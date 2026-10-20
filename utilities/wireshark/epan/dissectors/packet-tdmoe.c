@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,24 +22,26 @@
 void proto_reg_handoff_tdmoe(void);
 void proto_register_tdmoe(void);
 
+static dissector_handle_t tdmoe_handle;
+
 /* protocols and header fields */
-static int proto_tdmoe = -1;
+static int proto_tdmoe;
 
-static int hf_tdmoe_subaddress = -1;
-static int hf_tdmoe_samples = -1;
-static int hf_tdmoe_flags = -1;
-static int hf_tdmoe_yellow_alarm = -1;
-static int hf_tdmoe_sig_bits_present = -1;
-static int hf_tdmoe_packet_counter = -1;
-static int hf_tdmoe_channels = -1;
-static int hf_tdmoe_sig_bits = -1;
+static int hf_tdmoe_subaddress;
+static int hf_tdmoe_samples;
+static int hf_tdmoe_flags;
+static int hf_tdmoe_yellow_alarm;
+static int hf_tdmoe_sig_bits_present;
+static int hf_tdmoe_packet_counter;
+static int hf_tdmoe_channels;
+static int hf_tdmoe_sig_bits;
 
-static gint ett_tdmoe = -1;
-static gint ett_tdmoe_flags = -1;
+static int ett_tdmoe;
+static int ett_tdmoe_flags;
 
 static dissector_handle_t lapd_handle;
 
-static gint pref_tdmoe_d_channel = 24;
+static int pref_tdmoe_d_channel = 24;
 
 static int
 dissect_tdmoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
@@ -59,10 +49,10 @@ dissect_tdmoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 	proto_item *ti;
 	proto_tree *tdmoe_tree;
 	tvbuff_t   *next_client;
-	guint16     channels;
-	guint16     subaddress;
-	gint32 offset = 0;
-	static const gint *flags[] = { &hf_tdmoe_yellow_alarm, &hf_tdmoe_sig_bits_present, NULL };
+	uint16_t    channels;
+	uint16_t    subaddress;
+	int32_t offset = 0;
+	static int * const flags[] = { &hf_tdmoe_yellow_alarm, &hf_tdmoe_sig_bits_present, NULL };
 	int         chan;
 
 	/* Check that there's enough data */
@@ -76,7 +66,7 @@ dissect_tdmoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 	col_add_fstr(pinfo->cinfo, COL_INFO, "Subaddress: %d Channels: %d %s",
 		subaddress,
 		channels,
-		(tvb_get_guint8(tvb, 3) & TDMOE_YELLOW_ALARM_BITMASK ? "[YELLOW ALARM]" : "")
+		(tvb_get_uint8(tvb, 3) & TDMOE_YELLOW_ALARM_BITMASK ? "[YELLOW ALARM]" : "")
 	);
 
 
@@ -104,9 +94,9 @@ dissect_tdmoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 	proto_tree_add_item(tdmoe_tree, hf_tdmoe_channels, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset+=2;
 
-	if (tvb_get_guint8(tvb, 3) & TDMOE_SIGBITS_BITMASK) {
+	if (tvb_get_uint8(tvb, 3) & TDMOE_SIGBITS_BITMASK) {
 		/* 4 sigbits per channel. Might be different on other sub-protocols? */
-		guint16 length = (channels >> 1) + ((channels & 0x01) ? 1 : 0);
+		uint16_t length = (channels >> 1) + ((channels & 0x01) ? 1 : 0);
 
 		proto_tree_add_item(tdmoe_tree, hf_tdmoe_sig_bits, tvb, offset, length, ENC_NA);
 		offset += length;
@@ -130,7 +120,7 @@ proto_register_tdmoe(void)
 	static hf_register_info hf[] = {
 
 		{ &hf_tdmoe_subaddress,
-		  { "Subaddress",	"tdmoe.subaddress", FT_UINT8, BASE_DEC, NULL, 0x0,
+		  { "Subaddress",	"tdmoe.subaddress", FT_UINT16, BASE_DEC, NULL, 0x0,
 		    NULL, HFILL }},
 		{ &hf_tdmoe_samples,
 		  { "Samples",	"tdmoe.samples", FT_UINT8, BASE_DEC, NULL, 0x0,
@@ -154,7 +144,7 @@ proto_register_tdmoe(void)
 		  { "Sig bits", "tdmoe.sig_bits", FT_BYTES, BASE_NONE, NULL, 0x0,
 		    NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_tdmoe,
 		&ett_tdmoe_flags
 	};
@@ -163,7 +153,8 @@ proto_register_tdmoe(void)
 	proto_tdmoe = proto_register_protocol("Digium TDMoE Protocol", "TDMoE", "tdmoe");
 	proto_register_field_array(proto_tdmoe, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
-	tdmoe_module = prefs_register_protocol(proto_tdmoe, proto_reg_handoff_tdmoe);
+	tdmoe_handle = register_dissector("tdmoe", dissect_tdmoe, proto_tdmoe);
+	tdmoe_module = prefs_register_protocol(proto_tdmoe, NULL);
 	prefs_register_uint_preference(tdmoe_module, "d_channel",
 				       "TDMoE D-Channel",
 				       "The TDMoE channel that contains the D-Channel.",
@@ -173,16 +164,13 @@ proto_register_tdmoe(void)
 void
 proto_reg_handoff_tdmoe(void)
 {
-	dissector_handle_t tdmoe_handle;
-
-	tdmoe_handle = create_dissector_handle(dissect_tdmoe, proto_tdmoe);
 	dissector_add_uint("ethertype", ETHERTYPE_TDMOE, tdmoe_handle);
 
 	lapd_handle = find_dissector_add_dependency("lapd-bitstream", proto_tdmoe);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -113,7 +113,8 @@ This is a secondary sentence
 
 EOF
 
-../sentence-1-prg < s1.in > s1.out || Exit 1
+../sentence-1-prg < s1.in > s1.tmp || Exit 1
+LC_ALL=C tr -d '\r' < s1.tmp > s1.out || Exit 1
 
 : ${DIFF=diff}
 ${DIFF} s1.ok s1.out || Exit 1

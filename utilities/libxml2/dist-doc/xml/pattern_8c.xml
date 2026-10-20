@@ -1,0 +1,2361 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="pattern_8c" kind="file" language="C++">
+    <compoundname>pattern.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes refid="pattern_8h" local="no">libxml/pattern.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="dict_8h" local="no">libxml/dict.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes refid="parserInternals_8h" local="no">libxml/parserInternals.h</includes>
+    <includes local="yes">private/memory.h</includes>
+    <includes local="yes">private/parser.h</includes>
+    <incdepgraph>
+      <node id="28">
+        <label>libxml/HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="29">
+        <label>libxml/chvalid.h</label>
+        <link refid="chvalid_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/pattern.h</label>
+        <link refid="pattern_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/pattern.c</label>
+        <link refid="pattern_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="6">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="9">
+        <label>limits.h</label>
+      </node>
+      <node id="30">
+        <label>private/memory.h</label>
+      </node>
+      <node id="31">
+        <label>private/parser.h</label>
+      </node>
+      <node id="11">
+        <label>stdarg.h</label>
+      </node>
+      <node id="15">
+        <label>stddef.h</label>
+      </node>
+      <node id="8">
+        <label>stdio.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlStreamStep" prot="public">_xmlStreamStep</innerclass>
+    <innerclass refid="struct__xmlStreamComp" prot="public">_xmlStreamComp</innerclass>
+    <innerclass refid="struct__xmlStreamCtxt" prot="public">_xmlStreamCtxt</innerclass>
+    <innerclass refid="struct__xmlStepState" prot="public">_xmlStepState</innerclass>
+    <innerclass refid="struct__xmlStepStates" prot="public">_xmlStepStates</innerclass>
+    <innerclass refid="struct__xmlStepOp" prot="public">_xmlStepOp</innerclass>
+    <innerclass refid="struct__xmlPattern" prot="public">_xmlPattern</innerclass>
+    <innerclass refid="struct__xmlPatParserContext" prot="public">_xmlPatParserContext</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="pattern_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="26" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="26" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1ade0a63ade77a7b1dcd73f00e5aed4cdc" prot="public" static="no">
+        <name>ERROR</name>
+        <param><defname>a</defname></param>
+        <param><defname>b</defname></param>
+        <param><defname>c</defname></param>
+        <param><defname>d</defname></param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="45" column="10" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a943c05c63a81a20ad7047e0ed3d6ab20" prot="public" static="no">
+        <name>ERROR5</name>
+        <param><defname>a</defname></param>
+        <param><defname>b</defname></param>
+        <param><defname>c</defname></param>
+        <param><defname>d</defname></param>
+        <param><defname>e</defname></param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="46" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a255f8b07b435e6dac44231baaf41e463" prot="public" static="no">
+        <name>XML_STREAM_STEP_DESC</name>
+        <initializer>1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="48" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1af4277e85405543dd807c68dc6727d92e" prot="public" static="no">
+        <name>XML_STREAM_STEP_FINAL</name>
+        <initializer>2</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="49" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a7b9ccaddf5fe53f287237a7a7ae7e5c4" prot="public" static="no">
+        <name>XML_STREAM_STEP_ROOT</name>
+        <initializer>4</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="50" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a820eee941cd74f58b10b17aaed3cafc4" prot="public" static="no">
+        <name>XML_STREAM_STEP_ATTR</name>
+        <initializer>8</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="51" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="51" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a98674eb6ccd6115349e44a8807d7baa2" prot="public" static="no">
+        <name>XML_STREAM_STEP_NODE</name>
+        <initializer>16</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="52" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="52" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a42c45a186b48dca4e145e70d9465cf79" prot="public" static="no">
+        <name>XML_STREAM_STEP_IN_SET</name>
+        <initializer>32</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="53" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="53" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a9806c8f2c1a944e2d1696965bd64ea10" prot="public" static="no">
+        <name>XML_STREAM_FINAL_IS_ANY_NODE</name>
+        <initializer>1&lt;&lt;14</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="61" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="61" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1ac326f64dddb1f9bbbcc5af6ee9689a74" prot="public" static="no">
+        <name>XML_STREAM_FROM_ROOT</name>
+        <initializer>1&lt;&lt;15</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="62" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="62" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a6ebfd9c9a953a4038ef4097ff56a8fd0" prot="public" static="no">
+        <name>XML_STREAM_DESC</name>
+        <initializer>1&lt;&lt;16</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="63" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="63" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a6a659576b6e0281419eaaddaa06f42b6" prot="public" static="no">
+        <name>XML_STREAM_ANY_NODE</name>
+        <initializer>100</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="69" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="69" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a1732ec6c4f5a76f507ab823ef334b928" prot="public" static="no">
+        <name>XML_PATTERN_NOTPATTERN</name>
+        <initializer>                 (XML_PATTERN_XPATH | \
+                 XML_PATTERN_XSSEL | \
+                 XML_PATTERN_XSFIELD)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="71" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="71" bodyend="73"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1ad578bb096e089e3e02076c76f4da7869" prot="public" static="no">
+        <name>XML_STREAM_XS_IDC</name>
+        <param><defname>c</defname></param>
+        <initializer>    ((c)-&gt;flags &amp; \
+    (XML_PATTERN_XSSEL | XML_PATTERN_XSFIELD))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="75" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="75" bodyend="76"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a83d43450bbcb79ff139081c7a04e31ea" prot="public" static="no">
+        <name>XML_STREAM_XS_IDC_SEL</name>
+        <param><defname>c</defname></param>
+        <initializer>((c)-&gt;flags &amp; XML_PATTERN_XSSEL)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="78" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="78" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1aaf7b52284b7f0477d41181ffd86c031d" prot="public" static="no">
+        <name>XML_STREAM_XS_IDC_FIELD</name>
+        <param><defname>c</defname></param>
+        <initializer>((c)-&gt;flags &amp; XML_PATTERN_XSFIELD)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="80" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="80" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1aaa39e76fa25646d862b7b2efddf03c92" prot="public" static="no">
+        <name>XML_PAT_COPY_NSNAME</name>
+        <param><defname>c</defname></param>
+        <param><defname>r</defname></param>
+        <param><defname>nsname</defname></param>
+        <initializer>    if ((c)-&gt;comp-&gt;dict) \
+    r = (<ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *) <ref refid="dict_8h_1a84f7c91566b9ad4859c0b3674e9e3111" kindref="member">xmlDictLookup</ref>((c)-&gt;comp-&gt;dict, <ref refid="xmlstring_8h_1ad0a78338bf196a676079310a7b9c7599" kindref="member">BAD_CAST</ref> nsname, -1); \
+    else r = <ref refid="xmlstring_8h_1ae4beae949ad19f3ba61b010ba5bcf5c6" kindref="member">xmlStrdup</ref>(<ref refid="xmlstring_8h_1ad0a78338bf196a676079310a7b9c7599" kindref="member">BAD_CAST</ref> nsname);</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="82" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="82" bodyend="85"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1ae212d5539bcd4acbdfc25b10f611b30e" prot="public" static="no">
+        <name>XML_PAT_FREE_STRING</name>
+        <param><defname>c</defname></param>
+        <param><defname>r</defname></param>
+        <initializer>if ((c)-&gt;comp-&gt;dict == NULL) <ref refid="xmlmemory_8h_1a30231cbab46e8d659a5262c3b781164b" kindref="member">xmlFree</ref>(r);</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="87" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="87" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a1e010a21800826149480642bcbcd749f" prot="public" static="no">
+        <name>PAT_FROM_ROOT</name>
+        <initializer>(1&lt;&lt;8)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="161" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="161" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a34e46e872b880e52c2834f4056b0bd47" prot="public" static="no">
+        <name>PAT_FROM_CUR</name>
+        <initializer>(1&lt;&lt;9)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="162" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="162" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1aff0bd431f60abc560695115eb38e525d" prot="public" static="no">
+        <name>CUR</name>
+        <initializer>(*ctxt-&gt;cur)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="658" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="658" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1ad4085174a3a17d279d2dbd4b036b9e12" prot="public" static="no">
+        <name>SKIP</name>
+        <param><defname>val</defname></param>
+        <initializer>ctxt-&gt;cur += (val)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="659" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="659" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1af314159e84096cd64f018a2a4d8117a4" prot="public" static="no">
+        <name>NXT</name>
+        <param><defname>val</defname></param>
+        <initializer>ctxt-&gt;cur[(val)]</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="660" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="660" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1aec2f636e5f871d3368ee62978293ce1f" prot="public" static="no">
+        <name>PEEKPREV</name>
+        <param><defname>val</defname></param>
+        <initializer>ctxt-&gt;cur[-(val)]</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="661" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="661" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1afd94e685b9370cd448ebb1017a5a5d05" prot="public" static="no">
+        <name>CUR_PTR</name>
+        <initializer>ctxt-&gt;cur</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="662" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="662" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a764bdced1d55967df03accf048f32e84" prot="public" static="no">
+        <name>SKIP_BLANKS</name>
+        <initializer>    while (<ref refid="parserInternals_8h_1afdafd786dd8925a841d972b71acc4c5c" kindref="member">IS_BLANK_CH</ref>(CUR)) NEXT</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="664" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="664" bodyend="665"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a1f957b762e025dae67967a36c86dcfc1" prot="public" static="no">
+        <name>CURRENT</name>
+        <initializer>(*ctxt-&gt;cur)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="667" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="667" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1a2be29dbf95b4a2c822f307a5b8141184" prot="public" static="no">
+        <name>NEXT</name>
+        <initializer>((*ctxt-&gt;cur) ?  ctxt-&gt;cur++: ctxt-&gt;cur)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="668" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="668" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="pattern_8c_1abbd9e8467f8212b9176d05b0900112dd" prot="public" static="no">
+        <name>PUSH</name>
+        <param><defname>op</defname></param>
+        <param><defname>val</defname></param>
+        <param><defname>val2</defname></param>
+        <initializer>    if (xmlPatternAdd(ctxt, ctxt-&gt;comp, (op), (val), (val2))) goto error;</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="671" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="671" bodyend="672"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlPatOp</name>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9acd014c43f3cbad58167409b01405453f" prot="public">
+          <name>XML_OP_END</name>
+          <initializer>=0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9a2ba90f2c879eb5c05c1866b0bc5ca320" prot="public">
+          <name>XML_OP_ROOT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9a4fbd48132fd9d37f74713cc6417d5de5" prot="public">
+          <name>XML_OP_ELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9ad97bf15c75299bcffbc1ea2259d9116b" prot="public">
+          <name>XML_OP_CHILD</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9a050acd7d40ec513d68d17a129a7e791d" prot="public">
+          <name>XML_OP_ATTR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9ab133bbfb8508fce637d6f7305ecbd00d" prot="public">
+          <name>XML_OP_PARENT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9a3a4d72aea96b4c75d3a8fc7d244f79c4" prot="public">
+          <name>XML_OP_ANCESTOR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9a1131d6a10b0e60b7cb9682594dcae3e8" prot="public">
+          <name>XML_OP_NS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="pattern_8c_1af99dd700d0307160c0131e88b3965aa9a9f85f45570c7e95ea81ed4edc02d6711" prot="public">
+          <name>XML_OP_ALL</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="125" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="125" bodyend="135"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="pattern_8c_1a9c858613fe679529ebc50ce384fdcd5a" prot="public" static="no">
+        <type>struct _xmlStreamStep</type>
+        <definition>typedef struct _xmlStreamStep xmlStreamStep</definition>
+        <argsstring></argsstring>
+        <name>xmlStreamStep</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="89" column="29" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="89" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1a664e52584c9ee760c334d7fed0773275" prot="public" static="no">
+        <type>xmlStreamStep *</type>
+        <definition>typedef xmlStreamStep* xmlStreamStepPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlStreamStepPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="90" column="23" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="90" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1ac5c6c3364f4e64868611888fc2452db3" prot="public" static="no">
+        <type>struct _xmlStreamComp</type>
+        <definition>typedef struct _xmlStreamComp xmlStreamComp</definition>
+        <argsstring></argsstring>
+        <name>xmlStreamComp</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="98" column="29" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="98" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1a8bafc731bd6358a818ff4590b75d121e" prot="public" static="no">
+        <type>xmlStreamComp *</type>
+        <definition>typedef xmlStreamComp* xmlStreamCompPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlStreamCompPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="99" column="23" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="99" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1a5af603233b6d4a06823e2f9906edcfb1" prot="public" static="no">
+        <type>struct _xmlStepState</type>
+        <definition>typedef struct _xmlStepState xmlStepState</definition>
+        <argsstring></argsstring>
+        <name>xmlStepState</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="138" column="28" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="138" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1a93540a5501d2dc30bd3d9a90aa399793" prot="public" static="no">
+        <type>xmlStepState *</type>
+        <definition>typedef xmlStepState* xmlStepStatePtr</definition>
+        <argsstring></argsstring>
+        <name>xmlStepStatePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="139" column="22" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="139" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1a4f0015d005ac7adb4838582d8223ed23" prot="public" static="no">
+        <type>struct _xmlStepStates</type>
+        <definition>typedef struct _xmlStepStates xmlStepStates</definition>
+        <argsstring></argsstring>
+        <name>xmlStepStates</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="145" column="29" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="145" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1a4612bdc063e24033a5dc06b0041f4524" prot="public" static="no">
+        <type>xmlStepStates *</type>
+        <definition>typedef xmlStepStates* xmlStepStatesPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlStepStatesPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="146" column="23" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="146" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1a7e1457cbac2f142b5d5d31259af062b2" prot="public" static="no">
+        <type>struct _xmlStepOp</type>
+        <definition>typedef struct _xmlStepOp xmlStepOp</definition>
+        <argsstring></argsstring>
+        <name>xmlStepOp</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="153" column="25" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="153" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1ac512da84280a1770cdc68c4de79457ee" prot="public" static="no">
+        <type>xmlStepOp *</type>
+        <definition>typedef xmlStepOp* xmlStepOpPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlStepOpPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="154" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="154" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1aa3fdb882d212add8122c34e0859c4d69" prot="public" static="no">
+        <type>struct _xmlPatParserContext</type>
+        <definition>typedef struct _xmlPatParserContext xmlPatParserContext</definition>
+        <argsstring></argsstring>
+        <name>xmlPatParserContext</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="176" column="35" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="176" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="pattern_8c_1a08988659725e0060859b81da7bb1d913" prot="public" static="no">
+        <type>xmlPatParserContext *</type>
+        <definition>typedef xmlPatParserContext* xmlPatParserContextPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlPatParserContextPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="177" column="29" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="177" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="pattern_8c_1a52753b6c6edfa365d5b1840c7e7ccd74" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlFreeStreamComp</definition>
+        <argsstring>(xmlStreamCompPtr comp)</argsstring>
+        <name>xmlFreeStreamComp</name>
+        <param>
+          <type>xmlStreamCompPtr</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Free the compiled pattern for streaming. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compiled pattern for streaming </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1286" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1286" bodyend="1294" declfile="/builds/GNOME/libxml2/pattern.c" declline="119" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1ad675cef7cfd042244a75479bee8f329b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlPatternPtr</type>
+        <definition>static xmlPatternPtr xmlNewPattern</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlNewPattern</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Create a new XSLT Pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>the newly allocated <ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="201" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="201" bodyend="214"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a51f151384dc6e4d952db2a6e6e3c11eb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreePattern</definition>
+        <argsstring>(xmlPattern *comp)</argsstring>
+        <name>xmlFreePattern</name>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Free up the memory allocated by <computeroutput>comp</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XSLT comp </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="222" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="222" bodyend="224"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1ab6314f5b6d6e8d5b584e9115bf945bd0" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlFreePatternInternal</definition>
+        <argsstring>(xmlPatternPtr comp)</argsstring>
+        <name>xmlFreePatternInternal</name>
+        <param>
+          <type>xmlPatternPtr</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="227" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="227" bodyend="254"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a38ab7cfe4decaf298b6aafb311d88dde" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreePatternList</definition>
+        <argsstring>(xmlPattern *comp)</argsstring>
+        <name>xmlFreePatternList</name>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Free up the memory allocated by all the elements of <computeroutput>comp</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XSLT comp list </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="262" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="262" bodyend="271"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1adb2644291e580063474d5c17c022cdce" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlPatParserContextPtr</type>
+        <definition>static xmlPatParserContextPtr xmlNewPatParserContext</definition>
+        <argsstring>(const xmlChar *pattern, xmlDictPtr dict, const xmlChar **namespaces)</argsstring>
+        <name>xmlNewPatParserContext</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pattern</declname>
+        </param>
+        <param>
+          <type>xmlDictPtr</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>namespaces</declname>
+        </param>
+        <briefdescription>
+<para>Create a new XML pattern parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pattern</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pattern context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the inherited dictionary or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaces</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the prefix definitions, array of [URI, prefix] terminated with [NULL, NULL] or NULL if no namespace is used </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the newly allocated xmlPatParserContext or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="283" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="283" bodyend="310"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a2e3a2f2023a5da334527fdf52cb0668a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlFreePatParserContext</definition>
+        <argsstring>(xmlPatParserContextPtr ctxt)</argsstring>
+        <name>xmlFreePatParserContext</name>
+        <param>
+          <type>xmlPatParserContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free up the memory allocated by <computeroutput>ctxt</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XSLT parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="318" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="318" bodyend="323"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a384063a7145843ad1fee767af3380292" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlPatternGrow</definition>
+        <argsstring>(xmlPatternPtr comp)</argsstring>
+        <name>xmlPatternGrow</name>
+        <param>
+          <type>xmlPatternPtr</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="326" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="326" bodyend="341"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a44c30fdad412ce70058a0afc14973bf8" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlPatternAdd</definition>
+        <argsstring>(xmlPatParserContextPtr ctxt, xmlPatternPtr comp, xmlPatOp op, xmlChar *value, xmlChar *value2)</argsstring>
+        <name>xmlPatternAdd</name>
+        <param>
+          <type>xmlPatParserContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlPatternPtr</type>
+          <declname>comp</declname>
+        </param>
+        <param>
+          <type>xmlPatOp</type>
+          <declname>op</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value2</declname>
+        </param>
+        <briefdescription>
+<para>Add a step to an XSLT Compiled Match. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pattern parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compiled match expression </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>op</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an op </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the first value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the second value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of failure, 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="354" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="354" bodyend="368"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1ae2ade9ef5c1a7aee9c6c38791e38bdbe" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlReversePattern</definition>
+        <argsstring>(xmlPatternPtr comp)</argsstring>
+        <name>xmlReversePattern</name>
+        <param>
+          <type>xmlPatternPtr</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>reverse all the stack of expressions </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compiled match expression </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="377" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="377" bodyend="422"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a9d72a6ba39311900e8587e74754a57b7" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlPatPushState</definition>
+        <argsstring>(xmlStepStates *states, int step, xmlNodePtr node)</argsstring>
+        <name>xmlPatPushState</name>
+        <param>
+          <type>xmlStepStates *</type>
+          <declname>states</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>step</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="431" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="431" bodyend="449"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1af022d38c0ab04e1ebd825a819916d31c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlPatMatch</definition>
+        <argsstring>(xmlPatternPtr comp, xmlNodePtr node)</argsstring>
+        <name>xmlPatMatch</name>
+        <param>
+          <type>xmlPatternPtr</type>
+          <declname>comp</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Test whether the node matches the pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precompiled pattern </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if it matches, 0 if it doesn&apos;t and -1 in case of failure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="459" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="459" bodyend="650"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1ab77cb53faa8468cb8081c03ef0c1a596" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>static xmlChar * xmlPatScanName</definition>
+        <argsstring>(xmlPatParserContextPtr ctxt)</argsstring>
+        <name>xmlPatScanName</name>
+        <param>
+          <type>xmlPatParserContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>[4] NameChar ::= Letter | Digit | &apos;. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>&apos; | &apos;-&apos; | &apos;_&apos; | CombiningChar | Extender</para>
+<para>[5] Name ::= (Letter | &apos;_&apos; | &apos;:&apos;) (NameChar)*</para>
+<para>[6] Names ::= Name (S Name)*</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XPath Parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the Name parsed or NULL </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="687" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="687" bodyend="703"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1aafc5c770fc25f1002fd91e1e219cb593" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>static xmlChar * xmlPatScanNCName</definition>
+        <argsstring>(xmlPatParserContextPtr ctxt)</argsstring>
+        <name>xmlPatScanNCName</name>
+        <param>
+          <type>xmlPatParserContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Parses a non qualified name. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XPath Parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the Name parsed or NULL </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="713" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="713" bodyend="731"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a0a3d889c0a70872a5eb354db1b71a8dd" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCompileAttributeTest</definition>
+        <argsstring>(xmlPatParserContextPtr ctxt)</argsstring>
+        <name>xmlCompileAttributeTest</name>
+        <param>
+          <type>xmlPatParserContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Compile an attribute test. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compilation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="739" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="739" bodyend="821"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a0082b8de099fa6cc774b8d69ac6b6546" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCompileStepPattern</definition>
+        <argsstring>(xmlPatParserContextPtr ctxt)</argsstring>
+        <name>xmlCompileStepPattern</name>
+        <param>
+          <type>xmlPatParserContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Compile the Step Pattern and generates a precompiled form suitable for fast matching. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>[3] Step ::= &apos;.&apos; | NameTest [4] NameTest ::= QName | &apos;<emphasis>&apos; | NCName &apos;:&apos; &apos;</emphasis>&apos;</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compilation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="834" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="834" bodyend="1043"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a332de40efb0f7441449c79719eee6823" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCompilePathPattern</definition>
+        <argsstring>(xmlPatParserContextPtr ctxt)</argsstring>
+        <name>xmlCompilePathPattern</name>
+        <param>
+          <type>xmlPatParserContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Compile the Path Pattern and generates a precompiled form suitable for fast matching. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>[5] Path ::= (&apos;.//&apos;)? ( Step &apos;/&apos; )* ( Step | &apos;@&apos; NameTest )</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compilation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1054" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1054" bodyend="1141"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a2568beb2d63c309ed574dc4bf72cb059" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCompileIDCXPathPath</definition>
+        <argsstring>(xmlPatParserContextPtr ctxt)</argsstring>
+        <name>xmlCompileIDCXPathPath</name>
+        <param>
+          <type>xmlPatParserContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Compile the Path Pattern and generates a precompiled form suitable for fast matching. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>[5] Path ::= (&apos;.//&apos;)? ( Step &apos;/&apos; )* ( Step | &apos;@&apos; NameTest )</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compilation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1152" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1152" bodyend="1240"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a5fdb87e7b6baa38d44299ed50d8197cb" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlStreamCompPtr</type>
+        <definition>static xmlStreamCompPtr xmlNewStreamComp</definition>
+        <argsstring>(int size)</argsstring>
+        <name>xmlNewStreamComp</name>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>build a new compiled pattern for streaming </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of expected steps </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new structure or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1255" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1255" bodyend="1278"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1afd2bbeb9b7252e14bee66b9ab97e01fc" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlStreamCompAddStep</definition>
+        <argsstring>(xmlStreamCompPtr comp, const xmlChar *name, const xmlChar *ns, int nodeType, int flags)</argsstring>
+        <name>xmlStreamCompAddStep</name>
+        <param>
+          <type>xmlStreamCompPtr</type>
+          <declname>comp</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>nodeType</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flags</declname>
+        </param>
+        <briefdescription>
+<para>Add a new step to the compiled pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compiled pattern for streaming </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the first string, the name, or NULL for * </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the second step, the namespace name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodeType</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the flags for that step </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error or the step index if successful </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1307" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1307" bodyend="1337"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a09c7b848837f4b47868277e1b495478a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlStreamCompile</definition>
+        <argsstring>(xmlPatternPtr comp)</argsstring>
+        <name>xmlStreamCompile</name>
+        <param>
+          <type>xmlPatternPtr</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Tries to stream compile a pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precompiled pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of failure and 0 in case of success. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1346" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1346" bodyend="1514"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a9f6f7949e9dc74cc174250c11387b8b8" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlStreamCtxtPtr</type>
+        <definition>static xmlStreamCtxtPtr xmlNewStreamCtxt</definition>
+        <argsstring>(xmlStreamCompPtr stream)</argsstring>
+        <name>xmlNewStreamCtxt</name>
+        <param>
+          <type>xmlStreamCompPtr</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+<para>build a new stream context </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the copmiled stream </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new structure or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1523" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1523" bodyend="1540"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1ab5594822914fd8080c4f9f1fd77288f0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeStreamCtxt</definition>
+        <argsstring>(xmlStreamCtxt *stream)</argsstring>
+        <name>xmlFreeStreamCtxt</name>
+        <param>
+          <type><ref refid="pattern_8h_1ac8c5245dcea324e8b0230fae9a4ee08a" kindref="member">xmlStreamCtxt</ref> *</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+<para>Free the stream context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the stream context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1548" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1548" bodyend="1558"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a523619359bb1f4dde5563a649aedc576" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlStreamCtxtAddState</definition>
+        <argsstring>(xmlStreamCtxtPtr comp, int idx, int level)</argsstring>
+        <name>xmlStreamCtxtAddState</name>
+        <param>
+          <type>xmlStreamCtxtPtr</type>
+          <declname>comp</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>idx</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>level</declname>
+        </param>
+        <briefdescription>
+<para>Add a new state to the stream context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the stream context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>idx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the step index for that streaming state </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the level </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error or the state index if successful </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1569" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1569" bodyend="1601"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a62cfc6dd73df072956a781c11bd045e6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlStreamPushInternal</definition>
+        <argsstring>(xmlStreamCtxtPtr stream, const xmlChar *name, const xmlChar *ns, int nodeType)</argsstring>
+        <name>xmlStreamPushInternal</name>
+        <param>
+          <type>xmlStreamCtxtPtr</type>
+          <declname>stream</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>nodeType</declname>
+        </param>
+        <briefdescription>
+<para>Push new data onto the stream. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NOTE: if the call <ref refid="pattern_8h_1adad9188fd6810270fb0896b75291f817" kindref="member">xmlPatterncompile</ref> indicated a dictionary, then strings for name and ns will be expected to come from the dictionary. Both <computeroutput>name</computeroutput> and <computeroutput>ns</computeroutput> being NULL means the / i.e. the root of the document. This can also act as a reset.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the stream context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodeType</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the type of the node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error, 1 if the current state in the stream is a match and 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1618" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1618" bodyend="1923"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1afacfcf0c465a75527a40718893550461" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlStreamPush</definition>
+        <argsstring>(xmlStreamCtxt *stream, const xmlChar *name, const xmlChar *ns)</argsstring>
+        <name>xmlStreamPush</name>
+        <param>
+          <type><ref refid="pattern_8h_1ac8c5245dcea324e8b0230fae9a4ee08a" kindref="member">xmlStreamCtxt</ref> *</type>
+          <declname>stream</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Push new data onto the stream. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NOTE: if the call <ref refid="pattern_8h_1adad9188fd6810270fb0896b75291f817" kindref="member">xmlPatterncompile</ref> indicated a dictionary, then strings for name and ns will be expected to come from the dictionary. Both <computeroutput>name</computeroutput> and <computeroutput>ns</computeroutput> being NULL means the / i.e. the root of the document. This can also act as a reset. Otherwise the function will act as if it has been given an element-node.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the stream context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error, 1 if the current state in the stream is a match and 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1940" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1940" bodyend="1943"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a88b6c4bf6b6bb2aeece335562d7cbe5d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlStreamPushNode</definition>
+        <argsstring>(xmlStreamCtxt *stream, const xmlChar *name, const xmlChar *ns, int nodeType)</argsstring>
+        <name>xmlStreamPushNode</name>
+        <param>
+          <type><ref refid="pattern_8h_1ac8c5245dcea324e8b0230fae9a4ee08a" kindref="member">xmlStreamCtxt</ref> *</type>
+          <declname>stream</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>nodeType</declname>
+        </param>
+        <briefdescription>
+<para>Push new data onto the stream. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NOTE: if the call <ref refid="pattern_8h_1adad9188fd6810270fb0896b75291f817" kindref="member">xmlPatterncompile</ref> indicated a dictionary, then strings for name and ns will be expected to come from the dictionary. Both <computeroutput>name</computeroutput> and <computeroutput>ns</computeroutput> being NULL means the / i.e. the root of the document. This can also act as a reset. Different from <ref refid="pattern_8h_1afacfcf0c465a75527a40718893550461" kindref="member">xmlStreamPush</ref> this function can be fed with nodes of type: element-, attribute-, text-, cdata-section-, comment- and processing-instruction-node.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the stream context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodeType</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the type of the node being pushed </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error, 1 if the current state in the stream is a match and 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1963" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1963" bodyend="1969"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1ac421a45a1aa83ca9cced73701d63a8e8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlStreamPushAttr</definition>
+        <argsstring>(xmlStreamCtxt *stream, const xmlChar *name, const xmlChar *ns)</argsstring>
+        <name>xmlStreamPushAttr</name>
+        <param>
+          <type><ref refid="pattern_8h_1ac8c5245dcea324e8b0230fae9a4ee08a" kindref="member">xmlStreamCtxt</ref> *</type>
+          <declname>stream</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Push new attribute data onto the stream. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NOTE: If the call to <ref refid="pattern_8h_1adad9188fd6810270fb0896b75291f817" kindref="member">xmlPatterncompile</ref> indicated a dictionary, then strings for <computeroutput>name</computeroutput> and <computeroutput>ns</computeroutput> will be expected to come from the dictionary.</para>
+<para>Both <computeroutput>name</computeroutput> and <computeroutput>ns</computeroutput> being NULL means the root of the document. This can also act as a reset. Otherwise the function will act as if it has been given an attribute-node.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the stream context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error, 1 if the current state in the stream is a match and 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="1989" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="1989" bodyend="1992"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a4832c9b1f2748295646c81284ae0dbfd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlStreamPop</definition>
+        <argsstring>(xmlStreamCtxt *stream)</argsstring>
+        <name>xmlStreamPop</name>
+        <param>
+          <type><ref refid="pattern_8h_1ac8c5245dcea324e8b0230fae9a4ee08a" kindref="member">xmlStreamCtxt</ref> *</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+<para>push one level from the stream. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the stream context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error, 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2001" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2001" bodyend="2034"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1ae665245c4698c7965b8ec0cd9d9d4e40" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlStreamWantsAnyNode</definition>
+        <argsstring>(xmlStreamCtxt *streamCtxt)</argsstring>
+        <name>xmlStreamWantsAnyNode</name>
+        <param>
+          <type><ref refid="pattern_8h_1ac8c5245dcea324e8b0230fae9a4ee08a" kindref="member">xmlStreamCtxt</ref> *</type>
+          <declname>streamCtxt</declname>
+        </param>
+        <briefdescription>
+<para>Query if the streaming pattern additionally needs to be fed with text-, cdata-section-, comment- and processing-instruction-nodes. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If the result is 0 then only element-nodes and attribute-nodes need to be pushed.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>streamCtxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the stream context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 in case of need of nodes of the above described types, 0 otherwise. -1 on API errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2047" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2047" bodyend="2057"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a2acd15d2b12e805ed128f2aa46d9882c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlPatternCompileSafe</definition>
+        <argsstring>(const xmlChar *pattern, xmlDict *dict, int flags, const xmlChar **namespaces, xmlPattern **patternOut)</argsstring>
+        <name>xmlPatternCompileSafe</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pattern</declname>
+        </param>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flags</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>namespaces</declname>
+        </param>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> **</type>
+          <declname>patternOut</declname>
+        </param>
+        <briefdescription>
+<para>Compile a pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pattern</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pattern to compile </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an optional dictionary for interned strings </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>compilation flags, see <ref refid="pattern_8h_1ab16e18ec27cc560a78950a161958aba6" kindref="member">xmlPatternFlags</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaces</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the prefix definitions, array of [URI, prefix] or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>patternOut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>output pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, 1 on error, -1 if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2078" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2078" bodyend="2191"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1adad9188fd6810270fb0896b75291f817" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+        <definition>xmlPattern * xmlPatterncompile</definition>
+        <argsstring>(const xmlChar *pattern, xmlDict *dict, int flags, const xmlChar **namespaces)</argsstring>
+        <name>xmlPatterncompile</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pattern</declname>
+        </param>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flags</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>namespaces</declname>
+        </param>
+        <briefdescription>
+<para>Compile a pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pattern</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pattern to compile </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an optional dictionary for interned strings </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>compilation flags, see <ref refid="pattern_8h_1ab16e18ec27cc560a78950a161958aba6" kindref="member">xmlPatternFlags</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaces</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the prefix definitions, array of [URI, prefix] or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the compiled form of the pattern or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2203" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2203" bodyend="2208"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1ad5a3045aef24f3120f64b49fe99327bb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlPatternMatch</definition>
+        <argsstring>(xmlPattern *comp, xmlNode *node)</argsstring>
+        <name>xmlPatternMatch</name>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+          <declname>comp</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Test whether the node matches the pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precompiled pattern </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if it matches, 0 if it doesn&apos;t and -1 in case of failure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2218" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2218" bodyend="2232"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a70c14ecbf34ae4f57265237142a9f2d0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="pattern_8h_1ac8c5245dcea324e8b0230fae9a4ee08a" kindref="member">xmlStreamCtxt</ref> *</type>
+        <definition>xmlStreamCtxt * xmlPatternGetStreamCtxt</definition>
+        <argsstring>(xmlPattern *comp)</argsstring>
+        <name>xmlPatternGetStreamCtxt</name>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Get a streaming context for that pattern Use <ref refid="pattern_8h_1ab5594822914fd8080c4f9f1fd77288f0" kindref="member">xmlFreeStreamCtxt</ref> to free the context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precompiled pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the context or NULL in case of failure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2242" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2242" bodyend="2268"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a25677868ba3706188930551566a9df5d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlPatternStreamable</definition>
+        <argsstring>(xmlPattern *comp)</argsstring>
+        <name>xmlPatternStreamable</name>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Check if the pattern is streamable i.e. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><ref refid="pattern_8h_1a70c14ecbf34ae4f57265237142a9f2d0" kindref="member">xmlPatternGetStreamCtxt</ref> should work.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precompiled pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if streamable, 0 if not and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2278" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2278" bodyend="2287"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a9e1cfdfa0b37bf58a291471f7e5ae7af" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlPatternMaxDepth</definition>
+        <argsstring>(xmlPattern *comp)</argsstring>
+        <name>xmlPatternMaxDepth</name>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Check the maximum depth reachable by a pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precompiled pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-2 if no limit (using //), otherwise the depth, and -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2297" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2297" bodyend="2312"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a95f1ec8e0710555f34b4048978b43d50" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlPatternMinDepth</definition>
+        <argsstring>(xmlPattern *comp)</argsstring>
+        <name>xmlPatternMinDepth</name>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Check the minimum depth reachable by a pattern, 0 mean the / or . </para>
+        </briefdescription>
+        <detaileddescription>
+<para>are part of the set.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precompiled pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error otherwise the depth, </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2322" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2322" bodyend="2336"/>
+      </memberdef>
+      <memberdef kind="function" id="pattern_8c_1a23864cdfae4bec30d60769ca7f1ddf4e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlPatternFromRoot</definition>
+        <argsstring>(xmlPattern *comp)</argsstring>
+        <name>xmlPatternFromRoot</name>
+        <param>
+          <type><ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> *</type>
+          <declname>comp</declname>
+        </param>
+        <briefdescription>
+<para>Check if the pattern must be looked at from the root. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>comp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precompiled pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if true, 0 if false and -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="2345" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="2345" bodyend="2357"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/pattern.c"/>
+  </compounddef>
+</doxygen>

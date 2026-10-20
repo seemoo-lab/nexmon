@@ -5,25 +5,11 @@
  *
  * Copyright (C) 2008  Red Hat, Inc.
  *
- * Licensed under the Academic Free License version 2.0
- * Or under the following terms:
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: LGPL-2.1-or-later or AFL-2.0
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #include "xdgmimeicon.h"
@@ -161,7 +147,6 @@ _xdg_mime_icon_read_from_file (XdgIconList *list,
            sizeof (XdgIcon), icon_entry_cmp);
 }
 
-#ifdef NOT_USED_IN_GIO
 
 void
 _xdg_mime_icon_list_dump (XdgIconList *list)
@@ -179,5 +164,4 @@ _xdg_mime_icon_list_dump (XdgIconList *list)
     }
 }
 
-#endif
 

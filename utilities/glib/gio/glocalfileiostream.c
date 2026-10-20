@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,7 +37,7 @@
 
 
 #define g_local_file_io_stream_get_type _g_local_file_io_stream_get_type
-G_DEFINE_TYPE (GLocalFileIOStream, g_local_file_io_stream, G_TYPE_FILE_IO_STREAM);
+G_DEFINE_TYPE (GLocalFileIOStream, g_local_file_io_stream, G_TYPE_FILE_IO_STREAM)
 
 static void
 g_local_file_io_stream_finalize (GObject *object)
@@ -57,7 +59,7 @@ _g_local_file_io_stream_new (GLocalFileOutputStream *output_stream)
   int fd;
 
   stream = g_object_new (G_TYPE_LOCAL_FILE_IO_STREAM, NULL);
-  stream->output_stream = g_object_ref (output_stream);
+  stream->output_stream = g_object_ref (G_OUTPUT_STREAM (output_stream));
   _g_local_file_output_stream_set_do_close (output_stream, FALSE);
   fd = _g_local_file_output_stream_get_fd (output_stream);
   stream->input_stream = (GInputStream *)_g_local_file_input_stream_new (fd);

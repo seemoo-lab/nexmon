@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -40,35 +28,36 @@ static const value_string cimetrics_pid_vals[] = {
 	{ 0,		NULL }
 };
 
-static int proto_cimetrics_mstp = -1;
-static int hf_llc_cimetrics_pid = -1;
-static gint ett_cimetrics_mstp = -1;
+static int proto_cimetrics_mstp;
+static int hf_llc_cimetrics_pid;
+static int ett_cimetrics_mstp;
 
-static int hf_cimetrics_mstp_timer = -1;
-static int hf_cimetrics_mstp_value = -1;
+static int hf_cimetrics_mstp_timer;
+static int hf_cimetrics_mstp_value;
 
+static dissector_handle_t cimetric_handle;
 
 static int
 dissect_cimetrics_mstp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item *ti;
 	proto_tree *subtree;
-	gint offset = 0;
+	int offset = 0;
 #ifdef BACNET_MSTP_SUMMARY_IN_TREE
-	guint8 mstp_frame_type = 0;
-	guint8 mstp_frame_source = 0;
-	guint8 mstp_frame_destination = 0;
+	uint8_t mstp_frame_type = 0;
+	uint8_t mstp_frame_source = 0;
+	uint8_t mstp_frame_destination = 0;
 #endif
 
 #ifdef BACNET_MSTP_SUMMARY_IN_TREE
-	mstp_frame_type = tvb_get_guint8(tvb, offset+3);
-	mstp_frame_destination = tvb_get_guint8(tvb, offset+4);
-	mstp_frame_source = tvb_get_guint8(tvb, offset+5);
+	mstp_frame_type = tvb_get_uint8(tvb, offset+3);
+	mstp_frame_destination = tvb_get_uint8(tvb, offset+4);
+	mstp_frame_source = tvb_get_uint8(tvb, offset+5);
 	ti = proto_tree_add_protocol_format(tree,
 		proto_cimetrics_mstp, tvb, offset, 9,
 		"BACnet MS/TP, Src (%u), Dst (%u), %s",
 		mstp_frame_source, mstp_frame_destination,
-		mstp_frame_type_text(mstp_frame_type));
+		mstp_frame_type_text(pinfo->pool, mstp_frame_type));
 #else
 	ti = proto_tree_add_item(tree, proto_cimetrics_mstp, tvb, offset, 9, ENC_NA);
 #endif
@@ -94,7 +83,7 @@ proto_register_cimetrics(void)
 		{ &hf_cimetrics_mstp_value,
 		  { "8-bit value", "cimetrics.mstp_value",
 		    FT_UINT8, BASE_DEC, NULL, 0,
-		    "value", HFILL }
+		    NULL, HFILL }
 		}
 	};
 	static hf_register_info hf2[] = {
@@ -104,7 +93,7 @@ proto_register_cimetrics(void)
 		    NULL, HFILL }
 		}
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_cimetrics_mstp
 	};
 
@@ -114,8 +103,7 @@ proto_register_cimetrics(void)
 	proto_register_field_array(proto_cimetrics_mstp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-	register_dissector("cimetrics", dissect_cimetrics_mstp,
-			   proto_cimetrics_mstp);
+	cimetric_handle = register_dissector("cimetrics", dissect_cimetrics_mstp, proto_cimetrics_mstp);
 
 	llc_add_oui(OUI_CIMETRICS, "llc.cimetrics_pid",
 		    "LLC Cimetrics OUI PID", hf2, proto_cimetrics_mstp);
@@ -124,14 +112,11 @@ proto_register_cimetrics(void)
 void
 proto_reg_handoff_cimetrics(void)
 {
-	dissector_handle_t mstp_handle;
-
-	mstp_handle = find_dissector("cimetrics");
-	dissector_add_uint("llc.cimetrics_pid", 1, mstp_handle);
+	dissector_add_uint("llc.cimetrics_pid", 1, cimetric_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

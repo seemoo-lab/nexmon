@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -22,84 +23,84 @@ void proto_register_dcerpc_atsvc(void);
 void proto_reg_handoff_dcerpc_atsvc(void);
 
 /* Ett declarations */
-static gint ett_dcerpc_atsvc = -1;
-static gint ett_atsvc_atsvc_DaysOfMonth = -1;
-static gint ett_atsvc_atsvc_Flags = -1;
-static gint ett_atsvc_atsvc_DaysOfWeek = -1;
-static gint ett_atsvc_atsvc_JobInfo = -1;
-static gint ett_atsvc_atsvc_JobEnumInfo = -1;
-static gint ett_atsvc_atsvc_enum_ctr = -1;
+static int ett_dcerpc_atsvc;
+static int ett_atsvc_atsvc_DaysOfMonth;
+static int ett_atsvc_atsvc_Flags;
+static int ett_atsvc_atsvc_DaysOfWeek;
+static int ett_atsvc_atsvc_JobInfo;
+static int ett_atsvc_atsvc_JobEnumInfo;
+static int ett_atsvc_atsvc_enum_ctr;
 
 
 /* Header field declarations */
-static gint hf_atsvc_atsvc_DaysOfMonth_Eight = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Eighteenth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Eleventh = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Fifteenth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Fifth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_First = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Fourteenth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Fourth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Ninteenth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Ninth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Second = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Seventeenth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Seventh = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Sixteenth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Sixth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Tenth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Third = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Thirtieth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Thirtyfirst = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Thitteenth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twelfth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentyeighth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentyfifth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentyfirst = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentyfourth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentyninth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentysecond = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentyseventh = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentysixth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentyth = -1;
-static gint hf_atsvc_atsvc_DaysOfMonth_Twentythird = -1;
-static gint hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_FRIDAY = -1;
-static gint hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_MONDAY = -1;
-static gint hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_SATURDAY = -1;
-static gint hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_SUNDAY = -1;
-static gint hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_THURSDAY = -1;
-static gint hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_TUESDAY = -1;
-static gint hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_WEDNESDAY = -1;
-static gint hf_atsvc_atsvc_Flags_JOB_ADD_CURRENT_DATE = -1;
-static gint hf_atsvc_atsvc_Flags_JOB_EXEC_ERROR = -1;
-static gint hf_atsvc_atsvc_Flags_JOB_NONINTERACTIVE = -1;
-static gint hf_atsvc_atsvc_Flags_JOB_RUNS_TODAY = -1;
-static gint hf_atsvc_atsvc_Flags_JOB_RUN_PERIODICALLY = -1;
-static gint hf_atsvc_atsvc_JobDel_max_job_id = -1;
-static gint hf_atsvc_atsvc_JobDel_min_job_id = -1;
-static gint hf_atsvc_atsvc_JobEnumInfo_command = -1;
-static gint hf_atsvc_atsvc_JobEnumInfo_days_of_month = -1;
-static gint hf_atsvc_atsvc_JobEnumInfo_days_of_week = -1;
-static gint hf_atsvc_atsvc_JobEnumInfo_flags = -1;
-static gint hf_atsvc_atsvc_JobEnumInfo_job_time = -1;
-static gint hf_atsvc_atsvc_JobEnum_ctr = -1;
-static gint hf_atsvc_atsvc_JobEnum_preferred_max_len = -1;
-static gint hf_atsvc_atsvc_JobEnum_resume_handle = -1;
-static gint hf_atsvc_atsvc_JobEnum_total_entries = -1;
-static gint hf_atsvc_atsvc_JobInfo_command = -1;
-static gint hf_atsvc_atsvc_JobInfo_days_of_month = -1;
-static gint hf_atsvc_atsvc_JobInfo_days_of_week = -1;
-static gint hf_atsvc_atsvc_JobInfo_flags = -1;
-static gint hf_atsvc_atsvc_JobInfo_job_time = -1;
-static gint hf_atsvc_atsvc_enum_ctr_entries_read = -1;
-static gint hf_atsvc_atsvc_enum_ctr_first_entry = -1;
-static gint hf_atsvc_job_id = -1;
-static gint hf_atsvc_job_info = -1;
-static gint hf_atsvc_opnum = -1;
-static gint hf_atsvc_servername = -1;
-static gint hf_atsvc_status = -1;
+static int hf_atsvc_atsvc_DaysOfMonth_Eight;
+static int hf_atsvc_atsvc_DaysOfMonth_Eighteenth;
+static int hf_atsvc_atsvc_DaysOfMonth_Eleventh;
+static int hf_atsvc_atsvc_DaysOfMonth_Fifteenth;
+static int hf_atsvc_atsvc_DaysOfMonth_Fifth;
+static int hf_atsvc_atsvc_DaysOfMonth_First;
+static int hf_atsvc_atsvc_DaysOfMonth_Fourteenth;
+static int hf_atsvc_atsvc_DaysOfMonth_Fourth;
+static int hf_atsvc_atsvc_DaysOfMonth_Ninteenth;
+static int hf_atsvc_atsvc_DaysOfMonth_Ninth;
+static int hf_atsvc_atsvc_DaysOfMonth_Second;
+static int hf_atsvc_atsvc_DaysOfMonth_Seventeenth;
+static int hf_atsvc_atsvc_DaysOfMonth_Seventh;
+static int hf_atsvc_atsvc_DaysOfMonth_Sixteenth;
+static int hf_atsvc_atsvc_DaysOfMonth_Sixth;
+static int hf_atsvc_atsvc_DaysOfMonth_Tenth;
+static int hf_atsvc_atsvc_DaysOfMonth_Third;
+static int hf_atsvc_atsvc_DaysOfMonth_Thirtieth;
+static int hf_atsvc_atsvc_DaysOfMonth_Thirtyfirst;
+static int hf_atsvc_atsvc_DaysOfMonth_Thitteenth;
+static int hf_atsvc_atsvc_DaysOfMonth_Twelfth;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentyeighth;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentyfifth;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentyfirst;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentyfourth;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentyninth;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentysecond;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentyseventh;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentysixth;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentyth;
+static int hf_atsvc_atsvc_DaysOfMonth_Twentythird;
+static int hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_FRIDAY;
+static int hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_MONDAY;
+static int hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_SATURDAY;
+static int hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_SUNDAY;
+static int hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_THURSDAY;
+static int hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_TUESDAY;
+static int hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_WEDNESDAY;
+static int hf_atsvc_atsvc_Flags_JOB_ADD_CURRENT_DATE;
+static int hf_atsvc_atsvc_Flags_JOB_EXEC_ERROR;
+static int hf_atsvc_atsvc_Flags_JOB_NONINTERACTIVE;
+static int hf_atsvc_atsvc_Flags_JOB_RUNS_TODAY;
+static int hf_atsvc_atsvc_Flags_JOB_RUN_PERIODICALLY;
+static int hf_atsvc_atsvc_JobDel_max_job_id;
+static int hf_atsvc_atsvc_JobDel_min_job_id;
+static int hf_atsvc_atsvc_JobEnumInfo_command;
+static int hf_atsvc_atsvc_JobEnumInfo_days_of_month;
+static int hf_atsvc_atsvc_JobEnumInfo_days_of_week;
+static int hf_atsvc_atsvc_JobEnumInfo_flags;
+static int hf_atsvc_atsvc_JobEnumInfo_job_time;
+static int hf_atsvc_atsvc_JobEnum_ctr;
+static int hf_atsvc_atsvc_JobEnum_preferred_max_len;
+static int hf_atsvc_atsvc_JobEnum_resume_handle;
+static int hf_atsvc_atsvc_JobEnum_total_entries;
+static int hf_atsvc_atsvc_JobInfo_command;
+static int hf_atsvc_atsvc_JobInfo_days_of_month;
+static int hf_atsvc_atsvc_JobInfo_days_of_week;
+static int hf_atsvc_atsvc_JobInfo_flags;
+static int hf_atsvc_atsvc_JobInfo_job_time;
+static int hf_atsvc_atsvc_enum_ctr_entries_read;
+static int hf_atsvc_atsvc_enum_ctr_first_entry;
+static int hf_atsvc_job_id;
+static int hf_atsvc_job_info;
+static int hf_atsvc_opnum;
+static int hf_atsvc_servername;
+static int hf_atsvc_status;
 
-static gint proto_dcerpc_atsvc = -1;
+static int proto_dcerpc_atsvc;
 /* Version information */
 
 
@@ -107,7 +108,7 @@ static e_guid_t uuid_dcerpc_atsvc = {
 	0x1ff70682, 0x0a51, 0x30e8,
 	{ 0x07, 0x6d, 0x74, 0x0b, 0xe8, 0xce, 0xe9, 0x8b }
 };
-static guint16 ver_dcerpc_atsvc = 1;
+static uint16_t ver_dcerpc_atsvc = 1;
 
 static const true_false_string atsvc_DaysOfMonth_First_tfs = {
    "First is SET",
@@ -281,48 +282,48 @@ static const true_false_string atsvc_DaysOfWeek_DAYSOFWEEK_SUNDAY_tfs = {
    "DAYSOFWEEK_SUNDAY is SET",
    "DAYSOFWEEK_SUNDAY is NOT SET",
 };
-static int atsvc_dissect_element_JobInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobInfo_command_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnumInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnumInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnumInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnumInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnumInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnumInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnumInfo_command_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_enum_ctr_entries_read(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_enum_ctr_first_entry(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_enum_ctr_first_entry_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_enum_ctr_first_entry__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobAdd_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobAdd_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobAdd_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobAdd_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobAdd_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobAdd_job_id_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobDel_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobDel_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobDel_min_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobDel_max_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_ctr(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_ctr_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_preferred_max_len(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_total_entries(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_total_entries_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_resume_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobEnum_resume_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobGetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobGetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobGetInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobGetInfo_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobGetInfo_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int atsvc_dissect_element_JobGetInfo_job_info__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int atsvc_dissect_element_JobInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobInfo_command_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnumInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnumInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnumInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnumInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnumInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnumInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnumInfo_command_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_enum_ctr_entries_read(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_enum_ctr_first_entry(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_enum_ctr_first_entry_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_enum_ctr_first_entry__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobAdd_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobAdd_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobAdd_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobAdd_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobAdd_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobAdd_job_id_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobDel_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobDel_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobDel_min_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobDel_max_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_ctr(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_ctr_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_preferred_max_len(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_total_entries(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_total_entries_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_resume_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobEnum_resume_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobGetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobGetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobGetInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobGetInfo_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobGetInfo_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int atsvc_dissect_element_JobGetInfo_job_info__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 
 
 /* IDL: bitmap { */
@@ -360,10 +361,10 @@ static int atsvc_dissect_element_JobGetInfo_job_info__(tvbuff_t *tvb _U_, int of
 /* IDL: } */
 
 int
-atsvc_dissect_bitmap_DaysOfMonth(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+atsvc_dissect_bitmap_DaysOfMonth(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item;
-	static const int * atsvc_atsvc_DaysOfMonth_fields[] = {
+	static int * const atsvc_atsvc_DaysOfMonth_fields[] = {
 		&hf_atsvc_atsvc_DaysOfMonth_First,
 		&hf_atsvc_atsvc_DaysOfMonth_Second,
 		&hf_atsvc_atsvc_DaysOfMonth_Third,
@@ -397,7 +398,7 @@ atsvc_dissect_bitmap_DaysOfMonth(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 		&hf_atsvc_atsvc_DaysOfMonth_Thirtyfirst,
 		NULL
 	};
-	guint32 flags;
+	uint32_t flags;
 	ALIGN_TO_4_BYTES;
 
 	item = proto_tree_add_bitmask_with_flags(parent_tree, tvb, offset, hf_index,
@@ -426,10 +427,10 @@ atsvc_dissect_bitmap_DaysOfMonth(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 /* IDL: } */
 
 int
-atsvc_dissect_bitmap_Flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+atsvc_dissect_bitmap_Flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item;
-	static const int * atsvc_atsvc_Flags_fields[] = {
+	static int * const atsvc_atsvc_Flags_fields[] = {
 		&hf_atsvc_atsvc_Flags_JOB_RUN_PERIODICALLY,
 		&hf_atsvc_atsvc_Flags_JOB_EXEC_ERROR,
 		&hf_atsvc_atsvc_Flags_JOB_RUNS_TODAY,
@@ -437,7 +438,7 @@ atsvc_dissect_bitmap_Flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo
 		&hf_atsvc_atsvc_Flags_JOB_NONINTERACTIVE,
 		NULL
 	};
-	guint8 flags;
+	uint8_t flags;
 
 	item = proto_tree_add_bitmask_with_flags(parent_tree, tvb, offset, hf_index,
 				ett_atsvc_atsvc_Flags, atsvc_atsvc_Flags_fields, DREP_ENC_INTEGER(drep), BMT_NO_FALSE);
@@ -467,10 +468,10 @@ atsvc_dissect_bitmap_Flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo
 /* IDL: } */
 
 int
-atsvc_dissect_bitmap_DaysOfWeek(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+atsvc_dissect_bitmap_DaysOfWeek(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item;
-	static const int * atsvc_atsvc_DaysOfWeek_fields[] = {
+	static int * const atsvc_atsvc_DaysOfWeek_fields[] = {
 		&hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_MONDAY,
 		&hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_TUESDAY,
 		&hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_WEDNESDAY,
@@ -480,7 +481,7 @@ atsvc_dissect_bitmap_DaysOfWeek(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 		&hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_SUNDAY,
 		NULL
 	};
-	guint8 flags;
+	uint8_t flags;
 
 	item = proto_tree_add_bitmask_with_flags(parent_tree, tvb, offset, hf_index,
 				ett_atsvc_atsvc_DaysOfWeek, atsvc_atsvc_DaysOfWeek_fields, DREP_ENC_INTEGER(drep), BMT_NO_FALSE);
@@ -508,7 +509,7 @@ atsvc_dissect_bitmap_DaysOfWeek(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 static int
-atsvc_dissect_element_JobInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobInfo_job_time, 0);
 
@@ -516,7 +517,7 @@ atsvc_dissect_element_JobInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-atsvc_dissect_element_JobInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_bitmap_DaysOfMonth(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobInfo_days_of_month, 0);
 
@@ -524,7 +525,7 @@ atsvc_dissect_element_JobInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-atsvc_dissect_element_JobInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_bitmap_DaysOfWeek(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobInfo_days_of_week, 0);
 
@@ -532,7 +533,7 @@ atsvc_dissect_element_JobInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-atsvc_dissect_element_JobInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_bitmap_Flags(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobInfo_flags, 0);
 
@@ -540,7 +541,7 @@ atsvc_dissect_element_JobInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_in
 }
 
 static int
-atsvc_dissect_element_JobInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobInfo_command_, NDR_POINTER_UNIQUE, "Pointer to Command (uint16)",hf_atsvc_atsvc_JobInfo_command);
 
@@ -548,18 +549,18 @@ atsvc_dissect_element_JobInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-atsvc_dissect_element_JobInfo_command_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobInfo_command_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_atsvc_atsvc_JobInfo_command, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_atsvc_atsvc_JobInfo_command, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-atsvc_dissect_struct_JobInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+atsvc_dissect_struct_JobInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -606,7 +607,7 @@ atsvc_dissect_struct_JobInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
 /* IDL: } */
 
 static int
-atsvc_dissect_element_JobEnumInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnumInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_job_id, 0);
 
@@ -614,7 +615,7 @@ atsvc_dissect_element_JobEnumInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-atsvc_dissect_element_JobEnumInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnumInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobEnumInfo_job_time, 0);
 
@@ -622,7 +623,7 @@ atsvc_dissect_element_JobEnumInfo_job_time(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-atsvc_dissect_element_JobEnumInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnumInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_bitmap_DaysOfMonth(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobEnumInfo_days_of_month, 0);
 
@@ -630,7 +631,7 @@ atsvc_dissect_element_JobEnumInfo_days_of_month(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-atsvc_dissect_element_JobEnumInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnumInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_bitmap_DaysOfWeek(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobEnumInfo_days_of_week, 0);
 
@@ -638,7 +639,7 @@ atsvc_dissect_element_JobEnumInfo_days_of_week(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-atsvc_dissect_element_JobEnumInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnumInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_bitmap_Flags(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobEnumInfo_flags, 0);
 
@@ -646,7 +647,7 @@ atsvc_dissect_element_JobEnumInfo_flags(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-atsvc_dissect_element_JobEnumInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnumInfo_command(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobEnumInfo_command_, NDR_POINTER_UNIQUE, "Pointer to Command (uint16)",hf_atsvc_atsvc_JobEnumInfo_command);
 
@@ -654,18 +655,18 @@ atsvc_dissect_element_JobEnumInfo_command(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-atsvc_dissect_element_JobEnumInfo_command_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnumInfo_command_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_atsvc_atsvc_JobEnumInfo_command, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_atsvc_atsvc_JobEnumInfo_command, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-atsvc_dissect_struct_JobEnumInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+atsvc_dissect_struct_JobEnumInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -710,7 +711,7 @@ atsvc_dissect_struct_JobEnumInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 /* IDL: } */
 
 static int
-atsvc_dissect_element_enum_ctr_entries_read(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_enum_ctr_entries_read(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_enum_ctr_entries_read, 0);
 
@@ -718,7 +719,7 @@ atsvc_dissect_element_enum_ctr_entries_read(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-atsvc_dissect_element_enum_ctr_first_entry(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_enum_ctr_first_entry(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_enum_ctr_first_entry_, NDR_POINTER_UNIQUE, "Pointer to First Entry (atsvc_JobEnumInfo)",hf_atsvc_atsvc_enum_ctr_first_entry);
 
@@ -726,7 +727,7 @@ atsvc_dissect_element_enum_ctr_first_entry(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-atsvc_dissect_element_enum_ctr_first_entry_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_enum_ctr_first_entry_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_enum_ctr_first_entry__);
 
@@ -734,7 +735,7 @@ atsvc_dissect_element_enum_ctr_first_entry_(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-atsvc_dissect_element_enum_ctr_first_entry__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_enum_ctr_first_entry__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_struct_JobEnumInfo(tvb,offset,pinfo,tree,di,drep,hf_atsvc_atsvc_enum_ctr_first_entry,0);
 
@@ -742,7 +743,7 @@ atsvc_dissect_element_enum_ctr_first_entry__(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 int
-atsvc_dissect_struct_enum_ctr(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+atsvc_dissect_struct_enum_ctr(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -773,7 +774,7 @@ atsvc_dissect_struct_enum_ctr(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 }
 
 static int
-atsvc_dissect_element_JobAdd_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobAdd_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobAdd_servername_, NDR_POINTER_UNIQUE, "Pointer to Servername (uint16)",hf_atsvc_servername);
 
@@ -781,18 +782,18 @@ atsvc_dissect_element_JobAdd_servername(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-atsvc_dissect_element_JobAdd_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobAdd_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_atsvc_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_atsvc_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-atsvc_dissect_element_JobAdd_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobAdd_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobAdd_job_info_, NDR_POINTER_REF, "Pointer to Job Info (atsvc_JobInfo)",hf_atsvc_job_info);
 
@@ -800,7 +801,7 @@ atsvc_dissect_element_JobAdd_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-atsvc_dissect_element_JobAdd_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobAdd_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_struct_JobInfo(tvb,offset,pinfo,tree,di,drep,hf_atsvc_job_info,0);
 
@@ -808,7 +809,7 @@ atsvc_dissect_element_JobAdd_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-atsvc_dissect_element_JobAdd_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobAdd_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobAdd_job_id_, NDR_POINTER_REF, "Pointer to Job Id (uint32)",hf_atsvc_job_id);
 
@@ -816,7 +817,7 @@ atsvc_dissect_element_JobAdd_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_in
 }
 
 static int
-atsvc_dissect_element_JobAdd_job_id_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobAdd_job_id_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_job_id, 0);
 
@@ -830,9 +831,9 @@ atsvc_dissect_element_JobAdd_job_id_(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: ); */
 
 static int
-atsvc_dissect_JobAdd_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_JobAdd_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="JobAdd";
 	offset = atsvc_dissect_element_JobAdd_job_id(tvb, offset, pinfo, tree, di, drep);
@@ -841,13 +842,13 @@ atsvc_dissect_JobAdd_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_atsvc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-atsvc_dissect_JobAdd_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_JobAdd_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="JobAdd";
 	offset = atsvc_dissect_element_JobAdd_servername(tvb, offset, pinfo, tree, di, drep);
@@ -858,7 +859,7 @@ atsvc_dissect_JobAdd_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
 }
 
 static int
-atsvc_dissect_element_JobDel_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobDel_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobDel_servername_, NDR_POINTER_UNIQUE, "Pointer to Servername (uint16)",hf_atsvc_servername);
 
@@ -866,18 +867,18 @@ atsvc_dissect_element_JobDel_servername(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-atsvc_dissect_element_JobDel_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobDel_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_atsvc_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_atsvc_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-atsvc_dissect_element_JobDel_min_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobDel_min_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobDel_min_job_id, 0);
 
@@ -885,7 +886,7 @@ atsvc_dissect_element_JobDel_min_job_id(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-atsvc_dissect_element_JobDel_max_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobDel_max_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobDel_max_job_id, 0);
 
@@ -899,21 +900,21 @@ atsvc_dissect_element_JobDel_max_job_id(tvbuff_t *tvb _U_, int offset _U_, packe
 /* IDL: ); */
 
 static int
-atsvc_dissect_JobDel_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_JobDel_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="JobDel";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_atsvc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-atsvc_dissect_JobDel_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_JobDel_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="JobDel";
 	offset = atsvc_dissect_element_JobDel_servername(tvb, offset, pinfo, tree, di, drep);
@@ -926,7 +927,7 @@ atsvc_dissect_JobDel_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
 }
 
 static int
-atsvc_dissect_element_JobEnum_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobEnum_servername_, NDR_POINTER_UNIQUE, "Pointer to Servername (uint16)",hf_atsvc_servername);
 
@@ -934,18 +935,18 @@ atsvc_dissect_element_JobEnum_servername(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-atsvc_dissect_element_JobEnum_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_atsvc_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_atsvc_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-atsvc_dissect_element_JobEnum_ctr(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_ctr(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobEnum_ctr_, NDR_POINTER_REF, "Pointer to Ctr (atsvc_enum_ctr)",hf_atsvc_atsvc_JobEnum_ctr);
 
@@ -953,7 +954,7 @@ atsvc_dissect_element_JobEnum_ctr(tvbuff_t *tvb _U_, int offset _U_, packet_info
 }
 
 static int
-atsvc_dissect_element_JobEnum_ctr_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_ctr_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_struct_enum_ctr(tvb,offset,pinfo,tree,di,drep,hf_atsvc_atsvc_JobEnum_ctr,0);
 
@@ -961,7 +962,7 @@ atsvc_dissect_element_JobEnum_ctr_(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 }
 
 static int
-atsvc_dissect_element_JobEnum_preferred_max_len(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_preferred_max_len(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobEnum_preferred_max_len, 0);
 
@@ -969,7 +970,7 @@ atsvc_dissect_element_JobEnum_preferred_max_len(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-atsvc_dissect_element_JobEnum_total_entries(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_total_entries(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobEnum_total_entries_, NDR_POINTER_REF, "Pointer to Total Entries (uint32)",hf_atsvc_atsvc_JobEnum_total_entries);
 
@@ -977,7 +978,7 @@ atsvc_dissect_element_JobEnum_total_entries(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-atsvc_dissect_element_JobEnum_total_entries_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_total_entries_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobEnum_total_entries, 0);
 
@@ -985,7 +986,7 @@ atsvc_dissect_element_JobEnum_total_entries_(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-atsvc_dissect_element_JobEnum_resume_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_resume_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobEnum_resume_handle_, NDR_POINTER_UNIQUE, "Pointer to Resume Handle (uint32)",hf_atsvc_atsvc_JobEnum_resume_handle);
 
@@ -993,7 +994,7 @@ atsvc_dissect_element_JobEnum_resume_handle(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-atsvc_dissect_element_JobEnum_resume_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobEnum_resume_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_atsvc_JobEnum_resume_handle, 0);
 
@@ -1009,9 +1010,9 @@ atsvc_dissect_element_JobEnum_resume_handle_(tvbuff_t *tvb _U_, int offset _U_, 
 /* IDL: ); */
 
 static int
-atsvc_dissect_JobEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_JobEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="JobEnum";
 	offset = atsvc_dissect_element_JobEnum_ctr(tvb, offset, pinfo, tree, di, drep);
@@ -1026,13 +1027,13 @@ atsvc_dissect_JobEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_atsvc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-atsvc_dissect_JobEnum_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_JobEnum_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="JobEnum";
 	offset = atsvc_dissect_element_JobEnum_servername(tvb, offset, pinfo, tree, di, drep);
@@ -1047,7 +1048,7 @@ atsvc_dissect_JobEnum_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 }
 
 static int
-atsvc_dissect_element_JobGetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobGetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobGetInfo_servername_, NDR_POINTER_UNIQUE, "Pointer to Servername (uint16)",hf_atsvc_servername);
 
@@ -1055,18 +1056,18 @@ atsvc_dissect_element_JobGetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-atsvc_dissect_element_JobGetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobGetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_atsvc_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_atsvc_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-atsvc_dissect_element_JobGetInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobGetInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_atsvc_job_id, 0);
 
@@ -1074,7 +1075,7 @@ atsvc_dissect_element_JobGetInfo_job_id(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-atsvc_dissect_element_JobGetInfo_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobGetInfo_job_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobGetInfo_job_info_, NDR_POINTER_REF, "Pointer to Job Info (atsvc_JobInfo)",hf_atsvc_job_info);
 
@@ -1082,7 +1083,7 @@ atsvc_dissect_element_JobGetInfo_job_info(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-atsvc_dissect_element_JobGetInfo_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobGetInfo_job_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, atsvc_dissect_element_JobGetInfo_job_info__, NDR_POINTER_UNIQUE, "Pointer to Job Info (atsvc_JobInfo)",hf_atsvc_job_info);
 
@@ -1090,7 +1091,7 @@ atsvc_dissect_element_JobGetInfo_job_info_(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-atsvc_dissect_element_JobGetInfo_job_info__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_element_JobGetInfo_job_info__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = atsvc_dissect_struct_JobInfo(tvb,offset,pinfo,tree,di,drep,hf_atsvc_job_info,0);
 
@@ -1104,9 +1105,9 @@ atsvc_dissect_element_JobGetInfo_job_info__(tvbuff_t *tvb _U_, int offset _U_, p
 /* IDL: ); */
 
 static int
-atsvc_dissect_JobGetInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_JobGetInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="JobGetInfo";
 	offset = atsvc_dissect_element_JobGetInfo_job_info(tvb, offset, pinfo, tree, di, drep);
@@ -1115,13 +1116,13 @@ atsvc_dissect_JobGetInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_atsvc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-atsvc_dissect_JobGetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+atsvc_dissect_JobGetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="JobGetInfo";
 	offset = atsvc_dissect_element_JobGetInfo_servername(tvb, offset, pinfo, tree, di, drep);
@@ -1132,7 +1133,7 @@ atsvc_dissect_JobGetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 }
 
 
-static dcerpc_sub_dissector atsvc_dissectors[] = {
+static const dcerpc_sub_dissector atsvc_dissectors[] = {
 	{ 0, "JobAdd",
 	   atsvc_dissect_JobAdd_request, atsvc_dissect_JobAdd_response},
 	{ 1, "JobDel",
@@ -1148,141 +1149,141 @@ void proto_register_dcerpc_atsvc(void)
 {
 	static hf_register_info hf[] = {
 	{ &hf_atsvc_atsvc_DaysOfMonth_Eight,
-		{ "Eight", "atsvc.atsvc_DaysOfMonth.Eight", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Eight_tfs), ( 0x00000080 ), NULL, HFILL }},
+	  { "Eight", "atsvc.atsvc_DaysOfMonth.Eight", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Eight_tfs), ( 0x00000080 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Eighteenth,
-		{ "Eighteenth", "atsvc.atsvc_DaysOfMonth.Eighteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Eighteenth_tfs), ( 0x00020000 ), NULL, HFILL }},
+	  { "Eighteenth", "atsvc.atsvc_DaysOfMonth.Eighteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Eighteenth_tfs), ( 0x00020000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Eleventh,
-		{ "Eleventh", "atsvc.atsvc_DaysOfMonth.Eleventh", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Eleventh_tfs), ( 0x00000400 ), NULL, HFILL }},
+	  { "Eleventh", "atsvc.atsvc_DaysOfMonth.Eleventh", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Eleventh_tfs), ( 0x00000400 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Fifteenth,
-		{ "Fifteenth", "atsvc.atsvc_DaysOfMonth.Fifteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Fifteenth_tfs), ( 0x00004000 ), NULL, HFILL }},
+	  { "Fifteenth", "atsvc.atsvc_DaysOfMonth.Fifteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Fifteenth_tfs), ( 0x00004000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Fifth,
-		{ "Fifth", "atsvc.atsvc_DaysOfMonth.Fifth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Fifth_tfs), ( 0x00000010 ), NULL, HFILL }},
+	  { "Fifth", "atsvc.atsvc_DaysOfMonth.Fifth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Fifth_tfs), ( 0x00000010 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_First,
-		{ "First", "atsvc.atsvc_DaysOfMonth.First", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_First_tfs), ( 0x00000001 ), NULL, HFILL }},
+	  { "First", "atsvc.atsvc_DaysOfMonth.First", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_First_tfs), ( 0x00000001 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Fourteenth,
-		{ "Fourteenth", "atsvc.atsvc_DaysOfMonth.Fourteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Fourteenth_tfs), ( 0x00002000 ), NULL, HFILL }},
+	  { "Fourteenth", "atsvc.atsvc_DaysOfMonth.Fourteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Fourteenth_tfs), ( 0x00002000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Fourth,
-		{ "Fourth", "atsvc.atsvc_DaysOfMonth.Fourth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Fourth_tfs), ( 0x00000008 ), NULL, HFILL }},
+	  { "Fourth", "atsvc.atsvc_DaysOfMonth.Fourth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Fourth_tfs), ( 0x00000008 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Ninteenth,
-		{ "Ninteenth", "atsvc.atsvc_DaysOfMonth.Ninteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Ninteenth_tfs), ( 0x00040000 ), NULL, HFILL }},
+	  { "Ninteenth", "atsvc.atsvc_DaysOfMonth.Ninteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Ninteenth_tfs), ( 0x00040000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Ninth,
-		{ "Ninth", "atsvc.atsvc_DaysOfMonth.Ninth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Ninth_tfs), ( 0x00000100 ), NULL, HFILL }},
+	  { "Ninth", "atsvc.atsvc_DaysOfMonth.Ninth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Ninth_tfs), ( 0x00000100 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Second,
-		{ "Second", "atsvc.atsvc_DaysOfMonth.Second", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Second_tfs), ( 0x00000002 ), NULL, HFILL }},
+	  { "Second", "atsvc.atsvc_DaysOfMonth.Second", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Second_tfs), ( 0x00000002 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Seventeenth,
-		{ "Seventeenth", "atsvc.atsvc_DaysOfMonth.Seventeenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Seventeenth_tfs), ( 0x00010000 ), NULL, HFILL }},
+	  { "Seventeenth", "atsvc.atsvc_DaysOfMonth.Seventeenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Seventeenth_tfs), ( 0x00010000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Seventh,
-		{ "Seventh", "atsvc.atsvc_DaysOfMonth.Seventh", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Seventh_tfs), ( 0x00000040 ), NULL, HFILL }},
+	  { "Seventh", "atsvc.atsvc_DaysOfMonth.Seventh", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Seventh_tfs), ( 0x00000040 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Sixteenth,
-		{ "Sixteenth", "atsvc.atsvc_DaysOfMonth.Sixteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Sixteenth_tfs), ( 0x00008000 ), NULL, HFILL }},
+	  { "Sixteenth", "atsvc.atsvc_DaysOfMonth.Sixteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Sixteenth_tfs), ( 0x00008000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Sixth,
-		{ "Sixth", "atsvc.atsvc_DaysOfMonth.Sixth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Sixth_tfs), ( 0x00000020 ), NULL, HFILL }},
+	  { "Sixth", "atsvc.atsvc_DaysOfMonth.Sixth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Sixth_tfs), ( 0x00000020 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Tenth,
-		{ "Tenth", "atsvc.atsvc_DaysOfMonth.Tenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Tenth_tfs), ( 0x00000200 ), NULL, HFILL }},
+	  { "Tenth", "atsvc.atsvc_DaysOfMonth.Tenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Tenth_tfs), ( 0x00000200 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Third,
-		{ "Third", "atsvc.atsvc_DaysOfMonth.Third", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Third_tfs), ( 0x00000004 ), NULL, HFILL }},
+	  { "Third", "atsvc.atsvc_DaysOfMonth.Third", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Third_tfs), ( 0x00000004 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Thirtieth,
-		{ "Thirtieth", "atsvc.atsvc_DaysOfMonth.Thirtieth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Thirtieth_tfs), ( 0x20000000 ), NULL, HFILL }},
+	  { "Thirtieth", "atsvc.atsvc_DaysOfMonth.Thirtieth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Thirtieth_tfs), ( 0x20000000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Thirtyfirst,
-		{ "Thirtyfirst", "atsvc.atsvc_DaysOfMonth.Thirtyfirst", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Thirtyfirst_tfs), ( 0x40000000 ), NULL, HFILL }},
+	  { "Thirtyfirst", "atsvc.atsvc_DaysOfMonth.Thirtyfirst", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Thirtyfirst_tfs), ( 0x40000000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Thitteenth,
-		{ "Thitteenth", "atsvc.atsvc_DaysOfMonth.Thitteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Thitteenth_tfs), ( 0x00001000 ), NULL, HFILL }},
+	  { "Thitteenth", "atsvc.atsvc_DaysOfMonth.Thitteenth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Thitteenth_tfs), ( 0x00001000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twelfth,
-		{ "Twelfth", "atsvc.atsvc_DaysOfMonth.Twelfth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twelfth_tfs), ( 0x00000800 ), NULL, HFILL }},
+	  { "Twelfth", "atsvc.atsvc_DaysOfMonth.Twelfth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twelfth_tfs), ( 0x00000800 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentyeighth,
-		{ "Twentyeighth", "atsvc.atsvc_DaysOfMonth.Twentyeighth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyeighth_tfs), ( 0x08000000 ), NULL, HFILL }},
+	  { "Twentyeighth", "atsvc.atsvc_DaysOfMonth.Twentyeighth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyeighth_tfs), ( 0x08000000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentyfifth,
-		{ "Twentyfifth", "atsvc.atsvc_DaysOfMonth.Twentyfifth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyfifth_tfs), ( 0x01000000 ), NULL, HFILL }},
+	  { "Twentyfifth", "atsvc.atsvc_DaysOfMonth.Twentyfifth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyfifth_tfs), ( 0x01000000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentyfirst,
-		{ "Twentyfirst", "atsvc.atsvc_DaysOfMonth.Twentyfirst", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyfirst_tfs), ( 0x00100000 ), NULL, HFILL }},
+	  { "Twentyfirst", "atsvc.atsvc_DaysOfMonth.Twentyfirst", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyfirst_tfs), ( 0x00100000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentyfourth,
-		{ "Twentyfourth", "atsvc.atsvc_DaysOfMonth.Twentyfourth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyfourth_tfs), ( 0x00800000 ), NULL, HFILL }},
+	  { "Twentyfourth", "atsvc.atsvc_DaysOfMonth.Twentyfourth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyfourth_tfs), ( 0x00800000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentyninth,
-		{ "Twentyninth", "atsvc.atsvc_DaysOfMonth.Twentyninth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyninth_tfs), ( 0x10000000 ), NULL, HFILL }},
+	  { "Twentyninth", "atsvc.atsvc_DaysOfMonth.Twentyninth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyninth_tfs), ( 0x10000000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentysecond,
-		{ "Twentysecond", "atsvc.atsvc_DaysOfMonth.Twentysecond", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentysecond_tfs), ( 0x00200000 ), NULL, HFILL }},
+	  { "Twentysecond", "atsvc.atsvc_DaysOfMonth.Twentysecond", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentysecond_tfs), ( 0x00200000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentyseventh,
-		{ "Twentyseventh", "atsvc.atsvc_DaysOfMonth.Twentyseventh", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyseventh_tfs), ( 0x04000000 ), NULL, HFILL }},
+	  { "Twentyseventh", "atsvc.atsvc_DaysOfMonth.Twentyseventh", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyseventh_tfs), ( 0x04000000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentysixth,
-		{ "Twentysixth", "atsvc.atsvc_DaysOfMonth.Twentysixth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentysixth_tfs), ( 0x02000000 ), NULL, HFILL }},
+	  { "Twentysixth", "atsvc.atsvc_DaysOfMonth.Twentysixth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentysixth_tfs), ( 0x02000000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentyth,
-		{ "Twentyth", "atsvc.atsvc_DaysOfMonth.Twentyth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyth_tfs), ( 0x00080000 ), NULL, HFILL }},
+	  { "Twentyth", "atsvc.atsvc_DaysOfMonth.Twentyth", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentyth_tfs), ( 0x00080000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfMonth_Twentythird,
-		{ "Twentythird", "atsvc.atsvc_DaysOfMonth.Twentythird", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentythird_tfs), ( 0x00400000 ), NULL, HFILL }},
+	  { "Twentythird", "atsvc.atsvc_DaysOfMonth.Twentythird", FT_BOOLEAN, 32, TFS(&atsvc_DaysOfMonth_Twentythird_tfs), ( 0x00400000 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_FRIDAY,
-		{ "Daysofweek Friday", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_FRIDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_FRIDAY_tfs), ( 0x10 ), NULL, HFILL }},
+	  { "DAYSOFWEEK FRIDAY", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_FRIDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_FRIDAY_tfs), ( 0x10 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_MONDAY,
-		{ "Daysofweek Monday", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_MONDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_MONDAY_tfs), ( 0x01 ), NULL, HFILL }},
+	  { "DAYSOFWEEK MONDAY", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_MONDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_MONDAY_tfs), ( 0x01 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_SATURDAY,
-		{ "Daysofweek Saturday", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_SATURDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_SATURDAY_tfs), ( 0x20 ), NULL, HFILL }},
+	  { "DAYSOFWEEK SATURDAY", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_SATURDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_SATURDAY_tfs), ( 0x20 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_SUNDAY,
-		{ "Daysofweek Sunday", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_SUNDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_SUNDAY_tfs), ( 0x40 ), NULL, HFILL }},
+	  { "DAYSOFWEEK SUNDAY", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_SUNDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_SUNDAY_tfs), ( 0x40 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_THURSDAY,
-		{ "Daysofweek Thursday", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_THURSDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_THURSDAY_tfs), ( 0x08 ), NULL, HFILL }},
+	  { "DAYSOFWEEK THURSDAY", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_THURSDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_THURSDAY_tfs), ( 0x08 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_TUESDAY,
-		{ "Daysofweek Tuesday", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_TUESDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_TUESDAY_tfs), ( 0x02 ), NULL, HFILL }},
+	  { "DAYSOFWEEK TUESDAY", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_TUESDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_TUESDAY_tfs), ( 0x02 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_DaysOfWeek_DAYSOFWEEK_WEDNESDAY,
-		{ "Daysofweek Wednesday", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_WEDNESDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_WEDNESDAY_tfs), ( 0x04 ), NULL, HFILL }},
+	  { "DAYSOFWEEK WEDNESDAY", "atsvc.atsvc_DaysOfWeek.DAYSOFWEEK_WEDNESDAY", FT_BOOLEAN, 8, TFS(&atsvc_DaysOfWeek_DAYSOFWEEK_WEDNESDAY_tfs), ( 0x04 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_Flags_JOB_ADD_CURRENT_DATE,
-		{ "Job Add Current Date", "atsvc.atsvc_Flags.JOB_ADD_CURRENT_DATE", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_ADD_CURRENT_DATE_tfs), ( 0x08 ), NULL, HFILL }},
+	  { "JOB ADD CURRENT DATE", "atsvc.atsvc_Flags.JOB_ADD_CURRENT_DATE", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_ADD_CURRENT_DATE_tfs), ( 0x08 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_Flags_JOB_EXEC_ERROR,
-		{ "Job Exec Error", "atsvc.atsvc_Flags.JOB_EXEC_ERROR", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_EXEC_ERROR_tfs), ( 0x02 ), NULL, HFILL }},
+	  { "JOB EXEC ERROR", "atsvc.atsvc_Flags.JOB_EXEC_ERROR", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_EXEC_ERROR_tfs), ( 0x02 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_Flags_JOB_NONINTERACTIVE,
-		{ "Job Noninteractive", "atsvc.atsvc_Flags.JOB_NONINTERACTIVE", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_NONINTERACTIVE_tfs), ( 0x10 ), NULL, HFILL }},
+	  { "JOB NONINTERACTIVE", "atsvc.atsvc_Flags.JOB_NONINTERACTIVE", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_NONINTERACTIVE_tfs), ( 0x10 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_Flags_JOB_RUNS_TODAY,
-		{ "Job Runs Today", "atsvc.atsvc_Flags.JOB_RUNS_TODAY", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_RUNS_TODAY_tfs), ( 0x04 ), NULL, HFILL }},
+	  { "JOB RUNS TODAY", "atsvc.atsvc_Flags.JOB_RUNS_TODAY", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_RUNS_TODAY_tfs), ( 0x04 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_Flags_JOB_RUN_PERIODICALLY,
-		{ "Job Run Periodically", "atsvc.atsvc_Flags.JOB_RUN_PERIODICALLY", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_RUN_PERIODICALLY_tfs), ( 0x01 ), NULL, HFILL }},
+	  { "JOB RUN PERIODICALLY", "atsvc.atsvc_Flags.JOB_RUN_PERIODICALLY", FT_BOOLEAN, 8, TFS(&atsvc_Flags_JOB_RUN_PERIODICALLY_tfs), ( 0x01 ), NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobDel_max_job_id,
-		{ "Max Job Id", "atsvc.atsvc_JobDel.max_job_id", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Max Job Id", "atsvc.atsvc_JobDel.max_job_id", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobDel_min_job_id,
-		{ "Min Job Id", "atsvc.atsvc_JobDel.min_job_id", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Min Job Id", "atsvc.atsvc_JobDel.min_job_id", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnumInfo_command,
-		{ "Command", "atsvc.atsvc_JobEnumInfo.command", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Command", "atsvc.atsvc_JobEnumInfo.command", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnumInfo_days_of_month,
-		{ "Days Of Month", "atsvc.atsvc_JobEnumInfo.days_of_month", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Days Of Month", "atsvc.atsvc_JobEnumInfo.days_of_month", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnumInfo_days_of_week,
-		{ "Days Of Week", "atsvc.atsvc_JobEnumInfo.days_of_week", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Days Of Week", "atsvc.atsvc_JobEnumInfo.days_of_week", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnumInfo_flags,
-		{ "Flags", "atsvc.atsvc_JobEnumInfo.flags", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Flags", "atsvc.atsvc_JobEnumInfo.flags", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnumInfo_job_time,
-		{ "Job Time", "atsvc.atsvc_JobEnumInfo.job_time", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Job Time", "atsvc.atsvc_JobEnumInfo.job_time", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnum_ctr,
-		{ "Ctr", "atsvc.atsvc_JobEnum.ctr", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Ctr", "atsvc.atsvc_JobEnum.ctr", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnum_preferred_max_len,
-		{ "Preferred Max Len", "atsvc.atsvc_JobEnum.preferred_max_len", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Preferred Max Len", "atsvc.atsvc_JobEnum.preferred_max_len", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnum_resume_handle,
-		{ "Resume Handle", "atsvc.atsvc_JobEnum.resume_handle", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Resume Handle", "atsvc.atsvc_JobEnum.resume_handle", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobEnum_total_entries,
-		{ "Total Entries", "atsvc.atsvc_JobEnum.total_entries", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Total Entries", "atsvc.atsvc_JobEnum.total_entries", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobInfo_command,
-		{ "Command", "atsvc.atsvc_JobInfo.command", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Command", "atsvc.atsvc_JobInfo.command", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobInfo_days_of_month,
-		{ "Days Of Month", "atsvc.atsvc_JobInfo.days_of_month", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Days Of Month", "atsvc.atsvc_JobInfo.days_of_month", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobInfo_days_of_week,
-		{ "Days Of Week", "atsvc.atsvc_JobInfo.days_of_week", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Days Of Week", "atsvc.atsvc_JobInfo.days_of_week", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobInfo_flags,
-		{ "Flags", "atsvc.atsvc_JobInfo.flags", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Flags", "atsvc.atsvc_JobInfo.flags", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_JobInfo_job_time,
-		{ "Job Time", "atsvc.atsvc_JobInfo.job_time", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Job Time", "atsvc.atsvc_JobInfo.job_time", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_enum_ctr_entries_read,
-		{ "Entries Read", "atsvc.atsvc_enum_ctr.entries_read", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Entries Read", "atsvc.atsvc_enum_ctr.entries_read", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_atsvc_enum_ctr_first_entry,
-		{ "First Entry", "atsvc.atsvc_enum_ctr.first_entry", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "First Entry", "atsvc.atsvc_enum_ctr.first_entry", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_job_id,
-		{ "Job Id", "atsvc.job_id", FT_UINT32, BASE_DEC, NULL, 0, "Identifier of the scheduled job", HFILL }},
+	  { "Job Id", "atsvc.job_id", FT_UINT32, BASE_DEC, NULL, 0, "Identifier of the scheduled job", HFILL }},
 	{ &hf_atsvc_job_info,
-		{ "JobInfo", "atcvs.job_info", FT_NONE, BASE_NONE, NULL, 0, "JobInfo structure", HFILL }},
+	  { "JobInfo", "atcvs.job_info", FT_NONE, BASE_NONE, NULL, 0, "JobInfo structure", HFILL }},
 	{ &hf_atsvc_opnum,
-		{ "Operation", "atsvc.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Operation", "atsvc.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_atsvc_servername,
-		{ "Server", "atsvc.server", FT_STRING, BASE_NONE, NULL, 0, "Name of the server", HFILL }},
+	  { "Server", "atsvc.server", FT_STRING, BASE_NONE, NULL, 0, "Name of the server", HFILL }},
 	{ &hf_atsvc_status,
-		{ "NT Error", "atsvc.status", FT_UINT32, BASE_HEX, VALS(NT_errors), 0, NULL, HFILL }},
+	  { "NT Error", "atsvc.status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &NT_errors_ext, 0, NULL, HFILL }},
 	};
 
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dcerpc_atsvc,
 		&ett_atsvc_atsvc_DaysOfMonth,
 		&ett_atsvc_atsvc_Flags,

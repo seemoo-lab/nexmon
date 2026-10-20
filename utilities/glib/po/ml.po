@@ -14,7 +14,7 @@ msgstr ""
 "PO-Revision-Date: 2013-03-22 21:35+0530\n"
 "Last-Translator: Ani Peter <peter.ani@gmail.com>\n"
 "Language-Team: American English <kde-i18n-doc@kde.org>\n"
-"Language: en_US\n"
+"Language: ml\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -4351,6 +4351,102 @@ msgid "%s byte"
 msgid_plural "%s bytes"
 msgstr[0] "%s ബൈറ്റ്"
 msgstr[1] "%s ബൈറ്റുകള്‍"
+
+msgctxt "full month name with day"
+msgid "January"
+msgstr "ജനുവരി"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "ഫെബ്രുവരി"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "മാര്‍ച്ച്"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "ഏപ്രില്‍ "
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "മെയ്"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "ജൂണ്‍"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "ജൂലൈ"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "ഓഗസ്റ്റ്"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "സെപ്ടംബര്‍"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "ഒക്ടോബര്‍"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "നവംബര്‍"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "ഡിസംബര്‍"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "ജനു"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "ഫെബ്"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "മാര്‍"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "ഏപ്ര"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "മെ"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "ജൂണ്‍"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "ജൂ"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "ഓ"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "സെപ്ട"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "ഒക്ടോ"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "നവം"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "ഡി"
 
 #. Translators: this is from the deprecated function g_format_size_for_display() which uses 'KB' to
 #. * mean 1024 bytes.  I am aware that 'KB' is not correct, but it has been preserved for reasons of

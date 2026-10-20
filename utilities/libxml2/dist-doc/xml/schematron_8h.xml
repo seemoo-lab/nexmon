@@ -1,0 +1,695 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="schematron_8h" kind="file" language="C++">
+    <compoundname>schematron.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includedby refid="schematron_8c" local="no">/builds/GNOME/libxml2/schematron.c</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>schematron.h</label>
+        <link refid="schematron_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="7">
+        <label>limits.h</label>
+      </node>
+      <node id="9">
+        <label>stdarg.h</label>
+      </node>
+      <node id="6">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSchematronValidOptions</name>
+        <enumvalue id="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71a36bf9637a3b40576f1fa3d0b0784ef50" prot="public">
+          <name>XML_SCHEMATRON_OUT_QUIET</name>
+          <initializer>= 1 &lt;&lt; 0</initializer>
+          <briefdescription>
+<para>quiet no report </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71a0cc808127b2004b3134f83ef4cac4a64" prot="public">
+          <name>XML_SCHEMATRON_OUT_TEXT</name>
+          <initializer>= 1 &lt;&lt; 1</initializer>
+          <briefdescription>
+<para>build a textual report </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71a3037319ce47d664ac9fda0d3cef67811" prot="public">
+          <name>XML_SCHEMATRON_OUT_XML</name>
+          <initializer>= 1 &lt;&lt; 2</initializer>
+          <briefdescription>
+<para>output SVRL </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71a1f1d82fa37259ccd7a8f92320d53dc2d" prot="public">
+          <name>XML_SCHEMATRON_OUT_ERROR</name>
+          <initializer>= 1 &lt;&lt; 3</initializer>
+          <briefdescription>
+<para>output via <ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref> </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71ad0ecefa4969223647493cb85f9f663a1" prot="public">
+          <name>XML_SCHEMATRON_OUT_FILE</name>
+          <initializer>= 1 &lt;&lt; 8</initializer>
+          <briefdescription>
+<para>output to a file descriptor </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71a55bc4f5578da8f33e132ea515a24e393" prot="public">
+          <name>XML_SCHEMATRON_OUT_BUFFER</name>
+          <initializer>= 1 &lt;&lt; 9</initializer>
+          <briefdescription>
+<para>output to a buffer </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71ab2dd11014d9eca6b8e5cad79867d8a91" prot="public">
+          <name>XML_SCHEMATRON_OUT_IO</name>
+          <initializer>= 1 &lt;&lt; 10</initializer>
+          <briefdescription>
+<para>output to I/O mechanism </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Schematron validation options. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="31" column="1" bodyfile="schematron.h" bodystart="31" bodyend="46"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="schematron_8h_1adda7fc895133f8b277ef9e2d89d2f1c9" prot="public" static="no">
+        <type>struct _xmlSchematron</type>
+        <definition>typedef struct _xmlSchematron xmlSchematron</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematron</name>
+        <briefdescription>
+<para>Schematron schema. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="49" column="29" bodyfile="schematron.h" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8h_1a17476fc70299d570fce8db27b2425699" prot="public" static="no">
+        <type><ref refid="schematron_8h_1adda7fc895133f8b277ef9e2d89d2f1c9" kindref="member">xmlSchematron</ref> *</type>
+        <definition>typedef xmlSchematron* xmlSchematronPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="50" column="23" bodyfile="schematron.h" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8h_1a8ccc28cafcea9df8a370b4d919e72d55" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xmlSchematronValidityErrorFunc) (void *ctx, const char *msg,...)</definition>
+        <argsstring>)(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlSchematronValidityErrorFunc</name>
+        <briefdescription>
+<para>Signature of an error callback from a Schematron validation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="59" column="9" bodyfile="schematron.h" bodystart="59" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8h_1a81f66c445d335895bcce12e6145a8f25" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xmlSchematronValidityWarningFunc) (void *ctx, const char *msg,...)</definition>
+        <argsstring>)(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlSchematronValidityWarningFunc</name>
+        <briefdescription>
+<para>Signature of a warning callback from a Schematron validation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="68" column="9" bodyfile="schematron.h" bodystart="68" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" prot="public" static="no">
+        <type>struct _xmlSchematronParserCtxt</type>
+        <definition>typedef struct _xmlSchematronParserCtxt xmlSchematronParserCtxt</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronParserCtxt</name>
+        <briefdescription>
+<para>Schematron parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="71" column="39" bodyfile="schematron.h" bodystart="71" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8h_1ad21ae5bc9d86bf9f962b344dde3f67ed" prot="public" static="no">
+        <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+        <definition>typedef xmlSchematronParserCtxt* xmlSchematronParserCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronParserCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="72" column="33" bodyfile="schematron.h" bodystart="72" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" prot="public" static="no">
+        <type>struct _xmlSchematronValidCtxt</type>
+        <definition>typedef struct _xmlSchematronValidCtxt xmlSchematronValidCtxt</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronValidCtxt</name>
+        <briefdescription>
+<para>Schematron validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="75" column="38" bodyfile="schematron.h" bodystart="75" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8h_1a92ff9cd08d366a69512870a0b40c8942" prot="public" static="no">
+        <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+        <definition>typedef xmlSchematronValidCtxt* xmlSchematronValidCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronValidCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="76" column="32" bodyfile="schematron.h" bodystart="76" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="schematron_8h_1acdad0143ffe1b636b649ffab3a83b6a2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+        <definition>xmlSchematronParserCtxt * xmlSchematronNewParserCtxt</definition>
+        <argsstring>(const char *URL)</argsstring>
+        <name>xmlSchematronNewParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schematrons parse context for that file/resource expected to contain an XML Schematrons file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the location of the schema </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="82" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="634" bodyend="661" declfile="schematron.h" declline="82" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1a0a01a23788b54b6cb9ce2cfb719481ca" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+        <definition>xmlSchematronParserCtxt * xmlSchematronNewMemParserCtxt</definition>
+        <argsstring>(const char *buffer, int size)</argsstring>
+        <name>xmlSchematronNewMemParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>buffer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schematrons parse context for that memory buffer expected to contain an XML Schematrons file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a char array containing the schemas </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size of the array </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="84" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="672" bodyend="697" declfile="schematron.h" declline="84" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1a7d5cde2d168a5b37ed1acc31e456f0ed" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+        <definition>xmlSchematronParserCtxt * xmlSchematronNewDocParserCtxt</definition>
+        <argsstring>(xmlDoc *doc)</argsstring>
+        <name>xmlSchematronNewDocParserCtxt</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schematrons parse context for that document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NB. The document may be modified during the parsing process.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a preparsed document tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="87" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="707" bodyend="734" declfile="schematron.h" declline="87" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1ab57ee2ace830a40da34354115c9c11b9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchematronFreeParserCtxt</definition>
+        <argsstring>(xmlSchematronParserCtxt *ctxt)</argsstring>
+        <name>xmlSchematronFreeParserCtxt</name>
+        <param>
+          <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free the resources associated to the schema parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="89" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="742" bodyend="755" declfile="schematron.h" declline="89" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1ab947b7f0d51bbb56d59feac0098b75fb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1adda7fc895133f8b277ef9e2d89d2f1c9" kindref="member">xmlSchematron</ref> *</type>
+        <definition>xmlSchematron * xmlSchematronParse</definition>
+        <argsstring>(xmlSchematronParserCtxt *ctxt)</argsstring>
+        <name>xmlSchematronParse</name>
+        <param>
+          <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>parse a schema definition resource and build an internal XML Schema structure which can be used to validate instances. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the internal XML Schematron structure built from the resource or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="105" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1217" bodyend="1374" declfile="schematron.h" declline="105" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1a68eb5fd617240e236d624e2fa87f891d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchematronFree</definition>
+        <argsstring>(xmlSchematron *schema)</argsstring>
+        <name>xmlSchematronFree</name>
+        <param>
+          <type><ref refid="schematron_8h_1adda7fc895133f8b277ef9e2d89d2f1c9" kindref="member">xmlSchematron</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Deallocate a Schematron structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="107" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="609" bodyend="624" declfile="schematron.h" declline="107" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1a6b1158c2a9aabf5481104fc8af6104e7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchematronSetValidStructuredErrors</definition>
+        <argsstring>(xmlSchematronValidCtxt *ctxt, xmlStructuredErrorFunc serror, void *ctx)</argsstring>
+        <name>xmlSchematronSetValidStructuredErrors</name>
+        <param>
+          <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>serror</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the structured error callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Schematron validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>serror</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the structured error function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="112" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1685" bodyend="1694" declfile="schematron.h" declline="112" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1ae041c96b507947a0d12f63aba473fc03" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+        <definition>xmlSchematronValidCtxt * xmlSchematronNewValidCtxt</definition>
+        <argsstring>(xmlSchematron *schema, int options)</argsstring>
+        <name>xmlSchematronNewValidCtxt</name>
+        <param>
+          <type><ref refid="schematron_8h_1adda7fc895133f8b277ef9e2d89d2f1c9" kindref="member">xmlSchematron</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schematrons validation context based on the given schema. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a precompiled XML Schematrons </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of <ref refid="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71" kindref="member">xmlSchematronValidOptions</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the validation context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="138" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1704" bodyend="1735" declfile="schematron.h" declline="138" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1a97a4f050f918828dc0623e7ba5751084" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchematronFreeValidCtxt</definition>
+        <argsstring>(xmlSchematronValidCtxt *ctxt)</argsstring>
+        <name>xmlSchematronFreeValidCtxt</name>
+        <param>
+          <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free the resources associated to the schema validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="141" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1743" bodyend="1752" declfile="schematron.h" declline="141" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8h_1a0e8113b6f6e06a05363e79ba2fd3bbf7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchematronValidateDoc</definition>
+        <argsstring>(xmlSchematronValidCtxt *ctxt, xmlDoc *instance)</argsstring>
+        <name>xmlSchematronValidateDoc</name>
+        <param>
+          <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>instance</declname>
+        </param>
+        <briefdescription>
+<para>Validate a tree instance against the schematron. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>instance</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document instance tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of internal error and an error count otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schematron.h" line="143" column="5" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1921" bodyend="2011" declfile="schematron.h" declline="143" declcolumn="5"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>XML Schematron implementation. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>interface to the XML Schematron validity checking.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="schematron.h"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,10 @@
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+  <nextCatalog catalog="registry.xml"/>
+  <nextCatalog catalog="registry.xml"/>
+  <nextCatalog catalog="./registry.xml"/>
+  <nextCatalog catalog="././registry.xml"/>
+  <nextCatalog catalog="./././registry.xml"/>
+  <nextCatalog catalog="./../catalogs/registry.xml"/>
+  <nextCatalog catalog="./../catalogs/./registry.xml"/>
+</catalog>
+

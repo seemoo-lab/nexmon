@@ -200,8 +200,11 @@ A: libiconv, as an internationalization library, supports those character
      * ISO-2022-JP-1
        We implement this because it's in the RFCs, but I don't think it is
        really used.
+     * ISO-2022-JP-MS
+       We implement this because Microsoft Outlook Express / Microsoft MimeOLE
+       sends emails in this encoding.
      * U90, S90
-       We DON'T implement this because I have no informations about what it
+       We DON'T implement this because I have no information about what it
        is or who uses it.
    Simplified Chinese
      * EUC-CN = GB2312
@@ -314,7 +317,7 @@ A: libiconv, as an internationalization library, supports those character
        a nice encoding for debugging.
      * UNICODE (big endian), UNICODEFEFF (little endian)
        We DON'T implement these because they are stupid and not standardized.
-   Full Unicode, in terms of `uint16_t' or `uint32_t'
+   Full Unicode, in terms of 'uint16_t' or 'uint32_t'
    (with machine dependent endianness and alignment)
      * UCS-2-INTERNAL, UCS-4-INTERNAL
        We implement these because they are the preferred internal
@@ -325,7 +328,9 @@ A: No, they are not in use any more. Supporting ISO-646 variants is pointless
    since ISO-8859-* have been adopted.
 
 Q: Support EBCDIC ?
-A: No!
+A: Available through --enable-extra-encodings.
+   Why? Because several people (Ulrich Schwab, Calvin Buckley) have shown
+   interest in these encodings, by preparing forks of GNU libiconv.
 
 Q: How do I add a new character set?
 A: 1. Explain the "why" in this file, above.

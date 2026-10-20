@@ -1,0 +1,41 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: extraction of contexts.
+
+cat <<\EOF > xg-go-9.go
+package main
+
+import (
+	"fmt"
+	"github.com/leonelquinteros/gotext"
+)
+
+func main () {
+	// Specify localedir, domain.
+	gotext.Configure(".", "fr_FR", "hello")
+
+	fmt.Println(gotext.Get("help"))
+	fmt.Println(gotext.GetC("about", "Help"))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header -d xg-go-9.tmp xg-go-9.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-9.tmp.po > xg-go-9.po || Exit 1
+
+cat <<\EOF > xg-go-9.ok
+#: xg-go-9.go:12
+msgid "help"
+msgstr ""
+
+#: xg-go-9.go:13
+msgctxt "Help"
+msgid "about"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-9.ok xg-go-9.po || Exit 1
+
+exit 0

@@ -1,28 +1,15 @@
 /* packet-lte-rrc-template.c
  * Routines for Evolved Universal Terrestrial Radio Access (E-UTRA);
  * Radio Resource Control (RRC) protocol specification
- * (3GPP TS 36.331 V13.2.0 Release 13) packet dissection
+ * (3GPP TS 36.331 V18.6.0 Release 18) packet dissection
  * Copyright 2008, Vincent Helfre
- * Copyright 2009-2016, Pascal Quantin
+ * Copyright 2009-2025, Pascal Quantin
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,6 +17,7 @@
 #include <stdlib.h>
 
 #include <epan/packet.h>
+#include <epan/prefs.h>
 #include <epan/to_str.h>
 #include <epan/asn1.h>
 #include <epan/expert.h>
@@ -37,8 +25,12 @@
 #include <epan/exceptions.h>
 #include <epan/show_exception.h>
 #include <epan/proto_data.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 
 #include <wsutil/str_util.h>
+#include <wsutil/epochs.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 #include "packet-rrc.h"
@@ -49,6 +41,7 @@
 #include "packet-mac-lte.h"
 #include "packet-rlc-lte.h"
 #include "packet-pdcp-lte.h"
+#include "packet-nr-rrc.h"
 #include "packet-lte-rrc.h"
 
 #define PNAME  "LTE Radio Resource Control (RRC) protocol"
@@ -58,19 +51,28 @@
 void proto_register_lte_rrc(void);
 void proto_reg_handoff_lte_rrc(void);
 
-static dissector_handle_t nas_eps_handle = NULL;
-static dissector_handle_t rrc_irat_ho_to_utran_cmd_handle = NULL;
-static dissector_handle_t rrc_sys_info_cont_handle = NULL;
-static dissector_handle_t gsm_a_dtap_handle = NULL;
-static dissector_handle_t gsm_rlcmac_dl_handle = NULL;
+static dissector_handle_t nas_eps_handle;
+static dissector_handle_t nas_5gs_handle;
+static dissector_handle_t rrc_irat_ho_to_utran_cmd_handle;
+static dissector_handle_t rrc_sys_info_cont_handle;
+static dissector_handle_t gsm_a_dtap_handle;
+static dissector_handle_t gsm_rlcmac_dl_handle;
+static dissector_handle_t nr_rrc_reconf_handle;
+static dissector_handle_t lte_rrc_conn_reconf_handle;
+static dissector_handle_t lte_rrc_dl_ccch_handle;
 
-static GHashTable *lte_rrc_etws_cmas_dcs_hash = NULL;
+static wmem_map_t *lte_rrc_etws_cmas_dcs_hash;
 
 /* Keep track of where/how the System Info value has changed */
-static GHashTable *lte_rrc_system_info_value_changed_hash = NULL;
-static guint8     system_info_value_current;
-static gboolean   system_info_value_current_set;
+static wmem_map_t *lte_rrc_system_info_value_changed_hash;
+static uint8_t    system_info_value_current;
+static bool       system_info_value_current_set;
 
+static wmem_map_t *lte_rrc_dcch_segment_ueid_count_hash;
+static wmem_tree_t *lte_rrc_dcch_segment_id_tree;
+
+static bool lte_rrc_nas_in_root_tree;
+static bool lte_rrc_reassemble_dcch_segments;
 
 extern int proto_mac_lte;
 extern int proto_rlc_lte;
@@ -81,234 +83,289 @@ extern int proto_pdcp_lte;
 #include "packet-lte-rrc-val.h"
 
 /* Initialize the protocol and registered fields */
-static int proto_lte_rrc = -1;
+static int proto_lte_rrc;
 
 #include "packet-lte-rrc-hf.c"
 
-static int hf_lte_rrc_eutra_cap_feat_group_ind_1 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_2 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_3 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_4 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_5 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_6 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_7 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_8 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_9 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_10 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_11 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_12 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_13 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_14 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_15 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_16 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_17 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_18 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_19 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_20 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_21 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_22 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_23 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_24 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_25 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_26 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_27 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_28 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_29 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_30 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_31 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_32 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_33 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_34 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_35 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_36 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_37 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_38 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_39 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_40 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_41 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_42 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_43 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_44 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_45 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_46 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_47 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_48 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_49 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_50 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_51 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_52 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_53 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_54 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_55 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_56 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_57 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_58 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_59 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_60 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_61 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_62 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_63 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_64 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_101 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_102 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_103 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_104 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_105 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_106 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_107 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_108 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_109 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_110 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_111 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_112 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_113 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_114 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_115 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_116 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_117 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_118 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_119 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_120 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_121 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_122 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_123 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_124 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_125 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_126 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_127 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_128 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_129 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_130 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_131 = -1;
-static int hf_lte_rrc_eutra_cap_feat_group_ind_132 = -1;
-static int hf_lte_rrc_serialNumber_gs = -1;
-static int hf_lte_rrc_serialNumber_msg_code = -1;
-static int hf_lte_rrc_serialNumber_upd_nb = -1;
-static int hf_lte_rrc_warningType_value = -1;
-static int hf_lte_rrc_warningType_emergency_user_alert = -1;
-static int hf_lte_rrc_warningType_popup = -1;
-static int hf_lte_rrc_warningMessageSegment_nb_pages = -1;
-static int hf_lte_rrc_warningMessageSegment_decoded_page = -1;
-static int hf_lte_rrc_interBandTDD_CA_WithDifferentConfig_bit1 = -1;
-static int hf_lte_rrc_interBandTDD_CA_WithDifferentConfig_bit2 = -1;
-static int hf_lte_rrc_tdd_FDD_CA_PCellDuplex_r12_bit1 = -1;
-static int hf_lte_rrc_tdd_FDD_CA_PCellDuplex_r12_bit2 = -1;
-static int hf_lte_rrc_aperiodicCSI_Reporting_r13_bit1 = -1;
-static int hf_lte_rrc_aperiodicCSI_Reporting_r13_bit2 = -1;
-static int hf_lte_rrc_codebook_HARQ_ACK_r13_bit1 = -1;
-static int hf_lte_rrc_codebook_HARQ_ACK_r13_bit2 = -1;
-static int hf_lte_rrc_sr_config_periodicity = -1;
-static int hf_lte_rrc_sr_config_subframe_offset = -1;
-static int hf_lte_rrc_cdma_time = -1;
-static int hf_lte_rrc_utc_time = -1;
-static int hf_lte_rrc_local_time = -1;
-static int hf_lte_rrc_absolute_time = -1;
-static int hf_lte_rrc_transmissionModeList_r12_tm1 = -1;
-static int hf_lte_rrc_transmissionModeList_r12_tm2 = -1;
-static int hf_lte_rrc_transmissionModeList_r12_tm3 = -1;
-static int hf_lte_rrc_transmissionModeList_r12_tm4 = -1;
-static int hf_lte_rrc_transmissionModeList_r12_tm6 = -1;
-static int hf_lte_rrc_transmissionModeList_r12_tm8 = -1;
-static int hf_lte_rrc_transmissionModeList_r12_tm9 = -1;
-static int hf_lte_rrc_transmissionModeList_r12_tm10 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_0 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_1 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_2 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_3 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_4 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_5 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_6 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_7 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_8 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_9 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_10 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_11 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_12 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_13 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_14 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_15 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_16 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_17 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_18 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_19 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_20 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_21 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_22 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_23 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_24 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_25 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_26 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_27 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_28 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_29 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_30 = -1;
-static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_31 = -1;
-static int hf_lte_rrc_sib11_fragments = -1;
-static int hf_lte_rrc_sib11_fragment = -1;
-static int hf_lte_rrc_sib11_fragment_overlap = -1;
-static int hf_lte_rrc_sib11_fragment_overlap_conflict = -1;
-static int hf_lte_rrc_sib11_fragment_multiple_tails = -1;
-static int hf_lte_rrc_sib11_fragment_too_long_fragment = -1;
-static int hf_lte_rrc_sib11_fragment_error = -1;
-static int hf_lte_rrc_sib11_fragment_count = -1;
-static int hf_lte_rrc_sib11_reassembled_in = -1;
-static int hf_lte_rrc_sib11_reassembled_length = -1;
-static int hf_lte_rrc_sib11_reassembled_data = -1;
-static int hf_lte_rrc_sib12_fragments = -1;
-static int hf_lte_rrc_sib12_fragment = -1;
-static int hf_lte_rrc_sib12_fragment_overlap = -1;
-static int hf_lte_rrc_sib12_fragment_overlap_conflict = -1;
-static int hf_lte_rrc_sib12_fragment_multiple_tails = -1;
-static int hf_lte_rrc_sib12_fragment_too_long_fragment = -1;
-static int hf_lte_rrc_sib12_fragment_error = -1;
-static int hf_lte_rrc_sib12_fragment_count = -1;
-static int hf_lte_rrc_sib12_reassembled_in = -1;
-static int hf_lte_rrc_sib12_reassembled_length = -1;
-static int hf_lte_rrc_sib12_reassembled_data = -1;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_1;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_2;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_3;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_4;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_5;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_6;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_7;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_8;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_9;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_10;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_11;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_12;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_13;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_14;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_15;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_16;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_17;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_18;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_19;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_20;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_21;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_22;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_23;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_24;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_25;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_26;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_27;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_28;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_29;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_30;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_31;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_32;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_33;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_34;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_35;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_36;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_37;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_38;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_39;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_40;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_41;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_42;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_43;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_44;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_45;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_46;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_47;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_48;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_49;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_50;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_51;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_52;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_53;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_54;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_55;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_56;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_57;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_58;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_59;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_60;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_61;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_62;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_63;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_64;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_101;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_102;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_103;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_104;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_105;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_106;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_107;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_108;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_109;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_110;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_111;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_112;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_113;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_114;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_115;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_116;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_117;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_118;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_119;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_120;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_121;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_122;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_123;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_124;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_125;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_126;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_127;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_128;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_129;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_130;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_131;
+static int hf_lte_rrc_eutra_cap_feat_group_ind_132;
+static int hf_lte_rrc_serialNumber_gs;
+static int hf_lte_rrc_serialNumber_msg_code;
+static int hf_lte_rrc_serialNumber_upd_nb;
+static int hf_lte_rrc_warningType_value;
+static int hf_lte_rrc_warningType_emergency_user_alert;
+static int hf_lte_rrc_warningType_popup;
+static int hf_lte_rrc_warningMessageSegment_nb_pages;
+static int hf_lte_rrc_warningMessageSegment_decoded_page;
+static int hf_lte_rrc_interBandTDD_CA_WithDifferentConfig_bit1;
+static int hf_lte_rrc_interBandTDD_CA_WithDifferentConfig_bit2;
+static int hf_lte_rrc_tdd_FDD_CA_PCellDuplex_r12_bit1;
+static int hf_lte_rrc_tdd_FDD_CA_PCellDuplex_r12_bit2;
+static int hf_lte_rrc_aperiodicCSI_Reporting_r13_bit1;
+static int hf_lte_rrc_aperiodicCSI_Reporting_r13_bit2;
+static int hf_lte_rrc_codebook_HARQ_ACK_r13_bit1;
+static int hf_lte_rrc_codebook_HARQ_ACK_r13_bit2;
+static int hf_lte_rrc_sr_config_periodicity;
+static int hf_lte_rrc_sr_config_subframe_offset;
+static int hf_lte_rrc_cdma_time;
+static int hf_lte_rrc_utc_time;
+static int hf_lte_rrc_local_time;
+static int hf_lte_rrc_absolute_time;
+static int hf_lte_rrc_transmissionModeList_r12_tm1;
+static int hf_lte_rrc_transmissionModeList_r12_tm2;
+static int hf_lte_rrc_transmissionModeList_r12_tm3;
+static int hf_lte_rrc_transmissionModeList_r12_tm4;
+static int hf_lte_rrc_transmissionModeList_r12_tm6;
+static int hf_lte_rrc_transmissionModeList_r12_tm8;
+static int hf_lte_rrc_transmissionModeList_r12_tm9;
+static int hf_lte_rrc_transmissionModeList_r12_tm10;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_0;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_1;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_2;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_3;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_4;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_5;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_6;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_7;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_8;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_9;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_10;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_11;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_12;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_13;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_14;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_15;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_16;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_17;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_18;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_19;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_20;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_21;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_22;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_23;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_24;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_25;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_26;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_27;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_28;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_29;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_30;
+static int hf_lte_rrc_modifiedMPR_Behavior_r10_mpr_ampr_31;
+static int hf_lte_rrc_sib11_fragments;
+static int hf_lte_rrc_sib11_fragment;
+static int hf_lte_rrc_sib11_fragment_overlap;
+static int hf_lte_rrc_sib11_fragment_overlap_conflict;
+static int hf_lte_rrc_sib11_fragment_multiple_tails;
+static int hf_lte_rrc_sib11_fragment_too_long_fragment;
+static int hf_lte_rrc_sib11_fragment_error;
+static int hf_lte_rrc_sib11_fragment_count;
+static int hf_lte_rrc_sib11_reassembled_in;
+static int hf_lte_rrc_sib11_reassembled_length;
+static int hf_lte_rrc_sib11_reassembled_data;
+static int hf_lte_rrc_sib12_fragments;
+static int hf_lte_rrc_sib12_fragment;
+static int hf_lte_rrc_sib12_fragment_overlap;
+static int hf_lte_rrc_sib12_fragment_overlap_conflict;
+static int hf_lte_rrc_sib12_fragment_multiple_tails;
+static int hf_lte_rrc_sib12_fragment_too_long_fragment;
+static int hf_lte_rrc_sib12_fragment_error;
+static int hf_lte_rrc_sib12_fragment_count;
+static int hf_lte_rrc_sib12_reassembled_in;
+static int hf_lte_rrc_sib12_reassembled_length;
+static int hf_lte_rrc_sib12_reassembled_data;
+static int hf_lte_rrc_dcch_segment_fragments;
+static int hf_lte_rrc_dcch_segment_fragment;
+static int hf_lte_rrc_dcch_segment_fragment_overlap;
+static int hf_lte_rrc_dcch_segment_fragment_overlap_conflict;
+static int hf_lte_rrc_dcch_segment_fragment_multiple_tails;
+static int hf_lte_rrc_dcch_segment_fragment_too_long_fragment;
+static int hf_lte_rrc_dcch_segment_fragment_error;
+static int hf_lte_rrc_dcch_segment_fragment_count;
+static int hf_lte_rrc_dcch_segment_reassembled_in;
+static int hf_lte_rrc_dcch_segment_reassembled_length;
+static int hf_lte_rrc_dcch_segment_reassembled_data;
+static int hf_lte_rrc_measGapPatterns_r15_bit1;
+static int hf_lte_rrc_measGapPatterns_r15_bit2;
+static int hf_lte_rrc_measGapPatterns_r15_bit3;
+static int hf_lte_rrc_measGapPatterns_r15_bit4;
+static int hf_lte_rrc_measGapPatterns_r15_bit5;
+static int hf_lte_rrc_measGapPatterns_r15_bit6;
+static int hf_lte_rrc_measGapPatterns_r15_bit7;
+static int hf_lte_rrc_measGapPatterns_r15_bit8;
 
 /* Initialize the subtree pointers */
-static int ett_lte_rrc = -1;
+static int ett_lte_rrc;
 
 #include "packet-lte-rrc-ett.c"
 
-static gint ett_lte_rrc_featureGroupIndicators = -1;
-static gint ett_lte_rrc_featureGroupIndRel9Add = -1;
-static gint ett_lte_rrc_featureGroupIndRel10 = -1;
-static gint ett_lte_rrc_absTimeInfo = -1;
-static gint ett_lte_rrc_nas_SecurityParam = -1;
-static gint ett_lte_rrc_targetRAT_MessageContainer = -1;
-static gint ett_lte_rrc_siPsiSibContainer = -1;
-static gint ett_lte_rrc_dedicatedInfoNAS = -1;
-static gint ett_lte_rrc_timeInfo = -1;
-static gint ett_lte_rrc_serialNumber = -1;
-static gint ett_lte_rrc_warningType = -1;
-static gint ett_lte_rrc_dataCodingScheme = -1;
-static gint ett_lte_rrc_warningMessageSegment = -1;
-static gint ett_lte_rrc_interBandTDD_CA_WithDifferentConfig = -1;
-static gint ett_lte_rrc_tdd_FDD_CA_PCellDuplex_r12 = -1;
-static gint ett_lte_rrc_aperiodicCSI_Reporting_r13 = -1;
-static gint ett_lte_rrc_codebook_HARQ_ACK_r13 = -1;
-static gint ett_lte_rrc_sr_ConfigIndex = -1;
-static gint ett_lte_rrc_transmissionModeList_r12 = -1;
-static gint ett_lte_rrc_modifiedMPR_Behavior_r10 = -1;
-static gint ett_lte_rrc_sib11_fragment = -1;
-static gint ett_lte_rrc_sib11_fragments = -1;
-static gint ett_lte_rrc_sib12_fragment = -1;
-static gint ett_lte_rrc_sib12_fragments = -1;
+static int ett_lte_rrc_featureGroupIndicators;
+static int ett_lte_rrc_featureGroupIndRel9Add;
+static int ett_lte_rrc_featureGroupIndRel10;
+static int ett_lte_rrc_absTimeInfo;
+static int ett_lte_rrc_nas_SecurityParam;
+static int ett_lte_rrc_targetRAT_MessageContainer;
+static int ett_lte_rrc_siPsiSibContainer;
+static int ett_lte_rrc_dedicatedInfoNAS;
+static int ett_lte_rrc_timeInfo;
+static int ett_lte_rrc_serialNumber;
+static int ett_lte_rrc_warningType;
+static int ett_lte_rrc_dataCodingScheme;
+static int ett_lte_rrc_warningMessageSegment;
+static int ett_lte_rrc_interBandTDD_CA_WithDifferentConfig;
+static int ett_lte_rrc_tdd_FDD_CA_PCellDuplex_r12;
+static int ett_lte_rrc_aperiodicCSI_Reporting_r13;
+static int ett_lte_rrc_codebook_HARQ_ACK_r13;
+static int ett_lte_rrc_sr_ConfigIndex;
+static int ett_lte_rrc_transmissionModeList_r12;
+static int ett_lte_rrc_modifiedMPR_Behavior_r10;
+static int ett_lte_rrc_sib11_fragment;
+static int ett_lte_rrc_sib11_fragments;
+static int ett_lte_rrc_sib12_fragment;
+static int ett_lte_rrc_sib12_fragments;
+static int ett_lte_rrc_dcch_segment_fragment;
+static int ett_lte_rrc_dcch_segment_fragments;
+static int ett_lte_rrc_nr_SecondaryCellGroupConfig_r15;
+static int ett_lte_rrc_nr_RadioBearerConfig_r15;
+static int ett_lte_rrc_nr_RadioBearerConfigS_r15;
+static int ett_lte_rrc_sl_ConfigDedicatedForNR_r16;
+static int ett_lte_rrc_nr_SecondaryCellGroupConfig;
+static int ett_lte_rrc_scg_ConfigResponseNR_r15;
+static int ett_lte_rrc_scg_ConfigResponseNR_r16;
+static int ett_lte_rrc_measResultSCG_r15;
+static int ett_lte_rrc_measResultSCG_r16;
+static int ett_lte_rrc_ul_DCCH_MessageNR_r15;
+static int ett_lte_rrc_ul_DCCH_MessageNR_r16;
+static int ett_lte_rrc_sourceRB_ConfigNR_r15;
+static int ett_lte_rrc_sourceRB_ConfigSN_NR_r15;
+static int ett_lte_rrc_sourceOtherConfigSN_NR_r15;
+static int ett_lte_rrc_sourceContextEN_DC_r15;
+static int ett_lte_rrc_requestedFreqBandsNR_MRDC_r15;
+static int ett_lte_rrc_measGapPatterns_r15;
+static int ett_lte_rrc_nas_Container_r15;
+static int ett_lte_rrc_sourceRB_ConfigIntra5GC_r15;
+static int ett_lte_rrc_selectedbandCombinationInfoEN_DC_v1540;
+static int ett_lte_rrc_requestedCapabilityCommon_r15;
+static int ett_lte_rrc_sidelinkUEInformationNR_r16;
+static int ett_lte_rrc_ueAssistanceInformationNR_r16;
+static int ett_lte_rrc_sl_ParameterNR_r16;
+static int ett_lte_rrc_v2x_BandParametersNR_r16;
+static int ett_lte_rrc_ueAssistanceInformationNR_SCG_r16;
+static int ett_lte_rrc_assistanceDataSIB_Element_r15;
+static int ett_lte_rrc_overheatingAssistanceForSCG_r16;
+static int ett_lte_rrc_overheatingAssistanceForSCG_FR2_2_r17;
+static int ett_lte_rrc_triggerConditionSN_r17;
 
-static expert_field ei_lte_rrc_number_pages_le15 = EI_INIT;
-static expert_field ei_lte_rrc_si_info_value_changed = EI_INIT;
-static expert_field ei_lte_rrc_sibs_changing = EI_INIT;
-static expert_field ei_lte_rrc_sibs_changing_edrx = EI_INIT;
-static expert_field ei_lte_rrc_earthquake_warning_sys = EI_INIT;
-static expert_field ei_lte_rrc_commercial_mobile_alert_sys = EI_INIT;
-static expert_field ei_lte_rrc_unexpected_type_value = EI_INIT;
-static expert_field ei_lte_rrc_unexpected_length_value = EI_INIT;
-static expert_field ei_lte_rrc_too_many_group_a_rapids = EI_INIT;
-static expert_field ei_lte_rrc_invalid_drx_config = EI_INIT;
+static expert_field ei_lte_rrc_number_pages_le15;
+static expert_field ei_lte_rrc_si_info_value_changed;
+static expert_field ei_lte_rrc_sibs_changing;
+static expert_field ei_lte_rrc_sibs_changing_edrx;
+static expert_field ei_lte_rrc_earthquake_warning_sys;
+static expert_field ei_lte_rrc_commercial_mobile_alert_sys;
+static expert_field ei_lte_rrc_unexpected_type_value;
+static expert_field ei_lte_rrc_unexpected_length_value;
+static expert_field ei_lte_rrc_too_many_group_a_rapids;
+static expert_field ei_lte_rrc_invalid_drx_config;
+
+static const unit_name_string units_sr_periods = { " SR period", " SR periods" };
+static const unit_name_string units_short_drx_cycles = { " shortDRX-Cycle", " shortDRX-Cycles" };
 
 static reassembly_table lte_rrc_sib11_reassembly_table;
 static reassembly_table lte_rrc_sib12_reassembly_table;
+static reassembly_table lte_rrc_dcch_segment_reassembly_table;
 
 static const fragment_items lte_rrc_sib11_frag_items = {
     &ett_lte_rrc_sib11_fragment,
@@ -344,9 +401,26 @@ static const fragment_items lte_rrc_sib12_frag_items = {
     "SIB12 warning message segments"
 };
 
+static const fragment_items lte_rrc_dcch_segment_frag_items = {
+    &ett_lte_rrc_dcch_segment_fragment,
+    &ett_lte_rrc_dcch_segment_fragments,
+    &hf_lte_rrc_dcch_segment_fragments,
+    &hf_lte_rrc_dcch_segment_fragment,
+    &hf_lte_rrc_dcch_segment_fragment_overlap,
+    &hf_lte_rrc_dcch_segment_fragment_overlap_conflict,
+    &hf_lte_rrc_dcch_segment_fragment_multiple_tails,
+    &hf_lte_rrc_dcch_segment_fragment_too_long_fragment,
+    &hf_lte_rrc_dcch_segment_fragment_error,
+    &hf_lte_rrc_dcch_segment_fragment_count,
+    &hf_lte_rrc_dcch_segment_reassembled_in,
+    &hf_lte_rrc_dcch_segment_reassembled_length,
+    &hf_lte_rrc_dcch_segment_reassembled_data,
+    "DCCH message segments"
+};
+
 /* Forward declarations */
-static int dissect_DL_DCCH_Message_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 static int dissect_UECapabilityInformation_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+static int dissect_RRCConnectionReconfiguration_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 
 static const true_false_string lte_rrc_eutra_cap_feat_group_ind_1_val = {
   "Intra-subframe freq hopping for PUSCH scheduled by UL grant; DCI format 3a; Aperiodic CQI/PMI/RI report on PUSCH: Mode 2-0 & 2-2 - Supported",
@@ -513,8 +587,8 @@ static const true_false_string lte_rrc_eutra_cap_feat_group_ind_41_val = {
   "Measurement reporting event: Event B1 - Neighbour > threshold for UTRAN FDD - Not supported"
 };
 static const true_false_string lte_rrc_eutra_cap_feat_group_ind_42_val = {
-  "Undefined - Supported",
-  "Undefined - Not supported"
+  "DCI format 3a - Supported",
+  "DCI format 3a - Not supported"
 };
 static const true_false_string lte_rrc_eutra_cap_feat_group_ind_43_val = {
   "Undefined - Supported",
@@ -823,10 +897,92 @@ static const value_string lte_rrc_q_RxLevMinOffset_vals[] = {
   { 0, NULL}
 };
 
-static void
-lte_rrc_timeConnFailure_r10_fmt(gchar *s, guint32 v)
+static const value_string lte_rrc_delta_RxLevMin_vals[] = {
+  { -8, "-16dBm"},
+  { -7, "-14dBm"},
+  { -6, "-12dBm"},
+  { -5, "-10dBm"},
+  { -4, "-8dBm"},
+  { -3, "-6dBm"},
+  { -2, "-4dBm"},
+  { -1, "-2dBm"},
+  { 0, NULL}
+};
+
+static const value_string lte_rrc_messageSize_r14_vals[] =
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%ums (%u)", 100*v, v);
+    { 0,  "size = 0"},
+    { 1,  "0 < size <= 10"},
+    { 2,  "10 < size <= 12"},
+    { 3,  "12 < size <= 14"},
+    { 4,  "14 < size <= 17"},
+    { 5,  "17 < size <= 19"},
+    { 6,  "19 < size <= 22"},
+    { 7,  "22 < size <= 26"},
+    { 8,  "26 < size <= 31"},
+    { 9,  "31 < size <= 36"},
+    { 10, "36 < size <= 42"},
+    { 11, "42 < size <= 49"},
+    { 12, "49 < size <= 57"},
+    { 13, "57 < size <= 67"},
+    { 14, "67 < size <= 78"},
+    { 15, "78 < size <= 91"},
+    { 16, "91 < size <= 107"},
+    { 17, "107 < size <= 125"},
+    { 18, "125 < size <= 146"},
+    { 19, "146 < size <= 171"},
+    { 20, "171 < size <= 200"},
+    { 21, "200 < size <= 234"},
+    { 22, "234 < size <= 274"},
+    { 23, "274 < size <= 321"},
+    { 24, "321 < size <= 376"},
+    { 25, "376 < size <= 440"},
+    { 26, "440 < size <= 515"},
+    { 27, "515 < size <= 603"},
+    { 28, "603 < size <= 706"},
+    { 29, "706 < size <= 826"},
+    { 30, "826 < size <= 967"},
+    { 31, "967 < size <= 1132"},
+    { 32, "1132 < size <= 1326"},
+    { 33, "1326 < size <= 1552"},
+    { 34, "1552 < size <= 1817"},
+    { 35, "1817 < size <= 2127"},
+    { 36, "2127 < size <= 2490"},
+    { 37, "2490 < size <= 2915"},
+    { 38, "2915 < size <= 3413"},
+    { 39, "3413 < size <= 3995"},
+    { 40, "3995 < size <= 4677"},
+    { 41, "4677 < size <= 5476"},
+    { 42, "5476 < size <= 6411"},
+    { 43, "6411 < size <= 7505"},
+    { 44, "7505 < size <= 8787"},
+    { 45, "8787 < size <= 10276"},
+    { 46, "10287 < size <= 12043"},
+    { 47, "12043 < size <= 14099"},
+    { 48, "14099 < size <= 16507"},
+    { 49, "16507 < size <= 19325"},
+    { 50, "19325 < size <= 22624"},
+    { 51, "22624 < size <= 26487"},
+    { 52, "26487 < size <= 31009"},
+    { 53, "31009 < size <= 36304"},
+    { 54, "36304 < size <= 42502"},
+    { 55, "42502 < size <= 49759"},
+    { 56, "49759 < size <= 58255"},
+    { 57, "58255 < size <= 68201"},
+    { 58, "68201 < size <= 79846"},
+    { 59, "79846 < size <= 93479"},
+    { 60, "93479 < size <= 109439"},
+    { 61, "109439 < size <= 128125"},
+    { 62, "128125 < size <= 150000"},
+    { 63, "size > 150000"},
+    { 0, NULL }
+};
+static value_string_ext lte_rrc_messageSize_r14_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_messageSize_r14_vals);
+
+static void
+lte_rrc_timeConnFailure_r10_fmt(char *s, uint32_t v)
+{
+  snprintf(s, ITEM_LABEL_LENGTH, "%ums (%u)", 100*v, v);
 }
 
 static const value_string lte_rrc_n_r12_vals[] = {
@@ -842,12 +998,12 @@ static const value_string lte_rrc_n_r12_vals[] = {
 };
 
 static void
-lte_rrc_m_r12_fmt(gchar *s, guint32 v)
+lte_rrc_m_r12_fmt(char *s, uint32_t v)
 {
   if (v == 255) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "255 <= f(Nr) (255)");
+    snprintf(s, ITEM_LABEL_LENGTH, "255 <= f(Nr) (255)");
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%u <= f(Nr) < %u (%u)", v, v+1, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%u <= f(Nr) < %u (%u)", v, v+1, v);
   }
 }
 
@@ -1052,6 +1208,43 @@ static const value_string lte_rrc_ReselectionThreshold_vals[] = {
   {  0, NULL}
 };
 static value_string_ext lte_rrc_ReselectionThreshold_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_ReselectionThreshold_vals);
+
+static const value_string lte_rrc_ReselectionThreshold_NB_vals[] = {
+  { 32, "64dB"},
+  { 33, "66dB"},
+  { 34, "68dB"},
+  { 35, "70dB"},
+  { 36, "72dB"},
+  { 37, "74dB"},
+  { 38, "76dB"},
+  { 39, "78dB"},
+  { 40, "80dB"},
+  { 41, "82dB"},
+  { 42, "84dB"},
+  { 43, "86dB"},
+  { 44, "88dB"},
+  { 45, "90dB"},
+  { 46, "92dB"},
+  { 47, "94dB"},
+  { 48, "96dB"},
+  { 49, "98dB"},
+  { 50, "100dB"},
+  { 51, "102dB"},
+  { 52, "104dB"},
+  { 53, "106dB"},
+  { 54, "108dB"},
+  { 55, "110dB"},
+  { 56, "112dB"},
+  { 57, "114dB"},
+  { 58, "116dB"},
+  { 59, "118dB"},
+  { 60, "120dB"},
+  { 61, "122dB"},
+  { 62, "124dB"},
+  { 63, "126dB"},
+  {  0, NULL}
+};
+static value_string_ext lte_rrc_ReselectionThreshold_NB_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_ReselectionThreshold_NB_vals);
 
 static const value_string lte_rrc_Hysteresis_vals[] = {
   { 0 , "0dB"},
@@ -1887,6 +2080,28 @@ static const value_string lte_rrc_RSRP_Range_vals[] = {
 };
 static value_string_ext lte_rrc_RSRP_Range_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_RSRP_Range_vals);
 
+static const value_string lte_rrc_RSRP_Range_v1360_vals[] = {
+  { -17, "RSRP < -156dBm"},
+  { -16, "-156dBm <= RSRP < -155dBm"},
+  { -15, "-155dBm <= RSRP < -154dBm"},
+  { -14, "-154dBm <= RSRP < -153dBm"},
+  { -13, "-153dBm <= RSRP < -152dBm"},
+  { -12, "-152dBm <= RSRP < -151dBm"},
+  { -11, "-151dBm <= RSRP < -150dBm"},
+  { -10, "-150dBm <= RSRP < -149dBm"},
+  {  -9, "-149dBm <= RSRP < -148dBm"},
+  {  -8, "-148dBm <= RSRP < -147dBm"},
+  {  -7, "-147dBm <= RSRP < -146dBm"},
+  {  -6, "-146dBm <= RSRP < -145dBm"},
+  {  -5, "-145dBm <= RSRP < -144dBm"},
+  {  -4, "-144dBm <= RSRP < -143dBm"},
+  {  -3, "-143dBm <= RSRP < -142dBm"},
+  {  -2, "-142dBm <= RSRP < -141dBm"},
+  {  -1, "-141dBm <= RSRP < -140dBm"},
+  {  0, NULL}
+};
+static value_string_ext lte_rrc_RSRP_Range_v1360_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_RSRP_Range_v1360_vals);
+
 static const value_string lte_rrc_RSRP_RangeSL_vals[] = {
   {  0, "-infinity"},
   {  1, "-115dBm"},
@@ -1990,6 +2205,20 @@ static const value_string lte_rrc_RSRP_RangeSL4_vals[] = {
 };
 static value_string_ext lte_rrc_RSRP_RangeSL4_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_RSRP_RangeSL4_vals);
 
+static void
+lte_rrc_RSRP_RangeNR_r15_fmt(char *s, uint32_t v)
+{
+  if (v == 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "SS-RSRP < -156dBm (0)");
+  } else if (v == 126) {
+    snprintf(s, ITEM_LABEL_LENGTH, "-31dBm <= SS-RSRP (126)");
+  } else if (v == 127) {
+    snprintf(s, ITEM_LABEL_LENGTH, "Infinity (127)");
+  } else {
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= SS-RSRP < %ddBm (%u)", -157+v, -156+v, v);
+  }
+}
+
 static const value_string lte_rrc_RSRQ_Range_vals[] = {
   {-34, "RSRQ < -36dB"},
   {-33, "-36dB <= RSRQ < -35.5dB"},
@@ -2076,6 +2305,18 @@ static const value_string lte_rrc_RSRQ_Range_vals[] = {
 };
 static value_string_ext lte_rrc_RSRQ_Range_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_RSRQ_Range_vals);
 
+static void
+lte_rrc_RSRQ_RangeNR_r15_fmt(char *s, uint32_t v)
+{
+  if (v == 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "SS-RSRQ < -43dB (0)");
+  } else if (v == 127) {
+    snprintf(s, ITEM_LABEL_LENGTH, "20dB < SS-RSRQ (127)");
+  } else {
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= SS-RSRQ < %.1fdB (%u)", (((float)v-1)/2)-43, ((float)v/2)-43, v);
+  }
+}
+
 static const value_string lte_rrc_MBSFN_RSRQ_Range_vals[] = {
   {  0, "RSRQ < -23dB"},
   {  1, "-23dB <= RSRQ < -22.5dB"},
@@ -2114,22 +2355,22 @@ static const value_string lte_rrc_MBSFN_RSRQ_Range_vals[] = {
 static value_string_ext lte_rrc_MBSFN_RSRQ_Range_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_MBSFN_RSRQ_Range_vals);
 
 static void
-lte_rrc_availableAdmissionCapacityWLAN_fmt(gchar *s, guint32 v)
+lte_rrc_availableAdmissionCapacityWLAN_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%uus/s (%u)", 32*v, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%uus/s (%u)", 32*v, v);
 }
 
 static void
-lte_rrc_ue_RxTxTimeDiffResult_fmt(gchar *s, guint32 v)
+lte_rrc_ue_RxTxTimeDiffResult_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "T < 2Ts (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "T < 2Ts (0)");
   } else if (v < 2048) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%uTs <= T < %uTs (%u)", v*2, (v+1)*2, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%uTs <= T < %uTs (%u)", v*2, (v+1)*2, v);
   } else if (v < 4095) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%uTs <= T < %uTs (%u)", (v*8)-12288, ((v+1)*8)-12288, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%uTs <= T < %uTs (%u)", (v*8)-12288, ((v+1)*8)-12288, v);
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "20472Ts <= T (4095)");
+    snprintf(s, ITEM_LABEL_LENGTH, "20472Ts <= T (4095)");
   }
 }
 
@@ -2162,6 +2403,10 @@ static const value_string lte_rrc_neighCellConfig_vals[] = {
 };
 
 static const value_string lte_rrc_messageIdentifier_vals[] = {
+  { 0x03e8, "LCS CBS Message Identifier for E-OTD Assistance Data message"},
+  { 0x03e9, "LCS CBS Message Identifier for DGPS Correction Data message"},
+  { 0x03ea, "LCS CBS Message Identifier for GPS Ephemeris and Clock Correction Data message"},
+  { 0x03eb, "LCS CBS Message Identifier for GPS Almanac and Other Data message"},
   { 0x1100, "ETWS Identifier for earthquake warning message"},
   { 0x1101, "ETWS Identifier for tsunami warning message"},
   { 0x1102, "ETWS Identifier for earthquake and tsunami combined warning message"},
@@ -2196,9 +2441,37 @@ static const value_string lte_rrc_messageIdentifier_vals[] = {
   { 0x1129, "CMAS Identifier for the Required Monthly Test for additional languages"},
   { 0x112a, "CMAS Identifier for CMAS Exercise for additional languages"},
   { 0x112b, "CMAS Identifier for operator defined use for additional languages"},
+  { 0x112c, "CMAS CBS Message Identifier for CMAS Public Safety Alerts"},
+  { 0x112d, "CMAS CBS Message Identifier for CMAS Public Safety Alerts for additional languages"},
+  { 0x112e, "CMAS CBS Message Identifier for CMAS State/Local WEA Test"},
+  { 0x112f, "CMAS CBS Message Identifier for CMAS State/Local WEA Test for additional languages"},
+  { 0x1130, "CMAS CBS Message Identifier for geo-fencing trigger messages"},
+  { 0x1131, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality"},
+  { 0x1132, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when an earthquake occurs"},
+  { 0x1133, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a volcanic eruption occurs"},
+  { 0x1134, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is water (e.g. flood, typhoon, hurricane or tsunami) occurs"},
+  { 0x1135, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is fire (e.g. forest fire or building fire) occurs"},
+  { 0x1136, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is pressure (e.g. landslide or avalanche) occurs"},
+  { 0x1137, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is wind (e.g. tornado or gale) occurs"},
+  { 0x1138, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is dust (e.g. yellow dust or sandstorm) occurs"},
+  { 0x1139, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is chemical hazard (e.g. radiation leak or toxic substance leak) occurs"},
+  { 0x113a, "Non-ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when an epidemic occurs"},
+  { 0x113b, "Non-ETWS CBS Message Identifier for test message dedicated to UEs with no user interface and with ePWS functionality"},
+  { 0x113c, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality"},
+  { 0x113d, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when an earthquake occurs"},
+  { 0x113e, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a volcanic eruption occurs"},
+  { 0x113f, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is water (e.g. flood, typhoon, hurricane or tsunami) occurs"},
+  { 0x1140, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is fire (e.g. forest fire or building fire) occurs"},
+  { 0x1141, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is pressure (e.g. landslide or avalanche) occurs"},
+  { 0x1142, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is wind (e.g. tornado or gale) occurs"},
+  { 0x1143, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is dust (e.g. yellow dust or sandstorm) occurs"},
+  { 0x1144, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when a disaster whose characteristic is chemical hazard (e.g. radiation leak or toxic substance leak) occurs"},
+  { 0x1145, "ETWS CBS Message Identifier for warning message dedicated to UEs with no user interface and with ePWS functionality when an epidemic occurs"},
+  { 0x1146, "ETWS CBS Message Identifier for test message dedicated to UEs with no user interface and with ePWS functionality"},
+  { 0x1900, "EU-Info Message Identifier for the local language"},
   {      0, NULL},
 };
-static value_string_ext lte_rrc_messageIdentifier_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_messageIdentifier_vals);
+value_string_ext lte_rrc_messageIdentifier_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_messageIdentifier_vals);
 
 static const value_string lte_rrc_serialNumber_gs_vals[] = {
   { 0, "Display mode immediate, cell wide"},
@@ -2300,45 +2573,111 @@ static const value_string lte_rrc_excessDelay_r13_vals[] = {
 static value_string_ext lte_rrc_excessDelay_r13_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_excessDelay_r13_vals);
 
 static void
-lte_rrc_subframeBoundaryOffsetResult_r13_fmt(gchar *s, guint32 v)
+lte_rrc_averageDelay_r16_fmt(char *s, uint32_t v)
+{
+  snprintf(s, ITEM_LABEL_LENGTH, "%.1fms (%u)", (float)v/10, v);
+}
+
+static void
+lte_rrc_subframeBoundaryOffsetResult_r13_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "abs(deltaZ) < 700Ts (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "abs(deltaZ) < 700Ts (0)");
   } else if (v == 63) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "1320Ts < abs(deltaZ) (63)");
+    snprintf(s, ITEM_LABEL_LENGTH, "1320Ts < abs(deltaZ) (63)");
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%uTs < abs(deltaZ) <= %uTs (%u)", 700+(v-1)*10, 700+v*10, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%uTs < abs(deltaZ) <= %uTs (%u)", 700+(v-1)*10, 700+v*10, v);
   }
 }
 
 static void
-lte_rrc_RS_SINR_Range_r13_fmt(gchar *s, guint32 v)
+lte_rrc_RS_SINR_Range_r13_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RS-SINR < -23dB (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RS-SINR < -23dB (0)");
   } else if (v == 127) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "40dB <= RS-SINR (127)");
+    snprintf(s, ITEM_LABEL_LENGTH, "40dB <= RS-SINR (127)");
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= RS-SINR < %.1fdB (%u)", (((float)v-1)/2)-23, ((float)v/2)-23, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= RS-SINR < %.1fdB (%u)", (((float)v-1)/2)-23, ((float)v/2)-23, v);
   }
 }
 
 static void
-lte_rrc_RSSI_Range_r13_fmt(gchar *s, guint32 v)
+lte_rrc_RS_SINR_RangeNR_r15_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSSI < -100dBm (0)");
-  } else if (v == 76) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "-25dBm <= RSSI (76)");
+    snprintf(s, ITEM_LABEL_LENGTH, "SS-SINR < -23dB (0)");
+  } else if (v == 127) {
+    snprintf(s, ITEM_LABEL_LENGTH, "40dB < SS-SINR (127)");
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= RSSI < %ddBm (%u)", -100+(v-1), -100+v, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= SS-SINR < %.1fdB (%u)", (((float)v-1)/2)-23, ((float)v/2)-23, v);
   }
 }
 
 static void
-lte_rrc_thresholdWLAN_RSSI_fmt(gchar *s, guint32 v)
+lte_rrc_RSSI_Range_r13_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%ddBm (%u)", -128+v, v);
+  if (v == 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "RSSI < -100dBm (0)");
+  } else if (v == 76) {
+    snprintf(s, ITEM_LABEL_LENGTH, "-25dBm <= RSSI (76)");
+  } else {
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= RSSI < %ddBm (%u)", -100+(v-1), -100+v, v);
+  }
+}
+
+static void
+lte_rrc_scptm_FreqOffset_r14_fmt(char *s, uint32_t v)
+{
+  snprintf(s, ITEM_LABEL_LENGTH, "%udB (%u)", 2*v, v);
+}
+
+static void
+lte_rrc_offsetDFN_r14_fmt(char *s, uint32_t v)
+{
+  if (v == 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "0ms (0)");
+  } else if (v < 1000) {
+    snprintf(s, ITEM_LABEL_LENGTH, "%.3fms (%u)", ((float)v)/1000, v);
+  } else {
+    snprintf(s, ITEM_LABEL_LENGTH, "1ms (1000)");
+  }
+}
+
+static void
+lte_rrc_thresholdWLAN_RSSI_fmt(char *s, uint32_t v)
+{
+  snprintf(s, ITEM_LABEL_LENGTH, "%ddBm (%u)", -128+v, v);
+}
+
+static void
+lte_rrc_cr_Limit_r14_fmt(char *s, uint32_t v)
+{
+  if (v == 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "0 (0)");
+  } else if (v < 10000) {
+    snprintf(s, ITEM_LABEL_LENGTH, "%.4f (%u)", ((float)v)/10000, v);
+  } else {
+    snprintf(s, ITEM_LABEL_LENGTH, "1 (10000)");
+  }
+}
+
+static void
+lte_rrc_SL_CBR_r14_fmt(char *s, uint32_t v)
+{
+  if (v == 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "0 (0)");
+  } else if (v < 100) {
+    snprintf(s, ITEM_LABEL_LENGTH, "%.2f (%u)", ((float)v)/100, v);
+  } else {
+    snprintf(s, ITEM_LABEL_LENGTH, "1 (100)");
+  }
+}
+
+static void
+lte_rrc_threshS_RSSI_CBR_r14_fmt(char *s, uint32_t v)
+{
+  snprintf(s, ITEM_LABEL_LENGTH, "%ddBm (%u)", -112+(2*v), v);
 }
 
 static const value_string lte_rrc_schedulingInfoSIB1_NB_r13_vals[] = {
@@ -2359,6 +2698,51 @@ static const value_string lte_rrc_schedulingInfoSIB1_NB_r13_vals[] = {
 static value_string_ext lte_rrc_schedulingInfoSIB1_NB_r13_vals_ext = VALUE_STRING_EXT_INIT(lte_rrc_schedulingInfoSIB1_NB_r13_vals);
 
 static void
+lte_rrc_NRSRP_Range_NB_r14_fmt(char *s, uint32_t v)
+{
+  if (v == 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "NRSRP < -156dBm (0)");
+  } else if (v < 113) {
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= NRSRP < %ddBm (%u)", v-157, v-156, v);
+  } else {
+    snprintf(s, ITEM_LABEL_LENGTH, "-44dBm <= NRSRP (97)");
+  }
+}
+
+static void
+lte_rrc_NRSRQ_Range_NB_r14_fmt(char *s, uint32_t v)
+{
+  int32_t rsrq = (uint32_t)v;
+  if (rsrq == -30) {
+    snprintf(s, ITEM_LABEL_LENGTH, "NRSRQ < -34dB (-30)");
+  } else if (rsrq < 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= NRSRQ < %.1fdB (%d)", (((float)rsrq-1)/2)-19, ((float)rsrq/2)-19, rsrq);
+  } else if (rsrq == 0) {
+    snprintf(s, ITEM_LABEL_LENGTH, "NRSRQ < -19.5dB (0)");
+  } else if (rsrq < 34) {
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= NRSRQ < %.1fdB (%d)", (((float)rsrq-1)/2)-19.5, ((float)rsrq/2)-19.5, rsrq);
+  } else if (rsrq == 34) {
+    snprintf(s, ITEM_LABEL_LENGTH, "-3 <= NRSRQ (34)");
+  } else if (rsrq < 46) {
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= NRSRQ < %.1fdB (%d)", (((float)rsrq-1)/2)-20, ((float)rsrq/2)-20, rsrq);
+  } else {
+    snprintf(s, ITEM_LABEL_LENGTH, "2.5dB <= NRSRQ (46)");
+  }
+}
+
+static void
+lte_rrc_mbms_MaxBW_r14_fmt(char *s, uint32_t v)
+{
+  snprintf(s, ITEM_LABEL_LENGTH, "%u MHz (%u)", 40*v, v);
+}
+
+static void
+lte_rrc_dl_1024QAM_TotalWeightedLayers_r15_fmt(char *s, uint32_t v)
+{
+  snprintf(s, ITEM_LABEL_LENGTH, "%u (%u)", 10+(2*v), v);
+}
+
+static void
 lte_rrc_call_dissector(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
   TRY {
@@ -2377,10 +2761,10 @@ lte_rrc_call_dissector(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pi
 /*****************************************************************************/
 
 typedef struct meas_capabilities_item_band_mappings_t {
-  guint16 number_of_bands_set;
-  guint16 number_of_interfreq_serving_read;
-  guint16 number_of_interfreq_target_read;
-  guint16 band_by_item[256];
+  uint16_t number_of_bands_set;
+  uint16_t number_of_interfreq_serving_read;
+  uint16_t number_of_interfreq_target_read;
+  uint16_t band_by_item[256];
 } meas_capabilities_item_band_mappings_t;
 
 
@@ -2388,19 +2772,25 @@ typedef struct meas_capabilities_item_band_mappings_t {
 /* Struct to store all current uses of packet private data */
 typedef struct lte_rrc_private_data_t
 {
-  guint8  rat_type;
-  guint8  target_rat_type;
-  guint8  si_or_psi_geran;
-  guint8  ra_preambles;
-  guint16 message_identifier;
-  guint8 warning_message_segment_type;
-  guint8 warning_message_segment_number;
+  uint8_t rat_type;
+  uint8_t target_rat_type;
+  uint8_t si_or_psi_geran;
+  uint8_t ra_preambles;
+  uint16_t message_identifier;
+  uint8_t warning_message_segment_type;
+  uint8_t warning_message_segment_number;
   drb_mapping_t drb_mapping;
   drx_config_t  drx_config;
-  pdcp_security_info_t pdcp_security;
+  pdcp_lte_security_info_t pdcp_security;
   meas_capabilities_item_band_mappings_t meas_capabilities_item_band_mappings;
   simult_pucch_pusch_cell_type cell_type;
-  gboolean bcch_dl_sch_msg_br;
+  bool bcch_dl_sch_msg;
+  lpp_pos_sib_type_t pos_sib_type;
+  uint8_t dcch_segment_number;
+  tvbuff_t *dcch_segment;
+  bool dcch_segment_last;
+  bool digits_strbuf_parsing_failed_flag; /* Whether an error occurred when creating the IMSI/MCC-MNC pair string */
+  wmem_strbuf_t *last_mcc_strbuf; /* MCC of the immediately preceding IE PLMN-Identity */
 } lte_rrc_private_data_t;
 
 /* Helper function to get or create a struct that will be actx->private_data */
@@ -2411,7 +2801,7 @@ static lte_rrc_private_data_t* lte_rrc_get_private_data(asn1_ctx_t *actx)
   }
   else {
     lte_rrc_private_data_t* new_struct =
-      (lte_rrc_private_data_t*)wmem_alloc0(wmem_packet_scope(), sizeof(lte_rrc_private_data_t));
+      wmem_new0(actx->pinfo->pool, lte_rrc_private_data_t);
     actx->private_data = new_struct;
     return new_struct;
   }
@@ -2434,13 +2824,13 @@ static drb_mapping_t* private_data_get_drb_mapping(asn1_ctx_t *actx)
 
 
 /* RAT type */
-static guint8 private_data_get_rat_type(asn1_ctx_t *actx)
+static uint8_t private_data_get_rat_type(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   return private_data->rat_type;
 }
 
-static void private_data_set_rat_type(asn1_ctx_t *actx, guint8 rat_type)
+static void private_data_set_rat_type(asn1_ctx_t *actx, uint8_t rat_type)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   private_data->rat_type = rat_type;
@@ -2448,13 +2838,13 @@ static void private_data_set_rat_type(asn1_ctx_t *actx, guint8 rat_type)
 
 
 /* Target RAT type */
-static guint8 private_data_get_rat_target_type(asn1_ctx_t *actx)
+static uint8_t private_data_get_rat_target_type(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   return private_data->target_rat_type;
 }
 
-static void private_data_set_rat_target_type(asn1_ctx_t *actx, guint8 target_rat_type)
+static void private_data_set_rat_target_type(asn1_ctx_t *actx, uint8_t target_rat_type)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   private_data->target_rat_type = target_rat_type;
@@ -2462,13 +2852,13 @@ static void private_data_set_rat_target_type(asn1_ctx_t *actx, guint8 target_rat
 
 
 /* si_or_psi_geran */
-static guint8 private_data_get_si_or_psi_geran(asn1_ctx_t *actx)
+static uint8_t private_data_get_si_or_psi_geran(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   return private_data->si_or_psi_geran;
 }
 
-static void private_data_set_si_or_psi_geran(asn1_ctx_t *actx, guint8 si_or_psi_geran)
+static void private_data_set_si_or_psi_geran(asn1_ctx_t *actx, uint8_t si_or_psi_geran)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   private_data->si_or_psi_geran = si_or_psi_geran;
@@ -2476,13 +2866,13 @@ static void private_data_set_si_or_psi_geran(asn1_ctx_t *actx, guint8 si_or_psi_
 
 
 /* Message identifier */
-static guint16 private_data_get_message_identifier(asn1_ctx_t *actx)
+static uint16_t private_data_get_message_identifier(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   return private_data->message_identifier;
 }
 
-static void private_data_set_message_identifier(asn1_ctx_t *actx, guint16 message_identifier)
+static void private_data_set_message_identifier(asn1_ctx_t *actx, uint16_t message_identifier)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   private_data->message_identifier = message_identifier;
@@ -2490,13 +2880,13 @@ static void private_data_set_message_identifier(asn1_ctx_t *actx, guint16 messag
 
 
 /* Warning message segment type */
-static guint16 private_data_get_warning_message_segment_type(asn1_ctx_t *actx)
+static uint16_t private_data_get_warning_message_segment_type(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   return private_data->warning_message_segment_type;
 }
 
-static void private_data_set_warning_message_segment_type(asn1_ctx_t *actx, guint8 segment_type)
+static void private_data_set_warning_message_segment_type(asn1_ctx_t *actx, uint8_t segment_type)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   private_data->warning_message_segment_type = segment_type;
@@ -2504,13 +2894,13 @@ static void private_data_set_warning_message_segment_type(asn1_ctx_t *actx, guin
 
 
 /* Warning message segment number */
-static guint16 private_data_get_warning_message_segment_number(asn1_ctx_t *actx)
+static uint16_t private_data_get_warning_message_segment_number(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   return private_data->warning_message_segment_number;
 }
 
-static void private_data_set_warning_message_segment_number(asn1_ctx_t *actx, guint8 segment_number)
+static void private_data_set_warning_message_segment_number(asn1_ctx_t *actx, uint8_t segment_number)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   private_data->warning_message_segment_number = segment_number;
@@ -2518,13 +2908,13 @@ static void private_data_set_warning_message_segment_number(asn1_ctx_t *actx, gu
 
 
 /* Number of RA-preambles */
-static guint8 private_data_get_ra_preambles(asn1_ctx_t *actx)
+static uint8_t private_data_get_ra_preambles(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   return private_data->ra_preambles;
 }
 
-static void private_data_set_ra_preambles(asn1_ctx_t *actx, guint8 ra_preambles)
+static void private_data_set_ra_preambles(asn1_ctx_t *actx, uint8_t ra_preambles)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   private_data->ra_preambles = ra_preambles;
@@ -2532,7 +2922,7 @@ static void private_data_set_ra_preambles(asn1_ctx_t *actx, guint8 ra_preambles)
 
 
 /* PDCP Security info */
-static pdcp_security_info_t* private_data_pdcp_security_algorithms(asn1_ctx_t *actx)
+static pdcp_lte_security_info_t* private_data_pdcp_security_algorithms(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
   return &private_data->pdcp_security;
@@ -2546,12 +2936,12 @@ static meas_capabilities_item_band_mappings_t* private_data_meas_capabilities_it
   return &private_data->meas_capabilities_item_band_mappings;
 }
 
-static void set_freq_band_indicator(guint32 value, asn1_ctx_t *actx)
+static void set_freq_band_indicator(uint32_t value, asn1_ctx_t *actx)
 {
   /* Store band mapping for this item in the next position */
   meas_capabilities_item_band_mappings_t *mappings = private_data_meas_capabilities_item_band_mappings(actx);
   if (mappings->number_of_bands_set < 256) {
-    mappings->band_by_item[mappings->number_of_bands_set++] = (guint16)value;
+    mappings->band_by_item[mappings->number_of_bands_set++] = (uint16_t)value;
   }
 }
 
@@ -2576,42 +2966,114 @@ static void private_data_set_simult_pucch_pusch_cell_type(asn1_ctx_t *actx, simu
   private_data->cell_type = cell_type;
 }
 
-/* Is top message a BCCH DL-SCH BR */
-static gboolean private_data_get_bcch_dl_sch_msg_br(asn1_ctx_t *actx)
+/* Is top message a BCCH DL-SCH BR/MBMS */
+static bool private_data_get_bcch_dl_sch_msg(asn1_ctx_t *actx)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
-  return private_data->bcch_dl_sch_msg_br;
+  return private_data->bcch_dl_sch_msg;
 }
 
-static void private_data_set_bcch_dl_sch_msg_br(asn1_ctx_t *actx, gboolean is_br)
+static void private_data_set_bcch_dl_sch_msg(asn1_ctx_t *actx, bool is_bcch_dl_sch)
 {
   lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
-  private_data->bcch_dl_sch_msg_br = is_br;
+  private_data->bcch_dl_sch_msg = is_bcch_dl_sch;
+}
+
+static lpp_pos_sib_type_t private_data_get_pos_sib_type(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->pos_sib_type;
+}
+
+static void private_data_set_pos_sib_type(asn1_ctx_t *actx, lpp_pos_sib_type_t pos_sib_type)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->pos_sib_type = pos_sib_type;
+}
+
+static uint8_t private_data_get_dcch_segment_number(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->dcch_segment_number;
+}
+
+static void private_data_set_dcch_segment_number(asn1_ctx_t *actx, uint8_t dcch_segment_number)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->dcch_segment_number = dcch_segment_number;
+}
+
+static tvbuff_t *private_data_get_dcch_segment(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->dcch_segment;
+}
+
+static void private_data_set_dcch_segment(asn1_ctx_t *actx, tvbuff_t *dcch_segment)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->dcch_segment = dcch_segment;
+}
+
+static bool private_data_get_dcch_segment_last(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->dcch_segment_last;
+}
+
+static void private_data_set_dcch_segment_last(asn1_ctx_t *actx, bool dcch_segment_last)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->dcch_segment_last = dcch_segment_last;
+}
+
+static bool private_data_get_digits_strbuf_parsing_failed_flag(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->digits_strbuf_parsing_failed_flag;
+}
+
+static void private_data_set_digits_strbuf_parsing_failed_flag(asn1_ctx_t *actx, bool digits_strbuf_parsing_failed_flag)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->digits_strbuf_parsing_failed_flag = digits_strbuf_parsing_failed_flag;
+}
+
+static wmem_strbuf_t* private_data_get_last_mcc_strbuf(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->last_mcc_strbuf;
+}
+
+static void private_data_set_last_mcc_strbuf(asn1_ctx_t *actx, wmem_strbuf_t* last_mcc_strbuf)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->last_mcc_strbuf = last_mcc_strbuf;
 }
 
 /*****************************************************************************/
 
 
 static void
-lte_rrc_localTimeOffset_fmt(gchar *s, guint32 v)
+lte_rrc_localTimeOffset_fmt(char *s, uint32_t v)
 {
-  gint32 time_offset = (gint32) v;
+  int32_t time_offset = (int32_t) v;
 
-  g_snprintf(s, ITEM_LABEL_LENGTH, "UTC time %c %dhr %dmin (%d)",
+  snprintf(s, ITEM_LABEL_LENGTH, "UTC time %c %dhr %dmin (%d)",
              (time_offset < 0) ? '-':'+', abs(time_offset) >> 2,
              (abs(time_offset) & 0x03) * 15, time_offset);
 }
 
 static void
-dissect_lte_rrc_warningMessageSegment(tvbuff_t *warning_msg_seg_tvb, proto_tree *tree, packet_info *pinfo, guint8 dataCodingScheme)
+dissect_lte_rrc_warningMessageSegment(tvbuff_t *warning_msg_seg_tvb, proto_tree *tree, packet_info *pinfo, uint8_t dataCodingScheme)
 {
-  guint32 offset;
-  guint8 nb_of_pages, length, *str;
+  uint32_t offset;
+  uint8_t nb_of_pages, length, *str;
   proto_item *ti;
   tvbuff_t *cb_data_page_tvb, *cb_data_tvb;
   int i;
 
-  nb_of_pages = tvb_get_guint8(warning_msg_seg_tvb, 0);
+  nb_of_pages = tvb_get_uint8(warning_msg_seg_tvb, 0);
   ti = proto_tree_add_uint(tree, hf_lte_rrc_warningMessageSegment_nb_pages, warning_msg_seg_tvb, 0, 1, nb_of_pages);
   if (nb_of_pages > 15) {
     expert_add_info_format(pinfo, ti, &ei_lte_rrc_number_pages_le15,
@@ -2619,11 +3081,11 @@ dissect_lte_rrc_warningMessageSegment(tvbuff_t *warning_msg_seg_tvb, proto_tree 
     nb_of_pages = 15;
   }
   for (i = 0, offset = 1; i < nb_of_pages; i++) {
-    length = tvb_get_guint8(warning_msg_seg_tvb, offset+82);
+    length = tvb_get_uint8(warning_msg_seg_tvb, offset+82);
     cb_data_page_tvb = tvb_new_subset_length(warning_msg_seg_tvb, offset, length);
     cb_data_tvb = dissect_cbs_data(dataCodingScheme, cb_data_page_tvb, tree, pinfo, 0);
     if (cb_data_tvb) {
-      str = tvb_get_string_enc(wmem_packet_scope(), cb_data_tvb, 0, tvb_reported_length(cb_data_tvb), ENC_UTF_8|ENC_NA);
+      str = tvb_get_string_enc(pinfo->pool, cb_data_tvb, 0, tvb_reported_length(cb_data_tvb), ENC_UTF_8|ENC_NA);
       proto_tree_add_string_format(tree, hf_lte_rrc_warningMessageSegment_decoded_page, warning_msg_seg_tvb, offset, 83,
                                    str, "Decoded Page %u: %s", i+1, str);
     }
@@ -2753,73 +3215,55 @@ dissect_lte_rrc_featureGroupIndRel9Add(tvbuff_t *featureGroupIndRel9Add_tvb, asn
 
 /* Functions to get enum values out of indices parsed */
 /* If entry not found, return last element of array */
-static guint32 drx_lookup_onDurationTimer(guint32 idx)
+static uint32_t drx_lookup_onDurationTimer(uint32_t idx)
 {
-  static const guint32 vals[] = {1,2,3,4,5,6,8,10,20,30,40,50,60,80,100,200};
+  static const uint32_t vals[] = {1,2,3,4,5,6,8,10,20,30,40,50,60,80,100,200};
 
-  if (idx < (sizeof(vals)/sizeof(guint32))) {
-    return vals[idx];
-  }
-  return (sizeof(vals)/(sizeof(guint32)) - 1);
+  return vals[MIN(idx, array_length(vals) - 1)];
 }
 
-static guint32 drx_lookup_inactivityTimer(guint32 idx)
+static uint32_t drx_lookup_inactivityTimer(uint32_t idx)
 {
-  static const guint32 vals[] = {
-    1,2,3,4,5,6,8,10,20,30,40,50,60,80,100,200,300, 500,750,1280,1920,2560,0
+  static const uint32_t vals[] = {
+    1,2,3,4,5,6,8,10,20,30,40,50,60,80,100,200,300,500,750,1280,1920,2560,0
   };
 
-  if (idx < (sizeof(vals)/sizeof(guint32))) {
-    return vals[idx];
-  }
-  return (sizeof(vals)/(sizeof(guint32)) - 1);
+  return vals[MIN(idx, array_length(vals) - 1)];
 }
 
-static guint32 drx_lookup_retransmissionTimer(guint32 idx)
+static uint32_t drx_lookup_retransmissionTimer(uint32_t idx)
 {
-  static const guint32 vals[] = {1,2,4,6,8,16,24,33};
+  static const uint32_t vals[] = {1,2,4,6,8,16,24,33};
 
-  if (idx < (sizeof(vals)/sizeof(guint32))) {
-    return vals[idx];
-  }
-  return (sizeof(vals)/(sizeof(guint32)) - 1);
+  return vals[MIN(idx, array_length(vals) - 1)];
 }
 
-static guint32 drx_lookup_longCycle(guint32 idx)
+static uint32_t drx_lookup_longCycle(uint32_t idx)
 {
-  static const guint32 vals[] = {
+  static const uint32_t vals[] = {
     10,20,32,40,64,80,128,160,256,320,512,640,1024,1280,2048,2560
   };
 
-  if (idx < (sizeof(vals)/sizeof(guint32))) {
-    return vals[idx];
-  }
-  return (sizeof(vals)/(sizeof(guint32)) - 1);
+  return vals[MIN(idx, array_length(vals) - 1)];
 }
 
-static guint32 drx_lookup_longCycle_v1130(guint32 idx)
+static uint32_t drx_lookup_longCycle_v1130(uint32_t idx)
 {
-  static const guint32 vals[] = {
+  static const uint32_t vals[] = {
     60,70
   };
 
-  if (idx < (sizeof(vals)/sizeof(guint32))) {
-    return vals[idx];
-  }
-  return (sizeof(vals)/(sizeof(guint32)) - 1);
+  return vals[MIN(idx, array_length(vals) - 1)];
 }
 
 
-static guint32 drx_lookup_shortCycle(guint32 idx)
+static uint32_t drx_lookup_shortCycle(uint32_t idx)
 {
-  static const guint32 vals[] = {
+  static const uint32_t vals[] = {
     2,5,8,10,16,20,32,40,64,80,128,160,256,320,512,640
   };
 
-  if (idx < (sizeof(vals)/sizeof(guint32))) {
-    return vals[idx];
-  }
-  return (sizeof(vals)/(sizeof(guint32)) - 1);
+  return vals[MIN(idx, array_length(vals) - 1)];
 }
 
 static void drx_check_config_sane(drx_config_t *config, asn1_ctx_t *actx)
@@ -2857,7 +3301,7 @@ static void drx_check_config_sane(drx_config_t *config, asn1_ctx_t *actx)
 }
 
 /* Break sr-configIndex down into periodicity and offset.  From 36.231, 10.1 */
-static void sr_lookup_configindex(guint32 config_index, guint16 *periodicity, guint16 *offset)
+static void sr_lookup_configindex(uint32_t config_index, uint16_t *periodicity, uint16_t *offset)
 {
   if (config_index < 5) {
     *periodicity = 5;
@@ -2916,7 +3360,7 @@ dissect_lte_rrc_DL_DCCH(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
   ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
   lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
-  dissect_DL_DCCH_Message_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+  dissect_lte_rrc_DL_DCCH_Message_PDU(tvb, pinfo, lte_rrc_tree, NULL);
   return tvb_captured_length(tvb);
 }
 
@@ -2946,7 +3390,7 @@ dissect_lte_rrc_UL_DCCH(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
   ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
   lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
-  dissect_UL_DCCH_Message_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+  dissect_lte_rrc_UL_DCCH_Message_PDU(tvb, pinfo, lte_rrc_tree, NULL);
   return tvb_captured_length(tvb);
 }
 
@@ -3037,13 +3481,13 @@ dissect_lte_rrc_Handover_Preparation_Info(tvbuff_t *tvb, packet_info *pinfo, pro
   /* Don't want elements inside message updating Info column, so set now and
      freeze during dissection of PDU */
   col_set_str(pinfo->cinfo, COL_INFO, "HandoverPreparationInformation");
-  col_set_writable(pinfo->cinfo, COL_INFO, FALSE);
+  col_set_writable(pinfo->cinfo, COL_INFO, false);
 
   ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
   lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
   dissect_lte_rrc_HandoverPreparationInformation_PDU(tvb, pinfo, lte_rrc_tree, NULL);
 
-  col_set_writable(pinfo->cinfo, COL_INFO, TRUE);
+  col_set_writable(pinfo->cinfo, COL_INFO, true);
   return tvb_captured_length(tvb);
 }
 
@@ -3059,6 +3503,21 @@ dissect_lte_rrc_SBCCH_SL_BCH(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
   ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
   lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
   dissect_SBCCH_SL_BCH_Message_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+  return tvb_captured_length(tvb);
+}
+
+static int
+dissect_lte_rrc_SBCCH_SL_BCH_V2X(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+{
+  proto_item *ti;
+  proto_tree *lte_rrc_tree;
+
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "LTE RRC SBCCH_SL_BCH_V2X");
+  col_clear(pinfo->cinfo, COL_INFO);
+
+  ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
+  lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
+  dissect_SBCCH_SL_BCH_Message_V2X_r14_PDU(tvb, pinfo, lte_rrc_tree, NULL);
   return tvb_captured_length(tvb);
 }
 
@@ -3153,6 +3612,21 @@ dissect_lte_rrc_BCCH_BCH_NB(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 }
 
 static int
+dissect_lte_rrc_BCCH_BCH_TDD_NB(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+{
+  proto_item *ti;
+  proto_tree *lte_rrc_tree;
+
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "LTE RRC BCCH_BCH_TDD_NB");
+  col_clear(pinfo->cinfo, COL_INFO);
+
+  ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
+  lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
+  dissect_BCCH_BCH_Message_TDD_NB_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+  return tvb_captured_length(tvb);
+}
+
+static int
 dissect_lte_rrc_BCCH_DL_SCH_NB(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
   proto_item *ti;
@@ -3182,25 +3656,97 @@ dissect_lte_rrc_PCCH_NB(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
   return tvb_captured_length(tvb);
 }
 
-static void
-lte_rrc_init_protocol(void)
+static int
+dissect_lte_rrc_SC_MCCH_NB(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  lte_rrc_etws_cmas_dcs_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-  lte_rrc_system_info_value_changed_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-  reassembly_table_init(&lte_rrc_sib11_reassembly_table,
-                        &addresses_reassembly_table_functions);
-  reassembly_table_init(&lte_rrc_sib12_reassembly_table,
-                        &addresses_reassembly_table_functions);
+  proto_item *ti;
+  proto_tree *lte_rrc_tree;
+
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "LTE RRC SC MCCH_NB");
+  col_clear(pinfo->cinfo, COL_INFO);
+
+  ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
+  lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
+  dissect_SC_MCCH_Message_NB_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+  return tvb_captured_length(tvb);
 }
 
-static void
-lte_rrc_cleanup_protocol(void)
+static int
+dissect_lte_rrc_BCCH_BCH_MBMS(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  g_hash_table_destroy(lte_rrc_etws_cmas_dcs_hash);
-  g_hash_table_destroy(lte_rrc_system_info_value_changed_hash);
-  reassembly_table_destroy(&lte_rrc_sib11_reassembly_table);
-  reassembly_table_destroy(&lte_rrc_sib12_reassembly_table);
+  proto_item *ti;
+  proto_tree *lte_rrc_tree;
+
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "LTE RRC BCCH_BCH_MBMS");
+  col_clear(pinfo->cinfo, COL_INFO);
+
+  ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
+  lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
+  dissect_BCCH_BCH_Message_MBMS_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+  return tvb_captured_length(tvb);
 }
+
+static int
+dissect_lte_rrc_BCCH_DL_SCH_MBMS(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+{
+  proto_item *ti;
+  proto_tree *lte_rrc_tree;
+
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "LTE RRC DL_SCH_MBMS");
+  col_clear(pinfo->cinfo, COL_INFO);
+
+  ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
+  lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
+  dissect_BCCH_DL_SCH_Message_MBMS_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+  return tvb_captured_length(tvb);
+}
+
+static int
+dissect_lte_rrc_ue_eutra_capability_msg(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
+{
+    proto_item* ti;
+    proto_tree* lte_rrc_tree;
+
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "LTE RRC UE EUTRA Capability");
+    col_clear(pinfo->cinfo, COL_INFO);
+
+    ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
+    lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
+    dissect_lte_rrc_UE_EUTRA_Capability_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+    return tvb_captured_length(tvb);
+}
+
+static int
+dissect_lte_rrc_ueradioaccesscapabilityinformation_msg(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
+{
+    proto_item* ti;
+    proto_tree* lte_rrc_tree;
+
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "LTE RRC UERadioAccessCapabilityInformation");
+    col_clear(pinfo->cinfo, COL_INFO);
+
+    ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
+    lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
+    dissect_lte_rrc_UERadioAccessCapabilityInformation_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+    return tvb_captured_length(tvb);
+}
+
+static int
+dissect_lte_rrc_dissect_SystemInformationBlockType1_v890_IEs(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
+{
+    proto_item* ti;
+    proto_tree* lte_rrc_tree;
+
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "LTE RRC SystemInformationBlockType1-v890-IEs");
+    col_set_str(pinfo->cinfo, COL_INFO, "LTE RRC SystemInformationBlockType1-v890-IEs");
+
+    ti = proto_tree_add_item(tree, proto_lte_rrc, tvb, 0, -1, ENC_NA);
+    lte_rrc_tree = proto_item_add_subtree(ti, ett_lte_rrc);
+    dissect_SystemInformationBlockType1_v890_IEs_PDU(tvb, pinfo, lte_rrc_tree, NULL);
+    return tvb_captured_length(tvb);
+}
+
+
 
 /*--- proto_register_rrc -------------------------------------------*/
 void proto_register_lte_rrc(void) {
@@ -3929,11 +4475,87 @@ void proto_register_lte_rrc(void) {
     { &hf_lte_rrc_sib12_reassembled_data,
       { "Reassembled Data", "lte-rrc.warningMessageSegment_r9.reassembled_data",
          FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragments,
+      { "Fragments", "lte-rrc.dedicatedMessageSegment_r16.fragments",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment,
+      { "Fragment", "lte-rrc.dedicatedMessageSegment_r16.fragment",
+         FT_FRAMENUM, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_overlap,
+      { "Fragment Overlap", "lte-rrc.dedicatedMessageSegment_r16.fragment_overlap",
+         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_overlap_conflict,
+      { "Fragment Overlap Conflict", "lte-rrc.dedicatedMessageSegment_r16.fragment_overlap_conflict",
+         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_multiple_tails,
+      { "Fragment Multiple Tails", "lte-rrc.dedicatedMessageSegment_r16.fragment_multiple_tails",
+         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_too_long_fragment,
+      { "Too Long Fragment", "lte-rrc.dedicatedMessageSegment_r16.fragment_too_long_fragment",
+         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_error,
+      { "Fragment Error", "lte-rrc.dedicatedMessageSegment_r16.fragment_error",
+         FT_FRAMENUM, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_count,
+      { "Fragment Count", "lte-rrc.dedicatedMessageSegment_r16.fragment_count",
+         FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_reassembled_in,
+      { "Reassembled In", "lte-rrc.dedicatedMessageSegment_r16.reassembled_in",
+         FT_FRAMENUM, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_reassembled_length,
+      { "Reassembled Length", "lte-rrc.dedicatedMessageSegment_r16.reassembled_length",
+         FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_reassembled_data,
+      { "Reassembled Data", "lte-rrc.dedicatedMessageSegment_r16.reassembled_data",
+         FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_measGapPatterns_r15_bit1,
+      { "Gap Pattern 4", "lte-rrc.measGapPatterns_r15.bit1",
+        FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x80,
+        NULL, HFILL }},
+    { &hf_lte_rrc_measGapPatterns_r15_bit2,
+      { "Gap Pattern 5", "lte-rrc.measGapPatterns_r15.bit2",
+        FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x40,
+        NULL, HFILL }},
+    { &hf_lte_rrc_measGapPatterns_r15_bit3,
+      { "Gap Pattern 6", "lte-rrc.measGapPatterns_r15.bit3",
+        FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x20,
+        NULL, HFILL }},
+    { &hf_lte_rrc_measGapPatterns_r15_bit4,
+      { "Gap Pattern 7", "lte-rrc.measGapPatterns_r15.bit4",
+        FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x10,
+        NULL, HFILL }},
+    { &hf_lte_rrc_measGapPatterns_r15_bit5,
+      { "Gap Pattern 8", "lte-rrc.measGapPatterns_r15.bit5",
+        FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x08,
+        NULL, HFILL }},
+    { &hf_lte_rrc_measGapPatterns_r15_bit6,
+      { "Gap Pattern 9", "lte-rrc.measGapPatterns_r15.bit6",
+        FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x04,
+        NULL, HFILL }},
+    { &hf_lte_rrc_measGapPatterns_r15_bit7,
+      { "Gap Pattern 10", "lte-rrc.measGapPatterns_r15.bit7",
+        FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x02,
+        NULL, HFILL }},
+    { &hf_lte_rrc_measGapPatterns_r15_bit8,
+      { "Gap Pattern 11", "lte-rrc.measGapPatterns_r15.bit8",
+        FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x01,
         NULL, HFILL }}
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_lte_rrc,
 #include "packet-lte-rrc-ettarr.c"
 
@@ -3960,7 +4582,39 @@ void proto_register_lte_rrc(void) {
     &ett_lte_rrc_sib11_fragment,
     &ett_lte_rrc_sib11_fragments,
     &ett_lte_rrc_sib12_fragment,
-    &ett_lte_rrc_sib12_fragments
+    &ett_lte_rrc_sib12_fragments,
+    &ett_lte_rrc_dcch_segment_fragment,
+    &ett_lte_rrc_dcch_segment_fragments,
+    &ett_lte_rrc_nr_SecondaryCellGroupConfig_r15,
+    &ett_lte_rrc_nr_RadioBearerConfig_r15,
+    &ett_lte_rrc_nr_RadioBearerConfigS_r15,
+    &ett_lte_rrc_sl_ConfigDedicatedForNR_r16,
+    &ett_lte_rrc_nr_SecondaryCellGroupConfig,
+    &ett_lte_rrc_scg_ConfigResponseNR_r15,
+    &ett_lte_rrc_scg_ConfigResponseNR_r16,
+    &ett_lte_rrc_measResultSCG_r15,
+    &ett_lte_rrc_measResultSCG_r16,
+    &ett_lte_rrc_ul_DCCH_MessageNR_r15,
+    &ett_lte_rrc_ul_DCCH_MessageNR_r16,
+    &ett_lte_rrc_sourceRB_ConfigNR_r15,
+    &ett_lte_rrc_sourceRB_ConfigSN_NR_r15,
+    &ett_lte_rrc_sourceOtherConfigSN_NR_r15,
+    &ett_lte_rrc_sourceContextEN_DC_r15,
+    &ett_lte_rrc_requestedFreqBandsNR_MRDC_r15,
+    &ett_lte_rrc_measGapPatterns_r15,
+    &ett_lte_rrc_nas_Container_r15,
+    &ett_lte_rrc_sourceRB_ConfigIntra5GC_r15,
+    &ett_lte_rrc_selectedbandCombinationInfoEN_DC_v1540,
+    &ett_lte_rrc_requestedCapabilityCommon_r15,
+    &ett_lte_rrc_sidelinkUEInformationNR_r16,
+    &ett_lte_rrc_ueAssistanceInformationNR_r16,
+    &ett_lte_rrc_sl_ParameterNR_r16,
+    &ett_lte_rrc_v2x_BandParametersNR_r16,
+    &ett_lte_rrc_ueAssistanceInformationNR_SCG_r16,
+    &ett_lte_rrc_assistanceDataSIB_Element_r15,
+    &ett_lte_rrc_overheatingAssistanceForSCG_r16,
+    &ett_lte_rrc_overheatingAssistanceForSCG_FR2_2_r17,
+    &ett_lte_rrc_triggerConditionSN_r17
   };
 
   static ei_register_info ei[] = {
@@ -3977,12 +4631,13 @@ void proto_register_lte_rrc(void) {
   };
 
   expert_module_t* expert_lte_rrc;
+  module_t *lte_rrc_module;
 
   /* Register protocol */
   proto_lte_rrc = proto_register_protocol(PNAME, PSNAME, PFNAME);
 
   /* These entry points will first create an lte_rrc root node */
-  register_dissector("lte_rrc.dl_ccch", dissect_lte_rrc_DL_CCCH, proto_lte_rrc);
+  lte_rrc_dl_ccch_handle = register_dissector("lte_rrc.dl_ccch", dissect_lte_rrc_DL_CCCH, proto_lte_rrc);
   register_dissector("lte_rrc.dl_dcch", dissect_lte_rrc_DL_DCCH, proto_lte_rrc);
   register_dissector("lte_rrc.ul_ccch", dissect_lte_rrc_UL_CCCH, proto_lte_rrc);
   register_dissector("lte_rrc.ul_dcch", dissect_lte_rrc_UL_DCCH, proto_lte_rrc);
@@ -3993,14 +4648,22 @@ void proto_register_lte_rrc(void) {
   register_dissector("lte_rrc.mcch", dissect_lte_rrc_MCCH, proto_lte_rrc);
   register_dissector("lte_rrc.handover_prep_info", dissect_lte_rrc_Handover_Preparation_Info, proto_lte_rrc);
   register_dissector("lte_rrc.sbcch_sl_bch", dissect_lte_rrc_SBCCH_SL_BCH, proto_lte_rrc);
+  register_dissector("lte_rrc.sbcch_sl_bch.v2x", dissect_lte_rrc_SBCCH_SL_BCH_V2X, proto_lte_rrc);
   register_dissector("lte_rrc.sc_mcch", dissect_lte_rrc_SC_MCCH, proto_lte_rrc);
   register_dissector("lte_rrc.dl_ccch.nb", dissect_lte_rrc_DL_CCCH_NB, proto_lte_rrc);
   register_dissector("lte_rrc.dl_dcch.nb", dissect_lte_rrc_DL_DCCH_NB, proto_lte_rrc);
   register_dissector("lte_rrc.ul_ccch.nb", dissect_lte_rrc_UL_CCCH_NB, proto_lte_rrc);
   register_dissector("lte_rrc.ul_dcch.nb", dissect_lte_rrc_UL_DCCH_NB, proto_lte_rrc);
   register_dissector("lte_rrc.bcch_bch.nb", dissect_lte_rrc_BCCH_BCH_NB, proto_lte_rrc);
+  register_dissector("lte_rrc.bcch_bch.nb.tdd", dissect_lte_rrc_BCCH_BCH_TDD_NB, proto_lte_rrc);
   register_dissector("lte_rrc.bcch_dl_sch.nb", dissect_lte_rrc_BCCH_DL_SCH_NB, proto_lte_rrc);
   register_dissector("lte_rrc.pcch.nb", dissect_lte_rrc_PCCH_NB, proto_lte_rrc);
+  register_dissector("lte_rrc.sc_mcch.nb", dissect_lte_rrc_SC_MCCH_NB, proto_lte_rrc);
+  register_dissector("lte_rrc.bcch_bch.mbms", dissect_lte_rrc_BCCH_BCH_MBMS, proto_lte_rrc);
+  register_dissector("lte_rrc.bcch_dl_sch.mbms", dissect_lte_rrc_BCCH_DL_SCH_MBMS, proto_lte_rrc);
+  register_dissector("lte-rrc.ue_eutra_cap.msg", dissect_lte_rrc_ue_eutra_capability_msg, proto_lte_rrc);
+  register_dissector("lte-rrc.ue_radio_access_cap_info.msg", dissect_lte_rrc_ueradioaccesscapabilityinformation_msg, proto_lte_rrc);
+  register_dissector("lte-rrc.systeminformationblocktype1_v890_ies", dissect_lte_rrc_dissect_SystemInformationBlockType1_v890_IEs, proto_lte_rrc);
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_lte_rrc, hf, array_length(hf));
@@ -4011,8 +4674,28 @@ void proto_register_lte_rrc(void) {
   /* Register the dissectors defined in lte-rrc.conf */
 #include "packet-lte-rrc-dis-reg.c"
 
-  register_init_routine(&lte_rrc_init_protocol);
-  register_cleanup_routine(&lte_rrc_cleanup_protocol);
+  lte_rrc_etws_cmas_dcs_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
+  lte_rrc_system_info_value_changed_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
+  lte_rrc_dcch_segment_ueid_count_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
+  lte_rrc_dcch_segment_id_tree = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
+
+  reassembly_table_register(&lte_rrc_sib11_reassembly_table,
+                            &addresses_reassembly_table_functions);
+  reassembly_table_register(&lte_rrc_sib12_reassembly_table,
+                            &addresses_reassembly_table_functions);
+  reassembly_table_register(&lte_rrc_dcch_segment_reassembly_table,
+                            &addresses_reassembly_table_functions);
+
+  /* Register configuration preferences */
+  lte_rrc_module = prefs_register_protocol(proto_lte_rrc, NULL);
+  prefs_register_bool_preference(lte_rrc_module, "nas_in_root_tree",
+                                 "Show NAS PDU in root packet details",
+                                 "Whether the NAS PDU should be shown in the root packet details tree",
+                                 &lte_rrc_nas_in_root_tree);
+  prefs_register_bool_preference(lte_rrc_module, "reassemble_dcch_segments",
+                                 "Try to reassemble DCCH segmented messages",
+                                 "Whether the LTE RRC dissector should attempt to reassemble DCCH segmented messages",
+                                 &lte_rrc_reassemble_dcch_segments);
 }
 
 
@@ -4020,15 +4703,15 @@ void proto_register_lte_rrc(void) {
 void
 proto_reg_handoff_lte_rrc(void)
 {
-	static dissector_handle_t lte_rrc_dl_ccch_handle;
-
-	lte_rrc_dl_ccch_handle = find_dissector("lte_rrc.dl_ccch");
-	dissector_add_for_decode_as("udp.port", lte_rrc_dl_ccch_handle);
-	nas_eps_handle = find_dissector("nas-eps");
-	rrc_irat_ho_to_utran_cmd_handle = find_dissector("rrc.irat.ho_to_utran_cmd");
-	rrc_sys_info_cont_handle = find_dissector("rrc.sysinfo.cont");
-	gsm_a_dtap_handle = find_dissector("gsm_a_dtap");
-	gsm_rlcmac_dl_handle = find_dissector("gsm_rlcmac_dl");
+  dissector_add_for_decode_as_with_preference("udp.port", lte_rrc_dl_ccch_handle);
+  nas_eps_handle = find_dissector("nas-eps");
+  nas_5gs_handle = find_dissector("nas-5gs");
+  rrc_irat_ho_to_utran_cmd_handle = find_dissector("rrc.irat.ho_to_utran_cmd");
+  rrc_sys_info_cont_handle = find_dissector("rrc.sysinfo.cont");
+  gsm_a_dtap_handle = find_dissector("gsm_a_dtap");
+  gsm_rlcmac_dl_handle = find_dissector("gsm_rlcmac_dl");
+  nr_rrc_reconf_handle = find_dissector("nr-rrc.rrc_reconf");
+  lte_rrc_conn_reconf_handle = find_dissector("lte-rrc.rrc_conn_reconf");
 }
 
 

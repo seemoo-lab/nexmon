@@ -1,0 +1,1214 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="HTMLtree_8h" kind="file" language="C++">
+    <compoundname>HTMLtree.h</compoundname>
+    <includes local="no">stdio.h</includes>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="HTMLparser_8h" local="no">libxml/HTMLparser.h</includes>
+    <includedby refid="HTMLparser_8c" local="no">/builds/GNOME/libxml2/HTMLparser.c</includedby>
+    <includedby refid="HTMLtree_8c" local="no">/builds/GNOME/libxml2/HTMLtree.c</includedby>
+    <includedby refid="SAX2_8c" local="no">/builds/GNOME/libxml2/SAX2.c</includedby>
+    <includedby refid="debugXML_8c" local="no">/builds/GNOME/libxml2/debugXML.c</includedby>
+    <includedby refid="tree_8c" local="no">/builds/GNOME/libxml2/tree.c</includedby>
+    <includedby refid="xmlsave_8c" local="no">/builds/GNOME/libxml2/xmlsave.c</includedby>
+    <includedby refid="xmlwriter_8c" local="no">/builds/GNOME/libxml2/xmlwriter.c</includedby>
+    <incdepgraph>
+      <node id="11">
+        <label>libxml/HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>HTMLtree.h</label>
+        <link refid="HTMLtree_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="6">
+        <label>limits.h</label>
+      </node>
+      <node id="8">
+        <label>stdarg.h</label>
+      </node>
+      <node id="14">
+        <label>stddef.h</label>
+      </node>
+      <node id="2">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="HTMLtree_8h_1a3c27b9e29c7df8e247222c96c8273736" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlNewDoc</definition>
+        <argsstring>(const xmlChar *URI, const xmlChar *ExternalID)</argsstring>
+        <name>htmlNewDoc</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ExternalID</declname>
+          <defname>publicId</defname>
+        </param>
+        <briefdescription>
+<para>Creates a new HTML document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>system ID (URI) of the DTD (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>public ID of the DTD (optional) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new document </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="38" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="2279" bodyend="2286" declfile="HTMLtree.h" declline="38" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1af64c1a32a10d0b23e10d7f65443b5818" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlNewDocNoDtD</definition>
+        <argsstring>(const xmlChar *URI, const xmlChar *ExternalID)</argsstring>
+        <name>htmlNewDocNoDtD</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ExternalID</declname>
+          <defname>publicId</defname>
+        </param>
+        <briefdescription>
+<para>Creates a new HTML document without a DTD node if <computeroutput>URI</computeroutput> and <computeroutput>publicId</computeroutput> are NULL. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>system ID (URI) of the DTD (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>public ID of the DTD (optional) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new document, do not initialize the DTD if not provided </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="41" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="2229" bodyend="2269" declfile="HTMLtree.h" declline="41" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1ac05019e809b81421079ca26f46cb480c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * htmlGetMetaEncoding</definition>
+        <argsstring>(xmlDoc *doc)</argsstring>
+        <name>htmlGetMetaEncoding</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Look up and encoding declaration in the meta tags. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The returned string points into attribute content and can contain trailing garbage. It should be copied before modifying or freeing nodes.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the encoding ot NULL if not found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="44" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="264" bodyend="286" declfile="HTMLtree.h" declline="44" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1a038d28374af8a8d8385fbdd688e45218" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlSetMetaEncoding</definition>
+        <argsstring>(xmlDoc *doc, const xmlChar *encoding)</argsstring>
+        <name>htmlSetMetaEncoding</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>encoding</declname>
+        </param>
+        <briefdescription>
+<para>Creates or updates a meta tag with an encoding declaration. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NOTE: This will not change the document content encoding.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, 1 if no head element was found or arguments are invalid and -1 if memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="46" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="299" bodyend="349" declfile="HTMLtree.h" declline="46" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1a91cf61c59f06c32f29530888344877d6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlDocDumpMemory</definition>
+        <argsstring>(xmlDoc *cur, xmlChar **mem, int *size)</argsstring>
+        <name>htmlDocDumpMemory</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>mem</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Same as <ref refid="HTMLtree_8h_1a7c0fae1dbb4bd47a913fbd5c566a83ff" kindref="member">htmlDocDumpMemoryFormat</ref> with <computeroutput>format</computeroutput> set to 1 which is typically undesired. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Also see the warnings there. Use of this function is DISCOURAGED in favor of <ref refid="HTMLtree_8h_1ab03e04763f3f00e642efba0265574d52" kindref="member">htmlDocContentDumpFormatOutput</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>OUT: the memory pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>OUT: the memory length </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="50" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="651" bodyend="653" declfile="HTMLtree.h" declline="50" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1a7c0fae1dbb4bd47a913fbd5c566a83ff" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlDocDumpMemoryFormat</definition>
+        <argsstring>(xmlDoc *cur, xmlChar **mem, int *size, int format)</argsstring>
+        <name>htmlDocDumpMemoryFormat</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>mem</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>format</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML node to a memory, also returning the size of the result. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It&apos;s up to the caller to free the memory.</para>
+<para>Uses the encoding of the document. If the document has no encoding, ASCII with HTML 4.0 named character entities will be used. This is inefficient compared to UTF-8 and might be changed in a future version.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>OUT: the memory pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>OUT: the memory length </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>should formatting newlines been added </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="54" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="602" bodyend="638" declfile="HTMLtree.h" declline="54" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1ab4ecf8dd4e9a3c43da07156a374bd82b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlSaveFile</definition>
+        <argsstring>(const char *filename, xmlDoc *cur)</argsstring>
+        <name>htmlSaveFile</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML document to a file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Same as <ref refid="HTMLtree_8h_1aab894feca6c0113650cfd15ab365c44f" kindref="member">htmlSaveFileFormat</ref> with <computeroutput>encoding</computeroutput> set to NULL and <computeroutput>format</computeroutput> set to 1 which is typically undesired.</para>
+<para>Use of this function is DISCOURAGED in favor of <ref refid="HTMLtree_8h_1aab894feca6c0113650cfd15ab365c44f" kindref="member">htmlSaveFileFormat</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename (or URL) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or -1 in case of failure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="59" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="1243" bodyend="1245" declfile="HTMLtree.h" declline="59" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1aa1e36f78253ebdafd26e402931ec40c6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlSaveFileEnc</definition>
+        <argsstring>(const char *filename, xmlDoc *cur, const char *encoding)</argsstring>
+        <name>htmlSaveFileEnc</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML document to a file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Same as <ref refid="HTMLtree_8h_1aab894feca6c0113650cfd15ab365c44f" kindref="member">htmlSaveFileFormat</ref> with <computeroutput>format</computeroutput> set to 1 which is typically undesired. Also see the warnings there. Use of this function is DISCOURAGED in favor of <ref refid="HTMLtree_8h_1aab894feca6c0113650cfd15ab365c44f" kindref="member">htmlSaveFileFormat</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or -1 in case of failure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="62" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="1308" bodyend="1310" declfile="HTMLtree.h" declline="62" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1aab894feca6c0113650cfd15ab365c44f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlSaveFileFormat</definition>
+        <argsstring>(const char *filename, xmlDoc *cur, const char *encoding, int format)</argsstring>
+        <name>htmlSaveFileFormat</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>format</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML document to a file using a given encoding. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>filename</computeroutput> is <computeroutput>"-"</computeroutput>, stdout is used. This is potentially insecure and might be changed in a future version.</para>
+<para>If encoding is NULL, ASCII with HTML 4.0 named character entities will be used. This is inefficient compared to UTF-8 and might be changed in a future version.</para>
+<para>Sets or updates meta tags containing the character encoding.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>should formatting newlines been added </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or -1 in case of failure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="66" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="1266" bodyend="1293" declfile="HTMLtree.h" declline="66" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1a0350b9719ba1317a9c8ca6507d0e7d3f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlNodeDump</definition>
+        <argsstring>(xmlBuffer *buf, xmlDoc *doc, xmlNode *cur)</argsstring>
+        <name>htmlNodeDump</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML node to an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Always uses UTF-8.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML buffer output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="71" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="511" bodyend="531" declfile="HTMLtree.h" declline="71" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1add54664eff693a7b49fc2ee212b3b4a9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlDocDump</definition>
+        <argsstring>(FILE *f, xmlDoc *cur)</argsstring>
+        <name>htmlDocDump</name>
+        <param>
+          <type>FILE *</type>
+          <declname>f</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML document to an open <computeroutput>FILE</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Uses the encoding of the document. If the document has no encoding, ASCII with HTML 4.0 named character entities will be used. This is inefficient compared to UTF-8 and might be changed in a future version.</para>
+<para>Enables &quot;formatting&quot; unconditionally which is typically undesired.</para>
+<para>Use of this function is DISCOURAGED in favor of <ref refid="HTMLtree_8h_1a47fa2ea0f8f2af9b823855917e3a307a" kindref="member">htmlNodeDumpFileFormat</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>f</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE* </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or -1 in case of failure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="75" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="1205" bodyend="1227" declfile="HTMLtree.h" declline="75" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1a965a223af0926b16b95afe40563376af" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlNodeDumpFile</definition>
+        <argsstring>(FILE *out, xmlDoc *doc, xmlNode *cur)</argsstring>
+        <name>htmlNodeDumpFile</name>
+        <param>
+          <type>FILE *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Same as <ref refid="HTMLtree_8h_1a47fa2ea0f8f2af9b823855917e3a307a" kindref="member">htmlNodeDumpFileFormat</ref> with <computeroutput>format</computeroutput> set to 1 which is typically undesired. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Use of this function is DISCOURAGED in favor of <ref refid="HTMLtree_8h_1a47fa2ea0f8f2af9b823855917e3a307a" kindref="member">htmlNodeDumpFileFormat</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="78" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="583" bodyend="585" declfile="HTMLtree.h" declline="78" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1a47fa2ea0f8f2af9b823855917e3a307a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlNodeDumpFileFormat</definition>
+        <argsstring>(FILE *out, xmlDoc *doc, xmlNode *cur, const char *encoding, int format)</argsstring>
+        <name>htmlNodeDumpFileFormat</name>
+        <param>
+          <type>FILE *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>format</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML node to an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If encoding is NULL, ASCII with HTML 4.0 named character entities will be used. This is inefficient compared to UTF-8 and might be changed in a future version.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document (unused) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>should formatting newlines been added </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or -1 in case of failure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="82" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="548" bodyend="571" declfile="HTMLtree.h" declline="82" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1a82cfef54a605472de9ad2491f17a77a2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlNodeDumpOutput</definition>
+        <argsstring>(xmlOutputBuffer *buf, xmlDoc *doc, xmlNode *cur, const char *encoding)</argsstring>
+        <name>htmlNodeDumpOutput</name>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <briefdescription>
+<para>Same as <ref refid="HTMLtree_8h_1aac437ae981d846058aa22b8f03907d70" kindref="member">htmlNodeDumpFormatOutput</ref> with <computeroutput>format</computeroutput> set to 1 which is typically undesired. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Use of this function is DISCOURAGED in favor of <ref refid="HTMLtree_8h_1aac437ae981d846058aa22b8f03907d70" kindref="member">htmlNodeDumpFormatOutput</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML buffer output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document (unused) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding string (unused) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="89" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="1145" bodyend="1148" declfile="HTMLtree.h" declline="89" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1aac437ae981d846058aa22b8f03907d70" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlNodeDumpFormatOutput</definition>
+        <argsstring>(xmlOutputBuffer *buf, xmlDoc *doc, xmlNode *cur, const char *encoding, int format)</argsstring>
+        <name>htmlNodeDumpFormatOutput</name>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>format</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML node to an output buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML buffer output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document (unused) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding string (unused) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>should formatting newlines been added </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="94" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="1128" bodyend="1132" declfile="HTMLtree.h" declline="94" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1a61bfb8f341272b1105c6b0195bbcaaf9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlDocContentDumpOutput</definition>
+        <argsstring>(xmlOutputBuffer *buf, xmlDoc *cur, const char *encoding)</argsstring>
+        <name>htmlDocContentDumpOutput</name>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <briefdescription>
+<para>Same as <ref refid="HTMLtree_8h_1ab03e04763f3f00e642efba0265574d52" kindref="member">htmlDocContentDumpFormatOutput</ref> with <computeroutput>format</computeroutput> set to 1 which is typically undesired. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Use of this function is DISCOURAGED in favor of <ref refid="HTMLtree_8h_1ab03e04763f3f00e642efba0265574d52" kindref="member">htmlDocContentDumpFormatOutput</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML buffer output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding string (unused) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="100" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="1175" bodyend="1178" declfile="HTMLtree.h" declline="100" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1ab03e04763f3f00e642efba0265574d52" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlDocContentDumpFormatOutput</definition>
+        <argsstring>(xmlOutputBuffer *buf, xmlDoc *cur, const char *encoding, int format)</argsstring>
+        <name>htmlDocContentDumpFormatOutput</name>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>format</declname>
+        </param>
+        <briefdescription>
+<para>Serialize an HTML document to an output buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML buffer output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding string (unused) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>should formatting newlines been added </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="104" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="1159" bodyend="1163" declfile="HTMLtree.h" declline="104" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLtree_8h_1aa12b1ce2661108e8ecffda563a2e766b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlIsBooleanAttr</definition>
+        <argsstring>(const xmlChar *name)</argsstring>
+        <name>htmlIsBooleanAttr</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Determine if a given attribute is a boolean attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This doesn&apos;t handle HTML5.</para>
+<para><xrefsect id="deprecated_1_deprecated000182"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the attribute to check </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>false if the attribute is not boolean, true otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLtree.h" line="113" column="1" bodyfile="/builds/GNOME/libxml2/HTMLtree.c" bodystart="361" bodyend="439" declfile="HTMLtree.h" declline="113" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>HTML documents. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This modules implements functions to work with HTML documents, most of them related to serialization.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="HTMLtree.h"/>
+  </compounddef>
+</doxygen>

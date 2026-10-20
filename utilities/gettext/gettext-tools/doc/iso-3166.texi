@@ -77,7 +77,7 @@ Canada.
 @item CC
 Cocos (Keeling) Islands.
 @item CD
-Congo, The Democratic Republic of the.
+Congo, Democratic Republic of the.
 @item CF
 Central African Republic.
 @item CG
@@ -101,7 +101,7 @@ Costa Rica.
 @item CU
 Cuba.
 @item CV
-Cape Verde.
+Cabo Verde.
 @item CW
 Curaçao.
 @item CX
@@ -109,7 +109,7 @@ Christmas Island.
 @item CY
 Cyprus.
 @item CZ
-Czech Republic.
+Czechia.
 @item DE
 Germany.
 @item DJ
@@ -151,7 +151,7 @@ France.
 @item GA
 Gabon.
 @item GB
-United Kingdom.
+United Kingdom of Great Britain and Northern Ireland.
 @item GD
 Grenada.
 @item GE
@@ -285,7 +285,7 @@ Madagascar.
 @item MH
 Marshall Islands.
 @item MK
-Macedonia, The Former Yugoslav Republic of.
+North Macedonia.
 @item ML
 Mali.
 @item MM
@@ -329,7 +329,7 @@ Nigeria.
 @item NI
 Nicaragua.
 @item NL
-Netherlands.
+Netherlands, Kingdom of the.
 @item NO
 Norway.
 @item NP
@@ -423,7 +423,7 @@ Sint Maarten (Dutch part).
 @item SY
 Syrian Arab Republic.
 @item SZ
-Swaziland.
+Eswatini.
 @item TC
 Turks and Caicos Islands.
 @item TD
@@ -447,7 +447,7 @@ Tunisia.
 @item TO
 Tonga.
 @item TR
-Turkey.
+T@"{u}rkiye.
 @item TT
 Trinidad and Tobago.
 @item TV
@@ -463,21 +463,21 @@ Uganda.
 @item UM
 United States Minor Outlying Islands.
 @item US
-United States.
+United States of America.
 @item UY
 Uruguay.
 @item UZ
 Uzbekistan.
 @item VA
-Holy See (Vatican City State).
+Holy See.
 @item VC
 Saint Vincent and the Grenadines.
 @item VE
 Venezuela, Bolivarian Republic of.
 @item VG
-Virgin Islands, British.
+Virgin Islands (British).
 @item VI
-Virgin Islands, U.S..
+Virgin Islands (U.S.).
 @item VN
 Viet Nam.
 @item VU

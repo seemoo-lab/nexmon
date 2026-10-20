@@ -1,0 +1,3 @@
+(executable
+  (name hello)
+  (libraries gettext.base gettext-stub unix))

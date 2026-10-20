@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref https://www.opennetworking.org/sdn-resources/onf-specifications/openflow
  */
@@ -35,130 +23,140 @@ void proto_reg_handoff_openflow_v1(void);
 static dissector_handle_t eth_withoutfcs_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_openflow_v1 = -1;
-static int hf_openflow_version = -1;
-static int hf_openflow_1_0_type = -1;
-static int hf_openflow_length = -1;
-static int hf_openflow_xid = -1;
+static int proto_openflow_v1;
+static int hf_openflow_version;
+static int hf_openflow_1_0_type;
+static int hf_openflow_length;
+static int hf_openflow_xid;
 
-static int hf_openflow_datapath_id = -1;
-static int hf_openflow_datapath_mac = -1;
-static int hf_openflow_datapath_impl = -1;
-static int hf_openflow_n_buffers = -1;
-static int hf_openflow_n_tables = -1;
-/* static int hf_openflow_auxiliary_id = -1; */
-static int hf_openflow_capabilities = -1;
-static int hf_openflow_actions = -1;
-/* static int hf_openflow_reserved32 = -1; */
-static int hf_openflow_cap_flow_stats = -1;
-static int hf_openflow_table_stats = -1;
-static int hf_openflow_port_stats = -1;
-static int hf_openflow_group_stats = -1;
-static int hf_openflow_ip_reasm = -1;
-static int hf_openflow_queue_stats = -1;
-static int hf_openflow_port_blocked = -1;
+static int hf_openflow_datapath_id;
+static int hf_openflow_datapath_mac;
+static int hf_openflow_datapath_impl;
+static int hf_openflow_n_buffers;
+static int hf_openflow_n_tables;
+/* static int hf_openflow_auxiliary_id; */
+static int hf_openflow_capabilities;
+static int hf_openflow_actions;
+/* static int hf_openflow_reserved32; */
+static int hf_openflow_cap_flow_stats;
+static int hf_openflow_table_stats;
+static int hf_openflow_port_stats;
+static int hf_openflow_group_stats;
+static int hf_openflow_ip_reasm;
+static int hf_openflow_queue_stats;
+static int hf_openflow_port_blocked;
 
-static int hf_openflow_output = -1; /* Output to switch port. */
-static int hf_openflow_set_vlan_vid = -1; /* Set the 802.1q VLAN id. */
-static int hf_openflow_set_vlan_pcp = -1; /* Set the 802.1q priority. */
-static int hf_openflow_strip_vlan = -1; /* Strip the 802.1q header. */
-static int hf_openflow_set_dl_src = -1; /* Ethernet source address. */
-static int hf_openflow_set_dl_dst = -1; /* Ethernet destination address. */
-static int hf_openflow_set_nw_src = -1; /* IP source address. */
-static int hf_openflow_set_nw_dst = -1; /* IP destination address. */
-static int hf_openflow_set_nw_tos = -1; /* IP ToS (DSCP field, 6 bits). */
-static int hf_openflow_set_tp_src = -1; /* TCP/UDP source port. */
-static int hf_openflow_set_tp_dst = -1; /* TCP/UDP destination port. */
-static int hf_openflow_enqueue = -1; /* Output to queue. */
+static int hf_openflow_output; /* Output to switch port. */
+static int hf_openflow_set_vlan_vid; /* Set the 802.1q VLAN id. */
+static int hf_openflow_set_vlan_pcp; /* Set the 802.1q priority. */
+static int hf_openflow_strip_vlan; /* Strip the 802.1q header. */
+static int hf_openflow_set_dl_src; /* Ethernet source address. */
+static int hf_openflow_set_dl_dst; /* Ethernet destination address. */
+static int hf_openflow_set_nw_src; /* IP source address. */
+static int hf_openflow_set_nw_dst; /* IP destination address. */
+static int hf_openflow_set_nw_tos; /* IP ToS (DSCP field, 6 bits). */
+static int hf_openflow_set_tp_src; /* TCP/UDP source port. */
+static int hf_openflow_set_tp_dst; /* TCP/UDP destination port. */
+static int hf_openflow_enqueue; /* Output to queue. */
 
-static int hf_openflow_port_no = -1;
-static int hf_openflow_hw_addr = -1;
-static int hf_openflow_port_name = -1;
+static int hf_openflow_port_no;
+static int hf_openflow_hw_addr;
+static int hf_openflow_port_name;
 
 
-static int hf_openflow_port_config = -1;
-static int hf_openflow_port_state = -1;
-static int hf_openflow_port_curr = -1;
-static int hf_openflow_port_advertised = -1;
-static int hf_openflow_port_supported = -1;
-static int hf_openflow_port_peer = -1;
+static int hf_openflow_port_config;
+static int hf_openflow_port_state;
+static int hf_openflow_port_curr;
+static int hf_openflow_port_advertised;
+static int hf_openflow_port_supported;
+static int hf_openflow_port_peer;
 
-static int hf_openflow_port_down = -1;    /* Port is administratively down. */
-static int hf_openflow_no_stp = -1;       /* Disable 802.1D spanning tree on port. */
-static int hf_openflow_no_recv = -1;      /* Drop all packets except 802.1D spanning tree packets. */
-static int hf_openflow_no_recv_stp = -1;  /* Drop received 802.1D STP packets. */
-static int hf_openflow_no_flood = -1;     /* Do not include this port when flooding. */
-static int hf_openflow_no_fwd = -1;       /* Drop packets forwarded to port. */
-static int hf_openflow_no_packet_in = -1; /* Do not send packet-in msgs for port. */
+static int hf_openflow_port_down;    /* Port is administratively down. */
+static int hf_openflow_no_stp;       /* Disable 802.1D spanning tree on port. */
+static int hf_openflow_no_recv;      /* Drop all packets except 802.1D spanning tree packets. */
+static int hf_openflow_no_recv_stp;  /* Drop received 802.1D STP packets. */
+static int hf_openflow_no_flood;     /* Do not include this port when flooding. */
+static int hf_openflow_no_fwd;       /* Drop packets forwarded to port. */
+static int hf_openflow_no_packet_in; /* Do not send packet-in msgs for port. */
 
-static int hf_openflow_link_down = -1;    /* No physical link present. */
+static int hf_openflow_link_down;    /* No physical link present. */
 
-static int hf_openflow_10mb_hd = -1;      /* 10 Mb half-duplex rate support. */
-static int hf_openflow_10mb_fd = -1;      /* 10 Mb full-duplex rate support. */
-static int hf_openflow_100mb_hd = -1;     /* 100 Mb half-duplex rate support. */
-static int hf_openflow_100mb_fd = -1;     /* 100 Mb full-duplex rate support. */
-static int hf_openflow_1gb_hd = -1;       /* 1 Gb half-duplex rate support. */
-static int hf_openflow_1gb_fd = -1;       /* 1 Gb full-duplex rate support. */
-static int hf_openflow_10gb_fd = -1;      /* 10 Gb full-duplex rate support. */
-static int hf_openflow_copper = -1;       /* Copper medium. */
-static int hf_openflow_fiber = -1;        /* Fiber medium. */
-static int hf_openflow_autoneg = -1;      /* Auto-negotiation. */
-static int hf_openflow_pause = -1;        /* Pause. */
-static int hf_openflow_pause_asym = -1;   /* Asymmetric pause. */
+static int hf_openflow_10mb_hd;      /* 10 Mb half-duplex rate support. */
+static int hf_openflow_10mb_fd;      /* 10 Mb full-duplex rate support. */
+static int hf_openflow_100mb_hd;     /* 100 Mb half-duplex rate support. */
+static int hf_openflow_100mb_fd;     /* 100 Mb full-duplex rate support. */
+static int hf_openflow_1gb_hd;       /* 1 Gb half-duplex rate support. */
+static int hf_openflow_1gb_fd;       /* 1 Gb full-duplex rate support. */
+static int hf_openflow_10gb_fd;      /* 10 Gb full-duplex rate support. */
+static int hf_openflow_copper;       /* Copper medium. */
+static int hf_openflow_fiber;        /* Fiber medium. */
+static int hf_openflow_autoneg;      /* Auto-negotiation. */
+static int hf_openflow_pause;        /* Pause. */
+static int hf_openflow_pause_asym;   /* Asymmetric pause. */
 
-static int hf_openflow_config_flags = -1;
-static int hf_openflow_miss_send_len = -1;
+static int hf_openflow_config_flags;
+static int hf_openflow_miss_send_len;
 
-static int hf_openflow_buffer_id = -1;
-static int hf_openflow_total_len = -1;
-static int hf_openflow_in_port = -1;
-static int hf_openflow_reason = -1;
-static int hf_openflow_pkt_in_pad = -1;
-static int hf_openflow_table_id = -1;
-static int hf_openflow_cookie = -1;
-/* static int hf_openflow_cookie_mask = -1; */
-static int hf_openflow_features_reply_pad = -1;
-static int hf_openflow_actions_len = -1;
-static int hf_openflow_action_type = -1;
-static int hf_openflow_action_len = -1;
-static int hf_openflow_output_port = -1;
-static int hf_openflow_max_len = -1;
-static int hf_openflow_wildcards = -1;
-static int hf_openflow_command = -1;
-static int hf_openflow_eth_src = -1;
-static int hf_openflow_eth_dst = -1;
-static int hf_openflow_dl_vlan = -1;
-static int hf_openflow_dl_vlan_pcp = -1;
-static int hf_openflow_ofp_match_pad = -1;
-static int hf_openflow_match_dl_type = -1;
-static int hf_openflow_ofp_match_tos = -1;
-static int hf_openflow_ofp_match_nw_proto = -1;
-static int hf_openflow_ofp_source_addr = -1;
-static int hf_openflow_ofp_dest_addr = -1;
-static int hf_openflow_ofp_source_port = -1;
-static int hf_openflow_ofp_dest_port = -1;
-static int hf_openflow_idle_timeout = -1;
-static int hf_openflow_hard_timeout = -1;
-static int hf_openflow_priority = -1;
-static int hf_openflow_out_port = -1;
-/* static int hf_openflow_out_group = -1; */
-static int hf_openflow_flags = -1;
-static int hf_openflow_v1_stats_type = -1;
-static int hf_openflow_v1_flow_stats_request_pad = -1;
+static int hf_openflow_buffer_id;
+static int hf_openflow_total_len;
+static int hf_openflow_in_port;
+static int hf_openflow_reason;
+static int hf_openflow_pkt_in_pad;
+static int hf_openflow_flow_removed_cookie;
+static int hf_openflow_flow_removed_priority;
+static int hf_openflow_flow_removed_reason;
+static int hf_openflow_flow_removed_pad1;
+static int hf_openflow_flow_removed_duration_sec;
+static int hf_openflow_flow_removed_duration_nsec;
+static int hf_openflow_flow_removed_idle_timeout;
+static int hf_openflow_flow_removed_pad2;
+static int hf_openflow_flow_removed_packet_count;
+static int hf_openflow_flow_removed_byte_count;
+static int hf_openflow_table_id;
+static int hf_openflow_cookie;
+/* static int hf_openflow_cookie_mask; */
+static int hf_openflow_features_reply_pad;
+static int hf_openflow_actions_len;
+static int hf_openflow_action_type;
+static int hf_openflow_action_len;
+static int hf_openflow_output_port;
+static int hf_openflow_max_len;
+static int hf_openflow_wildcards;
+static int hf_openflow_command;
+static int hf_openflow_eth_src;
+static int hf_openflow_eth_dst;
+static int hf_openflow_dl_vlan;
+static int hf_openflow_dl_vlan_pcp;
+static int hf_openflow_ofp_match_pad;
+static int hf_openflow_match_dl_type;
+static int hf_openflow_ofp_match_tos;
+static int hf_openflow_ofp_match_nw_proto;
+static int hf_openflow_ofp_source_addr;
+static int hf_openflow_ofp_dest_addr;
+static int hf_openflow_ofp_source_port;
+static int hf_openflow_ofp_dest_port;
+static int hf_openflow_idle_timeout;
+static int hf_openflow_hard_timeout;
+static int hf_openflow_priority;
+static int hf_openflow_out_port;
+/* static int hf_openflow_out_group; */
+static int hf_openflow_flags;
+static int hf_openflow_v1_stats_type;
+static int hf_openflow_v1_flow_stats_request_pad;
 
 /* Initialize the subtree pointers */
-static gint ett_openflow = -1;
-static gint ett_openflow_path_id = -1;
-static gint ett_openflow_cap = -1;
-static gint ett_openflow_act = -1;
-static gint ett_openflow_port = -1;
-static gint ett_openflow_port_cnf = -1;
-static gint ett_openflow_port_state = -1;
-static gint ett_openflow_port_cf = -1;
+static int ett_openflow;
+static int ett_openflow_path_id;
+static int ett_openflow_cap;
+static int ett_openflow_act;
+static int ett_openflow_port;
+static int ett_openflow_port_cnf;
+static int ett_openflow_port_state;
+static int ett_openflow_port_cf;
 
-/* static expert_field ei_openflow_undecoded_data = EI_INIT; */
-static expert_field ei_openflow_action_type = EI_INIT;
-static expert_field ei_openflow_1_0_type = EI_INIT;
+/* static expert_field ei_openflow_undecoded_data; */
+static expert_field ei_openflow_action_type;
+static expert_field ei_openflow_1_0_type;
 
 static const value_string openflow_version_values[] = {
     { 0x01, "1.0" },
@@ -337,10 +335,10 @@ dissect_openflow_ofp_match_v1(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree 
     proto_tree_add_item(tree, hf_openflow_ofp_match_pad, tvb, offset, 2, ENC_NA);
     offset += 2;
     /* uint32_t nw_src; IP source address. */
-    proto_tree_add_item(tree, hf_openflow_ofp_source_addr, tvb, offset, 4, ENC_NA);
+    proto_tree_add_item(tree, hf_openflow_ofp_source_addr, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
     /* uint32_t nw_dst; IP destination address. */
-    proto_tree_add_item(tree, hf_openflow_ofp_dest_addr, tvb, offset, 4, ENC_NA);
+    proto_tree_add_item(tree, hf_openflow_ofp_dest_addr, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
     /* uint16_t tp_src; TCP/UDP source port. */
     proto_tree_add_item(tree, hf_openflow_ofp_source_port, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -390,9 +388,9 @@ static const value_string openflow_action_values[] = {
 };
 
 static int
-dissect_openflow_action_header(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_openflow_action_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
-    guint16 action_type, action_len;
+    uint16_t action_type, action_len;
     proto_item* ti;
 
     /* uint16_t type;  One of OFPAT_*. */
@@ -435,7 +433,7 @@ dissect_openflow_phy_port(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tre
     offset+=2;
     proto_tree_add_item(tree, hf_openflow_hw_addr, tvb, offset, 6, ENC_NA);
     offset+=6;
-    proto_tree_add_item(tree, hf_openflow_port_name, tvb, offset, OFP_MAX_PORT_NAME_LEN, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_openflow_port_name, tvb, offset, OFP_MAX_PORT_NAME_LEN, ENC_ASCII);
     offset+=OFP_MAX_PORT_NAME_LEN;
 
     /* Bitmap of OFPPC_* flags. */
@@ -532,19 +530,19 @@ struct ofp_switch_features {
 #endif
 
 static void
-dissect_openflow_features_reply_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, guint16 length)
+dissect_openflow_features_reply_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t length)
 {
     proto_item *ti;
     proto_tree *path_id_tree, *cap_tree, *act_tree;
 
-    guint16 length_remaining;
+    uint16_t length_remaining;
 
     ti = proto_tree_add_item(tree, hf_openflow_datapath_id, tvb, offset, 8, ENC_BIG_ENDIAN);
     path_id_tree = proto_item_add_subtree(ti, ett_openflow_path_id);
-    proto_tree_add_item(path_id_tree, hf_openflow_datapath_mac, tvb, offset, 6, ENC_NA);
-    offset+=6;
     proto_tree_add_item(path_id_tree, hf_openflow_datapath_impl, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset+=2;
+    proto_tree_add_item(path_id_tree, hf_openflow_datapath_mac, tvb, offset, 6, ENC_NA);
+    offset+=6;
 
     proto_tree_add_item(tree, hf_openflow_n_buffers, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset+=4;
@@ -587,7 +585,7 @@ dissect_openflow_features_reply_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 
     length_remaining = length-32;
     if(length_remaining > 0){
-        guint16 num_ports = length_remaining/48;
+        uint16_t num_ports = length_remaining/48;
         int i;
         if((length_remaining&0x003f) != 0){
             /* protocol_error */
@@ -605,7 +603,7 @@ dissect_openflow_features_reply_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 
 
 static void
-dissect_openflow_switch_config(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, guint16 length _U_)
+dissect_openflow_switch_config(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, uint16_t length _U_)
 {
 
     /* ofp_config_flags */
@@ -629,7 +627,7 @@ static const value_string openflow_reason_values[] = {
 };
 
 static void
-dissect_openflow_pkt_in(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, guint16 length)
+dissect_openflow_pkt_in(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t length)
 {
     tvbuff_t *next_tvb;
 
@@ -656,11 +654,68 @@ dissect_openflow_pkt_in(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 }
 
+#define OFPRR_IDLE_TIMEOUT  0
+#define OFPRR_HARD_TIMEOUT  1
+#define OFPRR_DELETE        2
+static const value_string openflow_flow_removed_reason_values[] = {
+    { OFPRR_IDLE_TIMEOUT, "OFPRR_IDLE_TIMEOUT" },
+    { OFPRR_HARD_TIMEOUT, "OFPRR_HARD_TIMEOUT" },
+    { OFPRR_DELETE,       "OFPRR_DELETE" },
+    { 0,                  NULL }
+};
+
 static void
-dissect_openflow_pkt_out(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, guint16 length _U_)
+dissect_openflow_flow_removed(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t length _U_)
+{
+    /* struct match; */
+    offset = dissect_openflow_ofp_match_v1(tvb, pinfo, tree, offset);
+
+    /* uint64_t cookie; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_cookie, tvb, offset, 8, ENC_BIG_ENDIAN);
+    offset+=8;
+
+    /* uint16_t priority; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_priority, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset+=2;
+
+    /* uint8_t reason; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_reason, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset+=1;
+
+    /* uint8_t pad1; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_pad1, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset+=1;
+
+    /* uint32_t duration_sec; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_duration_sec, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset+=4;
+
+    /* uint32_t duration_nsec; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_duration_nsec, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset+=4;
+
+    /* uint16_t idle_timeout; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_idle_timeout, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset+=2;
+
+    /* uint8_t pad2; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_pad2, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset+=2;
+
+    /* uint64_t packet_count; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_packet_count, tvb, offset, 8, ENC_BIG_ENDIAN);
+    offset+=8;
+
+    /* uint64_t byte_count; */
+    proto_tree_add_item(tree, hf_openflow_flow_removed_byte_count, tvb, offset, 8, ENC_BIG_ENDIAN);
+
+}
+
+static void
+dissect_openflow_pkt_out(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t length)
 {
     tvbuff_t *next_tvb;
-    gint32 buffer_id;
+    int32_t buffer_id;
 
     /* uint32_t buffer_id;  ID assigned by datapath. */
     buffer_id = tvb_get_ntohl(tvb, offset);
@@ -703,7 +758,7 @@ static const value_string openflow_command_values[] = {
 };
 
 static void
-dissect_openflow_flow_mod(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, guint16 length _U_)
+dissect_openflow_flow_mod(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t length _U_)
 {
 
     /* struct ofp_match match;  Fields to match */
@@ -740,7 +795,9 @@ dissect_openflow_flow_mod(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
 
     /* uint16_t flags; One of OFPFF_*. */
     proto_tree_add_item(tree, hf_openflow_flags, tvb, offset, 2, ENC_BIG_ENDIAN);
-    /*offset+=2;*/
+    offset+=2;
+
+    dissect_openflow_action_header(tvb, pinfo, tree, offset);
 }
 
 
@@ -763,10 +820,10 @@ static const value_string openflow_stats_type_values[] = {
     { 0, NULL }
 };
 static int
-dissect_openflow_stats_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, guint16 length _U_)
+dissect_openflow_stats_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t length _U_)
 {
     proto_item *type_item;
-    guint32 type;
+    uint32_t type;
 
     /* uint16_t type; */
     type_item = proto_tree_add_item_ret_uint(tree, hf_openflow_v1_stats_type, tvb, offset, 2, ENC_BIG_ENDIAN, &type);
@@ -791,11 +848,11 @@ dissect_openflow_stats_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 }
 
 static int
-dissect_openflow_stats_resp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, guint16 length)
+dissect_openflow_stats_resp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t length)
 {
 
     proto_item *type_item;
-    guint32 type;
+    uint32_t type;
 
     /* uint16_t type; */
     type_item = proto_tree_add_item_ret_uint(tree, hf_openflow_v1_stats_type, tvb, offset, 2, ENC_BIG_ENDIAN, &type);
@@ -827,18 +884,18 @@ dissect_openflow_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 {
     proto_item *ti, *type_item;
     proto_tree *openflow_tree;
-    guint offset = 0;
-    guint8 type;
-    guint16 length;
+    unsigned offset = 0;
+    uint8_t type;
+    uint16_t length;
 
-    type    = tvb_get_guint8(tvb, 1);
+    type    = tvb_get_uint8(tvb, 1);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, "Type: %s",
                   val_to_str_ext_const(type, &openflow_1_0_type_values_ext, "Unknown message type"));
 
     /* Stop the Ethernet frame from overwriting the columns */
     if((type == OFPT_1_0_PACKET_IN) || (type == OFPT_1_0_PACKET_OUT)){
-        col_set_writable(pinfo->cinfo, -1, FALSE);
+        col_set_writable(pinfo->cinfo, -1, false);
     }
 
     /* Create display subtree for the protocol */
@@ -890,6 +947,9 @@ dissect_openflow_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         break;
     case OFPT_1_0_PACKET_IN: /* 10 */
         dissect_openflow_pkt_in(tvb, pinfo, openflow_tree, offset, length);
+        break;
+    case OFPT_1_0_FLOW_REMOVED: /* 11 */
+        dissect_openflow_flow_removed(tvb, pinfo, openflow_tree, offset, length);
         break;
     case OFPT_1_0_PACKET_OUT: /* 13 */
         dissect_openflow_pkt_out(tvb, pinfo, openflow_tree, offset, length);
@@ -1267,6 +1327,56 @@ proto_register_openflow_v1(void)
                FT_BYTES, BASE_NONE, NULL, 0x0,
                NULL, HFILL }
         },
+        { &hf_openflow_flow_removed_cookie,
+            { "Cookie", "openflow.flow_removed.cookie",
+               FT_UINT64, BASE_HEX, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_priority,
+            { "Priority", "openflow.flow_removed.priority",
+               FT_UINT16, BASE_DEC, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_reason,
+            { "Reason", "openflow.flow_removed.reason",
+               FT_UINT8, BASE_DEC, VALS(openflow_flow_removed_reason_values), 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_pad1,
+            { "Pad1", "openflow.flow_removed.pad1",
+               FT_UINT8, BASE_HEX, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_duration_sec,
+            { "Duration sec", "openflow.flow_removed.duration_sec",
+               FT_UINT32, BASE_DEC, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_duration_nsec,
+            { "Duration nsec", "openflow.flow_removed.duration_nsec",
+               FT_UINT32, BASE_DEC, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_idle_timeout,
+            { "Idle timeout", "openflow.flow_removed.idle_timeout",
+               FT_UINT16, BASE_DEC, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_pad2,
+            { "Pad2", "openflow.flow_removed.pad2",
+               FT_UINT16, BASE_HEX, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_packet_count,
+            { "Packet count", "openflow.flow_removed.packet_count",
+               FT_UINT64, BASE_DEC, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_openflow_flow_removed_byte_count,
+            { "Byte count", "openflow.flow_removed.byte_count",
+               FT_UINT64, BASE_DEC, NULL, 0x0,
+               NULL, HFILL }
+        },
         { &hf_openflow_table_id,
             { "Table Id", "openflow.table_id",
                FT_UINT8, BASE_DEC, NULL, 0x0,
@@ -1428,7 +1538,7 @@ proto_register_openflow_v1(void)
         },
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_openflow,
         &ett_openflow_path_id,
         &ett_openflow_cap,
@@ -1450,8 +1560,7 @@ proto_register_openflow_v1(void)
     expert_module_t* expert_openflow_v1;
 
     /* Register the protocol name and description */
-    proto_openflow_v1 = proto_register_protocol("OpenFlow 1.0",
-            "openflow_v1", "openflow_v1");
+    proto_openflow_v1 = proto_register_protocol("OpenFlow 1.0", "openflow_v1", "openflow_v1");
 
     register_dissector("openflow_v1", dissect_openflow_v1, proto_openflow_v1);
 
@@ -1469,7 +1578,7 @@ proto_reg_handoff_openflow_v1(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

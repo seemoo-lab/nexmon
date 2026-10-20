@@ -1,0 +1,4604 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlwriter_8h" kind="file" language="C++">
+    <compoundname>xmlwriter.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes local="no">stdarg.h</includes>
+    <includes refid="xmlIO_8h" local="no">libxml/xmlIO.h</includes>
+    <includes refid="list_8h" local="no">libxml/list.h</includes>
+    <includes refid="xmlstring_8h" local="no">libxml/xmlstring.h</includes>
+    <includedby refid="xmlwriter_8c" local="no">/builds/GNOME/libxml2/xmlwriter.c</includedby>
+    <incdepgraph>
+      <node id="7">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>xmlwriter.h</label>
+        <link refid="xmlwriter_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="10">
+        <label>limits.h</label>
+      </node>
+      <node id="4">
+        <label>stdarg.h</label>
+      </node>
+      <node id="6">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="xmlwriter_8h_1a6e0a6e04241001660aba388213e5e9d0" prot="public" static="no">
+        <name>xmlTextWriterWriteProcessingInstruction</name>
+        <initializer><ref refid="xmlwriter_8h_1ae7631c9517f288604ec993c9299b090b" kindref="member">xmlTextWriterWritePI</ref></initializer>
+        <briefdescription>
+<para>This macro maps to <ref refid="xmlwriter_8h_1ae7631c9517f288604ec993c9299b090b" kindref="member">xmlTextWriterWritePI</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="277" column="9" bodyfile="xmlwriter.h" bodystart="277" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlwriter_8h_1a9132ba34309a628315fb8e896f2c7988" prot="public" static="no">
+        <name>xmlTextWriterWriteDocType</name>
+        <initializer><ref refid="xmlwriter_8h_1afc847176feea8f7406f55cad6ddf25c1" kindref="member">xmlTextWriterWriteDTD</ref></initializer>
+        <briefdescription>
+<para>this macro maps to <ref refid="xmlwriter_8h_1afc847176feea8f7406f55cad6ddf25c1" kindref="member">xmlTextWriterWriteDTD</ref> </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="337" column="9" bodyfile="xmlwriter.h" bodystart="337" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" prot="public" static="no">
+        <type>struct _xmlTextWriter</type>
+        <definition>typedef struct _xmlTextWriter xmlTextWriter</definition>
+        <argsstring></argsstring>
+        <name>xmlTextWriter</name>
+        <briefdescription>
+<para>Writer object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="30" column="33" bodyfile="xmlwriter.h" bodystart="30" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlwriter_8h_1a56d8d8f2c776e60026aca635fa285cf1" prot="public" static="no">
+        <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+        <definition>typedef xmlTextWriter* xmlTextWriterPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlTextWriterPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="31" column="27" bodyfile="xmlwriter.h" bodystart="31" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xmlwriter_8h_1a31c319094a439f6257a5c7c88d14621f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+        <definition>xmlTextWriter * xmlNewTextWriter</definition>
+        <argsstring>(xmlOutputBuffer *out)</argsstring>
+        <name>xmlNewTextWriter</name>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Create a new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> structure using an <ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> NOTE: the <computeroutput>out</computeroutput> parameter will be deallocated when the writer is closed (if the call succeed.). </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="37" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="166" bodyend="215" declfile="xmlwriter.h" declline="37" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a1d9ffbc55fc3f9f5c435cdd1015971db" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+        <definition>xmlTextWriter * xmlNewTextWriterFilename</definition>
+        <argsstring>(const char *uri, int compression)</argsstring>
+        <name>xmlNewTextWriterFilename</name>
+        <param>
+          <type>const char *</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>compression</declname>
+        </param>
+        <briefdescription>
+<para>Create a new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> structure with <computeroutput>uri</computeroutput> as output. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI of the resource for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>compression</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>compress the output? </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="39" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="225" bodyend="248" declfile="xmlwriter.h" declline="39" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a4409825f45de11942fd728667fee3871" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+        <definition>xmlTextWriter * xmlNewTextWriterMemory</definition>
+        <argsstring>(xmlBuffer *buf, int compression)</argsstring>
+        <name>xmlNewTextWriterMemory</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>compression</declname>
+        </param>
+        <briefdescription>
+<para>Create a new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> structure with <computeroutput>buf</computeroutput> as output TODO: handle compression. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>compression</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>compress the output? </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="41" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="259" bodyend="282" declfile="xmlwriter.h" declline="41" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a7f7c5dc724172af5f80ff5902917ce67" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+        <definition>xmlTextWriter * xmlNewTextWriterPushParser</definition>
+        <argsstring>(xmlParserCtxt *ctxt, int compression)</argsstring>
+        <name>xmlNewTextWriterPushParser</name>
+        <param>
+          <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>compression</declname>
+        </param>
+        <briefdescription>
+<para>Create a new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> structure with <computeroutput>ctxt</computeroutput> as output NOTE: the <computeroutput>ctxt</computeroutput> context will be freed with the resulting writer (if the call succeeds). </para>
+        </briefdescription>
+        <detaileddescription>
+<para>TODO: handle compression</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> to hold the new XML document tree </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>compression</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>compress the output? </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="43" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="295" bodyend="327" declfile="xmlwriter.h" declline="43" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1acca623c50e415dcd2d2bbc6d3439a122" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+        <definition>xmlTextWriter * xmlNewTextWriterDoc</definition>
+        <argsstring>(xmlDoc **doc, int compression)</argsstring>
+        <name>xmlNewTextWriterDoc</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> **</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>compression</declname>
+        </param>
+        <briefdescription>
+<para>Create a new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> structure with <computeroutput>doc</computeroutput> as output. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>address of a <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> to hold the new XML document tree </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>compression</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>compress the output? </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="45" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="337" bodyend="384" declfile="xmlwriter.h" declline="45" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1abf853d46c5c487a052c9fff61b4f53f0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+        <definition>xmlTextWriter * xmlNewTextWriterTree</definition>
+        <argsstring>(xmlDoc *doc, xmlNode *node, int compression)</argsstring>
+        <name>xmlNewTextWriterTree</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>compression</declname>
+        </param>
+        <briefdescription>
+<para>Create a new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> structure with <computeroutput>doc</computeroutput> as output starting at <computeroutput>node</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> or NULL for doc-&gt;children </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>compression</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>compress the output? </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="47" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="396" bodyend="439" declfile="xmlwriter.h" declline="47" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a41efe8290ad026d1358148ccb1c30dce" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeTextWriter</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlFreeTextWriter</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>Deallocate all the resources associated to the writer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="49" column="11" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="447" bodyend="475" declfile="xmlwriter.h" declline="49" declcolumn="11"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ac233846dd2f3ec723c89c62b67a0c4f3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartDocument</definition>
+        <argsstring>(xmlTextWriter *writer, const char *version, const char *encoding, const char *standalone)</argsstring>
+        <name>xmlTextWriterStartDocument</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>version</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>standalone</declname>
+        </param>
+        <briefdescription>
+<para>Start a new xml document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>version</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the xml version (&quot;1.0&quot;) or NULL for default (&quot;1.0&quot;) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding or NULL for default </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>standalone</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>&quot;yes&quot; or &quot;no&quot; or NULL for default </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="60" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="487" bodyend="595" declfile="xmlwriter.h" declline="60" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ab51f6e31405e7ece04fca044377d637a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndDocument</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndDocument</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End an xml document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>All open elements are closed, and the content is flushed to the output.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="64" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="605" bodyend="684" declfile="xmlwriter.h" declline="64" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a34a03ebb1a81498ec534f384bfaf184c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartComment</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterStartComment</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml comment. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="70" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="693" bodyend="766" declfile="xmlwriter.h" declline="70" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a5dd3014475b13e581a94512051fecf8a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndComment</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndComment</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End the current xml comment. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="72" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="775" bodyend="820" declfile="xmlwriter.h" declline="72" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ad6f15da152134dd14dc4157759c01e72" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatComment</definition>
+        <argsstring>(xmlTextWriter *writer, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatComment</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write an xml comment. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="74" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="831" bodyend="843" declfile="xmlwriter.h" declline="74" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a3d7b10800e380bfb29e83a726dd4fd7d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatComment</definition>
+        <argsstring>(xmlTextWriter *writer, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatComment</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml comment. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="78" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="854" bodyend="874" declfile="xmlwriter.h" declline="78" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1adc6cb4fdf4b4477a90f5340bb1deb3f6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteComment</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteComment</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml comment. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>comment string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="82" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="884" bodyend="904" declfile="xmlwriter.h" declline="82" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a0e07bad2f711d620cdf5aa8c70617581" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartElement</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name)</argsstring>
+        <name>xmlTextWriterStartElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="91" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="914" bodyend="997" declfile="xmlwriter.h" declline="91" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a4776c02db5d8603e6da7c2d58225cb60" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartElementNS</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *prefix, const xmlChar *name, const xmlChar *namespaceURI)</argsstring>
+        <name>xmlTextWriterStartElementNS</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceURI</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml element with namespace support. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace prefix or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaceURI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="93" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1009" bodyend="1064" declfile="xmlwriter.h" declline="93" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a2be62a600d339a4bcc37bf8e2481adea" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndElement</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End the current xml element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="100" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1073" bodyend="1154" declfile="xmlwriter.h" declline="100" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1aa6d2aa212ab53f4f3e67526560fad80d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterFullEndElement</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterFullEndElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End the current xml element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Writes an end tag even if the element is empty</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="101" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1163" bodyend="1235" declfile="xmlwriter.h" declline="101" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a53be50e4e062f731a726f572e9a54914" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatElement</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="108" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2093" bodyend="2106" declfile="xmlwriter.h" declline="108" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1aced20d66a45bebb9350286328a6aae52" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatElement</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="113" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2118" bodyend="2136" declfile="xmlwriter.h" declline="113" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1aa2397401f2799f45c1674341d1bf3a7f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteElement</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="118" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2147" bodyend="2170" declfile="xmlwriter.h" declline="118" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a025f1c879e5f13d732a3cc667403ed83" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatElementNS</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *prefix, const xmlChar *name, const xmlChar *namespaceURI, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatElementNS</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceURI</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml element with namespace support. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaceURI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="124" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2184" bodyend="2200" declfile="xmlwriter.h" declline="124" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a04aba254b8f7ab015441c15e6cea52a4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatElementNS</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *prefix, const xmlChar *name, const xmlChar *namespaceURI, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatElementNS</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceURI</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml element with namespace support. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaceURI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="131" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2214" bodyend="2235" declfile="xmlwriter.h" declline="131" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a1a7d7611678a5392f53537e5a2491a0b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteElementNS</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *prefix, const xmlChar *name, const xmlChar *namespaceURI, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteElementNS</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceURI</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml element with namespace support. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaceURI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="138" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2248" bodyend="2275" declfile="xmlwriter.h" declline="138" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ac5d4db28d1fbe61a44ac477003fb991c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatRaw</definition>
+        <argsstring>(xmlTextWriter *writer, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatRaw</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted raw xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="152" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1246" bodyend="1258" declfile="xmlwriter.h" declline="152" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a420f2af461e4569d6e4bd9c84d831160" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatRaw</definition>
+        <argsstring>(xmlTextWriter *writer, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatRaw</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted raw xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="156" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1269" bodyend="1286" declfile="xmlwriter.h" declline="156" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a3d4b864b911c4ab4002da113d45b9357" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteRawLen</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *content, int len)</argsstring>
+        <name>xmlTextWriterWriteRawLen</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>TODO: what about entities and special chars??</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>text string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>length of the text string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="160" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1298" bodyend="1340" declfile="xmlwriter.h" declline="160" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1af3efb37bb19a984218dcf64741dfd136" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteRaw</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteRaw</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write a raw xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>text string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="163" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1350" bodyend="1353" declfile="xmlwriter.h" declline="163" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ad2096c62f089519124519eabb7d4758e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatString</definition>
+        <argsstring>(xmlTextWriter *writer, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatString</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="165" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1364" bodyend="1379" declfile="xmlwriter.h" declline="165" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a001550355298f391b331f7534a5687dc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatString</definition>
+        <argsstring>(xmlTextWriter *writer, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatString</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="170" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1390" bodyend="1407" declfile="xmlwriter.h" declline="170" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ac5115ba2453dba41e116d35c33a54e77" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteString</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteString</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>text string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="176" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1417" bodyend="1465" declfile="xmlwriter.h" declline="176" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a6788b7f01af0a2fdc1ef14c80b5219df" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteBase64</definition>
+        <argsstring>(xmlTextWriter *writer, const char *data, int start, int len)</argsstring>
+        <name>xmlTextWriterWriteBase64</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>start</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Write an base64 encoded xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>binary data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>start</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the position within the data of the first byte to encode </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of bytes to encode </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error</para>
+</simplesect>
+NOTE: No safety check is done on the length of data. This check is something that should happen outside of this call, the caller should know better the actual data and if it&apos;s reaching the end of the buffer or not. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="179" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1562" bodyend="1596" declfile="xmlwriter.h" declline="179" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ae5b90473ba2b48e948227f81843bc7de" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteBinHex</definition>
+        <argsstring>(xmlTextWriter *writer, const char *data, int start, int len)</argsstring>
+        <name>xmlTextWriterWriteBinHex</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>start</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Write a BinHex encoded xml text. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>binary data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>start</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the position within the data of the first byte to encode </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of bytes to encode </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="182" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1650" bodyend="1684" declfile="xmlwriter.h" declline="182" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ab5a5dd2081b47aac2f682fbc81d52138" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartAttribute</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name)</argsstring>
+        <name>xmlTextWriterStartAttribute</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="190" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1694" bodyend="1746" declfile="xmlwriter.h" declline="190" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a2e8ec3564997922c5f94d176ad146718" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartAttributeNS</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *prefix, const xmlChar *name, const xmlChar *namespaceURI)</argsstring>
+        <name>xmlTextWriterStartAttributeNS</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceURI</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml attribute with namespace support. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace prefix or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>element local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaceURI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="192" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1758" bodyend="1845" declfile="xmlwriter.h" declline="192" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a2c6e43ef3f5cbc128baddebe3b5037e9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndAttribute</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndAttribute</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End the current xml element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="200" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1854" bodyend="1890" declfile="xmlwriter.h" declline="200" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a8669cd7417aa2cda405b5a2eb45bb625" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatAttribute</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatAttribute</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>attribute name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="207" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1902" bodyend="1915" declfile="xmlwriter.h" declline="207" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a2362a3684de863473c235e8581d0a9a6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatAttribute</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatAttribute</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>attribute name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="212" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1927" bodyend="1945" declfile="xmlwriter.h" declline="212" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1aa35a7a1b91706c15ec536b2c6da7ca73" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteAttribute</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteAttribute</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>attribute name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>attribute content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="217" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1956" bodyend="1977" declfile="xmlwriter.h" declline="217" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a7dda84446dc5cb4e185dea1261e24242" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatAttributeNS</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *prefix, const xmlChar *name, const xmlChar *namespaceURI, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatAttributeNS</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceURI</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml attribute.with namespace support. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>attribute local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaceURI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="223" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="1991" bodyend="2007" declfile="xmlwriter.h" declline="223" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a45c040bee8138075d25f593cd62e93eb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatAttributeNS</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *prefix, const xmlChar *name, const xmlChar *namespaceURI, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatAttributeNS</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceURI</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml attribute.with namespace support. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>attribute local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaceURI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="230" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2021" bodyend="2042" declfile="xmlwriter.h" declline="230" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a5f6a26fb9eb8151dcc2ca4c3e48af4e1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteAttributeNS</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *prefix, const xmlChar *name, const xmlChar *namespaceURI, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteAttributeNS</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceURI</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>attribute local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaceURI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>attribute content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="237" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2055" bodyend="2081" declfile="xmlwriter.h" declline="237" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a04fa65d4f102bca74d837ecf19fc9bb2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartPI</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *target)</argsstring>
+        <name>xmlTextWriterStartPI</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>target</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml PI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>target</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>PI target </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="252" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2285" bodyend="2370" declfile="xmlwriter.h" declline="252" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a224e0ebc56315cf0988d231fa4cf3356" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndPI</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndPI</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End the current xml PI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="254" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2379" bodyend="2419" declfile="xmlwriter.h" declline="254" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1aea32698f1b8c68a0f12855dff8b3c812" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatPI</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *target, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatPI</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>target</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted PI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>target</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>PI target </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="260" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2431" bodyend="2443" declfile="xmlwriter.h" declline="260" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1acb3b1cb15289066bff6a12af9e73a088" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatPI</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *target, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatPI</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>target</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml PI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>target</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>PI target </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="265" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2455" bodyend="2473" declfile="xmlwriter.h" declline="265" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ae7631c9517f288604ec993c9299b090b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWritePI</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *target, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWritePI</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>target</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml PI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>target</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>PI target </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>PI content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="270" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2484" bodyend="2507" declfile="xmlwriter.h" declline="270" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a9bfc7cf36c6f6c57403333e6be1ab55b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartCDATA</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterStartCDATA</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml CDATA section. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="282" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2516" bodyend="2584" declfile="xmlwriter.h" declline="282" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a04b9744078a775a0b90cd32cc1db4037" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndCDATA</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndCDATA</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End an xml CDATA section. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="283" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2593" bodyend="2625" declfile="xmlwriter.h" declline="283" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a6a2307b52b65cfd3b5e0dccb8013dac0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatCDATA</definition>
+        <argsstring>(xmlTextWriter *writer, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatCDATA</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml CDATA. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="289" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2636" bodyend="2648" declfile="xmlwriter.h" declline="289" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a37198e580cc3da8dfdbb645e0d813ecb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatCDATA</definition>
+        <argsstring>(xmlTextWriter *writer, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatCDATA</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted xml CDATA. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="293" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2659" bodyend="2676" declfile="xmlwriter.h" declline="293" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1affeade03ab3c858cdc475acb4ec9a71f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteCDATA</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteCDATA</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write an xml CDATA. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CDATA content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="297" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2686" bodyend="2708" declfile="xmlwriter.h" declline="297" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1aced95365233bd1351979805a6ca907d5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartDTD</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *pubid, const xmlChar *sysid)</argsstring>
+        <name>xmlTextWriterStartDTD</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysid</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml DTD. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public identifier, which is an alternative to the system identifier </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier, which is the URI of the DTD </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="304" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2720" bodyend="2846" declfile="xmlwriter.h" declline="304" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a468c5f6171a8187ee79ba7c1332856d2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndDTD</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndDTD</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End an xml DTD. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="308" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2855" bodyend="2921" declfile="xmlwriter.h" declline="308" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a8d53baa96b82801e094fbb81c2e87bf9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatDTD</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *pubid, const xmlChar *sysid, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatDTD</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysid</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a DTD with a formatted markup declarations part. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public identifier, which is an alternative to the system identifier </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier, which is the URI of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="314" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2935" bodyend="2950" declfile="xmlwriter.h" declline="314" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ae5a52cb3f607d5eb61a2d46eda00571e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatDTD</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *pubid, const xmlChar *sysid, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatDTD</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysid</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a DTD with a formatted markup declarations part. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public identifier, which is an alternative to the system identifier </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier, which is the URI of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="321" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2964" bodyend="2984" declfile="xmlwriter.h" declline="321" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1afc847176feea8f7406f55cad6ddf25c1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteDTD</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *pubid, const xmlChar *sysid, const xmlChar *subset)</argsstring>
+        <name>xmlTextWriterWriteDTD</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>subset</declname>
+        </param>
+        <briefdescription>
+<para>Write a DTD. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public identifier, which is an alternative to the system identifier </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier, which is the URI of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>subset</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string content of the DTD </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="328" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="2997" bodyend="3022" declfile="xmlwriter.h" declline="328" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1afcf7c4573f66e2a81915985641dd9baf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartDTDElement</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name)</argsstring>
+        <name>xmlTextWriterStartDTDElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml DTD element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD element </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="343" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3032" bodyend="3108" declfile="xmlwriter.h" declline="343" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ad058762134a90f9588b4d00882a17e25" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndDTDElement</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndDTDElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End an xml DTD element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="345" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3117" bodyend="3157" declfile="xmlwriter.h" declline="345" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ac86f07771acbf763eda0c7ad24e93b32" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatDTDElement</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatDTDElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted DTD element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="352" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3169" bodyend="3182" declfile="xmlwriter.h" declline="352" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a97fcfd3e19c0534fecb7d205d6dbcb44" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatDTDElement</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatDTDElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted DTD element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="357" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3194" bodyend="3212" declfile="xmlwriter.h" declline="357" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a999232d60d3fb20a6cde5ac2d8d1c681" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteDTDElement</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteDTDElement</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write a DTD element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>content of the element </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="362" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3223" bodyend="3249" declfile="xmlwriter.h" declline="362" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a51c5403599153f87d833597800a707c2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartDTDAttlist</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name)</argsstring>
+        <name>xmlTextWriterStartDTDAttlist</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml DTD ATTLIST. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD ATTLIST </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="373" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3259" bodyend="3335" declfile="xmlwriter.h" declline="373" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a956ec5bceaa28cd6159a44f763aa058a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndDTDAttlist</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndDTDAttlist</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End an xml DTD attribute list. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="375" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3344" bodyend="3384" declfile="xmlwriter.h" declline="375" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1afe04da2e4ac6491912b63f8a2d7f8397" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatDTDAttlist</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatDTDAttlist</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted DTD ATTLIST. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD ATTLIST </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="382" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3396" bodyend="3409" declfile="xmlwriter.h" declline="382" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1adb685e991f0786512b163b27bad99ccd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatDTDAttlist</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatDTDAttlist</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted DTD ATTLIST. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD ATTLIST </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="387" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3421" bodyend="3439" declfile="xmlwriter.h" declline="387" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a767e7a83d2a59733d51ae633fd392cac" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteDTDAttlist</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteDTDAttlist</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write a DTD ATTLIST. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD ATTLIST </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>content of the ATTLIST </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="392" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3450" bodyend="3476" declfile="xmlwriter.h" declline="392" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a2319e8031407a58d53172e2cdcfe1abc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterStartDTDEntity</definition>
+        <argsstring>(xmlTextWriter *writer, int pe, const xmlChar *name)</argsstring>
+        <name>xmlTextWriterStartDTDEntity</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>pe</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Start an xml DTD ATTLIST. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pe</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>TRUE if this is a parameter entity, FALSE if not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD ATTLIST </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="403" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3487" bodyend="3576" declfile="xmlwriter.h" declline="403" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1aaf6f9ca0dd4b1a2a5fc00e3cc4f7fcc5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterEndDTDEntity</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterEndDTDEntity</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>End an xml DTD entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="405" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3585" bodyend="3631" declfile="xmlwriter.h" declline="405" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a49e6504348420e83dc8ed43611590f0c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteFormatDTDInternalEntity</definition>
+        <argsstring>(xmlTextWriter *writer, int pe, const xmlChar *name, const char *format,...)</argsstring>
+        <name>xmlTextWriterWriteFormatDTDInternalEntity</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>pe</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Write a formatted DTD internal entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pe</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>TRUE if this is a parameter entity, FALSE if not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="412" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3644" bodyend="3659" declfile="xmlwriter.h" declline="412" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1afe2c10d3d99b848f26674d873ff1b989" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteVFormatDTDInternalEntity</definition>
+        <argsstring>(xmlTextWriter *writer, int pe, const xmlChar *name, const char *format, va_list argptr)</argsstring>
+        <name>xmlTextWriterWriteVFormatDTDInternalEntity</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>pe</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>format</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>argptr</declname>
+        </param>
+        <briefdescription>
+<para>Write a formatted DTD internal entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pe</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>TRUE if this is a parameter entity, FALSE if not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>format</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>format string (see printf) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>argptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the first member of the variable argument list. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="418" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3672" bodyend="3692" declfile="xmlwriter.h" declline="418" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1acea260ef1576da952c8e5af2571d0793" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteDTDInternalEntity</definition>
+        <argsstring>(xmlTextWriter *writer, int pe, const xmlChar *name, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteDTDInternalEntity</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>pe</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write a DTD internal entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pe</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>TRUE if this is a parameter entity, FALSE if not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>content of the entity </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="425" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3738" bodyend="3766" declfile="xmlwriter.h" declline="425" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1af52d81b702e57a533eebe8144f79f334" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteDTDExternalEntity</definition>
+        <argsstring>(xmlTextWriter *writer, int pe, const xmlChar *name, const xmlChar *pubid, const xmlChar *sysid, const xmlChar *ndataid)</argsstring>
+        <name>xmlTextWriterWriteDTDExternalEntity</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>pe</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ndataid</declname>
+        </param>
+        <briefdescription>
+<para>Write a DTD external entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The entity must have been started with <ref refid="xmlwriter_8h_1a2319e8031407a58d53172e2cdcfe1abc" kindref="member">xmlTextWriterStartDTDEntity</ref></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pe</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>TRUE if this is a parameter entity, FALSE if not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public identifier, which is an alternative to the system identifier </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier, which is the URI of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ndataid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the xml notation name. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="430" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3780" bodyend="3814" declfile="xmlwriter.h" declline="430" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a66a687257d15b5006463821df5f2d351" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteDTDExternalEntityContents</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *pubid, const xmlChar *sysid, const xmlChar *ndataid)</argsstring>
+        <name>xmlTextWriterWriteDTDExternalEntityContents</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ndataid</declname>
+        </param>
+        <briefdescription>
+<para>Write the contents of a DTD external entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public identifier, which is an alternative to the system identifier </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier, which is the URI of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ndataid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the xml notation name. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="437" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3826" bodyend="3944" declfile="xmlwriter.h" declline="437" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1ac39dde648130948c854c2088ca62017c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteDTDEntity</definition>
+        <argsstring>(xmlTextWriter *writer, int pe, const xmlChar *name, const xmlChar *pubid, const xmlChar *sysid, const xmlChar *ndataid, const xmlChar *content)</argsstring>
+        <name>xmlTextWriterWriteDTDEntity</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>pe</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ndataid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Write a DTD entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pe</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>TRUE if this is a parameter entity, FALSE if not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the DTD entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public identifier, which is an alternative to the system identifier </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier, which is the URI of the DTD </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ndataid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the xml notation name. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>content of the entity </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="443" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3707" bodyend="3726" declfile="xmlwriter.h" declline="443" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a7c3a6b02463a1fd6993281f017e03563" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterWriteDTDNotation</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *name, const xmlChar *pubid, const xmlChar *sysid)</argsstring>
+        <name>xmlTextWriterWriteDTDNotation</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubid</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysid</declname>
+        </param>
+        <briefdescription>
+<para>Write a DTD entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the xml notation </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public identifier, which is an alternative to the system identifier </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier, which is the URI of the DTD </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="459" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="3956" bodyend="4065" declfile="xmlwriter.h" declline="459" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a87dbfec3fcd60aa8341a2cf61b795434" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterSetIndent</definition>
+        <argsstring>(xmlTextWriter *writer, int indent)</argsstring>
+        <name>xmlTextWriterSetIndent</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>indent</declname>
+        </param>
+        <briefdescription>
+<para>Set indentation output. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>indent = 0 do not indentation. indent &gt; 0 do indentation.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>indent</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>do indentation? </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 on error or 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="468" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="4425" bodyend="4434" declfile="xmlwriter.h" declline="468" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a9885f63c8cda4a10d4b60f43db75e975" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterSetIndentString</definition>
+        <argsstring>(xmlTextWriter *writer, const xmlChar *str)</argsstring>
+        <name>xmlTextWriterSetIndentString</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Set string indentation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 on error or 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="470" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="4444" bodyend="4457" declfile="xmlwriter.h" declline="470" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a0bd2f5b1e8f153a41cabb59041d50294" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterSetQuoteChar</definition>
+        <argsstring>(xmlTextWriter *writer, xmlChar quotechar)</argsstring>
+        <name>xmlTextWriterSetQuoteChar</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref></type>
+          <declname>quotechar</declname>
+        </param>
+        <briefdescription>
+<para>Set the character used for quoting attributes. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>quotechar</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the quote character </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 on error or 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="474" column="9" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="4467" bodyend="4475" declfile="xmlwriter.h" declline="474" declcolumn="9"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a172ad716e800ddde9f3371bdfa6c54cb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterFlush</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterFlush</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>Flush the output buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the bytes written (may be 0 because of buffering) or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="480" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="4074" bodyend="4087" declfile="xmlwriter.h" declline="480" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlwriter_8h_1a0d9b0d6da415262a2c3f1afdc9fc93d1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlTextWriterClose</definition>
+        <argsstring>(xmlTextWriter *writer)</argsstring>
+        <name>xmlTextWriterClose</name>
+        <param>
+          <type><ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> *</type>
+          <declname>writer</declname>
+        </param>
+        <briefdescription>
+<para>Flushes and closes the output buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>writer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlwriter_8h_1a35c2a6bb8770f19006d2a0dfdf577adf" kindref="member">xmlTextWriter</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlwriter.h" line="481" column="10" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="4098" bodyend="4114" declfile="xmlwriter.h" declline="481" declcolumn="10"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>text writing API for XML </para>
+    </briefdescription>
+    <detaileddescription>
+<para>text writing API for XML</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Alfred Mickautsch </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xmlwriter.h"/>
+  </compounddef>
+</doxygen>

@@ -1,6 +1,5 @@
 /* Multiline error-reporting functions.
-   Copyright (C) 2001-2003, 2006, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
 #include <config.h>
@@ -25,26 +26,27 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "error.h"
-#include "progname.h"
+#include <error.h>
 #include "error-progname.h"
 #include "mbswidth.h"
+#if IN_LIBGETTEXTPO
+# define program_name getprogname ()
+#else
+# include "progname.h"
+#endif
 
 /* Emit a multiline warning to stderr, consisting of MESSAGE, with the
-   first line prefixed with PREFIX and the remaining lines prefixed with
-   the same amount of spaces.  Reuse the spaces of the previous call if
-   PREFIX is NULL.  Free the PREFIX and MESSAGE when done.  */
-void
-multiline_warning (char *prefix, char *message)
+   first line prefixed with PREFIX or, if that is NULL, with PREFIX_WIDTH
+   spaces, and the remaining lines prefixed with the same amount of spaces.
+   Free the PREFIX and MESSAGE when done.  Return the amount of spaces.  */
+static size_t
+multiline_internal (char *prefix, size_t prefix_width, char *message)
 {
-  static int width;
-  const char *cp;
-  int i;
-
   fflush (stdout);
 
-  cp = message;
+  const char *cp = message;
 
+  size_t width;
   if (prefix != NULL)
     {
       width = 0;
@@ -58,16 +60,16 @@ multiline_warning (char *prefix, char *message)
       free (prefix);
       goto after_indent;
     }
+  else
+    width = prefix_width;
 
   for (;;)
     {
-      const char *np;
-
-      for (i = width; i > 0; i--)
+      for (size_t i = width; i > 0; i--)
         putc (' ', stderr);
 
-    after_indent:
-      np = strchr (cp, '\n');
+    after_indent: ;
+      const char *np = strchr (cp, '\n');
 
       if (np == NULL || np[1] == '\0')
         {
@@ -81,16 +83,31 @@ multiline_warning (char *prefix, char *message)
     }
 
   free (message);
+
+  return width;
 }
 
-/* Emit a multiline error to stderr, consisting of MESSAGE, with the
-   first line prefixed with PREFIX and the remaining lines prefixed with
-   the same amount of spaces.  Reuse the spaces of the previous call if
-   PREFIX is NULL.  Free the PREFIX and MESSAGE when done.  */
-void
+size_t
+multiline_warning (char *prefix, char *message)
+{
+  if (prefix == NULL)
+    /* Invalid argument.  */
+    abort ();
+  return multiline_internal (prefix, 0, message);
+}
+
+size_t
 multiline_error (char *prefix, char *message)
 {
-  if (prefix != NULL)
-    ++error_message_count;
-  multiline_warning (prefix, message);
+  if (prefix == NULL)
+    /* Invalid argument.  */
+    abort ();
+  ++error_message_count;
+  return multiline_internal (prefix, 0, message);
+}
+
+void
+multiline_append (size_t prefix_width, char *message)
+{
+  multiline_internal (NULL, prefix_width, message);
 }

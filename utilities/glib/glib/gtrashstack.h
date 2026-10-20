@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,11 +35,13 @@
 
 G_BEGIN_DECLS
 
-typedef struct _GTrashStack GTrashStack;
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
+typedef struct _GTrashStack GTrashStack GLIB_DEPRECATED_TYPE_IN_2_48;
 struct _GTrashStack
 {
   GTrashStack *next;
-};
+} GLIB_DEPRECATED_TYPE_IN_2_48;
 
 GLIB_DEPRECATED_IN_2_48
 void      g_trash_stack_push   (GTrashStack **stack_p,
@@ -48,6 +52,8 @@ GLIB_DEPRECATED_IN_2_48
 gpointer  g_trash_stack_peek   (GTrashStack **stack_p);
 GLIB_DEPRECATED_IN_2_48
 guint     g_trash_stack_height (GTrashStack **stack_p);
+
+G_GNUC_END_IGNORE_DEPRECATIONS
 
 G_END_DECLS
 

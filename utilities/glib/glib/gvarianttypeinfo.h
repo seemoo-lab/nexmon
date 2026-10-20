@@ -2,10 +2,12 @@
  * Copyright © 2008 Ryan Lortie
  * Copyright © 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -40,18 +42,18 @@ typedef struct _GVariantTypeInfo GVariantTypeInfo;
  * corresponding to a given child of a tuple or dictionary entry in a
  * very short constant time.  It contains the typeinfo of the child,
  * along with 4 constants that allow the bounds of the child's
- * serialised data within the container's serialised data to be found
+ * serialized data within the container's serialized data to be found
  * very efficiently.
  *
- * Since dictionary entries are serialised as if they were tuples of 2
+ * Since dictionary entries are serialized as if they were tuples of 2
  * items, the term "tuple" will be used here in the general sense to
  * refer to tuples and dictionary entries.
  *
  * BACKGROUND:
- *   The serialised data for a tuple contains an array of "offsets" at
+ *   The serialized data for a tuple contains an array of "offsets" at
  *   the end.  There is one "offset" in this array for each
  *   variable-sized item in the tuple (except for the last one).  The
- *   offset points to the end point of that item's serialised data.  The
+ *   offset points to the end point of that item's serialized data.  The
  *   procedure for finding the start point is described below.  An
  *   offset is not needed for the last item because the end point of the
  *   last item is merely the end point of the container itself (after
@@ -80,7 +82,7 @@ typedef struct _GVariantTypeInfo GVariantTypeInfo;
  *
  * The constants in this structure are used as follows:
  *
- * First, among the array of offets contained in the tuple, 'i' is the
+ * First, among the array of offsets contained in the tuple, 'i' is the
  * index of the offset that refers to the end of the variable-sized item
  * preceding the item of interest.  If no variable-sized items precede
  * this item, then 'i' will be -1.
@@ -130,6 +132,8 @@ GLIB_AVAILABLE_IN_ALL
 void                            g_variant_type_info_query               (GVariantTypeInfo   *typeinfo,
                                                                          guint              *alignment,
                                                                          gsize              *size);
+GLIB_AVAILABLE_IN_2_60
+gsize                           g_variant_type_info_query_depth         (GVariantTypeInfo   *typeinfo);
 
 /* array */
 GLIB_AVAILABLE_IN_ALL

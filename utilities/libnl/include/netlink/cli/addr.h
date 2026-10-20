@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/cli/addr.h    CLI Address Helpers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2008-2009 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -13,6 +7,10 @@
 #define __NETLINK_CLI_ADDR_H_
 
 #include <netlink/route/addr.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define nl_cli_addr_alloc_cache(sk) \
 		nl_cli_alloc_cache((sk), "address", rtnl_addr_alloc_cache)
@@ -28,5 +26,9 @@ extern void nl_cli_addr_parse_scope(struct rtnl_addr *, char *);
 extern void nl_cli_addr_parse_broadcast(struct rtnl_addr *, char *);
 extern void nl_cli_addr_parse_preferred(struct rtnl_addr *, char *);
 extern void nl_cli_addr_parse_valid(struct rtnl_addr *, char *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -6,12 +6,12 @@
 
 @display
 Copyright @copyright{} 1991, 1999 Free Software Foundation, Inc.
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+<https://fsf.org/>
 
 Everyone is permitted to copy and distribute verbatim copies
 of this license document, but changing it is not allowed.
 
-[This is the first released version of the Lesser GPL.  It also counts
+[This is the first released version of the Lesser GPL@.  It also counts
 as the successor of the GNU Library Public License, version 2, hence the
 version number 2.1.]
 @end display
@@ -474,13 +474,13 @@ and reuse of software generally.
 
 @item
 BECAUSE THE LIBRARY IS LICENSED FREE OF CHARGE, THERE IS NO
-WARRANTY FOR THE LIBRARY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
+WARRANTY FOR THE LIBRARY, TO THE EXTENT PERMITTED BY APPLICABLE LAW@.
 EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR
 OTHER PARTIES PROVIDE THE LIBRARY ``AS IS'' WITHOUT WARRANTY OF ANY
 KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
 IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE
-LIBRARY IS WITH YOU.  SHOULD THE LIBRARY PROVE DEFECTIVE, YOU ASSUME
+PURPOSE@.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE
+LIBRARY IS WITH YOU@.  SHOULD THE LIBRARY PROVE DEFECTIVE, YOU ASSUME
 THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
 
 @item
@@ -523,13 +523,11 @@ your option) any later version.
 
 This library is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE@.  See the GNU
 Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
-USA.
+License along with this library; if not, see <https://www.gnu.org/licenses/>.
 @end smallexample
 
 Also add information on how to contact you by electronic and paper mail.
@@ -542,8 +540,8 @@ necessary.  Here is a sample; alter the names:
 Yoyodyne, Inc., hereby disclaims all copyright interest in the library
 `Frob' (a library for tweaking knobs) written by James Random Hacker.
 
-@var{signature of Ty Coon}, 1 April 1990
-Ty Coon, President of Vice
+@var{signature of Moe Ghoul}, 1 April 1990
+Moe Ghoul, President of Vice
 @end smallexample
 
 That's all there is to it!

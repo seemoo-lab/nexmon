@@ -12,19 +12,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -43,7 +31,7 @@ static dissector_handle_t llc_handle;
 static dissector_handle_t ccsds_handle;
 
 void
-dissect_802_3(volatile int length, gboolean is_802_2, tvbuff_t *tvb,
+dissect_802_3(volatile int length, bool is_802_2, tvbuff_t *tvb,
               int offset_after_length, packet_info *pinfo, proto_tree *tree,
               proto_tree *fh_tree, int length_id, int trailer_id, expert_field* ei_len,
               int fcs_len)
@@ -52,7 +40,7 @@ dissect_802_3(volatile int length, gboolean is_802_2, tvbuff_t *tvb,
   tvbuff_t   *volatile next_tvb = NULL;
   tvbuff_t   *trailer_tvb = NULL;
   const char *saved_proto;
-  gint        captured_length, reported_length;
+  int         captured_length, reported_length;
 
   length_it = proto_tree_add_uint(fh_tree, length_id, tvb,
                                   offset_after_length - 2, 2, length);
@@ -78,7 +66,7 @@ dissect_802_3(volatile int length, gboolean is_802_2, tvbuff_t *tvb,
   captured_length = tvb_captured_length_remaining(tvb, offset_after_length);
   if (captured_length > length)
     captured_length = length;
-  next_tvb = tvb_new_subset(tvb, offset_after_length, captured_length, length);
+  next_tvb = tvb_new_subset_length_caplen(tvb, offset_after_length, captured_length, length);
 
   /* Dissect the payload either as IPX or as an LLC frame.
      Catch non-fatal exceptions, so that if the reported length
@@ -122,7 +110,7 @@ dissect_802_3(volatile int length, gboolean is_802_2, tvbuff_t *tvb,
      is what we want, as it'll report that the packet was cut short. */
   trailer_tvb = tvb_new_subset_remaining(tvb, offset_after_length + length);
 
-  add_ethernet_trailer(pinfo, tree, fh_tree, trailer_id, tvb, trailer_tvb, fcs_len);
+  add_ethernet_trailer(pinfo, tree, fh_tree, trailer_id, tvb, trailer_tvb, fcs_len, offset_after_length);
 }
 
 void
@@ -137,7 +125,7 @@ proto_reg_handoff_ieee802_3(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

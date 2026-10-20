@@ -50,8 +50,8 @@ EOF
 
 : ${XGETTEXT=xgettext}
 # delete POT-Creation-Date: line because the date depends on local time.
-${XGETTEXT} --output - --add-location -c -kMyGetString:2 xg-cs-3.cs 2>/dev/null \
-  | sed '/\"POT-Creation-Date:.*/d' | LC_ALL=C tr -d '\r' > xg-cs-3.po || Exit 1
+${XGETTEXT} --output xg-cs-3.tmp --add-location -c -kMyGetString:2 xg-cs-3.cs 2>/dev/null || Exit 1
+sed -e '/\"POT-Creation-Date:.*/d' < xg-cs-3.tmp | LC_ALL=C tr -d '\r' > xg-cs-3.po || Exit 1
 
 cat <<\EOF > xg-cs-3.ok
 # SOME DESCRIPTIVE TITLE.

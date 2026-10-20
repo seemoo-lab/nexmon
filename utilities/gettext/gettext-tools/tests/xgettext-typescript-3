@@ -1,0 +1,74 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of TypeScript support: string concatenation,
+# strings with embedded expressions.
+
+cat <<\EOF > xg-ts-3.ts
+let s0: string;
+let s1: string = _("Concatenation #1 " + "- String part added");
+let s2: string = _('Concatenation #2 ' + '- String part added');
+
+// a
+let s3: string = // b
+         _("This" + " whole " // c
+          + "string" + // d
+         ' should' + " be " + 'extracted');
+
+// Strings with embedded expressions, a.k.a. template literals.
+let t: string = "";
+let e1: string = _(`embedded_1_${foo}_bar`);
+let e2: string = _(`embedded_2_${_("embedded_2_sub1")}_bar_${_('embedded_2_sub2')}_baz`);
+let e3: string = _(`embedded_3`);
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --add-comments --no-location -o xg-ts-3.tmp xg-ts-3.ts 2>xg-ts-3.err
+test $? = 0 || { cat xg-ts-3.err; Exit 1; }
+func_filter_POT_Creation_Date xg-ts-3.tmp xg-ts-3.pot
+
+cat <<\EOF > xg-ts-3.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Concatenation #1 - String part added"
+msgstr ""
+
+msgid "Concatenation #2 - String part added"
+msgstr ""
+
+#. a
+#. b
+msgid "This whole string should be extracted"
+msgstr ""
+
+msgid "embedded_2_sub1"
+msgstr ""
+
+msgid "embedded_2_sub2"
+msgstr ""
+
+msgid "embedded_3"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-ts-3.ok xg-ts-3.pot
+result=$?
+
+exit $result

@@ -1,10 +1,12 @@
 /*
- * Copyright 2012 Red Hat, Inc.
+ * Copyright 2012-2019 Red Hat, Inc.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  */
@@ -78,6 +80,8 @@ basic_callback (GObject      *object,
   *result_out = g_task_propagate_int (G_TASK (result), &error);
   g_assert_no_error (error);
 
+  g_assert (!g_task_had_error (G_TASK (result)));
+
   g_main_loop_quit (loop);
 }
 
@@ -125,12 +129,19 @@ test_basic (void)
 
 /* test_error */
 
+typedef struct {
+  GQuark expected_domain;
+  int expected_code;
+  char *expected_message;
+  gssize int_result;
+} TaskErrorResult;
+
 static void
 error_callback (GObject      *object,
                 GAsyncResult *result,
                 gpointer      user_data)
 {
-  gssize *result_out = user_data;
+  TaskErrorResult *result_inout = user_data;
   GError *error = NULL;
 
   g_assert (object == NULL);
@@ -139,11 +150,12 @@ error_callback (GObject      *object,
   g_assert (g_task_had_error (G_TASK (result)));
   g_assert_false (g_task_get_completed (G_TASK (result)));
 
-  *result_out = g_task_propagate_int (G_TASK (result), &error);
-  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_FAILED);
+  result_inout->int_result = g_task_propagate_int (G_TASK (result), &error);
+  g_assert_error (error, result_inout->expected_domain, result_inout->expected_code);
+  g_assert_cmpstr (error->message, ==, result_inout->expected_message);
   g_error_free (error);
 
-  g_main_loop_quit (loop);
+  g_assert (g_task_had_error (G_TASK (result)));
 }
 
 static gboolean
@@ -153,7 +165,7 @@ error_return (gpointer user_data)
 
   g_task_return_new_error (task,
                            G_IO_ERROR, G_IO_ERROR_FAILED,
-                           "Failed");
+                           "Failed %p", task);
   g_object_unref (task);
 
   return FALSE;
@@ -171,15 +183,17 @@ static void
 test_error (void)
 {
   GTask *task;
-  gssize result;
+  TaskErrorResult result;
   gboolean first_task_data_destroyed = FALSE;
   gboolean second_task_data_destroyed = FALSE;
-  gboolean notification_emitted = FALSE;
 
   task = g_task_new (NULL, NULL, error_callback, &result);
+  result = (TaskErrorResult){
+    .expected_domain = G_IO_ERROR,
+    .expected_code = G_IO_ERROR_FAILED,
+    .expected_message = g_strdup_printf ("Failed %p", task),
+  };
   g_object_add_weak_pointer (G_OBJECT (task), (gpointer *)&task);
-  g_signal_connect (task, "notify::completed",
-                    (GCallback) completed_cb, &notification_emitted);
 
   g_assert (first_task_data_destroyed == FALSE);
   g_task_set_task_data (task, &first_task_data_destroyed, error_destroy_notify);
@@ -191,12 +205,59 @@ test_error (void)
   g_assert (second_task_data_destroyed == FALSE);
 
   g_idle_add (error_return, task);
-  g_main_loop_run (loop);
+  wait_for_completed_notification (task);
 
-  g_assert_cmpint (result, ==, -1);
+  g_assert_cmpint (result.int_result, ==, -1);
   g_assert (second_task_data_destroyed == TRUE);
-  g_assert_true (notification_emitted);
   g_assert (task == NULL);
+  g_free (result.expected_message);
+}
+
+static void
+test_error_literal (void)
+{
+  GTask *task;
+  TaskErrorResult result;
+
+  task = g_task_new (NULL, NULL, error_callback, &result);
+  result = (TaskErrorResult){
+    .expected_domain = G_IO_ERROR,
+    .expected_code = G_IO_ERROR_FAILED,
+    .expected_message = "Literal Failure",
+  };
+
+  g_task_return_new_error_literal (task,
+                                   result.expected_domain,
+                                   result.expected_code,
+                                   "Literal Failure");
+
+  wait_for_completed_notification (task);
+  g_assert_cmpint (result.int_result, ==, -1);
+
+  g_assert_finalize_object (task);
+}
+
+static void
+test_error_literal_from_variable (void)
+{
+  GTask *task;
+  TaskErrorResult result;
+
+  task = g_task_new (NULL, NULL, error_callback, &result);
+  result = (TaskErrorResult){
+    .expected_domain = G_IO_ERROR,
+    .expected_code = G_IO_ERROR_FAILED,
+    .expected_message = "Literal Failure",
+  };
+
+  g_task_return_new_error_literal (task,
+                                   result.expected_domain,
+                                   result.expected_code,
+                                   result.expected_message);
+
+  wait_for_completed_notification (task);
+  g_assert_cmpint (result.int_result, ==, -1);
+  g_assert_finalize_object (task);
 }
 
 /* test_return_from_same_iteration: calling g_task_return_* from the
@@ -222,6 +283,8 @@ same_callback (GObject      *object,
 
   *result_out = g_task_propagate_boolean (G_TASK (result), &error);
   g_assert_no_error (error);
+
+  g_assert (!g_task_had_error (G_TASK (result)));
 
   g_main_loop_quit (loop);
 }
@@ -284,6 +347,8 @@ toplevel_callback (GObject      *object,
   *result_out = g_task_propagate_boolean (G_TASK (result), &error);
   g_assert_no_error (error);
 
+  g_assert (!g_task_had_error (G_TASK (result)));
+
   g_main_loop_quit (loop);
 }
 
@@ -339,6 +404,8 @@ anon_callback (GObject      *object,
 
   *result_out = g_task_propagate_int (G_TASK (result), &error);
   g_assert_no_error (error);
+
+  g_assert (!g_task_had_error (G_TASK (result)));
 
   g_main_loop_quit (loop);
 }
@@ -412,6 +479,8 @@ wrong_callback (GObject      *object,
 
   *result_out = g_task_propagate_int (G_TASK (result), &error);
   g_assert_no_error (error);
+
+  g_assert (!g_task_had_error (G_TASK (result)));
 
   g_main_loop_quit (loop);
 }
@@ -515,6 +584,8 @@ report_callback (GObject      *object,
   g_assert_cmpint (ret, ==, -1);
   g_error_free (error);
 
+  g_assert (g_task_had_error (G_TASK (result)));
+
   *weak_pointer = result;
   g_object_add_weak_pointer (G_OBJECT (result), weak_pointer);
   g_signal_connect (result, "notify::completed",
@@ -559,6 +630,8 @@ priority_callback (GObject      *object,
   g_task_propagate_boolean (G_TASK (result), &error);
   g_assert_no_error (error);
 
+  g_assert (!g_task_had_error (G_TASK (result)));
+
   *ret_out = ++counter;
 
   if (counter == 3)
@@ -598,13 +671,258 @@ test_priority (void)
   g_assert_cmpint (ret3, ==, 3);
 }
 
+/* Test that getting and setting the task name works. */
+static void name_callback (GObject      *object,
+                           GAsyncResult *result,
+                           gpointer      user_data);
+
+static void
+test_name (void)
+{
+  GTask *t1 = NULL;
+  char *orig = g_strdup ("some task");
+  gchar *name1 = NULL;
+
+  t1 = g_task_new (NULL, NULL, name_callback, &name1);
+  (g_task_set_name) (t1, orig);
+  g_task_return_boolean (t1, TRUE);
+  g_object_unref (t1);
+
+  g_main_loop_run (loop);
+
+  g_assert_cmpstr (name1, ==, orig);
+
+  g_free (name1);
+  g_free (orig);
+}
+
+static void
+test_name_macro_wrapper (void)
+{
+  GTask *t1 = NULL;
+  char *orig = g_strdup ("some task");
+  gchar *name1 = NULL;
+
+  t1 = g_task_new (NULL, NULL, name_callback, &name1);
+  g_task_set_name (t1, orig);
+  g_task_return_boolean (t1, TRUE);
+  g_object_unref (t1);
+
+  g_main_loop_run (loop);
+
+  g_assert_cmpstr (name1, ==, orig);
+
+  g_free (name1);
+  g_free (orig);
+}
+
+static void
+name_callback (GObject      *object,
+               GAsyncResult *result,
+               gpointer      user_data)
+{
+  gchar **name_out = user_data;
+  GError *local_error = NULL;
+
+  g_assert_null (*name_out);
+  *name_out = g_strdup (g_task_get_name (G_TASK (result)));
+
+  g_task_propagate_boolean (G_TASK (result), &local_error);
+  g_assert_no_error (local_error);
+
+  g_main_loop_quit (loop);
+}
+
+static void static_name_callback (GObject      *object,
+                                  GAsyncResult *result,
+                                  gpointer      user_data);
+
+static void
+test_static_name (void)
+{
+  GTask *t1 = NULL;
+  char *orig = "some task";
+  char *name1 = NULL;
+
+  t1 = g_task_new (NULL, NULL, static_name_callback, &name1);
+  g_task_set_static_name (t1, orig);
+  g_task_return_boolean (t1, TRUE);
+  g_object_unref (t1);
+
+  g_main_loop_run (loop);
+
+  g_assert_true (name1 == orig);
+}
+
+static void
+static_name_callback (GObject      *object,
+                      GAsyncResult *result,
+                      gpointer      user_data)
+{
+  const char **name_out = user_data;
+  GError *local_error = NULL;
+
+  g_assert_null (*name_out);
+  *name_out = g_task_get_name (G_TASK (result));
+
+  g_task_propagate_boolean (G_TASK (result), &local_error);
+  g_assert_no_error (local_error);
+
+  g_main_loop_quit (loop);
+}
+
+/* test_asynchronous_cancellation: cancelled tasks are returned
+ * asynchronously, i.e. not from inside the GCancellable::cancelled
+ * handler.
+ *
+ * The test is set up further below in test_asynchronous_cancellation.
+ */
+
+/* asynchronous_cancellation_callback represents the callback that the
+ * caller of a typical asynchronous API would have passed. See
+ * test_asynchronous_cancellation.
+ */
+static void
+asynchronous_cancellation_callback (GObject      *object,
+                                    GAsyncResult *result,
+                                    gpointer      user_data)
+{
+  GError *error = NULL;
+  guint run_task_id;
+
+  g_assert_null (object);
+  g_assert_true (g_task_is_valid (result, object));
+  g_assert_true (g_async_result_get_user_data (result) == user_data);
+  g_assert_true (g_task_had_error (G_TASK (result)));
+  g_assert_false (g_task_get_completed (G_TASK (result)));
+
+  run_task_id = GPOINTER_TO_UINT (g_task_get_task_data (G_TASK (result)));
+  g_assert_cmpuint (run_task_id, ==, 0);
+
+  g_task_propagate_boolean (G_TASK (result), &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+  g_clear_error (&error);
+
+  g_assert_true (g_task_had_error (G_TASK (result)));
+
+  g_main_loop_quit (loop);
+}
+
+/* asynchronous_cancellation_cancel_task represents a user cancelling
+ * the ongoing operation. To make it somewhat realistic it is delayed
+ * by 50ms via a timeout GSource. See test_asynchronous_cancellation.
+ */
+static gboolean
+asynchronous_cancellation_cancel_task (gpointer user_data)
+{
+  GCancellable *cancellable;
+  GTask *task = G_TASK (user_data);
+
+  cancellable = g_task_get_cancellable (task);
+  g_assert_true (G_IS_CANCELLABLE (cancellable));
+
+  g_cancellable_cancel (cancellable);
+  g_assert_false (g_task_get_completed (task));
+
+  return G_SOURCE_REMOVE;
+}
+
+/* asynchronous_cancellation_cancelled is the GCancellable::cancelled
+ * handler that's used by the asynchronous implementation for
+ * cancelling itself.
+ */
+static void
+asynchronous_cancellation_cancelled (GCancellable *cancellable,
+                                     gpointer      user_data)
+{
+  GTask *task = G_TASK (user_data);
+  guint run_task_id;
+
+  g_assert_true (cancellable == g_task_get_cancellable (task));
+
+  run_task_id = GPOINTER_TO_UINT (g_task_get_task_data (task));
+  g_assert_cmpuint (run_task_id, !=, 0);
+
+  g_source_remove (run_task_id);
+  g_task_set_task_data (task, GUINT_TO_POINTER (0), NULL);
+
+  g_task_return_boolean (task, FALSE);
+  g_assert_false (g_task_get_completed (task));
+}
+
+/* asynchronous_cancellation_run_task represents the actual
+ * asynchronous work being done in an idle GSource as was mentioned
+ * above. This is effectively meant to be an infinite loop so that
+ * the only way to break out of it is via cancellation.
+ */
+static gboolean
+asynchronous_cancellation_run_task (gpointer user_data)
+{
+  GCancellable *cancellable;
+  GTask *task = G_TASK (user_data);
+
+  cancellable = g_task_get_cancellable (task);
+  g_assert_true (G_IS_CANCELLABLE (cancellable));
+  g_assert_false (g_cancellable_is_cancelled (cancellable));
+
+  return G_SOURCE_CONTINUE;
+}
+
+/* Test that cancellation is always asynchronous. The completion callback for
+ * a #GTask must not be called from inside the cancellation handler.
+ *
+ * The body of the loop inside test_asynchronous_cancellation
+ * represents what would have been a typical asynchronous API call,
+ * and its implementation. They are fused together without an API
+ * boundary. The actual work done by this asynchronous API is
+ * represented by an idle GSource.
+ */
+static void
+test_asynchronous_cancellation (void)
+{
+  guint i;
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/1608");
+
+  /* Run a few times to shake out any timing issues between the
+   * cancellation and task sources.
+   */
+  for (i = 0; i < 5; i++)
+    {
+      GCancellable *cancellable;
+      GTask *task;
+      gboolean notification_emitted = FALSE;
+      guint run_task_id;
+
+      cancellable = g_cancellable_new ();
+
+      task = g_task_new (NULL, cancellable, asynchronous_cancellation_callback, NULL);
+      g_cancellable_connect (cancellable, (GCallback) asynchronous_cancellation_cancelled, task, NULL);
+      g_signal_connect (task, "notify::completed", (GCallback) completed_cb, &notification_emitted);
+
+      run_task_id = g_idle_add (asynchronous_cancellation_run_task, task);
+      g_source_set_name_by_id (run_task_id, "[test_asynchronous_cancellation] run_task");
+      g_task_set_task_data (task, GUINT_TO_POINTER (run_task_id), NULL);
+
+      g_timeout_add (50, asynchronous_cancellation_cancel_task, task);
+
+      g_main_loop_run (loop);
+
+      g_assert_true (g_task_get_completed (task));
+      g_assert_true (notification_emitted);
+
+      g_object_unref (cancellable);
+      g_object_unref (task);
+    }
+}
+
 /* test_check_cancellable: cancellation overrides return value */
 
 enum {
   CANCEL_BEFORE     = (1 << 1),
   CANCEL_AFTER      = (1 << 2),
   CHECK_CANCELLABLE = (1 << 3)
-};
+} G_GNUC_FLAG_ENUM;
 #define NUM_CANCEL_TESTS (CANCEL_BEFORE | CANCEL_AFTER | CHECK_CANCELLABLE)
 
 static void
@@ -699,6 +1017,8 @@ return_if_cancelled_callback (GObject      *object,
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
   g_clear_error (&error);
 
+  g_assert (g_task_had_error (G_TASK (result)));
+
   g_main_loop_quit (loop);
 }
 
@@ -754,7 +1074,7 @@ task_weak_notify (gpointer  user_data,
   gboolean *weak_notify_ran = user_data;
 
   g_mutex_lock (&run_in_thread_mutex);
-  *weak_notify_ran = TRUE;
+  g_atomic_int_set (weak_notify_ran, TRUE);
   g_cond_signal (&run_in_thread_cond);
   g_mutex_unlock (&run_in_thread_mutex);
 }
@@ -775,10 +1095,13 @@ run_in_thread_callback (GObject      *object,
   g_assert (g_async_result_get_user_data (result) == user_data);
   g_assert (!g_task_had_error (G_TASK (result)));
   g_assert_false (g_task_get_completed (G_TASK (result)));
+  g_assert_cmpstr (g_task_get_name (G_TASK (result)), ==, "test_run_in_thread name");
 
   ret = g_task_propagate_int (G_TASK (result), &error);
   g_assert_no_error (error);
   g_assert_cmpint (ret, ==, magic);
+
+  g_assert (!g_task_had_error (G_TASK (result)));
 
   *done = TRUE;
   g_main_loop_quit (loop);
@@ -796,11 +1119,12 @@ run_in_thread_thread (GTask        *task,
   g_assert (task_data == g_task_get_task_data (task));
   g_assert (cancellable == g_task_get_cancellable (task));
   g_assert_false (g_task_get_completed (task));
+  g_assert_cmpstr (g_task_get_name (task), ==, "test_run_in_thread name");
 
   g_assert (g_thread_self () != main_thread);
 
   g_mutex_lock (&run_in_thread_mutex);
-  *thread_ran = TRUE;
+  g_atomic_int_set (thread_ran, TRUE);
   g_cond_signal (&run_in_thread_cond);
   g_mutex_unlock (&run_in_thread_mutex);
 
@@ -811,35 +1135,39 @@ static void
 test_run_in_thread (void)
 {
   GTask *task;
-  volatile gboolean thread_ran = FALSE;
-  volatile gboolean weak_notify_ran = FALSE;
+  gboolean thread_ran = FALSE;  /* (atomic) */
+  gboolean weak_notify_ran = FALSE;  /* (atomic) */
   gboolean notification_emitted = FALSE;
   gboolean done = FALSE;
 
   task = g_task_new (NULL, NULL, run_in_thread_callback, &done);
+  g_task_set_name (task, "test_run_in_thread name");
   g_object_weak_ref (G_OBJECT (task), task_weak_notify, (gpointer)&weak_notify_ran);
   g_signal_connect (task, "notify::completed",
                     (GCallback) completed_cb, &notification_emitted);
 
   g_task_set_task_data (task, (gpointer)&thread_ran, NULL);
   g_task_run_in_thread (task, run_in_thread_thread);
-  g_object_unref (task);
 
   g_mutex_lock (&run_in_thread_mutex);
-  while (!thread_ran)
+  while (!g_atomic_int_get (&thread_ran))
     g_cond_wait (&run_in_thread_cond, &run_in_thread_mutex);
   g_mutex_unlock (&run_in_thread_mutex);
 
   g_assert (done == FALSE);
-  g_assert (weak_notify_ran == FALSE);
+  g_assert_false (g_atomic_int_get (&weak_notify_ran));
 
   g_main_loop_run (loop);
 
   g_assert (done == TRUE);
   g_assert_true (notification_emitted);
 
+  g_assert_cmpstr (g_task_get_name (task), ==, "test_run_in_thread name");
+
+  g_object_unref (task);
+
   g_mutex_lock (&run_in_thread_mutex);
-  while (!weak_notify_ran)
+  while (!g_atomic_int_get (&weak_notify_ran))
     g_cond_wait (&run_in_thread_cond, &run_in_thread_mutex);
   g_mutex_unlock (&run_in_thread_mutex);
 }
@@ -870,7 +1198,7 @@ run_in_thread_sync_thread (GTask        *task,
 
   g_assert (g_thread_self () != main_thread);
 
-  *thread_ran = TRUE;
+  g_atomic_int_set (thread_ran, TRUE);
   g_task_return_int (task, magic);
 }
 
@@ -891,7 +1219,7 @@ test_run_in_thread_sync (void)
   g_task_set_task_data (task, &thread_ran, NULL);
   g_task_run_in_thread_sync (task, run_in_thread_sync_thread);
 
-  g_assert (thread_ran == TRUE);
+  g_assert_true (g_atomic_int_get (&thread_ran));
   g_assert (task != NULL);
   g_assert (!g_task_had_error (task));
   g_assert_true (g_task_get_completed (task));
@@ -900,6 +1228,8 @@ test_run_in_thread_sync (void)
   ret = g_task_propagate_int (task, &error);
   g_assert_no_error (error);
   g_assert_cmpint (ret, ==, magic);
+
+  g_assert (!g_task_had_error (task));
 
   g_object_unref (task);
 }
@@ -928,6 +1258,8 @@ quit_main_loop_callback (GObject      *object,
   ret = g_task_propagate_boolean (G_TASK (result), &error);
   g_assert_no_error (error);
   g_assert_cmpint (ret, ==, TRUE);
+
+  g_assert (!g_task_had_error (G_TASK (result)));
 
   g_main_loop_quit (loop);
 }
@@ -1019,19 +1351,19 @@ test_run_in_thread_priority (void)
   g_task_set_task_data (task, &seq_a, NULL);
   g_task_run_in_thread (task, set_sequence_number_thread);
   g_object_unref (task);
-  
+
   task = g_task_new (NULL, NULL, quit_main_loop_callback, NULL);
   g_task_set_task_data (task, &seq_b, NULL);
   g_task_set_priority (task, G_PRIORITY_LOW);
   g_task_run_in_thread (task, set_sequence_number_thread);
   g_object_unref (task);
-  
+
   task = g_task_new (NULL, NULL, NULL, NULL);
   g_task_set_task_data (task, &seq_c, NULL);
   g_task_set_priority (task, G_PRIORITY_HIGH);
   g_task_run_in_thread (task, set_sequence_number_thread);
   g_object_unref (task);
-  
+
   cancellable = g_cancellable_new ();
   task = g_task_new (NULL, cancellable, NULL, NULL);
   g_task_set_task_data (task, &seq_d, NULL);
@@ -1102,6 +1434,7 @@ test_run_in_thread_nested (void)
  * tasks, they won't all run at once.
  */
 static GMutex overflow_mutex;
+static guint overflow_completed;
 
 static void
 run_overflow_task_thread (GTask        *task,
@@ -1114,16 +1447,19 @@ run_overflow_task_thread (GTask        *task,
   if (g_task_return_error_if_cancelled (task))
     {
       *result = 'X';
-      return;
+    }
+  else
+    {
+      /* Block until the main thread is ready. */
+      g_mutex_lock (&overflow_mutex);
+      g_mutex_unlock (&overflow_mutex);
+
+      *result = '.';
+
+      g_task_return_boolean (task, TRUE);
     }
 
-  /* Block until the main thread is ready. */
-  g_mutex_lock (&overflow_mutex);
-  g_mutex_unlock (&overflow_mutex);
-
-  *result = '.';
-
-  g_task_return_boolean (task, TRUE);
+  g_atomic_int_inc (&overflow_completed);
 }
 
 #define NUM_OVERFLOW_TASKS 1024
@@ -1134,7 +1470,7 @@ test_run_in_thread_overflow (void)
   GCancellable *cancellable;
   GTask *task;
   gchar buf[NUM_OVERFLOW_TASKS + 1];
-  gint i;
+  size_t i;
 
   /* Queue way too many tasks and then sleep for a bit. The first 10
    * tasks will be dispatched to threads and will then block on
@@ -1167,8 +1503,10 @@ test_run_in_thread_overflow (void)
   g_mutex_unlock (&overflow_mutex);
 
   /* Wait for all tasks to complete. */
-  while (strlen (buf) != NUM_OVERFLOW_TASKS)
+  while (g_atomic_int_get (&overflow_completed) != NUM_OVERFLOW_TASKS)
     g_usleep (1000);
+
+  g_assert_cmpint (strlen (buf), ==, NUM_OVERFLOW_TASKS);
 
   i = strspn (buf, ".");
   /* Given the sleep times above, i should be 14 for normal, 40 for
@@ -1178,13 +1516,13 @@ test_run_in_thread_overflow (void)
    * plausibly get (and we hope that if gtask is actually broken then
    * it will exceed those limits).
    */
-  g_assert_cmpint (i, >=, 10);
+  g_assert_cmpuint (i, >=, 10);
   if (g_test_slow ())
-    g_assert_cmpint (i, <, 50);
+    g_assert_cmpuint (i, <, 50);
   else
-    g_assert_cmpint (i, <, 20);
+    g_assert_cmpuint (i, <, 20);
 
-  g_assert_cmpint (i + strspn (buf + i, "X"), ==, NUM_OVERFLOW_TASKS);
+  g_assert_cmpuint (i + strspn (buf + i, "X"), ==, NUM_OVERFLOW_TASKS);
 }
 
 /* test_return_on_cancel */
@@ -1220,6 +1558,8 @@ return_on_cancel_callback (GObject      *object,
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
   g_clear_error (&error);
   g_assert_cmpint (ret, ==, -1);
+
+  g_assert (g_task_had_error (G_TASK (result)));
 
   *callback_ran = TRUE;
   g_main_loop_quit (loop);
@@ -1264,8 +1604,8 @@ test_return_on_cancel (void)
 {
   GTask *task;
   GCancellable *cancellable;
-  volatile ThreadState thread_state;
-  volatile gboolean weak_notify_ran = FALSE;
+  ThreadState thread_state;  /* (atomic) */
+  gboolean weak_notify_ran = FALSE;  /* (atomic) */
   gboolean callback_ran;
   gboolean notification_emitted = FALSE;
 
@@ -1275,7 +1615,7 @@ test_return_on_cancel (void)
    * early.
    */
   callback_ran = FALSE;
-  thread_state = THREAD_STARTING;
+  g_atomic_int_set (&thread_state, THREAD_STARTING);
   task = g_task_new (NULL, cancellable, return_on_cancel_callback, &callback_ran);
   g_signal_connect (task, "notify::completed",
                     (GCallback) completed_cb, &notification_emitted);
@@ -1286,18 +1626,18 @@ test_return_on_cancel (void)
   g_task_run_in_thread (task, return_on_cancel_thread);
   g_object_unref (task);
 
-  while (thread_state == THREAD_STARTING)
+  while (g_atomic_int_get (&thread_state) == THREAD_STARTING)
     g_cond_wait (&roc_init_cond, &roc_init_mutex);
   g_mutex_unlock (&roc_init_mutex);
 
-  g_assert (thread_state == THREAD_RUNNING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_RUNNING);
   g_assert (callback_ran == FALSE);
 
   g_cancellable_cancel (cancellable);
   g_mutex_unlock (&roc_finish_mutex);
   g_main_loop_run (loop);
 
-  g_assert (thread_state == THREAD_COMPLETED);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_COMPLETED);
   g_assert (callback_ran == TRUE);
   g_assert_true (notification_emitted);
 
@@ -1306,7 +1646,7 @@ test_return_on_cancel (void)
   /* If return-on-cancel is TRUE, it does return early */
   callback_ran = FALSE;
   notification_emitted = FALSE;
-  thread_state = THREAD_STARTING;
+  g_atomic_int_set (&thread_state, THREAD_STARTING);
   task = g_task_new (NULL, cancellable, return_on_cancel_callback, &callback_ran);
   g_object_weak_ref (G_OBJECT (task), task_weak_notify, (gpointer)&weak_notify_ran);
   g_signal_connect (task, "notify::completed",
@@ -1319,27 +1659,27 @@ test_return_on_cancel (void)
   g_task_run_in_thread (task, return_on_cancel_thread);
   g_object_unref (task);
 
-  while (thread_state == THREAD_STARTING)
+  while (g_atomic_int_get (&thread_state) == THREAD_STARTING)
     g_cond_wait (&roc_init_cond, &roc_init_mutex);
   g_mutex_unlock (&roc_init_mutex);
 
-  g_assert (thread_state == THREAD_RUNNING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_RUNNING);
   g_assert (callback_ran == FALSE);
 
   g_cancellable_cancel (cancellable);
   g_main_loop_run (loop);
-  g_assert (thread_state == THREAD_RUNNING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_RUNNING);
   g_assert (callback_ran == TRUE);
 
-  g_assert (weak_notify_ran == FALSE);
+  g_assert_false (g_atomic_int_get (&weak_notify_ran));
 
-  while (thread_state == THREAD_RUNNING)
+  while (g_atomic_int_get (&thread_state) == THREAD_RUNNING)
     g_cond_wait (&roc_finish_cond, &roc_finish_mutex);
   g_mutex_unlock (&roc_finish_mutex);
 
-  g_assert (thread_state == THREAD_CANCELLED);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_CANCELLED);
   g_mutex_lock (&run_in_thread_mutex);
-  while (!weak_notify_ran)
+  while (!g_atomic_int_get (&weak_notify_ran))
     g_cond_wait (&run_in_thread_cond, &run_in_thread_mutex);
   g_mutex_unlock (&run_in_thread_mutex);
 
@@ -1351,7 +1691,7 @@ test_return_on_cancel (void)
    */
   callback_ran = FALSE;
   notification_emitted = FALSE;
-  thread_state = THREAD_STARTING;
+  g_atomic_int_set (&thread_state, THREAD_STARTING);
   task = g_task_new (NULL, cancellable, return_on_cancel_callback, &callback_ran);
   g_signal_connect (task, "notify::completed",
                     (GCallback) completed_cb, &notification_emitted);
@@ -1368,17 +1708,17 @@ test_return_on_cancel (void)
   g_main_loop_run (loop);
   g_assert (callback_ran == TRUE);
 
-  while (thread_state == THREAD_STARTING)
+  while (g_atomic_int_get (&thread_state) == THREAD_STARTING)
     g_cond_wait (&roc_init_cond, &roc_init_mutex);
   g_mutex_unlock (&roc_init_mutex);
 
-  g_assert (thread_state == THREAD_RUNNING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_RUNNING);
 
-  while (thread_state == THREAD_RUNNING)
+  while (g_atomic_int_get (&thread_state) == THREAD_RUNNING)
     g_cond_wait (&roc_finish_cond, &roc_finish_mutex);
   g_mutex_unlock (&roc_finish_mutex);
 
-  g_assert (thread_state == THREAD_CANCELLED);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_CANCELLED);
   g_assert_true (notification_emitted);
 
   g_object_unref (cancellable);
@@ -1398,7 +1738,7 @@ test_return_on_cancel_sync (void)
 {
   GTask *task;
   GCancellable *cancellable;
-  volatile ThreadState thread_state;
+  ThreadState thread_state;  /* (atomic) */
   GThread *runner_thread;
   gssize ret;
   GError *error = NULL;
@@ -1407,7 +1747,7 @@ test_return_on_cancel_sync (void)
 
   /* If return-on-cancel is FALSE, the task does not return early.
    */
-  thread_state = THREAD_STARTING;
+  g_atomic_int_set (&thread_state, THREAD_STARTING);
   task = g_task_new (NULL, cancellable, run_in_thread_sync_callback, NULL);
 
   g_task_set_task_data (task, (gpointer)&thread_state, NULL);
@@ -1416,16 +1756,16 @@ test_return_on_cancel_sync (void)
   runner_thread = g_thread_new ("return-on-cancel-sync runner thread",
                                 cancel_sync_runner_thread, task);
 
-  while (thread_state == THREAD_STARTING)
+  while (g_atomic_int_get (&thread_state) == THREAD_STARTING)
     g_cond_wait (&roc_init_cond, &roc_init_mutex);
   g_mutex_unlock (&roc_init_mutex);
 
-  g_assert (thread_state == THREAD_RUNNING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_RUNNING);
 
   g_cancellable_cancel (cancellable);
   g_mutex_unlock (&roc_finish_mutex);
   g_thread_join (runner_thread);
-  g_assert (thread_state == THREAD_COMPLETED);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_COMPLETED);
 
   ret = g_task_propagate_int (task, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
@@ -1437,7 +1777,7 @@ test_return_on_cancel_sync (void)
   g_cancellable_reset (cancellable);
 
   /* If return-on-cancel is TRUE, it does return early */
-  thread_state = THREAD_STARTING;
+  g_atomic_int_set (&thread_state, THREAD_STARTING);
   task = g_task_new (NULL, cancellable, run_in_thread_sync_callback, NULL);
   g_task_set_return_on_cancel (task, TRUE);
 
@@ -1447,15 +1787,15 @@ test_return_on_cancel_sync (void)
   runner_thread = g_thread_new ("return-on-cancel-sync runner thread",
                                 cancel_sync_runner_thread, task);
 
-  while (thread_state == THREAD_STARTING)
+  while (g_atomic_int_get (&thread_state) == THREAD_STARTING)
     g_cond_wait (&roc_init_cond, &roc_init_mutex);
   g_mutex_unlock (&roc_init_mutex);
 
-  g_assert (thread_state == THREAD_RUNNING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_RUNNING);
 
   g_cancellable_cancel (cancellable);
   g_thread_join (runner_thread);
-  g_assert (thread_state == THREAD_RUNNING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_RUNNING);
 
   ret = g_task_propagate_int (task, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
@@ -1464,18 +1804,18 @@ test_return_on_cancel_sync (void)
 
   g_object_unref (task);
 
-  while (thread_state == THREAD_RUNNING)
+  while (g_atomic_int_get (&thread_state) == THREAD_RUNNING)
     g_cond_wait (&roc_finish_cond, &roc_finish_mutex);
   g_mutex_unlock (&roc_finish_mutex);
 
-  g_assert (thread_state == THREAD_CANCELLED);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_CANCELLED);
 
   g_cancellable_reset (cancellable);
 
   /* If the task is already cancelled before it starts, it returns
    * immediately, but the thread func still runs.
    */
-  thread_state = THREAD_STARTING;
+  g_atomic_int_set (&thread_state, THREAD_STARTING);
   task = g_task_new (NULL, cancellable, run_in_thread_sync_callback, NULL);
   g_task_set_return_on_cancel (task, TRUE);
 
@@ -1488,7 +1828,7 @@ test_return_on_cancel_sync (void)
                                 cancel_sync_runner_thread, task);
 
   g_thread_join (runner_thread);
-  g_assert (thread_state == THREAD_STARTING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_STARTING);
 
   ret = g_task_propagate_int (task, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
@@ -1497,17 +1837,17 @@ test_return_on_cancel_sync (void)
 
   g_object_unref (task);
 
-  while (thread_state == THREAD_STARTING)
+  while (g_atomic_int_get (&thread_state) == THREAD_STARTING)
     g_cond_wait (&roc_init_cond, &roc_init_mutex);
   g_mutex_unlock (&roc_init_mutex);
 
-  g_assert (thread_state == THREAD_RUNNING);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_RUNNING);
 
-  while (thread_state == THREAD_RUNNING)
+  while (g_atomic_int_get (&thread_state) == THREAD_RUNNING)
     g_cond_wait (&roc_finish_cond, &roc_finish_mutex);
   g_mutex_unlock (&roc_finish_mutex);
 
-  g_assert (thread_state == THREAD_CANCELLED);
+  g_assert_cmpint (g_atomic_int_get (&thread_state), ==, THREAD_CANCELLED);
 
   g_object_unref (cancellable);
 }
@@ -1541,6 +1881,8 @@ return_on_cancel_atomic_callback (GObject      *object,
   g_clear_error (&error);
   g_assert_cmpint (ret, ==, -1);
 
+  g_assert (g_task_had_error (G_TASK (result)));
+
   *callback_ran = TRUE;
   g_main_loop_quit (loop);
 }
@@ -1551,7 +1893,7 @@ return_on_cancel_atomic_thread (GTask        *task,
                                 gpointer      task_data,
                                 GCancellable *cancellable)
 {
-  gint *state = task_data;
+  gint *state = task_data;  /* (atomic) */
 
   g_assert (source_object == g_task_get_source_object (task));
   g_assert (task_data == g_task_get_task_data (task));
@@ -1559,34 +1901,34 @@ return_on_cancel_atomic_thread (GTask        *task,
   g_assert_false (g_task_get_completed (task));
 
   g_assert (g_thread_self () != main_thread);
-  g_assert_cmpint (*state, ==, 0);
+  g_assert_cmpint (g_atomic_int_get (state), ==, 0);
 
   g_mutex_lock (&roca_mutex_1);
-  *state = 1;
+  g_atomic_int_set (state, 1);
   g_cond_signal (&roca_cond_1);
   g_mutex_unlock (&roca_mutex_1);
 
   g_mutex_lock (&roca_mutex_2);
   if (g_task_set_return_on_cancel (task, FALSE))
-    *state = 2;
+    g_atomic_int_set (state, 2);
   else
-    *state = 3;
+    g_atomic_int_set (state, 3);
   g_cond_signal (&roca_cond_2);
   g_mutex_unlock (&roca_mutex_2);
 
   g_mutex_lock (&roca_mutex_1);
   if (g_task_set_return_on_cancel (task, TRUE))
-    *state = 4;
+    g_atomic_int_set (state, 4);
   else
-    *state = 5;
+    g_atomic_int_set (state, 5);
   g_cond_signal (&roca_cond_1);
   g_mutex_unlock (&roca_mutex_1);
 
   g_mutex_lock (&roca_mutex_2);
   if (g_task_set_return_on_cancel (task, TRUE))
-    *state = 6;
+    g_atomic_int_set (state, 6);
   else
-    *state = 7;
+    g_atomic_int_set (state, 7);
   g_cond_signal (&roca_cond_2);
   g_mutex_unlock (&roca_mutex_2);
 
@@ -1598,7 +1940,7 @@ test_return_on_cancel_atomic (void)
 {
   GTask *task;
   GCancellable *cancellable;
-  volatile gint state;
+  gint state;  /* (atomic) */
   gboolean notification_emitted = FALSE;
   gboolean callback_ran;
 
@@ -1607,7 +1949,7 @@ test_return_on_cancel_atomic (void)
   g_mutex_lock (&roca_mutex_2);
 
   /* If we don't cancel it, each set_return_on_cancel() call will succeed */
-  state = 0;
+  g_atomic_int_set (&state, 0);
   callback_ran = FALSE;
   task = g_task_new (NULL, cancellable, return_on_cancel_atomic_callback, &callback_ran);
   g_task_set_return_on_cancel (task, TRUE);
@@ -1618,23 +1960,23 @@ test_return_on_cancel_atomic (void)
   g_task_run_in_thread (task, return_on_cancel_atomic_thread);
   g_object_unref (task);
 
-  g_assert_cmpint (state, ==, 0);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 0);
 
-  while (state == 0)
+  while (g_atomic_int_get (&state) == 0)
     g_cond_wait (&roca_cond_1, &roca_mutex_1);
-  g_assert (state == 1);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 1);
 
-  while (state == 1)
+  while (g_atomic_int_get (&state) == 1)
     g_cond_wait (&roca_cond_2, &roca_mutex_2);
-  g_assert (state == 2);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 2);
 
-  while (state == 2)
+  while (g_atomic_int_get (&state) == 2)
     g_cond_wait (&roca_cond_1, &roca_mutex_1);
-  g_assert (state == 4);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 4);
 
-  while (state == 4)
+  while (g_atomic_int_get (&state) == 4)
     g_cond_wait (&roca_cond_2, &roca_mutex_2);
-  g_assert (state == 6);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 6);
 
   /* callback assumes there'll be a cancelled error */
   g_cancellable_cancel (cancellable);
@@ -1651,7 +1993,7 @@ test_return_on_cancel_atomic (void)
    * task won't complete right away, and further
    * g_task_set_return_on_cancel() calls will return FALSE.
    */
-  state = 0;
+  g_atomic_int_set (&state, 0);
   callback_ran = FALSE;
   notification_emitted = FALSE;
   task = g_task_new (NULL, cancellable, return_on_cancel_atomic_callback, &callback_ran);
@@ -1661,18 +2003,17 @@ test_return_on_cancel_atomic (void)
 
   g_task_set_task_data (task, (gpointer)&state, NULL);
   g_task_run_in_thread (task, return_on_cancel_atomic_thread);
-  g_object_unref (task);
 
-  g_assert_cmpint (state, ==, 0);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 0);
 
-  while (state == 0)
+  while (g_atomic_int_get (&state) == 0)
     g_cond_wait (&roca_cond_1, &roca_mutex_1);
-  g_assert (state == 1);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 1);
   g_assert (g_task_get_return_on_cancel (task));
 
-  while (state == 1)
+  while (g_atomic_int_get (&state) == 1)
     g_cond_wait (&roca_cond_2, &roca_mutex_2);
-  g_assert (state == 2);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 2);
   g_assert (!g_task_get_return_on_cancel (task));
 
   g_cancellable_cancel (cancellable);
@@ -1680,22 +2021,23 @@ test_return_on_cancel_atomic (void)
   g_main_loop_run (loop);
   g_assert (callback_ran == FALSE);
 
-  while (state == 2)
+  while (g_atomic_int_get (&state) == 2)
     g_cond_wait (&roca_cond_1, &roca_mutex_1);
-  g_assert (state == 5);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 5);
   g_assert (!g_task_get_return_on_cancel (task));
 
   g_main_loop_run (loop);
   g_assert (callback_ran == TRUE);
   g_assert_true (notification_emitted);
 
-  while (state == 5)
+  while (g_atomic_int_get (&state) == 5)
     g_cond_wait (&roca_cond_2, &roca_mutex_2);
-  g_assert (state == 7);
+  g_assert_cmpint (g_atomic_int_get (&state), ==, 7);
 
   g_object_unref (cancellable);
   g_mutex_unlock (&roca_mutex_1);
   g_mutex_unlock (&roca_mutex_2);
+  g_object_unref (task);
 }
 
 /* test_return_pointer: memory management of pointer returns */
@@ -1758,7 +2100,7 @@ test_return_pointer (void)
 
   g_assert_null (task);
   g_assert_null (object);
-  
+
   /* If we read back the return value, we steal its ref */
   object = (GObject *)g_dummy_object_new ();
   g_assert_cmpint (object->ref_count, ==, 1);
@@ -1784,6 +2126,69 @@ test_return_pointer (void)
   g_assert_null (task);
 }
 
+static void
+test_return_value (void)
+{
+  GObject *object;
+  GValue value = G_VALUE_INIT;
+  GValue ret = G_VALUE_INIT;
+  GTask *task;
+  GError *error = NULL;
+
+  object = (GObject *)g_dummy_object_new ();
+  g_assert_cmpint (object->ref_count, ==, 1);
+  g_object_add_weak_pointer (object, (gpointer *)&object);
+
+  g_value_init (&value, G_TYPE_OBJECT);
+  g_value_set_object (&value, object);
+  g_assert_cmpint (object->ref_count, ==, 2);
+
+  task = g_task_new (NULL, NULL, NULL, NULL);
+  g_object_add_weak_pointer (G_OBJECT (task), (gpointer *)&task);
+  g_task_return_value (task, &value);
+  g_assert_cmpint (object->ref_count, ==, 3);
+
+  g_assert_true (g_task_propagate_value (task, &ret, &error));
+  g_assert_no_error (error);
+  g_assert_true (g_value_get_object (&ret) == object);
+  g_assert_cmpint (object->ref_count, ==, 3);
+
+  g_object_unref (task);
+  g_assert_nonnull (task);
+  wait_for_completed_notification (task);
+  g_assert_null (task);
+
+  g_assert_cmpint (object->ref_count, ==, 3);
+  g_value_unset (&ret);
+  g_assert_cmpint (object->ref_count, ==, 2);
+  g_value_unset (&value);
+  g_assert_cmpint (object->ref_count, ==, 1);
+  g_object_unref (object);
+  g_assert_null (object);
+}
+
+static void
+test_return_prefixed_error (void)
+{
+  GTask *task;
+  GError *original_error = NULL;
+  GError *error = NULL;
+
+  g_set_error (&original_error, G_IO_ERROR, G_IO_ERROR_UNKNOWN, "oh no!");
+
+  task = g_task_new (NULL, NULL, NULL, NULL);
+  g_task_return_prefixed_error (task, original_error, "task %s: ", "failed");
+
+  wait_for_completed_notification (task);
+
+  g_assert_null (g_task_propagate_pointer (task, &error));
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_UNKNOWN);
+  g_assert_cmpstr (error->message, ==, "task failed: oh no!");
+
+  g_assert_finalize_object (task);
+  g_clear_error (&error);
+}
+
 /* test_object_keepalive: GTask takes a ref on its source object */
 
 static GObject *keepalive_object;
@@ -1804,6 +2209,8 @@ keepalive_callback (GObject      *object,
 
   *result_out = g_task_propagate_int (G_TASK (result), &error);
   g_assert_no_error (error);
+
+  g_assert (!g_task_had_error (G_TASK (result)));
 
   g_main_loop_quit (loop);
 }
@@ -1872,6 +2279,7 @@ legacy_error_callback (GObject      *object,
 
       g_assert_error (error, G_IO_ERROR, G_IO_ERROR_FAILED);
       *result_out = -2;
+      g_clear_error (&error);
     }
   else
     {
@@ -1956,6 +2364,338 @@ test_legacy_error (void)
   g_assert (simple == NULL);
 }
 
+/* Various helper functions for the return tests below. */
+static void
+task_complete_cb (GObject *source,
+                  GAsyncResult *result,
+                  gpointer user_data)
+{
+  GTask *task = G_TASK (result);
+  guint *calls = user_data;
+
+  g_assert_cmpint (++*calls, <=, 1);
+
+  /* Propagate the result, so it’s removed from the task’s internal state. */
+  g_task_propagate_boolean (task, NULL);
+}
+
+static void
+return_twice (GTask *task)
+{
+  gboolean error_first = GPOINTER_TO_UINT (g_task_get_task_data (task));
+
+  if (error_first)
+    {
+      g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_UNKNOWN, "oh no");
+      g_task_return_boolean (task, TRUE);
+    }
+  else
+    {
+      g_task_return_boolean (task, TRUE);
+      g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_UNKNOWN, "oh no");
+    }
+}
+
+static gboolean
+idle_cb (gpointer user_data)
+{
+  GTask *task = user_data;
+  return_twice (task);
+  g_object_unref (task);
+
+  return G_SOURCE_REMOVE;
+}
+
+static void
+test_return_permutation (gboolean error_first,
+                         gboolean return_in_idle)
+{
+  guint calls = 0;
+  GTask *task = NULL;
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/1525");
+
+  task = g_task_new (NULL, NULL, task_complete_cb, &calls);
+  g_task_set_task_data (task, GUINT_TO_POINTER (error_first), NULL);
+
+  if (return_in_idle)
+    g_idle_add (idle_cb, g_object_ref (task));
+  else
+    return_twice (task);
+
+  while (calls == 0)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpint (calls, ==, 1);
+
+  g_object_unref (task);
+}
+
+/* Test that calling g_task_return_boolean() after g_task_return_error(), when
+ * returning in an idle callback, correctly results in a critical warning. */
+static void
+test_return_in_idle_error_first (void)
+{
+  if (g_test_subprocess ())
+    {
+      test_return_permutation (TRUE, TRUE);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_failed ();
+  g_test_trap_assert_stderr ("*CRITICAL*assertion '!task->ever_returned' failed*");
+}
+
+/* Test that calling g_task_return_error() after g_task_return_boolean(), when
+ * returning in an idle callback, correctly results in a critical warning. */
+static void
+test_return_in_idle_value_first (void)
+{
+  if (g_test_subprocess ())
+    {
+      test_return_permutation (FALSE, TRUE);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_failed ();
+  g_test_trap_assert_stderr ("*CRITICAL*assertion '!task->ever_returned' failed*");
+}
+
+/* Test that calling g_task_return_boolean() after g_task_return_error(), when
+ * returning synchronously, correctly results in a critical warning. */
+static void
+test_return_error_first (void)
+{
+  if (g_test_subprocess ())
+    {
+      test_return_permutation (TRUE, FALSE);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_failed ();
+  g_test_trap_assert_stderr ("*CRITICAL*assertion '!task->ever_returned' failed*");
+}
+
+/* Test that calling g_task_return_error() after g_task_return_boolean(), when
+ * returning synchronously, correctly results in a critical warning. */
+static void
+test_return_value_first (void)
+{
+  if (g_test_subprocess ())
+    {
+      test_return_permutation (FALSE, FALSE);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_failed ();
+  g_test_trap_assert_stderr ("*CRITICAL*assertion '!task->ever_returned' failed*");
+}
+
+static gboolean
+source_cb (gpointer user_data)
+{
+  return G_SOURCE_REMOVE;
+}
+
+static void
+test_attach_source_set_name (void)
+{
+  guint calls = 0;
+  GTask *task = NULL;
+  GSource *source = NULL;
+  GSourceFuncs source_funcs = { NULL, NULL, NULL, NULL, NULL, NULL };
+
+  g_test_summary ("Test that attaching a source to a task will set the source’s name if unset");
+
+  task = g_task_new (NULL, NULL, task_complete_cb, &calls);
+  g_task_set_name (task, "test name");
+
+  source = g_source_new (&source_funcs, sizeof (GSource));
+  g_task_attach_source (task, source, source_cb);
+  g_assert_cmpstr (g_source_get_name (source), ==, "test name");
+  g_source_unref (source);
+
+  source = g_source_new (&source_funcs, sizeof (GSource));
+  g_source_set_name (source, "not the task name");
+  g_task_attach_source (task, source, source_cb);
+  g_assert_cmpstr (g_source_get_name (source), ==, "not the task name");
+  g_source_unref (source);
+
+  g_object_unref (task);
+}
+
+static void
+test_finalize_without_return (void)
+{
+  GTask *task = NULL;
+  guint n_calls = 0;
+
+  /* With a callback set. */
+  task = g_task_new (NULL, NULL, task_complete_cb, &n_calls);
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                         "GTask * (source object: *, source tag: *) finalized without "
+                         "ever returning (using g_task_return_*()). This potentially "
+                         "indicates a bug in the program.");
+  g_object_unref (task);
+  g_test_assert_expected_messages ();
+
+  /* With a callback and task name set. */
+  task = g_task_new (NULL, NULL, task_complete_cb, &n_calls);
+  g_task_set_static_name (task, "oogly boogly");
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                         "GTask oogly boogly (source object: *, source tag: *) finalized without "
+                         "ever returning (using g_task_return_*()). This potentially "
+                         "indicates a bug in the program.");
+  g_object_unref (task);
+  g_test_assert_expected_messages ();
+
+  /* Without a callback set. */
+  task = g_task_new (NULL, NULL, NULL, NULL);
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
+                         "GTask * (source object: *, source tag: *) finalized without "
+                         "ever returning (using g_task_return_*()). This potentially "
+                         "indicates a bug in the program.");
+  g_object_unref (task);
+  g_test_assert_expected_messages ();
+}
+
+/* Thread pool stress test that creates new threads when existing ones are blocked */
+/* Thread pool stress test that creates new threads when existing ones are blocked */
+#define STRESS_POOL_SIZE 10
+#define STRESS_FAST_TASKS 10
+#define STRESS_FAST_TASK_DURATION_USEC 200000
+#define STRESS_TASKS_CREATE_TIMEOUT_MSEC 1000
+#define STRESS_TASKS_END_TIMEOUT_MSEC 5000
+
+static gint stress_fast_created = 0;
+static gint stress_fast_completed = 0;
+static guint stress_task_end_timeout_id = 0;
+
+static void
+stress_blocking_thread (GTask *task,
+                        gpointer source_object,
+                        gpointer task_data,
+                        GCancellable *cancellable)
+{
+  g_test_message ("Blocking task started");
+  g_usleep (60 * G_USEC_PER_SEC);
+  g_task_return_boolean (task, TRUE);
+}
+
+static void
+stress_fast_thread (GTask *task,
+                    gpointer source_object,
+                    gpointer task_data,
+                    GCancellable *cancellable)
+{
+  gint64 start_time = GPOINTER_TO_INT (task_data);
+  guint elapsed_ms = (guint)(g_get_monotonic_time () - start_time) / 1000;
+
+  g_test_message ("Fast task started in %u ms", elapsed_ms);
+  g_usleep (STRESS_FAST_TASK_DURATION_USEC);
+
+  g_task_return_int (task, elapsed_ms);
+}
+
+static gboolean
+on_stress_task_end_timeout (gpointer user_data)
+{
+  stress_task_end_timeout_id = 0;
+
+  g_warning ("FAILED: Only %d fast tasks completed!", stress_fast_completed);
+  g_main_loop_quit (loop);
+
+  return G_SOURCE_REMOVE;
+}
+
+static void
+stress_fast_callback (GObject *source,
+                      GAsyncResult *result,
+                      gpointer user_data)
+{
+  GError *error = NULL;
+
+  stress_fast_completed++;
+
+  g_task_propagate_int (G_TASK (result), &error);
+  g_assert_no_error (error);
+
+  g_test_message ("Fast tasks completed: %d/%d", stress_fast_completed, STRESS_FAST_TASKS);
+  g_clear_handle_id (&stress_task_end_timeout_id, g_source_remove);
+
+  if (stress_fast_completed >= STRESS_FAST_TASKS)
+    {
+      g_test_message ("SUCCESS: All %d fast tasks completed!", stress_fast_completed);
+      g_main_loop_quit (loop);
+    }
+  else
+    {
+      stress_task_end_timeout_id = g_timeout_add (STRESS_TASKS_END_TIMEOUT_MSEC,
+                                                  on_stress_task_end_timeout,
+                                                  GINT_TO_POINTER (STRESS_FAST_TASKS));
+    }
+}
+
+static gboolean
+on_stress_task_create_timeout (gpointer user_data)
+{
+  GTask *task;
+
+  stress_fast_created++;
+  g_test_message ("Creating fast tasks %d/%d...", stress_fast_created, STRESS_FAST_TASKS);
+
+  task = g_task_new (NULL, NULL, stress_fast_callback, NULL);
+
+  g_task_set_task_data (task, GINT_TO_POINTER (g_get_monotonic_time ()), NULL);
+  g_task_run_in_thread (task, stress_fast_thread);
+  g_object_unref (task);
+
+  if (stress_task_end_timeout_id == 0)
+    {
+      stress_task_end_timeout_id = g_timeout_add (STRESS_TASKS_END_TIMEOUT_MSEC,
+                                                  on_stress_task_end_timeout,
+                                                  GINT_TO_POINTER (STRESS_FAST_TASKS));
+    }
+
+  return stress_fast_created < STRESS_FAST_TASKS ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
+}
+
+static void
+test_thread_pool_stress (void)
+{
+  gint i;
+
+  if (!g_test_thorough ())
+    {
+      g_test_skip ("Skipping thread pool stress test in non-thorough mode");
+      return;
+    }
+
+  g_test_message ("Creating %d blocking tasks...", STRESS_POOL_SIZE);
+  for (i = 0; i < STRESS_POOL_SIZE; i++)
+    {
+      GTask *task = g_task_new (NULL, NULL, NULL, NULL);
+      g_task_run_in_thread (task, stress_blocking_thread);
+      g_object_unref (task);
+    }
+
+  g_timeout_add (STRESS_TASKS_CREATE_TIMEOUT_MSEC,
+                 on_stress_task_create_timeout,
+                 GINT_TO_POINTER (STRESS_FAST_TASKS));
+
+  g_debug ("Running main loop...");
+
+  g_main_loop_run (loop);
+
+  g_assert_cmpint (stress_fast_completed, >=, STRESS_FAST_TASKS);
+}
 
 int
 main (int argc, char **argv)
@@ -1970,6 +2710,8 @@ main (int argc, char **argv)
 
   g_test_add_func ("/gtask/basic", test_basic);
   g_test_add_func ("/gtask/error", test_error);
+  g_test_add_func ("/gtask/error-literal", test_error_literal);
+  g_test_add_func ("/gtask/error-literal-from-variable", test_error_literal_from_variable);
   g_test_add_func ("/gtask/return-from-same-iteration", test_return_from_same_iteration);
   g_test_add_func ("/gtask/return-from-toplevel", test_return_from_toplevel);
   g_test_add_func ("/gtask/return-from-anon-thread", test_return_from_anon_thread);
@@ -1977,6 +2719,10 @@ main (int argc, char **argv)
   g_test_add_func ("/gtask/no-callback", test_no_callback);
   g_test_add_func ("/gtask/report-error", test_report_error);
   g_test_add_func ("/gtask/priority", test_priority);
+  g_test_add_func ("/gtask/name", test_name);
+  g_test_add_func ("/gtask/name/macro-wrapper", test_name_macro_wrapper);
+  g_test_add_func ("/gtask/static-name", test_static_name);
+  g_test_add_func ("/gtask/asynchronous-cancellation", test_asynchronous_cancellation);
   g_test_add_func ("/gtask/check-cancellable", test_check_cancellable);
   g_test_add_func ("/gtask/return-if-cancelled", test_return_if_cancelled);
   g_test_add_func ("/gtask/run-in-thread", test_run_in_thread);
@@ -1988,8 +2734,17 @@ main (int argc, char **argv)
   g_test_add_func ("/gtask/return-on-cancel-sync", test_return_on_cancel_sync);
   g_test_add_func ("/gtask/return-on-cancel-atomic", test_return_on_cancel_atomic);
   g_test_add_func ("/gtask/return-pointer", test_return_pointer);
+  g_test_add_func ("/gtask/return-value", test_return_value);
+  g_test_add_func ("/gtask/return-prefixed-error", test_return_prefixed_error);
   g_test_add_func ("/gtask/object-keepalive", test_object_keepalive);
   g_test_add_func ("/gtask/legacy-error", test_legacy_error);
+  g_test_add_func ("/gtask/return/in-idle/error-first", test_return_in_idle_error_first);
+  g_test_add_func ("/gtask/return/in-idle/value-first", test_return_in_idle_value_first);
+  g_test_add_func ("/gtask/return/error-first", test_return_error_first);
+  g_test_add_func ("/gtask/return/value-first", test_return_value_first);
+  g_test_add_func ("/gtask/attach-source/set-name", test_attach_source_set_name);
+  g_test_add_func ("/gtask/finalize-without-return", test_finalize_without_return);
+  g_test_add_func ("/gtask/thread-pool-stress", test_thread_pool_stress);
 
   ret = g_test_run();
 

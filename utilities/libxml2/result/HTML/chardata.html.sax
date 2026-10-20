@@ -1,0 +1,126 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.startElement(html)
+SAX.characters(
+    , 5)
+SAX.startElement(head)
+SAX.characters(
+        , 9)
+SAX.startElement(title)
+SAX.characters(&amp;, 1)
+SAX.characters(&lt;/head&gt;, 7)
+SAX.characters(&amp;, 1)
+SAX.endElement(title)
+SAX.characters(
+    , 5)
+SAX.endElement(head)
+SAX.characters(
+    , 5)
+SAX.startElement(body)
+SAX.characters(
+        , 9)
+SAX.startElement(textarea)
+SAX.characters(&amp;, 1)
+SAX.characters(&lt;/body&gt;, 7)
+SAX.characters(&amp;, 1)
+SAX.endElement(textarea)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(iframe)
+SAX.cdata(&amp;&lt;/body&gt;&amp;, 9)
+SAX.endElement(iframe)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(noembed)
+SAX.cdata(&amp;&lt;/body&gt;&amp;, 9)
+SAX.endElement(noembed)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(noframes)
+SAX.cdata(&amp;&lt;/body&gt;&amp;, 9)
+SAX.endElement(noframes)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(style)
+SAX.cdata(&amp;&lt;/body&gt;&amp;, 9)
+SAX.endElement(style)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(xmp)
+SAX.cdata(&amp;&lt;/body&gt;&amp;, 9)
+SAX.endElement(xmp)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(script)
+SAX.cdata(&amp;&lt;script&gt;&amp;, 10)
+SAX.endElement(script)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(script)
+SAX.cdata(&amp;&lt;!--&amp;, 6)
+SAX.endElement(script)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(script)
+SAX.cdata(&amp;&lt;!--&amp;--&gt;&amp;, 19)
+SAX.endElement(script)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(script)
+SAX.cdata(&amp;&lt;!--&amp;--&gt;&amp;, 10)
+SAX.endElement(script)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(script)
+SAX.cdata(&amp;&lt;!--&amp;&lt;script, 29)
+SAX.endElement(script)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+        , 9)
+SAX.startElement(script)
+SAX.cdata(&amp;&lt;!--&amp;&lt;script, 48)
+SAX.endElement(script)
+SAX.characters(
+        , 9)
+SAX.characters(&amp;, 1)
+SAX.characters(
+    , 5)
+SAX.endElement(body)
+SAX.characters(
+, 1)
+SAX.endElement(html)
+SAX.characters(
+, 1)
+SAX.endDocument()

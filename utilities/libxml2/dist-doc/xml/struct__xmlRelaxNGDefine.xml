@@ -1,0 +1,419 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRelaxNGDefine" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRelaxNGDefine</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1ab191ec9ddb88c78c46c00c126ec66b79" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGType</type>
+        <definition>xmlRelaxNGType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlRelaxNGDefine::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="141" column="20" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="141" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1af22243a9342e852a5bcc0b878913a289" prot="public" static="no" mutable="no">
+        <type>xmlNodePtr</type>
+        <definition>xmlNodePtr node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>_xmlRelaxNGDefine::node</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="142" column="16" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="142" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1a1ed8962c3c52bc7d9b3f10a3c48aec7e" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlRelaxNGDefine::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="143" column="13" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="143" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1aa53fac1b53ddbe0d1605cd13f01d4354" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* ns</definition>
+        <argsstring></argsstring>
+        <name>ns</name>
+        <qualifiedname>_xmlRelaxNGDefine::ns</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="144" column="13" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="144" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1a050d5251f022144a70e35e06ccc3665f" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>_xmlRelaxNGDefine::value</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="145" column="13" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="145" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1a735984d41155bc1032e09bece8f8d66d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* data</definition>
+        <argsstring></argsstring>
+        <name>data</name>
+        <qualifiedname>_xmlRelaxNGDefine::data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="146" column="10" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="146" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1ad85948e65fb11a8fbf730474b7ae2dd1" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGDefinePtr</type>
+        <definition>xmlRelaxNGDefinePtr content</definition>
+        <argsstring></argsstring>
+        <name>content</name>
+        <qualifiedname>_xmlRelaxNGDefine::content</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="147" column="25" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="147" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1ade111c5cc231aad4a1dec78e2613c66b" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGDefinePtr</type>
+        <definition>xmlRelaxNGDefinePtr parent</definition>
+        <argsstring></argsstring>
+        <name>parent</name>
+        <qualifiedname>_xmlRelaxNGDefine::parent</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="148" column="25" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="148" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1ab964d4010be2f537d61c85c27fd22486" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGDefinePtr</type>
+        <definition>xmlRelaxNGDefinePtr next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlRelaxNGDefine::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="149" column="25" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="149" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1ae9ae243973740d079e616973291c6d77" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGDefinePtr</type>
+        <definition>xmlRelaxNGDefinePtr attrs</definition>
+        <argsstring></argsstring>
+        <name>attrs</name>
+        <qualifiedname>_xmlRelaxNGDefine::attrs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="150" column="25" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="150" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1ac7f8895dadaf81334269d963516c5b27" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGDefinePtr</type>
+        <definition>xmlRelaxNGDefinePtr nameClass</definition>
+        <argsstring></argsstring>
+        <name>nameClass</name>
+        <qualifiedname>_xmlRelaxNGDefine::nameClass</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="151" column="25" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="151" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1a0f794a697eebf3dc0580f7df59651df2" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGDefinePtr</type>
+        <definition>xmlRelaxNGDefinePtr nextHash</definition>
+        <argsstring></argsstring>
+        <name>nextHash</name>
+        <qualifiedname>_xmlRelaxNGDefine::nextHash</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="152" column="25" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="152" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1a5a89173fa79d2f59545185e9986c2b86" prot="public" static="no" mutable="no">
+        <type>short</type>
+        <definition>short depth</definition>
+        <argsstring></argsstring>
+        <name>depth</name>
+        <qualifiedname>_xmlRelaxNGDefine::depth</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="153" column="11" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="153" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1a5b3fab0d2919207d1adb0f048ed5d39a" prot="public" static="no" mutable="no">
+        <type>short</type>
+        <definition>short dflags</definition>
+        <argsstring></argsstring>
+        <name>dflags</name>
+        <qualifiedname>_xmlRelaxNGDefine::dflags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="154" column="11" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="154" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGDefine_1aab4bd796115600ad83e5504c013232c4" prot="public" static="no" mutable="no">
+        <type>xmlRegexpPtr</type>
+        <definition>xmlRegexpPtr contModel</definition>
+        <argsstring></argsstring>
+        <name>contModel</name>
+        <qualifiedname>_xmlRelaxNGDefine::contModel</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="155" column="18" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="155" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="8">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlAutomataState</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlDict</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDictStrings</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="13">
+        <label>_xmlRegAtom</label>
+        <childnode refid="11" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="15">
+        <label>_xmlRegCounter</label>
+      </node>
+      <node id="14">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="12">
+        <label>_xmlRegTrans</label>
+        <childnode refid="13" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlRegexp</label>
+        <childnode refid="11" relation="usage">
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlRelaxNGDefine</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="1" relation="usage">
+          <edgelabel>attrs</edgelabel>
+          <edgelabel>content</edgelabel>
+          <edgelabel>nameClass</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>nextHash</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/relaxng.c" line="140" column="1" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="140" bodyend="156"/>
+    <listofallmembers>
+      <member refid="struct__xmlRelaxNGDefine_1ae9ae243973740d079e616973291c6d77" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>attrs</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1ad85948e65fb11a8fbf730474b7ae2dd1" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>content</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1aab4bd796115600ad83e5504c013232c4" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>contModel</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1a735984d41155bc1032e09bece8f8d66d" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>data</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1a5a89173fa79d2f59545185e9986c2b86" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>depth</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1a5b3fab0d2919207d1adb0f048ed5d39a" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>dflags</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1a1ed8962c3c52bc7d9b3f10a3c48aec7e" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>name</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1ac7f8895dadaf81334269d963516c5b27" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>nameClass</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1ab964d4010be2f537d61c85c27fd22486" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>next</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1a0f794a697eebf3dc0580f7df59651df2" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>nextHash</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1af22243a9342e852a5bcc0b878913a289" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>node</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1aa53fac1b53ddbe0d1605cd13f01d4354" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>ns</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1ade111c5cc231aad4a1dec78e2613c66b" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>parent</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1ab191ec9ddb88c78c46c00c126ec66b79" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>type</name></member>
+      <member refid="struct__xmlRelaxNGDefine_1a050d5251f022144a70e35e06ccc3665f" prot="public" virt="non-virtual"><scope>_xmlRelaxNGDefine</scope><name>value</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

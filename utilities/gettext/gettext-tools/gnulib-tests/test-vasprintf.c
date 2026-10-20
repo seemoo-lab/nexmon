@@ -1,9 +1,9 @@
 /* Test of vasprintf() and asprintf() functions.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
@@ -45,9 +45,7 @@ my_asprintf (char **result, const char *format, ...)
 static void
 test_vasprintf ()
 {
-  int repeat;
-
-  for (repeat = 0; repeat <= 8; repeat++)
+  for (int repeat = 0; repeat <= 8; repeat++)
     {
       char *result;
       int retval = my_asprintf (&result, "%d", 12345);
@@ -57,7 +55,7 @@ test_vasprintf ()
       free (result);
     }
 
-  for (repeat = 0; repeat <= 8; repeat++)
+  for (int repeat = 0; repeat <= 8; repeat++)
     {
       char *result;
       int retval = my_asprintf (&result, "%08lx", 12345UL);
@@ -71,9 +69,7 @@ test_vasprintf ()
 static void
 test_asprintf ()
 {
-  int repeat;
-
-  for (repeat = 0; repeat <= 8; repeat++)
+  for (int repeat = 0; repeat <= 8; repeat++)
     {
       char *result;
       int retval = asprintf (&result, "%d", 12345);
@@ -83,7 +79,7 @@ test_asprintf ()
       free (result);
     }
 
-  for (repeat = 0; repeat <= 8; repeat++)
+  for (int repeat = 0; repeat <= 8; repeat++)
     {
       char *result;
       int retval = asprintf (&result, "%08lx", 12345UL);
@@ -99,5 +95,5 @@ main (int argc, char *argv[])
 {
   test_vasprintf ();
   test_asprintf ();
-  return 0;
+  return test_exit_status;
 }

@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaValDuration" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaValDuration</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaValDuration_1a26a5a72ef091b729e3b695118b7a61a8" prot="public" static="no" mutable="no">
+        <type>long</type>
+        <definition>long mon</definition>
+        <argsstring></argsstring>
+        <name>mon</name>
+        <qualifiedname>_xmlSchemaValDuration::mon</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="73" column="17" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="73" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDuration_1afbcab1d10765b6ed287dccf3c13d8be9" prot="public" static="no" mutable="no">
+        <type>long</type>
+        <definition>long day</definition>
+        <argsstring></argsstring>
+        <name>day</name>
+        <qualifiedname>_xmlSchemaValDuration::day</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="74" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="74" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDuration_1a741d9964fa8029b9468528756ea835af" prot="public" static="no" mutable="no">
+        <type>double</type>
+        <definition>double sec</definition>
+        <argsstring></argsstring>
+        <name>sec</name>
+        <qualifiedname>_xmlSchemaValDuration::sec</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="75" column="11" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="75" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="72" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="72" bodyend="76"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaValDuration_1afbcab1d10765b6ed287dccf3c13d8be9" prot="public" virt="non-virtual"><scope>_xmlSchemaValDuration</scope><name>day</name></member>
+      <member refid="struct__xmlSchemaValDuration_1a26a5a72ef091b729e3b695118b7a61a8" prot="public" virt="non-virtual"><scope>_xmlSchemaValDuration</scope><name>mon</name></member>
+      <member refid="struct__xmlSchemaValDuration_1a741d9964fa8029b9468528756ea835af" prot="public" virt="non-virtual"><scope>_xmlSchemaValDuration</scope><name>sec</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

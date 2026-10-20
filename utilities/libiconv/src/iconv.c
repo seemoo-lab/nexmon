@@ -1,4 +1,4 @@
-/* Copyright (C) 2000-2009, 2011 Free Software Foundation, Inc.
+/* Copyright (C) 2000-2026 Free Software Foundation, Inc.
    This file is part of the GNU LIBICONV Library.
 
    This program is free software: you can redistribute it and/or modify
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #ifndef ICONV_CONST
@@ -43,6 +43,10 @@
 #include "uniwidth.h"
 #include "uniwidth/cjk.h"
 
+#ifdef __MVS__
+#include "zos-tag.h"
+#endif
+
 /* Ensure that iconv_no_i18n does not depend on libintl.  */
 #ifdef NO_I18N
 #include <stdarg.h>
@@ -67,7 +71,7 @@ error (int status, int errnum, const char *message, ...)
     exit(status);
 }
 #else
-# include "error.h"
+# include <error.h>
 #endif
 
 #include "gettext.h"
@@ -107,7 +111,7 @@ static void usage (int exitcode)
          Align it correctly against the first line.  */
       _("or:    iconv -l");
     fprintf(stderr, "%s\n%s\n", helpstring1, helpstring2);
-    fprintf(stderr, _("Try `%s --help' for more information.\n"), program_name);
+    fprintf(stderr, _("Try '%s --help' for more information.\n"), program_name);
   } else {
     /* xgettext: no-wrap */
     /* TRANSLATORS: The first line of the long usage message.
@@ -178,11 +182,16 @@ Informative output:\n"));
     printf(_("\
   --version                   output version information and exit\n"));
     printf("\n");
-    /* TRANSLATORS: The placeholder indicates the bug-reporting address
-       for this package.  Please add _another line_ saying
+    /* TRANSLATORS: The first placeholder is the web address of the Savannah
+       project of this package.  The second placeholder is the bug-reporting
+       email address for this package.  Please add _another line_ saying
        "Report translation bugs to <...>\n" with the address for translation
        bugs (typically your translation team's web or email address).  */
-    fputs(_("Report bugs to <bug-gnu-libiconv@gnu.org>.\n"),stdout);
+    printf(_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+           "https://savannah.gnu.org/projects/libiconv",
+           "bug-gnu-libiconv@gnu.org");
   }
   exit(exitcode);
 }
@@ -191,13 +200,14 @@ static void print_version (void)
 {
   printf("iconv (GNU libiconv %d.%d)\n",
          _libiconv_version >> 8, _libiconv_version & 0xff);
-  printf("Copyright (C) %s Free Software Foundation, Inc.\n", "2000-2011");
+  printf("Copyright (C) %s Free Software Foundation, Inc.\n", "2000-2026");
   /* xgettext: no-wrap */
-  fputs (_("\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+  /* TRANSLATORS: The %s placeholder is the web address of the GPL license.  */
+  printf (_("\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
-There is NO WARRANTY, to the extent permitted by law.\n\
-"),stdout);
+There is NO WARRANTY, to the extent permitted by law.\n"),
+          "https://gnu.org/licenses/gpl.html");
   /* TRANSLATORS: The %s placeholder expands to an author's name.  */
   printf(_("Written by %s.\n"),"Bruno Haible");
   exit(EXIT_SUCCESS);
@@ -414,10 +424,8 @@ static size_t ilseq_unicode_subst_size;
 
 /* Buffer of size ilseq_byte_subst_size+1. */
 static char* ilseq_byte_subst_buffer;
-#if HAVE_WCHAR_T
 /* Buffer of size ilseq_wchar_subst_size+1. */
 static char* ilseq_wchar_subst_buffer;
-#endif
 /* Buffer of size ilseq_unicode_subst_size+1. */
 static char* ilseq_unicode_subst_buffer;
 
@@ -500,8 +508,6 @@ static void subst_uc_to_mb_fallback
                     callback_arg);
 }
 
-#if HAVE_WCHAR_T
-
 /* Auxiliary variables for subst_mb_to_wc_fallback. */
 /* Converter from locale encoding to wchar_t. */
 static iconv_t subst_mb_to_wc_cd;
@@ -582,13 +588,6 @@ static void subst_wc_to_mb_fallback
                     callback_arg);
 }
 
-#else
-
-#define subst_mb_to_wc_fallback NULL
-#define subst_wc_to_mb_fallback NULL
-
-#endif
-
 /* Auxiliary variables for subst_mb_to_mb_fallback. */
 /* Converter from locale encoding to target encoding. */
 static iconv_t subst_mb_to_mb_cd;
@@ -668,7 +667,7 @@ static void conversion_error_other (int errnum, const char* infilename)
 
 /* Convert the input given in infile.  */
 
-static int convert (iconv_t cd, int infile, const char* infilename)
+static int convert (iconv_t cd, int infile, const char* infilename, _GL_UNUSED const char* tocode)
 {
   char inbuf[4096+4096];
   size_t inbufrest = 0;
@@ -680,6 +679,11 @@ static int convert (iconv_t cd, int infile, const char* infilename)
 
 #if O_BINARY
   SET_BINARY(infile);
+#endif
+#ifdef __MVS__
+  /* Turn off z/OS auto-conversion.  */
+  struct f_cnvrt req = {SETCVTOFF, 0, 0};
+  fcntl(infile, F_CONTROL_CVT, &req);
 #endif
   line = 1; column = 0;
   iconv(cd,NULL,NULL,NULL,NULL);
@@ -829,6 +833,11 @@ static int convert (iconv_t cd, int infile, const char* infilename)
     goto done;
   }
  done:
+#ifdef __MVS__
+  if (!status) {
+    status = tagfile(fileno(stdout), tocode);
+  }
+#endif
   if (outbuf != initial_outbuf)
     free(outbuf);
   return status;
@@ -859,8 +868,18 @@ int main (int argc, char* argv[])
 #endif
 #if ENABLE_NLS
   bindtextdomain("libiconv",relocate(LOCALEDIR));
+  bindtextdomain("gnulib",relocate(GNULIB_LOCALEDIR));
 #endif
   textdomain("libiconv");
+  /* No need to invoke the gnulib function stdopen() here, because
+     (1) the only file descriptor allocations done by this program are
+         fopen(...,"r"),
+     (2) when such fopen() calls occur, stdin is not used,
+     hence
+     - when an fopen() call happens to open fd 0, it is harmless, by (2),
+     - when an fopen() call happens to open fd 1 or 2, writing to
+       stdout or stderr will produce an error, by (1). */
+
   for (i = 1; i < argc;) {
     size_t len = strlen(argv[i]);
     if (!strcmp(argv[i],"--")) {
@@ -959,6 +978,7 @@ int main (int argc, char* argv[])
     if /* --s ... --silent */
        (len >= 3 && len <= 8 && !strncmp(argv[i],"--silent",len)) {
       silent = 1;
+      i++;
       continue;
     }
     if /* --h ... --help */
@@ -977,7 +997,7 @@ int main (int argc, char* argv[])
       continue;
     }
 #endif
-    if (argv[i][0] == '-') {
+    if (argv[i][0] == '-' && argv[i][1] != '\0') {
       const char *option = argv[i] + 1;
       if (*option == '\0')
         usage(1);
@@ -1031,6 +1051,18 @@ int main (int argc, char* argv[])
             _("try '%s -l' to get the list of supported encodings"),
             program_name);
     }
+    /* For EBCDIC encodings, determine how to map 0x15 (which encodes the
+       "newline function", see the Unicode standard, chapter 5).  */
+    const char *envvar_value = getenv("ICONV_EBCDIC_ZOS_UNIX");
+    if (envvar_value != NULL && envvar_value[0] != '\0') {
+      unsigned int surface;
+      iconvctl(cd, ICONV_GET_FROM_SURFACE, &surface);
+      surface |= ICONV_SURFACE_EBCDIC_ZOS_UNIX;
+      iconvctl(cd, ICONV_SET_FROM_SURFACE, &surface);
+      iconvctl(cd, ICONV_GET_TO_SURFACE, &surface);
+      surface |= ICONV_SURFACE_EBCDIC_ZOS_UNIX;
+      iconvctl(cd, ICONV_SET_TO_SURFACE, &surface);
+    }
     /* Look at fromcode and tocode, to determine whether character widths
        should be determined according to legacy CJK conventions. */
     cjkcode = iconv_canonicalize(tocode);
@@ -1040,28 +1072,22 @@ int main (int argc, char* argv[])
     if (ilseq_byte_subst != NULL)
       ilseq_byte_subst_buffer = (char*)xmalloc((ilseq_byte_subst_size+1)*sizeof(char));
     if (!discard_unconvertible) {
-      #if HAVE_WCHAR_T
       if (ilseq_wchar_subst != NULL)
         ilseq_wchar_subst_buffer = (char*)xmalloc((ilseq_wchar_subst_size+1)*sizeof(char));
-      #endif
       if (ilseq_unicode_subst != NULL)
         ilseq_unicode_subst_buffer = (char*)xmalloc((ilseq_unicode_subst_size+1)*sizeof(char));
       if (ilseq_byte_subst != NULL) {
         subst_mb_to_uc_cd = iconv_open("UCS-4-INTERNAL","char");
         subst_mb_to_uc_temp_buffer = (unsigned int*)xmalloc(ilseq_byte_subst_size*sizeof(unsigned int));
-        #if HAVE_WCHAR_T
         subst_mb_to_wc_cd = iconv_open("wchar_t","char");
         subst_mb_to_wc_temp_buffer = (wchar_t*)xmalloc(ilseq_byte_subst_size*sizeof(wchar_t));
-        #endif
         subst_mb_to_mb_cd = iconv_open(tocode,"char");
         subst_mb_to_mb_temp_buffer = (char*)xmalloc(ilseq_byte_subst_size*4);
       }
-      #if HAVE_WCHAR_T
       if (ilseq_wchar_subst != NULL) {
         subst_wc_to_mb_cd = iconv_open(tocode,"char");
         subst_wc_to_mb_temp_buffer = (char*)xmalloc(ilseq_wchar_subst_size*4);
       }
-      #endif
       if (ilseq_unicode_subst != NULL) {
         subst_uc_to_mb_cd = iconv_open(tocode,"char");
         subst_uc_to_mb_temp_buffer = (char*)xmalloc(ilseq_unicode_subst_size*4);
@@ -1085,24 +1111,32 @@ int main (int argc, char* argv[])
     if (i == argc)
       status = convert(cd,fileno(stdin),
                        /* TRANSLATORS: A filename substitute denoting standard input.  */
-                       _("(stdin)"));
+                       _("(stdin)"),
+                       tocode);
     else {
       status = 0;
       for (; i < argc; i++) {
         const char* infilename = argv[i];
-        FILE* infile = fopen(infilename,"r");
-        if (infile == NULL) {
-          int saved_errno = errno;
-          error(0,saved_errno,
-                /* TRANSLATORS: The first part of an error message.
-                   It is followed by a colon and a detail message.
-                   The %s placeholder expands to the input file name.  */
-                _("%s"),
-                infilename);
-          status = 1;
+        if (strcmp(infilename,"-") == 0) {
+          status |= convert(cd,fileno(stdin),
+                            /* TRANSLATORS: A filename substitute denoting standard input.  */
+                            _("(stdin)"),
+                            tocode);
         } else {
-          status |= convert(cd,fileno(infile),infilename);
-          fclose(infile);
+          FILE* infile = fopen(infilename,"r");
+          if (infile == NULL) {
+            int saved_errno = errno;
+            error(0,saved_errno,
+                  /* TRANSLATORS: The first part of an error message.
+                     It is followed by a colon and a detail message.
+                     The %s placeholder expands to the input file name.  */
+                  _("%s"),
+                  infilename);
+            status = 1;
+          } else {
+            status |= convert(cd,fileno(infile),infilename,tocode);
+            fclose(infile);
+          }
         }
       }
     }

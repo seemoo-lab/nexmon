@@ -1,0 +1,370 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="chvalid_8c" kind="file" language="C++">
+    <compoundname>chvalid.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes refid="chvalid_8h" local="no">libxml/chvalid.h</includes>
+    <includes local="no">stddef.h</includes>
+    <includes local="yes">codegen/ranges.inc</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/chvalid.c</label>
+        <link refid="chvalid_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/chvalid.h</label>
+        <link refid="chvalid_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>codegen/ranges.inc</label>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="5">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="7">
+        <label>stdarg.h</label>
+      </node>
+      <node id="8">
+        <label>stddef.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="chvalid_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="6" column="9" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="6" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="chvalid_8c_1ad8c349d0f6ce4251bf9177d9859b33d6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCharInRange</definition>
+        <argsstring>(unsigned int val, const xmlChRangeGroup *rptr)</argsstring>
+        <name>xmlCharInRange</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type>const xmlChRangeGroup *</type>
+          <declname>rptr</declname>
+        </param>
+        <briefdescription>
+<para>Does a binary search of the range table to determine if char is valid. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to be validated </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>rptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to range to be used to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if character valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="32" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="32" bodyend="77"/>
+      </memberdef>
+      <memberdef kind="function" id="chvalid_8c_1a8dc20da6ee999c3c823ca1aca833d4ef" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsBaseChar</definition>
+        <argsstring>(unsigned int ch)</argsstring>
+        <name>xmlIsBaseChar</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000103"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="chvalid_8h_1a8ce6e3da39da24cb484c117095feebb3" kindref="member">xmlIsBaseChar_ch</ref> or <ref refid="chvalid_8h_1af2ce611cd9b7e3720040e96045bcff0f" kindref="member">xmlIsBaseCharQ</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if argument valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="87" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="87" bodyend="89"/>
+      </memberdef>
+      <memberdef kind="function" id="chvalid_8c_1a2864e2737aa8f120f308e7587eb06d53" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsBlank</definition>
+        <argsstring>(unsigned int ch)</argsstring>
+        <name>xmlIsBlank</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000104"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="chvalid_8h_1a3002adb8fb25d38080a039e18a2f24f7" kindref="member">xmlIsBlank_ch</ref> or <ref refid="chvalid_8h_1a6b880732c84c5cc74f9e77f409e92f5d" kindref="member">xmlIsBlankQ</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if argument valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="99" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="99" bodyend="101"/>
+      </memberdef>
+      <memberdef kind="function" id="chvalid_8c_1a1da8bfda051cdbb51f3726f4c694fe60" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsChar</definition>
+        <argsstring>(unsigned int ch)</argsstring>
+        <name>xmlIsChar</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000105"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="chvalid_8h_1a358cee546e99f74fb798ee0cfaea1268" kindref="member">xmlIsChar_ch</ref> or <ref refid="chvalid_8h_1adbd3c61cc3ba18e726e2da314a8dea60" kindref="member">xmlIsCharQ</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if argument valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="111" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="111" bodyend="113"/>
+      </memberdef>
+      <memberdef kind="function" id="chvalid_8c_1a00cc2d0ead00c6b2ead36615a0a9c9fe" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsCombining</definition>
+        <argsstring>(unsigned int ch)</argsstring>
+        <name>xmlIsCombining</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000106"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="chvalid_8h_1a153bf94156595f808fe9de1e2ff1ed3d" kindref="member">xmlIsCombiningQ</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if argument valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="123" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="123" bodyend="125"/>
+      </memberdef>
+      <memberdef kind="function" id="chvalid_8c_1a68d72280183a8908f55c6cba0396a776" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsDigit</definition>
+        <argsstring>(unsigned int ch)</argsstring>
+        <name>xmlIsDigit</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000107"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="chvalid_8h_1a7ca753c2b90c52779c0aaf9545c67bee" kindref="member">xmlIsDigit_ch</ref> or <ref refid="chvalid_8h_1a5e849b87b1fa259d0981c5e1803dc707" kindref="member">xmlIsDigitQ</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if argument valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="135" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="135" bodyend="137"/>
+      </memberdef>
+      <memberdef kind="function" id="chvalid_8c_1a37dd3e110c23fe39340d2897a1626e5e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsExtender</definition>
+        <argsstring>(unsigned int ch)</argsstring>
+        <name>xmlIsExtender</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000108"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="chvalid_8h_1af90bd7cb53b78ce19322c20a050ab62f" kindref="member">xmlIsExtender_ch</ref> or <ref refid="chvalid_8h_1a7aca692afe988a9d51827c6215d7fdf8" kindref="member">xmlIsExtenderQ</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if argument valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="147" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="147" bodyend="149"/>
+      </memberdef>
+      <memberdef kind="function" id="chvalid_8c_1a4b4b8bbfaa4fcd8d2b2095d043795376" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsIdeographic</definition>
+        <argsstring>(unsigned int ch)</argsstring>
+        <name>xmlIsIdeographic</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000109"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="chvalid_8h_1a5ecbdde1fbac665994a2729bc62ad72e" kindref="member">xmlIsIdeographicQ</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if argument valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="159" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="159" bodyend="161"/>
+      </memberdef>
+      <memberdef kind="function" id="chvalid_8c_1a09a7c96ad4a0a2e084a3be68919e9292" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsPubidChar</definition>
+        <argsstring>(unsigned int ch)</argsstring>
+        <name>xmlIsPubidChar</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000110"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="chvalid_8h_1a06f584f95554a0f1b8c52ab47f9819ce" kindref="member">xmlIsPubidChar_ch</ref> or <ref refid="chvalid_8h_1af9cda6cbab7ed704566b22f336d1d6a7" kindref="member">xmlIsPubidCharQ</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>character to validate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if argument valid, false otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/chvalid.c" line="171" column="1" bodyfile="/builds/GNOME/libxml2/chvalid.c" bodystart="171" bodyend="173"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/chvalid.c"/>
+  </compounddef>
+</doxygen>

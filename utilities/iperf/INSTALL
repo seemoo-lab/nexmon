@@ -1,15 +1,91 @@
 $Id: INSTALL,v 1.1.1.1 2004/05/18 01:50:44 kgibbs Exp $
 
+Briefly:
+
+Do one-time if needed, e.g. for systems with dnf
+  dnf install gcc
+  dnf install gcc-c++
+  dnf install make
+  dnf install automake
+
+then to build do:
+  ./configure      -- configure for your machine
+  make             -- compile Iperf
+  make install     -- install Iperf, if desired, from root
+
+and to use:
+  iperf -s               (on machine "foo.bar.edu")
+  iperf -c foo.bar.edu   (on some other machine)
+  iperf -h               (for help screen)
+  iperf -v               (for version information)
+
+
 Platform Specific Notes
+
+Android NDK (cross compile from Linux)
+
+Download the NDK from https://developer.android.com/ndk
+
+Create a wrapper for the NDK's clang toolchain
+
+$ more ~/bin/aarch64-android-ndk
+#!/bin/sh
+export NDK=/projects/android-ndk-r26d
+export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
+export TARGET=aarch64-linux-android
+
+# Set this to your minSdkVersion.
+export API=24
+
+# Configure and build.
+export AR=$TOOLCHAIN/bin/llvm-ar
+export CC=$TOOLCHAIN/bin/$TARGET$API-clang
+export AS=$CC
+export CXX=$TOOLCHAIN/bin/$TARGET$API-clang++
+export LD=$TOOLCHAIN/bin/ld
+export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+export STRIP=$TOOLCHAIN/bin/llvm-strip
+
+"$@"
+#####
+
+Configure and make
+
+$ aarch64-android-ndk ../iperf2-code/configure --host=aarch64-linux-android
+$ make
+
+
+---
+
 
 FreeBSD
 
   If you use a cc or c++ other than the system one, threads may not be
-  detected properly.  To work around this set the following environment 
+  detected properly.  To work around this set the following environment
   variables:
 
     setenv CC /usr/bin/cc
     setenv CXX /usr/bin/c++
+
+---
+
+Windows 64bit (cross compile from Linux)
+
+# dnf install mingw64-gcc mingw64-gcc-c++ mingw64-winpthreads-static
+
+$ ../iperf2-code/configure --host=x86_64-w64-mingw32
+$ make
+
+---
+
+Windows 32bit (cross compile from Linux)
+
+# dnf install mingw32-gcc mingw32-gcc-c++ mingw32-winpthreads-static
+
+$ ../iperf2-code/configure --host=i686-w64-mingw32
+$ make
+
+
 
 ---
 
@@ -35,6 +111,15 @@ Windows (Cygwin + i686-w64-mingw32)
 
   The result runs natively on WinXP and above without requiring Cygwin
 
+
+---
+Windows 64 (Cygwin + i686-w64-mingw32)
+
+# dnf install mingw64-gcc mingw64-gcc-c++ mingw64-winpthreads-static
+
+$ ../iperf2-code/configure --host=x86_64-w64-mingw32
+$ make
+
 ---
 
 Windows (MinGW + Msys)
@@ -53,3 +138,63 @@ Windows (MinGW + Msys)
   MinGW+Msys on client machines.
 
 ---
+
+OpenWRT cross compile (example only)
+
+  Setup buildroot (not fully described here, link https://electrosome.com/cross-compile-openwrt-c-program/)
+      determine the target environment from the openwrt banner (this example is openwrt)
+      get the build environment, e.g. git clone https://github.com/openwrt/openwrt.git
+      update feeds
+          $ ./scripts/feeds update -a
+	  $ ./scripts/feeds install -a
+      configure target
+          $ make menuconfig
+      Then select Target System, Subtarget and Target Profile as per your target environment, e.g.
+          Target System: MediaTek Ralink MIPS
+	  Subtarget system: MT7620 based boards
+	  Target profile: NETGEAR R6350
+
+  Set environment variables (via any editor or manual exports to get)
+      [rjmcmahon@localhost iperf2-code]$ more ../openwrt.config
+      export STAGING_DIR=/home/usernmae/Code/openwrt/staging_dir
+      export TOOLCHAIN_DIR=$STAGING_DIR/toolchain-mipsel_24kc_gcc-8.4.0_musl (this is target dependent)
+      export LDCFLAGS=$TOOLCHAIN_DIR/usr/lib
+      export LD_LIBRARY_PATH=$TOOLCHAIN_DIR/usr/lib
+      export PATH=$TOOLCHAIN_DIR/bin:$PATH
+      $ source ../openwrt.config
+
+  Download iperf 2 source
+      $ cd iperf2-code
+  Run configure, e.g. (replace /home/rjmcmahon/Code with your directory)
+      $ ./configure --target=mips-buildroot-linux-gnu --host=mips-buildroot-linux-gnu CC=/home/rjmcmahon/Code/openwrt/staging_dir/toolchain-mipsel_24kc_gcc-8.4.0_musl/bin/mipsel-openwrt-linux-gcc CXX=/home/rjmcmahon/Code/openwrt/staging_dir/toolchain-mipsel_24kc_gcc-8.4.0_musl/bin/mipsel-openwrt-linux-g++
+
+  Cross compile (binary in the src/ directory)
+      $ make
+
+  Install iperf and shared libraries onto openwrt device
+      ssh into openwrt device, $ opkg install libstdcpp
+      $ scp src/iperf user@host:/usr/bin
+
+---
+Other configure and compile options
+
+      ./configure --enable-debuginfo - enable asserts
+      ./configure --enable-thread-debug - enable thread level debugging
+      ./configure --enable-summing-debug - enable summing level debugging
+      ./configure --enable-packet-debug - show packet sequence numbers - very chatty
+      ./configure --enable-udp-l4s - enable l4s udp test support
+      ./configure --enable-fastsampling - sub millisecond timestamping
+      ./configure --enable-checkprograms - compile supplmentary test programs
+      ./configure --disable-ipv6
+      ./configure --disable-multicast
+      ./configure --disable-threads
+      ./configure --disable-write-select
+      ./configure --enable-debug-symbols - enable debugging with symbols
+      ./configure --enable-default-localonly - limit test traffic to the local network (off by default)
+---
+
+dnf installs needed for build:
+
+       dnf install gcc
+       dnf install gcc-c++
+       dnf install automake

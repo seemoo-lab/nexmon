@@ -1,0 +1,838 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlversion_8h" kind="file" language="C++">
+    <compoundname>xmlversion.h</compoundname>
+    <includes local="no">libxml/xmlexports.h</includes>
+    <includedby refid="HTMLparser_8h" local="no">HTMLparser.h</includedby>
+    <includedby refid="HTMLtree_8h" local="no">HTMLtree.h</includedby>
+    <includedby refid="SAX2_8h" local="no">SAX2.h</includedby>
+    <includedby refid="c14n_8h" local="no">c14n.h</includedby>
+    <includedby refid="catalog_8h" local="no">catalog.h</includedby>
+    <includedby refid="chvalid_8h" local="no">chvalid.h</includedby>
+    <includedby refid="debugXML_8h" local="no">debugXML.h</includedby>
+    <includedby refid="dict_8h" local="no">dict.h</includedby>
+    <includedby refid="encoding_8h" local="no">encoding.h</includedby>
+    <includedby refid="entities_8h" local="no">entities.h</includedby>
+    <includedby refid="hash_8h" local="no">hash.h</includedby>
+    <includedby refid="list_8h" local="no">list.h</includedby>
+    <includedby refid="parser_8h" local="no">parser.h</includedby>
+    <includedby refid="parserInternals_8h" local="no">parserInternals.h</includedby>
+    <includedby refid="pattern_8h" local="no">pattern.h</includedby>
+    <includedby refid="relaxng_8h" local="no">relaxng.h</includedby>
+    <includedby refid="schemasInternals_8h" local="no">schemasInternals.h</includedby>
+    <includedby refid="schematron_8h" local="no">schematron.h</includedby>
+    <includedby refid="threads_8h" local="no">threads.h</includedby>
+    <includedby refid="tree_8h" local="no">tree.h</includedby>
+    <includedby refid="uri_8h" local="no">uri.h</includedby>
+    <includedby refid="valid_8h" local="no">valid.h</includedby>
+    <includedby refid="xinclude_8h" local="no">xinclude.h</includedby>
+    <includedby refid="xlink_8h" local="no">xlink.h</includedby>
+    <includedby refid="xmlIO_8h" local="no">xmlIO.h</includedby>
+    <includedby refid="xmlautomata_8h" local="no">xmlautomata.h</includedby>
+    <includedby refid="xmlerror_8h" local="no">xmlerror.h</includedby>
+    <includedby refid="xmlmemory_8h" local="no">xmlmemory.h</includedby>
+    <includedby refid="xmlmodule_8h" local="no">xmlmodule.h</includedby>
+    <includedby refid="xmlreader_8h" local="no">xmlreader.h</includedby>
+    <includedby refid="xmlregexp_8h" local="no">xmlregexp.h</includedby>
+    <includedby refid="xmlsave_8h" local="no">xmlsave.h</includedby>
+    <includedby refid="xmlschemas_8h" local="no">xmlschemas.h</includedby>
+    <includedby refid="xmlschemastypes_8h" local="no">xmlschemastypes.h</includedby>
+    <includedby refid="xmlstring_8h" local="no">xmlstring.h</includedby>
+    <includedby refid="xmlwriter_8h" local="no">xmlwriter.h</includedby>
+    <includedby refid="xpath_8h" local="no">xpath.h</includedby>
+    <includedby refid="xpathInternals_8h" local="no">xpathInternals.h</includedby>
+    <includedby refid="xpointer_8h" local="no">xpointer.h</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlexports.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="2">
+        <label>HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>HTMLtree.h</label>
+        <link refid="HTMLtree_8h"/>
+      </node>
+      <node id="5">
+        <label>SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>c14n.h</label>
+        <link refid="c14n_8h"/>
+      </node>
+      <node id="13">
+        <label>catalog.h</label>
+        <link refid="catalog_8h"/>
+      </node>
+      <node id="14">
+        <label>chvalid.h</label>
+        <link refid="chvalid_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>debugXML.h</label>
+        <link refid="debugXML_8h"/>
+      </node>
+      <node id="16">
+        <label>dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+      </node>
+      <node id="22">
+        <label>pattern.h</label>
+        <link refid="pattern_8h"/>
+      </node>
+      <node id="7">
+        <label>relaxng.h</label>
+        <link refid="relaxng_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>schemasInternals.h</label>
+        <link refid="schemasInternals_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="30">
+        <label>schematron.h</label>
+        <link refid="schematron_8h"/>
+      </node>
+      <node id="31">
+        <label>threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="32">
+        <label>tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+      </node>
+      <node id="34">
+        <label>uri.h</label>
+        <link refid="uri_8h"/>
+      </node>
+      <node id="29">
+        <label>valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>xinclude.h</label>
+        <link refid="xinclude_8h"/>
+      </node>
+      <node id="33">
+        <label>xlink.h</label>
+        <link refid="xlink_8h"/>
+      </node>
+      <node id="24">
+        <label>xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="35">
+        <label>xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="29" relation="include">
+        </childnode>
+      </node>
+      <node id="36">
+        <label>xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="37">
+        <label>xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+      </node>
+      <node id="38">
+        <label>xmlmodule.h</label>
+        <link refid="xmlmodule_8h"/>
+      </node>
+      <node id="8">
+        <label>xmlreader.h</label>
+        <link refid="xmlreader_8h"/>
+      </node>
+      <node id="39">
+        <label>xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>xmlsave.h</label>
+        <link refid="xmlsave_8h"/>
+      </node>
+      <node id="10">
+        <label>xmlschemas.h</label>
+        <link refid="xmlschemas_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>xmlschemastypes.h</label>
+        <link refid="xmlschemastypes_8h"/>
+      </node>
+      <node id="40">
+        <label>xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="34" relation="include">
+        </childnode>
+        <childnode refid="35" relation="include">
+        </childnode>
+        <childnode refid="39" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>xmlwriter.h</label>
+        <link refid="xmlwriter_8h"/>
+      </node>
+      <node id="19">
+        <label>xpath.h</label>
+        <link refid="xpath_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>xpathInternals.h</label>
+        <link refid="xpathInternals_8h"/>
+      </node>
+      <node id="21">
+        <label>xpointer.h</label>
+        <link refid="xpointer_8h"/>
+      </node>
+      <node id="1">
+        <label>xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="34" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="35" relation="include">
+        </childnode>
+        <childnode refid="36" relation="include">
+        </childnode>
+        <childnode refid="37" relation="include">
+        </childnode>
+        <childnode refid="38" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="39" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="40" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="xmlversion_8h_1a99ebbf7a469c5cf2f57b40a2cb9f4f86" prot="public" static="no">
+        <name>LIBXML_DOTTED_VERSION</name>
+        <initializer>&quot;2.15.4&quot;</initializer>
+        <briefdescription>
+<para>the version string like &quot;1.2.3&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="19" column="9" bodyfile="xmlversion.h" bodystart="19" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1acb82d8f83d004ac7f1e2c986921cd47c" prot="public" static="no">
+        <name>LIBXML_VERSION</name>
+        <initializer>21504</initializer>
+        <briefdescription>
+<para>the version number: 1.2.3 value is 10203 </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="24" column="9" bodyfile="xmlversion.h" bodystart="24" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1af0e51c4a13524c1ecded2cbbe3d17724" prot="public" static="no">
+        <name>LIBXML_VERSION_STRING</name>
+        <initializer>&quot;21504&quot;</initializer>
+        <briefdescription>
+<para>the version number string, 1.2.3 value is &quot;10203&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="29" column="9" bodyfile="xmlversion.h" bodystart="29" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1abffa59f5c7b172d03d60256adb1d1bd4" prot="public" static="no">
+        <name>LIBXML_VERSION_EXTRA</name>
+        <initializer>&quot;&quot;</initializer>
+        <briefdescription>
+<para>extra version information, used to show a git commit description </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="34" column="9" bodyfile="xmlversion.h" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a3ff59c8d65d4751ebbf14e08d55a99f2" prot="public" static="no">
+        <name>LIBXML_TEST_VERSION</name>
+        <initializer>xmlCheckVersion(21504);</initializer>
+        <briefdescription>
+<para>Macro to check that the libxml version in use is compatible with the version the software has been compiled against. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="40" column="9" bodyfile="xmlversion.h" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a0e2139d4cd0f3565a580cc9f02f56fde" prot="public" static="no">
+        <name>LIBXML_THREAD_ENABLED</name>
+        <briefdescription>
+<para>Whether the thread support is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="46" column="9" bodyfile="xmlversion.h" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1ae48fb7294be97e4f9f776aca8b01c877" prot="public" static="no">
+        <name>LIBXML_TREE_ENABLED</name>
+        <briefdescription>
+<para>Always enabled since 2.14.0. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="59" column="9" bodyfile="xmlversion.h" bodystart="59" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a160ac69348ec977a6aa7b87da29d5c24" prot="public" static="no">
+        <name>LIBXML_OUTPUT_ENABLED</name>
+        <briefdescription>
+<para>Whether the serialization/saving support is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="65" column="9" bodyfile="xmlversion.h" bodystart="65" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1aba03710e8d6e10e7fd6fb757d9e22264" prot="public" static="no">
+        <name>LIBXML_PUSH_ENABLED</name>
+        <briefdescription>
+<para>Whether the push parsing interfaces are configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="72" column="9" bodyfile="xmlversion.h" bodystart="72" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1af0c35d8dd7d3b46188ebb5fd7f92163c" prot="public" static="no">
+        <name>LIBXML_READER_ENABLED</name>
+        <briefdescription>
+<para>Whether the xmlReader parsing interface is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="79" column="9" bodyfile="xmlversion.h" bodystart="79" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a17e0b579a89fa5c7335206ea268560a5" prot="public" static="no">
+        <name>LIBXML_PATTERN_ENABLED</name>
+        <briefdescription>
+<para>Whether the <ref refid="pattern_8h_1ab90eb710cd869b8620373f1b62c5d543" kindref="member">xmlPattern</ref> node selection interface is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="86" column="9" bodyfile="xmlversion.h" bodystart="86" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a6372577d3648aa654203847c0ea304d1" prot="public" static="no">
+        <name>LIBXML_WRITER_ENABLED</name>
+        <briefdescription>
+<para>Whether the xmlWriter saving interface is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="93" column="9" bodyfile="xmlversion.h" bodystart="93" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a80771fc578adecb52cae709d500ef117" prot="public" static="no">
+        <name>LIBXML_SAX1_ENABLED</name>
+        <briefdescription>
+<para>Whether the older SAX1 interface is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="100" column="9" bodyfile="xmlversion.h" bodystart="100" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1ac4b63913f7c8474859c082c904c7bf4e" prot="public" static="no">
+        <name>LIBXML_VALID_ENABLED</name>
+        <briefdescription>
+<para>Whether the DTD validation support is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="114" column="9" bodyfile="xmlversion.h" bodystart="114" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1af96083c3995f17974f5582d90de6052c" prot="public" static="no">
+        <name>LIBXML_HTML_ENABLED</name>
+        <briefdescription>
+<para>Whether the HTML support is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="121" column="9" bodyfile="xmlversion.h" bodystart="121" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1ae23b525b4ff4dce0182cbfc390ca0b97" prot="public" static="no">
+        <name>LIBXML_C14N_ENABLED</name>
+        <briefdescription>
+<para>Whether the Canonicalization support is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="133" column="9" bodyfile="xmlversion.h" bodystart="133" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a79293e951c44a41e01b4da0c59f14263" prot="public" static="no">
+        <name>LIBXML_CATALOG_ENABLED</name>
+        <briefdescription>
+<para>Whether the Catalog support is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="140" column="9" bodyfile="xmlversion.h" bodystart="140" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a499c3b2979cf327ccaa6867413d10db4" prot="public" static="no">
+        <name>LIBXML_SGML_CATALOG_ENABLED</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="141" column="9" bodyfile="xmlversion.h" bodystart="141" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a391197419587ebf015b6cd7fd3678ed7" prot="public" static="no">
+        <name>LIBXML_XPATH_ENABLED</name>
+        <briefdescription>
+<para>Whether XPath is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="148" column="9" bodyfile="xmlversion.h" bodystart="148" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a36c7f196eb9000bb3088c564b274787b" prot="public" static="no">
+        <name>LIBXML_XPTR_ENABLED</name>
+        <briefdescription>
+<para>Whether XPointer is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="155" column="9" bodyfile="xmlversion.h" bodystart="155" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a5da7055d0e5e3c6afe93f634cc36606e" prot="public" static="no">
+        <name>LIBXML_XINCLUDE_ENABLED</name>
+        <briefdescription>
+<para>Whether XInclude is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="162" column="9" bodyfile="xmlversion.h" bodystart="162" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1abb86afb75bccb96fb6542b7cc774c38a" prot="public" static="no">
+        <name>LIBXML_ICONV_ENABLED</name>
+        <briefdescription>
+<para>Whether iconv support is available. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="169" column="9" bodyfile="xmlversion.h" bodystart="169" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a5fc15a933a710af56789cd010785fe0c" prot="public" static="no">
+        <name>LIBXML_ISO8859X_ENABLED</name>
+        <briefdescription>
+<para>Whether ISO-8859-* support is made available in case iconv is not. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="183" column="9" bodyfile="xmlversion.h" bodystart="183" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1adc138956bffc335bea66b14937db8e27" prot="public" static="no">
+        <name>LIBXML_DEBUG_ENABLED</name>
+        <briefdescription>
+<para>Whether Debugging module is configured in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="190" column="9" bodyfile="xmlversion.h" bodystart="190" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1add3180fecfe5258508eb9cd2c445c0e9" prot="public" static="no">
+        <name>LIBXML_REGEXP_ENABLED</name>
+        <briefdescription>
+<para>Whether the regular expressions interfaces are compiled in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="202" column="9" bodyfile="xmlversion.h" bodystart="202" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a67c644882ba083123a11fee70afe4b82" prot="public" static="no">
+        <name>LIBXML_AUTOMATA_ENABLED</name>
+        <briefdescription>
+<para>Whether the automata interfaces are compiled in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="209" column="9" bodyfile="xmlversion.h" bodystart="209" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a2a72bf173e2f4fa8854ac4193848a0f9" prot="public" static="no">
+        <name>LIBXML_RELAXNG_ENABLED</name>
+        <briefdescription>
+<para>Whether the RelaxNG validation interfaces are compiled in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="216" column="9" bodyfile="xmlversion.h" bodystart="216" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a7bb265f4313bb33594f4abba9feb2787" prot="public" static="no">
+        <name>LIBXML_SCHEMAS_ENABLED</name>
+        <briefdescription>
+<para>Whether the Schemas validation interfaces are compiled in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="223" column="9" bodyfile="xmlversion.h" bodystart="223" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1ac0a61a5e0b5b49d81d29a2e682c639b3" prot="public" static="no">
+        <name>LIBXML_SCHEMATRON_ENABLED</name>
+        <briefdescription>
+<para>Whether the Schematron validation interfaces are compiled in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="230" column="9" bodyfile="xmlversion.h" bodystart="230" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1ab346cd5b0da263a68fb7145e5547fee7" prot="public" static="no">
+        <name>LIBXML_MODULES_ENABLED</name>
+        <briefdescription>
+<para>Whether the module interfaces are compiled in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="237" column="9" bodyfile="xmlversion.h" bodystart="237" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a1a9a0309957daf54bb46828b02498392" prot="public" static="no">
+        <name>LIBXML_MODULE_EXTENSION</name>
+        <initializer>&quot;.so&quot;</initializer>
+        <briefdescription>
+<para>the string suffix used by dynamic modules (usually shared libraries) </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="241" column="9" bodyfile="xmlversion.h" bodystart="241" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlversion_8h_1a7200a26ef26ab229d1bc84a56f114eae" prot="public" static="no">
+        <name>LIBXML_ZLIB_ENABLED</name>
+        <briefdescription>
+<para>Whether the Zlib support is compiled in. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlversion.h" line="248" column="9" bodyfile="xmlversion.h" bodystart="248" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>compile-time version information </para>
+    </briefdescription>
+    <detaileddescription>
+<para>compile-time version information for the XML library</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xmlversion.h"/>
+  </compounddef>
+</doxygen>

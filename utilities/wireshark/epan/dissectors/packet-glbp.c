@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -44,59 +32,63 @@
 void proto_register_glbp(void);
 void proto_reg_handoff_glbp(void);
 
-static int proto_glbp = -1;
-/* glbp header? */
-static gint hf_glbp_version = -1;
-static gint hf_glbp_unknown1 = -1;
-static gint hf_glbp_group = -1;
-static gint hf_glbp_unknown2 = -1;
-static gint hf_glbp_ownerid = -1;
-static gint hf_glbp_tlv = -1;
-static gint hf_glbp_type = -1;
-static gint hf_glbp_length = -1;
-/* glbp type = 1 - hello */
-static gint hf_glbp_hello_unknown10 = -1;
-static gint hf_glbp_hello_vgstate = -1;
-static gint hf_glbp_hello_unknown11 = -1;
-static gint hf_glbp_hello_priority = -1;
-static gint hf_glbp_hello_unknown12 = -1;
-static gint hf_glbp_hello_helloint = -1;
-static gint hf_glbp_hello_holdint = -1;
-static gint hf_glbp_hello_redirect = -1;
-static gint hf_glbp_hello_timeout = -1;
-static gint hf_glbp_hello_unknown13 = -1;
-static gint hf_glbp_hello_addrtype = -1;
-static gint hf_glbp_hello_addrlen = -1;
-static gint hf_glbp_hello_virtualipv4 = -1;
-static gint hf_glbp_hello_virtualipv6 = -1;
-static gint hf_glbp_hello_virtualunk = -1;
-/* glbp type = 2 - Request/Response??? */
-static gint hf_glbp_reqresp_forwarder = -1;
-static gint hf_glbp_reqresp_vfstate = -1;
-static gint hf_glbp_reqresp_unknown21 = -1;
-static gint hf_glbp_reqresp_priority = -1;
-static gint hf_glbp_reqresp_weight = -1;
-static gint hf_glbp_reqresp_unknown22 = -1;
-static gint hf_glbp_reqresp_virtualmac = -1;
-/* glbp type = 3 - Auth */
-static gint hf_glbp_auth_authtype = -1;
-static gint hf_glbp_auth_authlength = -1;
-static gint hf_glbp_auth_plainpass = -1;
-static gint hf_glbp_auth_md5hash = -1;
-static gint hf_glbp_auth_md5chainindex = -1;
-static gint hf_glbp_auth_md5chainhash = -1;
-static gint hf_glbp_auth_authunknown = -1;
-/* unknown type */
-static gint hf_glbp_unknown_data = -1;
+static dissector_handle_t glbp_handle;
 
-static gint ett_glbp = -1;
-static gint ett_glbp_tlv = -1;
+#define GLBP_UDP_PORT 3222
+
+static int proto_glbp;
+/* glbp header? */
+static int hf_glbp_version;
+static int hf_glbp_unknown1;
+static int hf_glbp_group;
+static int hf_glbp_unknown2;
+static int hf_glbp_ownerid;
+static int hf_glbp_tlv;
+static int hf_glbp_type;
+static int hf_glbp_length;
+/* glbp type = 1 - hello */
+static int hf_glbp_hello_unknown10;
+static int hf_glbp_hello_vgstate;
+static int hf_glbp_hello_unknown11;
+static int hf_glbp_hello_priority;
+static int hf_glbp_hello_unknown12;
+static int hf_glbp_hello_helloint;
+static int hf_glbp_hello_holdint;
+static int hf_glbp_hello_redirect;
+static int hf_glbp_hello_timeout;
+static int hf_glbp_hello_unknown13;
+static int hf_glbp_hello_addrtype;
+static int hf_glbp_hello_addrlen;
+static int hf_glbp_hello_virtualipv4;
+static int hf_glbp_hello_virtualipv6;
+static int hf_glbp_hello_virtualunk;
+/* glbp type = 2 - Request/Response??? */
+static int hf_glbp_reqresp_forwarder;
+static int hf_glbp_reqresp_vfstate;
+static int hf_glbp_reqresp_unknown21;
+static int hf_glbp_reqresp_priority;
+static int hf_glbp_reqresp_weight;
+static int hf_glbp_reqresp_unknown22;
+static int hf_glbp_reqresp_virtualmac;
+/* glbp type = 3 - Auth */
+static int hf_glbp_auth_authtype;
+static int hf_glbp_auth_authlength;
+static int hf_glbp_auth_plainpass;
+static int hf_glbp_auth_md5hash;
+static int hf_glbp_auth_md5chainindex;
+static int hf_glbp_auth_md5chainhash;
+static int hf_glbp_auth_authunknown;
+/* unknown type */
+static int hf_glbp_unknown_data;
+
+static int ett_glbp;
+static int ett_glbp_tlv;
 
 /* filterable expert infos */
-static expert_field ei_glbp_ipv4_wrong_length = EI_INIT;
-static expert_field ei_glbp_ipv6_wrong_length = EI_INIT;
-static expert_field ei_glbp_tlv_length_too_small = EI_INIT;
-static expert_field ei_glbp_tlv_invalid_bytes_used = EI_INIT;
+static expert_field ei_glbp_ipv4_wrong_length;
+static expert_field ei_glbp_ipv6_wrong_length;
+static expert_field ei_glbp_tlv_length_too_small;
+static expert_field ei_glbp_tlv_invalid_bytes_used;
 
 static const value_string glbp_type_vals[] = {
   { 1,  "Hello" },
@@ -170,8 +162,8 @@ static int
 dissect_glbp_hello(tvbuff_t *tvb, int offset,
         packet_info *pinfo, proto_tree *tlv_tree)
 {
-  guint8 addrtype;
-  guint8 addrlen;
+  uint8_t addrtype;
+  uint8_t addrlen;
 
   proto_tree_add_item(tlv_tree, hf_glbp_hello_unknown10, tvb, offset, 1, ENC_NA);
   offset ++;
@@ -194,10 +186,10 @@ dissect_glbp_hello(tvbuff_t *tvb, int offset,
   proto_tree_add_item(tlv_tree, hf_glbp_hello_unknown13, tvb, offset, 2, ENC_NA);
   offset += 2;
   proto_tree_add_item(tlv_tree, hf_glbp_hello_addrtype,  tvb, offset, 1, ENC_BIG_ENDIAN);
-  addrtype = tvb_get_guint8(                             tvb, offset);
+  addrtype = tvb_get_uint8(                             tvb, offset);
   offset++;
   proto_tree_add_item(tlv_tree, hf_glbp_hello_addrlen,   tvb, offset, 1, ENC_BIG_ENDIAN);
-  addrlen = tvb_get_guint8(tvb, offset);
+  addrlen = tvb_get_uint8(tvb, offset);
   offset++;
   switch (addrtype) {
     case 1:
@@ -223,7 +215,7 @@ dissect_glbp_hello(tvbuff_t *tvb, int offset,
   offset += addrlen;
 
   col_append_fstr(pinfo->cinfo, COL_INFO, ", %s",
-    val_to_str(addrtype, glbp_addr_type_vals, "%d"));
+    val_to_str(pinfo->pool, addrtype, glbp_addr_type_vals, "%d"));
 
   return offset;
 }
@@ -255,18 +247,18 @@ static int
 dissect_glbp_auth(tvbuff_t *tvb, int offset,
         packet_info *pinfo _U_, proto_tree *tlv_tree)
 {
-  guint8 authtype;
-  guint8 authlength;
+  uint8_t authtype;
+  uint8_t authlength;
 
   proto_tree_add_item(tlv_tree, hf_glbp_auth_authtype,   tvb, offset, 1, ENC_BIG_ENDIAN);
-  authtype = tvb_get_guint8(tvb, offset);
+  authtype = tvb_get_uint8(tvb, offset);
   offset++;
   proto_tree_add_item(tlv_tree, hf_glbp_auth_authlength, tvb, offset, 1, ENC_BIG_ENDIAN);
-  authlength = tvb_get_guint8(tvb, offset);
+  authlength = tvb_get_uint8(tvb, offset);
   offset++;
   switch(authtype) {
   case 1:
-    proto_tree_add_item(tlv_tree, hf_glbp_auth_plainpass, tvb, offset, authlength, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tlv_tree, hf_glbp_auth_plainpass, tvb, offset, authlength, ENC_ASCII);
     offset += authlength;
     break;
   case 2:
@@ -288,7 +280,7 @@ dissect_glbp_auth(tvbuff_t *tvb, int offset,
 }
 
 static int
-dissect_glbp_unknown(tvbuff_t *tvb, int offset, guint32 length,
+dissect_glbp_unknown(tvbuff_t *tvb, int offset, uint32_t length,
         packet_info *pinfo _U_, proto_tree *tlv_tree)
 {
   proto_tree_add_item(tlv_tree, hf_glbp_unknown_data, tvb, offset, length, ENC_NA);
@@ -303,11 +295,11 @@ dissect_glbp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   proto_tree *glbp_tree;
   proto_tree *tlv_tree;
   proto_item *ti;
-  guint8      type;
+  uint8_t     type;
   int         offset    = 0;
   int         lastoffset;
-  guint8      length;
-  guint16     group;
+  uint8_t     length;
+  uint16_t    group;
 
   group = tvb_get_ntohs(tvb, 2);
 
@@ -330,8 +322,8 @@ dissect_glbp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   offset += 6;
   while (tvb_reported_length_remaining(tvb, offset) > 0) {
 
-    type = tvb_get_guint8(tvb, offset);
-    length = tvb_get_guint8(tvb, offset+1);
+    type = tvb_get_uint8(tvb, offset);
+    length = tvb_get_uint8(tvb, offset+1);
     if (length < 2) {
       expert_add_info_format(pinfo, NULL, &ei_glbp_tlv_length_too_small,
         "Length %u too small", length);
@@ -342,14 +334,14 @@ dissect_glbp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     ti = proto_tree_add_item(glbp_tree, hf_glbp_tlv, tvb, offset, length+2, ENC_BIG_ENDIAN);
     tlv_tree = proto_item_add_subtree(ti, ett_glbp_tlv);
     proto_item_append_text(ti, " l=%d, t=%s", length+2,
-                           val_to_str(type, glbp_type_vals, "%d"));
+                           val_to_str(pinfo->pool, type, glbp_type_vals, "%d"));
 
     proto_tree_add_item(tlv_tree, hf_glbp_type, tvb, offset, 1,  ENC_BIG_ENDIAN);
     offset++;
     proto_tree_add_item(tlv_tree, hf_glbp_length, tvb, offset, 1,  ENC_BIG_ENDIAN);
     offset++;
     col_append_fstr(pinfo->cinfo, COL_INFO, ", %s",
-                    val_to_str(type, glbp_type_vals, "%d"));
+                    val_to_str(pinfo->pool, type, glbp_type_vals, "%d"));
 
     lastoffset = offset;
     switch(type) {
@@ -377,14 +369,14 @@ dissect_glbp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   return offset;
 }
 
-static gboolean
+static bool
 test_glbp(tvbuff_t *tvb, packet_info *pinfo)
 {
-  guint32 unknown1;
+  uint32_t unknown1;
   if ( tvb_captured_length(tvb) < 2)
-    return FALSE;
-  unknown1 = tvb_get_guint8(tvb, 1);
-  if (tvb_get_guint8(tvb, 0) != 1 /* version? */
+    return false;
+  unknown1 = tvb_get_uint8(tvb, 1);
+  if (tvb_get_uint8(tvb, 0) != 1 /* version? */
       || unknown1 > 4
       || pinfo->srcport != pinfo->destport
 #if 0 /* XXX */
@@ -393,9 +385,9 @@ test_glbp(tvbuff_t *tvb, packet_info *pinfo)
       || unknown1 == 0 && pinfo->dl_src != ether:c2-00-7c-b8-00-00
 #endif
     ) {
-    return FALSE;
+    return false;
   }
-  return TRUE;
+  return true;
 }
 
 static int
@@ -570,7 +562,7 @@ proto_register_glbp(void)
         0x0, NULL, HFILL }},
 
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_glbp,
     &ett_glbp_tlv,
   };
@@ -578,15 +570,15 @@ proto_register_glbp(void)
   static ei_register_info ei[] = {
     { &ei_glbp_ipv4_wrong_length,
       { "glbp.ipv4_wrong_length", PI_MALFORMED, PI_ERROR,
-        "Wrong IPv4 address length: %u",
+        "Wrong IPv4 address length",
         EXPFILL }},
     { &ei_glbp_ipv6_wrong_length,
       { "glbp.ipv6_wrong_length", PI_MALFORMED, PI_ERROR,
-        "Wrong IPv6 address length: %u",
+        "Wrong IPv6 address length",
         EXPFILL }},
     { &ei_glbp_tlv_length_too_small,
       { "glbp.tlv_length_too_small", PI_MALFORMED, PI_ERROR,
-        "Length %u too small",
+        "TLV Length too small",
         EXPFILL }},
     { &ei_glbp_tlv_invalid_bytes_used,
       { "glbp.tlv_invalid_bytes_used", PI_MALFORMED, PI_ERROR,
@@ -596,25 +588,24 @@ proto_register_glbp(void)
 
   expert_module_t* expert_glbp;
 
-  proto_glbp = proto_register_protocol(
-        "Gateway Load Balancing Protocol", "GLBP", "glbp");
+  proto_glbp = proto_register_protocol("Gateway Load Balancing Protocol", "GLBP", "glbp");
+
   proto_register_field_array(proto_glbp, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
   expert_glbp = expert_register_protocol(proto_glbp);
   expert_register_field_array(expert_glbp, ei, array_length(ei));
+
+  glbp_handle = register_dissector("glbp", dissect_glbp_static, proto_glbp);
 }
 
 void
 proto_reg_handoff_glbp(void)
 {
-  dissector_handle_t glbp_handle;
-
-  glbp_handle = create_dissector_handle(dissect_glbp_static, proto_glbp);
-  dissector_add_uint("udp.port", 3222, glbp_handle);
+  dissector_add_uint_with_preference("udp.port", GLBP_UDP_PORT, glbp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

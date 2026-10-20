@@ -4,7 +4,7 @@
 # When a header entry is provided by xgettext, it overrides any msgid ""
 # present in the input.
 
-cat <<EOF > xg-test3.in.c
+cat <<\EOF > xg-test3.in.c
 This is a test of the xgettext functionality.
 /* xgettext:no-c-format */
 _("extract me")
@@ -23,10 +23,10 @@ EOF
 
 : ${XGETTEXT=xgettext}
 # delete POT-Creation-Date: line because the date depends on local time.
-${XGETTEXT} --output - --no-location -k_ xg-test3.in.c 2>/dev/null \
-  | sed '/\"POT-Creation-Date:.*/d' | LC_ALL=C tr -d '\r' > xg-test3.po
+${XGETTEXT} --output xg-test3.tmp --no-location -k_ xg-test3.in.c 2>/dev/null || Exit 1
+sed -e '/\"POT-Creation-Date:.*/d' < xg-test3.tmp | LC_ALL=C tr -d '\r' > xg-test3.po
 
-cat <<EOF > xg-test3.ok
+cat <<\EOF > xg-test3.ok
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.

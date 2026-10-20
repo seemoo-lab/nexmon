@@ -1,0 +1,17 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+
+[*.[ch]]
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+# For the legacy tabs which still exist in the code:
+tab_width = 8
+
+[meson.build]
+indent_size = 2
+indent_style = space
+

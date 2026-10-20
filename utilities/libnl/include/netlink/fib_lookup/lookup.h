@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/fib_lookup/fib_lookup.h	FIB Lookup
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -34,6 +28,13 @@ extern int			flnl_lookup_build_request(struct flnl_request *,
 extern int			flnl_lookup(struct nl_sock *,
 					    struct flnl_request *,
 					    struct nl_cache *);
+
+extern int flnl_result_get_table_id(struct flnl_result *res);
+extern int flnl_result_get_prefixlen(struct flnl_result *res);
+extern int flnl_result_get_nexthop_sel(struct flnl_result *res);
+extern int flnl_result_get_type(struct flnl_result *res);
+extern int flnl_result_get_scope(struct flnl_result *res);
+extern int flnl_result_get_error(struct flnl_result *res);
 
 #ifdef __cplusplus
 }

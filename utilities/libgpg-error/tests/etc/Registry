@@ -1,0 +1,8 @@
+# A test Registry emulation file for t-argparse
+
+[HKCU\Software\GNU\GnuPG]
+DisableAKR: fact
+SomeKey: Value-one
+
+[ \fhghfkhkfh ]
+DisableAKR: yes

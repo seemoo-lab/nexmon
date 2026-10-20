@@ -6,48 +6,39 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <wiretap/wtap.h>
-#include <epan/xdlc.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+#include "packet-xdlc.h"
 
 void proto_register_lapb(void);
 void proto_reg_handoff_lapb(void);
 
-static int proto_lapb = -1;
-static int hf_lapb_address = -1;
-static int hf_lapb_control = -1;
-static int hf_lapb_n_r = -1;
-static int hf_lapb_n_s = -1;
-static int hf_lapb_p = -1;
-static int hf_lapb_f = -1;
-static int hf_lapb_s_ftype = -1;
-static int hf_lapb_u_modifier_cmd = -1;
-static int hf_lapb_u_modifier_resp = -1;
-static int hf_lapb_ftype_i = -1;
-static int hf_lapb_ftype_s_u = -1;
+static int proto_lapb;
+static int hf_lapb_address;
+static int hf_lapb_control;
+static int hf_lapb_n_r;
+static int hf_lapb_n_s;
+static int hf_lapb_p;
+static int hf_lapb_f;
+static int hf_lapb_s_ftype;
+static int hf_lapb_u_modifier_cmd;
+static int hf_lapb_u_modifier_resp;
+static int hf_lapb_ftype_i;
+static int hf_lapb_ftype_s_u;
 
-static gint ett_lapb = -1;
-static gint ett_lapb_control = -1;
+static int ett_lapb;
+static int ett_lapb_control;
 
 static dissector_handle_t x25_dir_handle;
 static dissector_handle_t x25_handle;
+static dissector_handle_t lapb_handle;
 
 static const xdlc_cf_items lapb_cf_items = {
     &hf_lapb_n_r,
@@ -65,9 +56,9 @@ static int
 dissect_lapb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     proto_tree          *lapb_tree, *ti;
-    guint16             control;
+    uint16_t            control;
     int                 is_response;
-    guint8              byte0;
+    uint8_t             byte0;
     tvbuff_t            *next_tvb;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "LAPB");
@@ -91,7 +82,7 @@ dissect_lapb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         break;
     }
 
-    byte0 = tvb_get_guint8(tvb, 0);
+    byte0 = tvb_get_uint8(tvb, 0);
 
     if (byte0 != 0x01 && byte0 != 0x03 && byte0 != 0x07 && byte0 != 0x0f) /* invalid LAPB frame */
     {
@@ -106,16 +97,16 @@ dissect_lapb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     case P2P_DIR_SENT:
         if (byte0 == 0x03)
-            is_response = TRUE;
+            is_response = true;
         else
-            is_response = FALSE;
+            is_response = false;
         break;
 
     case P2P_DIR_RECV:
         if (byte0 == 0x01)
-            is_response = TRUE;
+            is_response = true;
         else
-            is_response = FALSE;
+            is_response = false;
         break;
 
     default:
@@ -125,7 +116,7 @@ dissect_lapb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
          * from another with that, but we can't say which is DTE->DCE
          * and which is DCE->DTE.
          */
-        is_response = FALSE;
+        is_response = false;
         break;
     }
 
@@ -136,7 +127,7 @@ dissect_lapb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     control = dissect_xdlc_control(tvb, 1, pinfo, lapb_tree, hf_lapb_control,
             ett_lapb_control, &lapb_cf_items, NULL, NULL, NULL,
-            is_response, FALSE, FALSE);
+            is_response, false, false);
 
     /* information frame ==> X.25 */
     if (XDLC_IS_INFORMATION(control)) {
@@ -204,7 +195,7 @@ proto_register_lapb(void)
           { "Frame type", "lapb.control.ftype", FT_UINT8, BASE_HEX,
             VALS(ftype_vals), XDLC_S_U_MASK, NULL, HFILL }},
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_lapb,
         &ett_lapb_control,
     };
@@ -214,14 +205,12 @@ proto_register_lapb(void)
     proto_register_field_array (proto_lapb, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("lapb", dissect_lapb, proto_lapb);
+    lapb_handle = register_dissector("lapb", dissect_lapb, proto_lapb);
 }
 
 void
 proto_reg_handoff_lapb(void)
 {
-    dissector_handle_t lapb_handle;
-
     /*
      * Get handles for the X.25 dissectors; we don't get an X.25
      * pseudo-header for LAPB-over-Ethernet, but we do get it
@@ -230,12 +219,11 @@ proto_reg_handoff_lapb(void)
     x25_dir_handle = find_dissector_add_dependency("x.25_dir", proto_lapb);
     x25_handle = find_dissector_add_dependency("x.25", proto_lapb);
 
-    lapb_handle = find_dissector("lapb");
     dissector_add_uint("wtap_encap", WTAP_ENCAP_LAPB, lapb_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

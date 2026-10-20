@@ -1,10 +1,10 @@
-/* malloc with out of memory checking.
-   Copyright (C) 2001-2004, 2006, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+/* xalloc.h -- malloc with out-of-memory checking
+
+   Copyright (C) 1990-2000, 2003-2004, 2006-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,12 +13,29 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifndef _XALLOC_H
-#define _XALLOC_H
+#ifndef XALLOC_H_
+#define XALLOC_H_
+
+/* This file uses _GL_INLINE_HEADER_BEGIN, _GL_INLINE, _Noreturn,
+   _GL_ATTRIBUTE_ALLOC_SIZE, _GL_ATTRIBUTE_MALLOC,
+   _GL_ATTRIBUTE_RETURNS_NONNULL.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
 
 #include <stddef.h>
+#include <stdlib.h>
+
+#if GNULIB_XALLOC
+# include "idx.h"
+#endif
+
+_GL_INLINE_HEADER_BEGIN
+#ifndef XALLOC_INLINE
+# define XALLOC_INLINE _GL_INLINE
+#endif
 
 
 #ifdef __cplusplus
@@ -26,45 +43,66 @@ extern "C" {
 #endif
 
 
-/* Defined in xmalloc.c.  */
+#if GNULIB_XALLOC_DIE
 
-/* Allocate SIZE bytes of memory dynamically, with error checking.  */
-extern void *xmalloc (size_t size);
-
-/* Allocate memory for NMEMB elements of SIZE bytes, with error checking.
-   SIZE must be > 0.  */
-extern void *xnmalloc (size_t nmemb, size_t size);
-
-/* Allocate SIZE bytes of memory dynamically, with error checking,
-   and zero it.  */
-extern void *xzalloc (size_t size);
-
-/* Allocate memory for NMEMB elements of SIZE bytes, with error checking,
-   and zero it.  */
-extern void *xcalloc (size_t nmemb, size_t size);
-
-/* Change the size of an allocated block of memory PTR to SIZE bytes,
-   with error checking.  If PTR is NULL, run xmalloc.  */
-extern void *xrealloc (void *ptr, size_t size);
-#ifdef __cplusplus
-}
-template <typename T>
-  inline T * xrealloc (T * ptr, size_t size)
-  {
-    return (T *) xrealloc ((void *) ptr, size);
-  }
-extern "C" {
-#endif
-
-/* This function is always triggered when memory is exhausted.  It is
-   in charge of honoring the three previous items.  This is the
+/* This function is always triggered when memory is exhausted.
+   It must be defined by the application, either explicitly
+   or by using gnulib's xalloc-die module.  This is the
    function to call when one wants the program to die because of a
    memory allocation failure.  */
-extern void xalloc_die (void)
-#if (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 5)) && !__STRICT_ANSI__
-     __attribute__ ((__noreturn__))
-#endif
-     ;
+_Noreturn void xalloc_die (void);
+
+#endif /* GNULIB_XALLOC_DIE */
+
+#if GNULIB_XALLOC
+
+void *xmalloc (size_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *ximalloc (idx_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xinmalloc (idx_t n, idx_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1, 2)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xzalloc (size_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xizalloc (idx_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xcalloc (size_t n, size_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1, 2)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xicalloc (idx_t n, idx_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1, 2)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xrealloc (void *p, size_t s)
+  _GL_ATTRIBUTE_ALLOC_SIZE ((2));
+void *xirealloc (void *p, idx_t s)
+  _GL_ATTRIBUTE_ALLOC_SIZE ((2)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xreallocarray (void *p, size_t n, size_t s)
+  _GL_ATTRIBUTE_ALLOC_SIZE ((2, 3));
+void *xireallocarray (void *p, idx_t n, idx_t s)
+  _GL_ATTRIBUTE_ALLOC_SIZE ((2, 3)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *x2realloc (void *p, size_t *ps) /* superseded by xpalloc */
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *x2nrealloc (void *p, size_t *pn, size_t s) /* superseded by xpalloc */
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xpalloc (void *pa, idx_t *pn, idx_t n_incr_min, ptrdiff_t n_max, idx_t s)
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *xmemdup (void const *p, size_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((2)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+void *ximemdup (void const *p, idx_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((2)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+char *ximemdup0 (void const *p, idx_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
+char *xstrdup (char const *str)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
 
 /* In the following macros, T must be an elementary or structure/union or
    typedef'ed type, or a pointer to such a type.  To apply one of the
@@ -72,82 +110,53 @@ extern void xalloc_die (void)
    it first and use the typedef name.  */
 
 /* Allocate an object of type T dynamically, with error checking.  */
-/* extern T *XMALLOC (typename T); */
-#define XMALLOC(T) \
-  ((T *) xmalloc (sizeof (T)))
+/* extern t *XMALLOC (typename t); */
+# define XMALLOC(t) ((t *) xmalloc (sizeof (t)))
 
-/* Allocate memory for NMEMB elements of type T, with error checking.  */
-/* extern T *XNMALLOC (size_t nmemb, typename T); */
-#if HAVE_INLINE
-/* xnmalloc performs a division and multiplication by sizeof (T).  Arrange to
-   perform the division at compile-time and the multiplication with a factor
-   known at compile-time.  */
-# define XNMALLOC(N,T) \
-   ((T *) (sizeof (T) == 1 \
-           ? xmalloc (N) \
-           : xnboundedmalloc(N, (size_t) (sizeof (ptrdiff_t) <= sizeof (size_t) ? -1 : -2) / sizeof (T), sizeof (T))))
-static inline void *
-xnboundedmalloc (size_t n, size_t bound, size_t s)
-{
-  if (n > bound)
-    xalloc_die ();
-  return xmalloc (n * s);
-}
-#else
-# define XNMALLOC(N,T) \
-   ((T *) (sizeof (T) == 1 ? xmalloc (N) : xnmalloc (N, sizeof (T))))
-#endif
+/* Allocate memory for N elements of type T, with error checking.  */
+/* extern t *XNMALLOC (size_t n, typename t); */
+# define XNMALLOC(n, t) \
+    ((t *) (sizeof (t) == 1 ? xmalloc (n) : xnmalloc (n, sizeof (t))))
 
 /* Allocate an object of type T dynamically, with error checking,
    and zero it.  */
-/* extern T *XZALLOC (typename T); */
-#define XZALLOC(T) \
-  ((T *) xzalloc (sizeof (T)))
+/* extern t *XZALLOC (typename t); */
+# define XZALLOC(t) ((t *) xzalloc (sizeof (t)))
 
-/* Allocate memory for NMEMB elements of type T, with error checking,
+/* Allocate memory for N elements of type T, with error checking,
    and zero it.  */
-/* extern T *XCALLOC (size_t nmemb, typename T); */
-#define XCALLOC(N,T) \
-  ((T *) xcalloc (N, sizeof (T)))
+/* extern t *XCALLOC (size_t n, typename t); */
+# define XCALLOC(n, t) \
+    ((t *) (sizeof (t) == 1 ? xzalloc (n) : xcalloc (n, sizeof (t))))
+
+
+/* Allocate an array of N objects, each with S bytes of memory,
+   dynamically, with error checking.  S must be nonzero.  */
+
+void *xnmalloc (size_t n, size_t s)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1, 2)) _GL_ATTRIBUTE_RETURNS_NONNULL;
+
+/* FIXME: Deprecate this in favor of xreallocarray?  */
+/* Change the size of an allocated block of memory P to an array of N
+   objects each of S bytes, with error checking.  S must be nonzero.  */
+
+XALLOC_INLINE void *xnrealloc (void *p, size_t n, size_t s)
+  _GL_ATTRIBUTE_ALLOC_SIZE ((2, 3));
+XALLOC_INLINE void *
+xnrealloc (void *p, size_t n, size_t s)
+{
+  return xreallocarray (p, n, s);
+}
 
 /* Return a pointer to a new buffer of N bytes.  This is like xmalloc,
    except it returns char *.  */
-#define xcharalloc(N) \
-  XNMALLOC (N, char)
 
+char *xcharalloc (size_t n)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_ALLOC_SIZE ((1)) _GL_ATTRIBUTE_RETURNS_NONNULL;
 
-/* Defined in xstrdup.c.  */
-
-/* Return a newly allocated copy of the N bytes of memory starting at P.  */
-extern void *xmemdup (const void *p, size_t n);
-#ifdef __cplusplus
-}
-template <typename T>
-  inline T * xmemdup (const T * p, size_t n)
-  {
-    return (T *) xmemdup ((const void *) p, n);
-  }
-extern "C" {
-#endif
-
-/* Return a newly allocated copy of STRING.  */
-extern char *xstrdup (const char *string);
-
-
-/* Return 1 if an array of N objects, each of size S, cannot exist due
-   to size arithmetic overflow.  S must be positive and N must be
-   nonnegative.  This is a macro, not an inline function, so that it
-   works correctly even when SIZE_MAX < N.
-
-   By gnulib convention, SIZE_MAX represents overflow in size
-   calculations, so the conservative dividend to use here is
-   SIZE_MAX - 1, since SIZE_MAX might represent an overflowed value.
-   However, malloc (SIZE_MAX) fails on all known hosts where
-   sizeof (ptrdiff_t) <= sizeof (size_t), so do not bother to test for
-   exactly-SIZE_MAX allocations on such hosts; this avoids a test and
-   branch when S is known to be 1.  */
-# define xalloc_oversized(n, s) \
-    ((size_t) (sizeof (ptrdiff_t) <= sizeof (size_t) ? -1 : -2) / (s) < (n))
+#endif /* GNULIB_XALLOC */
 
 
 #ifdef __cplusplus
@@ -155,4 +164,52 @@ extern char *xstrdup (const char *string);
 #endif
 
 
-#endif /* _XALLOC_H */
+#if GNULIB_XALLOC && defined __cplusplus
+
+/* C++ does not allow conversions from void * to other pointer types
+   without a cast.  Use templates to work around the problem when
+   possible.  */
+
+template <typename T> inline T *
+xrealloc (T *p, size_t s)
+{
+  return (T *) xrealloc ((void *) p, s);
+}
+
+template <typename T> inline T *
+xreallocarray (T *p, size_t n, size_t s)
+{
+  return (T *) xreallocarray ((void *) p, n, s);
+}
+
+/* FIXME: Deprecate this in favor of xreallocarray?  */
+template <typename T> inline T *
+xnrealloc (T *p, size_t n, size_t s)
+{
+  return xreallocarray (p, n, s);
+}
+
+template <typename T> inline T *
+x2realloc (T *p, size_t *pn)
+{
+  return (T *) x2realloc ((void *) p, pn);
+}
+
+template <typename T> inline T *
+x2nrealloc (T *p, size_t *pn, size_t s)
+{
+  return (T *) x2nrealloc ((void *) p, pn, s);
+}
+
+template <typename T> inline T *
+xmemdup (T const *p, size_t s)
+{
+  return (T *) xmemdup ((void const *) p, s);
+}
+
+#endif /* GNULIB_XALLOC && C++ */
+
+
+_GL_INLINE_HEADER_END
+
+#endif /* !XALLOC_H_ */

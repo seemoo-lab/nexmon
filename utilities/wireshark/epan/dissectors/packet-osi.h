@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
 */
 
 #ifndef _PACKET_OSI_H
@@ -60,9 +48,9 @@
 /* Exposed to be used by packet-osi-options.c */
 extern int  proto_osi;
 
-extern gboolean osi_calc_checksum( tvbuff_t *tvb, int offset, guint len, guint32* c0, guint32* c1);
-extern gboolean osi_check_and_get_checksum( tvbuff_t *tvb, int offset, guint len, int offset_check, guint16* result);
-extern guint32  check_atn_ec_32(tvbuff_t *tvb, guint tpdu_len, guint offset_ec_32_val, guint offset_iso8073_val, guint clnp_dst_len, const guint8 *clnp_dst, guint clnp_src_len, const guint8 *clnp_src);
-extern guint16  check_atn_ec_16(tvbuff_t *tvb, guint tpdu_len, guint offset_ec_16_val, guint offset_iso8073_val, guint clnp_dst_len, const guint8 *clnp_dst, guint clnp_src_len, const guint8 *clnp_src);
+extern bool osi_calc_checksum( tvbuff_t *tvb, int offset, unsigned len, uint32_t* c0, uint32_t* c1);
+extern bool osi_check_and_get_checksum( tvbuff_t *tvb, int offset, unsigned len, int offset_check, uint16_t* result);
+extern uint32_t check_atn_ec_32(tvbuff_t *tvb, unsigned tpdu_len, unsigned offset_ec_32_val, unsigned offset_iso8073_val, unsigned clnp_dst_len, const uint8_t *clnp_dst, unsigned clnp_src_len, const uint8_t *clnp_src);
+extern uint16_t check_atn_ec_16(tvbuff_t *tvb, unsigned tpdu_len, unsigned offset_ec_16_val, unsigned offset_iso8073_val, unsigned clnp_dst_len, const uint8_t *clnp_dst, unsigned clnp_src_len, const uint8_t *clnp_src);
 
 #endif /* _PACKET_OSI_H */

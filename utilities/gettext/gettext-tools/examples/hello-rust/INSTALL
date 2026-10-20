@@ -1,0 +1,13 @@
+This example relies on Rust (programs: rustc, cargo)
+and the following crates:
+  - gettext-rs (not 'gettext', not 'xtr'),
+  - formatx (not 'strfmt').
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

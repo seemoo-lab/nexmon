@@ -1,9 +1,9 @@
 /* Test of copying of files.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2008.  */
 
@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "progname.h"
 #include "macros.h"
 
 int
@@ -39,8 +38,6 @@ main (int argc, char *argv[])
   struct stat statbuf;
   int mode;
   int fd2;
-
-  set_program_name (argv[0]);
 
   ASSERT (argc == 3);
 
@@ -63,7 +60,7 @@ main (int argc, char *argv[])
     }
 
 #if USE_ACL
-  if (copy_acl (file1, fd1, file2, fd2, mode))
+  if (xcopy_acl (file1, fd1, file2, fd2, mode))
     exit (EXIT_FAILURE);
 #else
   chmod (file2, mode);
@@ -72,5 +69,5 @@ main (int argc, char *argv[])
   close (fd2);
   close (fd1);
 
-  return 0;
+  return test_exit_status;
 }

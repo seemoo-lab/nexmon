@@ -3,10 +3,12 @@
  * Copyright © 2008 Christian Kellner, Samuel Cormier-Iijima
  *           © 2009 codethink
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,6 +35,7 @@
 #include "gioerror.h"
 #include "glibintl.h"
 #include "gfiledescriptorbased.h"
+#include "gioprivate.h"
 
 struct _GSocketOutputStreamPrivate
 {
@@ -125,11 +128,40 @@ g_socket_output_stream_write (GOutputStream  *stream,
                               GCancellable   *cancellable,
                               GError        **error)
 {
-  GSocketOutputStream *onput_stream = G_SOCKET_OUTPUT_STREAM (stream);
+  GSocketOutputStream *output_stream = G_SOCKET_OUTPUT_STREAM (stream);
 
-  return g_socket_send_with_blocking (onput_stream->priv->socket,
+  return g_socket_send_with_blocking (output_stream->priv->socket,
 				      buffer, count, TRUE,
 				      cancellable, error);
+}
+
+static gboolean
+g_socket_output_stream_writev (GOutputStream        *stream,
+                               const GOutputVector  *vectors,
+                               gsize                 n_vectors,
+                               gsize                *bytes_written,
+                               GCancellable         *cancellable,
+                               GError              **error)
+{
+  GSocketOutputStream *output_stream = G_SOCKET_OUTPUT_STREAM (stream);
+  GPollableReturn res;
+
+  /* Clamp the number of vectors if more given than we can write in one go.
+   * The caller has to handle short writes anyway.
+   */
+  if (n_vectors > G_IOV_MAX)
+    n_vectors = G_IOV_MAX;
+
+  res = g_socket_send_message_with_timeout (output_stream->priv->socket, NULL,
+                                            vectors, n_vectors,
+                                            NULL, 0, G_SOCKET_MSG_NONE,
+                                            -1, bytes_written,
+                                            cancellable, error);
+
+  /* we have a non-zero timeout so this can't happen */
+  g_assert (res != G_POLLABLE_RETURN_WOULD_BLOCK);
+
+  return res == G_POLLABLE_RETURN_OK;
 }
 
 static gboolean
@@ -151,6 +183,27 @@ g_socket_output_stream_pollable_write_nonblocking (GPollableOutputStream  *polla
   return g_socket_send_with_blocking (output_stream->priv->socket,
 				      buffer, size, FALSE,
 				      NULL, error);
+}
+
+static GPollableReturn
+g_socket_output_stream_pollable_writev_nonblocking (GPollableOutputStream  *pollable,
+                                                    const GOutputVector    *vectors,
+                                                    gsize                   n_vectors,
+                                                    gsize                  *bytes_written,
+                                                    GError                **error)
+{
+  GSocketOutputStream *output_stream = G_SOCKET_OUTPUT_STREAM (pollable);
+
+  /* Clamp the number of vectors if more given than we can write in one go.
+   * The caller has to handle short writes anyway.
+   */
+  if (n_vectors > G_IOV_MAX)
+    n_vectors = G_IOV_MAX;
+
+  return g_socket_send_message_with_timeout (output_stream->priv->socket,
+                                             NULL, vectors, n_vectors,
+                                             NULL, 0, G_SOCKET_MSG_NONE, 0,
+                                             bytes_written, NULL, error);
 }
 
 static GSource *
@@ -191,11 +244,10 @@ g_socket_output_stream_class_init (GSocketOutputStreamClass *klass)
   gobject_class->set_property = g_socket_output_stream_set_property;
 
   goutputstream_class->write_fn = g_socket_output_stream_write;
+  goutputstream_class->writev_fn = g_socket_output_stream_writev;
 
   g_object_class_install_property (gobject_class, PROP_SOCKET,
-				   g_param_spec_object ("socket",
-							P_("socket"),
-							P_("The socket that this stream wraps"),
+				   g_param_spec_object ("socket", NULL, NULL,
 							G_TYPE_SOCKET, G_PARAM_CONSTRUCT_ONLY |
 							G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
@@ -214,6 +266,7 @@ g_socket_output_stream_pollable_iface_init (GPollableOutputStreamInterface *ifac
   iface->is_writable = g_socket_output_stream_pollable_is_writable;
   iface->create_source = g_socket_output_stream_pollable_create_source;
   iface->write_nonblocking = g_socket_output_stream_pollable_write_nonblocking;
+  iface->writev_nonblocking = g_socket_output_stream_pollable_writev_nonblocking;
 }
 
 static void

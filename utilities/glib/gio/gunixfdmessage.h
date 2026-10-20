@@ -2,10 +2,12 @@
  *
  * Copyright © 2009 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -61,20 +63,20 @@ struct _GUnixFDMessage
   GUnixFDMessagePrivate *priv;
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType                   g_unix_fd_message_get_type                      (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
+GType                   g_unix_fd_message_get_type                      (void);
+GIO_AVAILABLE_IN_ALL
 GSocketControlMessage * g_unix_fd_message_new_with_fd_list              (GUnixFDList     *fd_list);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GSocketControlMessage * g_unix_fd_message_new                           (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GUnixFDList *           g_unix_fd_message_get_fd_list                   (GUnixFDMessage  *message);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gint *                  g_unix_fd_message_steal_fds                     (GUnixFDMessage  *message,
                                                                          gint            *length);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean                g_unix_fd_message_append_fd                     (GUnixFDMessage  *message,
                                                                          gint             fd,
                                                                          GError         **error);

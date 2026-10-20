@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,18 +35,13 @@ G_BEGIN_DECLS
 #define G_BYTES_ICON(inst)        (G_TYPE_CHECK_INSTANCE_CAST ((inst), G_TYPE_BYTES_ICON, GBytesIcon))
 #define G_IS_BYTES_ICON(inst)     (G_TYPE_CHECK_INSTANCE_TYPE ((inst), G_TYPE_BYTES_ICON))
 
-/**
- * GBytesIcon:
- *
- * Gets an icon for a #GBytes. Implements #GLoadableIcon.
- **/
-GLIB_AVAILABLE_IN_2_38
-GType   g_bytes_icon_get_type   (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_38
+GType   g_bytes_icon_get_type   (void);
 
-GLIB_AVAILABLE_IN_2_38
+GIO_AVAILABLE_IN_2_38
 GIcon * g_bytes_icon_new        (GBytes     *bytes);
 
-GLIB_AVAILABLE_IN_2_38
+GIO_AVAILABLE_IN_2_38
 GBytes * g_bytes_icon_get_bytes (GBytesIcon *icon);
 
 G_END_DECLS

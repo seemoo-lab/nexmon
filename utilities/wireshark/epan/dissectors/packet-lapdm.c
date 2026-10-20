@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* LAPDm references:
@@ -50,58 +38,62 @@
  */
 
 #include "config.h"
+#include "packet-lapdm.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
-#include <epan/xdlc.h>
 #include <epan/reassemble.h>
+#include <epan/conversation.h>
+#include "packet-xdlc.h"
 
 void proto_register_lapdm(void);
 
-static int proto_lapdm = -1;
-static int hf_lapdm_address = -1;
-static int hf_lapdm_ea = -1;
-static int hf_lapdm_cr = -1;
-static int hf_lapdm_sapi = -1;
-static int hf_lapdm_lpd = -1;
+static dissector_handle_t b4_info_handle;
 
-static int hf_lapdm_control = -1;
-static int hf_lapdm_n_r = -1;
-static int hf_lapdm_n_s = -1;
-static int hf_lapdm_p = -1;
-static int hf_lapdm_f = -1;
-static int hf_lapdm_s_ftype = -1;
-static int hf_lapdm_u_modifier_cmd = -1;
-static int hf_lapdm_u_modifier_resp = -1;
-static int hf_lapdm_ftype_i = -1;
-static int hf_lapdm_ftype_s_u = -1;
+static int proto_lapdm;
+static int hf_lapdm_address;
+static int hf_lapdm_ea;
+static int hf_lapdm_cr;
+static int hf_lapdm_sapi;
+static int hf_lapdm_lpd;
 
-static int hf_lapdm_length = -1;
-static int hf_lapdm_el = -1;
-static int hf_lapdm_m = -1;
-static int hf_lapdm_len = -1;
+static int hf_lapdm_control;
+static int hf_lapdm_n_r;
+static int hf_lapdm_n_s;
+static int hf_lapdm_p;
+static int hf_lapdm_f;
+static int hf_lapdm_s_ftype;
+static int hf_lapdm_u_modifier_cmd;
+static int hf_lapdm_u_modifier_resp;
+static int hf_lapdm_ftype_i;
+static int hf_lapdm_ftype_s_u;
+
+static int hf_lapdm_length;
+static int hf_lapdm_el;
+static int hf_lapdm_m;
+static int hf_lapdm_len;
 
 /*
  * LAPDm fragment handling
  */
-static int hf_lapdm_fragment_data = -1;
-static int hf_lapdm_fragments = -1;
-static int hf_lapdm_fragment = -1;
-static int hf_lapdm_fragment_overlap = -1;
-static int hf_lapdm_fragment_overlap_conflicts = -1;
-static int hf_lapdm_fragment_multiple_tails = -1;
-static int hf_lapdm_fragment_too_long_fragment = -1;
-static int hf_lapdm_fragment_error = -1;
-static int hf_lapdm_fragment_count = -1;
-static int hf_lapdm_reassembled_in = -1;
-static int hf_lapdm_reassembled_length = -1;
+static int hf_lapdm_fragment_data;
+static int hf_lapdm_fragments;
+static int hf_lapdm_fragment;
+static int hf_lapdm_fragment_overlap;
+static int hf_lapdm_fragment_overlap_conflicts;
+static int hf_lapdm_fragment_multiple_tails;
+static int hf_lapdm_fragment_too_long_fragment;
+static int hf_lapdm_fragment_error;
+static int hf_lapdm_fragment_count;
+static int hf_lapdm_reassembled_in;
+static int hf_lapdm_reassembled_length;
 
-static gint ett_lapdm = -1;
-static gint ett_lapdm_address = -1;
-static gint ett_lapdm_control = -1;
-static gint ett_lapdm_length = -1;
-static gint ett_lapdm_fragment = -1;
-static gint ett_lapdm_fragments = -1;
+static int ett_lapdm;
+static int ett_lapdm_address;
+static int ett_lapdm_control;
+static int ett_lapdm_length;
+static int ett_lapdm_fragment;
+static int ett_lapdm_fragments;
 
 static reassembly_table lapdm_reassembly_table;
 
@@ -109,7 +101,7 @@ static wmem_map_t *lapdm_last_n_s_map;
 
 static dissector_table_t lapdm_sapi_dissector_table;
 
-static gboolean reassemble_lapdm = TRUE;
+static bool reassemble_lapdm = true;
 
 /*
  * Bits in the address field.
@@ -130,6 +122,7 @@ static gboolean reassemble_lapdm = TRUE;
 #define LAPDM_LEN_SHIFT         2
 
 #define LAPDM_HEADER_LEN 3
+#define LAPDM_HEADER_LEN_B4 2
 
 #define LAPDM_SAPI_RR_CC_MM     0
 #define LAPDM_SAPI_SMS          3
@@ -201,52 +194,73 @@ static const fragment_items lapdm_frag_items = {
     "fragments"
 };
 
-static void
-lapdm_defragment_init (void)
+static bool hdr_has_length(enum lapdm_hdr_type hdr_type)
 {
-    reassembly_table_init (&lapdm_reassembly_table,
-                           &addresses_reassembly_table_functions);
-    lapdm_last_n_s_map = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
-}
-
-static void
-lapdm_defragment_cleanup (void)
-{
-    reassembly_table_destroy(&lapdm_reassembly_table);
+    switch (hdr_type) {
+    case LAPDM_HDR_FMT_A:
+    case LAPDM_HDR_FMT_B:
+        return true;
+    default:
+        return false;
+    }
 }
 
 
 static int
-dissect_lapdm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+dissect_lapdm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
     proto_tree *lapdm_tree, *addr_tree, *length_tree;
     proto_item *lapdm_ti, *addr_ti, *length_ti;
-    guint8 addr, length, cr, sapi, len, n_s;
+    uint8_t addr, length, header_len, cr, sapi, len, n_s;
     int control;
-    gboolean m;
+    bool m;
     tvbuff_t *payload;
     int available_length;
-    gboolean is_response = FALSE;
+    bool is_response = false;
+    enum lapdm_hdr_type hdr_type = LAPDM_HDR_FMT_B;
+    bool is_acch = false, is_ui_frame = false;
+
+    if (data) {
+        lapdm_data_t *ld = (lapdm_data_t *) data;
+        is_acch = ld->is_acch;
+    }
 
     /* Check that there's enough data */
-    if (tvb_captured_length(tvb) < LAPDM_HEADER_LEN)
+    if (tvb_captured_length(tvb) < LAPDM_HEADER_LEN_B4)
         return 0;
+
+    control = tvb_get_uint8(tvb, 1);
+    is_ui_frame = (control & XDLC_S_U_MASK) == XDLC_U && (control & XDLC_U_MODIFIER_MASK) == XDLC_UI;
+
+    /* only downlink UI SACCH frames use B4 header format */
+    if (is_acch && is_ui_frame && pinfo->p2p_dir == P2P_DIR_RECV) {
+        hdr_type = LAPDM_HDR_FMT_B4;
+        header_len = LAPDM_HEADER_LEN_B4;
+        length = 0;
+    } else {
+        header_len = LAPDM_HEADER_LEN;
+
+        /* Check that there's enough data */
+        if (tvb_captured_length(tvb) < header_len)
+            return 0;
+
+        length = tvb_get_uint8(tvb, 2);
+    }
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "LAPDm");
 
-    addr = tvb_get_guint8(tvb, 0);
-    length = tvb_get_guint8(tvb, 2);
+    addr = tvb_get_uint8(tvb, 0);
 
     cr = addr & LAPDM_CR;
     if (pinfo->p2p_dir == P2P_DIR_RECV) {
-        is_response = cr ? FALSE : TRUE;
+        is_response = cr ? false : true;
     }
     else if (pinfo->p2p_dir == P2P_DIR_SENT) {
-        is_response = cr ? TRUE : FALSE;
+        is_response = cr ? true : false;
     }
 
     if (tree) {
-        lapdm_ti = proto_tree_add_item(tree, proto_lapdm, tvb, 0, LAPDM_HEADER_LEN, ENC_NA);
+        lapdm_ti = proto_tree_add_item(tree, proto_lapdm, tvb, 0, header_len, ENC_NA);
         lapdm_tree = proto_item_add_subtree(lapdm_ti, ett_lapdm);
 
         addr_ti = proto_tree_add_uint(lapdm_tree, hf_lapdm_address, tvb, 0, 1, addr);
@@ -264,9 +278,10 @@ dissect_lapdm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 
     control = dissect_xdlc_control(tvb, 1, pinfo, lapdm_tree, hf_lapdm_control,
                                    ett_lapdm_control, &lapdm_cf_items, NULL /* LAPDm doesn't support extended */, NULL, NULL,
-                                   is_response, FALSE, FALSE);
+                                   is_response, false, false);
 
-    if (tree) {
+    /* dissect length field (if present) */
+    if (tree && hdr_has_length(hdr_type)) {
         length_ti = proto_tree_add_uint(lapdm_tree, hf_lapdm_length, tvb,
                                         2, 1, length);
         length_tree = proto_item_add_subtree(length_ti, ett_lapdm_length);
@@ -276,18 +291,24 @@ dissect_lapdm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         proto_tree_add_uint(length_tree, hf_lapdm_el, tvb, 2, 1, length);
     }
 
+    if (hdr_has_length(hdr_type)) {
+        len = (length & LAPDM_LEN) >> LAPDM_LEN_SHIFT;
+        m = (length & LAPDM_M) >> LAPDM_M_SHIFT;
+    } else {
+        len = tvb_captured_length(tvb) - header_len;
+        m = 0;
+    }
+
     sapi = (addr & LAPDM_SAPI) >> LAPDM_SAPI_SHIFT;
-    len = (length & LAPDM_LEN) >> LAPDM_LEN_SHIFT;
     n_s = (control & XDLC_N_S_MASK) >> XDLC_N_S_SHIFT;
-    m = (length & LAPDM_M) >> LAPDM_M_SHIFT;
-    available_length = tvb_captured_length(tvb) - LAPDM_HEADER_LEN;
+    available_length = tvb_captured_length(tvb) - header_len;
 
     /* No point in doing anything if no payload
      */
     if( !MIN(len, available_length) )
         return 2;
 
-    payload = tvb_new_subset(tvb, LAPDM_HEADER_LEN, MIN(len,available_length), len);
+    payload = tvb_new_subset_length_caplen(tvb, header_len, MIN(len,available_length), len);
 
     /* Potentially segmented I frame
      */
@@ -295,26 +316,26 @@ dissect_lapdm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     {
         fragment_head *fd_m = NULL;
         tvbuff_t *reassembled = NULL;
-        guint32 fragment_id;
-        gboolean save_fragmented = pinfo->fragmented, add_frag;
+        uint32_t fragment_id;
+        bool save_fragmented = pinfo->fragmented, add_frag;
 
         pinfo->fragmented = m;
 
         /* Rely on caller to provide a way to group fragments */
-        fragment_id = (pinfo->circuit_id << 4) | (sapi << 1) | pinfo->p2p_dir;
+        fragment_id =  (conversation_get_id_from_elements(pinfo, CONVERSATION_GSMTAP, USE_LAST_ENDPOINT) << 4) | (sapi << 1) | pinfo->p2p_dir;
 
         if (!PINFO_FD_VISITED(pinfo)) {
             /* Check if new N(S) is equal to previous N(S) (to avoid adding retransmissions in reassembly table)
                As GUINT_TO_POINTER macro does not allow to differentiate NULL from 0, use 1-8 range instead of 0-7 */
-            guint *p_last_n_s = (guint*)wmem_map_lookup(lapdm_last_n_s_map, GUINT_TO_POINTER(fragment_id));
-            if (GPOINTER_TO_UINT(p_last_n_s) == (guint)(n_s+1)) {
-                add_frag = FALSE;
+            unsigned *p_last_n_s = (unsigned*)wmem_map_lookup(lapdm_last_n_s_map, GUINT_TO_POINTER(fragment_id));
+            if (GPOINTER_TO_UINT(p_last_n_s) == (unsigned)(n_s+1)) {
+                add_frag = false;
             } else {
-                add_frag = TRUE;
+                add_frag = true;
                 wmem_map_insert(lapdm_last_n_s_map, GUINT_TO_POINTER(fragment_id), GUINT_TO_POINTER(n_s+1));
             }
         } else {
-            add_frag = TRUE;
+            add_frag = true;
         }
 
         if (add_frag) {
@@ -324,10 +345,10 @@ dissect_lapdm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
             */
             fd_m = fragment_add_seq_next (&lapdm_reassembly_table, payload, 0,
                                         pinfo,
-                                        fragment_id, /* guint32 ID for fragments belonging together */
+                                        fragment_id, /* uint32_t ID for fragments belonging together */
                                         NULL,
-                                        /*n_s guint32 fragment sequence number */
-                                        len, /* guint32 fragment length */
+                                        /*n_s uint32_t fragment sequence number */
+                                        len, /* uint32_t fragment length */
                                         m); /* More fragments? */
 
             reassembled = process_reassembled_data(payload, 0, pinfo,
@@ -340,6 +361,11 @@ dissect_lapdm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
                 if (!dissector_try_uint(lapdm_sapi_dissector_table, sapi,
                                         reassembled, pinfo, tree))
                     call_data_dissector(reassembled, pinfo, tree);
+
+                if (!PINFO_FD_VISITED(pinfo)) {
+                    /* If reassembling is done, allow fragment_id reuse */
+                    wmem_map_remove(lapdm_last_n_s_map, GUINT_TO_POINTER(fragment_id));
+                }
             }
             else {
                 col_append_str(pinfo->cinfo, COL_INFO, " (Fragment)");
@@ -351,11 +377,17 @@ dissect_lapdm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
          */
         pinfo->fragmented = save_fragmented;
     }
+    else if (hdr_type == LAPDM_HDR_FMT_B4)
+    {
+        /* B4 frames have no length octet at L2 level, but instead a L2 pseudo length octet
+         * at L3.  We must call the proper dissector for decoding them */
+        call_dissector(b4_info_handle, payload, pinfo, tree);
+    }
     else
     {
         if (!PINFO_FD_VISITED(pinfo) && ((control & XDLC_S_U_MASK) == XDLC_U) && ((control & XDLC_U_MODIFIER_MASK) == XDLC_SABM)) {
             /* SABM frame; reset the last N(S) to an invalid value */
-            guint32 fragment_id = (pinfo->circuit_id << 4) | (sapi << 1) | pinfo->p2p_dir;
+            uint32_t fragment_id = (conversation_get_id_from_elements(pinfo, CONVERSATION_GSMTAP, USE_LAST_ENDPOINT) << 4) | (sapi << 1) | pinfo->p2p_dir;
             wmem_map_insert(lapdm_last_n_s_map, GUINT_TO_POINTER(fragment_id), GUINT_TO_POINTER(0));
         }
 
@@ -376,7 +408,7 @@ proto_register_lapdm(void)
 
         { &hf_lapdm_address,
           { "Address Field", "lapdm.address_field", FT_UINT8, BASE_HEX, NULL, 0x0,
-            "Address", HFILL }},
+            NULL, HFILL }},
 
         { &hf_lapdm_ea,
           { "EA", "lapdm.ea", FT_UINT8, BASE_DEC, VALS(lapdm_ea_vals), LAPDM_EA,
@@ -408,11 +440,11 @@ proto_register_lapdm(void)
 
         { &hf_lapdm_p,
           { "Poll", "lapdm.control.p", FT_BOOLEAN, 8,
-            TFS(&tfs_true_false), XDLC_P_F, NULL, HFILL }},
+            NULL, XDLC_P_F, NULL, HFILL }},
 
         { &hf_lapdm_f,
           { "Final", "lapdm.control.f", FT_BOOLEAN, 8,
-            TFS(&tfs_true_false), XDLC_P_F, NULL, HFILL }},
+            NULL, XDLC_P_F, NULL, HFILL }},
 
         { &hf_lapdm_s_ftype,
           { "Supervisory frame type", "lapdm.control.s_ftype", FT_UINT8, BASE_HEX,
@@ -497,7 +529,7 @@ proto_register_lapdm(void)
             NULL, 0x00, "The total length of the reassembled payload", HFILL }}
 
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_lapdm,
         &ett_lapdm_address,
         &ett_lapdm_control,
@@ -521,12 +553,20 @@ proto_register_lapdm(void)
                                    "Reassemble fragmented LAPDm packets",
                                    "Whether the dissector should defragment LAPDm messages spanning multiple packets.",
                                    &reassemble_lapdm);
-    register_init_routine (lapdm_defragment_init);
-    register_cleanup_routine (lapdm_defragment_cleanup);
+
+    lapdm_last_n_s_map = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
+
+    reassembly_table_register(&lapdm_reassembly_table,
+                           &addresses_reassembly_table_functions);
+
+    /* B4 frames have no length octet at L2 level, but instead a L2 pseudo length octet
+     * at L3.  We must call the proper dissector for decoding them, and gsm_a_ccch supports
+     * L2 pseudo length */
+    b4_info_handle = find_dissector_add_dependency("gsm_a_ccch", proto_lapdm);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

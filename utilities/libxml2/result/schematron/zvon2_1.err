@@ -1,0 +1,4 @@
+./test/schematron/zvon2_1.xml:1: element AAA: schematron error : /AAA line 1: Text in element AAA must not contain character @ 
+./test/schematron/zvon2_1.xml:2: element BBB: schematron error : /AAA/BBB line 2: Text in element BBB must not contain character @ 
+./test/schematron/zvon2_1.xml:3: element CCC: schematron error : /AAA/CCC line 3: Text in element CCC must not contain character @ 
+./test/schematron/zvon2_1.xml fails to validate

@@ -1,0 +1,343 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PRINTF_GETTEXT</title>
+
+</head>
+<body>
+
+<h1 align="center">PRINTF_GETTEXT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">printf_gettext
+- translate format string and apply it</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>printf_gettext</b>
+[<i>OPTION</i>] <i>FORMAT</i> [<i>ARGUMENT</i>]...</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>printf_gettext</b> program translates a format string
+into the user&rsquo;s language, by looking up the
+translation in a message catalog, and applies the translated
+format string to the specified arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Produces
+formatted output, applying the native language translation
+of FORMAT to the ARGUMENTs.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Options and
+arguments: <br>
+-c</b>,
+<b>--context</b>=<i>CONTEXT</i></p>
+
+<p style="margin-left:22%;">specify context for FORMAT</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>FORMAT</p></td>
+<td width="2%"></td>
+<td width="20%">
+
+
+<p>format string</p></td>
+<td width="58%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">ARGUMENT</p>
+
+<p style="margin-left:22%;">string or numeric argument</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">display version information and
+exit</p>
+
+<p style="margin-left:11%; margin-top: 1em">The format
+string consists of</p>
+
+<p style="margin-left:22%; margin-top: 1em">- plain
+text, - directives, that start with &rsquo;%&rsquo;,
+- escape sequences, that start with a backslash.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A directive
+that consumes an argument</p>
+
+<p style="margin-left:22%; margin-top: 1em">- starts
+with &rsquo;%&rsquo; or &rsquo;%m$&rsquo; where m is a
+positive integer, - is optionally followed by any of
+the characters &rsquo;#&rsquo;, &rsquo;0&rsquo;,
+&rsquo;-&rsquo;, &rsquo; &rsquo;, &rsquo;+&rsquo;,</p>
+
+<p style="margin-left:22%; margin-top: 1em">each of which
+acts as a flag,</p>
+
+<p style="margin-left:22%; margin-top: 1em">- is
+optionally followed by a width specification (a nonnegative
+integer), - is optionally followed by &rsquo;.&rsquo;
+and a precision specification (an optional</p>
+
+<p style="margin-left:22%; margin-top: 1em">nonnegative
+integer),</p>
+
+<p style="margin-left:22%; margin-top: 1em">- is
+finished by a specifier</p>
+
+<p style="margin-left:22%; margin-top: 1em">-
+&rsquo;c&rsquo;, that prints a character, -
+&rsquo;s&rsquo;, that prints a string, -
+&rsquo;i&rsquo;, &rsquo;d&rsquo;, that print an integer,
+- &rsquo;u&rsquo;, &rsquo;o&rsquo;, &rsquo;x&rsquo;,
+&rsquo;X&rsquo;, that print an unsigned (nonnegative)
+integer, - &rsquo;e&rsquo;, &rsquo;E&rsquo;, that
+print a floating-point number in scientific notation,
+- &rsquo;f&rsquo;, &rsquo;F&rsquo;, that print a
+floating-point number without an exponent, -
+&rsquo;g&rsquo;, &rsquo;G&rsquo;, that print a
+floating-point number in general notation, -
+&rsquo;a&rsquo;, &rsquo;A&rsquo;, that print a
+floating-point number in hexadecimal notation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Additionally
+there is the directive &rsquo;%%&rsquo;, that prints a
+single &rsquo;%&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a directive
+specifies the argument by its number (&rsquo;%m$&rsquo;
+notation), all directives that consume an argument must do
+so.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The escape
+sequences are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\\</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>backslash</p></td>
+<td width="22%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\a</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>alert (BEL)</p></td>
+<td width="22%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\b</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>backspace (BS)</p></td>
+<td width="22%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\f</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>form feed (FF)</p></td>
+<td width="22%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\n</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>new line (LF)</p></td>
+<td width="22%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\r</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>carriage return (CR)</p></td>
+<td width="22%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\t</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>horizontal tab (HT)</p></td>
+<td width="22%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\v</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>vertical tab (VT)</p></td>
+<td width="22%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>\nnn</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>octal number with 1 to 3 octal digits</p></td>
+<td width="22%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Environment
+variables:</p>
+
+<p style="margin-left:11%; margin-top: 1em">The translation
+of the format string is looked up in the translation domain
+given by the environment variable TEXTDOMAIN. It is looked
+up in the catalogs directory given by the environment
+variable TEXTDOMAINDIR or, if not present, in the default
+catalogs directory. This binary is configured to use the
+default catalogs directory: @localedir@</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Bruno Haible.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 2025-2026 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The full
+documentation for <b>printf_gettext</b> is maintained as a
+Texinfo manual. If the <b>info</b> and <b>printf_gettext</b>
+programs are properly installed at your site, the
+command</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>info
+printf_gettext</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">should give you
+access to the complete manual.</p>
+<hr>
+</body>
+</html>

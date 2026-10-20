@@ -14,25 +14,14 @@
  *
  * Copied from packet-radiotap.c
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/unit_strings.h>
 #include "packet-ppi-geolocation-common.h"
 
 enum ppi_vector_type {
@@ -149,129 +138,129 @@ static const value_string relativeto_string[] = {
 void proto_register_ppi_vector(void);
 
 /* protocol */
-static int proto_ppi_vector = -1;
+static int proto_ppi_vector;
 
 /* "top" level fields */
-static int hf_ppi_vector_version = -1;
-static int hf_ppi_vector_pad = -1;
-static int hf_ppi_vector_length = -1;
-static int hf_ppi_vector_present = -1;
-static int hf_ppi_vector_vflags = -1;
-static int hf_ppi_vector_vchars = -1;
-static int hf_ppi_vector_rot_x = -1;
-static int hf_ppi_vector_rot_y = -1;
-static int hf_ppi_vector_rot_z = -1;
+static int hf_ppi_vector_version;
+static int hf_ppi_vector_pad;
+static int hf_ppi_vector_length;
+static int hf_ppi_vector_present;
+static int hf_ppi_vector_vflags;
+static int hf_ppi_vector_vchars;
+static int hf_ppi_vector_rot_x;
+static int hf_ppi_vector_rot_y;
+static int hf_ppi_vector_rot_z;
 
 /* V1 */
-static int hf_ppi_vector_off_r = -1;
-static int hf_ppi_vector_off_f = -1;
-static int hf_ppi_vector_off_u = -1;
-static int hf_ppi_vector_vel_r = -1;
-static int hf_ppi_vector_vel_f = -1;
-static int hf_ppi_vector_vel_u = -1;
-static int hf_ppi_vector_vel_t = -1;
-static int hf_ppi_vector_acc_r = -1;
-static int hf_ppi_vector_acc_f = -1;
-static int hf_ppi_vector_acc_u = -1;
-static int hf_ppi_vector_acc_t = -1;
+static int hf_ppi_vector_off_r;
+static int hf_ppi_vector_off_f;
+static int hf_ppi_vector_off_u;
+static int hf_ppi_vector_vel_r;
+static int hf_ppi_vector_vel_f;
+static int hf_ppi_vector_vel_u;
+static int hf_ppi_vector_vel_t;
+static int hf_ppi_vector_acc_r;
+static int hf_ppi_vector_acc_f;
+static int hf_ppi_vector_acc_u;
+static int hf_ppi_vector_acc_t;
 
 /* V2 */
-static int hf_ppi_vector_off_x = -1;
-static int hf_ppi_vector_off_y = -1;
-static int hf_ppi_vector_off_z = -1;
+static int hf_ppi_vector_off_x;
+static int hf_ppi_vector_off_y;
+static int hf_ppi_vector_off_z;
 
-static int hf_ppi_vector_err_rot= -1;
-static int hf_ppi_vector_err_off= -1;
+static int hf_ppi_vector_err_rot;
+static int hf_ppi_vector_err_off;
 
 /* V1 only */
-static int hf_ppi_vector_err_vel= -1;
-static int hf_ppi_vector_err_acc= -1;
+static int hf_ppi_vector_err_vel;
+static int hf_ppi_vector_err_acc;
 
-static int hf_ppi_vector_descstr= -1;
-static int hf_ppi_vector_appspecific_num = -1;
-static int hf_ppi_vector_appspecific_data = -1;
+static int hf_ppi_vector_descstr;
+static int hf_ppi_vector_appspecific_num;
+static int hf_ppi_vector_appspecific_data;
 
 /* "Present" flags */
-static int hf_ppi_vector_present_vflags = -1;
-static int hf_ppi_vector_present_vchars = -1;
-static int hf_ppi_vector_present_val_x = -1;
-static int hf_ppi_vector_present_val_y = -1;
-static int hf_ppi_vector_present_val_z = -1;
+static int hf_ppi_vector_present_vflags;
+static int hf_ppi_vector_present_vchars;
+static int hf_ppi_vector_present_val_x;
+static int hf_ppi_vector_present_val_y;
+static int hf_ppi_vector_present_val_z;
 
 /* V1 */
-static int hf_ppi_vector_present_off_r = -1;
-static int hf_ppi_vector_present_off_f = -1;
-static int hf_ppi_vector_present_off_u = -1;
-static int hf_ppi_vector_present_vel_r = -1;
-static int hf_ppi_vector_present_vel_f = -1;
-static int hf_ppi_vector_present_vel_u = -1;
-static int hf_ppi_vector_present_vel_t = -1;
-static int hf_ppi_vector_present_acc_r = -1;
-static int hf_ppi_vector_present_acc_f = -1;
-static int hf_ppi_vector_present_acc_u = -1;
-static int hf_ppi_vector_present_acc_t = -1;
+static int hf_ppi_vector_present_off_r;
+static int hf_ppi_vector_present_off_f;
+static int hf_ppi_vector_present_off_u;
+static int hf_ppi_vector_present_vel_r;
+static int hf_ppi_vector_present_vel_f;
+static int hf_ppi_vector_present_vel_u;
+static int hf_ppi_vector_present_vel_t;
+static int hf_ppi_vector_present_acc_r;
+static int hf_ppi_vector_present_acc_f;
+static int hf_ppi_vector_present_acc_u;
+static int hf_ppi_vector_present_acc_t;
 
 /* V2 */
-static int hf_ppi_vector_present_off_x = -1;
-static int hf_ppi_vector_present_off_y = -1;
-static int hf_ppi_vector_present_off_z = -1;
+static int hf_ppi_vector_present_off_x;
+static int hf_ppi_vector_present_off_y;
+static int hf_ppi_vector_present_off_z;
 
-static int hf_ppi_vector_present_err_rot = -1;
-static int hf_ppi_vector_present_err_off = -1;
+static int hf_ppi_vector_present_err_rot;
+static int hf_ppi_vector_present_err_off;
 
 /* V1 only */
-static int hf_ppi_vector_present_err_vel = -1;
-static int hf_ppi_vector_present_err_acc = -1;
+static int hf_ppi_vector_present_err_vel;
+static int hf_ppi_vector_present_err_acc;
 
-static int hf_ppi_vector_present_descstr= -1;
-static int hf_ppi_vector_presenappsecific_num = -1;
-static int hf_ppi_vector_present_appspecific_data = -1;
-static int hf_ppi_vector_present_ext = -1;
+static int hf_ppi_vector_present_descstr;
+static int hf_ppi_vector_presenappsecific_num;
+static int hf_ppi_vector_present_appspecific_data;
+static int hf_ppi_vector_present_ext;
 
 /* VectorFlags bits */
 /* There are currently only three bits and two fields defined in vector flags.
 *  These control the units/interpretation of a vector
 */
-static int hf_ppi_vector_vflags_defines_forward = -1; /* bit 0 */
+static int hf_ppi_vector_vflags_defines_forward; /* bit 0 */
 
 /* V1 */
-static int hf_ppi_vector_vflags_rots_absolute = -1; /* different ways to display the same bit, hi or low */
-static int hf_ppi_vector_vflags_offsets_from_gps = -1; /* these are different ways to display the same bit, hi or low */
+static int hf_ppi_vector_vflags_rots_absolute; /* different ways to display the same bit, hi or low */
+static int hf_ppi_vector_vflags_offsets_from_gps; /* these are different ways to display the same bit, hi or low */
 
 /* V2 */
-static int hf_ppi_vector_vflags_relative_to= -1; /* bits 1 and 2 */
+static int hf_ppi_vector_vflags_relative_to; /* bits 1 and 2 */
 
 /*  There are currently eight vector characteristics.
 *  These are purely descriptive (no mathematical importance)
 */
-static int hf_ppi_vector_vchars_antenna = -1;
-static int hf_ppi_vector_vchars_dir_of_travel = -1;
-static int hf_ppi_vector_vchars_front_of_veh = -1;
+static int hf_ppi_vector_vchars_antenna;
+static int hf_ppi_vector_vchars_dir_of_travel;
+static int hf_ppi_vector_vchars_front_of_veh;
 
 /* V2 only */
-static int hf_ppi_vector_vchars_angle_of_arrival= -1;
-static int hf_ppi_vector_vchars_transmitter_pos= -1;
+static int hf_ppi_vector_vchars_angle_of_arrival;
+static int hf_ppi_vector_vchars_transmitter_pos;
 
-static int hf_ppi_vector_vchars_gps_derived = -1;
-static int hf_ppi_vector_vchars_ins_derived = -1;
-static int hf_ppi_vector_vchars_compass_derived = -1;
-static int hf_ppi_vector_vchars_accelerometer_derived = -1;
-static int hf_ppi_vector_vchars_human_derived = -1;
-static int hf_ppi_vector_unknown_data = -1;
+static int hf_ppi_vector_vchars_gps_derived;
+static int hf_ppi_vector_vchars_ins_derived;
+static int hf_ppi_vector_vchars_compass_derived;
+static int hf_ppi_vector_vchars_accelerometer_derived;
+static int hf_ppi_vector_vchars_human_derived;
+static int hf_ppi_vector_unknown_data;
 
 /*These represent arrow-dropdownthings in the gui */
-static gint ett_ppi_vector = -1;
-static gint ett_ppi_vector_present = -1;
-static gint ett_ppi_vectorflags= -1;
-static gint ett_ppi_vectorchars= -1;
+static int ett_ppi_vector;
+static int ett_ppi_vector_present;
+static int ett_ppi_vectorflags;
+static int ett_ppi_vectorchars;
 
-static expert_field ei_ppi_vector_present_bit = EI_INIT;
-static expert_field ei_ppi_vector_length = EI_INIT;
+static expert_field ei_ppi_vector_present_bit;
+static expert_field ei_ppi_vector_length;
 
 
 /* We want to abbreviate this field into a single line. Does so without any string manipulation */
 static void
-annotate_vector_chars(guint32 chars, proto_tree *my_pt)
+annotate_vector_chars(uint32_t chars, proto_tree *my_pt)
 {
     if (chars & PPI_VECTOR_VCHARS_ANTENNA)
         proto_item_append_text(my_pt, " (Antenna)");
@@ -286,7 +275,7 @@ annotate_vector_chars(guint32 chars, proto_tree *my_pt)
 }
 
 static void
-dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length_remaining, proto_tree *ppi_vector_tree)
+dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, int length_remaining, proto_tree *ppi_vector_tree)
 {
     proto_tree *vectorflags_tree          = NULL;
     proto_tree *vectorchars_tree          = NULL;
@@ -295,17 +284,17 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
 
     /* bits */
     int bit;
-    guint32 present, next_present;
+    uint32_t present, next_present;
     /* values actually read out, for displaying */
-    gdouble rot_x, rot_y, rot_z;
-    gdouble off_r, off_f, off_u;
-    gdouble vel_r, vel_f, vel_u, vel_t;
-    gdouble acc_r, acc_f, acc_u, acc_t = 0;
-    gdouble err_rot, err_off, err_vel, err_acc;
-    guint32 appsecific_num; /* appdata parser should add a subtree based on this value */
-    guint32 flags=0, chars=0;
+    double rot_x, rot_y, rot_z;
+    double off_r, off_f, off_u;
+    double vel_r, vel_f, vel_u, vel_t;
+    double acc_r, acc_f, acc_u, acc_t = 0;
+    double err_rot, err_off, err_vel, err_acc;
+    uint32_t appsecific_num; /* appdata parser should add a subtree based on this value */
+    uint32_t flags=0, chars=0;
 
-    static const int * ppi_vector_present_flags[] = {
+    static int * const ppi_vector_present_flags[] = {
         &hf_ppi_vector_present_vflags,
         &hf_ppi_vector_present_vchars,
         &hf_ppi_vector_present_val_x,
@@ -334,7 +323,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
     };
 
     /* temporary, conversion values */
-    guint32 t_val;
+    uint32_t t_val;
 
     present = tvb_get_letohl(tvb, offset+4);
     /* Subtree for the "present flags" bitfield. */
@@ -390,7 +379,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            rot_x = ppi_fixed3_6_to_gdouble(t_val);
+            rot_x = ppi_fixed3_6_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_rot_x, tvb, offset, 4, rot_x);
                 if (flags &  PPI_VECTOR_VFLAGS_ROTS_ABSOLUTE)
@@ -405,7 +394,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            rot_y = ppi_fixed3_6_to_gdouble(t_val);
+            rot_y = ppi_fixed3_6_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_rot_y, tvb, offset, 4, rot_y);
                 if (flags &  PPI_VECTOR_VFLAGS_ROTS_ABSOLUTE)
@@ -420,7 +409,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            rot_z = ppi_fixed3_6_to_gdouble(t_val);
+            rot_z = ppi_fixed3_6_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_rot_z, tvb, offset, 4, rot_z);
                 if (flags &  PPI_VECTOR_VFLAGS_ROTS_ABSOLUTE)
@@ -435,7 +424,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            off_r = ppi_fixed6_4_to_gdouble(t_val);
+            off_r = ppi_fixed6_4_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_off_r, tvb, offset, 4, off_r);
                 if (flags &  PPI_VECTOR_VFLAGS_OFFSETS_FROM_GPS)
@@ -450,7 +439,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            off_f = ppi_fixed6_4_to_gdouble(t_val);
+            off_f = ppi_fixed6_4_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_off_f, tvb, offset, 4, off_f);
                 if (flags &  PPI_VECTOR_VFLAGS_OFFSETS_FROM_GPS)
@@ -465,7 +454,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            off_u = ppi_fixed6_4_to_gdouble(t_val);
+            off_u = ppi_fixed6_4_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_off_u, tvb, offset, 4, off_u);
                 if (flags &  PPI_VECTOR_VFLAGS_OFFSETS_FROM_GPS)
@@ -480,11 +469,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            vel_r = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_vel_r, tvb, offset, 4, vel_r);
-                proto_item_append_text(ti, " m/s");
-            }
+            vel_r = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_vel_r, tvb, offset, 4, vel_r);
             offset+=4;
             length_remaining-=4;
             break;
@@ -492,11 +478,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            vel_f = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_vel_f, tvb, offset, 4, vel_f);
-                proto_item_append_text(ti, " m/s");
-            }
+            vel_f = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_vel_f, tvb, offset, 4, vel_f);
             offset+=4;
             length_remaining-=4;
             break;
@@ -504,11 +487,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            vel_u = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_vel_u, tvb, offset, 4, vel_u);
-                proto_item_append_text(ti, " m/s");
-            }
+            vel_u = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_vel_u, tvb, offset, 4, vel_u);
             offset+=4;
             length_remaining-=4;
             break;
@@ -516,11 +496,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            vel_t = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_vel_t, tvb, offset, 4, vel_t);
-                proto_item_append_text(ti, " m/s");
-            }
+            vel_t = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_vel_t, tvb, offset, 4, vel_t);
             offset+=4;
             length_remaining-=4;
             break;
@@ -528,11 +505,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            acc_r = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_acc_r, tvb, offset, 4, acc_r);
-                proto_item_append_text(ti, " (m/s)/s");
-            }
+            acc_r = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_acc_r, tvb, offset, 4, acc_r);
             offset+=4;
             length_remaining-=4;
             break;
@@ -540,11 +514,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            acc_f = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_acc_f, tvb, offset, 4, acc_f);
-                proto_item_append_text(ti, " (m/s)/s");
-            }
+            acc_f = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_acc_f, tvb, offset, 4, acc_f);
             offset+=4;
             length_remaining-=4;
             break;
@@ -552,11 +523,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            acc_u = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_acc_u, tvb, offset, 4, acc_u);
-                proto_item_append_text(ti, " (m/s)/s");
-            }
+            acc_u = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_acc_u, tvb, offset, 4, acc_u);
             offset+=4;
             length_remaining-=4;
             break;
@@ -564,11 +532,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            acc_t = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_acc_t, tvb, offset, 4, acc_t);
-                proto_item_append_text(ti, " (m/s)/s");
-            }
+            acc_t = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_acc_t, tvb, offset, 4, acc_t);
             offset+=4;
             length_remaining-=4;
             break;
@@ -576,11 +541,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val   = tvb_get_letohl(tvb, offset);
-            err_rot = ppi_fixed3_6_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_rot, tvb, offset, 4, err_rot);
-                proto_item_append_text(ti, " degrees");
-            }
+            err_rot = ppi_fixed3_6_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_rot, tvb, offset, 4, err_rot);
             offset+=4;
             length_remaining-=4;
             break;
@@ -588,11 +550,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val   = tvb_get_letohl(tvb, offset);
-            err_off = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_off, tvb, offset, 4, err_off);
-                proto_item_append_text(ti, " meters");
-            }
+            err_off = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_off, tvb, offset, 4, err_off);
             offset+=4;
             length_remaining-=4;
             break;
@@ -600,11 +559,8 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val   = tvb_get_letohl(tvb, offset);
-            err_vel = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_vel, tvb, offset, 4, err_vel);
-                proto_item_append_text(ti, "m/s");
-            }
+            err_vel = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_vel, tvb, offset, 4, err_vel);
             offset+=4;
             length_remaining-=4;
             break;
@@ -612,7 +568,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val   = tvb_get_letohl(tvb, offset);
-            err_acc = ppi_fixed6_4_to_gdouble(t_val);
+            err_acc = ppi_fixed6_4_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_acc, tvb, offset, 4, err_acc);
                 proto_item_append_text(ti, " (m/s)/s");
@@ -623,7 +579,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
         case  PPI_VECTOR_DESCSTR:
             if (length_remaining < 32)
                 break;
-            proto_tree_add_item(ppi_vector_tree, hf_ppi_vector_descstr, tvb, offset, 32, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(ppi_vector_tree, hf_ppi_vector_descstr, tvb, offset, 32, ENC_ASCII);
             offset+=32;
             length_remaining-=32;
             break;
@@ -657,7 +613,7 @@ dissect_ppi_vector_v1(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
 }
 
 static void
-dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length_remaining, proto_tree *ppi_vector_tree, proto_item *vector_line)
+dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, int length_remaining, proto_tree *ppi_vector_tree, proto_item *vector_line)
 {
     proto_tree *vectorflags_tree          = NULL;
     proto_tree *vectorchars_tree          = NULL;
@@ -666,23 +622,23 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
 
     /* bits */
     int bit;
-    guint32 present, next_present;
+    uint32_t present, next_present;
 
     /* values actually read out, for displaying */
-    gchar *curr_str;
+    char *curr_str;
 
     /* these are used to specially handle RelativeTo: */
-    guint32  relativeto_int;
-    const gchar *relativeto_str= "RelativeTo: Forward"; /* default if vflags is not present*/
+    uint32_t relativeto_int;
+    const char *relativeto_str;
 
     /* normal fields*/
-    guint32 flags=0, chars=0;
-    gdouble rot_x, rot_y, rot_z;
-    gdouble off_x, off_y, off_z;
-    gdouble err_rot, err_off;
-    guint32  appsecific_num; /* appdata parser should add a subtree based on this value */
+    uint32_t flags=0, chars=0;
+    double rot_x, rot_y, rot_z;
+    double off_x, off_y, off_z;
+    double err_rot, err_off;
+    uint32_t appsecific_num; /* appdata parser should add a subtree based on this value */
 
-    static const int * ppi_vector_present_flags[] = {
+    static int * const ppi_vector_present_flags[] = {
         &hf_ppi_vector_present_vflags,
         &hf_ppi_vector_present_vchars,
         &hf_ppi_vector_present_val_x,
@@ -701,7 +657,7 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
     };
 
     /* temporary, conversion values */
-    guint32 t_val;
+    uint32_t t_val;
 
     present = tvb_get_letohl(tvb, offset+4);
     /* Subtree for the "present flags" bitfield. */
@@ -803,7 +759,7 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            rot_x = ppi_fixed3_6_to_gdouble(t_val);
+            rot_x = ppi_fixed3_6_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_rot_x, tvb, offset, 4, rot_x);
                 proto_item_append_text(ti, " Degrees RelativeTo: %s", relativeto_str);
@@ -816,7 +772,7 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            rot_y = ppi_fixed3_6_to_gdouble(t_val);
+            rot_y = ppi_fixed3_6_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_rot_y, tvb, offset, 4, rot_y);
                 proto_item_append_text(ti, " Degrees RelativeTo: %s", relativeto_str);
@@ -829,7 +785,7 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            rot_z =  ppi_fixed3_6_to_gdouble(t_val);
+            rot_z =  ppi_fixed3_6_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_rot_z, tvb, offset, 4, rot_z);
                 proto_item_append_text(ti, " Degrees RelativeTo: %s", relativeto_str);
@@ -842,7 +798,7 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            off_x = ppi_fixed6_4_to_gdouble(t_val);
+            off_x = ppi_fixed6_4_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_off_x, tvb, offset, 4, off_x);
                 proto_item_append_text(ti, " Meters RelativeTo: %s", relativeto_str);
@@ -855,7 +811,7 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            off_y = ppi_fixed6_4_to_gdouble(t_val);
+            off_y = ppi_fixed6_4_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_off_y, tvb, offset, 4, off_y);
                 proto_item_append_text(ti, " Meters RelativeTo: %s", relativeto_str);
@@ -868,7 +824,7 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val = tvb_get_letohl(tvb, offset);
-            off_z = ppi_fixed6_4_to_gdouble(t_val);
+            off_z = ppi_fixed6_4_to_double(t_val);
             if (ppi_vector_tree) {
                 ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_off_z, tvb, offset, 4, off_z);
                 proto_item_append_text(ti, " Meters RelativeTo: %s", relativeto_str);
@@ -881,11 +837,8 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val   = tvb_get_letohl(tvb, offset);
-            err_rot = ppi_fixed3_6_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_rot, tvb, offset, 4, err_rot);
-                proto_item_append_text(ti, " Degrees");
-            }
+            err_rot = ppi_fixed3_6_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_rot, tvb, offset, 4, err_rot);
             offset+=4;
             length_remaining-=4;
             break;
@@ -893,11 +846,8 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
             if (length_remaining < 4)
                 break;
             t_val   = tvb_get_letohl(tvb, offset);
-            err_off = ppi_fixed6_4_to_gdouble(t_val);
-            if (ppi_vector_tree) {
-                ti = proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_off, tvb, offset, 4, err_off);
-                proto_item_append_text(ti, " Meters");
-            }
+            err_off = ppi_fixed6_4_to_double(t_val);
+            proto_tree_add_double(ppi_vector_tree, hf_ppi_vector_err_off, tvb, offset, 4, err_off);
             offset+=4;
             length_remaining-=4;
             break;
@@ -907,8 +857,8 @@ dissect_ppi_vector_v2(tvbuff_t *tvb, packet_info *pinfo, int offset, gint length
                 break;
             if (ppi_vector_tree)
             {
-                /* proto_tree_add_item(ppi_vector_tree, hf_ppi_vector_descstr, tvb, offset, 32, ENC_ASCII|ENC_NA); */
-                curr_str = tvb_format_stringzpad(tvb, offset, 32); /* need to append_text this */
+                /* proto_tree_add_item(ppi_vector_tree, hf_ppi_vector_descstr, tvb, offset, 32, ENC_ASCII); */
+                curr_str = tvb_format_stringzpad(pinfo->pool, tvb, offset, 32); /* need to append_text this */
                 proto_tree_add_string(ppi_vector_tree, hf_ppi_vector_descstr, tvb, offset, 32, curr_str);
                 proto_item_append_text(vector_line, " (%s)", curr_str);
             }
@@ -954,18 +904,18 @@ dissect_ppi_vector(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 {
     proto_tree *ppi_vector_tree;
     proto_item *ti, *vector_line;
-    gint        length_remaining;
+    int         length_remaining;
     int         offset          = 0;
 
     /* values actually read out, for displaying */
-    guint32 version;
-    guint length;
+    uint32_t version;
+    unsigned length;
 
     /* Clear out stuff in the info column */
     col_clear(pinfo->cinfo,COL_INFO);
 
     /* pull out the first three fields of the BASE-GEOTAG-HEADER */
-    version = tvb_get_guint8(tvb, offset);
+    version = tvb_get_uint8(tvb, offset);
     length  = tvb_get_letohs(tvb, offset+2);
 
     /* Setup basic column info */
@@ -1217,36 +1167,36 @@ proto_register_ppi_vector(void)
             "Offset up", HFILL } },
         { &hf_ppi_vector_vel_r,
           { "Vel-r", "ppi_vector.vel_r",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec), 0x0,
             "Velocity-right", HFILL } },
         { &hf_ppi_vector_vel_f,
           { "Vel-f", "ppi_vector.vel_f",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec), 0x0,
             "Velocity-forward", HFILL } },
         { &hf_ppi_vector_vel_u,
           { "Vel-u", "ppi_vector.vel_u",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec), 0x0,
             "Velocity-up", HFILL } },
         { &hf_ppi_vector_vel_t,
           { "Vel-t", "ppi_vector.vel_t",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec), 0x0,
             "Velocity-Total", HFILL } },
 
         { &hf_ppi_vector_acc_r,
           { "Accel-r", "ppi_vector.acc_r",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec_squared), 0x0,
             "Acceleration-right", HFILL } },
         { &hf_ppi_vector_acc_f,
           { "Accel-f", "ppi_vector.acc_f",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec_squared), 0x0,
             "Acceleration-forward", HFILL } },
         { &hf_ppi_vector_acc_u,
           { "Accel-u", "ppi_vector.acc_u",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec_squared), 0x0,
             "Acceleration-up", HFILL } },
         { &hf_ppi_vector_acc_t,
           { "Accel-t", "ppi_vector.acc_t",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec_squared), 0x0,
             "Acceleration-Total", HFILL } },
 
         /* V2 */
@@ -1265,21 +1215,21 @@ proto_register_ppi_vector(void)
 
         { &hf_ppi_vector_err_rot,
           { "Err-Rot", "ppi_vector.err_rot",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_degree_degrees), 0x0,
             "Rotation margin of error", HFILL } },
         { &hf_ppi_vector_err_off,
           { "Err-Off", "ppi_vector.err_off",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_meters), 0x0,
             "Offset margin of  error", HFILL } },
 
         /* V1 only */
         { &hf_ppi_vector_err_vel,
           { "Err-Vel", "ppi_vector.err_vel",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec), 0x0,
             "Velocity margin of error", HFILL } },
         { &hf_ppi_vector_err_acc,
           { "Err-Accel", "ppi_vector.err_acc",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_meter_sec_squared), 0x0,
             "Acceleration margin of error", HFILL } },
 
         { &hf_ppi_vector_descstr,
@@ -1373,7 +1323,7 @@ proto_register_ppi_vector(void)
             NULL, HFILL } },
 
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ppi_vector,
         &ett_ppi_vector_present,
         &ett_ppi_vectorflags,

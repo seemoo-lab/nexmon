@@ -1,0 +1,1898 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="globals_8c" kind="file" language="C++">
+    <compoundname>globals.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes local="no">string.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="xmlIO_8h" local="no">libxml/xmlIO.h</includes>
+    <includes refid="HTMLparser_8h" local="no">libxml/HTMLparser.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="threads_8h" local="no">libxml/threads.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="xmlsave_8h" local="no">libxml/xmlsave.h</includes>
+    <includes refid="SAX2_8h" local="no">libxml/SAX2.h</includes>
+    <includes local="yes">private/dict.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/globals.h</includes>
+    <includes local="yes">private/threads.h</includes>
+    <includes local="yes">private/tree.h</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/globals.c</label>
+        <link refid="globals_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/xmlsave.h</label>
+        <link refid="xmlsave_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="7">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="13">
+        <label>limits.h</label>
+      </node>
+      <node id="29">
+        <label>private/dict.h</label>
+      </node>
+      <node id="30">
+        <label>private/error.h</label>
+      </node>
+      <node id="31">
+        <label>private/globals.h</label>
+      </node>
+      <node id="32">
+        <label>private/threads.h</label>
+      </node>
+      <node id="33">
+        <label>private/tree.h</label>
+      </node>
+      <node id="15">
+        <label>stdarg.h</label>
+      </node>
+      <node id="20">
+        <label>stddef.h</label>
+      </node>
+      <node id="9">
+        <label>stdio.h</label>
+      </node>
+      <node id="3">
+        <label>stdlib.h</label>
+      </node>
+      <node id="4">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlGlobalState" prot="public">_xmlGlobalState</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="globals_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="8" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="8" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="globals_8c_1a14af6f24c240b409006c265f67c60fcb" prot="public" static="no">
+        <name>XML_GLOBALS_NO_REDEFINITION</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="14" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="14" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="globals_8c_1aaf75ed86fc8379a4271293622cb67ff8" prot="public" static="no">
+        <type>struct _xmlGlobalState</type>
+        <definition>typedef struct _xmlGlobalState xmlGlobalState</definition>
+        <argsstring></argsstring>
+        <name>xmlGlobalState</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="172" column="30" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="172" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="globals_8c_1a1f42cbbbdb3d4e46ab43730f301ec53c" prot="public" static="no">
+        <type>xmlGlobalState *</type>
+        <definition>typedef xmlGlobalState* xmlGlobalStatePtr</definition>
+        <argsstring></argsstring>
+        <name>xmlGlobalStatePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="173" column="24" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="173" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="globals_8c_1ac0177319b3bff5323dbcb0b5ff8ebb74" prot="public" static="yes" mutable="no">
+        <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref></type>
+        <definition>xmlMutex xmlThrDefMutex</definition>
+        <argsstring></argsstring>
+        <name>xmlThrDefMutex</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="34" column="17" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a83544b673f5063f9eae57f83dc70bb50" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int lineNumbersDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>lineNumbersDefaultValue</name>
+        <initializer>= 1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="39" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="39" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1af390987d91a68de5f00fc0d08896a690" prot="public" static="yes" mutable="no">
+        <type>pthread_key_t</type>
+        <definition>pthread_key_t globalkey</definition>
+        <argsstring></argsstring>
+        <name>globalkey</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="110" column="22" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="110" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a30231cbab46e8d659a5262c3b781164b" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlmemory_8h_1a8f7e901df83e1a867e3c157963dee331" kindref="member">xmlFreeFunc</ref></type>
+        <definition>xmlFreeFunc xmlFree</definition>
+        <argsstring></argsstring>
+        <name>xmlFree</name>
+        <initializer>= free</initializer>
+        <briefdescription>
+<para>The variable holding the libxml free() implementation. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="208" column="13" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="208" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a8eb58ce50121b43ad8a451a9228c55ae" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref></type>
+        <definition>xmlMallocFunc xmlMalloc</definition>
+        <argsstring></argsstring>
+        <name>xmlMalloc</name>
+        <initializer>= malloc</initializer>
+        <briefdescription>
+<para>The variable holding the libxml malloc() implementation. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="209" column="15" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="209" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1adb21f3d07c5ab24dc5afcd57cad59355" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref></type>
+        <definition>xmlMallocFunc xmlMallocAtomic</definition>
+        <argsstring></argsstring>
+        <name>xmlMallocAtomic</name>
+        <initializer>= malloc</initializer>
+        <briefdescription>
+<para>The variable holding the libxml malloc() implementation for atomic data (i.e. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>blocks not containing pointers), useful when using a garbage collecting allocator.</para>
+<para><xrefsect id="deprecated_1_deprecated000075"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="xmlmemory_8h_1a8eb58ce50121b43ad8a451a9228c55ae" kindref="member">xmlMalloc</ref> </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="210" column="15" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="210" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a1fd622318f4eb3c38c41e1e09c8b7780" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlmemory_8h_1a0dd26c9e178d6a1c19459a4d50e1cc65" kindref="member">xmlReallocFunc</ref></type>
+        <definition>xmlReallocFunc xmlRealloc</definition>
+        <argsstring></argsstring>
+        <name>xmlRealloc</name>
+        <initializer>= realloc</initializer>
+        <briefdescription>
+<para>The variable holding the libxml realloc() implementation. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="211" column="16" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="211" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1ae56b5aa48d2aad300b09849f06ff5bd2" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlmemory_8h_1a5dce41163312ec2fa3c4ac57cc4b795e" kindref="member">xmlStrdupFunc</ref></type>
+        <definition>xmlStrdupFunc xmlMemStrdup</definition>
+        <argsstring></argsstring>
+        <name>xmlMemStrdup</name>
+        <initializer>= xmlPosixStrdup</initializer>
+        <briefdescription>
+<para>The variable holding the libxml strdup() implementation. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="212" column="15" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="212" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1aba247e40c58652e2a16764a6e6115695" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlDoValidityCheckingDefaultValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlDoValidityCheckingDefaultValueThrDef</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="218" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="218" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a4cc852fcb49cfe38191f6509c33a43d8" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlGetWarningsDefaultValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlGetWarningsDefaultValueThrDef</name>
+        <initializer>= 1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="219" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="219" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1ab41ee349185dde033a5a8a8547b87d75" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlLoadExtDtdDefaultValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlLoadExtDtdDefaultValueThrDef</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="220" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="220" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1adf212ce6892420aaf2ac522ff8ede1e8" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlPedanticParserDefaultValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlPedanticParserDefaultValueThrDef</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="221" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="221" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a6bcd542cf924e26a89487d5b2fc3b28c" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlKeepBlanksDefaultValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlKeepBlanksDefaultValueThrDef</name>
+        <initializer>= 1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="222" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="222" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a63fe44e8c7044a993298d9b8fb929633" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlSubstituteEntitiesDefaultValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlSubstituteEntitiesDefaultValueThrDef</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="223" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="223" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a2bec12998b163b020341c06cbeb1d66d" prot="public" static="yes" mutable="no">
+        <type><ref refid="tree_8h_1a6fc959a53aad61a058f9039b313d8622" kindref="member">xmlRegisterNodeFunc</ref></type>
+        <definition>xmlRegisterNodeFunc xmlRegisterNodeDefaultValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlRegisterNodeDefaultValueThrDef</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="225" column="28" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="225" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1ab729c84c0b8cc98e9fd23470dd895013" prot="public" static="yes" mutable="no">
+        <type><ref refid="tree_8h_1aa242184c4aae31aa9c34f690f2e8b00f" kindref="member">xmlDeregisterNodeFunc</ref></type>
+        <definition>xmlDeregisterNodeFunc xmlDeregisterNodeDefaultValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlDeregisterNodeDefaultValueThrDef</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="226" column="30" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="226" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a1f1907743402122d5a4379bb449db873" prot="public" static="yes" mutable="no">
+        <type><ref refid="xmlIO_8h_1a3d74afc4eb6b1aa8b5521b2690459714" kindref="member">xmlParserInputBufferCreateFilenameFunc</ref></type>
+        <definition>xmlParserInputBufferCreateFilenameFunc xmlParserInputBufferCreateFilenameValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlParserInputBufferCreateFilenameValueThrDef</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="229" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="229" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a60375f055c1ed3213d88c71acddd6937" prot="public" static="yes" mutable="no">
+        <type><ref refid="xmlIO_8h_1ae825903725daafb3ea508546f13ae0dc" kindref="member">xmlOutputBufferCreateFilenameFunc</ref></type>
+        <definition>xmlOutputBufferCreateFilenameFunc xmlOutputBufferCreateFilenameValueThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlOutputBufferCreateFilenameValueThrDef</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="231" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="231" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1af628c4e6fc6565b7bfd2a5be457907a9" prot="public" static="yes" mutable="no">
+        <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+        <definition>xmlGenericErrorFunc xmlGenericErrorThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlGenericErrorThrDef</name>
+        <initializer>= xmlGenericErrorDefaultFunc</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="233" column="28" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="233" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a515a801744df71597483ad00332320cd" prot="public" static="yes" mutable="no">
+        <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+        <definition>xmlStructuredErrorFunc xmlStructuredErrorThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlStructuredErrorThrDef</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="234" column="31" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="234" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a536a1545744a2bc1e15204c11a7ab38c" prot="public" static="yes" mutable="no">
+        <type>void *</type>
+        <definition>void* xmlGenericErrorContextThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlGenericErrorContextThrDef</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="235" column="13" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="235" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a75fe11c7271532e241faa751e4814d41" prot="public" static="yes" mutable="no">
+        <type>void *</type>
+        <definition>void* xmlStructuredErrorContextThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlStructuredErrorContextThrDef</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="236" column="13" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="236" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a6a002e80c8fc7036fba4d477f21798e5" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlIndentTreeOutputThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlIndentTreeOutputThrDef</name>
+        <initializer>= 1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="239" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="239" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a7ea082af37a4959e9e6e4d7be1f8b39b" prot="public" static="yes" mutable="no">
+        <type>const char *</type>
+        <definition>const char* xmlTreeIndentStringThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlTreeIndentStringThrDef</name>
+        <initializer>= &quot;  &quot;</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="240" column="19" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="240" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a0524ae9c45337363e810eeb9e4ca73ca" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlSaveNoEmptyTagsThrDef</definition>
+        <argsstring></argsstring>
+        <name>xmlSaveNoEmptyTagsThrDef</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="241" column="12" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="241" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a9fb0be3e8c51ad06f2510ee43155cd69" prot="public" static="no" mutable="no">
+        <type>const <ref refid="parser_8h_1a7127f39ff5d23f7a6620ceabaf24dacd" kindref="member">xmlSAXHandlerV1</ref></type>
+        <definition>const xmlSAXHandlerV1 xmlDefaultSAXHandler</definition>
+        <argsstring></argsstring>
+        <name>xmlDefaultSAXHandler</name>
+        <initializer>= {
+    <ref refid="SAX2_8h_1a426bdedf05a2e7172c8d22ef54f74351" kindref="member">xmlSAX2InternalSubset</ref>,
+    <ref refid="SAX2_8h_1afd5d59d8038d019cda78252ac8686760" kindref="member">xmlSAX2IsStandalone</ref>,
+    <ref refid="SAX2_8h_1a0334fea735d91022d09c9b5610aef0e0" kindref="member">xmlSAX2HasInternalSubset</ref>,
+    <ref refid="SAX2_8h_1a7850f7aa6aaefdb47583c862ef32e0ce" kindref="member">xmlSAX2HasExternalSubset</ref>,
+    <ref refid="SAX2_8h_1a39ee75d1e91110a715cca933d6275062" kindref="member">xmlSAX2ResolveEntity</ref>,
+    <ref refid="SAX2_8h_1af1626793d18ab3cae69601432b71b299" kindref="member">xmlSAX2GetEntity</ref>,
+    <ref refid="SAX2_8h_1a6da9ac24b3fce0c47b26b3c222f81e8b" kindref="member">xmlSAX2EntityDecl</ref>,
+    <ref refid="SAX2_8h_1a1d226aee003f29263a795784c11f1926" kindref="member">xmlSAX2NotationDecl</ref>,
+    <ref refid="SAX2_8h_1afcef9ed7f0505156002296d877b5ca4e" kindref="member">xmlSAX2AttributeDecl</ref>,
+    <ref refid="SAX2_8h_1a4f53045e8f24c774968ea1f2bbaa1de7" kindref="member">xmlSAX2ElementDecl</ref>,
+    <ref refid="SAX2_8h_1a3d97e40115afbd8d14c1c0d23c7bc15c" kindref="member">xmlSAX2UnparsedEntityDecl</ref>,
+    <ref refid="SAX2_8h_1a78e204a815691fbc8b1f5354653af165" kindref="member">xmlSAX2SetDocumentLocator</ref>,
+    <ref refid="SAX2_8h_1ad42789af7558eeeac6143700fb23c2ea" kindref="member">xmlSAX2StartDocument</ref>,
+    <ref refid="SAX2_8h_1a4ee870a7124e9c68f197f1573eece0e1" kindref="member">xmlSAX2EndDocument</ref>,
+    <ref refid="SAX2_8h_1a60f2f18a22c3e372bf0bda848d46f594" kindref="member">xmlSAX2StartElement</ref>,
+    <ref refid="SAX2_8h_1a30410bbe46884abd0ab2a639c3c8cebf" kindref="member">xmlSAX2EndElement</ref>,
+    <ref refid="SAX2_8h_1af8883fe2352083b7ae494e28caf73d49" kindref="member">xmlSAX2Reference</ref>,
+    <ref refid="SAX2_8h_1ae839b53ec40a61bf06b8cdb7170cfea1" kindref="member">xmlSAX2Characters</ref>,
+    <ref refid="SAX2_8h_1ae839b53ec40a61bf06b8cdb7170cfea1" kindref="member">xmlSAX2Characters</ref>,
+    <ref refid="SAX2_8h_1afacf4b3ed76ce570a75ce04a1fe23c3a" kindref="member">xmlSAX2ProcessingInstruction</ref>,
+    <ref refid="SAX2_8h_1a6eb09427fd179926c358a8ad306c22b7" kindref="member">xmlSAX2Comment</ref>,
+    <ref refid="xmlerror_8h_1abad0bdb03736ce72902b303ec8525e6e" kindref="member">xmlParserWarning</ref>,
+    <ref refid="xmlerror_8h_1aae147cdcd7fe91e04d4267816c8d438a" kindref="member">xmlParserError</ref>,
+    <ref refid="xmlerror_8h_1aae147cdcd7fe91e04d4267816c8d438a" kindref="member">xmlParserError</ref>,
+    <ref refid="SAX2_8h_1ac2d6d7d22114152f8324ce804c8bfbdc" kindref="member">xmlSAX2GetParameterEntity</ref>,
+    <ref refid="SAX2_8h_1a776ea05888e1a26f3f87245320541eb5" kindref="member">xmlSAX2CDataBlock</ref>,
+    <ref refid="SAX2_8h_1aa148deef43d5a64e4a4da973744b6877" kindref="member">xmlSAX2ExternalSubset</ref>,
+    1,
+}</initializer>
+        <briefdescription>
+<para>Default SAX version1 handler for XML, builds the DOM tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000137"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This handler is unused and will be removed from future versions.</para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="252" column="23" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="252" bodyend="281"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1abf9b534019ecf8bf4165fd68b43ba02b" prot="public" static="no" mutable="no">
+        <type>const <ref refid="tree_8h_1a7ccc6335b7872be745350a8386cbd63c" kindref="member">xmlSAXLocator</ref></type>
+        <definition>const xmlSAXLocator xmlDefaultSAXLocator</definition>
+        <argsstring></argsstring>
+        <name>xmlDefaultSAXLocator</name>
+        <initializer>= {
+    <ref refid="SAX2_8h_1a4204a6b06727433c9c0e00d2cb7faa5e" kindref="member">xmlSAX2GetPublicId</ref>,
+    <ref refid="SAX2_8h_1a8a71838765d131940f5990bf31039dc7" kindref="member">xmlSAX2GetSystemId</ref>,
+    <ref refid="SAX2_8h_1a0f19376498a08a8b3b3a8349682e0cf1" kindref="member">xmlSAX2GetLineNumber</ref>,
+    <ref refid="SAX2_8h_1a9d69af6d60f361218858f007f96d4350" kindref="member">xmlSAX2GetColumnNumber</ref>
+}</initializer>
+        <briefdescription>
+<para>The default SAX Locator { getPublicId, getSystemId, getLineNumber, getColumnNumber}. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000138"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="291" column="21" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="291" bodyend="296"/>
+      </memberdef>
+      <memberdef kind="variable" id="globals_8c_1a83b368913f758eea3c0051c433ce9c10" prot="public" static="no" mutable="no">
+        <type>const <ref refid="parser_8h_1a7127f39ff5d23f7a6620ceabaf24dacd" kindref="member">xmlSAXHandlerV1</ref></type>
+        <definition>const xmlSAXHandlerV1 htmlDefaultSAXHandler</definition>
+        <argsstring></argsstring>
+        <name>htmlDefaultSAXHandler</name>
+        <initializer>= {
+    <ref refid="SAX2_8h_1a426bdedf05a2e7172c8d22ef54f74351" kindref="member">xmlSAX2InternalSubset</ref>,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    <ref refid="SAX2_8h_1af1626793d18ab3cae69601432b71b299" kindref="member">xmlSAX2GetEntity</ref>,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    <ref refid="SAX2_8h_1a78e204a815691fbc8b1f5354653af165" kindref="member">xmlSAX2SetDocumentLocator</ref>,
+    <ref refid="SAX2_8h_1ad42789af7558eeeac6143700fb23c2ea" kindref="member">xmlSAX2StartDocument</ref>,
+    <ref refid="SAX2_8h_1a4ee870a7124e9c68f197f1573eece0e1" kindref="member">xmlSAX2EndDocument</ref>,
+    <ref refid="SAX2_8h_1a60f2f18a22c3e372bf0bda848d46f594" kindref="member">xmlSAX2StartElement</ref>,
+    <ref refid="SAX2_8h_1a30410bbe46884abd0ab2a639c3c8cebf" kindref="member">xmlSAX2EndElement</ref>,
+    NULL,
+    <ref refid="SAX2_8h_1ae839b53ec40a61bf06b8cdb7170cfea1" kindref="member">xmlSAX2Characters</ref>,
+    <ref refid="SAX2_8h_1acac0ff5add43904a85cc199238441f7e" kindref="member">xmlSAX2IgnorableWhitespace</ref>,
+    <ref refid="SAX2_8h_1afacf4b3ed76ce570a75ce04a1fe23c3a" kindref="member">xmlSAX2ProcessingInstruction</ref>,
+    <ref refid="SAX2_8h_1a6eb09427fd179926c358a8ad306c22b7" kindref="member">xmlSAX2Comment</ref>,
+    <ref refid="xmlerror_8h_1abad0bdb03736ce72902b303ec8525e6e" kindref="member">xmlParserWarning</ref>,
+    <ref refid="xmlerror_8h_1aae147cdcd7fe91e04d4267816c8d438a" kindref="member">xmlParserError</ref>,
+    <ref refid="xmlerror_8h_1aae147cdcd7fe91e04d4267816c8d438a" kindref="member">xmlParserError</ref>,
+    NULL,
+    <ref refid="SAX2_8h_1a776ea05888e1a26f3f87245320541eb5" kindref="member">xmlSAX2CDataBlock</ref>,
+    NULL,
+    1,
+}</initializer>
+        <briefdescription>
+<para>Default old SAX v1 handler for HTML, builds the DOM tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000139"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This handler is unused and will be removed from future versions.</para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="306" column="23" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="306" bodyend="335"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="globals_8c_1a2df263ae2c59b522daa830f7ee352842" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlFreeGlobalState</definition>
+        <argsstring>(void *state)</argsstring>
+        <name>xmlFreeGlobalState</name>
+        <param>
+          <type>void *</type>
+          <declname>state</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="439" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="439" bodyend="452" declfile="/builds/GNOME/libxml2/globals.c" declline="121" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a2d54cf329bb23c6e08100c5addc6b108" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>char *</type>
+        <definition>static char * xmlPosixStrdup</definition>
+        <argsstring>(const char *cur)</argsstring>
+        <name>xmlPosixStrdup</name>
+        <param>
+          <type>const char *</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>a strdup implementation with a type signature matching POSIX </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the input char * </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> * or NULL </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="200" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="200" bodyend="202"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1ab736f4ce1ae8ce27b6c382a5d621e4ca" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlInitGlobalState</definition>
+        <argsstring>(xmlGlobalStatePtr gs)</argsstring>
+        <name>xmlInitGlobalState</name>
+        <param>
+          <type>xmlGlobalStatePtr</type>
+          <declname>gs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="561" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="561" bodyend="625" declfile="/builds/GNOME/libxml2/globals.c" declline="339" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a78825cacd25f23ce04a5298e25a12df0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitGlobals</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitGlobals</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000140"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="350" column="6" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="350" bodyend="352"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1abd7de022b553210a66d3d71af3a7c2b3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitGlobalsInternal</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitGlobalsInternal</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Additional initialisation for multi-threading. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="357" column="6" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="357" bodyend="370"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a82f973212972dfea97a84d0964f754a8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupGlobals</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupGlobals</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000141"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function is a no-op. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="378" column="6" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="378" bodyend="379"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1ac78398628226dd9c386878a752ed4d8d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupGlobalsInternal</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupGlobalsInternal</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Additional cleanup for multi-threading. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="384" column="6" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="384" bodyend="434"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1afdbf3cd89aef4ad17eb76925abc97f05" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlGlobalStatePtr</type>
+        <definition>static xmlGlobalStatePtr xmlNewGlobalState</definition>
+        <argsstring>(int allowFailure)</argsstring>
+        <name>xmlNewGlobalState</name>
+        <param>
+          <type>int</type>
+          <declname>allowFailure</declname>
+        </param>
+        <briefdescription>
+<para>Allocates a global state. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This structure is used to hold all data for use by a thread when supporting backwards compatibility of libxml2 to pre-thread-safe behaviour.</para>
+<para><simplesect kind="return"><para>the newly allocated xmlGlobalState or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="496" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="496" bodyend="521"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1aecc90b1c270d138e34dd852ea7bbc3c6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlGlobalStatePtr</type>
+        <definition>static xmlGlobalStatePtr xmlGetThreadLocalStorage</definition>
+        <argsstring>(int allowFailure)</argsstring>
+        <name>xmlGetThreadLocalStorage</name>
+        <param>
+          <type>int</type>
+          <declname>allowFailure</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="525" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="525" bodyend="549"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a7273525626aee577f3d413ef12d87162" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+        <definition>const xmlError * __xmlLastError</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlLastError</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="628" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="628" bodyend="630"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a44917daf9d35369e90e537aaa2e85b24" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlDoValidityCheckingDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlDoValidityCheckingDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="633" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="633" bodyend="635"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1ae8ae1381c6e76a1595d90e16c098f29f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlGetWarningsDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlGetWarningsDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="638" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="638" bodyend="640"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a967c8a056aa8eae0e4905b8230c8c79b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlKeepBlanksDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlKeepBlanksDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="643" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="643" bodyend="645"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1adc39641ba0a7f96b099939424050e031" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlLineNumbersDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlLineNumbersDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="648" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="648" bodyend="650"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1aab921dcaa77fccae78a455d95183abab" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlLoadExtDtdDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlLoadExtDtdDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="653" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="653" bodyend="655"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a9ab76a881e0a3434711e64901c1171a8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlPedanticParserDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlPedanticParserDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="658" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="658" bodyend="660"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a3564d4781fb0237dce1060575b5d8f0a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlSubstituteEntitiesDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlSubstituteEntitiesDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="663" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="663" bodyend="665"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a0da7dde2edb1f7884452250ce8e6e5fe" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlIndentTreeOutput</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlIndentTreeOutput</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="669" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="669" bodyend="671"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a963dad2e0a9ef846931d7e11554640a8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const char **</type>
+        <definition>const char ** __xmlTreeIndentString</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlTreeIndentString</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="674" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="674" bodyend="676"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a54633528bcc579af84c99d258185081d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int *</type>
+        <definition>int * __xmlSaveNoEmptyTags</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlSaveNoEmptyTags</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="679" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="679" bodyend="681"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a1996f9a8fe3c84897e0c90d33c6c7c4a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref> *</type>
+        <definition>xmlGenericErrorFunc * __xmlGenericError</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlGenericError</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="685" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="685" bodyend="687"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a918892c6df85165bd4fb735e8783b915" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void **</type>
+        <definition>void ** __xmlGenericErrorContext</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlGenericErrorContext</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="690" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="690" bodyend="692"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a9f059f50374db48ceafff0f07c28cce2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref> *</type>
+        <definition>xmlStructuredErrorFunc * __xmlStructuredError</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlStructuredError</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="695" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="695" bodyend="697"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a49f41b0cafe1a25b16d4da4007bac2e0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void **</type>
+        <definition>void ** __xmlStructuredErrorContext</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlStructuredErrorContext</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="700" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="700" bodyend="702"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1ab6206ce6ba50ae3de6f6a808bca2a034" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a6fc959a53aad61a058f9039b313d8622" kindref="member">xmlRegisterNodeFunc</ref> *</type>
+        <definition>xmlRegisterNodeFunc * __xmlRegisterNodeDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlRegisterNodeDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="705" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="705" bodyend="707"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a6834bd65ce77c575710d1a3002475f51" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1aa242184c4aae31aa9c34f690f2e8b00f" kindref="member">xmlDeregisterNodeFunc</ref> *</type>
+        <definition>xmlDeregisterNodeFunc * __xmlDeregisterNodeDefaultValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlDeregisterNodeDefaultValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="710" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="710" bodyend="712"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a914bfb8876208518395728e7282e6911" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlIO_8h_1a3d74afc4eb6b1aa8b5521b2690459714" kindref="member">xmlParserInputBufferCreateFilenameFunc</ref> *</type>
+        <definition>xmlParserInputBufferCreateFilenameFunc * __xmlParserInputBufferCreateFilenameValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlParserInputBufferCreateFilenameValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="715" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="715" bodyend="717"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a77fd221c39e9f40336ee36041b39cf12" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlIO_8h_1ae825903725daafb3ea508546f13ae0dc" kindref="member">xmlOutputBufferCreateFilenameFunc</ref> *</type>
+        <definition>xmlOutputBufferCreateFilenameFunc * __xmlOutputBufferCreateFilenameValue</definition>
+        <argsstring>(void)</argsstring>
+        <name>__xmlOutputBufferCreateFilenameValue</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="720" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="720" bodyend="722"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1acd0831852f85000056418e6eedb394c8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned *</type>
+        <definition>unsigned * xmlGetLocalRngState</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlGetLocalRngState</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>the local RNG state. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="755" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="755" bodyend="757"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a30866a3a9af1aa5fc49f206d301d8f35" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCheckThreadLocalStorage</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCheckThreadLocalStorage</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Check whether thread-local storage could be allocated. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>In cross-platform code running in multithreaded environments, this function should be called once in each thread before calling other library functions to make sure that thread-local storage was allocated properly.</para>
+<para><simplesect kind="since"><para>2.12.0 </para>
+</simplesect>
+<simplesect kind="return"><para>0 on success or -1 if a memory allocation failed. A failed allocation signals a typically fatal and irrecoverable out-of-memory situation. Don&apos;t call any library functions in this case. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="773" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="773" bodyend="779"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a7bbf69f459a1d3a88ac87abc8a0ffdf3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+        <definition>xmlError * xmlGetLastErrorInternal</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlGetLastErrorInternal</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>a pointer to the global error struct. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="785" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="785" bodyend="787"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a51e487c25e90d402e187bab7e84a1f1d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlThrDefSetGenericErrorFunc</definition>
+        <argsstring>(void *ctx, xmlGenericErrorFunc handler)</argsstring>
+        <name>xmlThrDefSetGenericErrorFunc</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+          <declname>handler</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000142"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Call <ref refid="xmlerror_8h_1ab1b127a183bcaaf7de7f08928dd5994a" kindref="member">xmlSetGenericErrorFunc</ref> in each thread.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>error handler </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="866" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="866" bodyend="874"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a803d46e8d2daf65eaee032a0a88beb2c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlThrDefSetStructuredErrorFunc</definition>
+        <argsstring>(void *ctx, xmlStructuredErrorFunc handler)</argsstring>
+        <name>xmlThrDefSetStructuredErrorFunc</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>handler</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000143"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Call <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc</ref> in each thread.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>error handler </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="885" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="885" bodyend="890"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a245dd5654f2c6538e305a1fb99766365" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefDoValidityCheckingDefaultValue</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefDoValidityCheckingDefaultValue</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000144"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_DTDVALID.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="900" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="900" bodyend="907"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a7d47fb3082b2f1078c677ce728c8bd8b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefGetWarningsDefaultValue</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefGetWarningsDefaultValue</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000145"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOWARNING.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="917" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="917" bodyend="924"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1ac810f502e07784d0aaf4cd720b601685" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefIndentTreeOutput</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefIndentTreeOutput</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000146"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Indenting is enabled by default. Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0" kindref="member">xmlSaveOption</ref> XML_SAVE_NO_INDENT to disable indenting.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="936" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="936" bodyend="943"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a5cdac7cc9c7562aaebbff1c6b395b6b5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const char *</type>
+        <definition>const char * xmlThrDefTreeIndentString</definition>
+        <argsstring>(const char *v)</argsstring>
+        <name>xmlThrDefTreeIndentString</name>
+        <param>
+          <type>const char *</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000147"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1a770239ed982d5bf2d232bd4b20da2bbd" kindref="member">xmlSaveSetIndentString</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="953" column="13" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="953" bodyend="960"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a335cbce6a63ac0c054e50a67f30694c3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefSaveNoEmptyTags</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefSaveNoEmptyTags</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000148"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0" kindref="member">xmlSaveOption</ref> XML_SAVE_NO_EMPTY.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="970" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="970" bodyend="977"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a0a1df3e4c96db656f4b97d8a5b63bc95" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefKeepBlanksDefaultValue</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefKeepBlanksDefaultValue</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000149"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Whitespace is kept by default. Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOBLANKS to remove whitespace.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="989" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="989" bodyend="996"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1aa9008805db392e631bc73865ee71e4f2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefLineNumbersDefaultValue</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefLineNumbersDefaultValue</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000150"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Has no effect.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>unused </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="1006" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="1006" bodyend="1008"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a55b6f562caa0000ed8132a29206e98db" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefLoadExtDtdDefaultValue</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefLoadExtDtdDefaultValue</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000151"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_DTDLOAD.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="1018" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="1018" bodyend="1025"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a488e4b86741fc86f96c909de67bde87d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefPedanticParserDefaultValue</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefPedanticParserDefaultValue</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000152"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_PEDANTIC.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="1035" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="1035" bodyend="1042"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1ae2e7b0e5f8db606038c38eae63c13663" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefSubstituteEntitiesDefaultValue</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefSubstituteEntitiesDefaultValue</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000153"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOENT.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="1052" column="5" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="1052" bodyend="1059"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a8d6667a403165df0275b7a27e7b1a060" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a6fc959a53aad61a058f9039b313d8622" kindref="member">xmlRegisterNodeFunc</ref></type>
+        <definition>xmlRegisterNodeFunc xmlThrDefRegisterNodeDefault</definition>
+        <argsstring>(xmlRegisterNodeFunc func)</argsstring>
+        <name>xmlThrDefRegisterNodeDefault</name>
+        <param>
+          <type><ref refid="tree_8h_1a6fc959a53aad61a058f9039b313d8622" kindref="member">xmlRegisterNodeFunc</ref></type>
+          <declname>func</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000154"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This feature will be removed.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>func</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="1070" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="1070" bodyend="1082"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a98a27bbe75784e827cf49105d044d290" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1aa242184c4aae31aa9c34f690f2e8b00f" kindref="member">xmlDeregisterNodeFunc</ref></type>
+        <definition>xmlDeregisterNodeFunc xmlThrDefDeregisterNodeDefault</definition>
+        <argsstring>(xmlDeregisterNodeFunc func)</argsstring>
+        <name>xmlThrDefDeregisterNodeDefault</name>
+        <param>
+          <type><ref refid="tree_8h_1aa242184c4aae31aa9c34f690f2e8b00f" kindref="member">xmlDeregisterNodeFunc</ref></type>
+          <declname>func</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000155"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This feature will be removed.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>func</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="1093" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="1093" bodyend="1105"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a76b82f56c1f44b0eb1f78dca6799be7c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlIO_8h_1a3d74afc4eb6b1aa8b5521b2690459714" kindref="member">xmlParserInputBufferCreateFilenameFunc</ref></type>
+        <definition>xmlParserInputBufferCreateFilenameFunc xmlThrDefParserInputBufferCreateFilenameDefault</definition>
+        <argsstring>(xmlParserInputBufferCreateFilenameFunc func)</argsstring>
+        <name>xmlThrDefParserInputBufferCreateFilenameDefault</name>
+        <param>
+          <type><ref refid="xmlIO_8h_1a3d74afc4eb6b1aa8b5521b2690459714" kindref="member">xmlParserInputBufferCreateFilenameFunc</ref></type>
+          <declname>func</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000156"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Call <ref refid="xmlIO_8h_1a69305091df0800559923f17822353d9c" kindref="member">xmlParserInputBufferCreateFilenameDefault</ref> in each thread.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>func</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="1117" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="1117" bodyend="1131"/>
+      </memberdef>
+      <memberdef kind="function" id="globals_8c_1a6249b3398ae8b3cf33ac338f25bdb4cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlIO_8h_1ae825903725daafb3ea508546f13ae0dc" kindref="member">xmlOutputBufferCreateFilenameFunc</ref></type>
+        <definition>xmlOutputBufferCreateFilenameFunc xmlThrDefOutputBufferCreateFilenameDefault</definition>
+        <argsstring>(xmlOutputBufferCreateFilenameFunc func)</argsstring>
+        <name>xmlThrDefOutputBufferCreateFilenameDefault</name>
+        <param>
+          <type><ref refid="xmlIO_8h_1ae825903725daafb3ea508546f13ae0dc" kindref="member">xmlOutputBufferCreateFilenameFunc</ref></type>
+          <declname>func</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000157"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Call <ref refid="xmlIO_8h_1a7c0abd74c8c0b2ca8459cb81b7f030ab" kindref="member">xmlOutputBufferCreateFilenameDefault</ref> in each thread.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>func</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="1143" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="1143" bodyend="1158"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/globals.c"/>
+  </compounddef>
+</doxygen>

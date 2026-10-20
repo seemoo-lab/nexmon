@@ -3,10 +3,12 @@
  * Copyright © 2012, 2013 Red Hat, Inc.
  * Copyright © 2012, 2013 Canonical Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  *
@@ -15,18 +17,14 @@
  */
 
 /**
- * SECTION:gsubprocess
- * @title: GSubprocess
- * @short_description: Child processes
- * @include: gio/gio.h
- * @see_also: #GSubprocessLauncher
+ * GSubprocess:
  *
- * #GSubprocess allows the creation of and interaction with child
+ * `GSubprocess` allows the creation of and interaction with child
  * processes.
  *
  * Processes can be communicated with using standard GIO-style APIs (ie:
- * #GInputStream, #GOutputStream).  There are GIO-style APIs to wait for
- * process termination (ie: cancellable and with an asynchronous
+ * [class@Gio.InputStream], [class@Gio.OutputStream]). There are GIO-style APIs
+ * to wait for process termination (ie: cancellable and with an asynchronous
  * variant).
  *
  * There is an API to force a process to terminate, as well as a
@@ -34,47 +32,56 @@
  *
  * One major advantage that GIO brings over the core GLib library is
  * comprehensive API for asynchronous I/O, such
- * g_output_stream_splice_async().  This makes GSubprocess
+ * [method@Gio.OutputStream.splice_async].  This makes `GSubprocess`
  * significantly more powerful and flexible than equivalent APIs in
  * some other languages such as the `subprocess.py`
- * included with Python.  For example, using #GSubprocess one could
+ * included with Python.  For example, using `GSubprocess` one could
  * create two child processes, reading standard output from the first,
  * processing it, and writing to the input stream of the second, all
  * without blocking the main loop.
  *
- * A powerful g_subprocess_communicate() API is provided similar to the
+ * A powerful [method@Gio.Subprocess.communicate] API is provided similar to the
  * `communicate()` method of `subprocess.py`. This enables very easy
  * interaction with a subprocess that has been opened with pipes.
  *
- * #GSubprocess defaults to tight control over the file descriptors open
- * in the child process, avoiding dangling-fd issues that are caused by
- * a simple fork()/exec().  The only open file descriptors in the
+ * `GSubprocess` defaults to tight control over the file descriptors open
+ * in the child process, avoiding dangling-FD issues that are caused by
+ * a simple `fork()`/`exec()`.  The only open file descriptors in the
  * spawned process are ones that were explicitly specified by the
- * #GSubprocess API (unless %G_SUBPROCESS_FLAGS_INHERIT_FDS was
+ * `GSubprocess` API (unless `G_SUBPROCESS_FLAGS_INHERIT_FDS` was
  * specified).
  *
- * #GSubprocess will quickly reap all child processes as they exit,
- * avoiding "zombie processes" remaining around for long periods of
- * time.  g_subprocess_wait() can be used to wait for this to happen,
+ * `GSubprocess` will quickly reap all child processes as they exit,
+ * avoiding ‘zombie processes’ remaining around for long periods of
+ * time.  [method@Gio.Subprocess.wait] can be used to wait for this to happen,
  * but it will happen even without the call being explicitly made.
  *
- * As a matter of principle, #GSubprocess has no API that accepts
+ * As a matter of principle, `GSubprocess` has no API that accepts
  * shell-style space-separated strings.  It will, however, match the
- * typical shell behaviour of searching the PATH for executables that do
- * not contain a directory separator in their name.
+ * typical shell behaviour of searching the `PATH` for executables that do
+ * not contain a directory separator in their name. By default, the `PATH`
+ * of the current process is used.  You can specify
+ * `G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP` to use the `PATH` of the
+ * launcher environment instead.
  *
- * #GSubprocess attempts to have a very simple API for most uses (ie:
+ * `GSubprocess` attempts to have a very simple API for most uses (ie:
  * spawning a subprocess with arguments and support for most typical
- * kinds of input and output redirection).  See g_subprocess_new(). The
- * #GSubprocessLauncher API is provided for more complicated cases
+ * kinds of input and output redirection).  See [ctor@Gio.Subprocess.new]. The
+ * [class@Gio.SubprocessLauncher] API is provided for more complicated cases
  * (advanced types of redirection, environment variable manipulation,
  * change of working directory, child setup functions, etc).
  *
- * A typical use of #GSubprocess will involve calling
- * g_subprocess_new(), followed by g_subprocess_wait_async() or
- * g_subprocess_wait().  After the process exits, the status can be
- * checked using functions such as g_subprocess_get_if_exited() (which
- * are similar to the familiar WIFEXITED-style POSIX macros).
+ * A typical use of `GSubprocess` will involve calling
+ * [ctor@Gio.Subprocess.new], followed by [method@Gio.Subprocess.wait_async] or
+ * [method@Gio.Subprocess.wait].  After the process exits, the status can be
+ * checked using functions such as [method@Gio.Subprocess.get_if_exited] (which
+ * are similar to the familiar `WIFEXITED`-style POSIX macros).
+ *
+ * Note that as of GLib 2.82, creating a `GSubprocess` causes the signal
+ * `SIGPIPE` to be ignored for the remainder of the program. If you are writing
+ * a command-line utility that uses `GSubprocess`, you may need to take into
+ * account the fact that your program will not automatically be killed
+ * if it tries to write to `stdout` after it has been closed.
  *
  * Since: 2.40
  **/
@@ -169,7 +176,7 @@ struct _GSubprocess
 };
 
 G_DEFINE_TYPE_WITH_CODE (GSubprocess, g_subprocess, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, initable_iface_init));
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, initable_iface_init))
 
 enum
 {
@@ -178,140 +185,6 @@ enum
   PROP_ARGV,
   N_PROPS
 };
-
-#ifdef G_OS_UNIX
-typedef struct
-{
-  gint                 fds[3];
-  GSpawnChildSetupFunc child_setup_func;
-  gpointer             child_setup_data;
-  GArray              *basic_fd_assignments;
-  GArray              *needdup_fd_assignments;
-} ChildData;
-
-static void
-unset_cloexec (int fd)
-{
-  int flags;
-  int result;
-
-  flags = fcntl (fd, F_GETFD, 0);
-
-  if (flags != -1)
-    {
-      flags &= (~FD_CLOEXEC);
-      do
-        result = fcntl (fd, F_SETFD, flags);
-      while (result == -1 && errno == EINTR);
-    }
-}
-
-static int
-dupfd_cloexec (int parent_fd)
-{
-  int fd;
-#ifdef F_DUPFD_CLOEXEC
-  do
-    fd = fcntl (parent_fd, F_DUPFD_CLOEXEC, 3);
-  while (fd == -1 && errno == EINTR);
-#else
-  /* OS X Snow Lion and earlier don't have F_DUPFD_CLOEXEC:
-   * https://bugzilla.gnome.org/show_bug.cgi?id=710962
-   */
-  int result, flags;
-  do
-    fd = fcntl (parent_fd, F_DUPFD, 3);
-  while (fd == -1 && errno == EINTR);
-  flags = fcntl (fd, F_GETFD, 0);
-  if (flags != -1)
-    {
-      flags |= FD_CLOEXEC;
-      do
-        result = fcntl (fd, F_SETFD, flags);
-      while (result == -1 && errno == EINTR);
-    }
-#endif
-  return fd;
-}
-
-/*
- * Based on code derived from
- * gnome-terminal:src/terminal-screen.c:terminal_screen_child_setup(),
- * used under the LGPLv2+ with permission from author.
- */
-static void
-child_setup (gpointer user_data)
-{
-  ChildData *child_data = user_data;
-  gint i;
-  gint result;
-
-  /* We're on the child side now.  "Rename" the file descriptors in
-   * child_data.fds[] to stdin/stdout/stderr.
-   *
-   * We don't close the originals.  It's possible that the originals
-   * should not be closed and if they should be closed then they should
-   * have been created O_CLOEXEC.
-   */
-  for (i = 0; i < 3; i++)
-    if (child_data->fds[i] != -1 && child_data->fds[i] != i)
-      {
-        do
-          result = dup2 (child_data->fds[i], i);
-        while (result == -1 && errno == EINTR);
-      }
-
-  /* Basic fd assignments we can just unset FD_CLOEXEC */
-  if (child_data->basic_fd_assignments)
-    {
-      for (i = 0; i < child_data->basic_fd_assignments->len; i++)
-        {
-          gint fd = g_array_index (child_data->basic_fd_assignments, int, i);
-
-          unset_cloexec (fd);
-        }
-    }
-
-  /* If we're doing remapping fd assignments, we need to handle
-   * the case where the user has specified e.g.:
-   * 5 -> 4, 4 -> 6
-   *
-   * We do this by duping the source fds temporarily.
-   */ 
-  if (child_data->needdup_fd_assignments)
-    {
-      for (i = 0; i < child_data->needdup_fd_assignments->len; i += 2)
-        {
-          gint parent_fd = g_array_index (child_data->needdup_fd_assignments, int, i);
-          gint new_parent_fd;
-
-          new_parent_fd = dupfd_cloexec (parent_fd);
-
-          g_array_index (child_data->needdup_fd_assignments, int, i) = new_parent_fd;
-        }
-      for (i = 0; i < child_data->needdup_fd_assignments->len; i += 2)
-        {
-          gint parent_fd = g_array_index (child_data->needdup_fd_assignments, int, i);
-          gint child_fd = g_array_index (child_data->needdup_fd_assignments, int, i+1);
-
-          if (parent_fd == child_fd)
-            {
-              unset_cloexec (parent_fd);
-            }
-          else
-            {
-              do
-                result = dup2 (parent_fd, child_fd);
-              while (result == -1 && errno == EINTR);
-              (void) close (parent_fd);
-            }
-        }
-    }
-
-  if (child_data->child_setup_func)
-    child_data->child_setup_func (child_data->child_setup_data);
-}
-#endif
 
 static GInputStream *
 platform_input_stream_from_spawn_fd (gint fd)
@@ -357,7 +230,7 @@ unix_open_file (const char  *filename,
 
       display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (saved_errno),
-                   _("Error opening file '%s': %s"), display_name,
+                   _("Error opening file “%s”: %s"), display_name,
                    g_strerror (saved_errno));
       g_free (display_name);
       /* fall through... */
@@ -402,24 +275,32 @@ g_subprocess_exited (GPid     pid,
   GSubprocess *self = user_data;
   GSList *tasks;
 
-  g_assert (self->pid == pid);
-
   g_mutex_lock (&self->pending_waits_lock);
+  g_assert (self->pid == pid);
   self->status = status;
-  tasks = self->pending_waits;
-  self->pending_waits = NULL;
+  tasks = g_steal_pointer (&self->pending_waits);
   self->pid = 0;
   g_mutex_unlock (&self->pending_waits_lock);
 
   /* Signal anyone in g_subprocess_wait_async() to wake up now */
-  while (tasks)
+  for (GSList *l = tasks; l != NULL; l = l->next)
     {
-      g_task_return_boolean (tasks->data, TRUE);
-      g_object_unref (tasks->data);
-      tasks = g_slist_delete_link (tasks, tasks);
+      g_task_return_boolean (l->data, TRUE);
+      g_object_unref (l->data);
     }
 
   g_spawn_close_pid (pid);
+
+  /* Locking here is technically not needed, but we do it to please TSAN, as
+   * it considers modifying tasks list memory outside the lock dangerous.
+   */
+#ifdef _GLIB_THREAD_SANITIZER
+  g_mutex_lock (&self->pending_waits_lock);
+  g_clear_slist (&tasks, NULL);
+  g_mutex_unlock (&self->pending_waits_lock);
+#else
+  g_clear_slist (&tasks, NULL);
+#endif
 
   return FALSE;
 }
@@ -430,12 +311,13 @@ initable_init (GInitable     *initable,
                GError       **error)
 {
   GSubprocess *self = G_SUBPROCESS (initable);
-#ifdef G_OS_UNIX
-  ChildData child_data = { { -1, -1, -1 }, 0 };
-#endif
   gint *pipe_ptrs[3] = { NULL, NULL, NULL };
   gint pipe_fds[3] = { -1, -1, -1 };
   gint close_fds[3] = { -1, -1, -1 };
+  GPid pid = 0;
+#ifdef G_OS_UNIX
+  gint stdin_fd = -1, stdout_fd = -1, stderr_fd = -1;
+#endif
   GSpawnFlags spawn_flags = 0;
   gboolean success = FALSE;
   gint i;
@@ -460,11 +342,11 @@ initable_init (GInitable     *initable,
   else if (self->launcher)
     {
       if (self->launcher->stdin_fd != -1)
-        child_data.fds[0] = self->launcher->stdin_fd;
+        stdin_fd = self->launcher->stdin_fd;
       else if (self->launcher->stdin_path != NULL)
         {
-          child_data.fds[0] = close_fds[0] = unix_open_file (self->launcher->stdin_path, O_RDONLY, error);
-          if (child_data.fds[0] == -1)
+          stdin_fd = close_fds[0] = unix_open_file (self->launcher->stdin_path, O_RDONLY, error);
+          if (stdin_fd == -1)
             goto out;
         }
     }
@@ -479,11 +361,11 @@ initable_init (GInitable     *initable,
   else if (self->launcher)
     {
       if (self->launcher->stdout_fd != -1)
-        child_data.fds[1] = self->launcher->stdout_fd;
+        stdout_fd = self->launcher->stdout_fd;
       else if (self->launcher->stdout_path != NULL)
         {
-          child_data.fds[1] = close_fds[1] = unix_open_file (self->launcher->stdout_path, O_CREAT | O_WRONLY, error);
-          if (child_data.fds[1] == -1)
+          stdout_fd = close_fds[1] = unix_open_file (self->launcher->stdout_path, O_CREAT | O_WRONLY, error);
+          if (stdout_fd == -1)
             goto out;
         }
     }
@@ -496,33 +378,25 @@ initable_init (GInitable     *initable,
     pipe_ptrs[2] = &pipe_fds[2];
 #ifdef G_OS_UNIX
   else if (self->flags & G_SUBPROCESS_FLAGS_STDERR_MERGE)
-    /* This will work because stderr gets setup after stdout. */
-    child_data.fds[2] = 1;
+    /* This will work because stderr gets set up after stdout. */
+    stderr_fd = 1;
   else if (self->launcher)
     {
       if (self->launcher->stderr_fd != -1)
-        child_data.fds[2] = self->launcher->stderr_fd;
+        stderr_fd = self->launcher->stderr_fd;
       else if (self->launcher->stderr_path != NULL)
         {
-          child_data.fds[2] = close_fds[2] = unix_open_file (self->launcher->stderr_path, O_CREAT | O_WRONLY, error);
-          if (child_data.fds[2] == -1)
+          stderr_fd = close_fds[2] = unix_open_file (self->launcher->stderr_path, O_CREAT | O_WRONLY, error);
+          if (stderr_fd == -1)
             goto out;
         }
-    }
-#endif
-
-#ifdef G_OS_UNIX
-  if (self->launcher)
-    {
-      child_data.basic_fd_assignments = self->launcher->basic_fd_assignments;
-      child_data.needdup_fd_assignments = self->launcher->needdup_fd_assignments;
     }
 #endif
 
   /* argv0 has no '/' in it?  We better do a PATH lookup. */
   if (strchr (self->argv[0], G_DIR_SEPARATOR) == NULL)
     {
-      if (self->launcher && self->launcher->path_from_envp)
+      if (self->launcher && self->launcher->flags & G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP)
         spawn_flags |= G_SPAWN_SEARCH_PATH_FROM_ENVP;
       else
         spawn_flags |= G_SPAWN_SEARCH_PATH;
@@ -534,37 +408,43 @@ initable_init (GInitable     *initable,
   spawn_flags |= G_SPAWN_DO_NOT_REAP_CHILD;
   spawn_flags |= G_SPAWN_CLOEXEC_PIPES;
 
+  success = g_spawn_async_with_pipes_and_fds (self->launcher ? self->launcher->cwd : NULL,
+                                              (const gchar * const *) self->argv,
+                                              (const gchar * const *) (self->launcher ? self->launcher->envp : NULL),
+                                              spawn_flags,
 #ifdef G_OS_UNIX
-  child_data.child_setup_func = self->launcher ? self->launcher->child_setup_func : NULL;
-  child_data.child_setup_data = self->launcher ? self->launcher->child_setup_user_data : NULL;
-#endif
-
-  success = g_spawn_async_with_pipes (self->launcher ? self->launcher->cwd : NULL,
-                                      self->argv,
-                                      self->launcher ? self->launcher->envp : NULL,
-                                      spawn_flags,
-#ifdef G_OS_UNIX
-                                      child_setup, &child_data,
+                                              self->launcher ? self->launcher->child_setup_func : NULL,
+                                              self->launcher ? self->launcher->child_setup_user_data : NULL,
+                                              stdin_fd, stdout_fd, stderr_fd,
+                                              self->launcher ? (const gint *) self->launcher->source_fds->data : NULL,
+                                              self->launcher ? (const gint *) self->launcher->target_fds->data : NULL,
+                                              self->launcher ? self->launcher->source_fds->len : 0,
 #else
-                                      NULL, NULL,
+                                              NULL, NULL,
+                                              -1, -1, -1,
+                                              NULL, NULL, 0,
 #endif
-                                      &self->pid,
-                                      pipe_ptrs[0], pipe_ptrs[1], pipe_ptrs[2],
-                                      error);
-  g_assert (success == (self->pid != 0));
+                                              &pid,
+                                              pipe_ptrs[0], pipe_ptrs[1], pipe_ptrs[2],
+                                              error);
+  g_assert (success == (pid != 0));
+
+  g_mutex_lock (&self->pending_waits_lock);
+  self->pid = pid;
+  g_mutex_unlock (&self->pending_waits_lock);
 
   {
     guint64 identifier;
-    gint s;
+    gint s G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
 
 #ifdef G_OS_WIN32
-    identifier = (guint64) GetProcessId (self->pid);
+    identifier = (guint64) GetProcessId (pid);
 #else
-    identifier = (guint64) self->pid;
+    identifier = (guint64) pid;
 #endif
 
     s = g_snprintf (self->identifier, sizeof self->identifier, "%"G_GUINT64_FORMAT, identifier);
-    g_assert (0 < s && s < sizeof self->identifier);
+    g_assert (0 < s && (gsize) s < sizeof self->identifier);
   }
 
   /* Start attempting to reap the child immediately */
@@ -574,7 +454,7 @@ initable_init (GInitable     *initable,
       GSource *source;
 
       worker_context = GLIB_PRIVATE_CALL (g_get_worker_context) ();
-      source = g_child_watch_source_new (self->pid);
+      source = g_child_watch_source_new (pid);
       g_source_set_callback (source, (GSourceFunc) g_subprocess_exited, g_object_ref (self), g_object_unref);
       g_source_attach (source, worker_context);
       g_source_unref (source);
@@ -632,15 +512,47 @@ g_subprocess_class_init (GSubprocessClass *class)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (class);
 
+#ifdef SIGPIPE
+  /* There is no portable, thread-safe way to avoid having the process
+   * be killed by SIGPIPE when calling write() on a pipe to a subprocess, so we
+   * are forced to simply ignore the signal process-wide.
+   *
+   * This can happen if `G_SUBPROCESS_FLAGS_STDIN_PIPE` is used and the
+   * subprocess calls close() on its stdin FD while the parent process is
+   * running g_subprocess_communicate().
+   *
+   * Even if we ignore it though, gdb will still stop if the app
+   * receives a SIGPIPE, which can be confusing and annoying. In `gsocket.c`,
+   * we can handily also set `MSG_NO_SIGNAL` / `SO_NOSIGPIPE`, but unfortunately
+   * there isn’t an equivalent of those for `pipe2`() FDs.
+   */
+  signal (SIGPIPE, SIG_IGN);
+#endif
+
   gobject_class->finalize = g_subprocess_finalize;
   gobject_class->set_property = g_subprocess_set_property;
 
+  /**
+   * GSubprocess:flags:
+   *
+   * Subprocess flags.
+   *
+   * Since: 2.40
+   */
   g_object_class_install_property (gobject_class, PROP_FLAGS,
-                                   g_param_spec_flags ("flags", P_("Flags"), P_("Subprocess flags"),
+                                   g_param_spec_flags ("flags", NULL, NULL,
                                                        G_TYPE_SUBPROCESS_FLAGS, 0, G_PARAM_WRITABLE |
                                                        G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GSubprocess:argv:
+   *
+   * Argument vector.
+   *
+   * Since: 2.40
+   */
   g_object_class_install_property (gobject_class, PROP_ARGV,
-                                   g_param_spec_boxed ("argv", P_("Arguments"), P_("Argument vector"),
+                                   g_param_spec_boxed ("argv", NULL, NULL,
                                                        G_TYPE_STRV, G_PARAM_WRITABLE |
                                                        G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 }
@@ -648,7 +560,7 @@ g_subprocess_class_init (GSubprocessClass *class)
 /**
  * g_subprocess_new: (skip)
  * @flags: flags that define the behaviour of the subprocess
- * @error: (allow-none): return location for an error, or %NULL
+ * @error: (nullable): return location for an error, or %NULL
  * @argv0: first commandline argument to pass to the subprocess
  * @...:   more commandline arguments, followed by %NULL
  *
@@ -697,9 +609,9 @@ g_subprocess_new (GSubprocessFlags   flags,
 
 /**
  * g_subprocess_newv: (rename-to g_subprocess_new)
- * @argv: (array zero-terminated=1) (element-type utf8): commandline arguments for the subprocess
+ * @argv: (array zero-terminated=1) (element-type filename): commandline arguments for the subprocess
  * @flags: flags that define the behaviour of the subprocess
- * @error: (allow-none): return location for an error, or %NULL
+ * @error: (nullable): return location for an error, or %NULL
  *
  * Create a new process with the given flags and argument list.
  *
@@ -729,16 +641,24 @@ g_subprocess_newv (const gchar * const  *argv,
  *
  * On UNIX, returns the process ID as a decimal string.
  * On Windows, returns the result of GetProcessId() also as a string.
+ * If the subprocess has terminated, this will return %NULL.
+ *
+ * Returns: (nullable): the subprocess identifier, or %NULL if the subprocess
+ *    has terminated
+ * Since: 2.40
  */
 const gchar *
 g_subprocess_get_identifier (GSubprocess *subprocess)
 {
+  const char *identifier;
+
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), NULL);
 
-  if (subprocess->pid)
-    return subprocess->identifier;
-  else
-    return NULL;
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  identifier = subprocess->pid ? subprocess->identifier : NULL;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  return identifier;
 }
 
 /**
@@ -748,10 +668,10 @@ g_subprocess_get_identifier (GSubprocess *subprocess)
  * Gets the #GOutputStream that you can write to in order to give data
  * to the stdin of @subprocess.
  *
- * The process must have been created with
- * %G_SUBPROCESS_FLAGS_STDIN_PIPE.
+ * The process must have been created with %G_SUBPROCESS_FLAGS_STDIN_PIPE and
+ * not %G_SUBPROCESS_FLAGS_STDIN_INHERIT, otherwise %NULL will be returned.
  *
- * Returns: (transfer none): the stdout pipe
+ * Returns: (nullable) (transfer none): the stdout pipe
  *
  * Since: 2.40
  **/
@@ -759,7 +679,6 @@ GOutputStream *
 g_subprocess_get_stdin_pipe (GSubprocess *subprocess)
 {
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), NULL);
-  g_return_val_if_fail (subprocess->stdin_pipe, NULL);
 
   return subprocess->stdin_pipe;
 }
@@ -771,10 +690,10 @@ g_subprocess_get_stdin_pipe (GSubprocess *subprocess)
  * Gets the #GInputStream from which to read the stdout output of
  * @subprocess.
  *
- * The process must have been created with
- * %G_SUBPROCESS_FLAGS_STDOUT_PIPE.
+ * The process must have been created with %G_SUBPROCESS_FLAGS_STDOUT_PIPE,
+ * otherwise %NULL will be returned.
  *
- * Returns: (transfer none): the stdout pipe
+ * Returns: (nullable) (transfer none): the stdout pipe
  *
  * Since: 2.40
  **/
@@ -782,7 +701,6 @@ GInputStream *
 g_subprocess_get_stdout_pipe (GSubprocess *subprocess)
 {
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), NULL);
-  g_return_val_if_fail (subprocess->stdout_pipe, NULL);
 
   return subprocess->stdout_pipe;
 }
@@ -794,10 +712,10 @@ g_subprocess_get_stdout_pipe (GSubprocess *subprocess)
  * Gets the #GInputStream from which to read the stderr output of
  * @subprocess.
  *
- * The process must have been created with
- * %G_SUBPROCESS_FLAGS_STDERR_PIPE.
+ * The process must have been created with %G_SUBPROCESS_FLAGS_STDERR_PIPE,
+ * otherwise %NULL will be returned.
  *
- * Returns: (transfer none): the stderr pipe
+ * Returns: (nullable) (transfer none): the stderr pipe
  *
  * Since: 2.40
  **/
@@ -805,9 +723,34 @@ GInputStream *
 g_subprocess_get_stderr_pipe (GSubprocess *subprocess)
 {
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), NULL);
-  g_return_val_if_fail (subprocess->stderr_pipe, NULL);
 
   return subprocess->stderr_pipe;
+}
+
+/* Remove the first list element containing @data, and return %TRUE. If no
+ * such element is found, return %FALSE. */
+static gboolean
+slist_remove_if_present (GSList        **list,
+                         gconstpointer   data)
+{
+  GSList *l, *prev;
+
+  for (l = *list, prev = NULL; l != NULL; prev = l, l = prev->next)
+    {
+      if (l->data == data)
+        {
+          if (prev != NULL)
+            prev->next = l->next;
+          else
+            *list = l->next;
+
+          g_slist_free_1 (l);
+
+          return TRUE;
+        }
+    }
+
+  return FALSE;
 }
 
 static void
@@ -816,15 +759,19 @@ g_subprocess_wait_cancelled (GCancellable *cancellable,
 {
   GTask *task = user_data;
   GSubprocess *self;
+  gboolean task_was_pending;
 
   self = g_task_get_source_object (task);
 
   g_mutex_lock (&self->pending_waits_lock);
-  self->pending_waits = g_slist_remove (self->pending_waits, task);
+  task_was_pending = slist_remove_if_present (&self->pending_waits, task);
   g_mutex_unlock (&self->pending_waits_lock);
 
-  g_task_return_boolean (task, FALSE);
-  g_object_unref (task);
+  if (task_was_pending)
+    {
+      g_task_return_boolean (task, FALSE);
+      g_object_unref (task);  /* ref from pending_waits */
+    }
 }
 
 /**
@@ -849,6 +796,7 @@ g_subprocess_wait_async (GSubprocess         *subprocess,
   GTask *task;
 
   task = g_task_new (subprocess, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_subprocess_wait_async);
 
   g_mutex_lock (&subprocess->pending_waits_lock);
   if (subprocess->pid)
@@ -858,7 +806,9 @@ g_subprocess_wait_async (GSubprocess         *subprocess,
        * see the cancellation in the _finish().
        */
       if (cancellable)
-        g_signal_connect_object (cancellable, "cancelled", G_CALLBACK (g_subprocess_wait_cancelled), task, 0);
+        g_signal_connect_object (cancellable, "cancelled",
+                                 G_CALLBACK (g_subprocess_wait_cancelled),
+                                 task, G_CONNECT_DEFAULT);
 
       subprocess->pending_waits = g_slist_prepend (subprocess->pending_waits, task);
       task = NULL;
@@ -971,7 +921,11 @@ g_subprocess_wait (GSubprocess   *subprocess,
   /* We can shortcut in the case that the process already quit (but only
    * after we checked the cancellable).
    */
-  if (subprocess->pid == 0)
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  success = subprocess->pid == 0;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  if (success)
     return TRUE;
 
   /* Otherwise, we need to do this the long way... */
@@ -990,7 +944,7 @@ g_subprocess_wait (GSubprocess   *subprocess,
  * @cancellable: a #GCancellable
  * @error: a #GError
  *
- * Combines g_subprocess_wait() with g_spawn_check_exit_status().
+ * Combines g_subprocess_wait() with g_spawn_check_wait_status().
  *
  * Returns: %TRUE on success, %FALSE if process exited abnormally, or
  * @cancellable was cancelled
@@ -1002,8 +956,16 @@ g_subprocess_wait_check (GSubprocess   *subprocess,
                          GCancellable  *cancellable,
                          GError       **error)
 {
-  return g_subprocess_wait (subprocess, cancellable, error) &&
-         g_spawn_check_exit_status (subprocess->status, error);
+  gint status;
+
+  if (!g_subprocess_wait (subprocess, cancellable, error))
+    return FALSE;
+
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  status = subprocess->status;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  return g_spawn_check_wait_status (status, error);
 }
 
 /**
@@ -1013,7 +975,7 @@ g_subprocess_wait_check (GSubprocess   *subprocess,
  * @callback: a #GAsyncReadyCallback to call when the operation is complete
  * @user_data: user_data for @callback
  *
- * Combines g_subprocess_wait_async() with g_spawn_check_exit_status().
+ * Combines g_subprocess_wait_async() with g_spawn_check_wait_status().
  *
  * This is the asynchronous version of g_subprocess_wait_check().
  *
@@ -1046,8 +1008,16 @@ g_subprocess_wait_check_finish (GSubprocess   *subprocess,
                                 GAsyncResult  *result,
                                 GError       **error)
 {
-  return g_subprocess_wait_finish (subprocess, result, error) &&
-         g_spawn_check_exit_status (subprocess->status, error);
+  gint status;
+
+  if (!g_subprocess_wait_finish (subprocess, result, error))
+    return FALSE;
+
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  status = subprocess->status;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  return g_spawn_check_wait_status (status, error);
 }
 
 #ifdef G_OS_UNIX
@@ -1065,8 +1035,10 @@ g_subprocess_actually_send_signal (gpointer user_data)
   /* The pid is set to zero from the worker thread as well, so we don't
    * need to take a lock in order to prevent it from changing under us.
    */
+  g_mutex_lock (&signal_record->subprocess->pending_waits_lock);
   if (signal_record->subprocess->pid)
     kill (signal_record->subprocess->pid, signal_record->signalnum);
+  g_mutex_unlock (&signal_record->subprocess->pending_waits_lock);
 
   g_object_unref (signal_record->subprocess);
 
@@ -1148,7 +1120,9 @@ g_subprocess_force_exit (GSubprocess *subprocess)
 #ifdef G_OS_UNIX
   g_subprocess_dispatch_signal (subprocess, SIGKILL);
 #else
+  g_mutex_lock (&subprocess->pending_waits_lock);
   TerminateProcess (subprocess->pid, 1);
+  g_mutex_unlock (&subprocess->pending_waits_lock);
 #endif
 }
 
@@ -1160,7 +1134,7 @@ g_subprocess_force_exit (GSubprocess *subprocess)
  *
  * This value has no particular meaning, but it can be used with the
  * macros defined by the system headers such as WIFEXITED.  It can also
- * be used with g_spawn_check_exit_status().
+ * be used with g_spawn_check_wait_status().
  *
  * It is more likely that you want to use g_subprocess_get_if_exited()
  * followed by g_subprocess_get_exit_status().
@@ -1175,10 +1149,19 @@ g_subprocess_force_exit (GSubprocess *subprocess)
 gint
 g_subprocess_get_status (GSubprocess *subprocess)
 {
-  g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), FALSE);
-  g_return_val_if_fail (subprocess->pid == 0, FALSE);
+  gint status;
+  GPid pid;
 
-  return subprocess->status;
+  g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), FALSE);
+
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  pid = subprocess->pid;
+  status = subprocess->status;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  g_return_val_if_fail (pid == 0, FALSE);
+
+  return status;
 }
 
 /**
@@ -1199,13 +1182,22 @@ g_subprocess_get_status (GSubprocess *subprocess)
 gboolean
 g_subprocess_get_successful (GSubprocess *subprocess)
 {
+  GPid pid;
+  gint status;
+
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), FALSE);
-  g_return_val_if_fail (subprocess->pid == 0, FALSE);
+
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  pid = subprocess->pid;
+  status = subprocess->status;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  g_return_val_if_fail (pid == 0, FALSE);
 
 #ifdef G_OS_UNIX
-  return WIFEXITED (subprocess->status) && WEXITSTATUS (subprocess->status) == 0;
+  return WIFEXITED (status) && WEXITSTATUS (status) == 0;
 #else
-  return subprocess->status == 0;
+  return status == 0;
 #endif
 }
 
@@ -1228,11 +1220,20 @@ g_subprocess_get_successful (GSubprocess *subprocess)
 gboolean
 g_subprocess_get_if_exited (GSubprocess *subprocess)
 {
+  GPid pid;
+  gint status G_GNUC_UNUSED;
+
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), FALSE);
-  g_return_val_if_fail (subprocess->pid == 0, FALSE);
+
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  pid = subprocess->pid;
+  status = subprocess->status;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  g_return_val_if_fail (pid == 0, FALSE);
 
 #ifdef G_OS_UNIX
-  return WIFEXITED (subprocess->status);
+  return WIFEXITED (status);
 #else
   return TRUE;
 #endif
@@ -1258,15 +1259,24 @@ g_subprocess_get_if_exited (GSubprocess *subprocess)
 gint
 g_subprocess_get_exit_status (GSubprocess *subprocess)
 {
+  gint status;
+  GPid pid;
+
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), 1);
-  g_return_val_if_fail (subprocess->pid == 0, 1);
+
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  pid = subprocess->pid;
+  status = subprocess->status;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  g_return_val_if_fail (pid == 0, 1);
 
 #ifdef G_OS_UNIX
-  g_return_val_if_fail (WIFEXITED (subprocess->status), 1);
+  g_return_val_if_fail (WIFEXITED (status), 1);
 
-  return WEXITSTATUS (subprocess->status);
+  return WEXITSTATUS (status);
 #else
-  return subprocess->status;
+  return status;
 #endif
 }
 
@@ -1288,11 +1298,20 @@ g_subprocess_get_exit_status (GSubprocess *subprocess)
 gboolean
 g_subprocess_get_if_signaled (GSubprocess *subprocess)
 {
+  GPid pid;
+  gint status G_GNUC_UNUSED;
+
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), FALSE);
-  g_return_val_if_fail (subprocess->pid == 0, FALSE);
+
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  pid = subprocess->pid;
+  status = subprocess->status;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  g_return_val_if_fail (pid == 0, FALSE);
 
 #ifdef G_OS_UNIX
-  return WIFSIGNALED (subprocess->status);
+  return WIFSIGNALED (status);
 #else
   return FALSE;
 #endif
@@ -1317,13 +1336,22 @@ g_subprocess_get_if_signaled (GSubprocess *subprocess)
 gint
 g_subprocess_get_term_sig (GSubprocess *subprocess)
 {
+  GPid pid;
+  gint status G_GNUC_UNUSED;
+
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), 0);
-  g_return_val_if_fail (subprocess->pid == 0, 0);
+
+  g_mutex_lock (&subprocess->pending_waits_lock);
+  pid = subprocess->pid;
+  status = subprocess->status;
+  g_mutex_unlock (&subprocess->pending_waits_lock);
+
+  g_return_val_if_fail (pid == 0, 0);
 
 #ifdef G_OS_UNIX
-  g_return_val_if_fail (WIFSIGNALED (subprocess->status), 0);
+  g_return_val_if_fail (WIFSIGNALED (status), 0);
 
-  return WTERMSIG (subprocess->status);
+  return WTERMSIG (status);
 #else
   g_critical ("g_subprocess_get_term_sig() called on Windows, where "
               "g_subprocess_get_if_signaled() always returns FALSE...");
@@ -1477,7 +1505,8 @@ g_subprocess_communicate_made_progress (GObject      *source_object,
 }
 
 static gboolean
-g_subprocess_communicate_cancelled (gpointer user_data)
+g_subprocess_communicate_cancelled (GCancellable *cancellable,
+                                    gpointer      user_data)
 {
   CommunicateState *state = user_data;
 
@@ -1498,8 +1527,7 @@ g_subprocess_communicate_state_free (gpointer data)
 
   if (state->cancellable_source)
     {
-      if (!g_source_is_destroyed (state->cancellable_source))
-        g_source_destroy (state->cancellable_source);
+      g_source_destroy (state->cancellable_source);
       g_source_unref (state->cancellable_source);
     }
 
@@ -1518,6 +1546,8 @@ g_subprocess_communicate_internal (GSubprocess         *subprocess,
   GTask *task;
 
   task = g_task_new (subprocess, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_subprocess_communicate_internal);
+
   state = g_slice_new0 (CommunicateState);
   g_task_set_task_data (task, state, g_subprocess_communicate_state_free);
 
@@ -1528,13 +1558,32 @@ g_subprocess_communicate_internal (GSubprocess         *subprocess,
     {
       state->cancellable_source = g_cancellable_source_new (cancellable);
       /* No ref held here, but we unref the source from state's free function */
-      g_source_set_callback (state->cancellable_source, g_subprocess_communicate_cancelled, state, NULL);
+      g_source_set_callback (state->cancellable_source,
+                             G_SOURCE_FUNC (g_subprocess_communicate_cancelled),
+                             state, NULL);
       g_source_attach (state->cancellable_source, g_main_context_get_thread_default ());
     }
 
   if (subprocess->stdin_pipe)
     {
       g_assert (stdin_buf != NULL);
+
+#ifdef G_OS_UNIX
+      /* We're doing async writes to the pipe, and the async write mechanism assumes
+       * that streams polling as writable do SOME progress (possibly partial) and then
+       * stop, but never block.
+       *
+       * However, for blocking pipes, unix will return writable if there is *any* space left
+       * but still block until the full buffer size is available before returning from write.
+       * So, to avoid async blocking on the main loop we make this non-blocking here.
+       *
+       * It should be safe to change the fd because we're the only user at this point as
+       * per the g_subprocess_communicate() docs, and all the code called by this function
+       * properly handles non-blocking fds.
+       */
+      g_unix_set_fd_nonblocking (g_unix_output_stream_get_fd (G_UNIX_OUTPUT_STREAM (subprocess->stdin_pipe)), TRUE, NULL);
+#endif
+
       state->stdin_buf = g_memory_input_stream_new_from_bytes (stdin_buf);
       g_output_stream_splice_async (subprocess->stdin_pipe, (GInputStream*)state->stdin_buf,
                                     G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE | G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
@@ -1574,10 +1623,10 @@ g_subprocess_communicate_internal (GSubprocess         *subprocess,
 /**
  * g_subprocess_communicate:
  * @subprocess: a #GSubprocess
- * @stdin_buf: (allow-none): data to send to the stdin of the subprocess, or %NULL
+ * @stdin_buf: (nullable): data to send to the stdin of the subprocess, or %NULL
  * @cancellable: a #GCancellable
- * @stdout_buf: (out): data read from the subprocess stdout
- * @stderr_buf: (out): data read from the subprocess stderr
+ * @stdout_buf: (out) (nullable) (optional) (transfer full): data read from the subprocess stdout
+ * @stderr_buf: (out) (nullable) (optional) (transfer full): data read from the subprocess stderr
  * @error: a pointer to a %NULL #GError pointer, or %NULL
  *
  * Communicate with the subprocess until it terminates, and all input
@@ -1655,8 +1704,8 @@ g_subprocess_communicate (GSubprocess   *subprocess,
 /**
  * g_subprocess_communicate_async:
  * @subprocess: Self
- * @stdin_buf: (allow-none): Input data, or %NULL
- * @cancellable: (allow-none): Cancellable
+ * @stdin_buf: (nullable): Input data, or %NULL
+ * @cancellable: (nullable): Cancellable
  * @callback: Callback
  * @user_data: User data
  *
@@ -1681,8 +1730,8 @@ g_subprocess_communicate_async (GSubprocess         *subprocess,
  * g_subprocess_communicate_finish:
  * @subprocess: Self
  * @result: Result
- * @stdout_buf: (out): Return location for stdout data
- * @stderr_buf: (out): Return location for stderr data
+ * @stdout_buf: (out) (nullable) (optional) (transfer full): Return location for stdout data
+ * @stderr_buf: (out) (nullable) (optional) (transfer full): Return location for stderr data
  * @error: Error
  *
  * Complete an invocation of g_subprocess_communicate_async().
@@ -1709,9 +1758,9 @@ g_subprocess_communicate_finish (GSubprocess   *subprocess,
   if (success)
     {
       if (stdout_buf)
-        *stdout_buf = g_memory_output_stream_steal_as_bytes (state->stdout_buf);
+        *stdout_buf = (state->stdout_buf != NULL) ? g_memory_output_stream_steal_as_bytes (state->stdout_buf) : NULL;
       if (stderr_buf)
-        *stderr_buf = g_memory_output_stream_steal_as_bytes (state->stderr_buf);
+        *stderr_buf = (state->stderr_buf != NULL) ? g_memory_output_stream_steal_as_bytes (state->stderr_buf) : NULL;
     }
 
   g_object_unref (result);
@@ -1721,14 +1770,17 @@ g_subprocess_communicate_finish (GSubprocess   *subprocess,
 /**
  * g_subprocess_communicate_utf8:
  * @subprocess: a #GSubprocess
- * @stdin_buf: (allow-none): data to send to the stdin of the subprocess, or %NULL
+ * @stdin_buf: (nullable): data to send to the stdin of the subprocess, or %NULL
  * @cancellable: a #GCancellable
- * @stdout_buf: (out): data read from the subprocess stdout
- * @stderr_buf: (out): data read from the subprocess stderr
+ * @stdout_buf: (out) (nullable) (optional) (transfer full): data read from the subprocess stdout
+ * @stderr_buf: (out) (nullable) (optional) (transfer full): data read from the subprocess stderr
  * @error: a pointer to a %NULL #GError pointer, or %NULL
  *
  * Like g_subprocess_communicate(), but validates the output of the
  * process as UTF-8, and returns it as a regular NUL terminated string.
+ *
+ * On error, @stdout_buf and @stderr_buf will be set to undefined values and
+ * should not be used.
  */
 gboolean
 g_subprocess_communicate_utf8 (GSubprocess   *subprocess,
@@ -1766,7 +1818,7 @@ g_subprocess_communicate_utf8 (GSubprocess   *subprocess,
 /**
  * g_subprocess_communicate_utf8_async:
  * @subprocess: Self
- * @stdin_buf: (allow-none): Input data, or %NULL
+ * @stdin_buf: (nullable): Input data, or %NULL
  * @cancellable: Cancellable
  * @callback: Callback
  * @user_data: User data
@@ -1813,6 +1865,7 @@ communicate_result_validate_utf8 (const char            *stream_name,
       if (!g_utf8_validate (*return_location, -1, &end))
         {
           g_free (*return_location);
+          *return_location = NULL;
           g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
                        "Invalid UTF-8 in child %s at offset %lu",
                        stream_name,
@@ -1830,8 +1883,8 @@ communicate_result_validate_utf8 (const char            *stream_name,
  * g_subprocess_communicate_utf8_finish:
  * @subprocess: Self
  * @result: Result
- * @stdout_buf: (out): Return location for stdout data
- * @stderr_buf: (out): Return location for stderr data
+ * @stdout_buf: (out) (nullable) (optional) (transfer full): Return location for stdout data
+ * @stderr_buf: (out) (nullable) (optional) (transfer full): Return location for stderr data
  * @error: Error
  *
  * Complete an invocation of g_subprocess_communicate_utf8_async().
@@ -1845,6 +1898,7 @@ g_subprocess_communicate_utf8_finish (GSubprocess   *subprocess,
 {
   gboolean ret = FALSE;
   CommunicateState *state;
+  gchar *local_stdout_buf = NULL, *local_stderr_buf = NULL;
 
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), FALSE);
   g_return_val_if_fail (g_task_is_valid (result, subprocess), FALSE);
@@ -1858,11 +1912,11 @@ g_subprocess_communicate_utf8_finish (GSubprocess   *subprocess,
 
   /* TODO - validate UTF-8 while streaming, rather than all at once.
    */
-  if (!communicate_result_validate_utf8 ("stdout", stdout_buf,
+  if (!communicate_result_validate_utf8 ("stdout", &local_stdout_buf,
                                          state->stdout_buf,
                                          error))
     goto out;
-  if (!communicate_result_validate_utf8 ("stderr", stderr_buf,
+  if (!communicate_result_validate_utf8 ("stderr", &local_stderr_buf,
                                          state->stderr_buf,
                                          error))
     goto out;
@@ -1870,5 +1924,14 @@ g_subprocess_communicate_utf8_finish (GSubprocess   *subprocess,
   ret = TRUE;
  out:
   g_object_unref (result);
+
+  if (ret && stdout_buf != NULL)
+    *stdout_buf = g_steal_pointer (&local_stdout_buf);
+  if (ret && stderr_buf != NULL)
+    *stderr_buf = g_steal_pointer (&local_stderr_buf);
+
+  g_free (local_stderr_buf);
+  g_free (local_stdout_buf);
+
   return ret;
 }

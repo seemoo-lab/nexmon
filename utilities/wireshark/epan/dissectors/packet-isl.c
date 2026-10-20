@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -25,10 +13,12 @@
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/show_exception.h>
+#include <epan/capture_dissectors.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #include "packet-isl.h"
 #include "packet-eth.h"
-#include "packet-tr.h"
 
 void proto_register_isl(void);
 void proto_reg_handoff_isl(void);
@@ -36,41 +26,41 @@ void proto_reg_handoff_isl(void);
 /*
  * See
  *
- *  http://www.cisco.com/en/US/tech/tk389/tk689/technologies_tech_note09186a0080094665.shtml
+ *  http://www.cisco.com/c/en/us/support/docs/lan-switching/8021q/17056-741-4.html
  *
  * and
  *
- *  http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm
+ *  http://docstore.mik.ua/univercd/cc/td/doc/product/lan/trsrb/frames.htm
  *
  * for information on ISL.
  */
-static int proto_isl = -1;
-static int hf_isl_dst = -1;
-static int hf_isl_type = -1;
-static int hf_isl_user_eth = -1;
-static int hf_isl_user = -1;
-static int hf_isl_src = -1;
-static int hf_isl_addr = -1;
-static int hf_isl_len = -1;
-static int hf_isl_hsa = -1;
-static int hf_isl_dsap = -1;
-static int hf_isl_ssap = -1;
-static int hf_isl_control = -1;
-static int hf_isl_vlan_id = -1;
-static int hf_isl_bpdu = -1;
-static int hf_isl_index = -1;
-static int hf_isl_reserved = -1;
-/* static int hf_isl_crc = -1; */
-static int hf_isl_src_vlan_id = -1;
-static int hf_isl_explorer = -1;
-static int hf_isl_dst_route_descriptor = -1;
-static int hf_isl_src_route_descriptor = -1;
-static int hf_isl_fcs_not_incl = -1;
-static int hf_isl_esize = -1;
-static int hf_isl_trailer = -1;
+static int proto_isl;
+static int hf_isl_dst;
+static int hf_isl_type;
+static int hf_isl_user_eth;
+static int hf_isl_user;
+static int hf_isl_src;
+static int hf_isl_addr;
+static int hf_isl_len;
+static int hf_isl_hsa;
+static int hf_isl_dsap;
+static int hf_isl_ssap;
+static int hf_isl_control;
+static int hf_isl_vlan_id;
+static int hf_isl_bpdu;
+static int hf_isl_index;
+static int hf_isl_reserved;
+/* static int hf_isl_crc; */
+static int hf_isl_src_vlan_id;
+static int hf_isl_explorer;
+static int hf_isl_dst_route_descriptor;
+static int hf_isl_src_route_descriptor;
+static int hf_isl_fcs_not_incl;
+static int hf_isl_esize;
+static int hf_isl_trailer;
 
-static gint ett_isl = -1;
-static gint ett_isl_dst = -1;
+static int ett_isl;
+static int ett_isl_dst;
 
 #define ISL_HEADER_SIZE 26
 
@@ -87,13 +77,16 @@ static gint ett_isl_dst = -1;
 static dissector_handle_t eth_withfcs_handle;
 static dissector_handle_t tr_handle;
 
-gboolean
-capture_isl(const guchar *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
+static capture_dissector_handle_t eth_cap_handle;
+static capture_dissector_handle_t tr_cap_handle;
+
+static bool
+capture_isl(const unsigned char *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
 {
-  guint8 type;
+  uint8_t type;
 
   if (!BYTES_ARE_IN_FRAME(offset, len, ISL_HEADER_SIZE))
-    return FALSE;
+    return false;
 
   type = (pd[offset+5] >> 4)&0x0F;
 
@@ -101,15 +94,14 @@ capture_isl(const guchar *pd, int offset, int len, capture_packet_info_t *cpinfo
 
   case TYPE_ETHER:
     offset += 14+12;    /* skip the header */
-    return capture_eth(pd, offset, len, cpinfo, pseudo_header);
+    return call_capture_dissector(eth_cap_handle, pd, offset, len, cpinfo, pseudo_header);
 
   case TYPE_TR:
     offset += 14+17;    /* skip the header */
-    return capture_tr(pd, offset, len, cpinfo, pseudo_header);
-    break;
+    return call_capture_dissector(tr_cap_handle, pd, offset, len, cpinfo, pseudo_header);
   }
 
-  return FALSE;
+  return false;
 }
 
 static const value_string type_vals[] = {
@@ -139,9 +131,9 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
   proto_tree *volatile fh_tree = NULL;
   proto_tree *dst_tree;
   proto_item *ti, *hidden_item;
-  volatile guint8 type;
-  volatile guint16 length;
-  gint captured_length;
+  volatile uint8_t type;
+  volatile uint16_t length;
+  int captured_length;
   tvbuff_t *volatile payload_tvb = NULL;
   tvbuff_t *volatile next_tvb;
   tvbuff_t *volatile trailer_tvb = NULL;
@@ -150,7 +142,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "ISL");
   col_clear(pinfo->cinfo, COL_INFO);
 
-  type = (tvb_get_guint8(tvb, 5) >> 4)&0x0F;
+  type = (tvb_get_uint8(tvb, 5) >> 4)&0x0F;
 
   if (tree) {
     ti = proto_tree_add_protocol_format(tree, proto_isl, tvb, 0, ISL_HEADER_SIZE,
@@ -159,7 +151,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
 
     ti = proto_tree_add_item(fh_tree, hf_isl_dst, tvb, 0, 6, ENC_NA);
     hidden_item = proto_tree_add_item(fh_tree, hf_isl_addr, tvb, 0, 6, ENC_NA);
-    PROTO_ITEM_SET_HIDDEN(hidden_item);
+    proto_item_set_hidden(hidden_item);
     dst_tree = proto_item_add_subtree(ti, ett_isl_dst);
     proto_tree_add_item(dst_tree, hf_isl_type, tvb, 5, 1, ENC_BIG_ENDIAN);
 
@@ -177,7 +169,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
     }
     proto_tree_add_item(fh_tree, hf_isl_src, tvb, 6, 6, ENC_NA);
     hidden_item = proto_tree_add_item(fh_tree, hf_isl_addr, tvb, 6, 6, ENC_NA);
-    PROTO_ITEM_SET_HIDDEN(hidden_item);
+    proto_item_set_hidden(hidden_item);
   }
   length = tvb_get_ntohs(tvb, 12);
   if (tree)
@@ -198,7 +190,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
           the packet doesn't have "length" bytes worth of
           captured data left in it - or it may not even have
           "length" bytes worth of data in it, period -
-          so the "tvb_new_subset()" creating "payload_tvb"
+          so the "tvb_new_subset_length_caplen()" creating "payload_tvb"
           threw an exception
 
          or
@@ -210,7 +202,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
          In either case, this means that all the data in the frame
          is within the length value, so we give all the data to the
          next protocol and have no trailer. */
-      payload_tvb = tvb_new_subset(tvb, 14, -1, length);
+      payload_tvb = tvb_new_subset_length_caplen(tvb, 14, -1, length);
       trailer_tvb = NULL;
     }
     ENDTRY;
@@ -259,7 +251,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
       if (captured_length > length)
         captured_length = length;
 
-      next_tvb = tvb_new_subset(payload_tvb, 12, captured_length, length);
+      next_tvb = tvb_new_subset_length_caplen(payload_tvb, 12, captured_length, length);
 
       /* Dissect the payload as an Ethernet frame.
 
@@ -289,7 +281,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
 
       /* Now add the Ethernet trailer and FCS.
          XXX - do this only if we're encapsulated in Ethernet? */
-      add_ethernet_trailer(pinfo, tree, fh_tree, hf_isl_trailer, tvb, trailer_tvb, fcs_len);
+      add_ethernet_trailer(pinfo, tree, fh_tree, hf_isl_trailer, tvb, trailer_tvb, fcs_len, 14);
     }
     break;
 
@@ -383,7 +375,7 @@ proto_register_isl(void)
         FT_UINT16, BASE_HEX, NULL, 0x0,
         "Route descriptor to be used for source learning", HFILL }},
     { &hf_isl_fcs_not_incl,
-      { "FCS Not Included",   "isl.fcs_not_incl", FT_BOOLEAN, 9,
+      { "FCS Not Included",   "isl.fcs_not_incl", FT_BOOLEAN, 8,
         NULL, 0x40, NULL, HFILL }},
     { &hf_isl_esize,
       { "Esize",      "isl.esize", FT_UINT8, BASE_DEC, NULL,
@@ -392,7 +384,7 @@ proto_register_isl(void)
       { "Trailer",    "isl.trailer", FT_BYTES, BASE_NONE, NULL, 0x0,
         "Ethernet Trailer or Checksum", HFILL }},
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_isl,
     &ett_isl_dst,
   };
@@ -400,6 +392,8 @@ proto_register_isl(void)
   proto_isl = proto_register_protocol("Cisco ISL", "ISL", "isl");
   proto_register_field_array(proto_isl, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  register_capture_dissector("isl", capture_isl, proto_isl);
 }
 
 void
@@ -410,10 +404,13 @@ proto_reg_handoff_isl(void)
    */
   eth_withfcs_handle = find_dissector_add_dependency("eth_withfcs", proto_isl);
   tr_handle = find_dissector_add_dependency("tr", proto_isl);
+
+  eth_cap_handle = find_capture_dissector("eth");
+  tr_cap_handle = find_capture_dissector("tr");
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

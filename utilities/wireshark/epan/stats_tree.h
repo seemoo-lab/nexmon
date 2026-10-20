@@ -1,4 +1,4 @@
-/* stats_tree.h
+/** @file
  * A counter tree API for Wireshark dissectors
  * 2005, Luis E. G. Ontanon
  *
@@ -6,29 +6,15 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __STATS_TREE_H
 #define __STATS_TREE_H
 
-#include <glib.h>
 #include <epan/epan.h>
 #include <epan/packet_info.h>
 #include <epan/tap.h>
 #include <epan/stat_groups.h>
-#include "../register.h"
 #include "ws_symbol_export.h"
 
 #ifdef __cplusplus
@@ -36,12 +22,25 @@ extern "C" {
 #endif /* __cplusplus */
 
 #define STAT_TREE_ROOT "root"
+#define STATS_TREE_MENU_SEPARATOR "//"
 
+/* stats_tree specific flags. When registering, these are used together
+ * with the TL_ flags defined in tap.h, so make sure they don't overlap!
+ * (Yes, that applies even to the flags that apply to nodes instead of
+ * the entire tree, and should not be passed in stats_tree_register.
+ * XXX - Why? These flags should be reworked at some point.)
+ */
+
+/* Flags on child nodes for internal use only */
 #define ST_FLG_AVERAGE      0x10000000  /* Calculate averages for nodes, rather than totals */
 #define ST_FLG_ROOTCHILD    0x20000000  /* This node is a direct child of the root node */
+
+/* Flags set on child nodes via stat_node_set_flags */
 #define ST_FLG_DEF_NOEXPAND 0x01000000  /* This node should not be expanded by default */
-#define ST_FLG_SORT_DESC    0x00800000  /* When sorting, sort ascending instead of decending */
 #define ST_FLG_SORT_TOP     0x00400000  /* When sorting always keep these lines on of list */
+
+/* Flags for the entire stat_tree, set via stats_tree_register[_plugin] */
+#define ST_FLG_SORT_DESC    0x00800000  /* When sorting, sort descending instead of ascending */
 #define ST_FLG_SRTCOL_MASK  0x000F0000  /* Mask for sort column ID */
 #define ST_FLG_SRTCOL_SHIFT 16          /* Number of bits to shift masked result */
 
@@ -59,10 +58,11 @@ extern "C" {
 typedef struct _stats_tree stats_tree;
 
 /* tap packet callback for stats_tree */
-typedef int  (*stat_tree_packet_cb)(stats_tree*,
-                                    packet_info *,
-                                    epan_dissect_t *,
-                                    const void *);
+typedef tap_packet_status (*stat_tree_packet_cb)(stats_tree*,
+                                                 packet_info *,
+                                                 epan_dissect_t *,
+                                                 const void *,
+                                                 tap_flags_t flags);
 
 /* stats_tree initialization callback */
 typedef void  (*stat_tree_init_cb)(stats_tree *);
@@ -70,74 +70,84 @@ typedef void  (*stat_tree_init_cb)(stats_tree *);
 /* stats_tree cleanup callback */
 typedef void  (*stat_tree_cleanup_cb)(stats_tree *);
 
-/* registers a new stats tree with default group REGISTER_STAT_GROUP_UNSORTED
- * abbr: protocol abbr
- * name: protocol display name
- * flags: tap listener flags for per-packet callback
- * packet: per packet callback
- * init: tree initialization callback
- * cleanup: cleanup callback
+typedef enum _stat_node_datatype {
+    STAT_DT_INT,
+    STAT_DT_FLOAT
+} stat_node_datatype;
+
+typedef struct _stats_tree_cfg stats_tree_cfg;
+
+/**
+ * Registers a new stats tree with default group REGISTER_STAT_GROUP_UNSORTED.
+ * @param abbr tree abbr (used for tshark -z option)
+ * @param path tree display name in GUI menu and window (use "//" for submenus)
+ * @param flags tap listener flags for per-packet callback
+ * @param packet per packet callback
+ * @param init tree initialization callback
+ * @param cleanup cleanup callback
+ * @return A stats tree configuration pointer.
  */
-WS_DLL_PUBLIC void stats_tree_register(const gchar *tapname,
-                                       const gchar *abbr,
-                                       const gchar *name,
-                                       guint flags,
+WS_DLL_PUBLIC stats_tree_cfg *stats_tree_register(const char *tapname,
+                                       const char *abbr,
+                                       const char *path,
+                                       unsigned flags,
                                        stat_tree_packet_cb packet,
                                        stat_tree_init_cb init,
                                        stat_tree_cleanup_cb cleanup);
 
-/* registers a new stats tree with default group REGISTER_STAT_GROUP_UNSORTED from a plugin
- * abbr: protocol abbr
- * name: protocol display name
- * flags: tap listener flags for per-packet callback
- * packet: per packet callback
- * init: tree initialization callback
- * cleanup: cleanup callback
+/**
+ * Registers a new stats tree with default group REGISTER_STAT_GROUP_UNSORTED from a plugin.
+ * @param abbr tree abbr (used for tshark -z option)
+ * @param path tree display name in GUI menu and window (use "//" for submenus)
+ * @param flags tap listener flags for per-packet callback
+ * @param packet per packet callback
+ * @param init tree initialization callback
+ * @param cleanup cleanup callback
+ * @return A stats tree configuration pointer.
  */
-WS_DLL_PUBLIC void stats_tree_register_plugin(const gchar *tapname,
-                                              const gchar *abbr,
-                                              const gchar *name,
-                                              guint flags,
+WS_DLL_PUBLIC stats_tree_cfg *stats_tree_register_plugin(const char *tapname,
+                                              const char *abbr,
+                                              const char *path,
+                                              unsigned flags,
                                               stat_tree_packet_cb packet,
                                               stat_tree_init_cb init,
                                               stat_tree_cleanup_cb cleanup);
 
-/* registers a new stats tree
- * abbr: protocol abbr
- * name: protocol display name
- * flags: tap listener flags for per-packet callback
- * packet: per packet callback
- * init: tree initialization callback
- * cleanup: cleanup callback
- * stat_group: the group this stat belongs to
+/**
+ * Set the menu statistics group for a stats tree.
+ * @param stat_group A menu group.
  */
-WS_DLL_PUBLIC void stats_tree_register_with_group(const gchar *tapname,
-                                                  const gchar *abbr,
-                                                  const gchar *name,
-                                                  guint flags,
-                                                  stat_tree_packet_cb packet,
-                                                  stat_tree_init_cb init,
-                                                  stat_tree_cleanup_cb cleanup,
-                                                  register_stat_group_t stat_group);
+WS_DLL_PUBLIC void stats_tree_set_group(stats_tree_cfg *st_config, register_stat_group_t stat_group);
 
-WS_DLL_PUBLIC int stats_tree_parent_id_by_name(stats_tree *st, const gchar *parent_name);
+/**
+ * Set the name a stats tree's first column.
+ * Default is "Topic / Item".
+ * @param column_name The new column name.
+ */
+WS_DLL_PUBLIC void stats_tree_set_first_column_name(stats_tree_cfg *st_config, const char *column_name);
+
+
+WS_DLL_PUBLIC int stats_tree_parent_id_by_name(stats_tree *st, const char *parent_name);
 
 /* Creates a node in the tree (to be used in the in init_cb)
  * st: the stats_tree in which to create it
  * name: the name of the new node
  * parent_name: the name of the parent_node (NULL for root)
- * with_children: TRUE if this node will have "dynamically created" children
+ * datatype: datatype used for the value of the node
+ * with_children: true if this node will have "dynamically created" children
  */
 WS_DLL_PUBLIC int stats_tree_create_node(stats_tree *st,
-                                         const gchar *name,
+                                         const char *name,
                                          int parent_id,
-                                         gboolean with_children);
+                                         stat_node_datatype datatype,
+                                         bool with_children);
 
 /* creates a node using its parent's tree name */
 WS_DLL_PUBLIC int stats_tree_create_node_by_pname(stats_tree *st,
-                                                  const gchar *name,
-                                                  const gchar *parent_name,
-                                                  gboolean with_children);
+                                                  const char *name,
+                                                  const char *parent_name,
+                                                  stat_node_datatype datatype,
+                                                  bool with_children);
 
 /* creates a node in the tree, that will contain a ranges list.
    example:
@@ -145,24 +155,24 @@ WS_DLL_PUBLIC int stats_tree_create_node_by_pname(stats_tree *st,
    "-99","100-199","200-299","300-399","400-", NULL);
 */
 WS_DLL_PUBLIC int stats_tree_create_range_node(stats_tree *st,
-                                               const gchar *name,
+                                               const char *name,
                                                int parent_id,
                                                ...);
 
 WS_DLL_PUBLIC int stats_tree_create_range_node_string(stats_tree *st,
-                                                      const gchar *name,
+                                                      const char *name,
                                                       int parent_id,
                                                       int num_str_ranges,
-                                                      gchar** str_ranges);
+                                                      char** str_ranges);
 
 WS_DLL_PUBLIC int stats_tree_range_node_with_pname(stats_tree *st,
-                                                   const gchar *name,
-                                                   const gchar *parent_name,
+                                                   const char *name,
+                                                   const char *parent_name,
                                                    ...);
 
 /* increases by one the ranged node and the sub node to whose range the value belongs */
 WS_DLL_PUBLIC int stats_tree_tick_range(stats_tree *st,
-                                        const gchar *name,
+                                        const char *name,
                                         int parent_id,
                                         int value_in_range);
 
@@ -171,22 +181,25 @@ WS_DLL_PUBLIC int stats_tree_tick_range(stats_tree *st,
 
 /* */
 WS_DLL_PUBLIC int stats_tree_create_pivot(stats_tree *st,
-                                          const gchar *name,
+                                          const char *name,
                                           int parent_id);
 
 WS_DLL_PUBLIC int stats_tree_create_pivot_by_pname(stats_tree *st,
-                                                   const gchar *name,
-                                                   const gchar *parent_name);
+                                                   const char *name,
+                                                   const char *parent_name);
 
 WS_DLL_PUBLIC int stats_tree_tick_pivot(stats_tree *st,
                                         int pivot_id,
-                                        const gchar *pivot_value);
+                                        const char *pivot_value);
+
+extern void stats_tree_cleanup(void);
+
 
 /*
  * manipulates the value of the node whose name is given
  * if the node does not exist yet it's created (with counter=1)
  * using parent_name as parent node (NULL for root).
- * with_children=TRUE to indicate that the created node will be a parent
+ * with_children=true to indicate that the created node will be a parent
  */
 typedef enum _manip_node_mode {
     MN_INCREASE,
@@ -196,24 +209,31 @@ typedef enum _manip_node_mode {
     MN_SET_FLAGS,
     MN_CLEAR_FLAGS
 } manip_node_mode;
-WS_DLL_PUBLIC int stats_tree_manip_node(manip_node_mode mode,
+WS_DLL_PUBLIC int stats_tree_manip_node_int(manip_node_mode mode,
                                         stats_tree *st,
-                                        const gchar *name,
+                                        const char *name,
                                         int parent_id,
-                                        gboolean with_children,
-                                        gint value);
+                                        bool with_children,
+                                        int value);
+
+WS_DLL_PUBLIC int stats_tree_manip_node_float(manip_node_mode mode,
+                                        stats_tree *st,
+                                        const char *name,
+                                        int parent_id,
+                                        bool with_children,
+                                        float value);
 
 #define increase_stat_node(st,name,parent_id,with_children,value)       \
-    (stats_tree_manip_node(MN_INCREASE,(st),(name),(parent_id),(with_children),(value)))
+    (stats_tree_manip_node_int(MN_INCREASE,(st),(name),(parent_id),(with_children),(value)))
 
 #define tick_stat_node(st,name,parent_id,with_children)                 \
-    (stats_tree_manip_node(MN_INCREASE,(st),(name),(parent_id),(with_children),1))
+    (stats_tree_manip_node_int(MN_INCREASE,(st),(name),(parent_id),(with_children),1))
 
 #define set_stat_node(st,name,parent_id,with_children,value)            \
-    (stats_tree_manip_node(MN_SET,(st),(name),(parent_id),(with_children),value))
+    (stats_tree_manip_node_int(MN_SET,(st),(name),(parent_id),(with_children),value))
 
 #define zero_stat_node(st,name,parent_id,with_children)                 \
-    (stats_tree_manip_node(MN_SET,(st),(name),(parent_id),(with_children),0))
+    (stats_tree_manip_node_int(MN_SET,(st),(name),(parent_id),(with_children),0))
 
 /*
  * Add value to average calculation WITHOUT ticking node. Node MUST be ticked separately!
@@ -223,19 +243,22 @@ WS_DLL_PUBLIC int stats_tree_manip_node(manip_node_mode mode,
  * least show a count instead of 0.
  */
 #define avg_stat_node_add_value_notick(st,name,parent_id,with_children,value) \
-    (stats_tree_manip_node(MN_AVERAGE_NOTICK,(st),(name),(parent_id),(with_children),value))
+    (stats_tree_manip_node_int(MN_AVERAGE_NOTICK,(st),(name),(parent_id),(with_children),value))
 
 /* Tick node and add a new value to the average calculation for this stats node. */
-#define avg_stat_node_add_value(st,name,parent_id,with_children,value)  \
-    (stats_tree_manip_node(MN_AVERAGE,(st),(name),(parent_id),(with_children),value))
+#define avg_stat_node_add_value_int(st,name,parent_id,with_children,value)  \
+    (stats_tree_manip_node_int(MN_AVERAGE,(st),(name),(parent_id),(with_children),value))
+
+#define avg_stat_node_add_value_float(st,name,parent_id,with_children,value)  \
+    (stats_tree_manip_node_float(MN_AVERAGE,(st),(name),(parent_id),(with_children),value))
 
 /* Set flags for this node. Node created if it does not yet exist. */
 #define stat_node_set_flags(st,name,parent_id,with_children,flags)      \
-    (stats_tree_manip_node(MN_SET_FLAGS,(st),(name),(parent_id),(with_children),flags))
+    (stats_tree_manip_node_int(MN_SET_FLAGS,(st),(name),(parent_id),(with_children),flags))
 
 /* Clear flags for this node. Node created if it does not yet exist. */
 #define stat_node_clear_flags(st,name,parent_id,with_children,flags)    \
-    (stats_tree_manip_node(MN_CLEAR_FLAGS,(st),(name),(parent_id),(with_children),flags))
+    (stats_tree_manip_node_int(MN_CLEAR_FLAGS,(st),(name),(parent_id),(with_children),flags))
 
 #ifdef __cplusplus
 }
@@ -244,7 +267,7 @@ WS_DLL_PUBLIC int stats_tree_manip_node(manip_node_mode mode,
 #endif /* __STATS_TREE_H */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

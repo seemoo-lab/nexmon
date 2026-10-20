@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * licence, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,6 +26,7 @@
 #error "Only <glib.h> can be included directly."
 #endif
 
+#include <glib/gerror.h>
 #include <glib/gtypes.h>
 
 G_BEGIN_DECLS
@@ -52,12 +55,16 @@ typedef enum
   G_TIME_TYPE_UNIVERSAL
 } GTimeType;
 
-GLIB_AVAILABLE_IN_ALL
+GLIB_DEPRECATED_IN_2_68_FOR (g_time_zone_new_identifier)
 GTimeZone *             g_time_zone_new                                 (const gchar *identifier);
+GLIB_AVAILABLE_IN_2_68
+GTimeZone *             g_time_zone_new_identifier                      (const gchar *identifier);
 GLIB_AVAILABLE_IN_ALL
 GTimeZone *             g_time_zone_new_utc                             (void);
 GLIB_AVAILABLE_IN_ALL
 GTimeZone *             g_time_zone_new_local                           (void);
+GLIB_AVAILABLE_IN_2_58
+GTimeZone *             g_time_zone_new_offset                          (gint32       seconds);
 
 GLIB_AVAILABLE_IN_ALL
 GTimeZone *             g_time_zone_ref                                 (GTimeZone   *tz);
@@ -83,6 +90,8 @@ gint32                  g_time_zone_get_offset                          (GTimeZo
 GLIB_AVAILABLE_IN_ALL
 gboolean                g_time_zone_is_dst                              (GTimeZone   *tz,
                                                                          gint         interval);
+GLIB_AVAILABLE_IN_2_58
+const gchar *           g_time_zone_get_identifier                      (GTimeZone   *tz);
 
 G_END_DECLS
 

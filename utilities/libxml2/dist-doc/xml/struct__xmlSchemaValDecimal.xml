@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaValDecimal" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaValDecimal</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaValDecimal_1ac63702296edcf9bf955f021cc570661e" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* str</definition>
+        <argsstring></argsstring>
+        <name>str</name>
+        <qualifiedname>_xmlSchemaValDecimal::str</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="82" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="82" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDecimal_1a8018edf2eb65c2d913cd4eff76f5ab74" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned integralPlaces</definition>
+        <argsstring></argsstring>
+        <name>integralPlaces</name>
+        <qualifiedname>_xmlSchemaValDecimal::integralPlaces</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="83" column="10" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="83" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDecimal_1a1dee367d6b30915916ac1f74e1ee964e" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned fractionalPlaces</definition>
+        <argsstring></argsstring>
+        <name>fractionalPlaces</name>
+        <qualifiedname>_xmlSchemaValDecimal::fractionalPlaces</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="84" column="10" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="84" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="80" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="81" bodyend="85"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaValDecimal_1a1dee367d6b30915916ac1f74e1ee964e" prot="public" virt="non-virtual"><scope>_xmlSchemaValDecimal</scope><name>fractionalPlaces</name></member>
+      <member refid="struct__xmlSchemaValDecimal_1a8018edf2eb65c2d913cd4eff76f5ab74" prot="public" virt="non-virtual"><scope>_xmlSchemaValDecimal</scope><name>integralPlaces</name></member>
+      <member refid="struct__xmlSchemaValDecimal_1ac63702296edcf9bf955f021cc570661e" prot="public" virt="non-virtual"><scope>_xmlSchemaValDecimal</scope><name>str</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

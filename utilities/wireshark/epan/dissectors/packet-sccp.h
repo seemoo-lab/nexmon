@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_SCCP_H
@@ -46,15 +34,11 @@
 #define SCCP_MSG_TYPE_LUDT  0x13
 #define SCCP_MSG_TYPE_LUDTS 0x14
 
-WS_DLL_PUBLIC const value_string sccp_message_type_acro_values[];
 WS_DLL_PUBLIC const value_string sccp_release_cause_values[];
 WS_DLL_PUBLIC const value_string sccp_return_cause_values[];
 WS_DLL_PUBLIC const value_string sccp_reset_cause_values[];
 WS_DLL_PUBLIC const value_string sccp_error_cause_values[];
 WS_DLL_PUBLIC const value_string sccp_refusal_cause_values[];
-
-/* from packet-sua.c */
-WS_DLL_PUBLIC const value_string sua_co_class_type_acro_values[];
 
 typedef enum _sccp_payload_t {
     SCCP_PLOAD_NONE,
@@ -64,56 +48,58 @@ typedef enum _sccp_payload_t {
 } sccp_payload_t;
 
 typedef struct _sccp_msg_info_t {
-	guint framenum;
-	guint offset;
-	guint type;
+	unsigned framenum;
+	unsigned offset;
+	unsigned type;
 
 	union {
 		struct {
-			gchar* label;
-			gchar* comment;
+			char* label;
+			char* comment;
+			char* imsi;
 			struct _sccp_assoc_info_t* assoc;
 			struct _sccp_msg_info_t* next;
 		} co;
 		struct {
-			guint8* calling_gt;
-			guint calling_ssn;
-			guint8* called_gt;
-			guint called_ssn;
+			uint8_t* calling_gt;
+			unsigned calling_ssn;
+			uint8_t* called_gt;
+			unsigned called_ssn;
 		} ud;
 	} data;
 } sccp_msg_info_t;
 
 typedef struct _sccp_assoc_info_t {
-    guint32 id;
-    guint32 calling_dpc;
-    guint32 called_dpc;
-    guint8 calling_ssn;
-    guint8 called_ssn;
-    gboolean has_fw_key;
-    gboolean has_bw_key;
+    uint32_t id;
+    uint32_t calling_dpc;
+    uint32_t called_dpc;
+    uint8_t calling_ssn;
+    uint8_t called_ssn;
+    bool has_fw_key;
+    bool has_bw_key;
     sccp_msg_info_t* msgs;
     sccp_msg_info_t* curr_msg;
 
     sccp_payload_t payload;
-    gchar* calling_party;
-    gchar* called_party;
-    gchar* extra_info;
-    guint32 app_info;  /* used only by dissectors of protocols above SCCP */
+    char* calling_party;
+    char* called_party;
+    char* extra_info;
+    char* imsi;
+    uint32_t app_info;  /* used only by dissectors of protocols above SCCP */
 
 } sccp_assoc_info_t;
 
 typedef struct _sccp_decode_context_t {
-    guint8 message_type;
-    guint dlr;
-    guint slr;
+    uint8_t message_type;
+    unsigned dlr;
+    unsigned slr;
     sccp_assoc_info_t* assoc;
     sccp_msg_info_t*   sccp_msg;
 
 } sccp_decode_context_t;
 
-extern sccp_assoc_info_t* get_sccp_assoc(packet_info* pinfo, guint offset, sccp_decode_context_t* value);
-extern gboolean looks_like_valid_sccp(guint32 frame_num, tvbuff_t *tvb, guint8 my_mtp3_standard);
+extern sccp_assoc_info_t* get_sccp_assoc(packet_info* pinfo, unsigned offset, sccp_decode_context_t* value);
+extern bool looks_like_valid_sccp(uint32_t frame_num, tvbuff_t *tvb, uint8_t my_mtp3_standard);
 
 #define INVALID_LR 0xffffff /* a reserved value */
 

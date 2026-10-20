@@ -3,10 +3,12 @@
  * Copyright (C) 2008-2010 Red Hat, Inc.
  * Copyright (C) 2011 Nokia Corporation
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,17 +28,8 @@
 
 #include <gio/gio.h>
 
+#include "gdbusprivate.h"
 #include "gdbus-tests.h"
-
-#ifdef HAVE_DBUS1
-# include <dbus/dbus-shared.h>
-#else
-# define DBUS_INTERFACE_DBUS "org.freedesktop.DBus"
-# define DBUS_PATH_DBUS "/org/freedesktop/DBus"
-# define DBUS_SERVICE_DBUS "org.freedesktop.DBus"
-# define DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER 1
-# define DBUS_RELEASE_NAME_REPLY_RELEASED 1
-#endif
 
 #define MY_NAME "com.example.Test.Myself"
 /* This many threads create and destroy GDBusProxy instances, in addition
@@ -117,13 +110,17 @@ request_name_cb (GObject *source,
   GDBusConnection *connection = G_DBUS_CONNECTION (source);
   GError *error = NULL;
   GVariant *var;
+  GVariant *child;
 
   var = g_dbus_connection_call_finish (connection, res, &error);
   g_assert_no_error (error);
-  g_assert_cmpuint (g_variant_get_uint32 (g_variant_get_child_value (var, 0)),
+  child = g_variant_get_child_value (var, 0);
+  g_assert_cmpuint (g_variant_get_uint32 (child),
                     ==, DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
 
   release_name (connection, TRUE);
+  g_variant_unref (child);
+  g_variant_unref (var);
 }
 
 static void
@@ -152,11 +149,13 @@ release_name_cb (GObject *source,
   GDBusConnection *connection = G_DBUS_CONNECTION (source);
   GError *error = NULL;
   GVariant *var;
+  GVariant *child;
   int i;
 
   var = g_dbus_connection_call_finish (connection, res, &error);
   g_assert_no_error (error);
-  g_assert_cmpuint (g_variant_get_uint32 (g_variant_get_child_value (var, 0)),
+  child = g_variant_get_child_value (var, 0);
+  g_assert_cmpuint (g_variant_get_uint32 (child),
                     ==, DBUS_RELEASE_NAME_REPLY_RELEASED);
 
   /* generate some rapid NameOwnerChanged signals to try to trigger crashes */
@@ -168,6 +167,8 @@ release_name_cb (GObject *source,
 
   /* wait for dbus-daemon to catch up */
   request_name (connection, TRUE);
+  g_variant_unref (child);
+  g_variant_unref (var);
 }
 
 static void
@@ -230,7 +231,7 @@ test_proxy (void)
   g_main_loop_unref (loop);
 
   /* TODO: should call session_bus_down() but that requires waiting
-   * for all the oustanding method calls to complete...
+   * for all the outstanding method calls to complete...
    */
   if (g_test_verbose ())
     g_printerr ("\n");
@@ -240,7 +241,7 @@ int
 main (int   argc,
       char *argv[])
 {
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
   g_test_dbus_unset ();
 

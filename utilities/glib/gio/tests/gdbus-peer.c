@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,7 +23,6 @@
 #include "config.h"
 
 #include <gio/gio.h>
-#include <unistd.h>
 #include <string.h>
 
 /* for open(2) */
@@ -43,9 +44,14 @@
 #include <errno.h>
 #endif
 
+#ifdef G_OS_WIN32
+#include <gio/giowin32-afunix.h>
+#endif
+
+#include "gdbusprivate.h"
 #include "gdbus-tests.h"
 
-#include "gdbus-object-manager-example/gdbus-example-objectmanager-generated.h"
+#include "gdbus-object-manager-example/objectmanager-gen.h"
 
 #ifdef G_OS_UNIX
 static gboolean is_unix = TRUE;
@@ -53,6 +59,7 @@ static gboolean is_unix = TRUE;
 static gboolean is_unix = FALSE;
 #endif
 
+static gchar *tmpdir = NULL;
 static gchar *tmp_address = NULL;
 static gchar *test_guid = NULL;
 static GMutex service_loop_lock;
@@ -75,6 +82,12 @@ typedef struct
   gboolean signal_received;
 } PeerData;
 
+/* This needs to be enough to usually take more than one write(),
+ * to reproduce
+ * <https://gitlab.gnome.org/GNOME/glib/-/issues/2074>.
+ * 1 MiB ought to be enough. */
+#define BIG_MESSAGE_ARRAY_SIZE (1024 * 1024)
+
 static const gchar *test_interface_introspection_xml =
   "<node>"
   "  <interface name='org.gtk.GDBus.PeerTestInterface'>"
@@ -86,6 +99,11 @@ static const gchar *test_interface_introspection_xml =
   "    <method name='EmitSignalWithNameSet'/>"
   "    <method name='OpenFile'>"
   "      <arg type='s' name='path' direction='in'/>"
+  "    </method>"
+  "    <method name='OpenFileWithBigMessage'>"
+  "      <arg type='s' name='path' direction='in'/>"
+  "      <arg type='h' name='handle' direction='out'/>"
+  "      <arg type='ay' name='junk' direction='out'/>"
   "    </method>"
   "    <signal name='PeerSignal'>"
   "      <arg type='s' name='a_string'/>"
@@ -163,7 +181,8 @@ test_interface_method_call (GDBusConnection       *connection,
 
       g_dbus_method_invocation_return_value (invocation, NULL);
     }
-  else if (g_strcmp0 (method_name, "OpenFile") == 0)
+  else if (g_strcmp0 (method_name, "OpenFile") == 0 ||
+           g_strcmp0 (method_name, "OpenFileWithBigMessage") == 0)
     {
 #ifdef G_OS_UNIX
       const gchar *path;
@@ -188,6 +207,21 @@ test_interface_method_call (GDBusConnection       *connection,
       g_dbus_message_set_unix_fd_list (reply, fd_list);
       g_object_unref (fd_list);
       g_object_unref (invocation);
+
+      if (g_strcmp0 (method_name, "OpenFileWithBigMessage") == 0)
+        {
+          char *junk;
+
+          junk = g_new0 (char, BIG_MESSAGE_ARRAY_SIZE);
+          g_dbus_message_set_body (reply,
+                                   g_variant_new ("(h@ay)",
+                                                  0,
+                                                  g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+                                                                             junk,
+                                                                             BIG_MESSAGE_ARRAY_SIZE,
+                                                                             1)));
+          g_free (junk);
+        }
 
       error = NULL;
       g_dbus_connection_send_message (connection,
@@ -230,7 +264,8 @@ static const GDBusInterfaceVTable test_interface_vtable =
 {
   test_interface_method_call,
   test_interface_get_property,
-  NULL  /* set_property */
+  NULL,  /* set_property */
+  { 0 }
 };
 
 static void
@@ -268,6 +303,71 @@ on_proxy_signal_received_with_name_set (GDBusProxy *proxy,
 /* ---------------------------------------------------------------------------------------------------- */
 
 static gboolean
+af_unix_works (void)
+{
+  int fd;
+
+  g_networking_init ();
+  fd = socket (AF_UNIX, SOCK_STREAM, 0);
+
+#ifdef G_OS_WIN32
+  closesocket (fd);
+  return fd != (int) INVALID_SOCKET;
+#else
+  g_close (fd, NULL);
+  return fd >= 0;
+#endif
+}
+
+static void
+setup_test_address (void)
+{
+  if (is_unix || af_unix_works ())
+    {
+      g_test_message ("Testing with unix:dir address");
+      tmpdir = g_dir_make_tmp ("gdbus-test-XXXXXX", NULL);
+      tmp_address = g_strdup_printf ("unix:dir=%s", tmpdir);
+    }
+  else
+    tmp_address = g_strdup ("nonce-tcp:host=127.0.0.1");
+}
+
+#ifdef G_OS_UNIX
+static void
+setup_tmpdir_test_address (void)
+{
+  g_test_message ("Testing with unix:tmpdir address");
+  tmpdir = g_dir_make_tmp ("gdbus-test-XXXXXX", NULL);
+  tmp_address = g_strdup_printf ("unix:tmpdir=%s", tmpdir);
+}
+
+static void
+setup_path_test_address (void)
+{
+  g_test_message ("Testing with unix:path address");
+  tmpdir = g_dir_make_tmp ("gdbus-test-XXXXXX", NULL);
+  tmp_address = g_strdup_printf ("unix:path=%s/gdbus-peer-socket", tmpdir);
+}
+#endif
+
+static void
+teardown_test_address (void)
+{
+  g_free (tmp_address);
+  if (tmpdir)
+    {
+      /* Ensuring the rmdir succeeds also ensures any sockets created on the
+       * filesystem are also deleted.
+       */
+      g_assert_cmpstr (g_rmdir (tmpdir) == 0 ? "OK" : g_strerror (errno),
+                       ==, "OK");
+      g_clear_pointer (&tmpdir, g_free);
+    }
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static gboolean
 on_authorize_authenticated_peer (GDBusAuthObserver *observer,
                                  GIOStream         *stream,
                                  GCredentials      *credentials,
@@ -295,7 +395,7 @@ on_new_connection (GDBusServer *server,
                    gpointer user_data)
 {
   PeerData *data = user_data;
-  GError *error;
+  GError *error = NULL;
   guint reg_id;
 
   //g_printerr ("Client connected.\n"
@@ -311,15 +411,29 @@ on_new_connection (GDBusServer *server,
       credentials = g_dbus_connection_get_peer_credentials (connection);
 
       g_assert (credentials != NULL);
+#ifdef G_OS_WIN32
+      {
+        DWORD *pid;
+        pid = g_credentials_get_native (credentials, G_CREDENTIALS_TYPE_WIN32_PID);
+        g_assert_cmpuint (*pid, ==, GetCurrentProcessId ());
+      }
+#else
       g_assert_cmpuint (g_credentials_get_unix_user (credentials, NULL), ==,
                         getuid ());
-      g_assert_cmpuint (g_credentials_get_unix_pid (credentials, NULL), ==,
-                        getpid ());
+#if G_CREDENTIALS_HAS_PID
+      g_assert_cmpint (g_credentials_get_unix_pid (credentials, &error), ==,
+                       getpid ());
+      g_assert_no_error (error);
+#else
+      g_assert_cmpint (g_credentials_get_unix_pid (credentials, &error), ==, -1);
+      g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+      g_clear_error (&error);
+#endif /* G_CREDENTIALS_HAS_PID */
+#endif /* G_OS_WIN32 */
     }
-#endif
+#endif /* G_CREDENTIALS_SUPPORTED */
 
   /* export object on the newly established connection */
-  error = NULL;
   reg_id = g_dbus_connection_register_object (connection,
                                               "/org/gtk/GDBus/PeerTestObject",
                                               test_interface_introspection_data,
@@ -589,7 +703,7 @@ check_connection (gpointer user_data)
         }
     }
 
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 static gboolean
@@ -599,7 +713,7 @@ on_do_disconnect_in_idle (gpointer data)
   g_debug ("GDC %p has ref_count %d", c, G_OBJECT (c)->ref_count);
   g_dbus_connection_disconnect (c);
   g_object_unref (c);
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 #endif
 
@@ -615,18 +729,21 @@ read_all_from_fd (gint fd, gsize *out_len, GError **error)
 
   do
     {
+      int errsv;
+
       num_read = read (fd, buf, sizeof (buf));
+      errsv = errno;
       if (num_read == -1)
         {
-          if (errno == EAGAIN || errno == EWOULDBLOCK)
+          if (errsv == EAGAIN || errsv == EWOULDBLOCK)
             continue;
           g_set_error (error,
                        G_IO_ERROR,
-                       g_io_error_from_errno (errno),
+                       g_io_error_from_errno (errsv),
                        "Failed reading %d bytes into offset %d: %s",
                        (gint) sizeof (buf),
                        (gint) str->len,
-                       strerror (errno));
+                       g_strerror (errsv));
           goto error;
         }
       else if (num_read > 0)
@@ -646,14 +763,14 @@ read_all_from_fd (gint fd, gsize *out_len, GError **error)
 
  error:
   if (out_len != NULL)
-    out_len = 0;
+    *out_len = 0;
   g_string_free (str, TRUE);
   return NULL;
 }
 #endif
 
 static void
-test_peer (void)
+do_test_peer (void)
 {
   GDBusConnection *c;
   GDBusConnection *c2;
@@ -665,6 +782,7 @@ test_peer (void)
   const gchar *s;
   GThread *service_thread;
   gulong signal_handler_id;
+  gsize i;
 
   memset (&data, '\0', sizeof (PeerData));
   data.current_connections = g_ptr_array_new_with_free_func (g_object_unref);
@@ -674,7 +792,7 @@ test_peer (void)
   c = g_dbus_connection_new_for_address_sync (is_unix ? "unix:path=/tmp/gdbus-test-does-not-exist-pid" :
                                               /* NOTE: Even if something is listening on port 12345 the connection
                                                * will fail because the nonce file doesn't exist */
-                                              "nonce-tcp:host=localhost,port=12345,noncefile=this-does-not-exist-gdbus",
+                                              "nonce-tcp:host=127.0.0.1,port=12345,noncefile=this-does-not-exist-gdbus",
                                               G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
                                               NULL, /* GDBusAuthObserver */
                                               NULL, /* cancellable */
@@ -726,6 +844,7 @@ test_peer (void)
   error = NULL;
   value = g_dbus_proxy_get_cached_property (proxy, "PeerProperty");
   g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "ThePropertyValue");
+  g_clear_pointer (&value, g_variant_unref);
 
   /* try invoking a method */
   error = NULL;
@@ -785,73 +904,116 @@ test_peer (void)
   g_assert_cmpint (data.num_method_calls, ==, 3);
   g_signal_handler_disconnect (proxy, signal_handler_id);
 
-  /* check for UNIX fd passing */
+  /*
+   * Check for UNIX fd passing.
+   *
+   * The first time through, we use a very simple method call. Note that
+   * because this does not have a G_VARIANT_TYPE_HANDLE in the message body
+   * to refer to the fd, it is a GDBus-specific idiom that would not
+   * interoperate with libdbus or sd-bus
+   * (see <https://gitlab.gnome.org/GNOME/glib/-/merge_requests/1726>).
+   *
+   * The second time, we call a method that returns a fd attached to a
+   * large message, to reproduce
+   * <https://gitlab.gnome.org/GNOME/glib/-/issues/2074>. It also happens
+   * to follow the more usual pattern for D-Bus messages containing a
+   * G_VARIANT_TYPE_HANDLE to refer to attached fds.
+   */
+  for (i = 0; i < 2; i++)
+    {
 #ifdef G_OS_UNIX
-  {
-    GDBusMessage *method_call_message;
-    GDBusMessage *method_reply_message;
-    GUnixFDList *fd_list;
-    gint fd;
-    gchar *buf;
-    gsize len;
-    gchar *buf2;
-    gsize len2;
-    const char *testfile = g_test_get_filename (G_TEST_DIST, "file.c", NULL);
+      GDBusMessage *method_call_message;
+      GDBusMessage *method_reply_message;
+      GUnixFDList *fd_list;
+      gint fd;
+      gchar *buf;
+      gsize len;
+      gchar *buf2;
+      gsize len2;
+      const char *testfile = g_test_get_filename (G_TEST_DIST, "file.c", NULL);
+      const char *method = "OpenFile";
+      GVariant *body;
 
-    method_call_message = g_dbus_message_new_method_call (NULL, /* name */
-                                                          "/org/gtk/GDBus/PeerTestObject",
-                                                          "org.gtk.GDBus.PeerTestInterface",
-                                                          "OpenFile");
-    g_dbus_message_set_body (method_call_message, g_variant_new ("(s)", testfile));
-    error = NULL;
-    method_reply_message = g_dbus_connection_send_message_with_reply_sync (c,
-                                                                           method_call_message,
-                                                                           G_DBUS_SEND_MESSAGE_FLAGS_NONE,
-                                                                           -1,
-                                                                           NULL, /* out_serial */
-                                                                           NULL, /* cancellable */
-                                                                           &error);
-    g_assert_no_error (error);
-    g_assert (g_dbus_message_get_message_type (method_reply_message) == G_DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    fd_list = g_dbus_message_get_unix_fd_list (method_reply_message);
-    g_assert (fd_list != NULL);
-    g_assert_cmpint (g_unix_fd_list_get_length (fd_list), ==, 1);
-    error = NULL;
-    fd = g_unix_fd_list_get (fd_list, 0, &error);
-    g_assert_no_error (error);
-    g_object_unref (method_call_message);
-    g_object_unref (method_reply_message);
+      if (i == 1)
+        method = "OpenFileWithBigMessage";
 
-    error = NULL;
-    len = 0;
-    buf = read_all_from_fd (fd, &len, &error);
-    g_assert_no_error (error);
-    g_assert (buf != NULL);
-    close (fd);
+      method_call_message = g_dbus_message_new_method_call (NULL, /* name */
+                                                            "/org/gtk/GDBus/PeerTestObject",
+                                                            "org.gtk.GDBus.PeerTestInterface",
+                                                            method);
+      g_dbus_message_set_body (method_call_message, g_variant_new ("(s)", testfile));
+      error = NULL;
+      method_reply_message = g_dbus_connection_send_message_with_reply_sync (c,
+                                                                             method_call_message,
+                                                                             G_DBUS_SEND_MESSAGE_FLAGS_NONE,
+                                                                             -1,
+                                                                             NULL, /* out_serial */
+                                                                             NULL, /* cancellable */
+                                                                             &error);
+      g_assert_no_error (error);
+      g_assert (g_dbus_message_get_message_type (method_reply_message) == G_DBUS_MESSAGE_TYPE_METHOD_RETURN);
 
-    error = NULL;
-    g_file_get_contents (testfile,
-                         &buf2,
-                         &len2,
-                         &error);
-    g_assert_no_error (error);
-    g_assert_cmpmem (buf, len, buf2, len2);
-    g_free (buf2);
-    g_free (buf);
-  }
+      body = g_dbus_message_get_body (method_reply_message);
+
+      if (i == 1)
+        {
+          gint32 handle = -1;
+          GVariant *junk = NULL;
+
+          g_assert_cmpstr (g_variant_get_type_string (body), ==, "(hay)");
+          g_variant_get (body, "(h@ay)", &handle, &junk);
+          g_assert_cmpint (handle, ==, 0);
+          g_assert_cmpuint (g_variant_n_children (junk), ==, BIG_MESSAGE_ARRAY_SIZE);
+          g_variant_unref (junk);
+        }
+      else
+        {
+          g_assert_null (body);
+        }
+
+      fd_list = g_dbus_message_get_unix_fd_list (method_reply_message);
+      g_assert (fd_list != NULL);
+      g_assert_cmpint (g_unix_fd_list_get_length (fd_list), ==, 1);
+      error = NULL;
+      fd = g_unix_fd_list_get (fd_list, 0, &error);
+      g_assert_no_error (error);
+      g_object_unref (method_call_message);
+      g_object_unref (method_reply_message);
+
+      error = NULL;
+      len = 0;
+      buf = read_all_from_fd (fd, &len, &error);
+      g_assert_no_error (error);
+      g_assert (buf != NULL);
+      close (fd);
+
+      error = NULL;
+      g_file_get_contents (testfile,
+                           &buf2,
+                           &len2,
+                           &error);
+      g_assert_no_error (error);
+      g_assert_cmpmem (buf, len, buf2, len2);
+      g_free (buf2);
+      g_free (buf);
 #else
-  error = NULL;
-  result = g_dbus_proxy_call_sync (proxy,
-                                   "OpenFile",
-                                   g_variant_new ("(s)", "boo"),
-                                   G_DBUS_CALL_FLAGS_NONE,
-                                   -1,
-                                   NULL,  /* GCancellable */
-                                   &error);
-  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_DBUS_ERROR);
-  g_assert (result == NULL);
-  g_error_free (error);
+      /* We do the same number of iterations on non-Unix, so that
+       * the method call count will match. In this case we use
+       * OpenFile both times, because the difference between this
+       * and OpenFileWithBigMessage is only relevant on Unix. */
+      error = NULL;
+      result = g_dbus_proxy_call_sync (proxy,
+                                       "OpenFile",
+                                       g_variant_new ("(s)", "boo"),
+                                       G_DBUS_CALL_FLAGS_NONE,
+                                       -1,
+                                       NULL,  /* GCancellable */
+                                       &error);
+      g_assert_error (error, G_IO_ERROR, G_IO_ERROR_DBUS_ERROR);
+      g_assert (result == NULL);
+      g_error_free (error);
 #endif /* G_OS_UNIX */
+    }
 
   /* Check that g_socket_get_credentials() work - (though this really
    * should be in socket.c)
@@ -868,14 +1030,30 @@ test_peer (void)
     g_assert_no_error (error);
     g_assert (G_IS_CREDENTIALS (credentials));
 
+#ifdef G_OS_WIN32
+      {
+        DWORD *pid;
+        pid = g_credentials_get_native (credentials, G_CREDENTIALS_TYPE_WIN32_PID);
+        g_assert_cmpuint (*pid, ==, GetCurrentProcessId ());
+      }
+#else
     g_assert_cmpuint (g_credentials_get_unix_user (credentials, NULL), ==,
                       getuid ());
-    g_assert_cmpuint (g_credentials_get_unix_pid (credentials, NULL), ==,
-                      getpid ());
+#if G_CREDENTIALS_HAS_PID
+    g_assert_cmpint (g_credentials_get_unix_pid (credentials, &error), ==,
+                     getpid ());
+    g_assert_no_error (error);
+#else
+    g_assert_cmpint (g_credentials_get_unix_pid (credentials, &error), ==, -1);
+    g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+    g_clear_error (&error);
+#endif /* G_CREDENTIALS_HAS_PID */
+    g_object_unref (credentials);
+#endif /* G_OS_WIN32 */
 #else
     g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
     g_assert (credentials == NULL);
-#endif
+#endif /* G_CREDENTIALS_SOCKET_GET_CREDENTIALS_SUPPORTED */
   }
 
 
@@ -951,7 +1129,7 @@ test_peer (void)
   g_variant_get (result, "(&s)", &s);
   g_assert_cmpstr (s, ==, "You greeted me with 'Hey Again Peer!'.");
   g_variant_unref (result);
-  g_assert_cmpint (data.num_method_calls, ==, 5);
+  g_assert_cmpint (data.num_method_calls, ==, 6);
 
 #if 0
   /* TODO: THIS TEST DOESN'T WORK YET */
@@ -971,6 +1149,286 @@ test_peer (void)
 
   g_main_loop_quit (service_loop);
   g_thread_join (service_thread);
+}
+
+static void
+test_peer (void)
+{
+  test_guid = g_dbus_generate_guid ();
+  loop = g_main_loop_new (NULL, FALSE);
+
+  /* Run this test multiple times using different address formats to ensure
+   * they all work.
+   */
+  setup_test_address ();
+  do_test_peer ();
+  teardown_test_address ();
+
+#ifdef G_OS_UNIX
+  setup_tmpdir_test_address ();
+  do_test_peer ();
+  teardown_test_address ();
+
+  setup_path_test_address ();
+  do_test_peer ();
+  teardown_test_address ();
+#endif
+
+  g_main_loop_unref (loop);
+  g_free (test_guid);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+#define VALID_GUID "0123456789abcdef0123456789abcdef"
+
+static void
+test_peer_invalid_server (void)
+{
+  GDBusServer *server;
+
+  if (!g_test_undefined ())
+    {
+      g_test_skip ("Not exercising programming errors");
+      return;
+    }
+
+  if (g_test_subprocess ())
+    {
+      /* This assumes we are not going to run out of GDBusServerFlags
+       * any time soon */
+      server = g_dbus_server_new_sync ("tcp:", (GDBusServerFlags) (1 << 30),
+                                       VALID_GUID,
+                                       NULL, NULL, NULL);
+      g_assert_null (server);
+    }
+  else
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*CRITICAL*G_DBUS_SERVER_FLAGS_ALL*");
+    }
+}
+
+static void
+test_peer_invalid_conn_stream_sync (void)
+{
+  GSocket *sock;
+  GSocketConnection *socket_conn;
+  GIOStream *iostream;
+  GDBusConnection *conn;
+
+  if (!g_test_undefined ())
+    {
+      g_test_skip ("Not exercising programming errors");
+      return;
+    }
+
+  sock = g_socket_new (G_SOCKET_FAMILY_IPV4,
+                       G_SOCKET_TYPE_STREAM,
+                       G_SOCKET_PROTOCOL_TCP,
+                       NULL);
+
+  if (sock == NULL)
+    {
+      g_test_skip ("TCP not available?");
+      return;
+    }
+
+  socket_conn = g_socket_connection_factory_create_connection (sock);
+  g_assert_nonnull (socket_conn);
+  iostream = G_IO_STREAM (socket_conn);
+  g_assert_nonnull (iostream);
+
+  if (g_test_subprocess ())
+    {
+      /* This assumes we are not going to run out of GDBusConnectionFlags
+       * any time soon */
+      conn = g_dbus_connection_new_sync (iostream, VALID_GUID,
+                                         (GDBusConnectionFlags) (1 << 30),
+                                         NULL, NULL, NULL);
+      g_assert_null (conn);
+    }
+  else
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*CRITICAL*G_DBUS_CONNECTION_FLAGS_ALL*");
+    }
+
+  g_clear_object (&sock);
+  g_clear_object (&socket_conn);
+}
+
+static void
+test_peer_invalid_conn_stream_async (void)
+{
+  GSocket *sock;
+  GSocketConnection *socket_conn;
+  GIOStream *iostream;
+
+  if (!g_test_undefined ())
+    {
+      g_test_skip ("Not exercising programming errors");
+      return;
+    }
+
+  sock = g_socket_new (G_SOCKET_FAMILY_IPV4,
+                       G_SOCKET_TYPE_STREAM,
+                       G_SOCKET_PROTOCOL_TCP,
+                       NULL);
+
+  if (sock == NULL)
+    {
+      g_test_skip ("TCP not available?");
+      return;
+    }
+
+  socket_conn = g_socket_connection_factory_create_connection (sock);
+  g_assert_nonnull (socket_conn);
+  iostream = G_IO_STREAM (socket_conn);
+  g_assert_nonnull (iostream);
+
+  if (g_test_subprocess ())
+    {
+      g_dbus_connection_new (iostream, VALID_GUID,
+                             (GDBusConnectionFlags) (1 << 30),
+                             NULL, NULL, NULL, NULL);
+    }
+  else
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*CRITICAL*G_DBUS_CONNECTION_FLAGS_ALL*");
+    }
+
+  g_clear_object (&sock);
+  g_clear_object (&socket_conn);
+}
+
+static void
+test_peer_invalid_conn_addr_sync (void)
+{
+  GDBusConnection *conn;
+
+  if (!g_test_undefined ())
+    {
+      g_test_skip ("Not exercising programming errors");
+      return;
+    }
+
+  if (g_test_subprocess ())
+    {
+      conn = g_dbus_connection_new_for_address_sync ("tcp:",
+                                                     (GDBusConnectionFlags) (1 << 30),
+                                                     NULL, NULL, NULL);
+      g_assert_null (conn);
+    }
+  else
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*CRITICAL*G_DBUS_CONNECTION_FLAGS_ALL*");
+    }
+}
+
+static void
+test_peer_invalid_conn_addr_async (void)
+{
+  if (!g_test_undefined ())
+    {
+      g_test_skip ("Not exercising programming errors");
+      return;
+    }
+
+  if (g_test_subprocess ())
+    {
+      g_dbus_connection_new_for_address ("tcp:",
+                                         (GDBusConnectionFlags) (1 << 30),
+                                         NULL, NULL, NULL, NULL);
+    }
+  else
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*CRITICAL*G_DBUS_CONNECTION_FLAGS_ALL*");
+    }
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static void
+test_peer_signals (void)
+{
+  GDBusConnection *c;
+  GDBusProxy *proxy;
+  GError *error = NULL;
+  PeerData data;
+  GThread *service_thread;
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/1620");
+
+  test_guid = g_dbus_generate_guid ();
+  loop = g_main_loop_new (NULL, FALSE);
+
+  setup_test_address ();
+  memset (&data, '\0', sizeof (PeerData));
+  data.current_connections = g_ptr_array_new_with_free_func (g_object_unref);
+
+  /* bring up a server - we run the server in a different thread to avoid deadlocks */
+  service_thread = g_thread_new ("test_peer",
+                                 service_thread_func,
+                                 &data);
+  await_service_loop ();
+  g_assert_nonnull (server);
+
+  /* bring up a connection and accept it */
+  data.accept_connection = TRUE;
+  c = g_dbus_connection_new_for_address_sync (g_dbus_server_get_client_address (server),
+                                              G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
+                                              NULL, /* GDBusAuthObserver */
+                                              NULL, /* cancellable */
+                                              &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (c);
+  while (data.current_connections->len < 1)
+    g_main_loop_run (loop);
+  g_assert_cmpint (data.current_connections->len, ==, 1);
+  g_assert_cmpint (data.num_connection_attempts, ==, 1);
+  g_assert_null (g_dbus_connection_get_unique_name (c));
+  g_assert_cmpstr (g_dbus_connection_get_guid (c), ==, test_guid);
+
+  /* Check that we can create a proxy with a non-NULL bus name, even though it's
+   * irrelevant in the non-message-bus case. Since the server runs in another
+   * thread it's fine to use synchronous blocking API here.
+   */
+  proxy = g_dbus_proxy_new_sync (c,
+                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+                                 G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+                                 NULL,
+                                 ":1.1", /* bus_name */
+                                 "/org/gtk/GDBus/PeerTestObject",
+                                 "org.gtk.GDBus.PeerTestInterface",
+                                 NULL, /* GCancellable */
+                                 &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (proxy);
+
+  /* unref the server and stop listening for new connections */
+  g_dbus_server_stop (server);
+  g_clear_object (&server);
+
+  g_object_unref (c);
+  g_ptr_array_unref (data.current_connections);
+  g_object_unref (proxy);
+
+  g_main_loop_quit (service_loop);
+  g_thread_join (service_thread);
+
+  teardown_test_address ();
+
+  g_main_loop_unref (loop);
+  g_free (test_guid);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -1019,7 +1477,8 @@ static const GDBusInterfaceVTable dmp_interface_vtable =
 {
   dmp_on_method_call,
   NULL,  /* get_property */
-  NULL   /* set_property */
+  NULL,  /* set_property */
+  { 0 }
 };
 
 
@@ -1053,7 +1512,7 @@ dmp_on_new_connection (GDBusServer     *server,
    * G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING really works
    * (GDBusServer uses this feature).
    */
-  usleep (100 * 1000);
+  g_usleep (100 * 1000);
 
   /* export an object */
   error = NULL;
@@ -1098,6 +1557,7 @@ dmp_thread_func (gpointer user_data)
   data->loop = g_main_loop_new (data->context, FALSE);
   g_main_loop_run (data->loop);
 
+  g_dbus_server_stop (data->server);
   g_main_context_pop_thread_default (data->context);
 
   g_free (guid);
@@ -1111,6 +1571,11 @@ delayed_message_processing (void)
   DmpData *data;
   GThread *service_thread;
   guint n;
+
+  test_guid = g_dbus_generate_guid ();
+  loop = g_main_loop_new (NULL, FALSE);
+
+  setup_test_address ();
 
   data = g_new0 (DmpData, 1);
 
@@ -1156,6 +1621,10 @@ delayed_message_processing (void)
   g_main_loop_quit (data->loop);
   g_thread_join (service_thread);
   dmp_data_free (data);
+  teardown_test_address ();
+
+  g_main_loop_unref (loop);
+  g_free (test_guid);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -1209,7 +1678,7 @@ nonce_tcp_service_thread_func (gpointer user_data)
 
   error = NULL;
   observer = g_dbus_auth_observer_new ();
-  server = g_dbus_server_new_sync ("nonce-tcp:",
+  server = g_dbus_server_new_sync ("nonce-tcp:host=127.0.0.1",
                                    G_DBUS_SERVER_FLAGS_NONE,
                                    test_guid,
                                    observer,
@@ -1249,10 +1718,14 @@ test_nonce_tcp (void)
   GError *error;
   GThread *service_thread;
   GDBusConnection *c;
-  gchar *s;
+  const char *s;
   gchar *nonce_file;
   gboolean res;
   const gchar *address;
+  int fd;
+
+  test_guid = g_dbus_generate_guid ();
+  loop = g_main_loop_new (NULL, FALSE);
 
   memset (&data, '\0', sizeof (PeerData));
   data.current_connections = g_ptr_array_new_with_free_func (g_object_unref);
@@ -1291,7 +1764,7 @@ test_nonce_tcp (void)
   s = strstr (address, "noncefile=");
   g_assert (s != NULL);
   s += sizeof "noncefile=" - 1;
-  nonce_file = g_strdup (s);
+  nonce_file = g_uri_unescape_string (s, NULL); /* URI-unescaping should be good enough */
 
   /* First try invalid data in the nonce file - this will actually
    * make the client send this and the server will reject it. The way
@@ -1347,14 +1820,25 @@ test_nonce_tcp (void)
   g_error_free (error);
   g_assert (c == NULL);
 
-  g_free (nonce_file);
+  /* Recreate the nonce-file so we can ensure the server deletes it when stopped. */
+  fd = g_creat (nonce_file, 0600);
+  g_assert_cmpint (fd, !=, -1);
+  g_close (fd, NULL);
 
   g_dbus_server_stop (server);
   g_object_unref (server);
   server = NULL;
 
+  g_assert_false (g_file_test (nonce_file, G_FILE_TEST_EXISTS));
+  g_free (nonce_file);
+
   g_main_loop_quit (service_loop);
   g_thread_join (service_thread);
+
+  g_ptr_array_unref (data.current_connections);
+
+  g_main_loop_unref (loop);
+  g_free (test_guid);
 }
 
 static void
@@ -1363,17 +1847,26 @@ test_credentials (void)
   GCredentials *c1, *c2;
   GError *error;
   gchar *desc;
+  gboolean same;
 
   c1 = g_credentials_new ();
   c2 = g_credentials_new ();
 
   error = NULL;
+#ifdef G_OS_UNIX
   if (g_credentials_set_unix_user (c2, getuid (), &error))
     g_assert_no_error (error);
+#endif
 
-  g_clear_error (&error);
-  g_assert (g_credentials_is_same_user (c1, c2, &error));
+  same = g_credentials_is_same_user (c1, c2, &error);
+#ifdef G_OS_UNIX
+  g_assert (same);
   g_assert_no_error (error);
+#else
+  g_assert (!same);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+  g_clear_error (&error);
+#endif
 
   desc = g_credentials_to_string (c1);
   g_assert (desc != NULL);
@@ -1406,7 +1899,7 @@ tcp_anonymous_service_thread_func (gpointer user_data)
   g_main_context_push_thread_default (service_context);
 
   error = NULL;
-  server = g_dbus_server_new_sync ("tcp:",
+  server = g_dbus_server_new_sync ("tcp:host=127.0.0.1",
                                    G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS,
                                    test_guid,
                                    NULL, /* GDBusObserver* */
@@ -1439,6 +1932,9 @@ test_tcp_anonymous (void)
   GDBusConnection *connection;
   GError *error;
 
+  test_guid = g_dbus_generate_guid ();
+  loop = g_main_loop_new (NULL, FALSE);
+
   seen_connection = FALSE;
   service_thread = g_thread_new ("tcp-anon-service",
                                  tcp_anonymous_service_thread_func,
@@ -1466,6 +1962,9 @@ test_tcp_anonymous (void)
   server = NULL;
 
   g_thread_join (service_thread);
+
+  g_main_loop_unref (loop);
+  g_free (test_guid);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -1522,7 +2021,7 @@ codegen_on_animal_poke (ExampleAnimal          *animal,
   g_assert_not_reached ();
 
  out:
-  return TRUE; /* to indicate that the method was handled */
+  return G_DBUS_METHOD_INVOCATION_HANDLED;
 }
 
 /* Runs in thread we created GDBusServer in (since we didn't pass G_DBUS_SERVER_FLAGS_RUN_IN_THREAD) */
@@ -1597,7 +2096,7 @@ static gboolean
 codegen_quit_mainloop_timeout (gpointer data)
 {
   g_main_loop_quit (loop);
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 static void
@@ -1609,6 +2108,11 @@ codegen_test_peer (void)
   GError              *error = NULL;
   GVariant            *value;
   const gchar         *s;
+
+  test_guid = g_dbus_generate_guid ();
+  loop = g_main_loop_new (NULL, FALSE);
+
+  setup_test_address ();
 
   /* bring up a server - we run the server in a different thread to avoid deadlocks */
   service_thread = g_thread_new ("codegen_test_peer",
@@ -1653,14 +2157,14 @@ codegen_test_peer (void)
 
   /* Poke server and make sure animal is updated */
   value = g_dbus_proxy_call_sync (G_DBUS_PROXY (animal1),
-                                  "org.freedesktop.DBus.Peer.Ping",
+                                  DBUS_INTERFACE_PEER ".Ping",
                                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
                                   NULL, &error);
   g_assert_no_error (error);
   g_assert (value != NULL);
   g_variant_unref (value);
 
-  /* Give the proxies a chance to refresh in the defaul main loop */
+  /* Give the proxies a chance to refresh in the default main loop */
   g_timeout_add (100, codegen_quit_mainloop_timeout, NULL);
   g_main_loop_run (loop);
 
@@ -1674,24 +2178,28 @@ codegen_test_peer (void)
 
   /* Some random unrelated call, just to get some test coverage */
   value = g_dbus_proxy_call_sync (G_DBUS_PROXY (animal2),
-                                  "org.freedesktop.DBus.Peer.GetMachineId",
+                                  DBUS_INTERFACE_PEER ".GetMachineId",
                                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
                                   NULL, &error);
   g_assert_no_error (error);
   g_variant_get (value, "(&s)", &s);
-  g_assert (g_dbus_is_guid (s));
+  g_test_message ("Machine ID: %s", s);
+  /* It's valid for machine-id inside containers to be empty, so we
+   * need to test for that possibility
+   */
+  g_assert ((s == NULL || *s == '\0') || g_dbus_is_guid (s));
   g_variant_unref (value);
   
   /* Poke server and make sure animal is updated */
   value = g_dbus_proxy_call_sync (G_DBUS_PROXY (animal2),
-                                  "org.freedesktop.DBus.Peer.Ping",
+                                  DBUS_INTERFACE_PEER ".Ping",
                                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
                                   NULL, &error);
   g_assert_no_error (error);
   g_assert (value != NULL);
   g_variant_unref (value);
 
-  /* Give the proxies a chance to refresh in the defaul main loop */
+  /* Give the proxies a chance to refresh in the default main loop */
   g_timeout_add (1000, codegen_quit_mainloop_timeout, NULL);
   g_main_loop_run (loop);
 
@@ -1704,10 +2212,16 @@ codegen_test_peer (void)
    * change notifications anyway because those are done from an idle handler
    */
   example_animal_call_poke_sync (animal2, TRUE, TRUE, NULL, &error);
+  g_clear_error (&error);
 
   g_object_unref (animal1);
   g_object_unref (animal2);
   g_thread_join (service_thread);
+
+  teardown_test_address ();
+
+  g_main_loop_unref (loop);
+  g_free (test_guid);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -1719,33 +2233,25 @@ main (int   argc,
 {
   gint ret;
   GDBusNodeInfo *introspection_data = NULL;
-  gchar *tmpdir = NULL;
 
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
   introspection_data = g_dbus_node_info_new_for_xml (test_interface_introspection_xml, NULL);
   g_assert (introspection_data != NULL);
   test_interface_introspection_data = introspection_data->interfaces[0];
 
-  test_guid = g_dbus_generate_guid ();
-
-  if (is_unix)
-    {
-      if (g_unix_socket_address_abstract_names_supported ())
-	tmp_address = g_strdup ("unix:tmpdir=/tmp/gdbus-test-");
-      else
-	{
-	  tmpdir = g_dir_make_tmp ("gdbus-test-XXXXXX", NULL);
-	  tmp_address = g_strdup_printf ("unix:tmpdir=%s", tmpdir);
-	}
-    }
-  else
-    tmp_address = g_strdup ("nonce-tcp:");
-
-  /* all the tests rely on a shared main loop */
-  loop = g_main_loop_new (NULL, FALSE);
-
   g_test_add_func ("/gdbus/peer-to-peer", test_peer);
+  g_test_add_func ("/gdbus/peer-to-peer/invalid/server",
+                   test_peer_invalid_server);
+  g_test_add_func ("/gdbus/peer-to-peer/invalid/conn/stream/async",
+                   test_peer_invalid_conn_stream_async);
+  g_test_add_func ("/gdbus/peer-to-peer/invalid/conn/stream/sync",
+                   test_peer_invalid_conn_stream_sync);
+  g_test_add_func ("/gdbus/peer-to-peer/invalid/conn/addr/async",
+                   test_peer_invalid_conn_addr_async);
+  g_test_add_func ("/gdbus/peer-to-peer/invalid/conn/addr/sync",
+                   test_peer_invalid_conn_addr_sync);
+  g_test_add_func ("/gdbus/peer-to-peer/signals", test_peer_signals);
   g_test_add_func ("/gdbus/delayed-message-processing", delayed_message_processing);
   g_test_add_func ("/gdbus/nonce-tcp", test_nonce_tcp);
 
@@ -1753,18 +2259,9 @@ main (int   argc,
   g_test_add_func ("/gdbus/credentials", test_credentials);
   g_test_add_func ("/gdbus/codegen-peer-to-peer", codegen_test_peer);
 
-  ret = g_test_run();
+  ret = g_test_run ();
 
-  g_main_loop_unref (loop);
-  g_free (test_guid);
   g_dbus_node_info_unref (introspection_data);
-  if (is_unix)
-    g_free (tmp_address);
-  if (tmpdir)
-    {
-      g_rmdir (tmpdir);
-      g_free (tmpdir);
-    }
 
   return ret;
 }

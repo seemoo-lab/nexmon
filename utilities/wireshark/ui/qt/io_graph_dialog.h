@@ -1,135 +1,49 @@
-/* io_graph_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef IO_GRAPH_DIALOG_H
 #define IO_GRAPH_DIALOG_H
 
 #include <config.h>
+#include "io_graph.h"
 
-#include <glib.h>
+#include <epan/epan_dissect.h>
+#include <epan/prefs.h>
 
-#include "epan/epan_dissect.h"
+#include <wsutil/str_util.h>
 
-#include "ui/io_graph_item.h"
+#include <ui/preference_utils.h>
+#include <ui/io_graph_item.h>
+#include <ui/qt/models/uat_model.h>
+#include <ui/qt/models/uat_delegate.h>
 
 #include "wireshark_dialog.h"
 
-#include <QIcon>
+#include <QPointer>
 #include <QMenu>
 #include <QTextStream>
+#include <QItemSelection>
 
-class QComboBox;
-class QLineEdit;
+#include <vector>
+
 class QRubberBand;
 class QTimer;
-class QTreeWidgetItem;
+class QAbstractButton;
+class CopyFromProfileButton;
 
-class SyntaxLineEdit;
-
-class QCPBars;
 class QCPGraph;
 class QCPItemTracer;
-class QCustomPlot;
+class QCPAxisTicker;
+class QCPAxisTickerDateTime;
 
-// GTK+ sets this to 100000 (NUM_IO_ITEMS)
-const int max_io_items_ = 250000;
-
-// XXX - Move to its own file?
-class IOGraph : public QObject {
-Q_OBJECT
-public:
-    // COUNT_TYPE_* in gtk/io_graph.c
-    enum PlotStyles { psLine, psImpulse, psBar, psStackedBar, psDot, psSquare, psDiamond };
-
-    explicit IOGraph(QCustomPlot *parent);
-    ~IOGraph();
-    const QString configError() { return config_err_; }
-    const QString name() { return name_; }
-    void setName(const QString &name);
-    const QString filter() { return filter_; }
-    void setFilter(const QString &filter);
-    void applyCurrentColor();
-    bool visible() { return visible_; }
-    void setVisible(bool visible);
-    QRgb color();
-    void setColor(const QRgb color);
-    void setPlotStyle(int style);
-    const QString valueUnitLabel();
-    void setValueUnits(int val_units);
-    const QString valueUnitField() { return vu_field_; }
-    void setValueUnitField(const QString &vu_field);
-    unsigned int movingAveragePeriod() { return moving_avg_period_; }
-    void setInterval(int interval);
-    bool addToLegend();
-    bool removeFromLegend();
-    QCPGraph *graph() { return graph_; }
-    QCPBars *bars() { return bars_; }
-    double startOffset();
-    int packetFromTime(double ts);
-    double getItemValue(int idx, const capture_file *cap_file) const;
-    int maxInterval () const { return cur_idx_; }
-
-    void clearAllData();
-
-    static QMap<io_graph_item_unit_t, QString> valueUnitsToNames();
-    static QMap<PlotStyles, QString> plotStylesToNames();
-    static QMap<int, QString> movingAveragesToNames();
-
-    unsigned int moving_avg_period_;
-
-public slots:
-    void recalcGraphData(capture_file *cap_file);
-    void captureFileClosing();
-    void reloadValueUnitField();
-
-signals:
-    void requestReplot();
-    void requestRecalc();
-    void requestRetap();
-
-private:
-    // Callbacks for register_tap_listener
-    static void tapReset(void *iog_ptr);
-    static gboolean tapPacket(void *iog_ptr, packet_info *pinfo, epan_dissect_t *edt, const void *data);
-    static void tapDraw(void *iog_ptr);
-
-    QCustomPlot *parent_;
-    QString config_err_;
-    QString name_;
-    bool visible_;
-    QCPGraph *graph_;
-    QCPBars *bars_;
-    QString filter_;
-    QBrush color_;
-    io_graph_item_unit_t val_units_;
-    QString vu_field_;
-    int hf_index_;
-    int interval_;
-    double start_time_;
-
-    // Cached data. We should be able to change the Y axis without retapping as
-    // much as is feasible.
-    io_graph_item_t items_[max_io_items_];
-    int cur_idx_;
-};
+/* define I/O Graph specific UAT columns */
+enum UatColumnsIOG {colEnabled = 0, colName, colDFilter, colColor, colStyle, colYAxis, colYField, colSMAPeriod, colYAxisFactor, colAOT, colMaxNum};
 
 namespace Ui {
 class IOGraphDialog;
@@ -140,14 +54,20 @@ class IOGraphDialog : public WiresharkDialog
     Q_OBJECT
 
 public:
-    explicit IOGraphDialog(QWidget &parent, CaptureFile &cf);
+    explicit IOGraphDialog(QWidget &parent, CaptureFile &cf, QString displayFilter = QString(),
+                           io_graph_item_unit_t value_units = IOG_ITEM_UNIT_PACKETS,
+                           QString yfield = QString(),
+                           bool is_sibling_dialog = false,
+                           const QVector<QString> convFilters = QVector<QString>() );
     ~IOGraphDialog();
 
-    void addGraph(bool checked, QString name, QString dfilter, int color_idx, IOGraph::PlotStyles style,
-                  io_graph_item_unit_t value_units, QString yfield, int moving_average);
+    void addGraph(bool checked, bool asAOT, QString name, QString dfilter, QRgb color_idx, IOGraph::PlotStyles style,
+                  io_graph_item_unit_t value_units, QString yfield, int moving_average, double yaxisfactor);
+    void addGraph(bool checked, bool asAOT, QString dfilter, io_graph_item_unit_t value_units, QString yfield);
     void addGraph(bool copy_from_current = false);
     void addDefaultGraph(bool enabled, int idx = 0);
-    void syncGraphSettings(QTreeWidgetItem *item);
+    void syncGraphSettings(int row);
+    qsizetype graphCount() const;
 
 public slots:
     void scheduleReplot(bool now = false);
@@ -156,30 +76,40 @@ public slots:
     void reloadFields();
 
 protected:
+    void captureFileClosing();
     void keyPressEvent(QKeyEvent *event);
     void reject();
 
+protected slots:
+    void modelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
+    void modelRowsReset();
+    void modelRowsInserted(const QModelIndex &parent, int first, int last);
+    void modelRowsRemoved(const QModelIndex &parent, int first, int last);
+    void modelRowsMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationRow);
+
 signals:
     void goToPacket(int packet_num);
-    void recalcGraphData(capture_file *);
+    void recalcGraphData(capture_file *cap_file);
     void intervalChanged(int interval);
     void reloadValueUnitFields();
 
 private:
     Ui::IOGraphDialog *ui;
+    CopyFromProfileButton *copy_profile_bt_;
 
-    QLineEdit *name_line_edit_;
-    SyntaxLineEdit *dfilter_line_edit_;
-    SyntaxLineEdit *yfield_line_edit_;
-    QComboBox *color_combo_box_;
-    QComboBox *style_combo_box_;
-    QComboBox *yaxis_combo_box_;
-    QComboBox *sma_combo_box_;
+    //Model and delegate were chosen over UatFrame because add/remove/copy
+    //buttons would need realignment (UatFrame has its own)
+    QPointer<UatModel> uat_model_;
+    UatDelegate *uat_delegate_;
+
+    // XXX - This needs to stay synced with UAT index
+    QVector<IOGraph*> ioGraphs_;
+
     QString hint_err_;
     QCPGraph *base_graph_;
     QCPItemTracer *tracer_;
-    guint32 packet_num_;
-    double start_time_;
+    uint32_t packet_num_;
+    nstime_t start_time_;
     bool mouse_drags_;
     QRubberBand *rubber_band_;
     QPoint rb_origin_;
@@ -189,9 +119,10 @@ private:
     bool need_recalc_; // Medium weight: recalculate values, then replot
     bool need_retap_; // Heavy weight: re-read packet data
     bool auto_axes_;
-    // Available colors
-    // XXX - Add custom
-    QList<QRgb> colors_;
+    int precision_;
+
+    QSharedPointer<QCPAxisTicker> number_ticker_;
+    QSharedPointer<QCPAxisTickerDateTime> datetime_ticker_;
 
 
 //    void fillGraph();
@@ -199,39 +130,46 @@ private:
     void zoomXAxis(bool in);
     void zoomYAxis(bool in);
     void panAxes(int x_pixels, int y_pixels);
-    QIcon graphColorIcon(int color_idx);
     void toggleTracerStyle(bool force_default = false);
     void getGraphInfo();
+    void updateHint();
     void updateLegend();
     QRectF getZoomRanges(QRect zoom_rect);
-    void itemEditingFinished(QTreeWidgetItem *item);
+    void createIOGraph(int currentRow);
     void loadProfileGraphs();
     void makeCsv(QTextStream &stream) const;
     bool saveCsv(const QString &file_name) const;
+    IOGraph *currentActiveGraph() const;
+    bool graphIsEnabled(int row) const;
+    bool graphAsAOT(int row) const;
 
 private slots:
+    static void applyChanges();
+
+    void copyFromProfile(QString filename);
     void updateWidgets();
+    void showContextMenu(const QPoint &pos);
     void graphClicked(QMouseEvent *event);
     void mouseMoved(QMouseEvent *event);
     void mouseReleased(QMouseEvent *event);
-    void focusChanged(QWidget *previous, QWidget *current);
-    void activateLastItem();
+    void selectedFrameChanged(QList<int> frames);
+    void moveLegend();
+
     void resetAxes();
     void updateStatistics(void);
     void copyAsCsvClicked();
 
+    void graphUatSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void on_intervalComboBox_currentIndexChanged(int index);
-    void on_todCheckBox_toggled(bool checked);
-    void on_graphTreeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
-    void on_graphTreeWidget_itemActivated(QTreeWidgetItem *item, int column);
-    void on_graphTreeWidget_itemSelectionChanged();
-    void on_graphTreeWidget_itemChanged(QTreeWidgetItem *item, int column);
+    void on_graphUat_currentItemChanged(const QModelIndex &current, const QModelIndex &previous);
 
-    void on_resetButton_clicked();
-    void on_logCheckBox_toggled(bool checked);
+    void on_automaticUpdateCheckBox_toggled(bool checked);
     void on_newToolButton_clicked();
     void on_deleteToolButton_clicked();
     void on_copyToolButton_clicked();
+    void on_clearToolButton_clicked();
+    void on_moveUpwardsToolButton_clicked();
+    void on_moveDownwardsToolButton_clicked();
     void on_dragRadioButton_toggled(bool checked);
     void on_zoomRadioButton_toggled(bool checked);
     void on_actionReset_triggered();
@@ -255,19 +193,10 @@ private slots:
     void on_actionCrosshairs_triggered();
     void on_buttonBox_helpRequested();
     void on_buttonBox_accepted();
+    void buttonBoxClicked(QAbstractButton *button);
+    void actionLegendTriggered(bool checked);
+    void actionTimeOfDayTriggered(bool checked);
+    void actionLogScaleTriggered(bool checked);
 };
 
 #endif // IO_GRAPH_DIALOG_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

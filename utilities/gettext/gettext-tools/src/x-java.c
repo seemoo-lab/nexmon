@@ -1,6 +1,5 @@
 /* xgettext Java backend.
-   Copyright (C) 2003, 2005-2009, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "x-java.h"
@@ -28,13 +27,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SB_NO_APPENDF
+#include <error.h>
+#include "attribute.h"
 #include "message.h"
+#include "rc-str-list.h"
 #include "xgettext.h"
-#include "error.h"
+#include "xg-pos.h"
+#include "xg-encoding.h"
+#include "xg-mixed-string.h"
+#include "xg-arglist-context.h"
+#include "xg-arglist-callshape.h"
+#include "xg-arglist-parser.h"
+#include "xg-message.h"
+#include "if-error.h"
 #include "xalloc.h"
-#include "hash.h"
+#include "string-buffer.h"
+#include "mem-hash-map.h"
 #include "po-charset.h"
 #include "unistr.h"
+#include "unictype.h"
 #include "gettext.h"
 
 #define _(s) gettext(s)
@@ -43,9 +55,14 @@
 
 
 /* The Java syntax is defined in the
-     Java Language Specification, Second Edition,
-     (available from http://java.sun.com/),
-     chapter 3 "Lexical Structure".  */
+     Java Language Specification
+     (available from https://docs.oracle.com/javase/specs/),
+     chapter 3 "Lexical Structure".
+
+   It supports string formatting through functions and methods, namely
+   through the Java.formatted method added in Java 15:
+   https://docs.oracle.com/en%2Fjava%2Fjavase%2F17%2Fdocs%2Fapi%2F%2F/java.base/java/lang/String.html#formatted%28java.lang.Object...%29
+ */
 
 
 /* ====================== Keyword set customization.  ====================== */
@@ -71,19 +88,17 @@ x_java_keyword (const char *name)
     default_keywords = false;
   else
     {
-      const char *end;
-      struct callshape shape;
-      const char *colon;
-
       if (keywords.table == NULL)
         hash_init (&keywords, 100);
 
+      const char *end;
+      struct callshape shape;
       split_keywordspec (name, &end, &shape);
 
       /* The characters between name and end should form a valid Java
          identifier sequence with dots.
          A colon means an invalid parse in split_keywordspec().  */
-      colon = strchr (name, ':');
+      const char *colon = strchr (name, ':');
       if (colon == NULL || colon >= end)
         insert_keyword_callshape (&keywords, name, end - name, &shape);
     }
@@ -115,31 +130,39 @@ void
 init_flag_table_java ()
 {
   xgettext_record_flag ("GettextResource.gettext:2:pass-java-format");
+  xgettext_record_flag ("GettextResource.gettext:2:pass-java-printf-format");
   xgettext_record_flag ("GettextResource.ngettext:2:pass-java-format");
+  xgettext_record_flag ("GettextResource.ngettext:2:pass-java-printf-format");
   xgettext_record_flag ("GettextResource.ngettext:3:pass-java-format");
+  xgettext_record_flag ("GettextResource.ngettext:3:pass-java-printf-format");
   xgettext_record_flag ("GettextResource.pgettext:3:pass-java-format");
+  xgettext_record_flag ("GettextResource.pgettext:3:pass-java-printf-format");
   xgettext_record_flag ("GettextResource.npgettext:3:pass-java-format");
+  xgettext_record_flag ("GettextResource.npgettext:3:pass-java-printf-format");
   xgettext_record_flag ("GettextResource.npgettext:4:pass-java-format");
+  xgettext_record_flag ("GettextResource.npgettext:4:pass-java-printf-format");
   xgettext_record_flag ("gettext:1:pass-java-format");
+  xgettext_record_flag ("gettext:1:pass-java-printf-format");
   xgettext_record_flag ("ngettext:1:pass-java-format");
+  xgettext_record_flag ("ngettext:1:pass-java-printf-format");
   xgettext_record_flag ("ngettext:2:pass-java-format");
+  xgettext_record_flag ("ngettext:2:pass-java-printf-format");
   xgettext_record_flag ("pgettext:2:pass-java-format");
+  xgettext_record_flag ("pgettext:2:pass-java-printf-format");
   xgettext_record_flag ("npgettext:2:pass-java-format");
+  xgettext_record_flag ("npgettext:2:pass-java-printf-format");
   xgettext_record_flag ("npgettext:3:pass-java-format");
+  xgettext_record_flag ("npgettext:3:pass-java-printf-format");
   xgettext_record_flag ("getString:1:pass-java-format");
+  xgettext_record_flag ("getString:1:pass-java-printf-format");
   xgettext_record_flag ("MessageFormat:1:java-format");
   xgettext_record_flag ("MessageFormat.format:1:java-format");
+  xgettext_record_flag ("String.format:1:java-printf-format");
+  xgettext_record_flag ("printf:1:java-printf-format"); /* PrintStream.printf */
 }
 
 
 /* ======================== Reading of characters.  ======================== */
-
-/* Real filename, used in error messages about the input file.  */
-static const char *real_file_name;
-
-/* Logical filename and line number, used to label the extracted messages.  */
-static char *logical_file_name;
-static int line_number;
 
 /* The input file stream.  */
 static FILE *fp;
@@ -178,8 +201,8 @@ phase1_getc ()
   if (c == EOF)
     {
       if (ferror (fp))
-        error (EXIT_FAILURE, errno, _("\
-error while reading \"%s\""), real_file_name);
+        error (EXIT_FAILURE, errno,
+               _("error while reading \"%s\""), real_file_name);
     }
 
   return c;
@@ -242,10 +265,10 @@ static int phase2_pushback_length;
 static int
 phase2_getc ()
 {
-  int c;
-
   if (phase2_pushback_length)
     return phase2_pushback[--phase2_pushback_length];
+
+  int c;
 
   c = phase1_getc ();
   if (c == EOF)
@@ -256,10 +279,6 @@ phase2_getc ()
       if (c == 'u')
         {
           unsigned int u_count = 1;
-          unsigned char buf[4];
-          unsigned int n;
-          int i;
-
           for (;;)
             {
               c = phase1_getc ();
@@ -269,8 +288,9 @@ phase2_getc ()
             }
           phase1_ungetc (c);
 
-          n = 0;
-          for (i = 0; i < 4; i++)
+          unsigned char buf[4];
+          unsigned int n = 0;
+          for (int i = 0; i < 4; i++)
             {
               c = phase1_getc ();
 
@@ -384,233 +404,22 @@ phase3_ungetc (int c)
 
 /* ========================= Accumulating strings.  ======================== */
 
-/* A string buffer type that allows appending bytes (in the
-   xgettext_current_source_encoding) or Unicode characters.
-   Returns the entire string in UTF-8 encoding.  */
+/* See xg-mixed-string.h for the main API.  */
 
-struct string_buffer
-{
-  /* The part of the string that has already been converted to UTF-8.  */
-  char *utf8_buffer;
-  size_t utf8_buflen;
-  size_t utf8_allocated;
-  /* The first half of an UTF-16 surrogate character.  */
-  unsigned short utf16_surr;
-  /* The part of the string that is still in the source encoding.  */
-  char *curr_buffer;
-  size_t curr_buflen;
-  size_t curr_allocated;
-  /* The lexical context.  Used only for error message purposes.  */
-  lexical_context_ty lcontext;
-};
-
-/* Initialize a 'struct string_buffer' to empty.  */
-static inline void
-init_string_buffer (struct string_buffer *bp, lexical_context_ty lcontext)
-{
-  bp->utf8_buffer = NULL;
-  bp->utf8_buflen = 0;
-  bp->utf8_allocated = 0;
-  bp->utf16_surr = 0;
-  bp->curr_buffer = NULL;
-  bp->curr_buflen = 0;
-  bp->curr_allocated = 0;
-  bp->lcontext = lcontext;
-}
-
-/* Auxiliary function: Append a byte to bp->curr.  */
-static inline void
-string_buffer_append_byte (struct string_buffer *bp, unsigned char c)
-{
-  if (bp->curr_buflen == bp->curr_allocated)
-    {
-      bp->curr_allocated = 2 * bp->curr_allocated + 10;
-      bp->curr_buffer = xrealloc (bp->curr_buffer, bp->curr_allocated);
-    }
-  bp->curr_buffer[bp->curr_buflen++] = c;
-}
-
-/* Auxiliary function: Ensure count more bytes are available in bp->utf8.  */
-static inline void
-string_buffer_append_unicode_grow (struct string_buffer *bp, size_t count)
-{
-  if (bp->utf8_buflen + count > bp->utf8_allocated)
-    {
-      size_t new_allocated = 2 * bp->utf8_allocated + 10;
-      if (new_allocated < bp->utf8_buflen + count)
-        new_allocated = bp->utf8_buflen + count;
-      bp->utf8_allocated = new_allocated;
-      bp->utf8_buffer = xrealloc (bp->utf8_buffer, new_allocated);
-    }
-}
-
-/* Auxiliary function: Append a Unicode character to bp->utf8.
-   uc must be < 0x110000.  */
-static inline void
-string_buffer_append_unicode (struct string_buffer *bp, ucs4_t uc)
-{
-  unsigned char utf8buf[6];
-  int count = u8_uctomb (utf8buf, uc, 6);
-
-  if (count < 0)
-    /* The caller should have ensured that uc is not out-of-range.  */
-    abort ();
-
-  string_buffer_append_unicode_grow (bp, count);
-  memcpy (bp->utf8_buffer + bp->utf8_buflen, utf8buf, count);
-  bp->utf8_buflen += count;
-}
-
-/* Auxiliary function: Handle the attempt to append a lone surrogate to
-   bp->utf8.  */
+/* Append a character or Unicode character to a 'struct mixed_string_buffer'.  */
 static void
-string_buffer_append_lone_surrogate (struct string_buffer *bp, unsigned int uc)
-{
-  /* A half surrogate is invalid, therefore use U+FFFD instead.
-     It appears to be valid Java: The Java Language Specification,
-     3rd ed., says "The Java programming language represents text
-     in sequences of 16-bit code units, using the UTF-16 encoding."
-     but does not impose constraints on the use of \uxxxx escape
-     sequences for surrogates.  And the JDK's javac happily groks
-     half surrogates.
-     But a half surrogate is invalid in UTF-8:
-       - RFC 3629 says
-           "The definition of UTF-8 prohibits encoding character
-            numbers between U+D800 and U+DFFF".
-       - Unicode 4.0 chapter 3
-         <http://www.unicode.org/versions/Unicode4.0.0/ch03.pdf>
-         section 3.9, p.77, says
-           "Because surrogate code points are not Unicode scalar
-            values, any UTF-8 byte sequence that would otherwise
-            map to code points D800..DFFF is ill-formed."
-         and in table 3-6, p. 78, does not mention D800..DFFF.
-       - The unicode.org FAQ question "How do I convert an unpaired
-         UTF-16 surrogate to UTF-8?" has the answer
-           "By representing such an unpaired surrogate on its own
-            as a 3-byte sequence, the resulting UTF-8 data stream
-            would become ill-formed."
-     So use U+FFFD instead.  */
-  error_with_progname = false;
-  error (0, 0, _("%s:%d: warning: lone surrogate U+%04X"),
-         logical_file_name, line_number, uc);
-  error_with_progname = true;
-  string_buffer_append_unicode (bp, 0xfffd);
-}
-
-/* Auxiliary function: Flush bp->utf16_surr into bp->utf8_buffer.  */
-static inline void
-string_buffer_flush_utf16_surr (struct string_buffer *bp)
-{
-  if (bp->utf16_surr != 0)
-    {
-      string_buffer_append_lone_surrogate (bp, bp->utf16_surr);
-      bp->utf16_surr = 0;
-    }
-}
-
-/* Auxiliary function: Flush bp->curr_buffer into bp->utf8_buffer.  */
-static inline void
-string_buffer_flush_curr_buffer (struct string_buffer *bp, int lineno)
-{
-  if (bp->curr_buflen > 0)
-    {
-      char *curr;
-      size_t count;
-
-      string_buffer_append_byte (bp, '\0');
-
-      /* Convert from the source encoding to UTF-8.  */
-      curr = from_current_source_encoding (bp->curr_buffer, bp->lcontext,
-                                           logical_file_name, lineno);
-
-      /* Append it to bp->utf8_buffer.  */
-      count = strlen (curr);
-      string_buffer_append_unicode_grow (bp, count);
-      memcpy (bp->utf8_buffer + bp->utf8_buflen, curr, count);
-      bp->utf8_buflen += count;
-
-      if (curr != bp->curr_buffer)
-        free (curr);
-      bp->curr_buflen = 0;
-    }
-}
-
-/* Append a character or Unicode character to a 'struct string_buffer'.  */
-static void
-string_buffer_append (struct string_buffer *bp, int c)
+mixed_string_buffer_append (struct mixed_string_buffer *bp, int c)
 {
   if (IS_UNICODE (c))
     {
       /* Append a Unicode character.  */
-
-      /* Switch from multibyte character mode to Unicode character mode.  */
-      string_buffer_flush_curr_buffer (bp, line_number);
-
-      /* Test whether this character and the previous one form a Unicode
-         surrogate character pair.  */
-      if (bp->utf16_surr != 0
-          && (c >= UNICODE (0xdc00) && c < UNICODE (0xe000)))
-        {
-          unsigned short utf16buf[2];
-          ucs4_t uc;
-
-          utf16buf[0] = bp->utf16_surr;
-          utf16buf[1] = UTF16_VALUE (c);
-          if (u16_mbtouc (&uc, utf16buf, 2) != 2)
-            abort ();
-
-          string_buffer_append_unicode (bp, uc);
-          bp->utf16_surr = 0;
-        }
-      else
-        {
-          string_buffer_flush_utf16_surr (bp);
-
-          if (c >= UNICODE (0xd800) && c < UNICODE (0xdc00))
-            bp->utf16_surr = UTF16_VALUE (c);
-          else if (c >= UNICODE (0xdc00) && c < UNICODE (0xe000))
-            string_buffer_append_lone_surrogate (bp, UTF16_VALUE (c));
-          else
-            string_buffer_append_unicode (bp, UTF16_VALUE (c));
-        }
+      mixed_string_buffer_append_unicode (bp, UTF16_VALUE (c));
     }
   else
     {
       /* Append a single byte.  */
-
-      /* Switch from Unicode character mode to multibyte character mode.  */
-      string_buffer_flush_utf16_surr (bp);
-
-      /* When a newline is seen, convert the accumulated multibyte sequence.
-         This ensures a correct line number in the error message in case of
-         a conversion error.  The "- 1" is to account for the newline.  */
-      if (c == '\n')
-        string_buffer_flush_curr_buffer (bp, line_number - 1);
-
-      string_buffer_append_byte (bp, (unsigned char) c);
+      mixed_string_buffer_append_char (bp, (unsigned char) c);
     }
-}
-
-/* Return the string buffer's contents.  */
-static char *
-string_buffer_result (struct string_buffer *bp)
-{
-  /* Flush all into bp->utf8_buffer.  */
-  string_buffer_flush_utf16_surr (bp);
-  string_buffer_flush_curr_buffer (bp, line_number);
-  /* NUL-terminate it.  */
-  string_buffer_append_unicode_grow (bp, 1);
-  bp->utf8_buffer[bp->utf8_buflen] = '\0';
-  /* Return it.  */
-  return bp->utf8_buffer;
-}
-
-/* Free the memory pointed to by a 'struct string_buffer'.  */
-static inline void
-free_string_buffer (struct string_buffer *bp)
-{
-  free (bp->utf8_buffer);
-  free (bp->curr_buffer);
 }
 
 
@@ -619,34 +428,32 @@ free_string_buffer (struct string_buffer *bp)
 
 /* Accumulating a single comment line.  */
 
-static struct string_buffer comment_buffer;
+static struct mixed_string_buffer comment_buffer;
 
 static inline void
 comment_start ()
 {
-  comment_buffer.utf8_buflen = 0;
-  comment_buffer.utf16_surr = 0;
-  comment_buffer.curr_buflen = 0;
-  comment_buffer.lcontext = lc_comment;
+  mixed_string_buffer_init (&comment_buffer, lc_comment,
+                            logical_file_name, line_number);
 }
 
 static inline bool
 comment_at_start ()
 {
-  return (comment_buffer.utf8_buflen == 0 && comment_buffer.utf16_surr == 0
-          && comment_buffer.curr_buflen == 0);
+  return mixed_string_buffer_is_empty (&comment_buffer);
 }
 
 static inline void
 comment_add (int c)
 {
-  string_buffer_append (&comment_buffer, c);
+  mixed_string_buffer_append (&comment_buffer, c);
 }
 
 static inline void
 comment_line_end (size_t chars_to_remove)
 {
-  char *buffer = string_buffer_result (&comment_buffer);
+  char *buffer =
+    mixed_string_contents_free1 (mixed_string_buffer_result (&comment_buffer));
   size_t buflen = strlen (buffer);
 
   buflen -= chars_to_remove;
@@ -670,11 +477,9 @@ static int last_non_comment_line;
 static int
 phase4_getc ()
 {
-  int c0;
   int c;
-  bool last_was_star;
 
-  c0 = phase3_getc ();
+  int c0 = phase3_getc ();
   if (RED (c0) != '/')
     return c0;
   c = phase3_getc ();
@@ -685,45 +490,47 @@ phase4_getc ()
       return c0;
 
     case '*':
-      /* C style comment.  */
-      comment_start ();
-      last_was_star = false;
-      for (;;)
-        {
-          c = phase3_getc ();
-          if (c == P2_EOF)
+      {
+        /* C style comment.  */
+        comment_start ();
+        bool last_was_star = false;
+        for (;;)
+          {
+            c = phase3_getc ();
+            if (c == P2_EOF)
+              break;
+            /* We skip all leading white space, but not EOLs.  */
+            if (!(comment_at_start () && (RED (c) == ' ' || RED (c) == '\t')))
+              comment_add (c);
+            switch (RED (c))
+              {
+              case '\n':
+                comment_line_end (1);
+                comment_start ();
+                last_was_star = false;
+                continue;
+
+              case '*':
+                last_was_star = true;
+                continue;
+
+              case '/':
+                if (last_was_star)
+                  {
+                    comment_line_end (2);
+                    break;
+                  }
+                FALLTHROUGH;
+
+              default:
+                last_was_star = false;
+                continue;
+              }
             break;
-          /* We skip all leading white space, but not EOLs.  */
-          if (!(comment_at_start () && (RED (c) == ' ' || RED (c) == '\t')))
-            comment_add (c);
-          switch (RED (c))
-            {
-            case '\n':
-              comment_line_end (1);
-              comment_start ();
-              last_was_star = false;
-              continue;
-
-            case '*':
-              last_was_star = true;
-              continue;
-
-            case '/':
-              if (last_was_star)
-                {
-                  comment_line_end (2);
-                  break;
-                }
-              /* FALLTHROUGH */
-
-            default:
-              last_was_star = false;
-              continue;
-            }
-          break;
-        }
-      last_comment_line = line_number;
-      return ' ';
+          }
+        last_comment_line = line_number;
+        return ' ';
+      }
 
     case '/':
       /* C++ style comment.  */
@@ -764,11 +571,25 @@ enum token_type_ty
   token_type_rbrace,            /* } */
   token_type_comma,             /* , */
   token_type_dot,               /* . */
-  token_type_string_literal,    /* "abc" */
+  token_type_string_literal,    /* "abc", """text block""" */
   token_type_number,            /* 1.23 */
   token_type_symbol,            /* identifier, keyword, null */
   token_type_plus,              /* + */
-  token_type_other              /* character literal, misc. operator */
+  token_type_conditional,       /* ? */
+  token_type_colon,             /* : */
+  token_type_assign,            /* = */
+  token_type_operator,          /* other operator:
+                                   - ++ -- ~ !
+                                   * / %
+                                   << >> >>>
+                                   < > <= >= == !=
+                                   & ^ | && ||
+                                   *= /= %= += -= <<= >>= >>>= &= ^= |=
+                                   ->
+                                   (switch expressions are not recognized yet.)
+                                 */
+  token_type_semicolon,         /* ; */
+  token_type_other              /* character literal, unknown operator */
 };
 typedef enum token_type_ty token_type_ty;
 
@@ -776,7 +597,8 @@ typedef struct token_ty token_ty;
 struct token_ty
 {
   token_type_ty type;
-  char *string;         /* for token_type_string_literal, token_type_symbol */
+  char *string;                         /* for token_type_symbol */
+  mixed_string_ty *mixed_string;        /* for token_type_string_literal */
   refcounted_string_list_ty *comment;   /* for token_type_string_literal */
   int line_number;
 };
@@ -786,10 +608,13 @@ struct token_ty
 static inline void
 free_token (token_ty *tp)
 {
-  if (tp->type == token_type_string_literal || tp->type == token_type_symbol)
+  if (tp->type == token_type_symbol)
     free (tp->string);
   if (tp->type == token_type_string_literal)
-    drop_reference (tp->comment);
+    {
+      free (tp->mixed_string);
+      drop_reference (tp->comment);
+    }
 }
 
 
@@ -854,12 +679,12 @@ do_getc_escaped ()
 
 /* Read a string literal or character literal.  */
 static void
-accumulate_escaped (struct string_buffer *literal, int delimiter)
+accumulate_escaped (struct mixed_string_buffer *literal, int delimiter)
 {
-  int c;
-
   for (;;)
     {
+      int c;
+
       /* Use phase 3, because phase 4 elides comments.  */
       c = phase3_getc ();
       if (c == P2_EOF || RED (c) == delimiter)
@@ -867,20 +692,342 @@ accumulate_escaped (struct string_buffer *literal, int delimiter)
       if (RED (c) == '\n')
         {
           phase3_ungetc (c);
-          error_with_progname = false;
           if (delimiter == '\'')
-            error (0, 0, _("%s:%d: warning: unterminated character constant"),
-                   logical_file_name, line_number);
+            if_error (IF_SEVERITY_WARNING,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("unterminated character constant"));
           else
-            error (0, 0, _("%s:%d: warning: unterminated string constant"),
-                   logical_file_name, line_number);
-          error_with_progname = true;
+            if_error (IF_SEVERITY_WARNING,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("unterminated string constant"));
           break;
         }
       if (RED (c) == '\\')
         c = do_getc_escaped ();
-      string_buffer_append (literal, c);
+      mixed_string_buffer_append (literal, c);
     }
+}
+
+
+/* Strip the common indentation of the non-blank lines of the given string and
+   remove all trailing whitespace of all lines.
+   Like the Java method String.stripIndent does.
+   <https://docs.oracle.com/en/java/javase/13/docs/api/java.base/java/lang/String.html#stripIndent()>  */
+static void
+strip_indent (mixed_string_ty *ms)
+{
+  size_t nsegments = ms->nsegments;
+  size_t minimum_indentation = SIZE_MAX;
+  {
+    size_t curr_line_indentation = 0;
+    bool curr_line_blank = true;
+
+    for (size_t i = 0; i < nsegments; i++)
+      {
+        struct mixed_string_segment *segment = ms->segments[i];
+
+        if (segment->type == utf8_encoded
+            || (segment->type == source_encoded
+                && xgettext_current_source_encoding == po_charset_utf8))
+          {
+            /* Consider Unicode whitespace characters.  */
+            size_t seglength = segment->length;
+
+            for (size_t j = 0; j < seglength; )
+              {
+                ucs4_t uc;
+                int bytes =
+                  u8_mbtouc (&uc, (const uint8_t *) &segment->contents[j],
+                             seglength - j);
+                j += bytes;
+                if (uc == 0x000a)
+                  {
+                    /* Newline.  */
+                    if (!curr_line_blank)
+                      if (minimum_indentation > curr_line_indentation)
+                        minimum_indentation = curr_line_indentation;
+                    curr_line_indentation = 0;
+                    curr_line_blank = true;
+                  }
+                else if (uc_is_java_whitespace (uc))
+                  {
+                    /* Whitespace character.  */
+                    if (curr_line_blank)
+                      /* Every whitespace character counts as 1, even the TAB
+                         character.  */
+                      curr_line_indentation++;
+                  }
+                else
+                  {
+                    /* Other character.  */
+                    curr_line_blank = false;
+                  }
+              }
+          }
+        else
+          {
+            /* When the encoding is not UTF-8, consider only ASCII whitespace
+               characters.  */
+            size_t seglength = segment->length;
+
+            for (size_t j = 0; j < seglength; j++)
+              {
+                char c = segment->contents[j];
+                if (c == '\n')
+                  {
+                    /* Newline.  */
+                    if (!curr_line_blank)
+                      if (minimum_indentation > curr_line_indentation)
+                        minimum_indentation = curr_line_indentation;
+                    curr_line_indentation = 0;
+                    curr_line_blank = true;
+                  }
+                else if (c == ' '
+                         || (c >= 0x09 && c <= 0x0d)
+                         || (c >= 0x1c && c <= 0x1f))
+                  {
+                    /* Whitespace character.  */
+                    if (curr_line_blank)
+                      /* Every whitespace character counts as 1, even the TAB
+                         character.  */
+                      curr_line_indentation++;
+                  }
+                else
+                  {
+                    /* Other character.  */
+                    curr_line_blank = false;
+                  }
+              }
+          }
+      }
+    /* The indentation of the last line matters even if is blank.  */
+    if (minimum_indentation > curr_line_indentation)
+      minimum_indentation = curr_line_indentation;
+  }
+
+  /* The same loop as above, but this time remove the leading
+     minimum_indentation whitespace characters and all trailing whitespace
+     characters from every line.  */
+  {
+    size_t start_of_curr_line_i = 0;
+    size_t start_of_curr_line_j = 0;
+    size_t start_of_trailing_whitespace_i = 0;
+    size_t start_of_trailing_whitespace_j = 0;
+    size_t whitespace_to_remove = minimum_indentation;
+
+    for (size_t i = 0; i < nsegments; i++)
+      {
+        struct mixed_string_segment *segment = ms->segments[i];
+        /* Perform a sliding copy from segment->contents[from_j] to
+           segment->contents[to_j].  0 <= to_j <= from_j.  */
+        size_t to_j;
+
+        if (segment->type == utf8_encoded
+            || (segment->type == source_encoded
+                && xgettext_current_source_encoding == po_charset_utf8))
+          {
+            /* Consider Unicode whitespace characters.  */
+            size_t seglength = segment->length;
+            size_t from_j;
+
+            for (to_j = from_j = 0; from_j < seglength; )
+              {
+                ucs4_t uc;
+                int bytes =
+                  u8_mbtouc (&uc, (const uint8_t *) &segment->contents[from_j],
+                             seglength - from_j);
+                if (uc == 0x000a)
+                  {
+                    /* Newline.  */
+                    if (whitespace_to_remove > 0)
+                      {
+                        /* It was a blank line with fewer than minimum_indentation
+                           whitespace characters.  Remove all this whitespace.  */
+                        if (start_of_curr_line_i < i)
+                          {
+                            ms->segments[start_of_curr_line_i]->length = start_of_curr_line_j;
+                            for (size_t k = start_of_curr_line_i + 1; k < i; k++)
+                              ms->segments[k]->length = 0;
+                            to_j = 0;
+                          }
+                        else
+                          to_j = start_of_curr_line_j;
+                      }
+                    else
+                      {
+                        /* Remove the trailing whitespace characters from the
+                           current line.  */
+                        if (start_of_trailing_whitespace_i < i)
+                          {
+                            ms->segments[start_of_trailing_whitespace_i]->length = start_of_trailing_whitespace_j;
+                            for (size_t k = start_of_trailing_whitespace_i + 1; k < i; k++)
+                              ms->segments[k]->length = 0;
+                            to_j = 0;
+                          }
+                        else
+                          to_j = start_of_trailing_whitespace_j;
+                      }
+                  }
+                if (to_j < from_j)
+                  memmove (&segment->contents[to_j], &segment->contents[from_j], bytes);
+                from_j += bytes;
+                to_j += bytes;
+                if (uc == 0x000a)
+                  {
+                    /* Newline.  */
+                    start_of_curr_line_i = i;
+                    start_of_curr_line_j = to_j;
+                    start_of_trailing_whitespace_i = i;
+                    start_of_trailing_whitespace_j = to_j;
+                    whitespace_to_remove = minimum_indentation;
+                  }
+                else if (uc_is_java_whitespace (uc))
+                  {
+                    /* Whitespace character.  */
+                    if (whitespace_to_remove > 0
+                        && --whitespace_to_remove == 0)
+                      {
+                        /* Remove the leading minimum_indentation whitespace
+                           characters from the current line.  */
+                        if (start_of_curr_line_i < i)
+                          {
+                            ms->segments[start_of_curr_line_i]->length = start_of_curr_line_j;
+                            for (size_t k = start_of_curr_line_i + 1; k < i; k++)
+                              ms->segments[k]->length = 0;
+                            to_j = 0;
+                          }
+                        else
+                          to_j = start_of_curr_line_j;
+                      }
+                  }
+                else
+                  {
+                    /* Other character.  */
+                    if (whitespace_to_remove > 0)
+                      abort ();
+                    start_of_trailing_whitespace_i = i;
+                    start_of_trailing_whitespace_j = to_j;
+                  }
+              }
+          }
+        else
+          {
+            /* When the encoding is not UTF-8, consider only ASCII whitespace
+               characters.  */
+            size_t seglength = segment->length;
+            size_t from_j;
+
+            for (to_j = from_j = 0; from_j < seglength; )
+              {
+                char c = segment->contents[from_j++];
+                if (c == '\n')
+                  {
+                    /* Newline.  */
+                    if (whitespace_to_remove > 0)
+                      {
+                        /* It was a blank line with fewer than minimum_indentation
+                           whitespace characters.  Remove all this whitespace.  */
+                        if (start_of_curr_line_i < i)
+                          {
+                            ms->segments[start_of_curr_line_i]->length = start_of_curr_line_j;
+                            for (size_t k = start_of_curr_line_i + 1; k < i; k++)
+                              ms->segments[k]->length = 0;
+                            to_j = 0;
+                          }
+                        else
+                          to_j = start_of_curr_line_j;
+                      }
+                    else
+                      {
+                        /* Remove the trailing whitespace characters from the
+                           current line.  */
+                        if (start_of_trailing_whitespace_i < i)
+                          {
+                            ms->segments[start_of_trailing_whitespace_i]->length = start_of_trailing_whitespace_j;
+                            for (size_t k = start_of_trailing_whitespace_i + 1; k < i; k++)
+                              ms->segments[k]->length = 0;
+                            to_j = 0;
+                          }
+                        else
+                          to_j = start_of_trailing_whitespace_j;
+                      }
+                  }
+                segment->contents[to_j++] = c;
+                if (c == '\n')
+                  {
+                    /* Newline.  */
+                    start_of_curr_line_i = i;
+                    start_of_curr_line_j = to_j;
+                    start_of_trailing_whitespace_i = i;
+                    start_of_trailing_whitespace_j = to_j;
+                    whitespace_to_remove = minimum_indentation;
+                  }
+                else if (c == ' '
+                         || (c >= 0x09 && c <= 0x0d)
+                         || (c >= 0x1c && c <= 0x1f))
+                  {
+                    /* Whitespace character.  */
+                    if (whitespace_to_remove > 0
+                        && --whitespace_to_remove == 0)
+                      {
+                        /* Remove the leading minimum_indentation whitespace
+                           characters from the current line.  */
+                        if (start_of_curr_line_i < i)
+                          {
+                            ms->segments[start_of_curr_line_i]->length = start_of_curr_line_j;
+                            for (size_t k = start_of_curr_line_i + 1; k < i; k++)
+                              ms->segments[k]->length = 0;
+                            to_j = 0;
+                          }
+                        else
+                          to_j = start_of_curr_line_j;
+                      }
+                  }
+                else
+                  {
+                    /* Other character.  */
+                    if (whitespace_to_remove > 0)
+                      abort ();
+                    start_of_trailing_whitespace_i = i;
+                    start_of_trailing_whitespace_j = to_j;
+                  }
+              }
+          }
+        if (i + 1 == nsegments)
+          {
+            /* Handle the last line.  */
+            if (whitespace_to_remove > 0)
+              {
+                /* It was a blank line with fewer than minimum_indentation
+                   whitespace characters.  Remove all this whitespace.  */
+                if (start_of_curr_line_i < i)
+                  {
+                    ms->segments[start_of_curr_line_i]->length = start_of_curr_line_j;
+                    for (size_t k = start_of_curr_line_i + 1; k < i; k++)
+                      ms->segments[k]->length = 0;
+                    to_j = 0;
+                  }
+                else
+                  to_j = start_of_curr_line_j;
+              }
+            else
+              {
+                /* Remove the trailing whitespace characters from the
+                   current line.  */
+                if (start_of_trailing_whitespace_i < i)
+                  {
+                    ms->segments[start_of_trailing_whitespace_i]->length = start_of_trailing_whitespace_j;
+                    for (size_t k = start_of_trailing_whitespace_i + 1; k < i; k++)
+                      ms->segments[k]->length = 0;
+                    to_j = 0;
+                  }
+                else
+                  to_j = start_of_trailing_whitespace_j;
+              }
+          }
+        segment->length = to_j;
+      }
+  }
 }
 
 
@@ -892,8 +1039,6 @@ static int phase5_pushback_length;
 static void
 phase5_get (token_ty *tp)
 {
-  int c;
-
   if (phase5_pushback_length)
     {
       *tp = phase5_pushback[--phase5_pushback_length];
@@ -903,6 +1048,8 @@ phase5_get (token_ty *tp)
 
   for (;;)
     {
+      int c;
+
       tp->line_number = line_number;
       c = phase4_getc ();
 
@@ -917,7 +1064,7 @@ phase5_get (token_ty *tp)
         case '\n':
           if (last_non_comment_line > last_comment_line)
             savable_comment_reset ();
-          /* FALLTHROUGH */
+          FALLTHROUGH;
         case ' ':
         case '\t':
         case '\f':
@@ -957,7 +1104,7 @@ phase5_get (token_ty *tp)
               tp->type = token_type_dot;
               return;
             }
-          /* FALLTHROUGH */
+          FALLTHROUGH;
 
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
@@ -1010,17 +1157,11 @@ phase5_get (token_ty *tp)
              characters.  This avoids conversion hassles w.r.t. the --keyword
              arguments, and shouldn't be a big problem in practice.  */
           {
-            static char *buffer;
-            static int bufmax;
-            int bufpos = 0;
+            struct string_buffer buffer;
+            sb_init (&buffer);
             for (;;)
               {
-                if (bufpos >= bufmax)
-                  {
-                    bufmax = 2 * bufmax + 10;
-                    buffer = xrealloc (buffer, bufmax);
-                  }
-                buffer[bufpos++] = RED (c);
+                sb_xappend1 (&buffer, RED (c));
                 c = phase4_getc ();
                 if (!((RED (c) >= 'A' && RED (c) <= 'Z')
                       || (RED (c) >= 'a' && RED (c) <= 'z')
@@ -1029,26 +1170,102 @@ phase5_get (token_ty *tp)
                   break;
               }
             phase4_ungetc (c);
-            if (bufpos >= bufmax)
-              {
-                bufmax = 2 * bufmax + 10;
-                buffer = xrealloc (buffer, bufmax);
-              }
-            buffer[bufpos] = '\0';
-            tp->string = xstrdup (buffer);
+            tp->string = sb_xdupfree_c (&buffer);
             tp->type = token_type_symbol;
             return;
           }
 
         case '"':
+          {
+            int c2 = phase3_getc ();
+            if (c2 == '"')
+              {
+                int c3 = phase3_getc ();
+                if (c3 == '"')
+                  {
+                    /* Text block.  Specification:
+                       <https://docs.oracle.com/javase/specs/jls/se13/preview/text-blocks.html>  */
+
+                    /* Parse the part up to and including the first newline.  */
+                    for (;;)
+                      {
+                        int ic = phase3_getc ();
+                        if (ic == P2_EOF)
+                          {
+                            if_error (IF_SEVERITY_WARNING,
+                                      logical_file_name, line_number, (size_t)(-1), false,
+                                      _("unterminated text block"));
+                            tp->type = token_type_other;
+                            return;
+                          }
+                        if (RED (ic) == ' ' || RED (ic) == '\t' || RED (ic) == '\f')
+                          ;
+                        else if (RED (ic) == '\n')
+                          break;
+                        else
+                          {
+                            if_error (IF_SEVERITY_WARNING,
+                                      logical_file_name, line_number, (size_t)(-1), false,
+                                      _("invalid syntax in text block"));
+                            tp->type = token_type_other;
+                            return;
+                          }
+                      }
+
+                    /* Parse the part after the first newline.  */
+                    struct mixed_string_buffer block;
+                    mixed_string_buffer_init (&block, lc_string,
+                                              logical_file_name, line_number);
+                    unsigned int consecutive_unescaped_doublequotes = 0;
+                    for (;;)
+                      {
+                        int ic = phase3_getc ();
+                        if (RED (ic) == '"')
+                          {
+                            consecutive_unescaped_doublequotes++;
+                            if (consecutive_unescaped_doublequotes == 3)
+                              break;
+                          }
+                        else
+                          {
+                            while (consecutive_unescaped_doublequotes > 0)
+                              {
+                                mixed_string_buffer_append (&block, '"');
+                                consecutive_unescaped_doublequotes--;
+                              }
+                            if (ic == P2_EOF)
+                              {
+                                if_error (IF_SEVERITY_WARNING,
+                                          logical_file_name, block.line_number, (size_t)(-1), false,
+                                          _("unterminated text block"));
+                                break;
+                              }
+                            if (RED (ic) == '\\')
+                              ic = do_getc_escaped ();
+                            mixed_string_buffer_append (&block, ic);
+                          }
+                      }
+                    mixed_string_ty *block_content = mixed_string_buffer_result (&block);
+
+                    /* Remove the common indentation from the content.  */
+                    strip_indent (block_content);
+
+                    tp->mixed_string = block_content;
+                    tp->comment = add_reference (savable_comment);
+                    tp->type = token_type_string_literal;
+                    return;
+                  }
+                phase3_ungetc (c3);
+              }
+            phase3_ungetc (c2);
+          }
           /* String literal.  */
           {
-            struct string_buffer literal;
-
-            init_string_buffer (&literal, lc_string);
+            struct mixed_string_buffer literal;
+            mixed_string_buffer_init (&literal, lc_string,
+                                      logical_file_name, line_number);
             accumulate_escaped (&literal, '"');
-            tp->string = xstrdup (string_buffer_result (&literal));
-            free_string_buffer (&literal);
+            tp->mixed_string = mixed_string_buffer_result (&literal);
             tp->comment = add_reference (savable_comment);
             tp->type = token_type_string_literal;
             return;
@@ -1057,33 +1274,248 @@ phase5_get (token_ty *tp)
         case '\'':
           /* Character literal.  */
           {
-            struct string_buffer literal;
-
-            init_string_buffer (&literal, lc_outside);
+            struct mixed_string_buffer literal;
+            mixed_string_buffer_init (&literal, lc_outside,
+                                      logical_file_name, line_number);
             accumulate_escaped (&literal, '\'');
-            free_string_buffer (&literal);
+            mixed_string_buffer_destroy (&literal);
             tp->type = token_type_other;
             return;
           }
 
         case '+':
-          c = phase4_getc ();
+          c = phase3_getc ();
           if (RED (c) == '+')
             /* Operator ++ */
-            tp->type = token_type_other;
+            tp->type = token_type_operator;
           else if (RED (c) == '=')
             /* Operator += */
-            tp->type = token_type_other;
+            tp->type = token_type_operator;
           else
             {
               /* Operator + */
-              phase4_ungetc (c);
+              phase3_ungetc (c);
               tp->type = token_type_plus;
             }
           return;
 
+        case '-':
+          c = phase3_getc ();
+          if (RED (c) == '-')
+            /* Operator -- */
+            tp->type = token_type_operator;
+          else if (RED (c) == '>')
+            /* Operator -> */
+            tp->type = token_type_operator;
+          else if (RED (c) == '=')
+            /* Operator -= */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Operator - */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '~':
+          /* Operator ~ */
+          tp->type = token_type_operator;
+          return;
+
+        case '!':
+          c = phase3_getc ();
+          if (RED (c) == '=')
+            /* Operator != */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Operator ! */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '*':
+          c = phase3_getc ();
+          if (RED (c) == '=')
+            /* Operator *= */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Operator * */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '/':
+          c = phase3_getc ();
+          if (RED (c) == '=')
+            /* Operator /= */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Operator / */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '%':
+          c = phase3_getc ();
+          if (RED (c) == '=')
+            /* Operator %= */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Operator % */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '<':
+          c = phase3_getc ();
+          if (RED (c) == '=')
+            /* Operator <= */
+            tp->type = token_type_operator;
+          else if (RED (c) == '<')
+            {
+              int c2 = phase3_getc ();
+              if (RED (c2) == '=')
+                /* Operator <<= */
+                tp->type = token_type_operator;
+              else
+                {
+                  /* Operator << */
+                  phase3_ungetc (c2);
+                  tp->type = token_type_operator;
+                }
+            }
+          else
+            {
+              /* Operator < */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '>':
+          c = phase3_getc ();
+          if (RED (c) == '=')
+            /* Operator >= */
+            tp->type = token_type_operator;
+          else if (RED (c) == '>')
+            {
+              int c2 = phase3_getc ();
+              if (RED (c2) == '=')
+                /* Operator >>= */
+                tp->type = token_type_operator;
+              else if (RED (c) == '>')
+                {
+                  int c3 = phase3_getc ();
+                  if (RED (c3) == '=')
+                    /* Operator >>>= */
+                    tp->type = token_type_operator;
+                  else
+                    {
+                      /* Operator >>> */
+                      phase3_ungetc (c3);
+                      tp->type = token_type_operator;
+                    }
+                }
+              else
+                {
+                  /* Operator >> */
+                  phase3_ungetc (c2);
+                  tp->type = token_type_operator;
+                }
+            }
+          else
+            {
+              /* Operator > */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '&':
+          c = phase3_getc ();
+          if (RED (c) == '&')
+            /* Operator && */
+            tp->type = token_type_operator;
+          else if (RED (c) == '=')
+            /* Operator &= */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Operator & */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '^':
+          c = phase3_getc ();
+          if (RED (c) == '=')
+            /* Operator ^= */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Operator ^ */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '|':
+          c = phase3_getc ();
+          if (RED (c) == '|')
+            /* Operator || */
+            tp->type = token_type_operator;
+          else if (RED (c) == '=')
+            /* Operator |= */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Operator | */
+              phase3_ungetc (c);
+              tp->type = token_type_operator;
+            }
+          return;
+
+        case '=':
+          c = phase3_getc ();
+          if (RED (c) == '=')
+            /* Operator == */
+            tp->type = token_type_operator;
+          else
+            {
+              /* Assignment operator = */
+              phase3_ungetc (c);
+              tp->type = token_type_assign;
+            }
+          return;
+
+        case '?':
+          /* Operator ?, used in ternary conditionals.  */
+          tp->type = token_type_conditional;
+          return;
+
+        case ':':
+          /* Operator :, used in ternary conditionals.  */
+          tp->type = token_type_colon;
+          return;
+
+
+        case ';':
+          /* Semicolon.  */
+          tp->type = token_type_semicolon;
+          return;
+
         default:
-          /* Misc. operator.  */
+          /* Unknown operator.  */
           tp->type = token_type_other;
           return;
         }
@@ -1127,32 +1559,26 @@ phase6_get (token_ty *tp)
   phase5_get (tp);
   if (tp->type == token_type_string_literal && phase6_last != token_type_rparen)
     {
-      char *sum = tp->string;
-      size_t sum_len = strlen (sum);
+      mixed_string_ty *sum = tp->mixed_string;
 
       for (;;)
         {
           token_ty token2;
-
           phase5_get (&token2);
+
           if (token2.type == token_type_plus)
             {
               token_ty token3;
-
               phase5_get (&token3);
+
               if (token3.type == token_type_string_literal)
                 {
                   token_ty token_after;
-
                   phase5_get (&token_after);
+
                   if (token_after.type != token_type_dot)
                     {
-                      char *addend = token3.string;
-                      size_t addend_len = strlen (addend);
-
-                      sum = (char *) xrealloc (sum, sum_len + addend_len + 1);
-                      memcpy (sum + sum_len, addend, addend_len + 1);
-                      sum_len += addend_len;
+                      sum = mixed_string_concat_free1 (sum, token3.mixed_string);
 
                       phase5_unget (&token_after);
                       free_token (&token3);
@@ -1166,7 +1592,7 @@ phase6_get (token_ty *tp)
           phase5_unget (&token2);
           break;
         }
-      tp->string = sum;
+      tp->mixed_string = sum;
     }
   phase6_last = tp->type;
 }
@@ -1205,6 +1631,14 @@ x_java_unlex (token_ty *tp)
 static flag_context_list_table_ty *flag_context_list_table;
 
 
+/* Maximum supported nesting depth.  */
+#define MAX_NESTING_DEPTH 1000
+
+/* Current nesting depths.  */
+static int paren_nesting_depth;
+static int brace_nesting_depth;
+
+
 /* The file is broken into tokens.  Scan the token stream, looking for
    a keyword, followed by a left paren, followed by a string.  When we
    see this sequence, we have something to remember.  We assume we are
@@ -1226,7 +1660,7 @@ static flag_context_list_table_ty *flag_context_list_table;
    Return true upon eof, false upon closing parenthesis or brace.  */
 static bool
 extract_parenthesized (message_list_ty *mlp, token_type_ty terminator,
-                       flag_context_ty outer_context,
+                       flag_region_ty *outer_region,
                        flag_context_list_iterator_ty context_iter,
                        struct arglist_parser *argparser)
 {
@@ -1240,9 +1674,10 @@ extract_parenthesized (message_list_ty *mlp, token_type_ty terminator,
   flag_context_list_iterator_ty next_context_iter =
     passthrough_context_list_iterator;
   /* Current context.  */
-  flag_context_ty inner_context =
-    inherited_context (outer_context,
-                       flag_context_list_iterator_advance (&context_iter));
+  flag_context_ty curr_context =
+    flag_context_list_iterator_advance (&context_iter);
+  /* Current region.  */
+  flag_region_ty *inner_region = new_sub_region (outer_region, curr_context);
 
   /* Start state is 0.  */
   state = 0;
@@ -1250,8 +1685,8 @@ extract_parenthesized (message_list_ty *mlp, token_type_ty terminator,
   for (;;)
     {
       token_ty token;
-
       x_java_lex (&token);
+
       switch (token.type)
         {
         case token_type_symbol:
@@ -1263,19 +1698,17 @@ extract_parenthesized (message_list_ty *mlp, token_type_ty terminator,
                symbolJ.....symbolN with J > I.  */
             char *sum = token.string;
             size_t sum_len = strlen (sum);
-            const char *dottedname;
-            flag_context_list_ty *context_list;
 
             for (;;)
               {
                 token_ty token2;
-
                 x_java_lex (&token2);
+
                 if (token2.type == token_type_dot)
                   {
                     token_ty token3;
-
                     x_java_lex (&token3);
+
                     if (token3.type == token_type_symbol)
                       {
                         char *addend = token3.string;
@@ -1297,126 +1730,202 @@ extract_parenthesized (message_list_ty *mlp, token_type_ty terminator,
                 break;
               }
 
-            for (dottedname = sum;;)
+            /* 'return' is a keyword, not a function-like symbol.
+               It needs to be treated specially, because in
+                 return (EXPR).formatted()
+               the extracted strings in EXPR need to be marked as
+               java-printf-format, whereas in
+                 foobar (EXPR).formatted()
+               they should not.  */
+            if (strcmp (sum, "return") != 0)
               {
-                void *keyword_value;
-
-                if (hash_find_entry (&keywords, dottedname, strlen (dottedname),
-                                     &keyword_value)
-                    == 0)
+                for (const char *dottedname = sum;;)
                   {
-                    next_shapes = (const struct callshapes *) keyword_value;
-                    state = 1;
-                    break;
+                    void *keyword_value;
+                    if (hash_find_entry (&keywords, dottedname, strlen (dottedname),
+                                         &keyword_value)
+                        == 0)
+                      {
+                        next_shapes = (const struct callshapes *) keyword_value;
+                        state = 1;
+                        break;
+                      }
+
+                    dottedname = strchr (dottedname, '.');
+                    if (dottedname == NULL)
+                      {
+                        state = 0;
+                        break;
+                      }
+                    dottedname++;
                   }
 
-                dottedname = strchr (dottedname, '.');
-                if (dottedname == NULL)
+                flag_context_list_ty *context_list;
+                for (const char *dottedname = sum;;)
                   {
-                    state = 0;
-                    break;
+                    context_list =
+                      flag_context_list_table_lookup (
+                        flag_context_list_table,
+                        dottedname, strlen (dottedname));
+                    if (context_list != NULL)
+                      break;
+
+                    dottedname = strchr (dottedname, '.');
+                    if (dottedname == NULL)
+                      break;
+                    dottedname++;
                   }
-                dottedname++;
+                next_context_iter = flag_context_list_iterator (context_list);
               }
-
-            for (dottedname = sum;;)
-              {
-                context_list =
-                  flag_context_list_table_lookup (
-                    flag_context_list_table,
-                    dottedname, strlen (dottedname));
-                if (context_list != NULL)
-                  break;
-
-                dottedname = strchr (dottedname, '.');
-                if (dottedname == NULL)
-                  break;
-                dottedname++;
-              }
-            next_context_iter = flag_context_list_iterator (context_list);
 
             free (sum);
-            continue;
+            break;
           }
 
         case token_type_lparen:
+          if (++paren_nesting_depth > MAX_NESTING_DEPTH)
+            if_error (IF_SEVERITY_FATAL_ERROR,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("too many open parentheses"));
           if (extract_parenthesized (mlp, token_type_rparen,
-                                     inner_context, next_context_iter,
+                                     inner_region, next_context_iter,
                                      arglist_parser_alloc (mlp,
                                                            state ? next_shapes : NULL)))
             {
-              xgettext_current_source_encoding = po_charset_utf8;
               arglist_parser_done (argparser, arg);
-              xgettext_current_source_encoding = xgettext_global_source_encoding;
+              unref_region (inner_region);
               return true;
             }
+          paren_nesting_depth--;
+          /* Test whether the next tokens are '.' and 'formatted'.  */
+          {
+            token_ty token2;
+            x_java_lex (&token2);
+            if (token2.type == token_type_dot)
+              {
+                token_ty token3;
+                x_java_lex (&token3);
+                if (token3.type == token_type_symbol
+                    && strcmp (token3.string, "formatted") == 0)
+                  {
+                    /* Mark the messages found in the region as java-printf-format
+                       a posteriori.  */
+                    set_format_flag_on_region (inner_region,
+                                               XFORMAT_SECONDARY, yes_according_to_context);
+                  }
+                x_java_unlex (&token3);
+              }
+            x_java_unlex (&token2);
+          }
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_rparen:
           if (terminator == token_type_rparen)
             {
-              xgettext_current_source_encoding = po_charset_utf8;
               arglist_parser_done (argparser, arg);
-              xgettext_current_source_encoding = xgettext_global_source_encoding;
+              unref_region (inner_region);
               return false;
             }
           if (terminator == token_type_rbrace)
-            {
-              error_with_progname = false;
-              error (0, 0,
-                     _("%s:%d: warning: ')' found where '}' was expected"),
-                     logical_file_name, token.line_number);
-              error_with_progname = true;
-            }
+            if_error (IF_SEVERITY_WARNING,
+                      logical_file_name, token.line_number, (size_t)(-1), false,
+                      _("')' found where '}' was expected"));
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_lbrace:
+          if (++brace_nesting_depth > MAX_NESTING_DEPTH)
+            if_error (IF_SEVERITY_FATAL_ERROR,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("too many open braces"));
           if (extract_parenthesized (mlp, token_type_rbrace,
-                                     null_context, null_context_list_iterator,
+                                     null_context_region (),
+                                     null_context_list_iterator,
                                      arglist_parser_alloc (mlp, NULL)))
             {
-              xgettext_current_source_encoding = po_charset_utf8;
               arglist_parser_done (argparser, arg);
-              xgettext_current_source_encoding = xgettext_global_source_encoding;
+              unref_region (inner_region);
               return true;
             }
+          brace_nesting_depth--;
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_rbrace:
           if (terminator == token_type_rbrace)
             {
-              xgettext_current_source_encoding = po_charset_utf8;
               arglist_parser_done (argparser, arg);
-              xgettext_current_source_encoding = xgettext_global_source_encoding;
+              unref_region (inner_region);
               return false;
             }
           if (terminator == token_type_rparen)
-            {
-              error_with_progname = false;
-              error (0, 0,
-                     _("%s:%d: warning: '}' found where ')' was expected"),
-                     logical_file_name, token.line_number);
-              error_with_progname = true;
-            }
+            if_error (IF_SEVERITY_WARNING,
+                      logical_file_name, token.line_number, (size_t)(-1), false,
+                      _("'}' found where ')' was expected"));
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_comma:
           arg++;
-          inner_context =
-            inherited_context (outer_context,
-                               flag_context_list_iterator_advance (
-                                 &context_iter));
+          unref_region (inner_region);
+          curr_context = flag_context_list_iterator_advance (&context_iter);
+          inner_region = new_sub_region (outer_region, curr_context);
           next_context_iter = passthrough_context_list_iterator;
           state = 0;
-          continue;
+          break;
+
+        case token_type_conditional:
+          /* In an expression A ? B : C, each of A, B, C is a distinct
+             sub-region, and since the value of A is not the value of entire
+             expression, if later set_format_flag_on_region is called on this
+             region or an ancestor region, it shall not have an effect on the
+             remembered messages of A.  */
+          inner_region->inherit_from_parent_region = false;
+          unref_region (inner_region);
+          inner_region = new_sub_region (outer_region, curr_context);
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_colon:
+          /* In an expression A ? B : C, each of A, B, C is a distinct
+             sub-region.  */
+          unref_region (inner_region);
+          inner_region = new_sub_region (outer_region, curr_context);
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_assign:
+          /* In an expression A = B, A and B are distinct sub-regions.
+             The value of B is the value of the entire expression.  */
+          inner_region->inherit_from_parent_region = false;
+          unref_region (inner_region);
+          inner_region = new_sub_region (outer_region, curr_context);
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_plus:
+        case token_type_operator:
+          /* When an expression contains one of these operators, neither the
+             value on the left of the operator nor the value on the right of the
+             operator is string-valued and the value of the entire expression.
+             Therefore, if later set_format_flag_on_region is called on this
+             region or an ancestor region, it shall not have an effect on the
+             remembered messages of this region.  */
+          inner_region->inherit_from_parent_region = false;
+          unref_region (inner_region);
+          inner_region = new_sub_region (outer_region, curr_context);
+          inner_region->inherit_from_parent_region = false;
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
 
         case token_type_string_literal:
           {
@@ -1424,35 +1933,50 @@ extract_parenthesized (message_list_ty *mlp, token_type_ty terminator,
             pos.file_name = logical_file_name;
             pos.line_number = token.line_number;
 
-            xgettext_current_source_encoding = po_charset_utf8;
             if (extract_all)
-              remember_a_message (mlp, NULL, token.string, inner_context,
-                                  &pos, NULL, token.comment);
+              {
+                char *string = mixed_string_contents (token.mixed_string);
+                mixed_string_free (token.mixed_string);
+                remember_a_message (mlp, NULL, string, true, false,
+                                    inner_region, &pos,
+                                    NULL, token.comment, true);
+              }
             else
-              arglist_parser_remember (argparser, arg, token.string,
-                                       inner_context,
+              arglist_parser_remember (argparser, arg, token.mixed_string,
+                                       inner_region,
                                        pos.file_name, pos.line_number,
-                                       token.comment);
-            xgettext_current_source_encoding = xgettext_global_source_encoding;
+                                       token.comment, true);
           }
           drop_reference (token.comment);
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
+
+        case token_type_semicolon:
+          arglist_parser_done (argparser, arg);
+          unref_region (inner_region);
+          if (terminator == token_type_rbrace)
+            {
+              argparser = arglist_parser_alloc (mlp, NULL);
+              inner_region = new_sub_region (outer_region, curr_context);
+              next_context_iter = null_context_list_iterator;
+              state = 0;
+              break;
+            }
+          else
+            return false;
 
         case token_type_eof:
-          xgettext_current_source_encoding = po_charset_utf8;
           arglist_parser_done (argparser, arg);
-          xgettext_current_source_encoding = xgettext_global_source_encoding;
+          unref_region (inner_region);
           return true;
 
         case token_type_dot:
         case token_type_number:
-        case token_type_plus:
         case token_type_other:
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         default:
           abort ();
@@ -1474,19 +1998,28 @@ extract_java (FILE *f,
   logical_file_name = xstrdup (logical_filename);
   line_number = 1;
 
+  phase1_pushback_length = 0;
+  phase2_pushback_length = 0;
+  phase3_pushback_length = 0;
+
   last_comment_line = -1;
   last_non_comment_line = -1;
 
+  phase5_pushback_length = 0;
+  phase6_pushback_length = 0;
   phase6_last = token_type_eof;
 
   flag_context_list_table = flag_table;
+  paren_nesting_depth = 0;
+  brace_nesting_depth = 0;
 
   init_keywords ();
 
   /* Eat tokens until eof is seen.  When extract_parenthesized returns
      due to an unbalanced closing parenthesis, just restart it.  */
   while (!extract_parenthesized (mlp, token_type_eof,
-                                 null_context, null_context_list_iterator,
+                                 null_context_region (),
+                                 null_context_list_iterator,
                                  arglist_parser_alloc (mlp, NULL)))
     ;
 

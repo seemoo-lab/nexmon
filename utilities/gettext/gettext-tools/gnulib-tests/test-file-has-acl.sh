@@ -18,7 +18,7 @@ func_tmpdir ()
   # Use the environment variable TMPDIR, falling back to /tmp. This allows
   # users to specify a different temporary directory, for example, if their
   # /tmp is filled up or too small.
-  : ${TMPDIR=/tmp}
+  : "${TMPDIR=/tmp}"
   {
     # Use the mktemp program if available. If not available, hide the error
     # message.
@@ -41,7 +41,12 @@ func_tmpdir ()
 }
 
 func_tmpdir
-builddir=`pwd`
+# builddir may already be set by the script that invokes this one.
+case "$builddir" in
+  '') builddir=`pwd` ;;
+  /* | ?:*) ;;
+  *) builddir=`pwd`/$builddir ;;
+esac
 cd "$builddir" ||
   {
     echo "$0: cannot determine build directory (unreadable parent dir?)" >&2
@@ -60,24 +65,24 @@ cd "$builddir" ||
   # Classification of the platform according to the programs available for
   # manipulating ACLs.
   # Possible values are:
-  #   linux, cygwin, freebsd, solaris, hpux, hpuxjfs, osf1, aix, macosx, irix, none.
+  #   linux, cygwin, freebsd, solaris, hpux, hpuxjfs, aix, macosx, none.
   # TODO: Support also native Windows platforms (mingw).
   acl_flavor=none
   if (getfacl tmpfile0 >/dev/null) 2>/dev/null; then
     # Platforms with the getfacl and setfacl programs.
-    # Linux, FreeBSD, Solaris, Cygwin.
+    # Linux, FreeBSD, NetBSD >= 10, Solaris, Cygwin.
     if (setfacl --help >/dev/null) 2>/dev/null; then
       # Linux, Cygwin.
-      if (LC_ALL=C setfacl --help | grep ' --set-file' >/dev/null) 2>/dev/null; then
+      if (LC_ALL=C setfacl --help | grep ' --test' >/dev/null) 2>/dev/null; then
         # Linux.
         acl_flavor=linux
       else
         acl_flavor=cygwin
       fi
     else
-      # FreeBSD, Solaris.
+      # FreeBSD, NetBSD >= 10, Solaris.
       if (LC_ALL=C setfacl 2>&1 | grep '\-x entries' >/dev/null) 2>/dev/null; then
-        # FreeBSD.
+        # FreeBSD, NetBSD >= 10.
         acl_flavor=freebsd
       else
         # Solaris.
@@ -87,7 +92,7 @@ cd "$builddir" ||
   else
     if (lsacl / >/dev/null) 2>/dev/null; then
       # Platforms with the lsacl and chacl programs.
-      # HP-UX, sometimes also IRIX.
+      # HP-UX.
       if (getacl tmpfile0 >/dev/null) 2>/dev/null; then
         # HP-UX 11.11 or newer.
         acl_flavor=hpuxjfs
@@ -97,14 +102,8 @@ cd "$builddir" ||
       fi
     else
       if (getacl tmpfile0 >/dev/null) 2>/dev/null; then
-        # Tru64, NonStop Kernel.
-        if (getacl -m tmpfile0 >/dev/null) 2>/dev/null; then
-          # Tru64.
-          acl_flavor=osf1
-        else
-          # NonStop Kernel.
-          acl_flavor=nsk
-        fi
+        # NonStop Kernel.
+        acl_flavor=nsk
       else
         if (aclget tmpfile0 >/dev/null) 2>/dev/null; then
           # AIX.
@@ -113,11 +112,6 @@ cd "$builddir" ||
           if (fsaclctl -v >/dev/null) 2>/dev/null; then
             # Mac OS X.
             acl_flavor=macosx
-          else
-            if test -f /sbin/chacl; then
-              # IRIX.
-              acl_flavor=irix
-            fi
           fi
         fi
       fi
@@ -129,7 +123,7 @@ cd "$builddir" ||
   # matches the expected value.
   func_test_file_has_acl ()
   {
-    res=`"$builddir"/test-file-has-acl${EXEEXT} "$1"`
+    res=`${CHECKER} "$builddir"/test-file-has-acl${EXEEXT} "$1"`
     test "$res" = "$2" || {
       echo "file_has_acl(\"$1\") returned $res, expected $2" 1>&2
       exit 1
@@ -159,26 +153,6 @@ cd "$builddir" ||
           ??????????" "*)
             test "$2" = no || {
               echo "/bin/ls $acl_ls_option $1 shows no ACL, but expected $2" 1>&2
-              exit 1
-            }
-            ;;
-        esac
-      }
-      ;;
-    irix)
-      func_test_has_acl ()
-      {
-        func_test_file_has_acl "$1" "$2"
-        case `/bin/ls -ldD "$1" | sed 1q` in
-          *" []")
-            test "$2" = no || {
-              echo "/bin/ls -ldD $1 shows no ACL, but expected $2" 1>&2
-              exit 1
-            }
-            ;;
-          *)
-            test "$2" = yes || {
-              echo "/bin/ls -ldD $1 shows an ACL, but expected $2" 1>&2
               exit 1
             }
             ;;
@@ -250,12 +224,14 @@ cd "$builddir" ||
       cygwin)
 
         # Set an ACL for a group.
-        if setfacl -m group:0:1 tmpfile0; then
+        # Group 1 in Cygwin corresponds to the DIALUP users (cf.
+        # <https://learn.microsoft.com/en-us/windows/win32/secauthz/well-known-sids>).
+        if setfacl -m group:1:1 tmpfile0; then
 
           func_test_has_acl tmpfile0 yes
 
           # Remove the ACL for the group.
-          setfacl -d group:0 tmpfile0
+          setfacl -d group:1 tmpfile0
 
           func_test_has_acl tmpfile0 no
 
@@ -289,26 +265,6 @@ cd "$builddir" ||
             func_test_has_acl tmpfile0 no
 
           fi
-        fi
-        ;;
-
-      osf1)
-
-        # Set an ACL for a user.
-        setacl -u user:$auid:1 tmpfile0 2> tmp.err
-        cat tmp.err 1>&2
-        if grep 'Error:' tmp.err > /dev/null \
-           || grep 'Operation not supported' tmp.err > /dev/null; then
-          :
-        else
-
-          func_test_has_acl tmpfile0 yes
-
-          # Remove the ACL for the user.
-          setacl -x user:$auid:1 tmpfile0
-
-          func_test_has_acl tmpfile0 no
-
         fi
         ;;
 
@@ -354,23 +310,6 @@ cd "$builddir" ||
 
         func_test_has_acl tmpfile0 no
 
-        ;;
-
-      irix)
-
-        # Set an ACL for a user.
-        /sbin/chacl user::rw-,group::---,other::---,user:$auid:--x tmpfile0 2> tmp.err
-        cat tmp.err 1>&2
-        if test -s tmp.err; then :; else
-
-          func_test_has_acl tmpfile0 yes
-
-          # Remove the ACL for the user.
-          /sbin/chacl user::rw-,group::---,other::--- tmpfile0
-
-          func_test_has_acl tmpfile0 no
-
-        fi
         ;;
 
     esac

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref: 3GPP TS 25.419 version  V9.0.0 (2009-12)
  */
@@ -28,6 +16,7 @@
 #include <epan/packet.h>
 
 #include <epan/asn1.h>
+#include <wsutil/array.h>
 
 #include "packet-tcp.h"
 #include "packet-per.h"
@@ -47,34 +36,33 @@ void proto_register_sabp(void);
 void proto_reg_handoff_sabp(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_sabp = -1;
+static int proto_sabp;
 
-static int hf_sabp_no_of_pages = -1;
-static int hf_sabp_cb_inf_len = -1;
-static int hf_sabp_cb_msg_inf_page = -1;
-static int hf_sabp_cbs_page_content = -1;
+static int hf_sabp_no_of_pages;
+static int hf_sabp_cb_inf_len;
+static int hf_sabp_cb_msg_inf_page;
+static int hf_sabp_cbs_page_content;
 #include "packet-sabp-hf.c"
 
 /* Initialize the subtree pointers */
-static int ett_sabp = -1;
-static int ett_sabp_e212 = -1;
-static int ett_sabp_cbs_data_coding = -1;
-static int ett_sabp_bcast_msg = -1;
-static int ett_sabp_cbs_serial_number = -1;
-static int ett_sabp_cbs_new_serial_number = -1;
-static int ett_sabp_cbs_page = -1;
-static int ett_sabp_cbs_page_content = -1;
+static int ett_sabp;
+static int ett_sabp_e212;
+static int ett_sabp_cbs_data_coding;
+static int ett_sabp_bcast_msg;
+static int ett_sabp_cbs_serial_number;
+static int ett_sabp_cbs_new_serial_number;
+static int ett_sabp_cbs_page;
+static int ett_sabp_cbs_page_content;
 
 #include "packet-sabp-ett.c"
 
 /* Global variables */
-static guint32 ProcedureCode;
-static guint32 ProtocolIE_ID;
-static guint32 ProtocolExtensionID;
-static guint8 sms_encoding;
+static uint32_t ProcedureCode;
+static uint32_t ProtocolIE_ID;
+static uint32_t ProtocolExtensionID;
+static uint8_t sms_encoding;
 
-/* desegmentation of sabp over TCP */
-static gboolean gbl_sabp_desegment = TRUE;
+#define SABP_PORT 3452
 
 /* Dissector tables */
 static dissector_table_t sabp_ies_dissector_table;
@@ -132,11 +120,11 @@ dissect_sabp_cb_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   tvbuff_t *page_tvb, *unpacked_tvb;
   int offset = 0;
   int n;
-  guint8 nr_pages, len, cb_inf_msg_len;
+  uint8_t nr_pages, len, cb_inf_msg_len;
 
 
   /* Octet 1 Number-of-Pages */
-  nr_pages = tvb_get_guint8(tvb, offset);
+  nr_pages = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tree, hf_sabp_no_of_pages, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset++;
   /*
@@ -146,19 +134,20 @@ dissect_sabp_cb_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     /* Error */
     return;
   }
+
   for (n = 0; n < nr_pages; n++) {
     subtree = proto_tree_add_subtree_format(tree, tvb, offset, 83, ett_sabp_cbs_page, NULL,
                 "CB page %u data",  n+1);
     /* octet 2 - 83 CBS-Message-Information-Page 1  */
     cbs_page_item = proto_tree_add_item(subtree, hf_sabp_cb_msg_inf_page, tvb, offset, 82, ENC_NA);
-    cb_inf_msg_len = tvb_get_guint8(tvb,offset+82);
+    cb_inf_msg_len = tvb_get_uint8(tvb,offset+82);
     page_tvb = tvb_new_subset_length(tvb, offset, cb_inf_msg_len);
     unpacked_tvb = dissect_cbs_data(sms_encoding, page_tvb, subtree, pinfo, 0);
-    len = tvb_captured_length(unpacked_tvb);
     if (unpacked_tvb != NULL){
+      len = tvb_captured_length(unpacked_tvb);
       if (tree != NULL){
         proto_tree *cbs_page_subtree = proto_item_add_subtree(cbs_page_item, ett_sabp_cbs_page_content);
-        proto_tree_add_item(cbs_page_subtree, hf_sabp_cbs_page_content, unpacked_tvb, 0, len, ENC_UTF_8|ENC_NA);
+        proto_tree_add_item(cbs_page_subtree, hf_sabp_cbs_page_content, unpacked_tvb, 0, len, ENC_UTF_8);
       }
     }
 
@@ -168,34 +157,6 @@ dissect_sabp_cb_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     offset++;
   }
 }
-
-static guint
-get_sabp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
-{
-  guint32 type_length;
-  int bit_offset;
-  asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
-
-  /* Length should be in the 3:d octet */
-  offset = offset + 3;
-
-  bit_offset = offset<<3;
-  /* Get the length of the sabp packet. offset in bits  */
-  dissect_per_length_determinant(tvb, bit_offset, &asn1_ctx, NULL, -1, &type_length);
-
-  /*
-   * Return the length of the PDU
-   * which is 3 + the length of the length, we only care about length up to 16K
-   * ("n" less than 128) a single octet containing "n" with bit 8 set to zero;
-   * ("n" less than 16K) two octets containing "n" with bit 8 of the first octet set to 1 and bit 7 set to zero;
-   */
-  if (type_length < 128)
-    return type_length+4;
-
-  return type_length+5;
-}
-
 
 static int
 dissect_sabp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
@@ -210,17 +171,47 @@ dissect_sabp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
   sabp_item = proto_tree_add_item(tree, proto_sabp, tvb, 0, -1, ENC_NA);
   sabp_tree = proto_item_add_subtree(sabp_item, ett_sabp);
 
-  dissect_SABP_PDU_PDU(tvb, pinfo, sabp_tree, NULL);
-  return tvb_captured_length(tvb);
+  return dissect_SABP_PDU_PDU(tvb, pinfo, sabp_tree, NULL);
 }
 
 /* Note a little bit of a hack assumes length max takes two bytes and that the length starts at byte 4 */
 static int
 dissect_sabp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
-  tcp_dissect_pdus(tvb, pinfo, tree, gbl_sabp_desegment, 5,
-                   get_sabp_pdu_len, dissect_sabp, data);
-  return tvb_captured_length(tvb);
+  uint32_t type_length, msg_len;
+  unsigned tvb_length;
+  int bit_offset;
+  bool is_fragmented;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+
+  tvb_length = tvb_reported_length(tvb);
+
+  if (tvb_length < 5) {
+    pinfo->desegment_offset = 0;
+    pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
+    return tvb_captured_length(tvb);
+  }
+
+  /* Length should be in the 3:d octet */
+  bit_offset = 24;
+  /* Get the length of the sabp packet. Offset in bits */
+  do {
+    bit_offset = dissect_per_length_determinant(tvb, bit_offset, &asn1_ctx, NULL, -1, &type_length, &is_fragmented);
+    bit_offset += 8*type_length;
+    msg_len = (bit_offset + 7) >> 3;
+    if (is_fragmented) {
+      /* Next length field will take 1 or 2 bytes; let's ask for the maximum */
+      msg_len += 2;
+    }
+    if (msg_len > tvb_length) {
+      pinfo->desegment_offset = 0;
+      pinfo->desegment_len = msg_len - tvb_length;
+      return tvb_captured_length(tvb);
+    }
+  } while (is_fragmented);
+
+  return dissect_sabp(tvb, pinfo, tree, data);
 }
 
 /*--- proto_register_sabp -------------------------------------------*/
@@ -250,7 +241,7 @@ void proto_register_sabp(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_sabp,
     &ett_sabp_e212,
     &ett_sabp_cbs_data_coding,
@@ -286,8 +277,8 @@ void proto_register_sabp(void) {
 void
 proto_reg_handoff_sabp(void)
 {
-  dissector_add_uint("udp.port", 3452, sabp_handle);
-  dissector_add_uint("tcp.port", 3452, sabp_tcp_handle);
+  dissector_add_uint_with_preference("udp.port", SABP_PORT, sabp_handle);
+  dissector_add_uint_with_preference("tcp.port", SABP_PORT, sabp_tcp_handle);
   dissector_add_uint("sctp.ppi", SABP_PAYLOAD_PROTOCOL_ID, sabp_handle);
 
 #include "packet-sabp-dis-tab.c"

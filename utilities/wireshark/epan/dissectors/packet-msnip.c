@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /*
 
@@ -36,27 +24,32 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/expert.h>
 #include <epan/to_str.h>
 #include "packet-igmp.h"
 
 void proto_register_msnip(void);
 void proto_reg_handoff_msnip(void);
 
-static int proto_msnip = -1;
-static int hf_checksum = -1;
-static int hf_checksum_status = -1;
-static int hf_type = -1;
-static int hf_count = -1;
-static int hf_holdtime = -1;
-static int hf_groups = -1;
-static int hf_maddr = -1;
-static int hf_mask = -1;
-static int hf_holdtime16 = -1;
-static int hf_genid = -1;
-static int hf_rec_type = -1;
+static dissector_handle_t msnip_handle;
 
-static int ett_msnip = -1;
-static int ett_groups = -1;
+static int proto_msnip;
+static int hf_checksum;
+static int hf_checksum_status;
+static int hf_type;
+static int hf_count;
+static int hf_holdtime;
+static int hf_groups;
+static int hf_maddr;
+static int hf_mask;
+static int hf_holdtime16;
+static int hf_genid;
+static int hf_rec_type;
+
+static int ett_msnip;
+static int ett_groups;
+
+static expert_field ei_checksum;
 
 #define MC_ALL_IGMPV3_ROUTERS	0xe0000016
 
@@ -81,21 +74,21 @@ static const value_string msnip_rec_types[] = {
 static int
 dissect_msnip_rmr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset)
 {
-	guint8 count;
+	uint8_t count;
 
 	/* group count */
-	count = tvb_get_guint8(tvb, offset);
+	count = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(parent_tree, hf_count, tvb, offset, 1, count);
 	offset += 1;
 
 	/* checksum */
-	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, pinfo, 0);
+	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, &ei_checksum, pinfo, 0);
 	offset += 2;
 
 	while (count--) {
 		proto_tree *tree;
 		proto_item *item;
-		guint8 rec_type;
+		uint8_t rec_type;
 		int old_offset = offset;
 
 		item = proto_tree_add_item(parent_tree, hf_groups,
@@ -103,7 +96,7 @@ dissect_msnip_rmr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, in
 		tree = proto_item_add_subtree(item, ett_groups);
 
 		/* record type */
-		rec_type = tvb_get_guint8(tvb, offset);
+		rec_type = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint(tree, hf_rec_type, tvb, offset, 1, rec_type);
 		offset += 1;
 
@@ -116,8 +109,8 @@ dissect_msnip_rmr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, in
 
 		if (item) {
 			proto_item_set_text(item,"Group: %s %s",
-				tvb_ip_to_str(tvb, offset-4),
-				val_to_str(rec_type, msnip_rec_types,
+				tvb_ip_to_str(pinfo->pool, tvb, offset-4),
+				val_to_str(pinfo->pool, rec_type, msnip_rec_types,
 					"Unknown Type:0x%02x"));
 
 			proto_item_set_len(item, offset-old_offset);
@@ -135,15 +128,15 @@ dissect_msnip_is(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 	offset += 1;
 
 	/* checksum */
-	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, pinfo, 0);
+	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, &ei_checksum, pinfo, 0);
 	offset += 2;
 
 	/* 16 bit holdtime */
-	proto_tree_add_uint(parent_tree, hf_holdtime16, tvb, offset, 2, tvb_get_ntohs(tvb, offset));
+	proto_tree_add_item(parent_tree, hf_holdtime16, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
 
 	/* Generation ID */
-	proto_tree_add_uint(parent_tree, hf_genid, tvb, offset, 2, tvb_get_ntohs(tvb, offset));
+	proto_tree_add_item(parent_tree, hf_genid, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
 
 	return offset;
@@ -153,15 +146,15 @@ dissect_msnip_is(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 static int
 dissect_msnip_gm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset)
 {
-	guint8 count;
+	uint8_t count;
 
 	/* group count */
-	count = tvb_get_guint8(tvb, offset);
+	count = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(parent_tree, hf_count, tvb, offset, 1, count);
 	offset += 1;
 
 	/* checksum */
-	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, pinfo, 0);
+	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, &ei_checksum, pinfo, 0);
 	offset += 2;
 
 	/* holdtime */
@@ -171,7 +164,7 @@ dissect_msnip_gm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 	while (count--) {
 		proto_tree *tree;
 		proto_item *item;
-		guint8 masklen;
+		uint8_t masklen;
 		int old_offset = offset;
 
 		item = proto_tree_add_item(parent_tree, hf_groups,
@@ -183,7 +176,7 @@ dissect_msnip_gm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 		offset += 4;
 
 		/* mask length */
-		masklen = tvb_get_guint8(tvb, offset);
+		masklen = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint(tree, hf_mask, tvb,
 			offset, 1, masklen);
 		offset += 1;
@@ -193,7 +186,7 @@ dissect_msnip_gm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 
 		if (item) {
 			proto_item_set_text(item,"Group: %s/%d",
-				tvb_ip_to_str(tvb, offset - 8), masklen);
+				tvb_ip_to_str(pinfo->pool, tvb, offset - 8), masklen);
 
 			proto_item_set_len(item, offset-old_offset);
 		}
@@ -209,13 +202,13 @@ dissect_msnip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 {
 	proto_tree *tree;
 	proto_item *item;
-	guint8 type;
+	uint8_t type;
 	int offset = 0;
-	guint32 dst = g_htonl(MC_ALL_IGMPV3_ROUTERS);
+	uint32_t dst = g_htonl(MC_ALL_IGMPV3_ROUTERS);
 
 	/* Shouldn't be destined for us */
-	if (memcmp(pinfo->dst.data, &dst, 4))
-	return 0;
+	if ((pinfo->dst.type != AT_IPv4) || memcmp(pinfo->dst.data, &dst, 4))
+		return 0;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "MSNIP");
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -223,9 +216,9 @@ dissect_msnip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	item = proto_tree_add_item(parent_tree, proto_msnip, tvb, offset, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_msnip);
 
-	type = tvb_get_guint8(tvb, offset);
+	type = tvb_get_uint8(tvb, offset);
 	col_add_str(pinfo->cinfo, COL_INFO,
-			val_to_str(type, msnip_types,
+			val_to_str(pinfo->pool, type, msnip_types,
 				"Unknown Type:0x%02x"));
 
 	/* type of command */
@@ -301,30 +294,36 @@ proto_register_msnip(void)
 			  VALS(msnip_rec_types), 0, "MSNIP Record Type", HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_msnip,
 		&ett_groups,
 	};
 
-	proto_msnip = proto_register_protocol("MSNIP: Multicast Source Notification of Interest Protocol",
-	    "MSNIP", "msnip");
+	static ei_register_info ei[] = {
+		{ &ei_checksum, { "msnip.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
+	};
+
+	expert_module_t* expert_msnip;
+
+	proto_msnip = proto_register_protocol("MSNIP: Multicast Source Notification of Interest Protocol", "MSNIP", "msnip");
 	proto_register_field_array(proto_msnip, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+	expert_msnip = expert_register_protocol(proto_msnip);
+	expert_register_field_array(expert_msnip, ei, array_length(ei));
+
+	msnip_handle = register_dissector("msnip", dissect_msnip, proto_msnip);
 }
 
 void
 proto_reg_handoff_msnip(void)
 {
-	dissector_handle_t msnip_handle;
-
-	msnip_handle = create_dissector_handle(dissect_msnip, proto_msnip);
 	dissector_add_uint("igmp.type", IGMP_TYPE_0x23, msnip_handle);
 	dissector_add_uint("igmp.type", IGMP_TYPE_0x24, msnip_handle);
 	dissector_add_uint("igmp.type", IGMP_TYPE_0x25, msnip_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

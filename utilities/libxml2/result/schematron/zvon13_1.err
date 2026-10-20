@@ -1,0 +1,2 @@
+./test/schematron/zvon13_1.xml:1: element Total: schematron error : /Total line 1: The values do not sum to 100%. 
+./test/schematron/zvon13_1.xml fails to validate

@@ -4,10 +4,12 @@
  * giounix.c: IO Channels using unix file descriptors
  * Copyright 1998 Owen Taylor
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,6 +43,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <glib/gstdio.h>
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
 
 #include "giochannel.h"
 
@@ -107,7 +113,8 @@ GSourceFuncs g_io_watch_funcs = {
   g_io_unix_prepare,
   g_io_unix_check,
   g_io_unix_dispatch,
-  g_io_unix_finalize
+  g_io_unix_finalize,
+  NULL, NULL
 };
 
 static GIOFuncs unix_channel_funcs = {
@@ -127,8 +134,6 @@ g_io_unix_prepare (GSource  *source,
 {
   GIOUnixWatch *watch = (GIOUnixWatch *)source;
   GIOCondition buffer_condition = g_io_channel_get_buffer_condition (watch->channel);
-
-  *timeout = -1;
 
   /* Only return TRUE here if _all_ bits in watch->condition will be set
    */
@@ -157,7 +162,7 @@ g_io_unix_dispatch (GSource     *source,
 
   if (!func)
     {
-      g_warning ("IO watch dispatched without callback\n"
+      g_warning ("IO watch dispatched without callback. "
 		 "You must call g_source_connect().");
       return FALSE;
     }
@@ -347,7 +352,7 @@ g_io_unix_create_watch (GIOChannel   *channel,
 
 
   source = g_source_new (&g_io_watch_funcs, sizeof (GIOUnixWatch));
-  g_source_set_name (source, "GIOChannel (Unix)");
+  g_source_set_static_name (source, "GIOChannel (Unix)");
   watch = (GIOUnixWatch *)source;
   
   watch->channel = channel;
@@ -397,7 +402,7 @@ g_io_unix_set_flags (GIOChannel *channel,
 static GIOFlags
 g_io_unix_get_flags (GIOChannel *channel)
 {
-  GIOFlags flags = 0;
+  GIOFlags flags = G_IO_FLAG_NONE;
   glong fcntl_flags;
   GIOUnixChannel *unix_channel = (GIOUnixChannel *) channel;
 
@@ -406,7 +411,7 @@ g_io_unix_get_flags (GIOChannel *channel)
   if (fcntl_flags == -1)
     {
       int err = errno;
-      g_warning (G_STRLOC "Error while getting flags for FD: %s (%d)\n",
+      g_warning (G_STRLOC "Error while getting flags for FD: %s (%d)",
 		 g_strerror (err), err);
       return 0;
     }
@@ -457,7 +462,7 @@ g_io_channel_new_file (const gchar *filename,
     MODE_R_PLUS = MODE_R | MODE_PLUS,
     MODE_W_PLUS = MODE_W | MODE_PLUS,
     MODE_A_PLUS = MODE_A | MODE_PLUS
-  } mode_num;
+  } G_GNUC_FLAG_ENUM mode_num;
   struct stat buffer;
 
   g_return_val_if_fail (filename != NULL, NULL);
@@ -476,7 +481,7 @@ g_io_channel_new_file (const gchar *filename,
         mode_num = MODE_A;
         break;
       default:
-        g_warning ("Invalid GIOFileMode %s.\n", mode);
+        g_warning ("Invalid GIOFileMode %s.", mode);
         return NULL;
     }
 
@@ -490,9 +495,9 @@ g_io_channel_new_file (const gchar *filename,
             mode_num |= MODE_PLUS;
             break;
           }
-        /* Fall through */
+        G_GNUC_FALLTHROUGH;
       default:
-        g_warning ("Invalid GIOFileMode %s.\n", mode);
+        g_warning ("Invalid GIOFileMode %s.", mode);
         return NULL;
     }
 
@@ -524,7 +529,7 @@ g_io_channel_new_file (const gchar *filename,
 
   create_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 
-  fid = g_open (filename, flags, create_mode);
+  fid = g_open (filename, flags | O_CLOEXEC, create_mode);
   if (fid == -1)
     {
       int err = errno;
@@ -592,6 +597,8 @@ g_io_channel_new_file (const gchar *filename,
  * is reading output from a command using via pipe, you may need to set
  * the encoding to the encoding of the current locale (see
  * g_get_charset()) with the g_io_channel_set_encoding() function.
+ * By default, the fd passed will not be closed when the final reference
+ * to the #GIOChannel data structure is dropped.
  *
  * If you want to read raw binary data without interpretation, then
  * call the g_io_channel_set_encoding() function with %NULL for the

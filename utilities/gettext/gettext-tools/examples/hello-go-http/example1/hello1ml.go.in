@@ -1,0 +1,127 @@
+// Example for use of GNU gettext.
+// This file is in the public domain.
+
+// Source code of a Go web server showing the use of a multi-locale API.
+
+
+package main
+
+import (
+	// Documentation: https://pkg.go.dev/fmt
+	"fmt"
+	// Documentation: https://pkg.go.dev/github.com/leonelquinteros/gotext
+	"github.com/leonelquinteros/gotext"
+	// Other Go packages
+	"context"
+	"log"
+	"net/http"
+	"strings"
+)
+
+var localizer_table map[string]*gotext.Locale
+
+// key under which to store the language in the context
+const langKey string = "userLanguage"
+
+// Middleware to extract language from request and store in context
+func languageMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		acceptLang := r.Header.Get("Accept-Language") // Extract language from header
+		// Spec: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language
+		lang := "en" // Default to English
+		if acceptLang != "" {
+			for _, l := range strings.Split(acceptLang, ",") {
+				l = strings.TrimSpace(strings.Split(l, ";")[0]) // Remove quality values
+				if _, exists := localizer_table[l]; exists {
+					lang = l
+					break
+				}
+			}
+		}
+
+		// Store language in the context
+		ctx := context.WithValue(r.Context(), langKey, lang)
+
+		// Pass request with new context to the next handler
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// Handler that retrieves the per-goroutine language from the context
+func handler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve language from the context
+	lang, _ := r.Context().Value(langKey).(string)
+
+	fmt.Fprintf(w, "Detected language: %s\n", lang)
+
+	localizer := localizer_table[lang]
+
+	fmt.Fprintln(w, localizer.Get("Hello, world!"))
+	fmt.Fprintln(w, localizer.Get("Hello %s", "Dolly"))
+}
+
+func main() {
+	// Preload all the existing translations into the localizer_table.
+	// This leads to faster response times than allocating the localizer
+	// lazily, for each HTTP request.
+	localizer_table = make(map[string]*gotext.Locale)
+	for _, language := range []string {
+			"en_US",
+			"ast_ES",
+			"bg_BG",
+			"ca_ES",
+			"cs_CZ",
+			"da_DK",
+			"de_DE",
+			"el_GR",
+			"eo",
+			"es_ES",
+			"fi_FI",
+			"fr_FR",
+			"ga_IE",
+			"gl_ES",
+			"hr_HR",
+			"hu_HU",
+			"id_ID",
+			"it_IT",
+			"ja_JP",
+			"ka_GE",
+			"ky_KG",
+			"lv_LV",
+			"ms_MY",
+			"mt_MT",
+			"nb_NO",
+			"nl_NL",
+			"nn_NO",
+			"pl_PL",
+			"pt_PT",
+			"pt_BR",
+			"ro_RO",
+			"ru_RU",
+			"sk_SK",
+			"sl_SI",
+			"sq_AL",
+			"sr_RS",
+			"sv_SE",
+			"ta_IN",
+			"tr_TR",
+			"uk_UA",
+			"vi_VN",
+			"zh_CN",
+			"zh_HK",
+			"zh_TW",
+		} {
+		// Specify localedir, locale.
+		localizer := gotext.NewLocale("@localedir@", language)
+		// Specify domain.
+		localizer.AddDomain("hello-go-http")
+		localizer_table[strings.Split(language, "_")[0]] = localizer
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", languageMiddleware(http.HandlerFunc(handler)))
+
+	port := 8080
+	fmt.Printf("Server listening on port %d\n", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), mux))
+}

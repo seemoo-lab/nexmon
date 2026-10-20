@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald[AT]wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,8 @@
 
 void proto_register_hsr(void);
 void proto_reg_handoff_hsr(void);
+
+static dissector_handle_t hsr_frame_handle;
 
 /**********************************************************/
 /* Lengths of fields within a HSR packet.                 */
@@ -53,21 +43,21 @@ static const value_string hsr_laneid_vals[] = {
 /* Initialize the protocol and registered fields          */
 /**********************************************************/
 
-static int proto_hsr = -1;
+static int proto_hsr;
 
 /* Initialize supervision frame fields */
 
 
-static int hf_hsr_path = -1;
-static int hf_hsr_netid = -1;
-static int hf_hsr_laneid = -1;
-static int hf_hsr_lsdu_size = -1;
-static int hf_hsr_sequence_nr = -1;
-static int hf_type= -1;
+static int hf_hsr_path;
+static int hf_hsr_netid;
+static int hf_hsr_laneid;
+static int hf_hsr_lsdu_size;
+static int hf_hsr_sequence_nr;
+static int hf_type;
 
 static dissector_table_t ethertype_subdissector_table;
 /* Initialize the subtree pointers */
-static gint ett_hsr_frame = -1;
+static int ett_hsr_frame;
 
 /* Code to actually dissect the packets */
 static int
@@ -76,8 +66,8 @@ dissect_hsr_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     proto_item *ti;
     proto_tree *hsr_tree;
     tvbuff_t *next_tvb;
-    guint16 etype;
-    guint16 lsdu_size, lsdu_size_correct;
+    uint16_t etype;
+    uint16_t lsdu_size, lsdu_size_correct;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "HSR");
 
@@ -170,7 +160,7 @@ void proto_register_hsr(void)
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_hsr_frame,
     };
 
@@ -181,20 +171,20 @@ void proto_register_hsr(void)
     /* Required function calls to register the header fields and subtree used */
     proto_register_field_array(proto_hsr, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    hsr_frame_handle = register_dissector("hsr", dissect_hsr_frame, proto_hsr);
 }
 
 
 void proto_reg_handoff_hsr(void)
 {
-    dissector_handle_t hsr_frame_handle;
-    hsr_frame_handle = create_dissector_handle(dissect_hsr_frame, proto_hsr);
     dissector_add_uint("ethertype", ETHERTYPE_HSR, hsr_frame_handle);
 
     ethertype_subdissector_table = find_dissector_table("ethertype");
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

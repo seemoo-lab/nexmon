@@ -1,27 +1,15 @@
 /* packet-ses.c
-*
-* Routine to dissect ITU-T Rec. X.225 (1995 E)/ISO 8327-1 OSI Session Protocol packets
-*
-* Yuriy Sidelnikov <YSidelnikov@hotmail.com>
-*
-* Wireshark - Network traffic analyzer
-* By Gerald Combs <gerald@wireshark.org>
-* Copyright 1998 Gerald Combs
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ *
+ * Routine to dissect ITU-T Rec. X.225 (1995 E)/ISO 8327-1 OSI Session Protocol packets
+ *
+ * Yuriy Sidelnikov <YSidelnikov@hotmail.com>
+ *
+ * Wireshark - Network traffic analyzer
+ * By Gerald Combs <gerald@wireshark.org>
+ * Copyright 1998 Gerald Combs
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
 #include "config.h"
 
@@ -31,7 +19,8 @@
 #include <epan/conversation.h>
 #include <epan/reassemble.h>
 #include <epan/proto_data.h>
-
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include <wsutil/str_util.h>
 
 #include "packet-ber.h"
@@ -44,98 +33,98 @@ void proto_register_clses(void);
 void proto_reg_handoff_clses(void);
 
 /* ses header fields             */
-static int proto_ses          = -1;
-static int hf_ses_type        = -1;
-static int hf_ses_type_0      = -1;
-static int hf_ses_length      = -1;
-/* static int hf_ses_version     = -1; */
-/* static int hf_ses_reserved    = -1; */
+static int proto_ses;
+static int hf_ses_type;
+static int hf_ses_type_0;
+static int hf_ses_length;
+/* static int hf_ses_version; */
+/* static int hf_ses_reserved; */
 
-static int hf_ses_segment_data = -1;
-static int hf_ses_segments = -1;
-static int hf_ses_segment = -1;
-static int hf_ses_segment_overlap = -1;
-static int hf_ses_segment_overlap_conflicts = -1;
-static int hf_ses_segment_multiple_tails = -1;
-static int hf_ses_segment_too_long_segment = -1;
-static int hf_ses_segment_error = -1;
-static int hf_ses_segment_count = -1;
-static int hf_ses_reassembled_in = -1;
-static int hf_ses_reassembled_length = -1;
+static int hf_ses_segment_data;
+static int hf_ses_segments;
+static int hf_ses_segment;
+static int hf_ses_segment_overlap;
+static int hf_ses_segment_overlap_conflicts;
+static int hf_ses_segment_multiple_tails;
+static int hf_ses_segment_too_long_segment;
+static int hf_ses_segment_error;
+static int hf_ses_segment_count;
+static int hf_ses_reassembled_in;
+static int hf_ses_reassembled_length;
 
 /* ses fields defining a sub tree */
-static gint ett_ses           = -1;
-static gint ett_ses_param     = -1;
+static int ett_ses;
+static int ett_ses_param;
 
-static gint ett_ses_segment = -1;
-static gint ett_ses_segments = -1;
+static int ett_ses_segment;
+static int ett_ses_segments;
 
 
 /* flags */
-static int hf_connect_protocol_options_flags = -1;
-static int hf_version_number_options_flags = -1;
-static int hf_enclosure_item_options_flags = -1;
-static int hf_token_item_options_flags = -1;
+static int hf_connect_protocol_options_flags;
+static int hf_version_number_options_flags;
+static int hf_enclosure_item_options_flags;
+static int hf_token_item_options_flags;
 
-static gint ett_connect_protocol_options_flags = -1;
-static gint ett_transport_options_flags = -1;
-static gint ett_protocol_version_flags = -1;
-static gint ett_enclosure_item_flags = -1;
-static gint ett_token_item_flags = -1;
-static gint ett_ses_req_options_flags = -1;
+static int ett_connect_protocol_options_flags;
+static int ett_transport_options_flags;
+static int ett_protocol_version_flags;
+static int ett_enclosure_item_flags;
+static int ett_token_item_flags;
+static int ett_ses_req_options_flags;
 
 /* called SS user reference */
-static int hf_called_ss_user_reference = -1;
+static int hf_called_ss_user_reference;
 
 /* calling SS user reference */
-static int hf_calling_ss_user_reference = -1;
+static int hf_calling_ss_user_reference;
 
 /* common reference */
-static int hf_common_reference = -1;
+static int hf_common_reference;
 
 /* additional reference information */
-static int hf_additional_reference_information = -1;
+static int hf_additional_reference_information;
 
 /* token item */
-static int hf_release_token = -1;
-static int hf_major_activity_token = -1;
-static int hf_synchronize_minor_token = -1;
-static int hf_data_token = -1;
+static int hf_release_token;
+static int hf_major_activity_token;
+static int hf_synchronize_minor_token;
+static int hf_data_token;
 
 /* protocol options */
-static int hf_able_to_receive_extended_concatenated_SPDU = -1;
+static int hf_able_to_receive_extended_concatenated_SPDU;
 
 /* session requirement */
-static int hf_session_user_req_flags = -1;
-static int hf_session_exception_report= -1;
-static int hf_data_separation_function_unit= -1;
-static int hf_symmetric_synchronize_function_unit= -1;
-static int hf_typed_data_function_unit= -1;
-static int hf_exception_function_unit= -1;
-static int hf_capability_function_unit=-1;
-static int hf_negotiated_release_function_unit= -1;
-static int hf_activity_management_function_unit= -1;
-static int hf_resynchronize_function_unit= -1;
-static int hf_major_resynchronize_function_unit= -1;
-static int hf_minor_resynchronize_function_unit= -1;
-static int hf_expedited_data_resynchronize_function_unit= -1;
-static int hf_duplex_function_unit= -1;
-static int hf_half_duplex_function_unit = -1;
+static int hf_session_user_req_flags;
+static int hf_session_exception_report;
+static int hf_data_separation_function_unit;
+static int hf_symmetric_synchronize_function_unit;
+static int hf_typed_data_function_unit;
+static int hf_exception_function_unit;
+static int hf_capability_function_unit;
+static int hf_negotiated_release_function_unit;
+static int hf_activity_management_function_unit;
+static int hf_resynchronize_function_unit;
+static int hf_major_resynchronize_function_unit;
+static int hf_minor_resynchronize_function_unit;
+static int hf_expedited_data_resynchronize_function_unit;
+static int hf_duplex_function_unit;
+static int hf_half_duplex_function_unit;
 
 /* TSDU maximum size */
-static int hf_proposed_tsdu_maximum_size_i2r = -1;
-static int hf_proposed_tsdu_maximum_size_r2i = -1;
+static int hf_proposed_tsdu_maximum_size_i2r;
+static int hf_proposed_tsdu_maximum_size_r2i;
 
 /* protocol version */
-static int hf_protocol_version_1 = -1;
-static int hf_protocol_version_2 = -1;
+static int hf_protocol_version_1;
+static int hf_protocol_version_2;
 
 /* initial serial number */
-static int hf_initial_serial_number = -1;
+static int hf_initial_serial_number;
 
 /* enclosure item */
-static int hf_beginning_of_SSDU = -1;
-static int hf_end_of_SSDU = -1;
+static int hf_beginning_of_SSDU;
+static int hf_end_of_SSDU;
 
 /* token setting item */
 
@@ -149,57 +138,57 @@ static const value_string token_setting_vals[] = {
 
 static const true_false_string tfs_released_kept = { "Released", "Kept" };
 
-static int hf_release_token_setting = -1;
-static int hf_major_activity_token_setting = -1;
-static int hf_synchronize_minor_token_setting = -1;
-static int hf_data_token_setting = -1;
+static int hf_release_token_setting;
+static int hf_major_activity_token_setting;
+static int hf_synchronize_minor_token_setting;
+static int hf_data_token_setting;
 
 /* calling session selector */
-static int hf_calling_session_selector = -1;
+static int hf_calling_session_selector;
 
 /* called session selector */
-static int hf_called_session_selector = -1;
+static int hf_called_session_selector;
 
 /* activity id */
-static int hf_activity_identifier = -1;
+static int hf_activity_identifier;
 
 /* serial number */
-static int hf_serial_number = -1;
+static int hf_serial_number;
 
 /* second serial number */
-static int hf_second_serial_number = -1;
+static int hf_second_serial_number;
 
 /* second initial serial number */
-static int hf_second_initial_serial_number = -1;
+static int hf_second_initial_serial_number;
 
 /* large initial serial number */
-static int hf_large_initial_serial_number = -1;
+static int hf_large_initial_serial_number;
 
 /* large second initial serial number */
-static int hf_large_second_initial_serial_number = -1;
+static int hf_large_second_initial_serial_number;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_ses_reason_code = -1;
-static int hf_ses_transport_implementation_restriction = -1;
-static int hf_ses_transport_no_reason = -1;
-static int hf_ses_parameter_group_inside_parameter_group = -1;
-static int hf_ses_user_data = -1;
-static int hf_ses_parameter_type = -1;
-static int hf_ses_transport_protocol_error = -1;
-static int hf_ses_transport_user_abort = -1;
-static int hf_ses_parameter_length = -1;
-static int hf_ses_transport_connection = -1;
-static int hf_ses_transport_option_flags = -1;
+static int hf_ses_reason_code;
+static int hf_ses_transport_implementation_restriction;
+static int hf_ses_transport_no_reason;
+static int hf_ses_parameter_group_inside_parameter_group;
+static int hf_ses_user_data;
+static int hf_ses_parameter_type;
+static int hf_ses_transport_protocol_error;
+static int hf_ses_transport_user_abort;
+static int hf_ses_parameter_length;
+static int hf_ses_transport_connection;
+static int hf_ses_transport_option_flags;
 
 /* clses header fields             */
-static int proto_clses          = -1;
+static int proto_clses;
 
-static expert_field ei_ses_bad_length = EI_INIT;
-static expert_field ei_ses_bad_parameter_length = EI_INIT;
+static expert_field ei_ses_bad_length;
+static expert_field ei_ses_bad_parameter_length;
 
 #define PROTO_STRING_CLSES "ISO 9548-1 OSI Connectionless Session Protocol"
 
-static dissector_handle_t pres_handle = NULL;
+static dissector_handle_t pres_handle;
 
 static reassembly_table ses_reassembly_table;
 
@@ -330,14 +319,14 @@ static const value_string reason_vals[] =
 static value_string_ext reason_vals_ext = VALUE_STRING_EXT_INIT(reason_vals);
 
 /* desegmentation of OSI over ses  */
-static gboolean ses_desegment = TRUE;
+static bool ses_desegment = true;
 
 /* RTSE reassembly data */
-static guint ses_pres_ctx_id = 0;
-static gboolean ses_rtse_reassemble = FALSE;
+static unsigned ses_pres_ctx_id;
+static bool ses_rtse_reassemble;
 
 static void
-call_pres_dissector(tvbuff_t *tvb, int offset, guint16 param_len,
+call_pres_dissector(tvbuff_t *tvb, int offset, uint16_t param_len,
 		    packet_info *pinfo, proto_tree *tree,
 		    proto_tree *param_tree,
 		    struct SESSION_DATA_STRUCTURE *session)
@@ -367,9 +356,9 @@ call_pres_dissector(tvbuff_t *tvb, int offset, guint16 param_len,
 static int
 get_item_len(tvbuff_t *tvb, int offset, int *len_len)
 {
-	guint16 len;
+	uint16_t len;
 
-	len = tvb_get_guint8(tvb, offset);
+	len = tvb_get_uint8(tvb, offset);
 	if(len == TWO_BYTE_LEN)
 	{
 		len = tvb_get_ntohs(tvb, offset+1);
@@ -380,23 +369,23 @@ get_item_len(tvbuff_t *tvb, int offset, int *len_len)
 	return len;
 }
 
-static gboolean
+static bool
 dissect_parameter(tvbuff_t *tvb, int offset, proto_tree *tree,
-	          proto_tree *param_tree, packet_info *pinfo, guint8 param_type,
-	          guint16 param_len, proto_item *param_len_item, guint8 *enclosure_item_flags,
+	          proto_tree *param_tree, packet_info *pinfo, uint8_t param_type,
+	          uint16_t param_len, proto_item *param_len_item, uint8_t *enclosure_item_flags,
 		  struct SESSION_DATA_STRUCTURE *session)
 {
-	gboolean has_user_information = TRUE;
-	guint16       flags;
+	bool has_user_information = true;
+	uint16_t      flags;
 	asn1_ctx_t asn1_ctx;
-	static const int * item_option_flags[] = {
+	static int * const item_option_flags[] = {
 		&hf_release_token,
 		&hf_major_activity_token,
 		&hf_synchronize_minor_token,
 		&hf_data_token,
 		NULL
 	};
-	static const int * transport_option_flags[] = {
+	static int * const transport_option_flags[] = {
 		&hf_ses_transport_connection,
 		&hf_ses_transport_user_abort,
 		&hf_ses_transport_protocol_error,
@@ -404,11 +393,11 @@ dissect_parameter(tvbuff_t *tvb, int offset, proto_tree *tree,
 		&hf_ses_transport_implementation_restriction,
 		NULL
 	};
-	static const int * protocol_options_flags[] = {
+	static int * const protocol_options_flags[] = {
 		&hf_able_to_receive_extended_concatenated_SPDU,
 		NULL
 	};
-	static const int * req_options_flags[] = {
+	static int * const req_options_flags[] = {
 		&hf_session_exception_report,
 		&hf_data_separation_function_unit,
 		&hf_symmetric_synchronize_function_unit,
@@ -425,18 +414,18 @@ dissect_parameter(tvbuff_t *tvb, int offset, proto_tree *tree,
 		&hf_half_duplex_function_unit,
 		NULL
 	};
-	static const int * version_flags[] = {
+	static int * const version_flags[] = {
 		&hf_protocol_version_2,
 		&hf_protocol_version_1,
 		NULL
 	};
-	static const int * enclosure_flags[] = {
+	static int * const enclosure_flags[] = {
 		&hf_end_of_SSDU,
 		&hf_beginning_of_SSDU,
 		NULL
 	};
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	switch (param_type)
 	{
@@ -496,7 +485,7 @@ dissect_parameter(tvbuff_t *tvb, int offset, proto_tree *tree,
 		}
 		proto_tree_add_bitmask(param_tree, tvb, offset, hf_ses_transport_option_flags, ett_transport_options_flags, transport_option_flags, ENC_NA);
 
-		if(tvb_get_guint8(tvb, offset) & user_abort )
+		if(tvb_get_uint8(tvb, offset) & user_abort )
 		{
 			session->abort_type = SESSION_USER_ABORT;
 		}
@@ -561,7 +550,7 @@ dissect_parameter(tvbuff_t *tvb, int offset, proto_tree *tree,
 
 		proto_tree_add_item(param_tree,
 			    hf_initial_serial_number,
-			    tvb, offset, param_len, ENC_ASCII|ENC_NA);
+			    tvb, offset, param_len, ENC_ASCII);
 		break;
 
 	case EnclosureItem:
@@ -571,8 +560,8 @@ dissect_parameter(tvbuff_t *tvb, int offset, proto_tree *tree,
 			    "Length is %u, should be 1", param_len);
 			break;
 		}
-		flags = tvb_get_guint8(tvb, offset);
-		*enclosure_item_flags = (guint8) flags;
+		flags = tvb_get_uint8(tvb, offset);
+		*enclosure_item_flags = (uint8_t) flags;
 		proto_tree_add_bitmask(param_tree, tvb, offset, hf_enclosure_item_options_flags, ett_enclosure_item_flags, enclosure_flags, ENC_BIG_ENDIAN);
 
 		if (flags & END_SPDU) {
@@ -594,7 +583,7 @@ dissect_parameter(tvbuff_t *tvb, int offset, proto_tree *tree,
 		     * So, there is only no user information if *only* END_SPDU is set.
 		     */
 
-		     has_user_information = FALSE;
+		     has_user_information = false;
 		  }
 		}
 		break;
@@ -641,7 +630,7 @@ dissect_parameter(tvbuff_t *tvb, int offset, proto_tree *tree,
 
 		proto_tree_add_item(param_tree,
 			    hf_serial_number,
-			    tvb, offset, param_len, ENC_ASCII|ENC_NA);
+			    tvb, offset, param_len, ENC_ASCII);
 		break;
 
 	case Reason_Code:
@@ -700,7 +689,7 @@ PICS.    */
 
 		proto_tree_add_item(param_tree,
 			    hf_second_serial_number,
-			    tvb, offset, param_len, ENC_ASCII|ENC_NA);
+			    tvb, offset, param_len, ENC_ASCII);
 		break;
 
 	case Second_Initial_Serial_Number:
@@ -709,7 +698,7 @@ PICS.    */
 
 		proto_tree_add_item(param_tree,
 			    hf_second_initial_serial_number,
-			    tvb, offset, param_len, ENC_ASCII|ENC_NA);
+			    tvb, offset, param_len, ENC_ASCII);
 		break;
 
 	case Large_Initial_Serial_Number:
@@ -718,7 +707,7 @@ PICS.    */
 
 		proto_tree_add_item(param_tree,
 			    hf_large_initial_serial_number,
-			    tvb, offset, param_len, ENC_ASCII|ENC_NA);
+			    tvb, offset, param_len, ENC_ASCII);
 		break;
 
 	case Large_Second_Initial_Serial_Number:
@@ -727,7 +716,7 @@ PICS.    */
 
 		proto_tree_add_item(param_tree,
 			    hf_large_second_initial_serial_number,
-			    tvb, offset, param_len, ENC_ASCII|ENC_NA);
+			    tvb, offset, param_len, ENC_ASCII);
 		break;
 
 	default:
@@ -736,25 +725,25 @@ PICS.    */
 	return has_user_information;
 }
 
-static gboolean
+static bool
 dissect_parameter_group(tvbuff_t *tvb, int offset, proto_tree *tree,
-		        proto_tree *pg_tree, packet_info *pinfo, guint16 pg_len,
-		        guint8 *enclosure_item_flags, struct SESSION_DATA_STRUCTURE *session)
+		        proto_tree *pg_tree, packet_info *pinfo, uint16_t pg_len,
+		        uint8_t *enclosure_item_flags, struct SESSION_DATA_STRUCTURE *session)
 {
-	gboolean has_user_information = TRUE;
+	bool has_user_information = true;
 	proto_item *ti, *param_len_item;
 	proto_tree *param_tree;
-	guint8 param_type;
+	uint8_t param_type;
 	const char *param_str;
 	int len_len;
-	guint16 param_len;
+	uint16_t param_len;
 
 	while(pg_len != 0)
 	{
-		param_type = tvb_get_guint8(tvb, offset);
+		param_type = tvb_get_uint8(tvb, offset);
 		param_tree = proto_tree_add_subtree(pg_tree, tvb, offset, -1,
 			ett_ses_param, &ti,
-			val_to_str_ext(param_type, &param_vals_ext, "Unknown parameter type (0x%02x)"));
+			val_to_str_ext(pinfo->pool, param_type, &param_vals_ext, "Unknown parameter type (0x%02x)"));
 		param_str = val_to_str_ext_const(param_type, &param_vals_ext, "Unknown");
 		proto_tree_add_item(param_tree, hf_ses_parameter_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset++;
@@ -792,7 +781,7 @@ dissect_parameter_group(tvbuff_t *tvb, int offset, proto_tree *tree,
 				if (!dissect_parameter(tvb, offset, tree,
 				    param_tree, pinfo, param_type, param_len, param_len_item,
 				    enclosure_item_flags, session))
-					has_user_information = FALSE;
+					has_user_information = false;
 				break;
 			}
 		}
@@ -803,27 +792,27 @@ dissect_parameter_group(tvbuff_t *tvb, int offset, proto_tree *tree,
 }
 
 /*
- * Returns TRUE if there's a User Information field in this SPDU, FALSE
+ * Returns true if there's a User Information field in this SPDU, false
  * otherwise.
  */
-static gboolean
-dissect_parameters(tvbuff_t *tvb, int offset, guint16 len, proto_tree *tree,
+static bool
+dissect_parameters(tvbuff_t *tvb, int offset, uint16_t len, proto_tree *tree,
 	           proto_tree *ses_tree, packet_info *pinfo,
-	           guint8 *enclosure_item_flags, struct SESSION_DATA_STRUCTURE *session)
+	           uint8_t *enclosure_item_flags, struct SESSION_DATA_STRUCTURE *session)
 {
-	gboolean has_user_information = TRUE;
+	bool has_user_information = true;
 	proto_item *ti, *param_len_item;
 	proto_tree *param_tree;
-	guint8 param_type;
+	uint8_t param_type;
 	const char *param_str;
 	int len_len;
-	guint16 param_len;
+	uint16_t param_len;
 
 	while (len != 0)
 	{
-		param_type = tvb_get_guint8(tvb, offset);
+		param_type = tvb_get_uint8(tvb, offset);
 		param_tree = proto_tree_add_subtree(ses_tree, tvb, offset, -1, ett_ses_param, &ti,
-		    val_to_str_ext(param_type, &param_vals_ext,
+		    val_to_str_ext(pinfo->pool, param_type, &param_vals_ext,
 		      "Unknown parameter type (0x%02x)"));
 		param_str = val_to_str_ext_const(param_type, &param_vals_ext, "Unknown");
 		proto_tree_add_item(param_tree, hf_ses_parameter_type, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -866,7 +855,7 @@ dissect_parameters(tvbuff_t *tvb, int offset, guint16 len, proto_tree *tree,
 				/* Yes. */
 				if (!dissect_parameter_group(tvb, offset, tree,
 				    param_tree, pinfo, param_len, enclosure_item_flags, session))
-					has_user_information = FALSE;
+					has_user_information = false;
 				break;
 
 			/* everything else is a PI */
@@ -874,7 +863,7 @@ dissect_parameters(tvbuff_t *tvb, int offset, guint16 len, proto_tree *tree,
 				if (!dissect_parameter(tvb, offset, tree,
 				    param_tree, pinfo, param_type, param_len, param_len_item,
 				    enclosure_item_flags, session))
-					has_user_information = FALSE;
+					has_user_information = false;
 				break;
 			}
 		}
@@ -889,32 +878,32 @@ dissect_parameters(tvbuff_t *tvb, int offset, guint16 len, proto_tree *tree,
  */
 static int
 dissect_spdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
-	     gboolean tokens, gboolean connectionless)
+	     bool tokens, bool connectionless)
 {
-	gboolean has_user_information = FALSE;
-	guint8 type;
+	bool has_user_information = false;
+	uint8_t type;
 	proto_item *ti = NULL;
 	proto_tree *ses_tree = NULL;
 	int len_len;
-	guint16 parameters_len;
+	uint16_t parameters_len;
 	tvbuff_t *next_tvb = NULL;
-	guint32 *pres_ctx_id = NULL;
-	guint8 enclosure_item_flags = BEGINNING_SPDU|END_SPDU;
+	uint32_t *pres_ctx_id = NULL;
+	uint8_t enclosure_item_flags = BEGINNING_SPDU|END_SPDU;
 	struct SESSION_DATA_STRUCTURE session;
 
 	/*
 	 * Get SPDU type.
 	 */
-	type = tvb_get_guint8(tvb, offset);
+	type = tvb_get_uint8(tvb, offset);
 	session.spdu_type = type;
 	session.abort_type = SESSION_NO_ABORT;
 	session.pres_ctx_id = 0;
 	session.ros_op = 0;
-	session.rtse_reassemble = FALSE;
+	session.rtse_reassemble = false;
 
 	if(connectionless) {
 		col_add_str(pinfo->cinfo, COL_INFO,
-			    val_to_str_ext(type, &ses_vals_ext, "Unknown SPDU type (0x%02x)"));
+			    val_to_str_ext(pinfo->pool, type, &ses_vals_ext, "Unknown SPDU type (0x%02x)"));
 		if (tree) {
 			ti = proto_tree_add_item(tree, proto_clses, tvb, offset,
 				-1, ENC_NA);
@@ -922,11 +911,11 @@ dissect_spdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
 			proto_tree_add_uint(ses_tree, hf_ses_type, tvb,
 				offset, 1, type);
 		}
-		has_user_information = TRUE;
+		has_user_information = true;
 	}
 	else if (tokens) {
 		col_add_str(pinfo->cinfo, COL_INFO,
-			    val_to_str(type, ses_category0_vals, "Unknown SPDU type (0x%02x)"));
+			    val_to_str(pinfo->pool, type, ses_category0_vals, "Unknown SPDU type (0x%02x)"));
 		if (tree) {
 			ti = proto_tree_add_item(tree, proto_ses, tvb, offset,
 			    -1, ENC_NA);
@@ -936,7 +925,7 @@ dissect_spdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
 		}
 	} else {
 		col_add_str(pinfo->cinfo, COL_INFO,
-			    val_to_str_ext(type, &ses_vals_ext, "Unknown SPDU type (0x%02x)"));
+			    val_to_str_ext(pinfo->pool, type, &ses_vals_ext, "Unknown SPDU type (0x%02x)"));
 		if (tree) {
 			ti = proto_tree_add_item(tree, proto_ses, tvb, offset,
 				-1, ENC_NA);
@@ -952,22 +941,22 @@ dissect_spdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
 		case SES_DATA_TRANSFER:
 		case SES_EXPEDITED:
 		case SES_TYPED_DATA:
-			has_user_information = TRUE;
+			has_user_information = true;
 			break;
 		case SES_MAJOR_SYNC_POINT:
-			pres_ctx_id = (guint32 *)p_get_proto_data(wmem_file_scope(), pinfo, proto_ses, 0);
+			pres_ctx_id = (uint32_t *)p_get_proto_data(wmem_file_scope(), pinfo, proto_ses, 0);
 			if (ses_rtse_reassemble != 0 && !pres_ctx_id) {
 				/* First time visited - save pres_ctx_id */
-				pres_ctx_id = wmem_new(wmem_file_scope(), guint32);
+				pres_ctx_id = wmem_new(wmem_file_scope(), uint32_t);
 				*pres_ctx_id = ses_pres_ctx_id;
 				p_add_proto_data(wmem_file_scope(), pinfo, proto_ses, 0, pres_ctx_id);
 			}
 			if (pres_ctx_id) {
 				session.pres_ctx_id = *pres_ctx_id;
-				session.rtse_reassemble = TRUE;
-				has_user_information = TRUE;
+				session.rtse_reassemble = true;
+				has_user_information = true;
 			}
-			ses_rtse_reassemble = FALSE;
+			ses_rtse_reassemble = false;
 			break;
 		}
 	}
@@ -983,7 +972,7 @@ dissect_spdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
 	/* Dissect parameters. */
 	if (!dissect_parameters(tvb, offset, parameters_len, tree, ses_tree,
 				pinfo, &enclosure_item_flags, &session))
-		has_user_information = FALSE;
+		has_user_information = false;
 	offset += parameters_len;
 
 	proto_item_set_end(ti, tvb, offset);
@@ -999,13 +988,11 @@ dissect_spdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
 	} else {
 		conversation_t *conversation = NULL;
 		fragment_head *frag_msg = NULL;
-		gint fragment_len;
-		guint32 ses_id = 0;
+		int fragment_len;
+		uint32_t ses_id = 0;
 
 		/* Use conversation index as segment id */
-		conversation  = find_conversation (pinfo->num,
-						   &pinfo->src, &pinfo->dst, pinfo->ptype,
-						   pinfo->srcport, pinfo->destport, 0);
+		conversation  = find_conversation_pinfo(pinfo, 0);
 		if (conversation != NULL) {
 			ses_id = conversation->conv_index;
 		}
@@ -1017,12 +1004,12 @@ dissect_spdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
 						  tvb, offset,
 						  pinfo, ses_id, NULL,
 						  fragment_len,
-						  (enclosure_item_flags & END_SPDU) ? FALSE : TRUE);
+						  (enclosure_item_flags & END_SPDU) ? false : true);
 		next_tvb = process_reassembled_data (tvb, offset, pinfo, "Reassembled SES",
 						     frag_msg, &ses_frag_items, NULL,
 						     (enclosure_item_flags & END_SPDU) ? tree : ses_tree);
 
-		has_user_information = TRUE;
+		has_user_information = true;
 		offset += fragment_len;
 	}
 
@@ -1041,7 +1028,7 @@ dissect_spdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
 		offset = tvb_captured_length(tvb);
 		if (session.rtse_reassemble && type == SES_DATA_TRANSFER) {
 			ses_pres_ctx_id = session.pres_ctx_id;
-			ses_rtse_reassemble = TRUE;
+			ses_rtse_reassemble = true;
 		}
 	}
 	return offset;
@@ -1054,12 +1041,12 @@ static int
 dissect_ses(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
-	guint8 type;
-	gboolean is_clsp = FALSE;
+	uint8_t type;
+	bool is_clsp = false;
 
-	type = tvb_get_guint8(tvb, offset);
+	type = tvb_get_uint8(tvb, offset);
 	if(type == CLSES_UNIT_DATA)
-		is_clsp = TRUE;
+		is_clsp = true;
 
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, is_clsp ? "CLSES" : "SES");
@@ -1074,7 +1061,7 @@ dissect_ses(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	 * the same SPDU type value).
 	 */
 	if ((type == SES_PLEASE_TOKENS) || (type == SES_GIVE_TOKENS))
-		offset = dissect_spdu(tvb, offset, pinfo, tree, TOKENS_SPDU, FALSE);
+		offset = dissect_spdu(tvb, offset, pinfo, tree, TOKENS_SPDU, false);
 
 
 	/* Dissect the remaining SPDUs. */
@@ -1083,48 +1070,37 @@ dissect_ses(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	return tvb_captured_length(tvb);
 }
 
-static void ses_reassemble_init (void)
-{
-	reassembly_table_init (&ses_reassembly_table,
-		&addresses_reassembly_table_functions);
-}
-
-static void ses_reassemble_cleanup (void)
-{
-	reassembly_table_destroy(&ses_reassembly_table);
-}
-
-static gboolean
-dissect_ses_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *data _U_)
+static bool
+dissect_ses_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *data)
 {
 	/* must check that this really is a ses packet */
 	int offset = 0;
-	guint8 type;
+	uint8_t type;
 	int len_len;
-	guint16 len;
+	uint16_t len;
 
 	/* first, check do we have at least 4 bytes (type+length) */
 	if (tvb_captured_length(tvb) < 2)
-		return FALSE;	/* no */
+		return false;	/* no */
 
-	/* can we recognize session PDU ? Return FALSE if  not */
+	/* can we recognize session PDU ? Return false if  not */
 	/*   get SPDU type */
-	type = tvb_get_guint8(tvb, offset);
+	type = tvb_get_uint8(tvb, offset);
 	/* check SPDU type */
 	if (try_val_to_str_ext(type, &ses_vals_ext) == NULL)
 	{
-		return FALSE;  /* no, it isn't a session PDU */
+		return false;  /* no, it isn't a session PDU */
 	}
 
 	/* can we recognize the second session PDU if the first one was
-	 * a Give Tokens PDU? Return FALSE if not */
+	 * a Give Tokens PDU? Return false if not */
 	if(tvb_bytes_exist(tvb, 2, 2) && type == SES_GIVE_TOKENS) {
 		/*   get SPDU type */
-		type = tvb_get_guint8(tvb, offset+2);
+		type = tvb_get_uint8(tvb, offset+2);
 		/* check SPDU type */
 		if (try_val_to_str_ext(type, &ses_vals_ext) == NULL)
 		{
-			return FALSE;  /* no, it isn't a session PDU */
+			return false;  /* no, it isn't a session PDU */
 		}
 	}
 
@@ -1133,9 +1109,9 @@ dissect_ses_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, voi
 	 * the starter in this case is fixed to 0x32 (SES_MINOR_SYNC_ACK for SES),
 	 * so if the parameter type is unknown, it's probably SIMATIC */
 	if(type == 0x32 && tvb_captured_length(tvb) >= 3) {
-		type = tvb_get_guint8(tvb, offset+2);
+		type = tvb_get_uint8(tvb, offset+2);
 		if (try_val_to_str_ext(type, &param_vals_ext) == NULL) {
-			return FALSE; /* it's probably a SIMATIC protocol */
+			return false; /* it's probably a SIMATIC protocol */
 		}
 	}
 
@@ -1147,19 +1123,19 @@ dissect_ses_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, voi
 	len+=len_len;
 	/* do we have enough bytes ? */
 	if (tvb_reported_length(tvb) < len)
-		return FALSE;	/* no */
+		return false;	/* no */
 
 	/* final check to see if the next SPDU, if present, is also valid */
-	if (tvb_captured_length(tvb) > 1+(guint) len) {
-	  type = tvb_get_guint8(tvb, offset + len + 1);
+	if (tvb_captured_length(tvb) > 1+(unsigned) len) {
+	  type = tvb_get_uint8(tvb, offset + len + 1);
 	  /* check SPDU type */
 	  if (try_val_to_str_ext(type, &ses_vals_ext) == NULL) {
-	    return FALSE;  /* no, it isn't a session PDU */
+	    return false;  /* no, it isn't a session PDU */
 	  }
 	}
 
 	dissect_ses(tvb, pinfo, parent_tree, data);
-	return TRUE;
+	return true;
 }
 
 void
@@ -1357,7 +1333,7 @@ proto_register_ses(void)
 			&hf_session_exception_report,
 			{
 				"Session exception report",
-				"ses.exception_report.",
+				"ses.exception_report",
 				FT_BOOLEAN, 16,
 				NULL,
 				SES_EXCEPTION_REPORT,
@@ -1859,7 +1835,7 @@ proto_register_ses(void)
           { &hf_ses_parameter_group_inside_parameter_group, { "Parameter group inside parameter group", "ses.parameter_group_inside_parameter_group", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 	};
 
-	static gint *ett[] =
+	static int *ett[] =
 	{
 		&ett_ses,
 		&ett_ses_param,
@@ -1887,8 +1863,8 @@ proto_register_ses(void)
 	expert_ses = expert_register_protocol(proto_ses);
 	expert_register_field_array(expert_ses, ei, array_length(ei));
 
-	register_init_routine (&ses_reassemble_init);
-	register_cleanup_routine (&ses_reassemble_cleanup);
+	reassembly_table_register (&ses_reassembly_table,
+		&addresses_reassembly_table_functions);
 
 	ses_module = prefs_register_protocol(proto_ses, NULL);
 
@@ -1933,7 +1909,7 @@ proto_reg_handoff_clses(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,11 +1,8 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-ldap.h                                                              */
-/* asn2wrs.py -b -p ldap -c ./ldap.cnf -s ./packet-ldap-template -D . -O ../.. Lightweight-Directory-Access-Protocol-V3.asn */
+/* asn2wrs.py -b -q -L -p ldap -c ./ldap.cnf -s ./packet-ldap-template -D . -O ../.. Lightweight-Directory-Access-Protocol-V3.asn */
 
-/* Input file: packet-ldap-template.h */
-
-#line 1 "./asn1/ldap/packet-ldap-template.h"
 /* packet-ldap.h
  * Routines for ros packet dissection
  * Copyright 2005, Anders Broman <anders.broman@ericsson.com>
@@ -14,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_LDAP_H__
@@ -90,26 +75,26 @@
 
 #define LDAP_SASL_MAX_BUF	1024*1024
 
-#define NETLOGON_NT_VERSION_1					1
-#define NETLOGON_NT_VERSION_5					2
-#define NETLOGON_NT_VERSION_5EX					4
-#define NETLOGON_NT_VERSION_5EX_WITH_IP			8
-#define NETLOGON_NT_VERSION_WITH_CLOSEST_SITE	16
+#define NETLOGON_NT_VERSION_1                   1
+#define NETLOGON_NT_VERSION_5                   2
+#define NETLOGON_NT_VERSION_5EX                 4
+#define NETLOGON_NT_VERSION_5EX_WITH_IP         8
+#define NETLOGON_NT_VERSION_WITH_CLOSEST_SITE  16
 
 #define LOGON_SAM_LOGON_RESPONSE        19
 #define LOGON_SAM_LOGON_RESPONSE_EX     23
 
 typedef struct ldap_call_response {
-  gboolean is_request;
-  guint32 req_frame;
+  bool is_request;
+  uint32_t req_frame;
   nstime_t req_time;
-  guint32 rep_frame;
-  guint messageId;
-  guint protocolOpTag;
+  uint32_t rep_frame;
+  unsigned messageId;
+  unsigned protocolOpTag;
 } ldap_call_response_t;
 
 WS_DLL_PUBLIC
-int dissect_mscldap_string(tvbuff_t *tvb, int offset, char *str, int max_len, gboolean prepend_dot _U_);
+int dissect_mscldap_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int max_len, char **str);
 
 WS_DLL_PUBLIC const value_string ldap_procedure_names[];
 

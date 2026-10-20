@@ -1,9 +1,10 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test C# support: --add-comments option.
+# Test C# support: --add-comments option, string concatenation,
+# strings with embedded expressions.
 
-cat <<EOF > xg-cs-5.cs
+cat <<\EOF > xg-cs-5.cs
 // This comment will not be extracted.
 Console.WriteLine(GetString("help"));
 //  TRANSLATORS: This is an extracted comment.
@@ -18,6 +19,10 @@ Console.WriteLine(GetString("The Fabulous Four"));
 Console.WriteLine(GetString("there is not enough" +
 " room on a single line for this entire long, " // confusing, eh?
 + "verbose string"));
+// Strings with embedded expressions, a.k.a. interpolated strings.
+Console.WriteLine(GetString($"embedded_1_{foo}_bar"));
+Console.WriteLine(GetString($"embedded_2_{GetString("embedded_2_sub1")}_bar_{GetString("embedded_2_sub2")}_baz"));
+Console.WriteLine(GetString($"embedded_3"));
 EOF
 
 : ${XGETTEXT=xgettext}
@@ -25,7 +30,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-cs-5.tmp xg-cs-5.cs || Exit 1
 LC_ALL=C tr -d '\r' < xg-cs-5.tmp.po > xg-cs-5.po || Exit 1
 
-cat <<EOF > xg-cs-5.ok
+cat <<\EOF > xg-cs-5.ok
 msgid "help"
 msgstr ""
 
@@ -46,6 +51,15 @@ msgstr ""
 msgid ""
 "there is not enough room on a single line for this entire long, verbose "
 "string"
+msgstr ""
+
+msgid "embedded_2_sub1"
+msgstr ""
+
+msgid "embedded_2_sub2"
+msgstr ""
+
+msgid "embedded_3"
 msgstr ""
 EOF
 

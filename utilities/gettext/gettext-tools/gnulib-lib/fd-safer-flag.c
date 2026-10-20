@@ -1,11 +1,11 @@
 /* Adjust a file descriptor result so that it avoids clobbering
    STD{IN,OUT,ERR}_FILENO, with specific flags.
 
-   Copyright (C) 2005-2006, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2005-2006, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -14,7 +14,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Paul Eggert and Eric Blake.  */
 
@@ -42,9 +42,9 @@ fd_safer_flag (int fd, int flag)
   if (STDIN_FILENO <= fd && fd <= STDERR_FILENO)
     {
       int f = dup_safer_flag (fd, flag);
-      int e = errno;
+      int saved_errno = errno;
       close (fd);
-      errno = e;
+      errno = saved_errno;
       fd = f;
     }
 

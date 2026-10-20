@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_RMT_COMMON__
@@ -35,9 +23,13 @@
 #define LCT_PREFS_EXT_193_NONE 0
 #define LCT_PREFS_EXT_193_FLUTE 1
 
+#define LCT_ATSC3_MODE_DISABLED 0
+#define LCT_ATSC3_MODE_AUTO 1
+#define LCT_ATSC3_MODE_FORCE 2
 
 extern const enum_val_t enum_lct_ext_192[];
 extern const enum_val_t enum_lct_ext_193[];
+extern const enum_val_t enum_lct_atsc3_mode[];
 
 /* String tables external references */
 extern const value_string string_fec_encoding_id[];
@@ -48,35 +40,37 @@ extern const value_string string_fec_encoding_id[];
 typedef struct lct_data_exchange
 {
 	/* inputs */
-	gint ext_192;
-	gint ext_193;
+	int ext_192;
+	int ext_193;
+	bool is_atsc3;
 
 	/* outputs */
-	guint8 codepoint;
-	gboolean is_flute;
+	uint8_t codepoint;
+	bool is_flute;
+	bool is_sp; /* is Source Packet? Source Packet Indicator is defined in RFC 5775 */
 
 } lct_data_exchange_t;
 
 typedef struct fec_data_exchange
 {
 	/* inputs */
-	guint8 encoding_id;
+	uint8_t encoding_id;
 
 } fec_data_exchange_t;
 
 
 /* Common RMT exported functions */
 /* ============================= */
-extern int lct_ext_decode(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, guint offset, guint offset_max, lct_data_exchange_t *data_exchange,
+extern int lct_ext_decode(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset, unsigned offset_max, lct_data_exchange_t *data_exchange,
                    int hfext, int ettext);
-extern void fec_decode_ext_fti(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, guint8 encoding_id);
+extern void fec_decode_ext_fti(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint8_t encoding_id);
 
-extern double rmt_decode_send_rate(guint16 send_rate );
+extern double rmt_decode_send_rate(uint16_t send_rate );
 
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,34 +1,20 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-ilp.c                                                               */
-/* asn2wrs.py -p ilp -c ./ilp.cnf -s ./packet-ilp-template -D . -O ../.. ILP.asn ILP-Components.asn */
+/* asn2wrs.py -q -L -p ilp -c ./ilp.cnf -s ./packet-ilp-template -D . -O ../.. ILP.asn ILP-Components.asn */
 
-/* Input file: packet-ilp-template.c */
-
-#line 1 "./asn1/ilp/packet-ilp-template.c"
 /* packet-ilp.c
  * Routines for OMA Internal Location Protocol packet dissection
  * Copyright 2006, e.yimjia <jy.m12.0@gmail.com>
+ * Copyright 2019, Pascal Quantin <pascal@wireshark.org>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * ref OMA-TS-ILP-V2_0_1-20121205-A
+ * ref OMA-TS-ILP-V2_0_4-20181213-A
  * http://www.openmobilealliance.org
  */
 
@@ -37,6 +23,7 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/asn1.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 #include "packet-tcp.h"
@@ -52,583 +39,638 @@ void proto_register_ilp(void);
 
 static dissector_handle_t rrlp_handle;
 static dissector_handle_t lpp_handle;
-static dissector_handle_t ilp_handle;
+static dissector_handle_t ilp_tcp_handle;
 
 
 /* IANA Registered Ports
  * oma-ilp         7276/tcp    OMA Internal Location
  */
-static guint gbl_ilp_port = 7276;
+#define ILP_TCP_PORT    7276
 
 /* Initialize the protocol and registered fields */
-static int proto_ilp = -1;
+static int proto_ilp;
 
 
 #define ILP_HEADER_SIZE 2
 
-static gboolean ilp_desegment = TRUE;
+static bool ilp_desegment = true;
 
-
-/*--- Included file: packet-ilp-hf.c ---*/
-#line 1 "./asn1/ilp/packet-ilp-hf.c"
-static int hf_ilp_ILP_PDU_PDU = -1;               /* ILP_PDU */
-static int hf_ilp_length = -1;                    /* INTEGER_0_65535 */
-static int hf_ilp_version = -1;                   /* Version */
-static int hf_ilp_sessionID2 = -1;                /* SessionID2 */
-static int hf_ilp_message = -1;                   /* IlpMessage */
-static int hf_ilp_msPREQ = -1;                    /* PREQ */
-static int hf_ilp_msPRES = -1;                    /* PRES */
-static int hf_ilp_msPRPT = -1;                    /* PRPT */
-static int hf_ilp_msPLREQ = -1;                   /* PLREQ */
-static int hf_ilp_msPLRES = -1;                   /* PLRES */
-static int hf_ilp_msPINIT = -1;                   /* PINIT */
-static int hf_ilp_msPAUTH = -1;                   /* PAUTH */
-static int hf_ilp_msPALIVE = -1;                  /* PALIVE */
-static int hf_ilp_msPEND = -1;                    /* PEND */
-static int hf_ilp_msPMESS = -1;                   /* PMESS */
-static int hf_ilp_sLPMode = -1;                   /* SLPMode */
-static int hf_ilp_approvedPosMethods = -1;        /* PosTechnology */
-static int hf_ilp_locationId = -1;                /* LocationId */
-static int hf_ilp_multipleLocationIds = -1;       /* MultipleLocationIds */
-static int hf_ilp_position = -1;                  /* Position */
-static int hf_ilp_triggerParams = -1;             /* TriggerParams */
-static int hf_ilp_sPCSETKey = -1;                 /* SPCSETKey */
-static int hf_ilp_sPCTID = -1;                    /* SPCTID */
-static int hf_ilp_sPCSETKeylifetime = -1;         /* SPCSETKeylifetime */
-static int hf_ilp_qoP = -1;                       /* QoP */
-static int hf_ilp_sETCapabilities = -1;           /* SETCapabilities */
-static int hf_ilp_notificationMode = -1;          /* NotificationMode */
-static int hf_ilp_triggerType = -1;               /* TriggerType */
-static int hf_ilp_periodicTriggerParams = -1;     /* PeriodicTriggerParams */
-static int hf_ilp_numberOfFixes = -1;             /* INTEGER_1_8639999 */
-static int hf_ilp_intervalBetweenFixes = -1;      /* INTEGER_1_8639999 */
-static int hf_ilp_startTime = -1;                 /* INTEGER_0_2678400 */
-static int hf_ilp_preferredPosMethod = -1;        /* PosMethod */
-static int hf_ilp_gnssPosTechnology = -1;         /* GNSSPosTechnology */
-static int hf_ilp_supportedPosMethods = -1;       /* PosTechnology */
-static int hf_ilp_sPCstatusCode = -1;             /* SPCStatusCode */
-static int hf_ilp_fixNumber = -1;                 /* INTEGER_1_8639999 */
-static int hf_ilp_statusCode = -1;                /* StatusCode */
-static int hf_ilp_positionResults = -1;           /* PositionResults */
-static int hf_ilp_PositionResults_item = -1;      /* PositionResult */
-static int hf_ilp_posMethod = -1;                 /* PosMethod */
-static int hf_ilp_requestedAssistData = -1;       /* RequestedAssistData */
-static int hf_ilp_posPayLoad = -1;                /* PosPayLoad */
-static int hf_ilp_utran_GPSReferenceTimeResult = -1;  /* UTRAN_GPSReferenceTimeResult */
-static int hf_ilp_utran_GANSSReferenceTimeResult = -1;  /* UTRAN_GANSSReferenceTimeResult */
-static int hf_ilp_almanacRequested = -1;          /* BOOLEAN */
-static int hf_ilp_utcModelRequested = -1;         /* BOOLEAN */
-static int hf_ilp_ionosphericModelRequested = -1;  /* BOOLEAN */
-static int hf_ilp_dgpsCorrectionsRequested = -1;  /* BOOLEAN */
-static int hf_ilp_referenceLocationRequested = -1;  /* BOOLEAN */
-static int hf_ilp_referenceTimeRequested = -1;    /* BOOLEAN */
-static int hf_ilp_acquisitionAssistanceRequested = -1;  /* BOOLEAN */
-static int hf_ilp_realTimeIntegrityRequested = -1;  /* BOOLEAN */
-static int hf_ilp_navigationModelRequested = -1;  /* BOOLEAN */
-static int hf_ilp_navigationModelData = -1;       /* NavigationModel */
-static int hf_ilp_ganssRequestedCommonAssistanceDataList = -1;  /* GanssRequestedCommonAssistanceDataList */
-static int hf_ilp_ganssRequestedGenericAssistanceDataList = -1;  /* GanssRequestedGenericAssistanceDataList */
-static int hf_ilp_extendedEphemeris = -1;         /* ExtendedEphemeris */
-static int hf_ilp_extendedEphemerisCheck = -1;    /* ExtendedEphCheck */
-static int hf_ilp_validity = -1;                  /* INTEGER_1_256 */
-static int hf_ilp_beginTime = -1;                 /* GPSTime */
-static int hf_ilp_endTime = -1;                   /* GPSTime */
-static int hf_ilp_gPSWeek = -1;                   /* INTEGER_0_1023 */
-static int hf_ilp_gPSTOWhour = -1;                /* INTEGER_0_167 */
-static int hf_ilp_ganssReferenceTime = -1;        /* BOOLEAN */
-static int hf_ilp_ganssIonosphericModel = -1;     /* BOOLEAN */
-static int hf_ilp_ganssAdditionalIonosphericModelForDataID00 = -1;  /* BOOLEAN */
-static int hf_ilp_ganssAdditionalIonosphericModelForDataID11 = -1;  /* BOOLEAN */
-static int hf_ilp_ganssEarthOrientationParameters = -1;  /* BOOLEAN */
-static int hf_ilp_GanssRequestedGenericAssistanceDataList_item = -1;  /* GanssReqGenericData */
-static int hf_ilp_ganssId = -1;                   /* INTEGER_0_15 */
-static int hf_ilp_ganssSBASid = -1;               /* BIT_STRING_SIZE_3 */
-static int hf_ilp_ganssRealTimeIntegrity = -1;    /* BOOLEAN */
-static int hf_ilp_ganssDifferentialCorrection = -1;  /* DGANSS_Sig_Id_Req */
-static int hf_ilp_ganssAlmanac = -1;              /* BOOLEAN */
-static int hf_ilp_ganssNavigationModelData = -1;  /* GanssNavigationModelData */
-static int hf_ilp_ganssTimeModels = -1;           /* BIT_STRING_SIZE_16 */
-static int hf_ilp_ganssReferenceMeasurementInfo = -1;  /* BOOLEAN */
-static int hf_ilp_ganssDataBits = -1;             /* GanssDataBits */
-static int hf_ilp_ganssUTCModel = -1;             /* BOOLEAN */
-static int hf_ilp_ganssAdditionalDataChoices = -1;  /* GanssAdditionalDataChoices */
-static int hf_ilp_ganssAuxiliaryInformation = -1;  /* BOOLEAN */
-static int hf_ilp_ganssExtendedEphemeris = -1;    /* ExtendedEphemeris */
-static int hf_ilp_ganssExtendedEphemerisCheck = -1;  /* GanssExtendedEphCheck */
-static int hf_ilp_ganssWeek = -1;                 /* INTEGER_0_4095 */
-static int hf_ilp_ganssToe = -1;                  /* INTEGER_0_167 */
-static int hf_ilp_t_toeLimit = -1;                /* INTEGER_0_10 */
-static int hf_ilp_satellitesListRelatedDataList = -1;  /* SatellitesListRelatedDataList */
-static int hf_ilp_SatellitesListRelatedDataList_item = -1;  /* SatellitesListRelatedData */
-static int hf_ilp_satId = -1;                     /* INTEGER_0_63 */
-static int hf_ilp_iod = -1;                       /* INTEGER_0_1023 */
-static int hf_ilp_ganssTODmin = -1;               /* INTEGER_0_59 */
-static int hf_ilp_reqDataBitAssistanceList = -1;  /* ReqDataBitAssistanceList */
-static int hf_ilp_gnssSignals = -1;               /* GANSSSignals */
-static int hf_ilp_ganssDataBitInterval = -1;      /* INTEGER_0_15 */
-static int hf_ilp_ganssDataBitSatList = -1;       /* T_ganssDataBitSatList */
-static int hf_ilp_ganssDataBitSatList_item = -1;  /* INTEGER_0_63 */
-static int hf_ilp_orbitModelID = -1;              /* INTEGER_0_7 */
-static int hf_ilp_clockModelID = -1;              /* INTEGER_0_7 */
-static int hf_ilp_utcModelID = -1;                /* INTEGER_0_7 */
-static int hf_ilp_almanacModelID = -1;            /* INTEGER_0_7 */
-static int hf_ilp_beginTime_01 = -1;              /* GANSSextEphTime */
-static int hf_ilp_endTime_01 = -1;                /* GANSSextEphTime */
-static int hf_ilp_gANSSday = -1;                  /* INTEGER_0_8191 */
-static int hf_ilp_gANSSTODhour = -1;              /* INTEGER_0_23 */
-static int hf_ilp_gpsWeek = -1;                   /* INTEGER_0_1023 */
-static int hf_ilp_gpsToe = -1;                    /* INTEGER_0_167 */
-static int hf_ilp_nSAT = -1;                      /* INTEGER_0_31 */
-static int hf_ilp_toeLimit = -1;                  /* INTEGER_0_10 */
-static int hf_ilp_satInfo = -1;                   /* SatelliteInfo */
-static int hf_ilp_SatelliteInfo_item = -1;        /* SatelliteInfoElement */
-static int hf_ilp_iODE = -1;                      /* INTEGER_0_255 */
-static int hf_ilp_sPCStatusCode = -1;             /* SPCStatusCode */
-static int hf_ilp_velocity = -1;                  /* Velocity */
-static int hf_ilp_utran_GPSReferenceTimeAssistance = -1;  /* UTRAN_GPSReferenceTimeAssistance */
-static int hf_ilp_utran_GANSSReferenceTimeAssistance = -1;  /* UTRAN_GANSSReferenceTimeAssistance */
-static int hf_ilp_maj = -1;                       /* INTEGER_0_255 */
-static int hf_ilp_min = -1;                       /* INTEGER_0_255 */
-static int hf_ilp_servind = -1;                   /* INTEGER_0_255 */
-static int hf_ilp_slcSessionID = -1;              /* SlcSessionID */
-static int hf_ilp_setSessionID = -1;              /* SetSessionID */
-static int hf_ilp_spcSessionID = -1;              /* SpcSessionID */
-static int hf_ilp_sessionId = -1;                 /* INTEGER_0_65535 */
-static int hf_ilp_setId = -1;                     /* SETId */
-static int hf_ilp_msisdn = -1;                    /* T_msisdn */
-static int hf_ilp_mdn = -1;                       /* T_mdn */
-static int hf_ilp_minsi = -1;                     /* BIT_STRING_SIZE_34 */
-static int hf_ilp_imsi = -1;                      /* T_imsi */
-static int hf_ilp_nai = -1;                       /* IA5String_SIZE_1_1000 */
-static int hf_ilp_iPAddress = -1;                 /* IPAddress */
-static int hf_ilp_sessionID = -1;                 /* OCTET_STRING_SIZE_4 */
-static int hf_ilp_slcId = -1;                     /* NodeAddress */
-static int hf_ilp_spcId = -1;                     /* NodeAddress */
-static int hf_ilp_ipv4Address = -1;               /* OCTET_STRING_SIZE_4 */
-static int hf_ilp_ipv6Address = -1;               /* OCTET_STRING_SIZE_16 */
-static int hf_ilp_fqdn = -1;                      /* FQDN */
-static int hf_ilp_cellInfo = -1;                  /* CellInfo */
-static int hf_ilp_status = -1;                    /* Status */
-static int hf_ilp_MultipleLocationIds_item = -1;  /* LocationIdData */
-static int hf_ilp_relativetimestamp = -1;         /* RelativeTime */
-static int hf_ilp_servingFlag = -1;               /* BOOLEAN */
-static int hf_ilp_posTechnology = -1;             /* PosTechnology */
-static int hf_ilp_prefMethod = -1;                /* PrefMethod */
-static int hf_ilp_posProtocol = -1;               /* PosProtocol */
-static int hf_ilp_supportedBearers = -1;          /* SupportedBearers */
-static int hf_ilp_agpsSETassisted = -1;           /* BOOLEAN */
-static int hf_ilp_agpsSETBased = -1;              /* BOOLEAN */
-static int hf_ilp_autonomousGPS = -1;             /* BOOLEAN */
-static int hf_ilp_aFLT = -1;                      /* BOOLEAN */
-static int hf_ilp_eCID = -1;                      /* BOOLEAN */
-static int hf_ilp_eOTD = -1;                      /* BOOLEAN */
-static int hf_ilp_oTDOA = -1;                     /* BOOLEAN */
-static int hf_ilp_gANSSPositionMethods = -1;      /* GANSSPositionMethods */
-static int hf_ilp_GANSSPositionMethods_item = -1;  /* GANSSPositionMethod */
-static int hf_ilp_gANSSPositioningMethodTypes = -1;  /* GANSSPositioningMethodTypes */
-static int hf_ilp_gANSSSignals = -1;              /* GANSSSignals */
-static int hf_ilp_setAssisted = -1;               /* BOOLEAN */
-static int hf_ilp_setBased = -1;                  /* BOOLEAN */
-static int hf_ilp_autonomous = -1;                /* BOOLEAN */
-static int hf_ilp_tia801 = -1;                    /* BOOLEAN */
-static int hf_ilp_rrlp = -1;                      /* BOOLEAN */
-static int hf_ilp_rrc = -1;                       /* BOOLEAN */
-static int hf_ilp_lpp = -1;                       /* BOOLEAN */
-static int hf_ilp_posProtocolVersionRRLP = -1;    /* PosProtocolVersion3GPP */
-static int hf_ilp_posProtocolVersionRRC = -1;     /* PosProtocolVersion3GPP */
-static int hf_ilp_posProtocolVersionTIA801 = -1;  /* PosProtocolVersion3GPP2 */
-static int hf_ilp_posProtocolVersionLPP = -1;     /* PosProtocolVersion3GPP */
-static int hf_ilp_majorVersionField = -1;         /* INTEGER_0_255 */
-static int hf_ilp_technicalVersionField = -1;     /* INTEGER_0_255 */
-static int hf_ilp_editorialVersionField = -1;     /* INTEGER_0_255 */
-static int hf_ilp_PosProtocolVersion3GPP2_item = -1;  /* Supported3GPP2PosProtocolVersion */
-static int hf_ilp_revisionNumber = -1;            /* BIT_STRING_SIZE_6 */
-static int hf_ilp_pointReleaseNumber = -1;        /* INTEGER_0_255 */
-static int hf_ilp_internalEditLevel = -1;         /* INTEGER_0_255 */
-static int hf_ilp_gsm = -1;                       /* BOOLEAN */
-static int hf_ilp_wcdma = -1;                     /* BOOLEAN */
-static int hf_ilp_lte = -1;                       /* BOOLEAN */
-static int hf_ilp_cdma = -1;                      /* BOOLEAN */
-static int hf_ilp_hprd = -1;                      /* BOOLEAN */
-static int hf_ilp_umb = -1;                       /* BOOLEAN */
-static int hf_ilp_wlan = -1;                      /* BOOLEAN */
-static int hf_ilp_wiMAX = -1;                     /* BOOLEAN */
-static int hf_ilp_gsmCell = -1;                   /* GsmCellInformation */
-static int hf_ilp_wcdmaCell = -1;                 /* WcdmaCellInformation */
-static int hf_ilp_cdmaCell = -1;                  /* CdmaCellInformation */
-static int hf_ilp_hrpdCell = -1;                  /* HrpdCellInformation */
-static int hf_ilp_umbCell = -1;                   /* UmbCellInformation */
-static int hf_ilp_lteCell = -1;                   /* LteCellInformation */
-static int hf_ilp_wlanAP = -1;                    /* WlanAPInformation */
-static int hf_ilp_wimaxBS = -1;                   /* WimaxBSInformation */
-static int hf_ilp_set_GPSTimingOfCell = -1;       /* T_set_GPSTimingOfCell */
-static int hf_ilp_ms_part = -1;                   /* INTEGER_0_16383 */
-static int hf_ilp_ls_part = -1;                   /* INTEGER_0_4294967295 */
-static int hf_ilp_modeSpecificInfo = -1;          /* T_modeSpecificInfo */
-static int hf_ilp_fdd = -1;                       /* T_fdd */
-static int hf_ilp_referenceIdentity = -1;         /* PrimaryCPICH_Info */
-static int hf_ilp_tdd = -1;                       /* T_tdd */
-static int hf_ilp_referenceIdentity_01 = -1;      /* CellParametersID */
-static int hf_ilp_sfn = -1;                       /* INTEGER_0_4095 */
-static int hf_ilp_gpsReferenceTimeUncertainty = -1;  /* INTEGER_0_127 */
-static int hf_ilp_ganssTimeID = -1;               /* INTEGER_0_15 */
-static int hf_ilp_set_GANSSReferenceTime = -1;    /* SET_GANSSReferenceTime */
-static int hf_ilp_set_GANSSTimingOfCell = -1;     /* T_set_GANSSTimingOfCell */
-static int hf_ilp_ms_part_01 = -1;                /* INTEGER_0_80 */
-static int hf_ilp_modeSpecificInfo_01 = -1;       /* T_modeSpecificInfo_01 */
-static int hf_ilp_fdd_01 = -1;                    /* T_fdd_01 */
-static int hf_ilp_tdd_01 = -1;                    /* T_tdd_01 */
-static int hf_ilp_ganss_TODUncertainty = -1;      /* INTEGER_0_127 */
-static int hf_ilp_gps = -1;                       /* BOOLEAN */
-static int hf_ilp_galileo = -1;                   /* BOOLEAN */
-static int hf_ilp_sbas = -1;                      /* BOOLEAN */
-static int hf_ilp_modernized_gps = -1;            /* BOOLEAN */
-static int hf_ilp_qzss = -1;                      /* BOOLEAN */
-static int hf_ilp_glonass = -1;                   /* BOOLEAN */
-static int hf_ilp_timestamp = -1;                 /* UTCTime */
-static int hf_ilp_positionEstimate = -1;          /* PositionEstimate */
-static int hf_ilp_latitudeSign = -1;              /* T_latitudeSign */
-static int hf_ilp_latitude = -1;                  /* INTEGER_0_8388607 */
-static int hf_ilp_longitude = -1;                 /* INTEGER_M8388608_8388607 */
-static int hf_ilp_uncertainty = -1;               /* T_uncertainty */
-static int hf_ilp_uncertaintySemiMajor = -1;      /* INTEGER_0_127 */
-static int hf_ilp_uncertaintySemiMinor = -1;      /* INTEGER_0_127 */
-static int hf_ilp_orientationMajorAxis = -1;      /* INTEGER_0_180 */
-static int hf_ilp_confidence = -1;                /* INTEGER_0_100 */
-static int hf_ilp_altitudeInfo = -1;              /* AltitudeInfo */
-static int hf_ilp_altitudeDirection = -1;         /* T_altitudeDirection */
-static int hf_ilp_altitude = -1;                  /* INTEGER_0_32767 */
-static int hf_ilp_altUncertainty = -1;            /* INTEGER_0_127 */
-static int hf_ilp_refNID = -1;                    /* INTEGER_0_65535 */
-static int hf_ilp_refSID = -1;                    /* INTEGER_0_32767 */
-static int hf_ilp_refBASEID = -1;                 /* INTEGER_0_65535 */
-static int hf_ilp_refBASELAT = -1;                /* INTEGER_0_4194303 */
-static int hf_ilp_reBASELONG = -1;                /* INTEGER_0_8388607 */
-static int hf_ilp_refREFPN = -1;                  /* INTEGER_0_511 */
-static int hf_ilp_refWeekNumber = -1;             /* INTEGER_0_65535 */
-static int hf_ilp_refSeconds = -1;                /* INTEGER_0_4194303 */
-static int hf_ilp_refMCC = -1;                    /* INTEGER_0_999 */
-static int hf_ilp_refMNC = -1;                    /* INTEGER_0_999 */
-static int hf_ilp_refLAC = -1;                    /* INTEGER_0_65535 */
-static int hf_ilp_refCI = -1;                     /* INTEGER_0_65535 */
-static int hf_ilp_nMR = -1;                       /* NMR */
-static int hf_ilp_tA = -1;                        /* INTEGER_0_255 */
-static int hf_ilp_refUC = -1;                     /* INTEGER_0_268435455 */
-static int hf_ilp_frequencyInfo = -1;             /* FrequencyInfo */
-static int hf_ilp_primaryScramblingCode = -1;     /* INTEGER_0_511 */
-static int hf_ilp_measuredResultsList = -1;       /* MeasuredResultsList */
-static int hf_ilp_cellParametersId = -1;          /* INTEGER_0_127 */
-static int hf_ilp_timingAdvance = -1;             /* TimingAdvance */
-static int hf_ilp_tA_01 = -1;                     /* INTEGER_0_8191 */
-static int hf_ilp_tAResolution = -1;              /* TAResolution */
-static int hf_ilp_chipRate = -1;                  /* ChipRate */
-static int hf_ilp_refSECTORID = -1;               /* BIT_STRING_SIZE_128 */
-static int hf_ilp_cellGlobalIdEUTRA = -1;         /* CellGlobalIdEUTRA */
-static int hf_ilp_physCellId = -1;                /* PhysCellId */
-static int hf_ilp_trackingAreaCode = -1;          /* TrackingAreaCode */
-static int hf_ilp_rsrpResult = -1;                /* RSRP_Range */
-static int hf_ilp_rsrqResult = -1;                /* RSRQ_Range */
-static int hf_ilp_tA_02 = -1;                     /* INTEGER_0_1282 */
-static int hf_ilp_measResultListEUTRA = -1;       /* MeasResultListEUTRA */
-static int hf_ilp_earfcn = -1;                    /* INTEGER_0_65535 */
-static int hf_ilp_MeasResultListEUTRA_item = -1;  /* MeasResultEUTRA */
-static int hf_ilp_cgi_Info = -1;                  /* T_cgi_Info */
-static int hf_ilp_cellGlobalId = -1;              /* CellGlobalIdEUTRA */
-static int hf_ilp_measResult = -1;                /* T_measResult */
-static int hf_ilp_plmn_Identity = -1;             /* PLMN_Identity */
-static int hf_ilp_cellIdentity = -1;              /* CellIdentity */
-static int hf_ilp_mcc = -1;                       /* MCC */
-static int hf_ilp_mnc = -1;                       /* MNC */
-static int hf_ilp_MCC_item = -1;                  /* MCC_MNC_Digit */
-static int hf_ilp_MNC_item = -1;                  /* MCC_MNC_Digit */
-static int hf_ilp_apMACAddress = -1;              /* BIT_STRING_SIZE_48 */
-static int hf_ilp_apTransmitPower = -1;           /* INTEGER_M127_128 */
-static int hf_ilp_apAntennaGain = -1;             /* INTEGER_M127_128 */
-static int hf_ilp_apSignaltoNoise = -1;           /* INTEGER_M127_128 */
-static int hf_ilp_apDeviceType = -1;              /* T_apDeviceType */
-static int hf_ilp_apSignalStrength = -1;          /* INTEGER_M127_128 */
-static int hf_ilp_apChannelFrequency = -1;        /* INTEGER_0_256 */
-static int hf_ilp_apRoundTripDelay = -1;          /* RTD */
-static int hf_ilp_setTransmitPower = -1;          /* INTEGER_M127_128 */
-static int hf_ilp_setAntennaGain = -1;            /* INTEGER_M127_128 */
-static int hf_ilp_setSignaltoNoise = -1;          /* INTEGER_M127_128 */
-static int hf_ilp_setSignalStrength = -1;         /* INTEGER_M127_128 */
-static int hf_ilp_apReportedLocation = -1;        /* ReportedLocation */
-static int hf_ilp_rTDValue = -1;                  /* INTEGER_0_16777216 */
-static int hf_ilp_rTDUnits = -1;                  /* RTDUnits */
-static int hf_ilp_rTDAccuracy = -1;               /* INTEGER_0_255 */
-static int hf_ilp_locationEncodingDescriptor = -1;  /* LocationEncodingDescriptor */
-static int hf_ilp_locationData = -1;              /* LocationData */
-static int hf_ilp_locationAccuracy = -1;          /* INTEGER_0_4294967295 */
-static int hf_ilp_locationValue = -1;             /* OCTET_STRING_SIZE_1_128 */
-static int hf_ilp_wimaxBsID = -1;                 /* WimaxBsID */
-static int hf_ilp_wimaxRTD = -1;                  /* WimaxRTD */
-static int hf_ilp_wimaxNMRList = -1;              /* WimaxNMRList */
-static int hf_ilp_bsID_MSB = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_ilp_bsID_LSB = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_ilp_rTD = -1;                       /* INTEGER_0_65535 */
-static int hf_ilp_rTDstd = -1;                    /* INTEGER_0_1023 */
-static int hf_ilp_WimaxNMRList_item = -1;         /* WimaxNMR */
-static int hf_ilp_relDelay = -1;                  /* INTEGER_M32768_32767 */
-static int hf_ilp_relDelaystd = -1;               /* INTEGER_0_1023 */
-static int hf_ilp_rSSI = -1;                      /* INTEGER_0_255 */
-static int hf_ilp_rSSIstd = -1;                   /* INTEGER_0_63 */
-static int hf_ilp_bSTxPower = -1;                 /* INTEGER_0_255 */
-static int hf_ilp_cINR = -1;                      /* INTEGER_0_255 */
-static int hf_ilp_cINRstd = -1;                   /* INTEGER_0_63 */
-static int hf_ilp_bSLocation = -1;                /* ReportedLocation */
-static int hf_ilp_modeSpecificFrequencyInfo = -1;  /* FrequencySpecificInfo */
-static int hf_ilp_fdd_fr = -1;                    /* FrequencyInfoFDD */
-static int hf_ilp_tdd_fr = -1;                    /* FrequencyInfoTDD */
-static int hf_ilp_uarfcn_UL = -1;                 /* UARFCN */
-static int hf_ilp_uarfcn_DL = -1;                 /* UARFCN */
-static int hf_ilp_uarfcn_Nt = -1;                 /* UARFCN */
-static int hf_ilp_NMR_item = -1;                  /* NMRelement */
-static int hf_ilp_aRFCN = -1;                     /* INTEGER_0_1023 */
-static int hf_ilp_bSIC = -1;                      /* INTEGER_0_63 */
-static int hf_ilp_rxLev = -1;                     /* INTEGER_0_63 */
-static int hf_ilp_MeasuredResultsList_item = -1;  /* MeasuredResults */
-static int hf_ilp_utra_CarrierRSSI = -1;          /* UTRA_CarrierRSSI */
-static int hf_ilp_cellMeasuredResultsList = -1;   /* CellMeasuredResultsList */
-static int hf_ilp_CellMeasuredResultsList_item = -1;  /* CellMeasuredResults */
-static int hf_ilp_cellIdentity_01 = -1;           /* INTEGER_0_268435455 */
-static int hf_ilp_modeSpecificInfo_02 = -1;       /* T_modeSpecificInfo_02 */
-static int hf_ilp_fdd_02 = -1;                    /* T_fdd_02 */
-static int hf_ilp_primaryCPICH_Info = -1;         /* PrimaryCPICH_Info */
-static int hf_ilp_cpich_Ec_N0 = -1;               /* CPICH_Ec_N0 */
-static int hf_ilp_cpich_RSCP = -1;                /* CPICH_RSCP */
-static int hf_ilp_pathloss = -1;                  /* Pathloss */
-static int hf_ilp_tdd_02 = -1;                    /* T_tdd_02 */
-static int hf_ilp_cellParametersID = -1;          /* CellParametersID */
-static int hf_ilp_proposedTGSN = -1;              /* TGSN */
-static int hf_ilp_primaryCCPCH_RSCP = -1;         /* PrimaryCCPCH_RSCP */
-static int hf_ilp_timeslotISCP_List = -1;         /* TimeslotISCP_List */
-static int hf_ilp_TimeslotISCP_List_item = -1;    /* TimeslotISCP */
-static int hf_ilp_utran_GPSReferenceTime = -1;    /* UTRAN_GPSReferenceTime */
-static int hf_ilp_utranGPSDriftRate = -1;         /* UTRANGPSDriftRate */
-static int hf_ilp_utran_GPSTimingOfCell = -1;     /* T_utran_GPSTimingOfCell */
-static int hf_ilp_ms_part_02 = -1;                /* INTEGER_0_1023 */
-static int hf_ilp_modeSpecificInfo_03 = -1;       /* T_modeSpecificInfo_03 */
-static int hf_ilp_fdd_03 = -1;                    /* T_fdd_03 */
-static int hf_ilp_tdd_03 = -1;                    /* T_tdd_03 */
-static int hf_ilp_utran_GANSSReferenceTime = -1;  /* UTRAN_GANSSReferenceTime */
-static int hf_ilp_ganssDay = -1;                  /* INTEGER_0_8191 */
-static int hf_ilp_utranGANSSDriftRate = -1;       /* UTRANGANSSDriftRate */
-static int hf_ilp_ganssTOD = -1;                  /* INTEGER_0_86399 */
-static int hf_ilp_utran_GANSSTimingOfCell = -1;   /* INTEGER_0_3999999 */
-static int hf_ilp_modeSpecificInfo_04 = -1;       /* T_modeSpecificInfo_04 */
-static int hf_ilp_fdd_04 = -1;                    /* T_fdd_04 */
-static int hf_ilp_tdd_04 = -1;                    /* T_tdd_04 */
-static int hf_ilp_horacc = -1;                    /* INTEGER_0_127 */
-static int hf_ilp_veracc = -1;                    /* INTEGER_0_127 */
-static int hf_ilp_maxLocAge = -1;                 /* INTEGER_0_65535 */
-static int hf_ilp_delay = -1;                     /* INTEGER_0_7 */
-static int hf_ilp_horvel = -1;                    /* Horvel */
-static int hf_ilp_horandvervel = -1;              /* Horandvervel */
-static int hf_ilp_horveluncert = -1;              /* Horveluncert */
-static int hf_ilp_horandveruncert = -1;           /* Horandveruncert */
-static int hf_ilp_bearing = -1;                   /* BIT_STRING_SIZE_9 */
-static int hf_ilp_horspeed = -1;                  /* BIT_STRING_SIZE_16 */
-static int hf_ilp_verdirect = -1;                 /* BIT_STRING_SIZE_1 */
-static int hf_ilp_verspeed = -1;                  /* BIT_STRING_SIZE_8 */
-static int hf_ilp_uncertspeed = -1;               /* BIT_STRING_SIZE_8 */
-static int hf_ilp_horuncertspeed = -1;            /* BIT_STRING_SIZE_8 */
-static int hf_ilp_veruncertspeed = -1;            /* BIT_STRING_SIZE_8 */
-static int hf_ilp_rAND = -1;                      /* BIT_STRING_SIZE_128 */
-static int hf_ilp_slpFQDN = -1;                   /* FQDN */
-static int hf_ilp_rrcPayload = -1;                /* OCTET_STRING_SIZE_1_8192 */
-static int hf_ilp_rrlpPayload = -1;               /* T_rrlpPayload */
-static int hf_ilp_multiPosPayload = -1;           /* MultiPosPayLoad */
-static int hf_ilp_lPPPayload = -1;                /* T_lPPPayload */
-static int hf_ilp_lPPPayload_item = -1;           /* T_lPPPayload_item */
-static int hf_ilp_tia801Payload = -1;             /* T_tia801Payload */
-static int hf_ilp_tia801Payload_item = -1;        /* OCTET_STRING_SIZE_1_60000 */
+static int hf_ilp_ILP_PDU_PDU;                    /* ILP_PDU */
+static int hf_ilp_length;                         /* INTEGER_0_65535 */
+static int hf_ilp_version;                        /* Version */
+static int hf_ilp_sessionID2;                     /* SessionID2 */
+static int hf_ilp_message;                        /* IlpMessage */
+static int hf_ilp_msPREQ;                         /* PREQ */
+static int hf_ilp_msPRES;                         /* PRES */
+static int hf_ilp_msPRPT;                         /* PRPT */
+static int hf_ilp_msPLREQ;                        /* PLREQ */
+static int hf_ilp_msPLRES;                        /* PLRES */
+static int hf_ilp_msPINIT;                        /* PINIT */
+static int hf_ilp_msPAUTH;                        /* PAUTH */
+static int hf_ilp_msPALIVE;                       /* PALIVE */
+static int hf_ilp_msPEND;                         /* PEND */
+static int hf_ilp_msPMESS;                        /* PMESS */
+static int hf_ilp_sLPMode;                        /* SLPMode */
+static int hf_ilp_approvedPosMethods;             /* PosTechnology */
+static int hf_ilp_locationId;                     /* LocationId */
+static int hf_ilp_multipleLocationIds;            /* MultipleLocationIds */
+static int hf_ilp_position;                       /* Position */
+static int hf_ilp_triggerParams;                  /* TriggerParams */
+static int hf_ilp_sPCSETKey;                      /* SPCSETKey */
+static int hf_ilp_spctid;                         /* SPCTID */
+static int hf_ilp_sPCSETKeylifetime;              /* SPCSETKeylifetime */
+static int hf_ilp_qoP;                            /* QoP */
+static int hf_ilp_sETCapabilities;                /* SETCapabilities */
+static int hf_ilp_notificationMode;               /* NotificationMode */
+static int hf_ilp_triggerType;                    /* TriggerType */
+static int hf_ilp_periodicTriggerParams;          /* PeriodicTriggerParams */
+static int hf_ilp_numberOfFixes;                  /* INTEGER_1_8639999 */
+static int hf_ilp_intervalBetweenFixes;           /* INTEGER_1_8639999 */
+static int hf_ilp_startTime;                      /* INTEGER_0_2678400 */
+static int hf_ilp_preferredPosMethod;             /* PosMethod */
+static int hf_ilp_gnssPosTechnology;              /* GNSSPosTechnology */
+static int hf_ilp_supportedPosMethods;            /* PosTechnology */
+static int hf_ilp_sPCstatusCode;                  /* SPCStatusCode */
+static int hf_ilp_fixNumber;                      /* INTEGER_1_8639999 */
+static int hf_ilp_statusCode;                     /* StatusCode */
+static int hf_ilp_positionResults;                /* PositionResults */
+static int hf_ilp_PositionResults_item;           /* PositionResult */
+static int hf_ilp_posMethod;                      /* PosMethod */
+static int hf_ilp_requestedAssistData;            /* RequestedAssistData */
+static int hf_ilp_posPayLoad;                     /* PosPayLoad */
+static int hf_ilp_utran_GPSReferenceTimeResult;   /* UTRAN_GPSReferenceTimeResult */
+static int hf_ilp_utran_GANSSReferenceTimeResult;  /* UTRAN_GANSSReferenceTimeResult */
+static int hf_ilp_almanacRequested;               /* BOOLEAN */
+static int hf_ilp_utcModelRequested;              /* BOOLEAN */
+static int hf_ilp_ionosphericModelRequested;      /* BOOLEAN */
+static int hf_ilp_dgpsCorrectionsRequested;       /* BOOLEAN */
+static int hf_ilp_referenceLocationRequested;     /* BOOLEAN */
+static int hf_ilp_referenceTimeRequested;         /* BOOLEAN */
+static int hf_ilp_acquisitionAssistanceRequested;  /* BOOLEAN */
+static int hf_ilp_realTimeIntegrityRequested;     /* BOOLEAN */
+static int hf_ilp_navigationModelRequested;       /* BOOLEAN */
+static int hf_ilp_navigationModelData;            /* NavigationModel */
+static int hf_ilp_ganssRequestedCommonAssistanceDataList;  /* GanssRequestedCommonAssistanceDataList */
+static int hf_ilp_ganssRequestedGenericAssistanceDataList;  /* GanssRequestedGenericAssistanceDataList */
+static int hf_ilp_extendedEphemeris;              /* ExtendedEphemeris */
+static int hf_ilp_extendedEphemerisCheck;         /* ExtendedEphCheck */
+static int hf_ilp_validity;                       /* INTEGER_1_256 */
+static int hf_ilp_beginTime;                      /* GPSTime */
+static int hf_ilp_endTime;                        /* GPSTime */
+static int hf_ilp_gPSWeek;                        /* INTEGER_0_1023 */
+static int hf_ilp_gPSTOWhour;                     /* INTEGER_0_167 */
+static int hf_ilp_ganssReferenceTime;             /* BOOLEAN */
+static int hf_ilp_ganssIonosphericModel;          /* BOOLEAN */
+static int hf_ilp_ganssAdditionalIonosphericModelForDataID00;  /* BOOLEAN */
+static int hf_ilp_ganssAdditionalIonosphericModelForDataID11;  /* BOOLEAN */
+static int hf_ilp_ganssEarthOrientationParameters;  /* BOOLEAN */
+static int hf_ilp_ganssAdditionalIonosphericModelForDataID01;  /* BOOLEAN */
+static int hf_ilp_GanssRequestedGenericAssistanceDataList_item;  /* GanssReqGenericData */
+static int hf_ilp_ganssId;                        /* INTEGER_0_15 */
+static int hf_ilp_ganssSBASid;                    /* BIT_STRING_SIZE_3 */
+static int hf_ilp_ganssRealTimeIntegrity;         /* BOOLEAN */
+static int hf_ilp_ganssDifferentialCorrection;    /* DGANSS_Sig_Id_Req */
+static int hf_ilp_ganssAlmanac;                   /* BOOLEAN */
+static int hf_ilp_ganssNavigationModelData;       /* GanssNavigationModelData */
+static int hf_ilp_ganssTimeModels;                /* BIT_STRING_SIZE_16 */
+static int hf_ilp_ganssReferenceMeasurementInfo;  /* BOOLEAN */
+static int hf_ilp_ganssDataBits;                  /* GanssDataBits */
+static int hf_ilp_ganssUTCModel;                  /* BOOLEAN */
+static int hf_ilp_ganssAdditionalDataChoices;     /* GanssAdditionalDataChoices */
+static int hf_ilp_ganssAuxiliaryInformation;      /* BOOLEAN */
+static int hf_ilp_ganssExtendedEphemeris;         /* ExtendedEphemeris */
+static int hf_ilp_ganssExtendedEphemerisCheck;    /* GanssExtendedEphCheck */
+static int hf_ilp_bds_DifferentialCorrection;     /* BDS_Sig_Id_Req */
+static int hf_ilp_bds_GridModelReq;               /* BOOLEAN */
+static int hf_ilp_ganssWeek;                      /* INTEGER_0_4095 */
+static int hf_ilp_ganssToe;                       /* INTEGER_0_167 */
+static int hf_ilp_t_toeLimit;                     /* INTEGER_0_10 */
+static int hf_ilp_satellitesListRelatedDataList;  /* SatellitesListRelatedDataList */
+static int hf_ilp_SatellitesListRelatedDataList_item;  /* SatellitesListRelatedData */
+static int hf_ilp_satId;                          /* INTEGER_0_63 */
+static int hf_ilp_iod;                            /* INTEGER_0_1023 */
+static int hf_ilp_ganssTODmin;                    /* INTEGER_0_59 */
+static int hf_ilp_reqDataBitAssistanceList;       /* ReqDataBitAssistanceList */
+static int hf_ilp_gnssSignals;                    /* GANSSSignals */
+static int hf_ilp_ganssDataBitInterval;           /* INTEGER_0_15 */
+static int hf_ilp_ganssDataBitSatList;            /* T_ganssDataBitSatList */
+static int hf_ilp_ganssDataBitSatList_item;       /* INTEGER_0_63 */
+static int hf_ilp_orbitModelID;                   /* INTEGER_0_7 */
+static int hf_ilp_clockModelID;                   /* INTEGER_0_7 */
+static int hf_ilp_utcModelID;                     /* INTEGER_0_7 */
+static int hf_ilp_almanacModelID;                 /* INTEGER_0_7 */
+static int hf_ilp_beginTime_01;                   /* GANSSextEphTime */
+static int hf_ilp_endTime_01;                     /* GANSSextEphTime */
+static int hf_ilp_gANSSday;                       /* INTEGER_0_8191 */
+static int hf_ilp_gANSSTODhour;                   /* INTEGER_0_23 */
+static int hf_ilp_gpsWeek;                        /* INTEGER_0_1023 */
+static int hf_ilp_gpsToe;                         /* INTEGER_0_167 */
+static int hf_ilp_nsat;                           /* INTEGER_0_31 */
+static int hf_ilp_toeLimit;                       /* INTEGER_0_10 */
+static int hf_ilp_satInfo;                        /* SatelliteInfo */
+static int hf_ilp_SatelliteInfo_item;             /* SatelliteInfoElement */
+static int hf_ilp_iode;                           /* INTEGER_0_255 */
+static int hf_ilp_sPCStatusCode;                  /* SPCStatusCode */
+static int hf_ilp_velocity;                       /* Velocity */
+static int hf_ilp_utran_GPSReferenceTimeAssistance;  /* UTRAN_GPSReferenceTimeAssistance */
+static int hf_ilp_utran_GANSSReferenceTimeAssistance;  /* UTRAN_GANSSReferenceTimeAssistance */
+static int hf_ilp_maj;                            /* INTEGER_0_255 */
+static int hf_ilp_min;                            /* INTEGER_0_255 */
+static int hf_ilp_servind;                        /* INTEGER_0_255 */
+static int hf_ilp_slcSessionID;                   /* SlcSessionID */
+static int hf_ilp_setSessionID;                   /* SetSessionID */
+static int hf_ilp_spcSessionID;                   /* SpcSessionID */
+static int hf_ilp_sessionId;                      /* INTEGER_0_65535 */
+static int hf_ilp_setId;                          /* SETId */
+static int hf_ilp_msisdn;                         /* T_msisdn */
+static int hf_ilp_mdn;                            /* T_mdn */
+static int hf_ilp_minsi;                          /* BIT_STRING_SIZE_34 */
+static int hf_ilp_imsi;                           /* T_imsi */
+static int hf_ilp_nai;                            /* IA5String_SIZE_1_1000 */
+static int hf_ilp_iPAddress;                      /* IPAddress */
+static int hf_ilp_imei;                           /* OCTET_STRING_SIZE_8 */
+static int hf_ilp_sessionID;                      /* OCTET_STRING_SIZE_4 */
+static int hf_ilp_slcId;                          /* NodeAddress */
+static int hf_ilp_spcId;                          /* NodeAddress */
+static int hf_ilp_ipv4Address;                    /* OCTET_STRING_SIZE_4 */
+static int hf_ilp_ipv6Address;                    /* OCTET_STRING_SIZE_16 */
+static int hf_ilp_fqdn;                           /* FQDN */
+static int hf_ilp_cellInfo;                       /* CellInfo */
+static int hf_ilp_status;                         /* Status */
+static int hf_ilp_MultipleLocationIds_item;       /* LocationIdData */
+static int hf_ilp_relativetimestamp;              /* RelativeTime */
+static int hf_ilp_servingFlag;                    /* BOOLEAN */
+static int hf_ilp_posTechnology;                  /* PosTechnology */
+static int hf_ilp_prefMethod;                     /* PrefMethod */
+static int hf_ilp_posProtocol;                    /* PosProtocol */
+static int hf_ilp_supportedBearers;               /* SupportedBearers */
+static int hf_ilp_agpsSETassisted;                /* BOOLEAN */
+static int hf_ilp_agpsSETBased;                   /* BOOLEAN */
+static int hf_ilp_autonomousGPS;                  /* BOOLEAN */
+static int hf_ilp_aflt;                           /* BOOLEAN */
+static int hf_ilp_ecid;                           /* BOOLEAN */
+static int hf_ilp_eotd;                           /* BOOLEAN */
+static int hf_ilp_otdoa;                          /* BOOLEAN */
+static int hf_ilp_gANSSPositionMethods;           /* GANSSPositionMethods */
+static int hf_ilp_additionalPositioningMethods;   /* AdditionalPositioningMethods */
+static int hf_ilp_GANSSPositionMethods_item;      /* GANSSPositionMethod */
+static int hf_ilp_gANSSPositioningMethodTypes;    /* GANSSPositioningMethodTypes */
+static int hf_ilp_gANSSSignals;                   /* GANSSSignals */
+static int hf_ilp_setAssisted;                    /* BOOLEAN */
+static int hf_ilp_setBased;                       /* BOOLEAN */
+static int hf_ilp_autonomous;                     /* BOOLEAN */
+static int hf_ilp_AdditionalPositioningMethods_item;  /* AddPosSupport_Element */
+static int hf_ilp_addPosID;                       /* T_addPosID */
+static int hf_ilp_addPosMode;                     /* T_addPosMode */
+static int hf_ilp_tia801;                         /* BOOLEAN */
+static int hf_ilp_rrlp;                           /* BOOLEAN */
+static int hf_ilp_rrc;                            /* BOOLEAN */
+static int hf_ilp_lpp;                            /* BOOLEAN */
+static int hf_ilp_posProtocolVersionRRLP;         /* PosProtocolVersion3GPP */
+static int hf_ilp_posProtocolVersionRRC;          /* PosProtocolVersion3GPP */
+static int hf_ilp_posProtocolVersionTIA801;       /* PosProtocolVersion3GPP2 */
+static int hf_ilp_posProtocolVersionLPP;          /* PosProtocolVersion3GPP */
+static int hf_ilp_lppe;                           /* BOOLEAN */
+static int hf_ilp_posProtocolVersionLPPe;         /* PosProtocolVersionOMA */
+static int hf_ilp_majorVersionField;              /* INTEGER_0_255 */
+static int hf_ilp_technicalVersionField;          /* INTEGER_0_255 */
+static int hf_ilp_editorialVersionField;          /* INTEGER_0_255 */
+static int hf_ilp_PosProtocolVersion3GPP2_item;   /* Supported3GPP2PosProtocolVersion */
+static int hf_ilp_revisionNumber;                 /* BIT_STRING_SIZE_6 */
+static int hf_ilp_pointReleaseNumber;             /* INTEGER_0_255 */
+static int hf_ilp_internalEditLevel;              /* INTEGER_0_255 */
+static int hf_ilp_minorVersionField;              /* INTEGER_0_255 */
+static int hf_ilp_gsm;                            /* BOOLEAN */
+static int hf_ilp_wcdma;                          /* BOOLEAN */
+static int hf_ilp_lte;                            /* BOOLEAN */
+static int hf_ilp_cdma;                           /* BOOLEAN */
+static int hf_ilp_hprd;                           /* BOOLEAN */
+static int hf_ilp_umb;                            /* BOOLEAN */
+static int hf_ilp_wlan;                           /* BOOLEAN */
+static int hf_ilp_wiMAX;                          /* BOOLEAN */
+static int hf_ilp_nr;                             /* BOOLEAN */
+static int hf_ilp_gsmCell;                        /* GsmCellInformation */
+static int hf_ilp_wcdmaCell;                      /* WcdmaCellInformation */
+static int hf_ilp_cdmaCell;                       /* CdmaCellInformation */
+static int hf_ilp_hrpdCell;                       /* HrpdCellInformation */
+static int hf_ilp_umbCell;                        /* UmbCellInformation */
+static int hf_ilp_lteCell;                        /* LteCellInformation */
+static int hf_ilp_wlanAP;                         /* WlanAPInformation */
+static int hf_ilp_wimaxBS;                        /* WimaxBSInformation */
+static int hf_ilp_nrCell;                         /* NRCellInformation */
+static int hf_ilp_set_GPSTimingOfCell;            /* T_set_GPSTimingOfCell */
+static int hf_ilp_ms_part;                        /* INTEGER_0_16383 */
+static int hf_ilp_ls_part;                        /* INTEGER_0_4294967295 */
+static int hf_ilp_modeSpecificInfo;               /* T_modeSpecificInfo */
+static int hf_ilp_fdd;                            /* T_fdd */
+static int hf_ilp_referenceIdentity;              /* PrimaryCPICH_Info */
+static int hf_ilp_tdd;                            /* T_tdd */
+static int hf_ilp_referenceIdentity_01;           /* CellParametersID */
+static int hf_ilp_sfn;                            /* INTEGER_0_4095 */
+static int hf_ilp_gpsReferenceTimeUncertainty;    /* INTEGER_0_127 */
+static int hf_ilp_ganssTimeID;                    /* INTEGER_0_15 */
+static int hf_ilp_set_GANSSReferenceTime;         /* SET_GANSSReferenceTime */
+static int hf_ilp_set_GANSSTimingOfCell;          /* T_set_GANSSTimingOfCell */
+static int hf_ilp_ms_part_01;                     /* INTEGER_0_80 */
+static int hf_ilp_modeSpecificInfo_01;            /* T_modeSpecificInfo_01 */
+static int hf_ilp_fdd_01;                         /* T_fdd_01 */
+static int hf_ilp_tdd_01;                         /* T_tdd_01 */
+static int hf_ilp_ganss_TODUncertainty;           /* INTEGER_0_127 */
+static int hf_ilp_gps;                            /* BOOLEAN */
+static int hf_ilp_galileo;                        /* BOOLEAN */
+static int hf_ilp_sbas;                           /* BOOLEAN */
+static int hf_ilp_modernized_gps;                 /* BOOLEAN */
+static int hf_ilp_qzss;                           /* BOOLEAN */
+static int hf_ilp_glonass;                        /* BOOLEAN */
+static int hf_ilp_bds;                            /* BOOLEAN */
+static int hf_ilp_timestamp;                      /* UTCTime */
+static int hf_ilp_positionEstimate;               /* PositionEstimate */
+static int hf_ilp_latitudeSign;                   /* T_latitudeSign */
+static int hf_ilp_latitude;                       /* INTEGER_0_8388607 */
+static int hf_ilp_longitude;                      /* INTEGER_M8388608_8388607 */
+static int hf_ilp_uncertainty;                    /* T_uncertainty */
+static int hf_ilp_uncertaintySemiMajor;           /* INTEGER_0_127 */
+static int hf_ilp_uncertaintySemiMinor;           /* INTEGER_0_127 */
+static int hf_ilp_orientationMajorAxis;           /* INTEGER_0_180 */
+static int hf_ilp_confidence;                     /* INTEGER_0_100 */
+static int hf_ilp_altitudeInfo;                   /* AltitudeInfo */
+static int hf_ilp_altitudeDirection;              /* T_altitudeDirection */
+static int hf_ilp_altitude;                       /* INTEGER_0_32767 */
+static int hf_ilp_altUncertainty;                 /* INTEGER_0_127 */
+static int hf_ilp_refNID;                         /* INTEGER_0_65535 */
+static int hf_ilp_refSID;                         /* INTEGER_0_32767 */
+static int hf_ilp_refBASEID;                      /* INTEGER_0_65535 */
+static int hf_ilp_refBASELAT;                     /* INTEGER_0_4194303 */
+static int hf_ilp_reBASELONG;                     /* INTEGER_0_8388607 */
+static int hf_ilp_refREFPN;                       /* INTEGER_0_511 */
+static int hf_ilp_refWeekNumber;                  /* INTEGER_0_65535 */
+static int hf_ilp_refSeconds;                     /* INTEGER_0_4194303 */
+static int hf_ilp_refMCC;                         /* INTEGER_0_999 */
+static int hf_ilp_refMNC;                         /* INTEGER_0_999 */
+static int hf_ilp_refLAC;                         /* INTEGER_0_65535 */
+static int hf_ilp_refCI;                          /* INTEGER_0_65535 */
+static int hf_ilp_nmr;                            /* NMR */
+static int hf_ilp_ta;                             /* INTEGER_0_255 */
+static int hf_ilp_refUC;                          /* INTEGER_0_268435455 */
+static int hf_ilp_frequencyInfo;                  /* FrequencyInfo */
+static int hf_ilp_primaryScramblingCode;          /* INTEGER_0_511 */
+static int hf_ilp_measuredResultsList;            /* MeasuredResultsList */
+static int hf_ilp_cellParametersId;               /* INTEGER_0_127 */
+static int hf_ilp_timingAdvance;                  /* TimingAdvance */
+static int hf_ilp_ta_01;                          /* INTEGER_0_8191 */
+static int hf_ilp_tAResolution;                   /* TAResolution */
+static int hf_ilp_chipRate;                       /* ChipRate */
+static int hf_ilp_refSECTORID;                    /* BIT_STRING_SIZE_128 */
+static int hf_ilp_cellGlobalIdEUTRA;              /* CellGlobalIdEUTRA */
+static int hf_ilp_physCellId;                     /* PhysCellId */
+static int hf_ilp_trackingAreaCode;               /* TrackingAreaCode */
+static int hf_ilp_rsrpResult;                     /* RSRP_Range */
+static int hf_ilp_rsrqResult;                     /* RSRQ_Range */
+static int hf_ilp_ta_02;                          /* INTEGER_0_1282 */
+static int hf_ilp_measResultListEUTRA;            /* MeasResultListEUTRA */
+static int hf_ilp_earfcn;                         /* INTEGER_0_65535 */
+static int hf_ilp_earfcn_ext;                     /* INTEGER_65536_262143 */
+static int hf_ilp_rsrpResult_ext;                 /* RSRP_Range_Ext */
+static int hf_ilp_rsrqResult_ext;                 /* RSRQ_Range_Ext */
+static int hf_ilp_rs_sinrResult;                  /* RS_SINR_Range */
+static int hf_ilp_servingInformation5G;           /* ServingInformation5G */
+static int hf_ilp_MeasResultListEUTRA_item;       /* MeasResultEUTRA */
+static int hf_ilp_cgi_Info;                       /* T_cgi_Info */
+static int hf_ilp_cellGlobalId;                   /* CellGlobalIdEUTRA */
+static int hf_ilp_measResult;                     /* T_measResult */
+static int hf_ilp_neighbourInformation5G;         /* NeighbourInformation5G */
+static int hf_ilp_plmn_Identity;                  /* PLMN_Identity */
+static int hf_ilp_eutra_cellIdentity;             /* CellIdentity */
+static int hf_ilp_mcc;                            /* MCC */
+static int hf_ilp_mnc;                            /* MNC */
+static int hf_ilp_MCC_item;                       /* MCC_MNC_Digit */
+static int hf_ilp_MNC_item;                       /* MCC_MNC_Digit */
+static int hf_ilp_trackingAreaCode_01;            /* TrackingAreaCodeNR */
+static int hf_ilp_apMACAddress;                   /* BIT_STRING_SIZE_48 */
+static int hf_ilp_apTransmitPower;                /* INTEGER_M127_128 */
+static int hf_ilp_apAntennaGain;                  /* INTEGER_M127_128 */
+static int hf_ilp_apSignaltoNoise;                /* INTEGER_M127_128 */
+static int hf_ilp_apDeviceType;                   /* T_apDeviceType */
+static int hf_ilp_apSignalStrength;               /* INTEGER_M127_128 */
+static int hf_ilp_apChannelFrequency;             /* INTEGER_0_256 */
+static int hf_ilp_apRoundTripDelay;               /* RTD */
+static int hf_ilp_setTransmitPower;               /* INTEGER_M127_128 */
+static int hf_ilp_setAntennaGain;                 /* INTEGER_M127_128 */
+static int hf_ilp_setSignaltoNoise;               /* INTEGER_M127_128 */
+static int hf_ilp_setSignalStrength;              /* INTEGER_M127_128 */
+static int hf_ilp_apReportedLocation;             /* ReportedLocation */
+static int hf_ilp_apRepLocation;                  /* RepLocation */
+static int hf_ilp_apSignalStrengthDelta;          /* INTEGER_0_1 */
+static int hf_ilp_apSignaltoNoiseDelta;           /* INTEGER_0_1 */
+static int hf_ilp_setSignalStrengthDelta;         /* INTEGER_0_1 */
+static int hf_ilp_setSignaltoNoiseDelta;          /* INTEGER_0_1 */
+static int hf_ilp_operatingClass;                 /* INTEGER_0_255 */
+static int hf_ilp_apSSID;                         /* OCTET_STRING_SIZE_1_32 */
+static int hf_ilp_apPHYType;                      /* T_apPHYType */
+static int hf_ilp_setMACAddress;                  /* BIT_STRING_SIZE_48 */
+static int hf_ilp_rTDValue;                       /* INTEGER_0_16777216 */
+static int hf_ilp_rTDUnits;                       /* RTDUnits */
+static int hf_ilp_rTDAccuracy;                    /* INTEGER_0_255 */
+static int hf_ilp_locationEncodingDescriptor;     /* LocationEncodingDescriptor */
+static int hf_ilp_locationData;                   /* LocationData */
+static int hf_ilp_locationAccuracy;               /* INTEGER_0_4294967295 */
+static int hf_ilp_locationValue;                  /* OCTET_STRING_SIZE_1_128 */
+static int hf_ilp_lciLocData;                     /* LciLocData */
+static int hf_ilp_locationDataLCI;                /* LocationDataLCI */
+static int hf_ilp_latitudeResolution;             /* BIT_STRING_SIZE_6 */
+static int hf_ilp_LocationDataLCI_latitude;       /* BIT_STRING_SIZE_34 */
+static int hf_ilp_longitudeResolution;            /* BIT_STRING_SIZE_6 */
+static int hf_ilp_LocationDataLCI_longitude;      /* BIT_STRING_SIZE_34 */
+static int hf_ilp_altitudeType;                   /* BIT_STRING_SIZE_4 */
+static int hf_ilp_altitudeResolution;             /* BIT_STRING_SIZE_6 */
+static int hf_ilp_LocationDataLCI_altitude;       /* BIT_STRING_SIZE_30 */
+static int hf_ilp_datum;                          /* BIT_STRING_SIZE_8 */
+static int hf_ilp_wimaxBsID;                      /* WimaxBsID */
+static int hf_ilp_wimaxRTD;                       /* WimaxRTD */
+static int hf_ilp_wimaxNMRList;                   /* WimaxNMRList */
+static int hf_ilp_bsID_MSB;                       /* BIT_STRING_SIZE_24 */
+static int hf_ilp_bsID_LSB;                       /* BIT_STRING_SIZE_24 */
+static int hf_ilp_rtd;                            /* INTEGER_0_65535 */
+static int hf_ilp_rTDstd;                         /* INTEGER_0_1023 */
+static int hf_ilp_WimaxNMRList_item;              /* WimaxNMR */
+static int hf_ilp_relDelay;                       /* INTEGER_M32768_32767 */
+static int hf_ilp_relDelaystd;                    /* INTEGER_0_1023 */
+static int hf_ilp_rssi;                           /* INTEGER_0_255 */
+static int hf_ilp_rSSIstd;                        /* INTEGER_0_63 */
+static int hf_ilp_bSTxPower;                      /* INTEGER_0_255 */
+static int hf_ilp_cinr;                           /* INTEGER_0_255 */
+static int hf_ilp_cINRstd;                        /* INTEGER_0_63 */
+static int hf_ilp_bSLocation;                     /* ReportedLocation */
+static int hf_ilp_servingCellInformation;         /* ServingCellInformationNR */
+static int hf_ilp_measuredResultsListNR;          /* MeasResultListNR */
+static int hf_ilp_ServingCellInformationNR_item;  /* ServCellNR */
+static int hf_ilp_physCellId_01;                  /* PhysCellIdNR */
+static int hf_ilp_arfcn_NR;                       /* ARFCN_NR */
+static int hf_ilp_cellGlobalId_01;                /* CellGlobalIdNR */
+static int hf_ilp_ssb_Measurements;               /* NR_Measurements */
+static int hf_ilp_csi_rs_Measurements;            /* NR_Measurements */
+static int hf_ilp_ta_03;                          /* INTEGER_0_3846 */
+static int hf_ilp_MeasResultListNR_item;          /* MeasResultNR */
+static int hf_ilp_cellIdentityNR;                 /* CellIdentityNR */
+static int hf_ilp_rsrp_Range;                     /* INTEGER_0_127 */
+static int hf_ilp_rsrq_Range;                     /* INTEGER_0_127 */
+static int hf_ilp_sinr_Range;                     /* INTEGER_0_127 */
+static int hf_ilp_modeSpecificFrequencyInfo;      /* FrequencySpecificInfo */
+static int hf_ilp_fdd_fr;                         /* FrequencyInfoFDD */
+static int hf_ilp_tdd_fr;                         /* FrequencyInfoTDD */
+static int hf_ilp_uarfcn_UL;                      /* UARFCN */
+static int hf_ilp_uarfcn_DL;                      /* UARFCN */
+static int hf_ilp_uarfcn_Nt;                      /* UARFCN */
+static int hf_ilp_NMR_item;                       /* NMRelement */
+static int hf_ilp_arfcn;                          /* INTEGER_0_1023 */
+static int hf_ilp_bsic;                           /* INTEGER_0_63 */
+static int hf_ilp_rxLev;                          /* INTEGER_0_63 */
+static int hf_ilp_MeasuredResultsList_item;       /* MeasuredResults */
+static int hf_ilp_utra_CarrierRSSI;               /* UTRA_CarrierRSSI */
+static int hf_ilp_cellMeasuredResultsList;        /* CellMeasuredResultsList */
+static int hf_ilp_CellMeasuredResultsList_item;   /* CellMeasuredResults */
+static int hf_ilp_cellIdentity;                   /* INTEGER_0_268435455 */
+static int hf_ilp_modeSpecificInfo_02;            /* T_modeSpecificInfo_02 */
+static int hf_ilp_fdd_02;                         /* T_fdd_02 */
+static int hf_ilp_primaryCPICH_Info;              /* PrimaryCPICH_Info */
+static int hf_ilp_cpich_Ec_N0;                    /* CPICH_Ec_N0 */
+static int hf_ilp_cpich_RSCP;                     /* CPICH_RSCP */
+static int hf_ilp_pathloss;                       /* Pathloss */
+static int hf_ilp_tdd_02;                         /* T_tdd_02 */
+static int hf_ilp_cellParametersID;               /* CellParametersID */
+static int hf_ilp_proposedTGSN;                   /* TGSN */
+static int hf_ilp_primaryCCPCH_RSCP;              /* PrimaryCCPCH_RSCP */
+static int hf_ilp_timeslotISCP_List;              /* TimeslotISCP_List */
+static int hf_ilp_TimeslotISCP_List_item;         /* TimeslotISCP */
+static int hf_ilp_utran_GPSReferenceTime;         /* UTRAN_GPSReferenceTime */
+static int hf_ilp_utranGPSDriftRate;              /* UTRANGPSDriftRate */
+static int hf_ilp_utran_GPSTimingOfCell;          /* T_utran_GPSTimingOfCell */
+static int hf_ilp_ms_part_02;                     /* INTEGER_0_1023 */
+static int hf_ilp_modeSpecificInfo_03;            /* T_modeSpecificInfo_03 */
+static int hf_ilp_fdd_03;                         /* T_fdd_03 */
+static int hf_ilp_tdd_03;                         /* T_tdd_03 */
+static int hf_ilp_utran_GANSSReferenceTime;       /* UTRAN_GANSSReferenceTime */
+static int hf_ilp_ganssDay;                       /* INTEGER_0_8191 */
+static int hf_ilp_utranGANSSDriftRate;            /* UTRANGANSSDriftRate */
+static int hf_ilp_ganssTOD;                       /* INTEGER_0_86399 */
+static int hf_ilp_utran_GANSSTimingOfCell;        /* INTEGER_0_3999999 */
+static int hf_ilp_modeSpecificInfo_04;            /* T_modeSpecificInfo_04 */
+static int hf_ilp_fdd_04;                         /* T_fdd_04 */
+static int hf_ilp_tdd_04;                         /* T_tdd_04 */
+static int hf_ilp_horacc;                         /* INTEGER_0_127 */
+static int hf_ilp_veracc;                         /* INTEGER_0_127 */
+static int hf_ilp_maxLocAge;                      /* INTEGER_0_65535 */
+static int hf_ilp_delay;                          /* INTEGER_0_7 */
+static int hf_ilp_ver2_responseTime;              /* INTEGER_1_128 */
+static int hf_ilp_horvel;                         /* Horvel */
+static int hf_ilp_horandvervel;                   /* Horandvervel */
+static int hf_ilp_horveluncert;                   /* Horveluncert */
+static int hf_ilp_horandveruncert;                /* Horandveruncert */
+static int hf_ilp_bearing;                        /* BIT_STRING_SIZE_9 */
+static int hf_ilp_horspeed;                       /* BIT_STRING_SIZE_16 */
+static int hf_ilp_verdirect;                      /* BIT_STRING_SIZE_1 */
+static int hf_ilp_verspeed;                       /* BIT_STRING_SIZE_8 */
+static int hf_ilp_uncertspeed;                    /* BIT_STRING_SIZE_8 */
+static int hf_ilp_horuncertspeed;                 /* BIT_STRING_SIZE_8 */
+static int hf_ilp_veruncertspeed;                 /* BIT_STRING_SIZE_8 */
+static int hf_ilp_rand;                           /* BIT_STRING_SIZE_128 */
+static int hf_ilp_slpFQDN;                        /* FQDN */
+static int hf_ilp_rrcPayload;                     /* OCTET_STRING_SIZE_1_8192 */
+static int hf_ilp_rrlpPayload;                    /* T_rrlpPayload */
+static int hf_ilp_multiPosPayload;                /* MultiPosPayLoad */
+static int hf_ilp_lPPPayload;                     /* T_lPPPayload */
+static int hf_ilp_lPPPayload_item;                /* T_lPPPayload_item */
+static int hf_ilp_tia801Payload;                  /* T_tia801Payload */
+static int hf_ilp_tia801Payload_item;             /* OCTET_STRING_SIZE_1_60000 */
 /* named bits */
-static int hf_ilp_GANSSSignals_signal1 = -1;
-static int hf_ilp_GANSSSignals_signal2 = -1;
-static int hf_ilp_GANSSSignals_signal3 = -1;
-static int hf_ilp_GANSSSignals_signal4 = -1;
-static int hf_ilp_GANSSSignals_signal5 = -1;
-static int hf_ilp_GANSSSignals_signal6 = -1;
-static int hf_ilp_GANSSSignals_signal7 = -1;
-static int hf_ilp_GANSSSignals_signal8 = -1;
-
-/*--- End of included file: packet-ilp-hf.c ---*/
-#line 64 "./asn1/ilp/packet-ilp-template.c"
-static int hf_ilp_mobile_directory_number = -1;
+static int hf_ilp_GANSSSignals_signal1;
+static int hf_ilp_GANSSSignals_signal2;
+static int hf_ilp_GANSSSignals_signal3;
+static int hf_ilp_GANSSSignals_signal4;
+static int hf_ilp_GANSSSignals_signal5;
+static int hf_ilp_GANSSSignals_signal6;
+static int hf_ilp_GANSSSignals_signal7;
+static int hf_ilp_GANSSSignals_signal8;
+static int hf_ilp_T_addPosMode_standalone;
+static int hf_ilp_T_addPosMode_setBased;
+static int hf_ilp_T_addPosMode_setAssisted;
+static int hf_ilp_mobile_directory_number;
 
 /* Initialize the subtree pointers */
-static gint ett_ilp = -1;
-static gint ett_ilp_setid = -1;
-
-/*--- Included file: packet-ilp-ett.c ---*/
-#line 1 "./asn1/ilp/packet-ilp-ett.c"
-static gint ett_ilp_ILP_PDU = -1;
-static gint ett_ilp_IlpMessage = -1;
-static gint ett_ilp_PREQ = -1;
-static gint ett_ilp_TriggerParams = -1;
-static gint ett_ilp_PeriodicTriggerParams = -1;
-static gint ett_ilp_PRES = -1;
-static gint ett_ilp_PRPT = -1;
-static gint ett_ilp_PLREQ = -1;
-static gint ett_ilp_PLRES = -1;
-static gint ett_ilp_PositionResults = -1;
-static gint ett_ilp_PositionResult = -1;
-static gint ett_ilp_PINIT = -1;
-static gint ett_ilp_RequestedAssistData = -1;
-static gint ett_ilp_ExtendedEphemeris = -1;
-static gint ett_ilp_ExtendedEphCheck = -1;
-static gint ett_ilp_GPSTime = -1;
-static gint ett_ilp_GanssRequestedCommonAssistanceDataList = -1;
-static gint ett_ilp_GanssRequestedGenericAssistanceDataList = -1;
-static gint ett_ilp_GanssReqGenericData = -1;
-static gint ett_ilp_GanssNavigationModelData = -1;
-static gint ett_ilp_SatellitesListRelatedDataList = -1;
-static gint ett_ilp_SatellitesListRelatedData = -1;
-static gint ett_ilp_GanssDataBits = -1;
-static gint ett_ilp_ReqDataBitAssistanceList = -1;
-static gint ett_ilp_T_ganssDataBitSatList = -1;
-static gint ett_ilp_GanssAdditionalDataChoices = -1;
-static gint ett_ilp_GanssExtendedEphCheck = -1;
-static gint ett_ilp_GANSSextEphTime = -1;
-static gint ett_ilp_NavigationModel = -1;
-static gint ett_ilp_SatelliteInfo = -1;
-static gint ett_ilp_SatelliteInfoElement = -1;
-static gint ett_ilp_PAUTH = -1;
-static gint ett_ilp_PALIVE = -1;
-static gint ett_ilp_PEND = -1;
-static gint ett_ilp_PMESS = -1;
-static gint ett_ilp_Version = -1;
-static gint ett_ilp_SessionID2 = -1;
-static gint ett_ilp_SetSessionID = -1;
-static gint ett_ilp_SETId = -1;
-static gint ett_ilp_SlcSessionID = -1;
-static gint ett_ilp_SpcSessionID = -1;
-static gint ett_ilp_IPAddress = -1;
-static gint ett_ilp_NodeAddress = -1;
-static gint ett_ilp_LocationId = -1;
-static gint ett_ilp_MultipleLocationIds = -1;
-static gint ett_ilp_LocationIdData = -1;
-static gint ett_ilp_SETCapabilities = -1;
-static gint ett_ilp_PosTechnology = -1;
-static gint ett_ilp_GANSSPositionMethods = -1;
-static gint ett_ilp_GANSSPositionMethod = -1;
-static gint ett_ilp_GANSSPositioningMethodTypes = -1;
-static gint ett_ilp_GANSSSignals = -1;
-static gint ett_ilp_PosProtocol = -1;
-static gint ett_ilp_PosProtocolVersion3GPP = -1;
-static gint ett_ilp_PosProtocolVersion3GPP2 = -1;
-static gint ett_ilp_Supported3GPP2PosProtocolVersion = -1;
-static gint ett_ilp_SupportedBearers = -1;
-static gint ett_ilp_CellInfo = -1;
-static gint ett_ilp_UTRAN_GPSReferenceTimeResult = -1;
-static gint ett_ilp_T_set_GPSTimingOfCell = -1;
-static gint ett_ilp_T_modeSpecificInfo = -1;
-static gint ett_ilp_T_fdd = -1;
-static gint ett_ilp_T_tdd = -1;
-static gint ett_ilp_UTRAN_GANSSReferenceTimeResult = -1;
-static gint ett_ilp_SET_GANSSReferenceTime = -1;
-static gint ett_ilp_T_set_GANSSTimingOfCell = -1;
-static gint ett_ilp_T_modeSpecificInfo_01 = -1;
-static gint ett_ilp_T_fdd_01 = -1;
-static gint ett_ilp_T_tdd_01 = -1;
-static gint ett_ilp_GNSSPosTechnology = -1;
-static gint ett_ilp_Position = -1;
-static gint ett_ilp_PositionEstimate = -1;
-static gint ett_ilp_T_uncertainty = -1;
-static gint ett_ilp_AltitudeInfo = -1;
-static gint ett_ilp_CdmaCellInformation = -1;
-static gint ett_ilp_GsmCellInformation = -1;
-static gint ett_ilp_WcdmaCellInformation = -1;
-static gint ett_ilp_TimingAdvance = -1;
-static gint ett_ilp_HrpdCellInformation = -1;
-static gint ett_ilp_UmbCellInformation = -1;
-static gint ett_ilp_LteCellInformation = -1;
-static gint ett_ilp_MeasResultListEUTRA = -1;
-static gint ett_ilp_MeasResultEUTRA = -1;
-static gint ett_ilp_T_cgi_Info = -1;
-static gint ett_ilp_T_measResult = -1;
-static gint ett_ilp_CellGlobalIdEUTRA = -1;
-static gint ett_ilp_PLMN_Identity = -1;
-static gint ett_ilp_MCC = -1;
-static gint ett_ilp_MNC = -1;
-static gint ett_ilp_WlanAPInformation = -1;
-static gint ett_ilp_RTD = -1;
-static gint ett_ilp_ReportedLocation = -1;
-static gint ett_ilp_LocationData = -1;
-static gint ett_ilp_WimaxBSInformation = -1;
-static gint ett_ilp_WimaxBsID = -1;
-static gint ett_ilp_WimaxRTD = -1;
-static gint ett_ilp_WimaxNMRList = -1;
-static gint ett_ilp_WimaxNMR = -1;
-static gint ett_ilp_FrequencyInfo = -1;
-static gint ett_ilp_FrequencySpecificInfo = -1;
-static gint ett_ilp_FrequencyInfoFDD = -1;
-static gint ett_ilp_FrequencyInfoTDD = -1;
-static gint ett_ilp_NMR = -1;
-static gint ett_ilp_NMRelement = -1;
-static gint ett_ilp_MeasuredResultsList = -1;
-static gint ett_ilp_MeasuredResults = -1;
-static gint ett_ilp_CellMeasuredResultsList = -1;
-static gint ett_ilp_CellMeasuredResults = -1;
-static gint ett_ilp_T_modeSpecificInfo_02 = -1;
-static gint ett_ilp_T_fdd_02 = -1;
-static gint ett_ilp_T_tdd_02 = -1;
-static gint ett_ilp_TimeslotISCP_List = -1;
-static gint ett_ilp_PrimaryCPICH_Info = -1;
-static gint ett_ilp_UTRAN_GPSReferenceTimeAssistance = -1;
-static gint ett_ilp_UTRAN_GPSReferenceTime = -1;
-static gint ett_ilp_T_utran_GPSTimingOfCell = -1;
-static gint ett_ilp_T_modeSpecificInfo_03 = -1;
-static gint ett_ilp_T_fdd_03 = -1;
-static gint ett_ilp_T_tdd_03 = -1;
-static gint ett_ilp_UTRAN_GANSSReferenceTimeAssistance = -1;
-static gint ett_ilp_UTRAN_GANSSReferenceTime = -1;
-static gint ett_ilp_T_modeSpecificInfo_04 = -1;
-static gint ett_ilp_T_fdd_04 = -1;
-static gint ett_ilp_T_tdd_04 = -1;
-static gint ett_ilp_QoP = -1;
-static gint ett_ilp_Velocity = -1;
-static gint ett_ilp_Horvel = -1;
-static gint ett_ilp_Horandvervel = -1;
-static gint ett_ilp_Horveluncert = -1;
-static gint ett_ilp_Horandveruncert = -1;
-static gint ett_ilp_SPCTID = -1;
-static gint ett_ilp_PosPayLoad = -1;
-static gint ett_ilp_MultiPosPayLoad = -1;
-static gint ett_ilp_T_lPPPayload = -1;
-static gint ett_ilp_T_tia801Payload = -1;
-
-/*--- End of included file: packet-ilp-ett.c ---*/
-#line 70 "./asn1/ilp/packet-ilp-template.c"
+static int ett_ilp;
+static int ett_ilp_setid;
+static int ett_ilp_ILP_PDU;
+static int ett_ilp_IlpMessage;
+static int ett_ilp_PREQ;
+static int ett_ilp_TriggerParams;
+static int ett_ilp_PeriodicTriggerParams;
+static int ett_ilp_PRES;
+static int ett_ilp_PRPT;
+static int ett_ilp_PLREQ;
+static int ett_ilp_PLRES;
+static int ett_ilp_PositionResults;
+static int ett_ilp_PositionResult;
+static int ett_ilp_PINIT;
+static int ett_ilp_RequestedAssistData;
+static int ett_ilp_ExtendedEphemeris;
+static int ett_ilp_ExtendedEphCheck;
+static int ett_ilp_GPSTime;
+static int ett_ilp_GanssRequestedCommonAssistanceDataList;
+static int ett_ilp_GanssRequestedGenericAssistanceDataList;
+static int ett_ilp_GanssReqGenericData;
+static int ett_ilp_GanssNavigationModelData;
+static int ett_ilp_SatellitesListRelatedDataList;
+static int ett_ilp_SatellitesListRelatedData;
+static int ett_ilp_GanssDataBits;
+static int ett_ilp_ReqDataBitAssistanceList;
+static int ett_ilp_T_ganssDataBitSatList;
+static int ett_ilp_GanssAdditionalDataChoices;
+static int ett_ilp_GanssExtendedEphCheck;
+static int ett_ilp_GANSSextEphTime;
+static int ett_ilp_NavigationModel;
+static int ett_ilp_SatelliteInfo;
+static int ett_ilp_SatelliteInfoElement;
+static int ett_ilp_PAUTH;
+static int ett_ilp_PALIVE;
+static int ett_ilp_PEND;
+static int ett_ilp_PMESS;
+static int ett_ilp_Version;
+static int ett_ilp_SessionID2;
+static int ett_ilp_SetSessionID;
+static int ett_ilp_SETId;
+static int ett_ilp_SlcSessionID;
+static int ett_ilp_SpcSessionID;
+static int ett_ilp_IPAddress;
+static int ett_ilp_NodeAddress;
+static int ett_ilp_LocationId;
+static int ett_ilp_MultipleLocationIds;
+static int ett_ilp_LocationIdData;
+static int ett_ilp_SETCapabilities;
+static int ett_ilp_PosTechnology;
+static int ett_ilp_GANSSPositionMethods;
+static int ett_ilp_GANSSPositionMethod;
+static int ett_ilp_GANSSPositioningMethodTypes;
+static int ett_ilp_GANSSSignals;
+static int ett_ilp_AdditionalPositioningMethods;
+static int ett_ilp_AddPosSupport_Element;
+static int ett_ilp_T_addPosMode;
+static int ett_ilp_PosProtocol;
+static int ett_ilp_PosProtocolVersion3GPP;
+static int ett_ilp_PosProtocolVersion3GPP2;
+static int ett_ilp_Supported3GPP2PosProtocolVersion;
+static int ett_ilp_PosProtocolVersionOMA;
+static int ett_ilp_SupportedBearers;
+static int ett_ilp_CellInfo;
+static int ett_ilp_UTRAN_GPSReferenceTimeResult;
+static int ett_ilp_T_set_GPSTimingOfCell;
+static int ett_ilp_T_modeSpecificInfo;
+static int ett_ilp_T_fdd;
+static int ett_ilp_T_tdd;
+static int ett_ilp_UTRAN_GANSSReferenceTimeResult;
+static int ett_ilp_SET_GANSSReferenceTime;
+static int ett_ilp_T_set_GANSSTimingOfCell;
+static int ett_ilp_T_modeSpecificInfo_01;
+static int ett_ilp_T_fdd_01;
+static int ett_ilp_T_tdd_01;
+static int ett_ilp_GNSSPosTechnology;
+static int ett_ilp_Position;
+static int ett_ilp_PositionEstimate;
+static int ett_ilp_T_uncertainty;
+static int ett_ilp_AltitudeInfo;
+static int ett_ilp_CdmaCellInformation;
+static int ett_ilp_GsmCellInformation;
+static int ett_ilp_WcdmaCellInformation;
+static int ett_ilp_TimingAdvance;
+static int ett_ilp_HrpdCellInformation;
+static int ett_ilp_UmbCellInformation;
+static int ett_ilp_LteCellInformation;
+static int ett_ilp_MeasResultListEUTRA;
+static int ett_ilp_MeasResultEUTRA;
+static int ett_ilp_T_cgi_Info;
+static int ett_ilp_T_measResult;
+static int ett_ilp_CellGlobalIdEUTRA;
+static int ett_ilp_PLMN_Identity;
+static int ett_ilp_MCC;
+static int ett_ilp_MNC;
+static int ett_ilp_ServingInformation5G;
+static int ett_ilp_NeighbourInformation5G;
+static int ett_ilp_WlanAPInformation;
+static int ett_ilp_RTD;
+static int ett_ilp_ReportedLocation;
+static int ett_ilp_LocationData;
+static int ett_ilp_RepLocation;
+static int ett_ilp_LciLocData;
+static int ett_ilp_LocationDataLCI;
+static int ett_ilp_WimaxBSInformation;
+static int ett_ilp_WimaxBsID;
+static int ett_ilp_WimaxRTD;
+static int ett_ilp_WimaxNMRList;
+static int ett_ilp_WimaxNMR;
+static int ett_ilp_NRCellInformation;
+static int ett_ilp_ServingCellInformationNR;
+static int ett_ilp_ServCellNR;
+static int ett_ilp_MeasResultListNR;
+static int ett_ilp_MeasResultNR;
+static int ett_ilp_CellGlobalIdNR;
+static int ett_ilp_NR_Measurements;
+static int ett_ilp_FrequencyInfo;
+static int ett_ilp_FrequencySpecificInfo;
+static int ett_ilp_FrequencyInfoFDD;
+static int ett_ilp_FrequencyInfoTDD;
+static int ett_ilp_NMR;
+static int ett_ilp_NMRelement;
+static int ett_ilp_MeasuredResultsList;
+static int ett_ilp_MeasuredResults;
+static int ett_ilp_CellMeasuredResultsList;
+static int ett_ilp_CellMeasuredResults;
+static int ett_ilp_T_modeSpecificInfo_02;
+static int ett_ilp_T_fdd_02;
+static int ett_ilp_T_tdd_02;
+static int ett_ilp_TimeslotISCP_List;
+static int ett_ilp_PrimaryCPICH_Info;
+static int ett_ilp_UTRAN_GPSReferenceTimeAssistance;
+static int ett_ilp_UTRAN_GPSReferenceTime;
+static int ett_ilp_T_utran_GPSTimingOfCell;
+static int ett_ilp_T_modeSpecificInfo_03;
+static int ett_ilp_T_fdd_03;
+static int ett_ilp_T_tdd_03;
+static int ett_ilp_UTRAN_GANSSReferenceTimeAssistance;
+static int ett_ilp_UTRAN_GANSSReferenceTime;
+static int ett_ilp_T_modeSpecificInfo_04;
+static int ett_ilp_T_fdd_04;
+static int ett_ilp_T_tdd_04;
+static int ett_ilp_QoP;
+static int ett_ilp_Velocity;
+static int ett_ilp_Horvel;
+static int ett_ilp_Horandvervel;
+static int ett_ilp_Horveluncert;
+static int ett_ilp_Horandveruncert;
+static int ett_ilp_SPCTID;
+static int ett_ilp_PosPayLoad;
+static int ett_ilp_MultiPosPayLoad;
+static int ett_ilp_T_lPPPayload;
+static int ett_ilp_T_tia801Payload;
 
 /* Include constants */
-
-/*--- Included file: packet-ilp-val.h ---*/
-#line 1 "./asn1/ilp/packet-ilp-val.h"
 #define maxGANSS                       16
 #define maxGANSSSat                    32
 #define maxLidSize                     64
 #define maxCellReport                  8
 #define maxWimaxBSMeas                 32
+#define maxNRServingCell               32
+#define maxCellReportNR                32
 #define maxCellMeas                    32
 #define maxFreq                        8
 #define maxTS                          14
 #define maxPosSize                     1024
 
-/*--- End of included file: packet-ilp-val.h ---*/
-#line 73 "./asn1/ilp/packet-ilp-template.c"
 
-
-
-/*--- Included file: packet-ilp-fn.c ---*/
-#line 1 "./asn1/ilp/packet-ilp-fn.c"
 
 
 static int
 dissect_ilp_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -638,7 +680,7 @@ dissect_ilp_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_ilp_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -664,7 +706,7 @@ dissect_ilp_Version(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_ilp_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       4, 4, FALSE, NULL);
+                                       4, 4, false, NULL);
 
   return offset;
 }
@@ -674,7 +716,7 @@ dissect_ilp_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ilp_OCTET_STRING_SIZE_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       16, 16, FALSE, NULL);
+                                       16, 16, false, NULL);
 
   return offset;
 }
@@ -706,7 +748,7 @@ dissect_ilp_IPAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_ilp_FQDN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,
-                                                      1, 255, FALSE, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-", 64,
+                                                      1, 255, false, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-", 64,
                                                       NULL);
 
   return offset;
@@ -753,18 +795,16 @@ dissect_ilp_SlcSessionID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_ilp_T_msisdn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 70 "./asn1/ilp/ilp.cnf"
   tvbuff_t *msisdn_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, &msisdn_tvb);
+                                       8, 8, false, &msisdn_tvb);
 
   if (msisdn_tvb) {
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ilp_setid);
-    dissect_e164_msisdn(msisdn_tvb, subtree, 0, 8, E164_ENC_BCD);
+    dissect_e164_msisdn(msisdn_tvb, actx->pinfo, subtree, 0, 8, E164_ENC_BCD);
   }
-
 
 
   return offset;
@@ -774,18 +814,16 @@ dissect_ilp_T_msisdn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 static int
 dissect_ilp_T_mdn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 80 "./asn1/ilp/ilp.cnf"
   tvbuff_t *mdn_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, &mdn_tvb);
+                                       8, 8, false, &mdn_tvb);
 
   if (mdn_tvb) {
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ilp_setid);
-    proto_tree_add_string(subtree, hf_ilp_mobile_directory_number, mdn_tvb, 0, 8, tvb_bcd_dig_to_wmem_packet_str(mdn_tvb, 0, 8, NULL, FALSE));
+    proto_tree_add_item(subtree, hf_ilp_mobile_directory_number, mdn_tvb, 0, 8, ENC_BCD_DIGITS_0_9|ENC_LITTLE_ENDIAN);
   }
-
 
 
   return offset;
@@ -796,7 +834,7 @@ dissect_ilp_T_mdn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_ilp_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     34, 34, FALSE, NULL, NULL);
+                                     34, 34, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -805,18 +843,16 @@ dissect_ilp_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 static int
 dissect_ilp_T_imsi(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 90 "./asn1/ilp/ilp.cnf"
   tvbuff_t *imsi_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, &imsi_tvb);
+                                       8, 8, false, &imsi_tvb);
 
   if (imsi_tvb) {
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ilp_setid);
-    dissect_e212_imsi(imsi_tvb, actx->pinfo, subtree, 0, 8, FALSE);
+    dissect_e212_imsi(imsi_tvb, actx->pinfo, subtree, 0, 8, false);
   }
-
 
 
   return offset;
@@ -827,7 +863,18 @@ dissect_ilp_T_imsi(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 static int
 dissect_ilp_IA5String_SIZE_1_1000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          1, 1000, FALSE);
+                                          1, 1000, false,
+                                          NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_OCTET_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
+                                       8, 8, false, NULL);
 
   return offset;
 }
@@ -840,6 +887,7 @@ static const value_string ilp_SETId_vals[] = {
   {   3, "imsi" },
   {   4, "nai" },
   {   5, "iPAddress" },
+  {   6, "imei" },
   { 0, NULL }
 };
 
@@ -850,6 +898,7 @@ static const per_choice_t SETId_choice[] = {
   {   3, &hf_ilp_imsi            , ASN1_EXTENSION_ROOT    , dissect_ilp_T_imsi },
   {   4, &hf_ilp_nai             , ASN1_EXTENSION_ROOT    , dissect_ilp_IA5String_SIZE_1_1000 },
   {   5, &hf_ilp_iPAddress       , ASN1_EXTENSION_ROOT    , dissect_ilp_IPAddress },
+  {   6, &hf_ilp_imei            , ASN1_NOT_EXTENSION_ROOT, dissect_ilp_OCTET_STRING_SIZE_8 },
   { 0, NULL, 0, NULL }
 };
 
@@ -919,7 +968,7 @@ static const value_string ilp_SLPMode_vals[] = {
 static int
 dissect_ilp_SLPMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -938,7 +987,7 @@ dissect_ilp_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_ilp_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
@@ -948,7 +997,7 @@ dissect_ilp_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_ilp_BIT_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     3, 3, FALSE, NULL, NULL);
+                                     3, 3, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -970,11 +1019,22 @@ dissect_ilp_GANSSPositioningMethodTypes(tvbuff_t *tvb _U_, int offset _U_, asn1_
 }
 
 
+static int * const GANSSSignals_bits[] = {
+  &hf_ilp_GANSSSignals_signal1,
+  &hf_ilp_GANSSSignals_signal2,
+  &hf_ilp_GANSSSignals_signal3,
+  &hf_ilp_GANSSSignals_signal4,
+  &hf_ilp_GANSSSignals_signal5,
+  &hf_ilp_GANSSSignals_signal6,
+  &hf_ilp_GANSSSignals_signal7,
+  &hf_ilp_GANSSSignals_signal8,
+  NULL
+};
 
 static int
 dissect_ilp_GANSSSignals(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     1, 8, FALSE, NULL, NULL);
+                                     1, 8, false, GANSSSignals_bits, 8, NULL, NULL);
 
   return offset;
 }
@@ -1005,7 +1065,67 @@ static int
 dissect_ilp_GANSSPositionMethods(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_GANSSPositionMethods, GANSSPositionMethods_sequence_of,
-                                                  1, 16, FALSE);
+                                                  1, 16, false);
+
+  return offset;
+}
+
+
+static const value_string ilp_T_addPosID_vals[] = {
+  {   0, "mBS" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_ilp_T_addPosID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     1, NULL, true, 0, NULL);
+
+  return offset;
+}
+
+
+static int * const T_addPosMode_bits[] = {
+  &hf_ilp_T_addPosMode_standalone,
+  &hf_ilp_T_addPosMode_setBased,
+  &hf_ilp_T_addPosMode_setAssisted,
+  NULL
+};
+
+static int
+dissect_ilp_T_addPosMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     1, 8, false, T_addPosMode_bits, 3, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t AddPosSupport_Element_sequence[] = {
+  { &hf_ilp_addPosID        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_T_addPosID },
+  { &hf_ilp_addPosMode      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_T_addPosMode },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_AddPosSupport_Element(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_AddPosSupport_Element, AddPosSupport_Element_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t AdditionalPositioningMethods_sequence_of[1] = {
+  { &hf_ilp_AdditionalPositioningMethods_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ilp_AddPosSupport_Element },
+};
+
+static int
+dissect_ilp_AdditionalPositioningMethods(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_ilp_AdditionalPositioningMethods, AdditionalPositioningMethods_sequence_of,
+                                                  1, 8, false);
 
   return offset;
 }
@@ -1015,11 +1135,12 @@ static const per_sequence_t PosTechnology_sequence[] = {
   { &hf_ilp_agpsSETassisted , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_agpsSETBased    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_autonomousGPS   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
-  { &hf_ilp_aFLT            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
-  { &hf_ilp_eCID            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
-  { &hf_ilp_eOTD            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
-  { &hf_ilp_oTDOA           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
+  { &hf_ilp_aflt            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
+  { &hf_ilp_ecid            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
+  { &hf_ilp_eotd            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
+  { &hf_ilp_otdoa           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_gANSSPositionMethods, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_GANSSPositionMethods },
+  { &hf_ilp_additionalPositioningMethods, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_AdditionalPositioningMethods },
   { NULL, 0, 0, NULL }
 };
 
@@ -1036,7 +1157,7 @@ dissect_ilp_PosTechnology(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_INTEGER_0_999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 999U, NULL, FALSE);
+                                                            0U, 999U, NULL, false);
 
   return offset;
 }
@@ -1046,7 +1167,7 @@ dissect_ilp_INTEGER_0_999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1023U, NULL, FALSE);
+                                                            0U, 1023U, NULL, false);
 
   return offset;
 }
@@ -1056,15 +1177,15 @@ dissect_ilp_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_ilp_INTEGER_0_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
 
   return offset;
 }
 
 
 static const per_sequence_t NMRelement_sequence[] = {
-  { &hf_ilp_aRFCN           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_1023 },
-  { &hf_ilp_bSIC            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_63 },
+  { &hf_ilp_arfcn           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_1023 },
+  { &hf_ilp_bsic            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_63 },
   { &hf_ilp_rxLev           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_63 },
   { NULL, 0, 0, NULL }
 };
@@ -1086,7 +1207,7 @@ static int
 dissect_ilp_NMR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_NMR, NMR_sequence_of,
-                                                  1, 15, FALSE);
+                                                  1, 15, false);
 
   return offset;
 }
@@ -1097,8 +1218,8 @@ static const per_sequence_t GsmCellInformation_sequence[] = {
   { &hf_ilp_refMNC          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_999 },
   { &hf_ilp_refLAC          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_65535 },
   { &hf_ilp_refCI           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_65535 },
-  { &hf_ilp_nMR             , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_NMR },
-  { &hf_ilp_tA              , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_255 },
+  { &hf_ilp_nmr             , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_NMR },
+  { &hf_ilp_ta              , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_255 },
   { NULL, 0, 0, NULL }
 };
 
@@ -1115,7 +1236,7 @@ dissect_ilp_GsmCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_ilp_INTEGER_0_268435455(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 268435455U, NULL, FALSE);
+                                                            0U, 268435455U, NULL, false);
 
   return offset;
 }
@@ -1125,7 +1246,7 @@ dissect_ilp_INTEGER_0_268435455(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ilp_UARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16383U, NULL, FALSE);
+                                                            0U, 16383U, NULL, false);
 
   return offset;
 }
@@ -1200,7 +1321,7 @@ dissect_ilp_FrequencyInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_INTEGER_0_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 511U, NULL, FALSE);
+                                                            0U, 511U, NULL, false);
 
   return offset;
 }
@@ -1210,7 +1331,7 @@ dissect_ilp_INTEGER_0_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_UTRA_CarrierRSSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -1234,7 +1355,7 @@ dissect_ilp_PrimaryCPICH_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_CPICH_Ec_N0(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
 
   return offset;
 }
@@ -1244,7 +1365,7 @@ dissect_ilp_CPICH_Ec_N0(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_ilp_CPICH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -1254,7 +1375,7 @@ dissect_ilp_CPICH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ilp_Pathloss(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            46U, 173U, NULL, FALSE);
+                                                            46U, 173U, NULL, false);
 
   return offset;
 }
@@ -1281,7 +1402,7 @@ dissect_ilp_T_fdd_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int
 dissect_ilp_CellParametersID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -1291,7 +1412,7 @@ dissect_ilp_CellParametersID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_ilp_TGSN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 14U, NULL, FALSE);
+                                                            0U, 14U, NULL, false);
 
   return offset;
 }
@@ -1301,7 +1422,7 @@ dissect_ilp_TGSN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_
 static int
 dissect_ilp_PrimaryCCPCH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -1311,7 +1432,7 @@ dissect_ilp_PrimaryCCPCH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_TimeslotISCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -1325,7 +1446,7 @@ static int
 dissect_ilp_TimeslotISCP_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_TimeslotISCP_List, TimeslotISCP_List_sequence_of,
-                                                  1, maxTS, FALSE);
+                                                  1, maxTS, false);
 
   return offset;
 }
@@ -1372,7 +1493,7 @@ dissect_ilp_T_modeSpecificInfo_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 static const per_sequence_t CellMeasuredResults_sequence[] = {
-  { &hf_ilp_cellIdentity_01 , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_268435455 },
+  { &hf_ilp_cellIdentity    , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_268435455 },
   { &hf_ilp_modeSpecificInfo_02, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ilp_T_modeSpecificInfo_02 },
   { NULL, 0, 0, NULL }
 };
@@ -1394,7 +1515,7 @@ static int
 dissect_ilp_CellMeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_CellMeasuredResultsList, CellMeasuredResultsList_sequence_of,
-                                                  1, maxCellMeas, FALSE);
+                                                  1, maxCellMeas, false);
 
   return offset;
 }
@@ -1424,7 +1545,7 @@ static int
 dissect_ilp_MeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_MeasuredResultsList, MeasuredResultsList_sequence_of,
-                                                  1, maxFreq, FALSE);
+                                                  1, maxFreq, false);
 
   return offset;
 }
@@ -1434,7 +1555,7 @@ dissect_ilp_MeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ilp_INTEGER_0_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -1444,7 +1565,7 @@ dissect_ilp_INTEGER_0_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_INTEGER_0_8191(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8191U, NULL, FALSE);
+                                                            0U, 8191U, NULL, false);
 
   return offset;
 }
@@ -1461,7 +1582,7 @@ static const value_string ilp_TAResolution_vals[] = {
 static int
 dissect_ilp_TAResolution(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1478,14 +1599,14 @@ static const value_string ilp_ChipRate_vals[] = {
 static int
 dissect_ilp_ChipRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
 
 
 static const per_sequence_t TimingAdvance_sequence[] = {
-  { &hf_ilp_tA_01           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_8191 },
+  { &hf_ilp_ta_01           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_8191 },
   { &hf_ilp_tAResolution    , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_TAResolution },
   { &hf_ilp_chipRate        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_ChipRate },
   { NULL, 0, 0, NULL }
@@ -1525,7 +1646,7 @@ dissect_ilp_WcdmaCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_ilp_INTEGER_0_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32767U, NULL, FALSE);
+                                                            0U, 32767U, NULL, false);
 
   return offset;
 }
@@ -1535,7 +1656,7 @@ dissect_ilp_INTEGER_0_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_ilp_INTEGER_0_4194303(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4194303U, NULL, FALSE);
+                                                            0U, 4194303U, NULL, false);
 
   return offset;
 }
@@ -1545,7 +1666,7 @@ dissect_ilp_INTEGER_0_4194303(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_INTEGER_0_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8388607U, NULL, FALSE);
+                                                            0U, 8388607U, NULL, false);
 
   return offset;
 }
@@ -1576,7 +1697,7 @@ dissect_ilp_CdmaCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ilp_BIT_STRING_SIZE_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     128, 128, FALSE, NULL, NULL);
+                                     128, 128, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1624,7 +1745,7 @@ dissect_ilp_UmbCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_ilp_MCC_MNC_Digit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 9U, NULL, FALSE);
+                                                            0U, 9U, NULL, false);
 
   return offset;
 }
@@ -1638,7 +1759,7 @@ static int
 dissect_ilp_MCC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_MCC, MCC_sequence_of,
-                                                  3, 3, FALSE);
+                                                  3, 3, false);
 
   return offset;
 }
@@ -1652,7 +1773,7 @@ static int
 dissect_ilp_MNC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_MNC, MNC_sequence_of,
-                                                  2, 3, FALSE);
+                                                  2, 3, false);
 
   return offset;
 }
@@ -1677,7 +1798,7 @@ dissect_ilp_PLMN_Identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_CellIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     28, 28, FALSE, NULL, NULL);
+                                     28, 28, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1685,7 +1806,7 @@ dissect_ilp_CellIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static const per_sequence_t CellGlobalIdEUTRA_sequence[] = {
   { &hf_ilp_plmn_Identity   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_PLMN_Identity },
-  { &hf_ilp_cellIdentity    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_CellIdentity },
+  { &hf_ilp_eutra_cellIdentity, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_CellIdentity },
   { NULL, 0, 0, NULL }
 };
 
@@ -1702,7 +1823,7 @@ dissect_ilp_CellGlobalIdEUTRA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_PhysCellId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 503U, NULL, FALSE);
+                                                            0U, 503U, NULL, false);
 
   return offset;
 }
@@ -1712,7 +1833,7 @@ dissect_ilp_PhysCellId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ilp_TrackingAreaCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     16, 16, FALSE, NULL, NULL);
+                                     16, 16, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1722,7 +1843,7 @@ dissect_ilp_TrackingAreaCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_ilp_RSRP_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 97U, NULL, FALSE);
+                                                            0U, 97U, NULL, false);
 
   return offset;
 }
@@ -1732,7 +1853,7 @@ dissect_ilp_RSRP_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ilp_RSRQ_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 34U, NULL, FALSE);
+                                                            0U, 34U, NULL, false);
 
   return offset;
 }
@@ -1742,7 +1863,7 @@ dissect_ilp_RSRQ_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ilp_INTEGER_0_1282(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1282U, NULL, FALSE);
+                                                            0U, 1282U, NULL, false);
 
   return offset;
 }
@@ -1763,10 +1884,79 @@ dissect_ilp_T_cgi_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 }
 
 
+
+static int
+dissect_ilp_INTEGER_65536_262143(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            65536U, 262143U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_RSRP_Range_Ext(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            -17, -1, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_RSRQ_Range_Ext(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            -30, 46U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_RS_SINR_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 127U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_TrackingAreaCodeNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     24, 24, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t NeighbourInformation5G_sequence[] = {
+  { &hf_ilp_trackingAreaCode_01, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_TrackingAreaCodeNR },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_NeighbourInformation5G(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_NeighbourInformation5G, NeighbourInformation5G_sequence);
+
+  return offset;
+}
+
+
 static const per_sequence_t T_measResult_sequence[] = {
   { &hf_ilp_rsrpResult      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_RSRP_Range },
   { &hf_ilp_rsrqResult      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_RSRQ_Range },
   { &hf_ilp_earfcn          , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_65535 },
+  { &hf_ilp_earfcn_ext      , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_65536_262143 },
+  { &hf_ilp_rsrpResult_ext  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_RSRP_Range_Ext },
+  { &hf_ilp_rsrqResult_ext  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_RSRQ_Range_Ext },
+  { &hf_ilp_rs_sinrResult   , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_RS_SINR_Range },
+  { &hf_ilp_neighbourInformation5G, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_NeighbourInformation5G },
   { NULL, 0, 0, NULL }
 };
 
@@ -1803,7 +1993,21 @@ static int
 dissect_ilp_MeasResultListEUTRA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_MeasResultListEUTRA, MeasResultListEUTRA_sequence_of,
-                                                  1, maxCellReport, FALSE);
+                                                  1, maxCellReport, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t ServingInformation5G_sequence[] = {
+  { &hf_ilp_trackingAreaCode_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_TrackingAreaCodeNR },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_ServingInformation5G(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_ServingInformation5G, ServingInformation5G_sequence);
 
   return offset;
 }
@@ -1815,9 +2019,14 @@ static const per_sequence_t LteCellInformation_sequence[] = {
   { &hf_ilp_trackingAreaCode, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_TrackingAreaCode },
   { &hf_ilp_rsrpResult      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_RSRP_Range },
   { &hf_ilp_rsrqResult      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_RSRQ_Range },
-  { &hf_ilp_tA_02           , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_1282 },
+  { &hf_ilp_ta_02           , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_1282 },
   { &hf_ilp_measResultListEUTRA, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_MeasResultListEUTRA },
   { &hf_ilp_earfcn          , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_65535 },
+  { &hf_ilp_earfcn_ext      , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_65536_262143 },
+  { &hf_ilp_rsrpResult_ext  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_RSRP_Range_Ext },
+  { &hf_ilp_rsrqResult_ext  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_RSRQ_Range_Ext },
+  { &hf_ilp_rs_sinrResult   , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_RS_SINR_Range },
+  { &hf_ilp_servingInformation5G, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_ServingInformation5G },
   { NULL, 0, 0, NULL }
 };
 
@@ -1834,7 +2043,7 @@ dissect_ilp_LteCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_ilp_BIT_STRING_SIZE_48(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     48, 48, FALSE, NULL, NULL);
+                                     48, 48, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1844,7 +2053,7 @@ dissect_ilp_BIT_STRING_SIZE_48(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_ilp_INTEGER_M127_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
+                                                            -127, 128U, NULL, false);
 
   return offset;
 }
@@ -1854,6 +2063,9 @@ static const value_string ilp_T_apDeviceType_vals[] = {
   {   0, "wlan802-11a" },
   {   1, "wlan802-11b" },
   {   2, "wlan802-11g" },
+  {   3, "wlan802-11n" },
+  {   4, "wlan802-11ac" },
+  {   5, "wlan802-11ad" },
   { 0, NULL }
 };
 
@@ -1861,7 +2073,7 @@ static const value_string ilp_T_apDeviceType_vals[] = {
 static int
 dissect_ilp_T_apDeviceType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 3, NULL);
 
   return offset;
 }
@@ -1871,7 +2083,7 @@ dissect_ilp_T_apDeviceType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_ilp_INTEGER_0_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 256U, NULL, FALSE);
+                                                            0U, 256U, NULL, false);
 
   return offset;
 }
@@ -1881,7 +2093,7 @@ dissect_ilp_INTEGER_0_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_INTEGER_0_16777216(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16777216U, NULL, FALSE);
+                                                            0U, 16777216U, NULL, false);
 
   return offset;
 }
@@ -1900,7 +2112,7 @@ static const value_string ilp_RTDUnits_vals[] = {
 static int
 dissect_ilp_RTDUnits(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, TRUE, 0, NULL);
+                                     5, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1923,8 +2135,8 @@ dissect_ilp_RTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_t
 
 
 static const value_string ilp_LocationEncodingDescriptor_vals[] = {
-  {   0, "lCI" },
-  {   1, "aSN1" },
+  {   0, "lci" },
+  {   1, "asn1" },
   { 0, NULL }
 };
 
@@ -1932,7 +2144,7 @@ static const value_string ilp_LocationEncodingDescriptor_vals[] = {
 static int
 dissect_ilp_LocationEncodingDescriptor(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1942,7 +2154,7 @@ dissect_ilp_LocationEncodingDescriptor(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_ilp_INTEGER_0_4294967295(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4294967295U, NULL, FALSE);
+                                                            0U, 4294967295U, NULL, false);
 
   return offset;
 }
@@ -1952,7 +2164,7 @@ dissect_ilp_INTEGER_0_4294967295(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_ilp_OCTET_STRING_SIZE_1_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 128, FALSE, NULL);
+                                       1, 128, false, NULL);
 
   return offset;
 }
@@ -1988,6 +2200,145 @@ dissect_ilp_ReportedLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 }
 
 
+
+static int
+dissect_ilp_BIT_STRING_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     6, 6, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_BIT_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     4, 4, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_BIT_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     30, 30, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     8, 8, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t LocationDataLCI_sequence[] = {
+  { &hf_ilp_latitudeResolution, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_6 },
+  { &hf_ilp_LocationDataLCI_latitude, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_34 },
+  { &hf_ilp_longitudeResolution, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_6 },
+  { &hf_ilp_LocationDataLCI_longitude, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_34 },
+  { &hf_ilp_altitudeType    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_4 },
+  { &hf_ilp_altitudeResolution, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_6 },
+  { &hf_ilp_LocationDataLCI_altitude, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_30 },
+  { &hf_ilp_datum           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_8 },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_LocationDataLCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_LocationDataLCI, LocationDataLCI_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t LciLocData_sequence[] = {
+  { &hf_ilp_locationDataLCI , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_LocationDataLCI },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_LciLocData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_LciLocData, LciLocData_sequence);
+
+  return offset;
+}
+
+
+static const value_string ilp_RepLocation_vals[] = {
+  {   0, "lciLocData" },
+  { 0, NULL }
+};
+
+static const per_choice_t RepLocation_choice[] = {
+  {   0, &hf_ilp_lciLocData      , ASN1_EXTENSION_ROOT    , dissect_ilp_LciLocData },
+  { 0, NULL, 0, NULL }
+};
+
+static int
+dissect_ilp_RepLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
+                                 ett_ilp_RepLocation, RepLocation_choice,
+                                 NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_INTEGER_0_1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 1U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_OCTET_STRING_SIZE_1_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
+                                       1, 32, false, NULL);
+
+  return offset;
+}
+
+
+static const value_string ilp_T_apPHYType_vals[] = {
+  {   0, "unknown" },
+  {   1, "any" },
+  {   2, "fhss" },
+  {   3, "dsss" },
+  {   4, "irbaseband" },
+  {   5, "ofdm" },
+  {   6, "hrdsss" },
+  {   7, "erp" },
+  {   8, "ht" },
+  {   9, "ihv" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_ilp_T_apPHYType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     10, NULL, true, 0, NULL);
+
+  return offset;
+}
+
+
 static const per_sequence_t WlanAPInformation_sequence[] = {
   { &hf_ilp_apMACAddress    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_48 },
   { &hf_ilp_apTransmitPower , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_M127_128 },
@@ -2002,6 +2353,15 @@ static const per_sequence_t WlanAPInformation_sequence[] = {
   { &hf_ilp_setSignaltoNoise, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_M127_128 },
   { &hf_ilp_setSignalStrength, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_M127_128 },
   { &hf_ilp_apReportedLocation, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_ReportedLocation },
+  { &hf_ilp_apRepLocation   , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_RepLocation },
+  { &hf_ilp_apSignalStrengthDelta, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_1 },
+  { &hf_ilp_apSignaltoNoiseDelta, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_1 },
+  { &hf_ilp_setSignalStrengthDelta, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_1 },
+  { &hf_ilp_setSignaltoNoiseDelta, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_1 },
+  { &hf_ilp_operatingClass  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_255 },
+  { &hf_ilp_apSSID          , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_OCTET_STRING_SIZE_1_32 },
+  { &hf_ilp_apPHYType       , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_T_apPHYType },
+  { &hf_ilp_setMACAddress   , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_BIT_STRING_SIZE_48 },
   { NULL, 0, 0, NULL }
 };
 
@@ -2018,7 +2378,7 @@ dissect_ilp_WlanAPInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_BIT_STRING_SIZE_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     24, 24, FALSE, NULL, NULL);
+                                     24, 24, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2040,7 +2400,7 @@ dissect_ilp_WimaxBsID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 static const per_sequence_t WimaxRTD_sequence[] = {
-  { &hf_ilp_rTD             , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_65535 },
+  { &hf_ilp_rtd             , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_65535 },
   { &hf_ilp_rTDstd          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_1023 },
   { NULL, 0, 0, NULL }
 };
@@ -2058,7 +2418,7 @@ dissect_ilp_WimaxRTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int
 dissect_ilp_INTEGER_M32768_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -32768, 32767U, NULL, FALSE);
+                                                            -32768, 32767U, NULL, false);
 
   return offset;
 }
@@ -2068,10 +2428,10 @@ static const per_sequence_t WimaxNMR_sequence[] = {
   { &hf_ilp_wimaxBsID       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_WimaxBsID },
   { &hf_ilp_relDelay        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_M32768_32767 },
   { &hf_ilp_relDelaystd     , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_1023 },
-  { &hf_ilp_rSSI            , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_255 },
+  { &hf_ilp_rssi            , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_255 },
   { &hf_ilp_rSSIstd         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_63 },
   { &hf_ilp_bSTxPower       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_255 },
-  { &hf_ilp_cINR            , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_255 },
+  { &hf_ilp_cinr            , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_255 },
   { &hf_ilp_cINRstd         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_63 },
   { &hf_ilp_bSLocation      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_ReportedLocation },
   { NULL, 0, 0, NULL }
@@ -2094,7 +2454,7 @@ static int
 dissect_ilp_WimaxNMRList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_WimaxNMRList, WimaxNMRList_sequence_of,
-                                                  1, maxWimaxBSMeas, FALSE);
+                                                  1, maxWimaxBSMeas, false);
 
   return offset;
 }
@@ -2116,6 +2476,159 @@ dissect_ilp_WimaxBSInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 }
 
 
+
+static int
+dissect_ilp_PhysCellIdNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 1007U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_ARFCN_NR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 3279165U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_CellIdentityNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     36, 36, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t CellGlobalIdNR_sequence[] = {
+  { &hf_ilp_plmn_Identity   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_PLMN_Identity },
+  { &hf_ilp_cellIdentityNR  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_CellIdentityNR },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_CellGlobalIdNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_CellGlobalIdNR, CellGlobalIdNR_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t NR_Measurements_sequence[] = {
+  { &hf_ilp_rsrp_Range      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_127 },
+  { &hf_ilp_rsrq_Range      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_127 },
+  { &hf_ilp_sinr_Range      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_127 },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_NR_Measurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_NR_Measurements, NR_Measurements_sequence);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_INTEGER_0_3846(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 3846U, NULL, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t ServCellNR_sequence[] = {
+  { &hf_ilp_physCellId_01   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_PhysCellIdNR },
+  { &hf_ilp_arfcn_NR        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_ARFCN_NR },
+  { &hf_ilp_cellGlobalId_01 , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_CellGlobalIdNR },
+  { &hf_ilp_trackingAreaCode_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_TrackingAreaCodeNR },
+  { &hf_ilp_ssb_Measurements, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_NR_Measurements },
+  { &hf_ilp_csi_rs_Measurements, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_NR_Measurements },
+  { &hf_ilp_ta_03           , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_3846 },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_ServCellNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_ServCellNR, ServCellNR_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t ServingCellInformationNR_sequence_of[1] = {
+  { &hf_ilp_ServingCellInformationNR_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ilp_ServCellNR },
+};
+
+static int
+dissect_ilp_ServingCellInformationNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_ilp_ServingCellInformationNR, ServingCellInformationNR_sequence_of,
+                                                  1, maxNRServingCell, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t MeasResultNR_sequence[] = {
+  { &hf_ilp_physCellId_01   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_PhysCellIdNR },
+  { &hf_ilp_arfcn_NR        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_ARFCN_NR },
+  { &hf_ilp_cellGlobalId_01 , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_CellGlobalIdNR },
+  { &hf_ilp_trackingAreaCode_01, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_TrackingAreaCodeNR },
+  { &hf_ilp_ssb_Measurements, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_NR_Measurements },
+  { &hf_ilp_csi_rs_Measurements, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_NR_Measurements },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_MeasResultNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_MeasResultNR, MeasResultNR_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t MeasResultListNR_sequence_of[1] = {
+  { &hf_ilp_MeasResultListNR_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ilp_MeasResultNR },
+};
+
+static int
+dissect_ilp_MeasResultListNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_ilp_MeasResultListNR, MeasResultListNR_sequence_of,
+                                                  1, maxCellReportNR, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t NRCellInformation_sequence[] = {
+  { &hf_ilp_servingCellInformation, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_ServingCellInformationNR },
+  { &hf_ilp_measuredResultsListNR, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_MeasResultListNR },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_NRCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_NRCellInformation, NRCellInformation_sequence);
+
+  return offset;
+}
+
+
 static const value_string ilp_CellInfo_vals[] = {
   {   0, "gsmCell" },
   {   1, "wcdmaCell" },
@@ -2125,6 +2638,7 @@ static const value_string ilp_CellInfo_vals[] = {
   {   5, "lteCell" },
   {   6, "wlanAP" },
   {   7, "wimaxBS" },
+  {   8, "nrCell" },
   { 0, NULL }
 };
 
@@ -2137,6 +2651,7 @@ static const per_choice_t CellInfo_choice[] = {
   {   5, &hf_ilp_lteCell         , ASN1_EXTENSION_ROOT    , dissect_ilp_LteCellInformation },
   {   6, &hf_ilp_wlanAP          , ASN1_EXTENSION_ROOT    , dissect_ilp_WlanAPInformation },
   {   7, &hf_ilp_wimaxBS         , ASN1_EXTENSION_ROOT    , dissect_ilp_WimaxBSInformation },
+  {   8, &hf_ilp_nrCell          , ASN1_NOT_EXTENSION_ROOT, dissect_ilp_NRCellInformation },
   { 0, NULL, 0, NULL }
 };
 
@@ -2161,7 +2676,7 @@ static const value_string ilp_Status_vals[] = {
 static int
 dissect_ilp_Status(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2186,7 +2701,7 @@ dissect_ilp_LocationId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ilp_RelativeTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -2216,7 +2731,7 @@ static int
 dissect_ilp_MultipleLocationIds(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_MultipleLocationIds, MultipleLocationIds_sequence_of,
-                                                  1, maxLidSize, FALSE);
+                                                  1, maxLidSize, false);
 
   return offset;
 }
@@ -2226,7 +2741,8 @@ dissect_ilp_MultipleLocationIds(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ilp_UTCTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_VisibleString(tvb, offset, actx, tree, hf_index,
-                                        NO_BOUND, NO_BOUND, FALSE);
+                                        NO_BOUND, NO_BOUND, false,
+                                        NULL);
 
   return offset;
 }
@@ -2242,7 +2758,7 @@ static const value_string ilp_T_latitudeSign_vals[] = {
 static int
 dissect_ilp_T_latitudeSign(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2252,7 +2768,7 @@ dissect_ilp_T_latitudeSign(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_ilp_INTEGER_M8388608_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -8388608, 8388607U, NULL, FALSE);
+                                                            -8388608, 8388607U, NULL, false);
 
   return offset;
 }
@@ -2262,7 +2778,7 @@ dissect_ilp_INTEGER_M8388608_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_ilp_INTEGER_0_180(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 180U, NULL, FALSE);
+                                                            0U, 180U, NULL, false);
 
   return offset;
 }
@@ -2288,7 +2804,7 @@ dissect_ilp_T_uncertainty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_INTEGER_0_100(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 100U, NULL, FALSE);
+                                                            0U, 100U, NULL, false);
 
   return offset;
 }
@@ -2304,7 +2820,7 @@ static const value_string ilp_T_altitudeDirection_vals[] = {
 static int
 dissect_ilp_T_altitudeDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2349,7 +2865,7 @@ dissect_ilp_PositionEstimate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_ilp_BIT_STRING_SIZE_9(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     9, 9, FALSE, NULL, NULL);
+                                     9, 9, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2359,7 +2875,7 @@ dissect_ilp_BIT_STRING_SIZE_9(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_BIT_STRING_SIZE_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     16, 16, FALSE, NULL, NULL);
+                                     16, 16, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2384,17 +2900,7 @@ dissect_ilp_Horvel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 static int
 dissect_ilp_BIT_STRING_SIZE_1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     1, 1, FALSE, NULL, NULL);
-
-  return offset;
-}
-
-
-
-static int
-dissect_ilp_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     1, 1, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2504,7 +3010,7 @@ static const value_string ilp_TriggerType_vals[] = {
 static int
 dissect_ilp_TriggerType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2514,7 +3020,7 @@ dissect_ilp_TriggerType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_ilp_INTEGER_1_8639999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 8639999U, NULL, FALSE);
+                                                            1U, 8639999U, NULL, false);
 
   return offset;
 }
@@ -2524,7 +3030,7 @@ dissect_ilp_INTEGER_1_8639999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_INTEGER_0_2678400(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 2678400U, NULL, FALSE);
+                                                            0U, 2678400U, NULL, false);
 
   return offset;
 }
@@ -2565,14 +3071,14 @@ dissect_ilp_TriggerParams(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_SPCSETKey(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     128, 128, FALSE, NULL, NULL);
+                                     128, 128, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
 
 
 static const per_sequence_t SPCTID_sequence[] = {
-  { &hf_ilp_rAND            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_128 },
+  { &hf_ilp_rand            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BIT_STRING_SIZE_128 },
   { &hf_ilp_slpFQDN         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_FQDN },
   { NULL, 0, 0, NULL }
 };
@@ -2590,7 +3096,7 @@ dissect_ilp_SPCTID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 static int
 dissect_ilp_SPCSETKeylifetime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 24U, NULL, FALSE);
+                                                            1U, 24U, NULL, false);
 
   return offset;
 }
@@ -2600,7 +3106,17 @@ dissect_ilp_SPCSETKeylifetime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_INTEGER_0_7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 7U, NULL, FALSE);
+                                                            0U, 7U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ilp_INTEGER_1_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            1U, 128U, NULL, false);
 
   return offset;
 }
@@ -2611,6 +3127,7 @@ static const per_sequence_t QoP_sequence[] = {
   { &hf_ilp_veracc          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_127 },
   { &hf_ilp_maxLocAge       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_65535 },
   { &hf_ilp_delay           , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_INTEGER_0_7 },
+  { &hf_ilp_ver2_responseTime, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_INTEGER_1_128 },
   { NULL, 0, 0, NULL }
 };
 
@@ -2634,7 +3151,7 @@ static const value_string ilp_PrefMethod_vals[] = {
 static int
 dissect_ilp_PrefMethod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2651,16 +3168,6 @@ static int
 dissect_ilp_PosProtocolVersion3GPP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_ilp_PosProtocolVersion3GPP, PosProtocolVersion3GPP_sequence);
-
-  return offset;
-}
-
-
-
-static int
-dissect_ilp_BIT_STRING_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     6, 6, FALSE, NULL, NULL);
 
   return offset;
 }
@@ -2690,7 +3197,22 @@ static int
 dissect_ilp_PosProtocolVersion3GPP2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_PosProtocolVersion3GPP2, PosProtocolVersion3GPP2_sequence_of,
-                                                  1, 8, FALSE);
+                                                  1, 8, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t PosProtocolVersionOMA_sequence[] = {
+  { &hf_ilp_majorVersionField, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_255 },
+  { &hf_ilp_minorVersionField, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_255 },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ilp_PosProtocolVersionOMA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ilp_PosProtocolVersionOMA, PosProtocolVersionOMA_sequence);
 
   return offset;
 }
@@ -2705,6 +3227,8 @@ static const per_sequence_t PosProtocol_sequence[] = {
   { &hf_ilp_posProtocolVersionRRC, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_PosProtocolVersion3GPP },
   { &hf_ilp_posProtocolVersionTIA801, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_PosProtocolVersion3GPP2 },
   { &hf_ilp_posProtocolVersionLPP, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_PosProtocolVersion3GPP },
+  { &hf_ilp_lppe            , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_BOOLEAN },
+  { &hf_ilp_posProtocolVersionLPPe, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_PosProtocolVersionOMA },
   { NULL, 0, 0, NULL }
 };
 
@@ -2726,6 +3250,7 @@ static const per_sequence_t SupportedBearers_sequence[] = {
   { &hf_ilp_umb             , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_wlan            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_wiMAX           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
+  { &hf_ilp_nr              , ASN1_NOT_EXTENSION_ROOT, ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { NULL, 0, 0, NULL }
 };
 
@@ -2765,7 +3290,7 @@ static const value_string ilp_NotificationMode_vals[] = {
 static int
 dissect_ilp_NotificationMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2779,7 +3304,7 @@ static const per_sequence_t PREQ_sequence[] = {
   { &hf_ilp_position        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_Position },
   { &hf_ilp_triggerParams   , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_TriggerParams },
   { &hf_ilp_sPCSETKey       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_SPCSETKey },
-  { &hf_ilp_sPCTID          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_SPCTID },
+  { &hf_ilp_spctid          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_SPCTID },
   { &hf_ilp_sPCSETKeylifetime, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_SPCSETKeylifetime },
   { &hf_ilp_qoP             , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_QoP },
   { &hf_ilp_sETCapabilities , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_SETCapabilities },
@@ -2802,15 +3327,16 @@ static const value_string ilp_PosMethod_vals[] = {
   {   2, "agpsSETassistedpref" },
   {   3, "agpsSETbasedpref" },
   {   4, "autonomousGPS" },
-  {   5, "aFLT" },
-  {   6, "eCID" },
-  {   7, "eOTD" },
-  {   8, "oTDOA" },
+  {   5, "aflt" },
+  {   6, "ecid" },
+  {   7, "eotd" },
+  {   8, "otdoa" },
   {   9, "agnssSETassisted" },
   {  10, "agnssSETbased" },
   {  11, "agnssSETassistedpref" },
   {  12, "agnssSETbasedpref" },
   {  13, "autonomousGNSS" },
+  {  14, "ver2-mbs" },
   { 0, NULL }
 };
 
@@ -2818,7 +3344,7 @@ static const value_string ilp_PosMethod_vals[] = {
 static int
 dissect_ilp_PosMethod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     14, NULL, TRUE, 0, NULL);
+                                     14, NULL, true, 1, NULL);
 
   return offset;
 }
@@ -2831,6 +3357,7 @@ static const per_sequence_t GNSSPosTechnology_sequence[] = {
   { &hf_ilp_modernized_gps  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_qzss            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_glonass         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
+  { &hf_ilp_bds             , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_BOOLEAN },
   { NULL, 0, 0, NULL }
 };
 
@@ -2854,7 +3381,7 @@ static const value_string ilp_SPCStatusCode_vals[] = {
 static int
 dissect_ilp_SPCStatusCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2903,7 +3430,7 @@ static const value_string ilp_StatusCode_vals[] = {
 static int
 dissect_ilp_StatusCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     17, NULL, TRUE, 0, NULL);
+                                     17, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2970,7 +3497,7 @@ static int
 dissect_ilp_PositionResults(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_PositionResults, PositionResults_sequence_of,
-                                                  1, maxPosSize, FALSE);
+                                                  1, maxPosSize, false);
 
   return offset;
 }
@@ -2994,7 +3521,7 @@ dissect_ilp_PLRES(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_ilp_INTEGER_0_167(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 167U, NULL, FALSE);
+                                                            0U, 167U, NULL, false);
 
   return offset;
 }
@@ -3004,7 +3531,7 @@ dissect_ilp_INTEGER_0_167(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ilp_INTEGER_0_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 31U, NULL, FALSE);
+                                                            0U, 31U, NULL, false);
 
   return offset;
 }
@@ -3014,7 +3541,7 @@ dissect_ilp_INTEGER_0_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_ilp_INTEGER_0_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 10U, NULL, FALSE);
+                                                            0U, 10U, NULL, false);
 
   return offset;
 }
@@ -3022,7 +3549,7 @@ dissect_ilp_INTEGER_0_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static const per_sequence_t SatelliteInfoElement_sequence[] = {
   { &hf_ilp_satId           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_63 },
-  { &hf_ilp_iODE            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_255 },
+  { &hf_ilp_iode            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_255 },
   { NULL, 0, 0, NULL }
 };
 
@@ -3043,7 +3570,7 @@ static int
 dissect_ilp_SatelliteInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_SatelliteInfo, SatelliteInfo_sequence_of,
-                                                  1, 31, FALSE);
+                                                  1, 31, false);
 
   return offset;
 }
@@ -3052,7 +3579,7 @@ dissect_ilp_SatelliteInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static const per_sequence_t NavigationModel_sequence[] = {
   { &hf_ilp_gpsWeek         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_1023 },
   { &hf_ilp_gpsToe          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_167 },
-  { &hf_ilp_nSAT            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_31 },
+  { &hf_ilp_nsat            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_31 },
   { &hf_ilp_toeLimit        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_10 },
   { &hf_ilp_satInfo         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_SatelliteInfo },
   { NULL, 0, 0, NULL }
@@ -3073,6 +3600,7 @@ static const per_sequence_t GanssRequestedCommonAssistanceDataList_sequence[] = 
   { &hf_ilp_ganssAdditionalIonosphericModelForDataID00, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_ganssAdditionalIonosphericModelForDataID11, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_ganssEarthOrientationParameters, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
+  { &hf_ilp_ganssAdditionalIonosphericModelForDataID01, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_BOOLEAN },
   { NULL, 0, 0, NULL }
 };
 
@@ -3089,7 +3617,7 @@ dissect_ilp_GanssRequestedCommonAssistanceDataList(tvbuff_t *tvb _U_, int offset
 static int
 dissect_ilp_DGANSS_Sig_Id_Req(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -3099,7 +3627,7 @@ dissect_ilp_DGANSS_Sig_Id_Req(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_INTEGER_0_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4095U, NULL, FALSE);
+                                                            0U, 4095U, NULL, false);
 
   return offset;
 }
@@ -3128,7 +3656,7 @@ static int
 dissect_ilp_SatellitesListRelatedDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_SatellitesListRelatedDataList, SatellitesListRelatedDataList_sequence_of,
-                                                  0, maxGANSSSat, FALSE);
+                                                  0, maxGANSSSat, false);
 
   return offset;
 }
@@ -3155,7 +3683,7 @@ dissect_ilp_GanssNavigationModelData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_ilp_INTEGER_0_59(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 59U, NULL, FALSE);
+                                                            0U, 59U, NULL, false);
 
   return offset;
 }
@@ -3169,7 +3697,7 @@ static int
 dissect_ilp_T_ganssDataBitSatList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_T_ganssDataBitSatList, T_ganssDataBitSatList_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -3227,7 +3755,7 @@ dissect_ilp_GanssAdditionalDataChoices(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_ilp_INTEGER_1_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 256U, NULL, FALSE);
+                                                            1U, 256U, NULL, false);
 
   return offset;
 }
@@ -3251,7 +3779,7 @@ dissect_ilp_ExtendedEphemeris(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ilp_INTEGER_0_23(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 23U, NULL, FALSE);
+                                                            0U, 23U, NULL, false);
 
   return offset;
 }
@@ -3287,6 +3815,16 @@ dissect_ilp_GanssExtendedEphCheck(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 }
 
 
+
+static int
+dissect_ilp_BDS_Sig_Id_Req(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     8, 8, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
 static const per_sequence_t GanssReqGenericData_sequence[] = {
   { &hf_ilp_ganssId         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_INTEGER_0_15 },
   { &hf_ilp_ganssSBASid     , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_BIT_STRING_SIZE_3 },
@@ -3302,6 +3840,8 @@ static const per_sequence_t GanssReqGenericData_sequence[] = {
   { &hf_ilp_ganssAuxiliaryInformation, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_BOOLEAN },
   { &hf_ilp_ganssExtendedEphemeris, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_ExtendedEphemeris },
   { &hf_ilp_ganssExtendedEphemerisCheck, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_GanssExtendedEphCheck },
+  { &hf_ilp_bds_DifferentialCorrection, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_BDS_Sig_Id_Req },
+  { &hf_ilp_bds_GridModelReq, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ilp_BOOLEAN },
   { NULL, 0, 0, NULL }
 };
 
@@ -3322,7 +3862,7 @@ static int
 dissect_ilp_GanssRequestedGenericAssistanceDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_GanssRequestedGenericAssistanceDataList, GanssRequestedGenericAssistanceDataList_sequence_of,
-                                                  1, maxGANSS, FALSE);
+                                                  1, maxGANSS, false);
 
   return offset;
 }
@@ -3389,7 +3929,7 @@ dissect_ilp_RequestedAssistData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ilp_OCTET_STRING_SIZE_1_8192(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 8192, FALSE, NULL);
+                                       1, 8192, false, NULL);
 
   return offset;
 }
@@ -3398,17 +3938,15 @@ dissect_ilp_OCTET_STRING_SIZE_1_8192(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 static int
 dissect_ilp_T_rrlpPayload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 52 "./asn1/ilp/ilp.cnf"
   tvbuff_t *rrlp_tvb;
 
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 8192, FALSE, &rrlp_tvb);
+                                       1, 8192, false, &rrlp_tvb);
 
 
   if (rrlp_tvb && rrlp_handle) {
     call_dissector(rrlp_handle, rrlp_tvb, actx->pinfo, tree);
   }
-
 
 
   return offset;
@@ -3418,17 +3956,15 @@ dissect_ilp_T_rrlpPayload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 static int
 dissect_ilp_T_lPPPayload_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 61 "./asn1/ilp/ilp.cnf"
   tvbuff_t *lpp_tvb;
 
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 60000, FALSE, &lpp_tvb);
+                                       1, 60000, false, &lpp_tvb);
 
 
   if (lpp_tvb && lpp_handle) {
     call_dissector(lpp_handle, lpp_tvb, actx->pinfo, tree);
   }
-
 
 
   return offset;
@@ -3443,7 +3979,7 @@ static int
 dissect_ilp_T_lPPPayload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_T_lPPPayload, T_lPPPayload_sequence_of,
-                                                  1, 3, FALSE);
+                                                  1, 3, false);
 
   return offset;
 }
@@ -3453,7 +3989,7 @@ dissect_ilp_T_lPPPayload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_ilp_OCTET_STRING_SIZE_1_60000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 60000, FALSE, NULL);
+                                       1, 60000, false, NULL);
 
   return offset;
 }
@@ -3467,7 +4003,7 @@ static int
 dissect_ilp_T_tia801Payload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ilp_T_tia801Payload, T_tia801Payload_sequence_of,
-                                                  1, 3, FALSE);
+                                                  1, 3, false);
 
   return offset;
 }
@@ -3516,7 +4052,7 @@ dissect_ilp_PosPayLoad(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ilp_INTEGER_0_16383(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16383U, NULL, FALSE);
+                                                            0U, 16383U, NULL, false);
 
   return offset;
 }
@@ -3608,7 +4144,7 @@ dissect_ilp_UTRAN_GPSReferenceTimeResult(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_ilp_INTEGER_0_80(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 80U, NULL, FALSE);
+                                                            0U, 80U, NULL, false);
 
   return offset;
 }
@@ -3736,7 +4272,7 @@ dissect_ilp_PINIT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 
 static const per_sequence_t PAUTH_sequence[] = {
   { &hf_ilp_sPCSETKey       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_SPCSETKey },
-  { &hf_ilp_sPCTID          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_SPCTID },
+  { &hf_ilp_spctid          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ilp_SPCTID },
   { &hf_ilp_sPCSETKeylifetime, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ilp_SPCSETKeylifetime },
   { NULL, 0, 0, NULL }
 };
@@ -3883,7 +4419,7 @@ static const value_string ilp_UTRANGPSDriftRate_vals[] = {
 static int
 dissect_ilp_UTRANGPSDriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     15, NULL, FALSE, 0, NULL);
+                                     15, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -3909,7 +4445,7 @@ dissect_ilp_UTRAN_GPSReferenceTimeAssistance(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 dissect_ilp_INTEGER_0_86399(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 86399U, NULL, FALSE);
+                                                            0U, 86399U, NULL, false);
 
   return offset;
 }
@@ -3919,7 +4455,7 @@ dissect_ilp_INTEGER_0_86399(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_ilp_INTEGER_0_3999999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3999999U, NULL, FALSE);
+                                                            0U, 3999999U, NULL, false);
 
   return offset;
 }
@@ -4016,7 +4552,7 @@ static const value_string ilp_UTRANGANSSDriftRate_vals[] = {
 static int
 dissect_ilp_UTRANGANSSDriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     15, NULL, FALSE, 0, NULL);
+                                     15, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4088,17 +4624,15 @@ static const per_choice_t IlpMessage_choice[] = {
 
 static int
 dissect_ilp_IlpMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 42 "./asn1/ilp/ilp.cnf"
 
-guint32 IlpMessage;
+uint32_t IlpMessage;
 
     offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_ilp_IlpMessage, IlpMessage_choice,
                                  &IlpMessage);
 
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, "%s ", val_to_str(IlpMessage,ilp_IlpMessage_vals,"Unknown"));
-
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, "%s ", val_to_str_const(IlpMessage,ilp_IlpMessage_vals,"Unknown"));
 
 
   return offset;
@@ -4115,7 +4649,6 @@ static const per_sequence_t ILP_PDU_sequence[] = {
 
 static int
 dissect_ilp_ILP_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 27 "./asn1/ilp/ilp.cnf"
   proto_item *it;
   proto_tree *ilp_tree;
 
@@ -4124,11 +4657,8 @@ dissect_ilp_ILP_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 
   col_set_str(actx->pinfo->cinfo, COL_PROTOCOL, PSNAME);
   col_clear(actx->pinfo->cinfo, COL_INFO);
-
-#line 38 "./asn1/ilp/ilp.cnf"
   offset = dissect_per_sequence(tvb, offset, actx, ilp_tree, hf_index,
                                    ett_ilp_ILP_PDU, ILP_PDU_sequence);
-
 
 
   return offset;
@@ -4139,18 +4669,15 @@ dissect_ilp_ILP_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int dissect_ILP_PDU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, FALSE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_ilp_ILP_PDU(tvb, offset, &asn1_ctx, tree, hf_ilp_ILP_PDU_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 
 
-/*--- End of included file: packet-ilp-fn.c ---*/
-#line 76 "./asn1/ilp/packet-ilp-template.c"
 
-
-static guint
+static unsigned
 get_ilp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
   /* PDU length = Message length */
@@ -4173,9 +4700,6 @@ void proto_register_ilp(void) {
   /* List of fields */
   static hf_register_info hf[] = {
 
-
-/*--- Included file: packet-ilp-hfarr.c ---*/
-#line 1 "./asn1/ilp/packet-ilp-hfarr.c"
     { &hf_ilp_ILP_PDU_PDU,
       { "ILP-PDU", "ilp.ILP_PDU_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -4264,8 +4788,8 @@ void proto_register_ilp(void) {
       { "sPCSETKey", "ilp.sPCSETKey",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ilp_sPCTID,
-      { "sPCTID", "ilp.sPCTID_element",
+    { &hf_ilp_spctid,
+      { "spctid", "ilp.spctid_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_ilp_sPCSETKeylifetime,
@@ -4452,6 +4976,10 @@ void proto_register_ilp(void) {
       { "ganssEarthOrientationParameters", "ilp.ganssEarthOrientationParameters",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
+    { &hf_ilp_ganssAdditionalIonosphericModelForDataID01,
+      { "ganssAdditionalIonosphericModelForDataID01", "ilp.ganssAdditionalIonosphericModelForDataID01",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
     { &hf_ilp_GanssRequestedGenericAssistanceDataList_item,
       { "GanssReqGenericData", "ilp.GanssReqGenericData_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -4512,6 +5040,14 @@ void proto_register_ilp(void) {
       { "ganssExtendedEphemerisCheck", "ilp.ganssExtendedEphemerisCheck_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "GanssExtendedEphCheck", HFILL }},
+    { &hf_ilp_bds_DifferentialCorrection,
+      { "bds-DifferentialCorrection", "ilp.bds_DifferentialCorrection",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BDS_Sig_Id_Req", HFILL }},
+    { &hf_ilp_bds_GridModelReq,
+      { "bds-GridModelReq", "ilp.bds_GridModelReq",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
     { &hf_ilp_ganssWeek,
       { "ganssWeek", "ilp.ganssWeek",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -4604,8 +5140,8 @@ void proto_register_ilp(void) {
       { "gpsToe", "ilp.gpsToe",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_167", HFILL }},
-    { &hf_ilp_nSAT,
-      { "nSAT", "ilp.nSAT",
+    { &hf_ilp_nsat,
+      { "nsat", "ilp.nsat",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_31", HFILL }},
     { &hf_ilp_toeLimit,
@@ -4620,8 +5156,8 @@ void proto_register_ilp(void) {
       { "SatelliteInfoElement", "ilp.SatelliteInfoElement_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ilp_iODE,
-      { "iODE", "ilp.iODE",
+    { &hf_ilp_iode,
+      { "iode", "ilp.iode",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_255", HFILL }},
     { &hf_ilp_sPCStatusCode,
@@ -4681,7 +5217,7 @@ void proto_register_ilp(void) {
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_ilp_minsi,
-      { "min", "ilp.min",
+      { "min", "ilp.minsi",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_34", HFILL }},
     { &hf_ilp_imsi,
@@ -4696,6 +5232,10 @@ void proto_register_ilp(void) {
       { "iPAddress", "ilp.iPAddress",
         FT_UINT32, BASE_DEC, VALS(ilp_IPAddress_vals), 0,
         NULL, HFILL }},
+    { &hf_ilp_imei,
+      { "imei", "ilp.imei",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "OCTET_STRING_SIZE_8", HFILL }},
     { &hf_ilp_sessionID,
       { "sessionID", "ilp.sessionID",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -4768,24 +5308,28 @@ void proto_register_ilp(void) {
       { "autonomousGPS", "ilp.autonomousGPS",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
-    { &hf_ilp_aFLT,
-      { "aFLT", "ilp.aFLT",
+    { &hf_ilp_aflt,
+      { "aflt", "ilp.aflt",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
-    { &hf_ilp_eCID,
-      { "eCID", "ilp.eCID",
+    { &hf_ilp_ecid,
+      { "ecid", "ilp.ecid",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
-    { &hf_ilp_eOTD,
-      { "eOTD", "ilp.eOTD",
+    { &hf_ilp_eotd,
+      { "eotd", "ilp.eotd",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
-    { &hf_ilp_oTDOA,
-      { "oTDOA", "ilp.oTDOA",
+    { &hf_ilp_otdoa,
+      { "otdoa", "ilp.otdoa",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
     { &hf_ilp_gANSSPositionMethods,
       { "gANSSPositionMethods", "ilp.gANSSPositionMethods",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ilp_additionalPositioningMethods,
+      { "additionalPositioningMethods", "ilp.additionalPositioningMethods",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_ilp_GANSSPositionMethods_item,
@@ -4812,6 +5356,18 @@ void proto_register_ilp(void) {
       { "autonomous", "ilp.autonomous",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
+    { &hf_ilp_AdditionalPositioningMethods_item,
+      { "AddPosSupport-Element", "ilp.AddPosSupport_Element_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ilp_addPosID,
+      { "addPosID", "ilp.addPosID",
+        FT_UINT32, BASE_DEC, VALS(ilp_T_addPosID_vals), 0,
+        NULL, HFILL }},
+    { &hf_ilp_addPosMode,
+      { "addPosMode", "ilp.addPosMode",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_ilp_tia801,
       { "tia801", "ilp.tia801",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
@@ -4844,6 +5400,14 @@ void proto_register_ilp(void) {
       { "posProtocolVersionLPP", "ilp.posProtocolVersionLPP_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "PosProtocolVersion3GPP", HFILL }},
+    { &hf_ilp_lppe,
+      { "lppe", "ilp.lppe",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
+    { &hf_ilp_posProtocolVersionLPPe,
+      { "posProtocolVersionLPPe", "ilp.posProtocolVersionLPPe_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "PosProtocolVersionOMA", HFILL }},
     { &hf_ilp_majorVersionField,
       { "majorVersionField", "ilp.majorVersionField",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -4870,6 +5434,10 @@ void proto_register_ilp(void) {
         "INTEGER_0_255", HFILL }},
     { &hf_ilp_internalEditLevel,
       { "internalEditLevel", "ilp.internalEditLevel",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_255", HFILL }},
+    { &hf_ilp_minorVersionField,
+      { "minorVersionField", "ilp.minorVersionField",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_255", HFILL }},
     { &hf_ilp_gsm,
@@ -4904,6 +5472,10 @@ void proto_register_ilp(void) {
       { "wiMAX", "ilp.wiMAX",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
+    { &hf_ilp_nr,
+      { "nr", "ilp.nr",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
     { &hf_ilp_gsmCell,
       { "gsmCell", "ilp.gsmCell_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -4936,6 +5508,10 @@ void proto_register_ilp(void) {
       { "wimaxBS", "ilp.wimaxBS_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "WimaxBSInformation", HFILL }},
+    { &hf_ilp_nrCell,
+      { "nrCell", "ilp.nrCell_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "NRCellInformation", HFILL }},
     { &hf_ilp_set_GPSTimingOfCell,
       { "set-GPSTimingOfCell", "ilp.set_GPSTimingOfCell_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -5030,6 +5606,10 @@ void proto_register_ilp(void) {
         "BOOLEAN", HFILL }},
     { &hf_ilp_glonass,
       { "glonass", "ilp.glonass",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
+    { &hf_ilp_bds,
+      { "bds", "ilp.bds",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
     { &hf_ilp_timestamp,
@@ -5136,12 +5716,12 @@ void proto_register_ilp(void) {
       { "refCI", "ilp.refCI",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_65535", HFILL }},
-    { &hf_ilp_nMR,
-      { "nMR", "ilp.nMR",
+    { &hf_ilp_nmr,
+      { "nmr", "ilp.nmr",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
-    { &hf_ilp_tA,
-      { "tA", "ilp.tA",
+    { &hf_ilp_ta,
+      { "ta", "ilp.ta",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_255", HFILL }},
     { &hf_ilp_refUC,
@@ -5168,8 +5748,8 @@ void proto_register_ilp(void) {
       { "timingAdvance", "ilp.timingAdvance_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ilp_tA_01,
-      { "tA", "ilp.tA",
+    { &hf_ilp_ta_01,
+      { "ta", "ilp.ta",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_8191", HFILL }},
     { &hf_ilp_tAResolution,
@@ -5204,8 +5784,8 @@ void proto_register_ilp(void) {
       { "rsrqResult", "ilp.rsrqResult",
         FT_UINT32, BASE_DEC, NULL, 0,
         "RSRQ_Range", HFILL }},
-    { &hf_ilp_tA_02,
-      { "tA", "ilp.tA",
+    { &hf_ilp_ta_02,
+      { "ta", "ilp.ta",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_1282", HFILL }},
     { &hf_ilp_measResultListEUTRA,
@@ -5216,6 +5796,26 @@ void proto_register_ilp(void) {
       { "earfcn", "ilp.earfcn",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_65535", HFILL }},
+    { &hf_ilp_earfcn_ext,
+      { "earfcn-ext", "ilp.earfcn_ext",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_65536_262143", HFILL }},
+    { &hf_ilp_rsrpResult_ext,
+      { "rsrpResult-ext", "ilp.rsrpResult_ext",
+        FT_INT32, BASE_DEC, NULL, 0,
+        "RSRP_Range_Ext", HFILL }},
+    { &hf_ilp_rsrqResult_ext,
+      { "rsrqResult-ext", "ilp.rsrqResult_ext",
+        FT_INT32, BASE_DEC, NULL, 0,
+        "RSRQ_Range_Ext", HFILL }},
+    { &hf_ilp_rs_sinrResult,
+      { "rs-sinrResult", "ilp.rs_sinrResult",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "RS_SINR_Range", HFILL }},
+    { &hf_ilp_servingInformation5G,
+      { "servingInformation5G", "ilp.servingInformation5G_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_ilp_MeasResultListEUTRA_item,
       { "MeasResultEUTRA", "ilp.MeasResultEUTRA_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -5232,12 +5832,16 @@ void proto_register_ilp(void) {
       { "measResult", "ilp.measResult_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_ilp_neighbourInformation5G,
+      { "neighbourInformation5G", "ilp.neighbourInformation5G_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_ilp_plmn_Identity,
       { "plmn-Identity", "ilp.plmn_Identity_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ilp_cellIdentity,
-      { "cellIdentity", "ilp.cellIdentity",
+    { &hf_ilp_eutra_cellIdentity,
+      { "cellIdentity", "ilp.cellglobalideutra.cellIdentity",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_ilp_mcc,
@@ -5256,6 +5860,10 @@ void proto_register_ilp(void) {
       { "MCC-MNC-Digit", "ilp.MCC_MNC_Digit",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
+    { &hf_ilp_trackingAreaCode_01,
+      { "trackingAreaCode", "ilp.trackingAreaCode",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "TrackingAreaCodeNR", HFILL }},
     { &hf_ilp_apMACAddress,
       { "apMACAddress", "ilp.apMACAddress",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -5308,6 +5916,42 @@ void proto_register_ilp(void) {
       { "apReportedLocation", "ilp.apReportedLocation_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ReportedLocation", HFILL }},
+    { &hf_ilp_apRepLocation,
+      { "apRepLocation", "ilp.apRepLocation",
+        FT_UINT32, BASE_DEC, VALS(ilp_RepLocation_vals), 0,
+        "RepLocation", HFILL }},
+    { &hf_ilp_apSignalStrengthDelta,
+      { "apSignalStrengthDelta", "ilp.apSignalStrengthDelta",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_1", HFILL }},
+    { &hf_ilp_apSignaltoNoiseDelta,
+      { "apSignaltoNoiseDelta", "ilp.apSignaltoNoiseDelta",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_1", HFILL }},
+    { &hf_ilp_setSignalStrengthDelta,
+      { "setSignalStrengthDelta", "ilp.setSignalStrengthDelta",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_1", HFILL }},
+    { &hf_ilp_setSignaltoNoiseDelta,
+      { "setSignaltoNoiseDelta", "ilp.setSignaltoNoiseDelta",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_1", HFILL }},
+    { &hf_ilp_operatingClass,
+      { "operatingClass", "ilp.operatingClass",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_255", HFILL }},
+    { &hf_ilp_apSSID,
+      { "apSSID", "ilp.apSSID",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "OCTET_STRING_SIZE_1_32", HFILL }},
+    { &hf_ilp_apPHYType,
+      { "apPHYType", "ilp.apPHYType",
+        FT_UINT32, BASE_DEC, VALS(ilp_T_apPHYType_vals), 0,
+        NULL, HFILL }},
+    { &hf_ilp_setMACAddress,
+      { "setMACAddress", "ilp.setMACAddress",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_48", HFILL }},
     { &hf_ilp_rTDValue,
       { "rTDValue", "ilp.rTDValue",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -5336,6 +5980,46 @@ void proto_register_ilp(void) {
       { "locationValue", "ilp.locationValue",
         FT_BYTES, BASE_NONE, NULL, 0,
         "OCTET_STRING_SIZE_1_128", HFILL }},
+    { &hf_ilp_lciLocData,
+      { "lciLocData", "ilp.lciLocData_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ilp_locationDataLCI,
+      { "locationDataLCI", "ilp.locationDataLCI_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ilp_latitudeResolution,
+      { "latitudeResolution", "ilp.latitudeResolution",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_6", HFILL }},
+    { &hf_ilp_LocationDataLCI_latitude,
+      { "latitude", "ilp.locationdatalci.latitude",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_34", HFILL }},
+    { &hf_ilp_longitudeResolution,
+      { "longitudeResolution", "ilp.longitudeResolution",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_6", HFILL }},
+    { &hf_ilp_LocationDataLCI_longitude,
+      { "longitude", "ilp.locationdatalci.longitude",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_34", HFILL }},
+    { &hf_ilp_altitudeType,
+      { "altitudeType", "ilp.altitudeType",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_4", HFILL }},
+    { &hf_ilp_altitudeResolution,
+      { "altitudeResolution", "ilp.altitudeResolution",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_6", HFILL }},
+    { &hf_ilp_LocationDataLCI_altitude,
+      { "altitude", "ilp.locationdatalci.altitude",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_30", HFILL }},
+    { &hf_ilp_datum,
+      { "datum", "ilp.datum",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
     { &hf_ilp_wimaxBsID,
       { "wimaxBsID", "ilp.wimaxBsID_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -5356,8 +6040,8 @@ void proto_register_ilp(void) {
       { "bsID-LSB", "ilp.bsID_LSB",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_24", HFILL }},
-    { &hf_ilp_rTD,
-      { "rTD", "ilp.rTD",
+    { &hf_ilp_rtd,
+      { "rtd", "ilp.rtd",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_65535", HFILL }},
     { &hf_ilp_rTDstd,
@@ -5376,8 +6060,8 @@ void proto_register_ilp(void) {
       { "relDelaystd", "ilp.relDelaystd",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_1023", HFILL }},
-    { &hf_ilp_rSSI,
-      { "rSSI", "ilp.rSSI",
+    { &hf_ilp_rssi,
+      { "rssi", "ilp.rssi",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_255", HFILL }},
     { &hf_ilp_rSSIstd,
@@ -5388,8 +6072,8 @@ void proto_register_ilp(void) {
       { "bSTxPower", "ilp.bSTxPower",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_255", HFILL }},
-    { &hf_ilp_cINR,
-      { "cINR", "ilp.cINR",
+    { &hf_ilp_cinr,
+      { "cinr", "ilp.cinr",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_255", HFILL }},
     { &hf_ilp_cINRstd,
@@ -5400,16 +6084,72 @@ void proto_register_ilp(void) {
       { "bSLocation", "ilp.bSLocation_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ReportedLocation", HFILL }},
+    { &hf_ilp_servingCellInformation,
+      { "servingCellInformation", "ilp.servingCellInformation",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "ServingCellInformationNR", HFILL }},
+    { &hf_ilp_measuredResultsListNR,
+      { "measuredResultsListNR", "ilp.measuredResultsListNR",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "MeasResultListNR", HFILL }},
+    { &hf_ilp_ServingCellInformationNR_item,
+      { "ServCellNR", "ilp.ServCellNR_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ilp_physCellId_01,
+      { "physCellId", "ilp.physCellId",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "PhysCellIdNR", HFILL }},
+    { &hf_ilp_arfcn_NR,
+      { "arfcn-NR", "ilp.arfcn_NR",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ilp_cellGlobalId_01,
+      { "cellGlobalId", "ilp.cellGlobalId_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "CellGlobalIdNR", HFILL }},
+    { &hf_ilp_ssb_Measurements,
+      { "ssb-Measurements", "ilp.ssb_Measurements_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "NR_Measurements", HFILL }},
+    { &hf_ilp_csi_rs_Measurements,
+      { "csi-rs-Measurements", "ilp.csi_rs_Measurements_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "NR_Measurements", HFILL }},
+    { &hf_ilp_ta_03,
+      { "ta", "ilp.ta",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_3846", HFILL }},
+    { &hf_ilp_MeasResultListNR_item,
+      { "MeasResultNR", "ilp.MeasResultNR_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ilp_cellIdentityNR,
+      { "cellIdentityNR", "ilp.cellIdentityNR",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ilp_rsrp_Range,
+      { "rsrp-Range", "ilp.rsrp_Range",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_127", HFILL }},
+    { &hf_ilp_rsrq_Range,
+      { "rsrq-Range", "ilp.rsrq_Range",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_127", HFILL }},
+    { &hf_ilp_sinr_Range,
+      { "sinr-Range", "ilp.sinr_Range",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_127", HFILL }},
     { &hf_ilp_modeSpecificFrequencyInfo,
-      { "modeSpecificInfo", "ilp.modeSpecificInfo",
+      { "modeSpecificInfo", "ilp.modeSpecificFrequencyInfo",
         FT_UINT32, BASE_DEC, VALS(ilp_FrequencySpecificInfo_vals), 0,
         "FrequencySpecificInfo", HFILL }},
     { &hf_ilp_fdd_fr,
-      { "fdd", "ilp.fdd_element",
+      { "fdd", "ilp.fdd_fr_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "FrequencyInfoFDD", HFILL }},
     { &hf_ilp_tdd_fr,
-      { "tdd", "ilp.tdd_element",
+      { "tdd", "ilp.tdd_fr_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "FrequencyInfoTDD", HFILL }},
     { &hf_ilp_uarfcn_UL,
@@ -5428,12 +6168,12 @@ void proto_register_ilp(void) {
       { "NMRelement", "ilp.NMRelement_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ilp_aRFCN,
-      { "aRFCN", "ilp.aRFCN",
+    { &hf_ilp_arfcn,
+      { "arfcn", "ilp.arfcn",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_1023", HFILL }},
-    { &hf_ilp_bSIC,
-      { "bSIC", "ilp.bSIC",
+    { &hf_ilp_bsic,
+      { "bsic", "ilp.bsic",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_63", HFILL }},
     { &hf_ilp_rxLev,
@@ -5456,7 +6196,7 @@ void proto_register_ilp(void) {
       { "CellMeasuredResults", "ilp.CellMeasuredResults_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ilp_cellIdentity_01,
+    { &hf_ilp_cellIdentity,
       { "cellIdentity", "ilp.cellIdentity",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_268435455", HFILL }},
@@ -5584,6 +6324,10 @@ void proto_register_ilp(void) {
       { "delay", "ilp.delay",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_7", HFILL }},
+    { &hf_ilp_ver2_responseTime,
+      { "ver2-responseTime", "ilp.ver2_responseTime",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_1_128", HFILL }},
     { &hf_ilp_horvel,
       { "horvel", "ilp.horvel_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -5628,8 +6372,8 @@ void proto_register_ilp(void) {
       { "veruncertspeed", "ilp.veruncertspeed",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_8", HFILL }},
-    { &hf_ilp_rAND,
-      { "rAND", "ilp.rAND",
+    { &hf_ilp_rand,
+      { "rand", "ilp.rand",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_128", HFILL }},
     { &hf_ilp_slpFQDN,
@@ -5665,40 +6409,49 @@ void proto_register_ilp(void) {
         FT_BYTES, BASE_NONE, NULL, 0,
         "OCTET_STRING_SIZE_1_60000", HFILL }},
     { &hf_ilp_GANSSSignals_signal1,
-      { "signal1", "ilp.signal1",
+      { "signal1", "ilp.GANSSSignals.signal1",
         FT_BOOLEAN, 8, NULL, 0x80,
         NULL, HFILL }},
     { &hf_ilp_GANSSSignals_signal2,
-      { "signal2", "ilp.signal2",
+      { "signal2", "ilp.GANSSSignals.signal2",
         FT_BOOLEAN, 8, NULL, 0x40,
         NULL, HFILL }},
     { &hf_ilp_GANSSSignals_signal3,
-      { "signal3", "ilp.signal3",
+      { "signal3", "ilp.GANSSSignals.signal3",
         FT_BOOLEAN, 8, NULL, 0x20,
         NULL, HFILL }},
     { &hf_ilp_GANSSSignals_signal4,
-      { "signal4", "ilp.signal4",
+      { "signal4", "ilp.GANSSSignals.signal4",
         FT_BOOLEAN, 8, NULL, 0x10,
         NULL, HFILL }},
     { &hf_ilp_GANSSSignals_signal5,
-      { "signal5", "ilp.signal5",
+      { "signal5", "ilp.GANSSSignals.signal5",
         FT_BOOLEAN, 8, NULL, 0x08,
         NULL, HFILL }},
     { &hf_ilp_GANSSSignals_signal6,
-      { "signal6", "ilp.signal6",
+      { "signal6", "ilp.GANSSSignals.signal6",
         FT_BOOLEAN, 8, NULL, 0x04,
         NULL, HFILL }},
     { &hf_ilp_GANSSSignals_signal7,
-      { "signal7", "ilp.signal7",
+      { "signal7", "ilp.GANSSSignals.signal7",
         FT_BOOLEAN, 8, NULL, 0x02,
         NULL, HFILL }},
     { &hf_ilp_GANSSSignals_signal8,
-      { "signal8", "ilp.signal8",
+      { "signal8", "ilp.GANSSSignals.signal8",
         FT_BOOLEAN, 8, NULL, 0x01,
         NULL, HFILL }},
-
-/*--- End of included file: packet-ilp-hfarr.c ---*/
-#line 102 "./asn1/ilp/packet-ilp-template.c"
+    { &hf_ilp_T_addPosMode_standalone,
+      { "standalone", "ilp.T.addPosMode.standalone",
+        FT_BOOLEAN, 8, NULL, 0x80,
+        NULL, HFILL }},
+    { &hf_ilp_T_addPosMode_setBased,
+      { "setBased", "ilp.T.addPosMode.setBased",
+        FT_BOOLEAN, 8, NULL, 0x40,
+        NULL, HFILL }},
+    { &hf_ilp_T_addPosMode_setAssisted,
+      { "setAssisted", "ilp.T.addPosMode.setAssisted",
+        FT_BOOLEAN, 8, NULL, 0x20,
+        NULL, HFILL }},
     { &hf_ilp_mobile_directory_number,
       { "Mobile Directory Number", "ilp.mobile_directory_number",
         FT_STRING, BASE_NONE, NULL, 0,
@@ -5706,12 +6459,9 @@ void proto_register_ilp(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_ilp,
     &ett_ilp_setid,
-
-/*--- Included file: packet-ilp-ettarr.c ---*/
-#line 1 "./asn1/ilp/packet-ilp-ettarr.c"
     &ett_ilp_ILP_PDU,
     &ett_ilp_IlpMessage,
     &ett_ilp_PREQ,
@@ -5764,10 +6514,14 @@ void proto_register_ilp(void) {
     &ett_ilp_GANSSPositionMethod,
     &ett_ilp_GANSSPositioningMethodTypes,
     &ett_ilp_GANSSSignals,
+    &ett_ilp_AdditionalPositioningMethods,
+    &ett_ilp_AddPosSupport_Element,
+    &ett_ilp_T_addPosMode,
     &ett_ilp_PosProtocol,
     &ett_ilp_PosProtocolVersion3GPP,
     &ett_ilp_PosProtocolVersion3GPP2,
     &ett_ilp_Supported3GPP2PosProtocolVersion,
+    &ett_ilp_PosProtocolVersionOMA,
     &ett_ilp_SupportedBearers,
     &ett_ilp_CellInfo,
     &ett_ilp_UTRAN_GPSReferenceTimeResult,
@@ -5801,15 +6555,27 @@ void proto_register_ilp(void) {
     &ett_ilp_PLMN_Identity,
     &ett_ilp_MCC,
     &ett_ilp_MNC,
+    &ett_ilp_ServingInformation5G,
+    &ett_ilp_NeighbourInformation5G,
     &ett_ilp_WlanAPInformation,
     &ett_ilp_RTD,
     &ett_ilp_ReportedLocation,
     &ett_ilp_LocationData,
+    &ett_ilp_RepLocation,
+    &ett_ilp_LciLocData,
+    &ett_ilp_LocationDataLCI,
     &ett_ilp_WimaxBSInformation,
     &ett_ilp_WimaxBsID,
     &ett_ilp_WimaxRTD,
     &ett_ilp_WimaxNMRList,
     &ett_ilp_WimaxNMR,
+    &ett_ilp_NRCellInformation,
+    &ett_ilp_ServingCellInformationNR,
+    &ett_ilp_ServCellNR,
+    &ett_ilp_MeasResultListNR,
+    &ett_ilp_MeasResultNR,
+    &ett_ilp_CellGlobalIdNR,
+    &ett_ilp_NR_Measurements,
     &ett_ilp_FrequencyInfo,
     &ett_ilp_FrequencySpecificInfo,
     &ett_ilp_FrequencyInfoFDD,
@@ -5847,9 +6613,6 @@ void proto_register_ilp(void) {
     &ett_ilp_MultiPosPayLoad,
     &ett_ilp_T_lPPPayload,
     &ett_ilp_T_tia801Payload,
-
-/*--- End of included file: packet-ilp-ettarr.c ---*/
-#line 113 "./asn1/ilp/packet-ilp-template.c"
   };
 
   module_t *ilp_module;
@@ -5857,27 +6620,19 @@ void proto_register_ilp(void) {
 
   /* Register protocol */
   proto_ilp = proto_register_protocol(PNAME, PSNAME, PFNAME);
-  ilp_handle = register_dissector("ilp", dissect_ilp_tcp, proto_ilp);
+  ilp_tcp_handle = register_dissector("ilp", dissect_ilp_tcp, proto_ilp);
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_ilp, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
-  ilp_module = prefs_register_protocol(proto_ilp,proto_reg_handoff_ilp);
+  ilp_module = prefs_register_protocol(proto_ilp, NULL);
 
   prefs_register_bool_preference(ilp_module, "desegment_ilp_messages",
         "Reassemble ILP messages spanning multiple TCP segments",
         "Whether the ILP dissector should reassemble messages spanning multiple TCP segments."
         " To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
         &ilp_desegment);
-
-  /* Register a configuration option for port */
-  prefs_register_uint_preference(ilp_module, "tcp.port",
-                                 "ILP TCP Port",
-                                 "Set the TCP port for ILP messages(IANA registered port is 7276)",
-                                 10,
-                                 &gbl_ilp_port);
-
 }
 
 
@@ -5885,18 +6640,12 @@ void proto_register_ilp(void) {
 void
 proto_reg_handoff_ilp(void)
 {
-  static gboolean initialized = FALSE;
-  static guint local_ilp_port;
+  dissector_handle_t ilp_pdu_handle;
 
-  if (!initialized) {
-    dissector_add_string("media_type","application/oma-supl-ilp", ilp_handle);
-    rrlp_handle = find_dissector_add_dependency("rrlp", proto_ilp);
-    lpp_handle = find_dissector_add_dependency("lpp", proto_ilp);
-    initialized = TRUE;
-  } else {
-    dissector_delete_uint("tcp.port", local_ilp_port, ilp_handle);
-  }
+  ilp_pdu_handle = create_dissector_handle(dissect_ILP_PDU_PDU, proto_ilp);
+  rrlp_handle = find_dissector_add_dependency("rrlp", proto_ilp);
+  lpp_handle = find_dissector_add_dependency("lpp", proto_ilp);
 
-  local_ilp_port = gbl_ilp_port;
-  dissector_add_uint("tcp.port", gbl_ilp_port, ilp_handle);
+  dissector_add_string("media_type","application/oma-supl-ilp", ilp_pdu_handle);
+  dissector_add_uint_with_preference("tcp.port", ILP_TCP_PORT, ilp_tcp_handle);
 }

@@ -1,0 +1,4 @@
+@set UPDATED 1 October 2025
+@set UPDATED-MONTH October 2025
+@set EDITION 1.0
+@set VERSION 1.0

@@ -1,0 +1,276 @@
+0
+StartTag
+z 0= <=
+1
+StartTag
+z x=<
+2
+StartTag
+z z=z=z
+3
+StartTag
+z ==
+4
+StartTag
+z ==
+5
+StartTag
+z ===
+6
+StartTag
+z ====
+7
+StartTag
+z z=&
+8
+StartTag
+z z=&'
+9
+StartTag
+z z=&
+10
+StartTag
+z z=&"
+11
+StartTag
+z z=&xlink_xmlns;
+Character
+bar
+StartTag
+z
+12
+StartTag
+z z=  foo
+Character
+bar
+StartTag
+z
+13
+StartTag
+foo "=bar
+14
+StartTag
+foo '=bar
+15
+StartTag
+foo a"b=bar
+16
+StartTag
+foo a'b=bar
+17
+StartTag
+foo a=b'c
+18
+StartTag
+foo a=b"c
+19
+StartTag
+foo a=b c=
+20
+StartTag
+foo a=b c=
+21
+StartTag
+br a=b
+22
+StartTag
+bar a=b
+23
+DOCTYPE
+html
+<none>
+<none>
+24
+25
+26
+Character
+�
+27
+Character
+�
+28
+Character
+A
+29
+Character
+A
+30
+Character
+&#x &#X 
+31
+Character
+&#xZ
+32
+Character
+&# &#; 
+33
+Character
+&#A
+34
+Character
+𐀀
+35
+Character
+􏿿
+36
+Character
+�
+37
+Character
+�
+38
+Character
+�
+39
+Character
+�
+40
+Character
+�
+41
+Character
+�
+42
+Character
+퟿����
+43
+StartTag
+x
+44
+EndTag
+x
+45
+StartTag
+x x=
+46
+StartTag
+x@az[`az{ @az[`az{=
+47
+StartTag
+x x=1
+48
+EndTag
+x
+49
+EndTag
+x
+50
+StartTag
+br
+51
+StartTag
+xr
+52
+EndTag
+br
+53
+DOCTYPE
+html
+AbC
+XyZ
+54
+DOCTYPE
+html
+aBc
+xYz
+55
+DOCTYPE
+html
+<none>
+XyZ
+56
+DOCTYPE
+html
+<none>
+xYz
+57
+Comment
+doc
+58
+Comment
+doc�
+59
+Comment
+doc
+60
+Comment
+doc﷑
+61
+Comment
+doc🿿
+62
+Character
+
+?
+63
+Character
+
+
+64
+Character
+
+
+65
+Character
+
+
+66
+Character
+
+
+
+67
+Character
+
+
+
+68
+Character
+
+
+
+69
+Character
+text
+
+
+text
+70
+DOCTYPE
+html
+<none>
+<none>
+71
+DOCTYPE
+html
+<none>
+<none>
+72
+DOCTYPE
+html
+<none>
+<none>
+73
+DOCTYPE
+html
+<none>
+<none>
+74
+DOCTYPE
+html
+<none>
+<none>
+Character
+text
+75
+StartTag
+a a=aa`
+76
+77
+78
+79
+80
+81
+82
+83
+84

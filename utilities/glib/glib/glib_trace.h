@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2009,2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,7 +27,9 @@
 #error "config.h must be included prior to glib_trace.h"
 #endif
 
-#ifdef HAVE_DTRACE
+/* Ignore probes when doing static analysis, as they do weird things which
+ * confuses the analyser. */
+#if defined(HAVE_DTRACE) && !defined(__clang_analyzer__)
 
 /* include the generated probes header and put markers in code */
 #include "glib_probes.h"

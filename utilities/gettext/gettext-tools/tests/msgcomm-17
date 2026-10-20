@@ -5,7 +5,7 @@
 # entries only (entries occurring less than 2 times).  But don't drop the
 # header entry; otherwise msgcomm will fail for multibyte strings.
 
-cat <<EOF > mcomm-test17.in1
+cat <<\EOF > mcomm-test17.in1
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -23,7 +23,7 @@ msgid "1"
 msgstr "1x"
 EOF
 
-cat <<EOF > mcomm-test17.in2
+cat <<\EOF > mcomm-test17.in2
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"

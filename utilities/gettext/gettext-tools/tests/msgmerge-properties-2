@@ -9,7 +9,7 @@ cat <<\EOF > mm-p-2.po
 white=wei\u00df
 EOF
 
-cat <<EOF > mm-p-2.pot
+cat <<\EOF > mm-p-2.pot
 #. location changed
 #: cogarithmetic.cc:33
 !white=

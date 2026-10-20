@@ -5,46 +5,47 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_SNMP_H
 #define PACKET_SNMP_H
 
+#define SNMP_REQ_GET                0
+#define SNMP_REQ_GETNEXT            1
+#define SNMP_REQ_SET                3
+#define SNMP_REQ_GETBULK            5
+#define SNMP_REQ_INFORM             6
+
+#define SNMP_RES_GET                2
+
+#define SNMP_TRAP                   4
+#define SNMP_TRAPV2                 7
+#define SNMP_REPORT                 8
+
 typedef struct _snmp_usm_key {
-	guint8* data;
-	guint len;
+	uint8_t* data;
+	unsigned len;
 } snmp_usm_key_t;
 
 typedef struct _snmp_ue_assoc_t snmp_ue_assoc_t;
 typedef struct _snmp_usm_params_t snmp_usm_params_t;
 
-typedef gboolean (*snmp_usm_authenticator_t)(snmp_usm_params_t*, guint8** calc_auth, guint* calc_auth_len, gchar const** error);
-typedef tvbuff_t* (*snmp_usm_decoder_t)(snmp_usm_params_t*, tvbuff_t* encryptedData, gchar const** error);
-typedef void (*snmp_usm_password_to_key_t)(const guint8 *password, guint passwordlen, const guint8 *engineID, guint engineLength, guint8 *key);
+typedef tvbuff_t* (*snmp_usm_decoder_t)(snmp_usm_params_t*, tvbuff_t* encryptedData, packet_info *pinfo, char const** error);
 
-typedef struct _snmp_usm_auth_model_t {
-	snmp_usm_password_to_key_t pass2key;
-	snmp_usm_authenticator_t authenticate;
-	guint key_size;
+typedef enum _snmp_usm_auth_model_t {
+	SNMP_USM_AUTH_MD5 = 0,
+	SNMP_USM_AUTH_SHA1,
+	SNMP_USM_AUTH_SHA2_224,
+	SNMP_USM_AUTH_SHA2_256,
+	SNMP_USM_AUTH_SHA2_384,
+	SNMP_USM_AUTH_SHA2_512
 } snmp_usm_auth_model_t;
 
 typedef struct _snmp_user_t {
 	snmp_usm_key_t userName;
 
-	snmp_usm_auth_model_t* authModel;
+	snmp_usm_auth_model_t authModel;
 	snmp_usm_key_t authPassword;
 	snmp_usm_key_t authKey;
 
@@ -54,26 +55,27 @@ typedef struct _snmp_user_t {
 } snmp_user_t;
 
 typedef struct {
-	guint8* data;
-	guint len;
+	uint8_t* data;
+	unsigned len;
 } snmp_engine_id_t;
 
 struct _snmp_ue_assoc_t {
 	snmp_user_t user;
 	snmp_engine_id_t engine;
-	guint	auth_model;
-	guint	priv_proto;
+	unsigned	auth_model;
+	unsigned	priv_proto;
+	unsigned	priv_key_exp;
 	struct _snmp_ue_assoc_t* next;
 };
 
 struct _snmp_usm_params_t {
-	gboolean authenticated;
-	gboolean encrypted;
-	guint start_offset;
-	guint auth_offset;
+	bool authenticated;
+	bool encrypted;
+	unsigned start_offset;
+	unsigned auth_offset;
 
-	guint32 boots;
-	guint32 snmp_time;
+	uint32_t boots;
+	uint32_t snmp_time;
 	tvbuff_t* engine_tvb;
 	tvbuff_t* user_tvb;
 	proto_item* auth_item;
@@ -82,15 +84,23 @@ struct _snmp_usm_params_t {
 	tvbuff_t* msg_tvb;
 	snmp_ue_assoc_t* user_assoc;
 
-	gboolean authOK;
+	bool authOK;
 };
+
+typedef struct snmp_request_response {
+	uint32_t request_frame_id;
+	uint32_t response_frame_id;
+	nstime_t request_time;
+	unsigned requestId;
+	unsigned request_procedure_id;
+} snmp_request_response_t;
 
 /*
  * Guts of the SNMP dissector - exported for use by protocols such as
  * ILMI.
  */
-extern guint dissect_snmp_pdu(tvbuff_t *, int, packet_info *, proto_tree *tree,
-    int, gint, gboolean);
+extern unsigned dissect_snmp_pdu(tvbuff_t *, int, packet_info *, proto_tree *tree,
+    int, int, bool);
 extern int dissect_snmp_engineid(proto_tree *, packet_info *, tvbuff_t *, int, int);
 
 /*#include "packet-snmp-exp.h"*/

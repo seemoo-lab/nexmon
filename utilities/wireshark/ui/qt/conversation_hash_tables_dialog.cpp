@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "conversation_hash_tables_dialog.h"
@@ -24,13 +12,110 @@
 
 #include "config.h"
 
-#include <glib.h>
-
 #include <epan/conversation.h>
 #include <epan/conversation_debug.h>
 
-#include "qt_ui_utils.h"
-#include "wireshark_application.h"
+#include <ui/qt/utils/qt_ui_utils.h>
+#include "main_application.h"
+
+static void
+fill_named_table(void *key, void *value _U_, void *user_data)
+{
+    const conversation_element_t *elements = static_cast<const conversation_element_t *>(key);
+    QString* html_table = static_cast<QString *>(user_data);
+
+    if (!elements || !html_table) {
+        return;
+    }
+
+    if (html_table->isEmpty()) {
+        html_table->append("<tr>");
+        int addr_count = 1;
+        int port_count = 1;
+        int string_count = 1;
+        int uint_count = 1;
+        int uint64_count = 1;
+        int int_count = 1;
+        int int64_count = 1;
+        int blob_count = 1;
+        for (const conversation_element_t *cur_el = elements; ; cur_el++) {
+            QString title;
+            switch (cur_el->type) {
+            case CE_ADDRESS:
+                title = QStringLiteral("Address %1").arg(addr_count++);
+                break;
+            case CE_PORT:
+                title = QStringLiteral("Port %1").arg(port_count++);
+                break;
+            case CE_STRING:
+                title = QStringLiteral("String %1").arg(string_count++);
+                break;
+            case CE_UINT:
+                title = QStringLiteral("UInt %1").arg(uint_count++);
+                break;
+            case CE_UINT64:
+                title = QStringLiteral("UInt64 %1").arg(uint64_count++);
+                break;
+            case CE_INT:
+                title = QStringLiteral("Int %1").arg(int_count++);
+                break;
+            case CE_INT64:
+                title = QStringLiteral("Int64 %1").arg(int64_count++);
+                break;
+            case CE_BLOB:
+                title = QStringLiteral("Blob %1").arg(blob_count++);
+                break;
+            case CE_CONVERSATION_TYPE:
+                html_table->append(QStringLiteral("<th>Endpoint</th>"));
+                goto title_done;
+                break;
+            }
+            html_table->append(QStringLiteral("<th>%1</th>").arg(title));
+        }
+title_done:
+        html_table->append("</tr>\n");
+    }
+
+    html_table->append("<tr>");
+
+    for (const conversation_element_t *cur_el = elements; ; cur_el++) {
+        QString val;
+        switch (cur_el->type) {
+        case CE_ADDRESS:
+            val = address_to_qstring(&cur_el->addr_val);
+            break;
+        case CE_PORT:
+            val = QString::number(cur_el->port_val);
+            break;
+        case CE_STRING:
+            val = cur_el->str_val;
+            break;
+        case CE_UINT:
+            val = QString::number(cur_el->uint_val);
+            break;
+        case CE_UINT64:
+            val = QString::number(cur_el->uint64_val);
+            break;
+        case CE_INT:
+            val = QString::number(cur_el->int_val);
+            break;
+        case CE_INT64:
+            val = QString::number(cur_el->int64_val);
+            break;
+        case CE_BLOB:
+            val = QString(QByteArray::fromRawData((const char *)cur_el->blob.val, (int)cur_el->blob.len).toHex());
+            break;
+        case CE_CONVERSATION_TYPE:
+            html_table->append(QStringLiteral("<td>%1</td>").arg(QString::number(cur_el->conversation_type_val)));
+            goto val_done;
+            break;
+        }
+        html_table->append(QStringLiteral("<td>%1</td>").arg(val));
+    }
+val_done:
+
+    html_table->append("</tr>\n");
+}
 
 ConversationHashTablesDialog::ConversationHashTablesDialog(QWidget *parent) :
     GeometryStateDialog(parent),
@@ -38,18 +123,34 @@ ConversationHashTablesDialog::ConversationHashTablesDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     if (parent) loadGeometry(parent->width() * 3 / 4, parent->height() * 3 / 4);
-
-    setWindowTitle(wsApp->windowTitleString(tr("Dissector Tables")));
+    setAttribute(Qt::WA_DeleteOnClose, true);
+    setWindowTitle(mainApp->windowTitleString(tr("Conversation Hash Tables")));
 
     QString html;
 
-    html += "<h3>Conversation Hash Tables</h3>\n";
+    html += "<h2>Conversation Hash Tables</h2>\n";
 
-    html += hashTableToHtmlTable("conversation_hashtable_exact", get_conversation_hashtable_exact());
-    html += hashTableToHtmlTable("conversation_hashtable_no_addr2", get_conversation_hashtable_no_addr2());
-    html += hashTableToHtmlTable("conversation_hashtable_no_port2", get_conversation_hashtable_no_port2());
-    html += hashTableToHtmlTable("conversation_hashtable_no_addr2_or_port2", get_conversation_hashtable_no_addr2_or_port2());
+    wmem_map_t *conversation_tables = get_conversation_hashtables();
+    wmem_list_t *table_names = wmem_map_get_keys(NULL, conversation_tables);
+    for (wmem_list_frame_t *cur_frame = wmem_list_head(table_names); cur_frame; cur_frame = wmem_list_frame_next(cur_frame))
+    {
+        const char *table_name = static_cast<const char *>(wmem_list_frame_data(cur_frame));
+        wmem_map_t *table = static_cast<wmem_map_t *>(wmem_map_lookup(conversation_tables, table_name));
 
+        if (!table) {
+            html += QStringLiteral("<h3>%1, Error: table not found</h3>\n").arg(table_name);
+            continue;
+        }
+
+        html += QStringLiteral("<h3>%1, %2 entries</h3>\n").arg(table_name).arg(wmem_map_size(table));
+        QString html_table;
+        html += "<table>\n";
+        wmem_map_foreach(table, fill_named_table, &html_table);
+        html += html_table;
+        html += "</table>\n";
+    }
+    wmem_destroy_list(table_names);
+    ui->conversationTextEdit->setReadOnly(true);
     ui->conversationTextEdit->setHtml(html);
 }
 
@@ -57,43 +158,3 @@ ConversationHashTablesDialog::~ConversationHashTablesDialog()
 {
     delete ui;
 }
-
-const QString ConversationHashTablesDialog::hashTableToHtmlTable(const QString table_name, struct _GHashTable *hash_table)
-{
-    GList *conversation_keys = NULL;
-    if (hash_table) conversation_keys = g_hash_table_get_keys(hash_table);
-    int num_keys = g_list_length(conversation_keys);
-
-    QString html_table = QString("<p>%1, %2 entries</p>").arg(table_name).arg(num_keys);
-    if (num_keys < 1) return html_table;
-
-    int one_em = fontMetrics().height();
-    html_table += QString("<table cellpadding=\"%1\">\n").arg(one_em / 4);
-
-    html_table += "<tr><th align=\"left\">Address 1</th><th align=\"left\">Port 1</th><th align=\"left\">Address 2</th><th align=\"left\">Port 2</th></tr>\n";
-
-    // XXX Add a column for the hash value.
-    for (GList *ck_entry = conversation_keys; ck_entry; ck_entry = g_list_next(ck_entry)) {
-        const conversation_key *conv_key = (conversation_key *) ck_entry->data;
-        html_table += QString("<tr><td>%1</td><td>%2</td><td>%3</td><td>%4</td></tr>\n")
-                .arg(address_to_qstring(&conv_key->addr1))
-                .arg(conv_key->port1)
-                .arg(address_to_qstring(&conv_key->addr2))
-                .arg(conv_key->port2);
-    }
-    html_table += "</table>\n";
-    return html_table;
-}
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

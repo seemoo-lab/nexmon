@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * The eXpressive Internet Protocol (XIP) is the network layer protocol for
  * the eXpressive Internet Architecture (XIA), a future Internet architecture
@@ -45,28 +33,28 @@ void proto_reg_handoff_xip(void);
 /* Next dissector handles. */
 static dissector_handle_t xip_serval_handle;
 
-static gint proto_xip			= -1;
+static int proto_xip;
 
-static gint hf_xip_version		= -1;
-static gint hf_xip_next_hdr		= -1;
-static gint hf_xip_payload_len		= -1;
-static gint hf_xip_hop_limit		= -1;
-static gint hf_xip_num_dst		= -1;
-static gint hf_xip_num_src		= -1;
-static gint hf_xip_last_node		= -1;
-static gint hf_xip_dst_dag		= -1;
-static gint hf_xip_dst_dag_entry	= -1;
-static gint hf_xip_src_dag		= -1;
-static gint hf_xip_src_dag_entry	= -1;
+static int hf_xip_version;
+static int hf_xip_next_hdr;
+static int hf_xip_payload_len;
+static int hf_xip_hop_limit;
+static int hf_xip_num_dst;
+static int hf_xip_num_src;
+static int hf_xip_last_node;
+static int hf_xip_dst_dag;
+static int hf_xip_dst_dag_entry;
+static int hf_xip_src_dag;
+static int hf_xip_src_dag_entry;
 
-static gint ett_xip_tree		= -1;
-static gint ett_xip_ddag		= -1;
-static gint ett_xip_sdag		= -1;
+static int ett_xip_tree;
+static int ett_xip_ddag;
+static int ett_xip_sdag;
 
-static expert_field ei_xip_invalid_len = EI_INIT;
-static expert_field ei_xip_next_header = EI_INIT;
-static expert_field ei_xip_bad_num_dst = EI_INIT;
-static expert_field ei_xip_bad_num_src = EI_INIT;
+static expert_field ei_xip_invalid_len;
+static expert_field ei_xip_next_header;
+static expert_field ei_xip_bad_num_dst;
+static expert_field ei_xip_bad_num_src;
 
 static dissector_handle_t xip_handle;
 
@@ -135,22 +123,22 @@ enum xia_addr_error {
 /* Split XID up into 4 byte chunks. */
 #define XIA_XID_CHUNK_SIZE	4
 
-typedef guint32 xid_type_t;
+typedef uint32_t xid_type_t;
 
 struct xia_xid {
 	/* XID type. */
 	xid_type_t	xid_type;
 
 	/* XID, represented as 4 byte ints. */
-	guint32		xid_id[XIA_XID_SIZE / XIA_XID_CHUNK_SIZE];
+	uint32_t		xid_id[XIA_XID_SIZE / XIA_XID_CHUNK_SIZE];
 };
 
 struct xia_row {
 	struct xia_xid	s_xid;
 	/* Outgoing edges. */
 	union {
-		guint8	a[XIA_OUTDEGREE_MAX];
-		guint32	i;
+		uint8_t	a[XIA_OUTDEGREE_MAX];
+		uint32_t	i;
 	} s_edge;
 };
 
@@ -185,37 +173,37 @@ struct xia_addr {
 #define XIA_CHOSEN_EDGES (XIA_CHOSEN_EDGE << 24 | XIA_CHOSEN_EDGE << 16 |\
 			 XIA_CHOSEN_EDGE <<  8 | XIA_CHOSEN_EDGE)
 
-static inline gint
-is_edge_chosen(guint8 e)
+static inline int
+is_edge_chosen(uint8_t e)
 {
 	return e & XIA_CHOSEN_EDGE;
 }
 
-static inline gint
+static inline int
 is_any_edge_chosen(const struct xia_row *row)
 {
 	return row->s_edge.i & XIA_CHOSEN_EDGES;
 }
 
-static inline gint
-is_empty_edge(guint8 e)
+static inline int
+is_empty_edge(uint8_t e)
 {
 	return (e & XIA_EMPTY_EDGE) == XIA_EMPTY_EDGE;
 }
 
-static inline gint
+static inline int
 xia_is_nat(xid_type_t ty)
 {
 	return ty == XIDTYPE_NAT;
 }
 
-static gint
+static int
 xia_are_edges_valid(const struct xia_row *row,
-	guint8 node, guint8 num_node, guint32 *pvisited)
+	uint8_t node, uint8_t num_node, uint32_t *pvisited)
 {
-	const guint8 *edge;
-	guint32 all_edges, bits;
-	gint i;
+	const uint8_t *edge;
+	uint32_t all_edges, bits;
+	int i;
 
 	if (is_any_edge_chosen(row)) {
 		/* Since at least an edge of last_node has already
@@ -228,7 +216,7 @@ xia_are_edges_valid(const struct xia_row *row,
 	all_edges = g_ntohl(row->s_edge.i);
 	bits = 0xffffffff;
 	for (i = 0; i < XIA_OUTDEGREE_MAX; i++, edge++) {
-		guint8 e;
+		uint8_t e;
 		e = *edge;
 		if (e == XIA_EMPTY_EDGE) {
 			if ((all_edges & bits) !=
@@ -251,12 +239,12 @@ xia_are_edges_valid(const struct xia_row *row,
 	return 0;
 }
 
-static gint
+static int
 xia_test_addr(const struct xia_addr *addr)
 {
-	gint i, n;
-	gint saw_nat = 0;
-	guint32 visited = 0;
+	int i, n;
+	int saw_nat = 0;
+	uint32_t visited = 0;
 
 	/* Test that XIDTYPE_NAT is present only on last rows. */
 	n = XIA_NODES_MAX;
@@ -275,7 +263,7 @@ xia_test_addr(const struct xia_addr *addr)
 
 	/* Test edges are well formed. */
 	for (i = 0; i < n; i++) {
-		gint rc;
+		int rc;
 		rc = xia_are_edges_valid(&addr->s_row[i], i, n, &visited);
 		if (rc)
 			return rc;
@@ -285,7 +273,7 @@ xia_test_addr(const struct xia_addr *addr)
 		/* Test entry point is present. Notice that it's just a
 		 * friendlier error since it's also XIAEADDR_MULTI_COMPONENTS.
 		 */
-		guint32 all_edges;
+		uint32_t all_edges;
 		all_edges = addr->s_row[n - 1].s_edge.i;
 		if (all_edges == XIA_EMPTY_EDGES)
 			return -XIAEADDR_NO_ENTRY;
@@ -303,10 +291,10 @@ xia_test_addr(const struct xia_addr *addr)
 
 #define INDEX_BASE 36
 
-static inline gchar
-edge_to_char(guint8 e)
+static inline char
+edge_to_char(uint8_t e)
 {
-	const gchar *ch_edge = "0123456789abcdefghijklmnopqrstuvwxyz";
+	const char *ch_edge = "0123456789abcdefghijklmnopqrstuvwxyz";
 	e &= ~XIA_CHOSEN_EDGE;
 	if (e < INDEX_BASE)
 		return ch_edge[e];
@@ -317,9 +305,9 @@ edge_to_char(guint8 e)
 }
 
 static void
-add_edges_to_buf(gint valid, wmem_strbuf_t *buf, const guint8 *edges)
+add_edges_to_buf(int valid, wmem_strbuf_t *buf, const uint8_t *edges)
 {
-	gint i;
+	int i;
 	wmem_strbuf_append_c(buf, '-');
 	for (i = 0; i < XIA_OUTDEGREE_MAX; i++) {
 		if (valid && edges[i] == XIA_EMPTY_EDGE)
@@ -335,8 +323,8 @@ add_edges_to_buf(gint valid, wmem_strbuf_t *buf, const guint8 *edges)
 static void
 add_type_to_buf(xid_type_t ty, wmem_strbuf_t *buf)
 {
-	const gchar *xid_name;
-	gsize buflen = wmem_strbuf_get_len(buf);
+	const char *xid_name;
+	size_t buflen = wmem_strbuf_get_len(buf);
 
 	if (XIA_MAX_STRADDR_SIZE - buflen - 1 < MAX_PPAL_NAME_SIZE)
 		return;
@@ -366,7 +354,7 @@ add_id_to_buf(const struct xia_xid *src, wmem_strbuf_t *buf)
 static int
 xia_ntop(const struct xia_addr *src, wmem_strbuf_t *buf)
 {
-	gint valid, i;
+	int valid, i;
 
 	valid = xia_test_addr(src) >= 1;
 	if (!valid)
@@ -409,23 +397,22 @@ xia_ntop(const struct xia_addr *src, wmem_strbuf_t *buf)
 #define XIPH_DSTD		8
 
 static void
-construct_dag(tvbuff_t *tvb, proto_tree *xip_tree,
-	const gint ett, const gint hf, const gint hf_entry,
-	const guint8 num_nodes, guint8 offset)
+construct_dag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *xip_tree,
+	const int ett, const int hf, const int hf_entry,
+	const uint8_t num_nodes, int offset)
 {
 	proto_tree *dag_tree;
 	proto_item *ti;
 	struct xia_addr dag;
 	wmem_strbuf_t *buf;
-	const gchar *dag_str;
-	guint i, j;
-	guint8 dag_offset = offset;
+	const char *dag_str;
+	unsigned i, j;
+	int dag_offset = offset;
 
 	ti = proto_tree_add_item(xip_tree, hf, tvb, offset,
 		num_nodes * XIA_NODE_SIZE, ENC_BIG_ENDIAN);
 
-	buf = wmem_strbuf_sized_new(wmem_packet_scope(),
-		XIA_MAX_STRADDR_SIZE, XIA_MAX_STRADDR_SIZE);
+	buf = wmem_strbuf_new_sized(pinfo->pool, XIA_MAX_STRADDR_SIZE);
 
 	dag_tree = proto_item_add_subtree(ti, ett);
 
@@ -455,9 +442,9 @@ construct_dag(tvbuff_t *tvb, proto_tree *xip_tree,
 		XIA_NODE_SIZE * num_nodes, dag_str, "%s", dag_str);
 }
 
-static gint
+static int
 dissect_xip_sink_node(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-	gint offset, guint8 sink_node)
+	int offset, uint8_t sink_node)
 {
 	tvbuff_t *next_tvb;
 
@@ -473,12 +460,12 @@ dissect_xip_sink_node(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	}
 }
 
-static gint
+static int
 dissect_xip_next_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-	proto_item *next_ti, gint offset)
+	proto_item *next_ti, int offset)
 {
 	tvbuff_t *next_tvb;
-	guint8 next_header = tvb_get_guint8(tvb, XIPH_NXTH);
+	uint8_t next_header = tvb_get_uint8(tvb, XIPH_NXTH);
 
 	switch (next_header) {
 	case XIA_NEXT_HEADER_DATA:
@@ -501,12 +488,12 @@ display_xip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	proto_item *next_ti = NULL;
 	proto_item *num_ti = NULL;
 
-	gint offset;
-	guint16 xiph_len, payload_len;
-	guint8 num_dst_nodes, num_src_nodes, last_node;
+	int offset;
+	uint16_t xiph_len, payload_len;
+	uint8_t num_dst_nodes, num_src_nodes, last_node;
 
-	num_dst_nodes = tvb_get_guint8(tvb, XIPH_NDST);
-	num_src_nodes = tvb_get_guint8(tvb, XIPH_NSRC);
+	num_dst_nodes = tvb_get_uint8(tvb, XIPH_NDST);
+	num_src_nodes = tvb_get_uint8(tvb, XIPH_NSRC);
 	xiph_len = 8 + (XIA_NODE_SIZE * num_dst_nodes) +
 		(XIA_NODE_SIZE * num_src_nodes);
 
@@ -557,20 +544,20 @@ display_xip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	}
 
 	/* Add XIP last node. */
-	last_node = tvb_get_guint8(tvb, XIPH_LSTN);
+	last_node = tvb_get_uint8(tvb, XIPH_LSTN);
 	proto_tree_add_uint_format_value(xip_tree, hf_xip_last_node, tvb,
 		XIPH_LSTN, 1, last_node, "%d%s", last_node,
 		last_node == XIA_ENTRY_NODE_INDEX ? " (entry node)" : "");
 
 	/* Construct Destination DAG subtree. */
 	if (num_dst_nodes > 0)
-		construct_dag(tvb, xip_tree, ett_xip_ddag,
+		construct_dag(tvb, pinfo, xip_tree, ett_xip_ddag,
 			hf_xip_dst_dag, hf_xip_dst_dag_entry,
 			num_dst_nodes, XIPH_DSTD);
 
 	/* Construct Source DAG subtree. */
 	if (num_src_nodes > 0)
-		construct_dag(tvb, xip_tree, ett_xip_sdag,
+		construct_dag(tvb, pinfo, xip_tree, ett_xip_sdag,
 			hf_xip_src_dag, hf_xip_src_dag_entry,
 			num_src_nodes,
 			XIPH_DSTD + num_dst_nodes * XIA_NODE_SIZE);
@@ -586,7 +573,7 @@ display_xip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	dissect_xip_next_header(tvb, pinfo, tree, next_ti, offset);
 }
 
-static gint
+static int
 dissect_xip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	void *data _U_)
 {
@@ -653,7 +640,7 @@ proto_register_xip(void)
 		   BASE_NONE, NULL, 0x0, NULL, HFILL }}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_xip_tree,
 		&ett_xip_ddag,
 		&ett_xip_sdag
@@ -679,10 +666,7 @@ proto_register_xip(void)
 
 	expert_module_t* expert_xip;
 
-	proto_xip = proto_register_protocol(
-		"eXpressive Internet Protocol",
-		"XIP",
-		"xip");
+	proto_xip = proto_register_protocol("eXpressive Internet Protocol", "XIP", "xip");
 
 	xip_handle = register_dissector("xip", dissect_xip, proto_xip);
 	proto_register_field_array(proto_xip, hf, array_length(hf));
@@ -701,7 +685,7 @@ proto_reg_handoff_xip(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -12,4 +12,8 @@ rom.idc: $(RAM_FILE)
 	@printf "\033[0;31m  GENERATING IDC FILE\033[0m %s\n" $@
 	$(Q)cat rom.map | gawk 'BEGIN { printf "#import <idc.idc>\n\nstatic main() {\n" } { if (!seen[$$1]++) { printf "\tMakeName(0x%s,\"%s\");\n",$$1,$$3 }; } END { printf "}\n" }' > $@
 
+clean: FORCE
+	@printf "\033[0;31m  CLEANING FIRMWARE VERSIONS\033[0m\n"
+	$(Q)for dir in $(SUBDIRS); do [ -f $$dir/Makefile ] && make -C $$dir clean || true; done
+
 FORCE:

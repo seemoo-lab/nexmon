@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -40,16 +42,22 @@ struct _GLocalFileClass
   GObjectClass parent_class;
 };
 
-GType   _g_local_file_get_type (void) G_GNUC_CONST;
+GType   _g_local_file_get_type (void);
 
 GFile * _g_local_file_new      (const char *filename);
 
 const char * _g_local_file_get_filename (GLocalFile *file);
 
-gboolean g_local_file_is_remote (const gchar *filename);
+gboolean g_local_file_is_nfs_home (const gchar *filename);
 
 GFile * g_local_file_new_from_dirname_and_basename (const char *dirname,
                                                     const char *basename);
+
+gchar *_g_local_file_find_topdir_for (const char *file_path);
+
+gboolean _g_local_file_trash_macos (const char    *path,
+                                    GCancellable  *cancellable,
+                                    GError       **error);
 
 G_END_DECLS
 

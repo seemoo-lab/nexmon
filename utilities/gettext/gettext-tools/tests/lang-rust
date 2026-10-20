@@ -1,0 +1,159 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of gettext facilities in the Rust language.
+# Assumes an fr_FR locale is installed.
+# Assumes the following packages are installed: rustc, cargo,
+# and the following Rust packages ("crates"): gettext-rs, formatx.
+
+# Test whether we can build and run Rust programs.
+: ${CARGO=cargo}
+(${CARGO} --version) >/dev/null 2>/dev/null \
+  || { echo "Skipping test: cargo not found"; Exit 77; }
+
+cat <<\EOF > Cargo.toml
+[package]
+name = "gettext-lang-rust"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+gettext-rs = "0.7.2"
+formatx = "0.2.3"
+EOF
+
+mkdir src
+cat <<\EOF > src/main.rs
+use std::env;
+use std::process;
+use gettextrs::*;
+use formatx::*;
+
+fn main() {
+  let args: Vec<String> = env::args().collect();
+  let n: u32 = args[1].parse().unwrap_or_else(|_| { process::exit (1); });
+
+  setlocale (LocaleCategory::LcAll, "");
+
+  textdomain ("prog").expect ("textdomain failed");
+  bindtextdomain ("prog", ".").expect ("bindtextdomain failed");
+  /* gettext-rs requires UTF-8 encoding.  */
+  bind_textdomain_codeset ("prog", "UTF-8").expect ("bind_textdomain_codeset failed");
+
+  println! ("{}", gettext ("'Your command, please?', asked the waiter."));
+  println! ("{}", formatx! (ngettext ("a piece of cake", "{} pieces of cake", n), n).unwrap());
+  println! ("{}", formatx! (gettext ("{} is replaced by {}."), "FF", "EUR").unwrap());
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -o prog.tmp --omit-header --no-location src/main.rs || Exit 1
+LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
+
+cat <<\EOF > prog.ok
+msgid "'Your command, please?', asked the waiter."
+msgstr ""
+
+#, rust-format
+msgid "a piece of cake"
+msgid_plural "{} pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+
+#, rust-format
+msgid "{} is replaced by {}."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} prog.ok prog.pot || Exit 1
+
+cat <<\EOF > fr.po
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "'Your command, please?', asked the waiter."
+msgstr "«Votre commande, s'il vous plait», dit le garçon."
+
+# Les gateaux allemands sont les meilleurs du monde.
+#, rust-format
+msgid "a piece of cake"
+msgid_plural "{} pieces of cake"
+msgstr[0] "un morceau de gateau"
+msgstr[1] "{} morceaux de gateau"
+
+# Reverse the arguments.
+#, rust-format
+msgid "{} is replaced by {}."
+msgstr "{1} remplace {0}."
+EOF
+
+: ${MSGMERGE=msgmerge}
+${MSGMERGE} -q -o fr.po.tmp fr.po prog.pot || Exit 1
+LC_ALL=C tr -d '\r' < fr.po.tmp > fr.po.new || Exit 1
+
+: ${DIFF=diff}
+${DIFF} fr.po fr.po.new || Exit 1
+
+test -d fr || mkdir fr
+test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
+
+this_test_is_longrunning_
+
+: ${CARGO=cargo}
+# This takes between 2.5 minutes (on a fast machine) and 5 minutes,
+# most of it in building gettext-sys. Sigh.
+${CARGO} build || Exit 1
+
+# Test which of the fr_FR locales are installed.
+: ${LOCALE_FR=fr_FR}
+: ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+if test $LOCALE_FR != none; then
+  LC_ALL=$LOCALE_FR ../testlocale
+  case $? in
+    0) ;;
+    77) LOCALE_FR=none;;
+    *) Exit 1;;
+  esac
+fi
+if test $LOCALE_FR_UTF8 != none; then
+  LC_ALL=$LOCALE_FR_UTF8 ../testlocale
+  case $? in
+    0) ;;
+    77) LOCALE_FR_UTF8=none;;
+    *) Exit 1;;
+  esac
+fi
+if test $LOCALE_FR = none && test $LOCALE_FR_UTF8 = none; then
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: no french locale is installed"
+  else
+    echo "Skipping test: no french locale is supported"
+  fi
+  Exit 77
+fi
+
+: ${DIFF=diff}
+cat <<\EOF > prog.ok
+«Votre commande, s'il vous plait», dit le garçon.
+2 morceaux de gateau
+EUR remplace FF.
+EOF
+
+: ${LOCALE_FR=fr_FR}
+: ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+if test $LOCALE_FR != none; then
+  LANGUAGE= LC_ALL=$LOCALE_FR target/debug/gettext-lang-rust 2 > prog.out1 || Exit 1
+  ${DIFF} prog.ok prog.out1 || Exit 1
+fi
+if test $LOCALE_FR_UTF8 != none; then
+  LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 target/debug/gettext-lang-rust 2 > prog.out2 || Exit 1
+  ${DIFF} prog.ok prog.out2 || Exit 1
+fi
+
+Exit 0

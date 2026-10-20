@@ -1,0 +1,2 @@
+./test/schemas/vdv-first4_1.xml:14: Schemas validity error : Element 'born': '196T6-08-22' is not a valid value of the atomic type 'date'.
+./test/schemas/vdv-first4_1.xml fails to validate

@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlList" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlList</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlList_1ac4c8d54c375bb3a7171c208ee22dcca8" prot="public" static="no" mutable="no">
+        <type>xmlLinkPtr</type>
+        <definition>xmlLinkPtr sentinel</definition>
+        <argsstring></argsstring>
+        <name>sentinel</name>
+        <qualifiedname>_xmlList::sentinel</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/list.c" line="40" column="16" bodyfile="/builds/GNOME/libxml2/list.c" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlList_1a058e9d54e012512d72c9a71fdd622a65" prot="public" static="no" mutable="no">
+        <type>void(*</type>
+        <definition>void(* linkDeallocator) (xmlLinkPtr)</definition>
+        <argsstring>)(xmlLinkPtr)</argsstring>
+        <name>linkDeallocator</name>
+        <qualifiedname>_xmlList::linkDeallocator</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/list.c" line="41" column="5" bodyfile="/builds/GNOME/libxml2/list.c" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlList_1ae79474ee2cc616460e28ca69aaac6e54" prot="public" static="no" mutable="no">
+        <type>int(*</type>
+        <definition>int(* linkCompare) (const void *, const void *)</definition>
+        <argsstring>)(const void *, const void *)</argsstring>
+        <name>linkCompare</name>
+        <qualifiedname>_xmlList::linkCompare</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/list.c" line="42" column="5" bodyfile="/builds/GNOME/libxml2/list.c" bodystart="42" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>_xmlLink</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlList</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>sentinel</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/list.c" line="38" column="1" bodyfile="/builds/GNOME/libxml2/list.c" bodystart="39" bodyend="43"/>
+    <listofallmembers>
+      <member refid="struct__xmlList_1ae79474ee2cc616460e28ca69aaac6e54" prot="public" virt="non-virtual"><scope>_xmlList</scope><name>linkCompare</name></member>
+      <member refid="struct__xmlList_1a058e9d54e012512d72c9a71fdd622a65" prot="public" virt="non-virtual"><scope>_xmlList</scope><name>linkDeallocator</name></member>
+      <member refid="struct__xmlList_1ac4c8d54c375bb3a7171c208ee22dcca8" prot="public" virt="non-virtual"><scope>_xmlList</scope><name>sentinel</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

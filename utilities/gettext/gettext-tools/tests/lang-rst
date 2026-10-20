@@ -2,6 +2,7 @@
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
 # Test of gettext facilities in the RST format.
+# Assumes the following packages are installed: fp-utils.
 
 cat <<\EOF > prog.rst
 # From the rstconv program itself.
@@ -23,7 +24,7 @@ EOF
 ${XGETTEXT} -o prog.tmp --omit-header --add-location prog.rst || Exit 1
 LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
 
-cat <<EOF > prog.ok
+cat <<\EOF > prog.ok
 #: rstconv.help
 msgid ""
 "rstconv [-h|--help]    Displays this help\n"
@@ -64,7 +65,7 @@ ${DIFF} prog.ok prog.pot || Exit 1
 : ${RSTCONV=rstconv}
 if (${RSTCONV} -o prog.pot -i prog.rst) >/dev/null 2>&1; then
 
-cat <<EOF > prog.ok1
+cat <<\EOF > prog.ok1
 #: rstconv:help
 msgid "rstconv [-h|--help]    Displays this help\nrstconv options        Convert rst file\n\nOptions are:\n  -i file    Use specified file instead of stdin as input .rst (OPTIONAL)\n  -o file    Write output to specified file (REQUIRED)\n  -f format  Specifies the output format:\n             po    GNU gettext .po (portable) format (DEFAULT)\n"
 msgstr ""
@@ -87,7 +88,7 @@ msgstr ""
 
 EOF
 
-cat <<EOF > prog.ok2
+cat <<\EOF > prog.ok2
 #: rstconv:help
 msgid ""
 "rstconv [-h|--help]    Displays this help\n"

@@ -3,7 +3,7 @@
 
 # Verify 'msgcat --sort-output'
 
-cat <<EOF > mcat-test7.in1
+cat <<\EOF > mcat-test7.in1
 #: clients/inst_language.ycp:119
 msgid "two"
 msgstr "2"

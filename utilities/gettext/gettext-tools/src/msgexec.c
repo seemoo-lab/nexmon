@@ -1,6 +1,5 @@
 /* Pass translations to a subprocess.
-   Copyright (C) 2001-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,15 +12,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
 
 #include <errno.h>
-#include <getopt.h>
 #include <limits.h>
 #include <locale.h>
 #include <signal.h>
@@ -31,16 +29,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <error.h>
+#include "options.h"
+#include "noreturn.h"
 #include "closeout.h"
 #include "dir-list.h"
-#include "error.h"
 #include "xvasprintf.h"
 #include "error-progname.h"
 #include "progname.h"
 #include "relocatable.h"
-#include "basename.h"
+#include "basename-lgpl.h"
 #include "message.h"
-#include "read-catalog.h"
+#include "read-catalog-file.h"
 #include "read-po.h"
 #include "read-properties.h"
 #include "read-stringtable.h"
@@ -68,7 +68,7 @@ static const char *sub_name;
 static const char *sub_path;
 
 /* Argument list for the subprogram.  */
-static char **sub_argv;
+static const char **sub_argv;
 static int sub_argc;
 
 static bool newline;
@@ -76,120 +76,113 @@ static bool newline;
 /* Maximum exit code encountered.  */
 static int exitcode;
 
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "directory", required_argument, NULL, 'D' },
-  { "help", no_argument, NULL, 'h' },
-  { "input", required_argument, NULL, 'i' },
-  { "newline", no_argument, NULL, CHAR_MAX + 2 },
-  { "properties-input", no_argument, NULL, 'P' },
-  { "stringtable-input", no_argument, NULL, CHAR_MAX + 1 },
-  { "version", no_argument, NULL, 'V' },
-  { NULL, 0, NULL, 0 }
-};
-
 
 /* Forward declaration of local functions.  */
-static void usage (int status)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-        __attribute__ ((noreturn))
-#endif
-;
+_GL_NORETURN_FUNC static void usage (int status);
 static void process_msgdomain_list (const msgdomain_list_ty *mdlp);
 
 
 int
 main (int argc, char **argv)
 {
-  int opt;
-  bool do_help;
-  bool do_version;
-  const char *input_file;
-  msgdomain_list_ty *result;
-  catalog_input_format_ty input_syntax = &input_format_po;
-  size_t i;
-
   /* Set program name for messages.  */
   set_program_name (argv[0]);
   error_print_progname = maybe_print_progname;
+  gram_max_allowed_errors = 20;
 
-#ifdef HAVE_SETLOCALE
   /* Set locale via LC_ALL.  */
   setlocale (LC_ALL, "");
-#endif
 
   /* Set the text message domain.  */
   bindtextdomain (PACKAGE, relocate (LOCALEDIR));
+  bindtextdomain ("gnulib", relocate (GNULIB_LOCALEDIR));
   bindtextdomain ("bison-runtime", relocate (BISON_LOCALEDIR));
   textdomain (PACKAGE);
 
   /* Ensure that write errors on stdout are detected.  */
   atexit (close_stdout);
 
-  /* Set default values for variables.  */
-  do_help = false;
-  do_version = false;
-  input_file = NULL;
+  /* Default values for command line options.  */
+  bool do_help = false;
+  bool do_version = false;
+  const char *input_file = NULL;
+  catalog_input_format_ty input_syntax = &input_format_po;
 
-  /* The '+' in the options string causes option parsing to terminate when
-     the first non-option, i.e. the subprogram name, is encountered.  */
-  while ((opt = getopt_long (argc, argv, "+D:hi:PV", long_options, NULL))
-         != EOF)
-    switch (opt)
-      {
-      case '\0':                /* Long option.  */
-        break;
+  /* Parse command line options.  */
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "directory",         'D',          required_argument },
+    { "help",              'h',          no_argument       },
+    { "input",             'i',          required_argument },
+    { "newline",           CHAR_MAX + 2, no_argument       },
+    { "properties-input",  'P',          no_argument       },
+    { "stringtable-input", CHAR_MAX + 1, no_argument       },
+    { "version",           'V',          no_argument       },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  /* The flag NON_OPTION_TERMINATES_OPTIONS causes option parsing to terminate
+     when the first non-option, i.e. the subprogram name, is encountered.  */
+  start_options (argc, argv, options, NON_OPTION_TERMINATES_OPTIONS, 0);
+  {
+    int opt;
+    while ((opt = get_next_option ()) != -1)
+      switch (opt)
+        {
+        case '\0':                /* Long option with key == 0.  */
+          break;
 
-      case 'D':
-        dir_list_append (optarg);
-        break;
+        case 'D':
+          dir_list_append (optarg);
+          break;
 
-      case 'h':
-        do_help = true;
-        break;
+        case 'h':
+          do_help = true;
+          break;
 
-      case 'i':
-        if (input_file != NULL)
-          {
-            error (EXIT_SUCCESS, 0, _("at most one input file allowed"));
-            usage (EXIT_FAILURE);
-          }
-        input_file = optarg;
-        break;
+        case 'i':
+          if (input_file != NULL)
+            {
+              error (EXIT_SUCCESS, 0, _("at most one input file allowed"));
+              usage (EXIT_FAILURE);
+            }
+          input_file = optarg;
+          break;
 
-      case 'P':
-        input_syntax = &input_format_properties;
-        break;
+        case 'P':
+          input_syntax = &input_format_properties;
+          break;
 
-      case 'V':
-        do_version = true;
-        break;
+        case 'V':
+          do_version = true;
+          break;
 
-      case CHAR_MAX + 1: /* --stringtable-input */
-        input_syntax = &input_format_stringtable;
-        break;
+        case CHAR_MAX + 1: /* --stringtable-input */
+          input_syntax = &input_format_stringtable;
+          break;
 
-      case CHAR_MAX + 2: /* --newline */
-        newline = true;
-        break;
+        case CHAR_MAX + 2: /* --newline */
+          newline = true;
+          break;
 
-      default:
-        usage (EXIT_FAILURE);
-        break;
-      }
+        default:
+          usage (EXIT_FAILURE);
+          break;
+        }
+  }
 
   /* Version information is requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "2001-2016");
+              "2001-2026", "https://gnu.org/licenses/gpl.html");
       printf (_("Written by %s.\n"), proper_name ("Bruno Haible"));
       exit (EXIT_SUCCESS);
     }
@@ -205,17 +198,20 @@ There is NO WARRANTY, to the extent permitted by law.\n\
 
   /* Build argument list for the program.  */
   sub_argc = argc - optind;
-  sub_argv = XNMALLOC (sub_argc + 1, char *);
-  for (i = 0; i < sub_argc; i++)
-    sub_argv[i] = argv[optind + i];
-  sub_argv[i] = NULL;
+  sub_argv = XNMALLOC (sub_argc + 1, const char *);
+  {
+    size_t i;
+    for (i = 0; i < sub_argc; i++)
+      sub_argv[i] = argv[optind + i];
+    sub_argv[i] = NULL;
+  }
 
   /* By default, input comes from standard input.  */
   if (input_file == NULL)
     input_file = "-";
 
   /* Read input file.  */
-  result = read_catalog_file (input_file, input_syntax);
+  msgdomain_list_ty *result = read_catalog_file (input_file, input_syntax);
 
   if (strcmp (sub_name, "0") != 0)
     {
@@ -228,9 +224,9 @@ There is NO WARRANTY, to the extent permitted by law.\n\
          strings must continue nevertheless.  */
       {
         sigset_t sigpipe_set;
-
         sigemptyset (&sigpipe_set);
         sigaddset (&sigpipe_set, SIGPIPE);
+
         sigprocmask (SIG_UNBLOCK, &sigpipe_set, NULL);
       }
 
@@ -240,7 +236,7 @@ There is NO WARRANTY, to the extent permitted by law.\n\
       sub_path = find_in_path (sub_name);
 
       /* Finish argument list for the program.  */
-      sub_argv[0] = (char *) sub_path;
+      sub_argv[0] = sub_path;
     }
 
   exitcode = 0; /* = EXIT_SUCCESS */
@@ -311,12 +307,16 @@ Informative output:\n"));
       printf (_("\
   -V, --version               output version information and exit\n"));
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"),
-             stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+             "https://savannah.gnu.org/projects/gettext",
+             "bug-gettext@gnu.org");
     }
 
   exit (status);
@@ -340,6 +340,7 @@ nonintr_close (int fd)
 
   return retval;
 }
+#undef close
 #define close nonintr_close
 
 #endif
@@ -359,18 +360,12 @@ process_string (const message_ty *mp, const char *str, size_t len)
   else
     {
       /* General command.  */
-      char *location;
-      pid_t child;
-      int fd[1];
-      void (*orig_sigpipe_handler)(int);
-      int exitstatus;
-      char *newstr;
 
       /* Set environment variables for the subprocess.
          Note: These environment variables, especially MSGEXEC_MSGCTXT and
          MSGEXEC_MSGID, may contain non-ASCII characters.  The subprocess
          may not interpret these values correctly if the locale encoding is
-         different from the PO file's encoding.  We want about this situation,
+         different from the PO file's encoding.  We warned about this situation,
          above.
          On Unix, this problem is often harmless.  On Windows, however, - both
          native Windows and Cygwin - the values of environment variables *must*
@@ -387,10 +382,12 @@ process_string (const message_ty *mp, const char *str, size_t len)
         xsetenv ("MSGEXEC_MSGID_PLURAL", mp->msgid_plural, 1);
       else
         unsetenv ("MSGEXEC_MSGID_PLURAL");
-      location = xasprintf ("%s:%ld", mp->pos.file_name,
-                            (long) mp->pos.line_number);
-      xsetenv ("MSGEXEC_LOCATION", location, 1);
-      free (location);
+      {
+        char *location =
+          xasprintf ("%s:%ld", mp->pos.file_name, (long) mp->pos.line_number);
+        xsetenv ("MSGEXEC_LOCATION", location, 1);
+        free (location);
+      }
       if (mp->prev_msgctxt != NULL)
         xsetenv ("MSGEXEC_PREV_MSGCTXT", mp->prev_msgctxt, 1);
       else
@@ -405,29 +402,34 @@ process_string (const message_ty *mp, const char *str, size_t len)
         unsetenv ("MSGEXEC_PREV_MSGID_PLURAL");
 
       /* Open a pipe to a subprocess.  */
-      child = create_pipe_out (sub_name, sub_path, sub_argv, NULL, false, true,
-                               true, fd);
+      int fd[1];
+      pid_t child = create_pipe_out (sub_name, sub_path, sub_argv, NULL, NULL,
+                                     NULL, false, true, true, fd);
 
       /* Ignore SIGPIPE here.  We don't care if the subprocesses terminates
          successfully without having read all of the input that we feed it.  */
+      void (*orig_sigpipe_handler)(int);
       orig_sigpipe_handler = signal (SIGPIPE, SIG_IGN);
 
-      if (newline)
-        {
-          newstr = XNMALLOC (len + 1, char);
-          memcpy (newstr, str, len);
-          newstr[len++] = '\n';
-        }
-      else
-        newstr = (char *) str;
+      {
+        char *newstr;
+        if (newline)
+          {
+            newstr = XNMALLOC (len + 1, char);
+            memcpy (newstr, str, len);
+            newstr[len++] = '\n';
+          }
+        else
+          newstr = (char *) str;
 
-      if (full_write (fd[0], newstr, len) < len)
-        if (errno != EPIPE)
-          error (EXIT_FAILURE, errno,
-                 _("write to %s subprocess failed"), sub_name);
+        if (full_write (fd[0], newstr, len) < len)
+          if (errno != EPIPE)
+            error (EXIT_FAILURE, errno,
+                   _("write to %s subprocess failed"), sub_name);
 
-      if (newstr != str)
-        free (newstr);
+        if (newstr != str)
+          free (newstr);
+      }
 
       close (fd[0]);
 
@@ -436,7 +438,7 @@ process_string (const message_ty *mp, const char *str, size_t len)
       /* Remove zombie process from process list, and retrieve exit status.  */
       /* FIXME: Should ignore_sigpipe be set to true here? It depends on the
          semantics of the subprogram...  */
-      exitstatus =
+      int exitstatus =
         wait_subprocess (child, sub_name, false, false, true, true, NULL);
       if (exitcode < exitstatus)
         exitcode = exitstatus;
@@ -449,17 +451,17 @@ process_message (const message_ty *mp)
 {
   const char *msgstr = mp->msgstr;
   size_t msgstr_len = mp->msgstr_len;
-  const char *p;
-  size_t k;
 
   /* Process each NUL delimited substring separately.  */
+  const char *p;
+  size_t k;
   for (p = msgstr, k = 0; p < msgstr + msgstr_len; k++)
     {
       size_t length = strlen (p);
 
       if (mp->msgid_plural != NULL)
         {
-          char *plural_form_string = xasprintf ("%zu", k);
+          char *plural_form_string = xasprintf ("%lu", (unsigned long) k);
 
           xsetenv ("MSGEXEC_PLURAL_FORM", plural_form_string, 1);
           free (plural_form_string);
@@ -476,9 +478,7 @@ process_message (const message_ty *mp)
 static void
 process_message_list (const message_list_ty *mlp)
 {
-  size_t j;
-
-  for (j = 0; j < mlp->nitems; j++)
+  for (size_t j = 0; j < mlp->nitems; j++)
     process_message (mlp->item[j]);
 }
 
@@ -486,8 +486,6 @@ process_message_list (const message_list_ty *mlp)
 static void
 process_msgdomain_list (const msgdomain_list_ty *mdlp)
 {
-  size_t k;
-
-  for (k = 0; k < mdlp->nitems; k++)
+  for (size_t k = 0; k < mdlp->nitems; k++)
     process_message_list (mdlp->item[k]->messages);
 }

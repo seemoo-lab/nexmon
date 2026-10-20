@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlOutputCallback" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlOutputCallback</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlOutputCallback_1aa6f7bf5707341acb4146d8828453da44" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1aff7688b09fcdd451000a6780073b2898" kindref="member">xmlOutputMatchCallback</ref></type>
+        <definition>xmlOutputMatchCallback matchcallback</definition>
+        <argsstring></argsstring>
+        <name>matchcallback</name>
+        <qualifiedname>_xmlOutputCallback::matchcallback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlIO.c" line="94" column="28" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="94" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputCallback_1a8312c8ae37b2f4cbd0cbf44fd1cf2d9d" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1ae76959417bcb567c921557784460bb96" kindref="member">xmlOutputOpenCallback</ref></type>
+        <definition>xmlOutputOpenCallback opencallback</definition>
+        <argsstring></argsstring>
+        <name>opencallback</name>
+        <qualifiedname>_xmlOutputCallback::opencallback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlIO.c" line="95" column="27" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="95" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputCallback_1af78a1bb1ca5981801fcd3d93cbdafa96" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1a77e13204f2024d8643f29f98ec6f2f2b" kindref="member">xmlOutputWriteCallback</ref></type>
+        <definition>xmlOutputWriteCallback writecallback</definition>
+        <argsstring></argsstring>
+        <name>writecallback</name>
+        <qualifiedname>_xmlOutputCallback::writecallback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlIO.c" line="96" column="28" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="96" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputCallback_1a76eb9bbead7fb9ca3856518e0371dc83" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1a1b78d8c2e0fa02f8aa1a2fd4dc9f6f57" kindref="member">xmlOutputCloseCallback</ref></type>
+        <definition>xmlOutputCloseCallback closecallback</definition>
+        <argsstring></argsstring>
+        <name>closecallback</name>
+        <qualifiedname>_xmlOutputCallback::closecallback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlIO.c" line="97" column="28" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="97" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlIO.c" line="93" column="1" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="93" bodyend="98"/>
+    <listofallmembers>
+      <member refid="struct__xmlOutputCallback_1a76eb9bbead7fb9ca3856518e0371dc83" prot="public" virt="non-virtual"><scope>_xmlOutputCallback</scope><name>closecallback</name></member>
+      <member refid="struct__xmlOutputCallback_1aa6f7bf5707341acb4146d8828453da44" prot="public" virt="non-virtual"><scope>_xmlOutputCallback</scope><name>matchcallback</name></member>
+      <member refid="struct__xmlOutputCallback_1a8312c8ae37b2f4cbd0cbf44fd1cf2d9d" prot="public" virt="non-virtual"><scope>_xmlOutputCallback</scope><name>opencallback</name></member>
+      <member refid="struct__xmlOutputCallback_1af78a1bb1ca5981801fcd3d93cbdafa96" prot="public" virt="non-virtual"><scope>_xmlOutputCallback</scope><name>writecallback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

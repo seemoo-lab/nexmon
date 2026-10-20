@@ -1,0 +1,2679 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="encoding_8c" kind="file" language="C++">
+    <compoundname>encoding.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="no">limits.h</includes>
+    <includes local="no">ctype.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes local="no">iconv.h</includes>
+    <includes local="no">errno.h</includes>
+    <includes refid="encoding_8h" local="no">libxml/encoding.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="HTMLparser_8h" local="no">libxml/HTMLparser.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes local="yes">private/buf.h</includes>
+    <includes local="yes">private/enc.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/memory.h</includes>
+    <includes local="yes">codegen/charset.inc</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/encoding.c</label>
+        <link refid="encoding_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+        <childnode refid="34" relation="include">
+        </childnode>
+        <childnode refid="35" relation="include">
+        </childnode>
+      </node>
+      <node id="30">
+        <label>libxml/HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+      </node>
+      <node id="29">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="35">
+        <label>codegen/charset.inc</label>
+      </node>
+      <node id="5">
+        <label>ctype.h</label>
+      </node>
+      <node id="8">
+        <label>errno.h</label>
+      </node>
+      <node id="7">
+        <label>iconv.h</label>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="11">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="4">
+        <label>limits.h</label>
+      </node>
+      <node id="31">
+        <label>private/buf.h</label>
+      </node>
+      <node id="32">
+        <label>private/enc.h</label>
+      </node>
+      <node id="33">
+        <label>private/error.h</label>
+      </node>
+      <node id="34">
+        <label>private/memory.h</label>
+      </node>
+      <node id="18">
+        <label>stdarg.h</label>
+      </node>
+      <node id="21">
+        <label>stddef.h</label>
+      </node>
+      <node id="14">
+        <label>stdio.h</label>
+      </node>
+      <node id="6">
+        <label>stdlib.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlCharEncodingAlias" prot="public">_xmlCharEncodingAlias</innerclass>
+    <innerclass refid="structxmlEncTableEntry" prot="public">xmlEncTableEntry</innerclass>
+    <innerclass refid="structxmlIconvCtxt" prot="public">xmlIconvCtxt</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="encoding_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="23" column="9" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="23" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="encoding_8c_1a18ea6bf8a809882986fe01f325bd4178" prot="public" static="no">
+        <name>XML_HANDLER_STATIC</name>
+        <initializer>(1 &lt;&lt; 0)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="53" column="9" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="53" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="encoding_8c_1a569e7f511c62e99a4ac39799202fdbe8" prot="public" static="no">
+        <name>XML_HANDLER_LEGACY</name>
+        <initializer>(1 &lt;&lt; 1)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="54" column="9" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="54" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="encoding_8c_1a8c31b247cd71ee367d4acd2ba48bf8ee" prot="public" static="no">
+        <name>MAKE_8BIT_HANDLER</name>
+        <param><defname>name</defname></param>
+        <param><defname>table</defname></param>
+        <initializer>    { (char *) name, { EightBitToUtf8 }, { Utf8ToEightBit }, \
+      (void *) xmlunicodetable_##table, \
+      (void *) xmltranscodetable_##table, \
+      NULL, XML_HANDLER_STATIC }</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="291" column="9" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="291" bodyend="295"/>
+      </memberdef>
+      <memberdef kind="define" id="encoding_8c_1a137cb54f04152ea4e56dece6e8f2bd16" prot="public" static="no">
+        <name>MAKE_ISO_HANDLER</name>
+        <param><defname>name</defname></param>
+        <param><defname>n</defname></param>
+        <initializer>    { (char *) name, { NULL }, { NULL }, NULL, NULL, NULL, \
+      XML_HANDLER_STATIC }</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="304" column="9" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="304" bodyend="306"/>
+      </memberdef>
+      <memberdef kind="define" id="encoding_8c_1ad1f19be14690dbf08d070e73bb477d39" prot="public" static="no">
+        <name>MAKE_HANDLER</name>
+        <param><defname>name</defname></param>
+        <param><defname>in</defname></param>
+        <param><defname>out</defname></param>
+        <initializer>    { (char *) name, { in }, { out }, NULL, NULL, NULL, XML_HANDLER_STATIC }</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="310" column="9" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="310" bodyend="311"/>
+      </memberdef>
+      <memberdef kind="define" id="encoding_8c_1ae3b046a3cc60376ebc9e5a4edc1b3ffe" prot="public" static="no">
+        <name>NUM_DEFAULT_HANDLERS</name>
+        <initializer>    (sizeof(defaultHandlers) / sizeof(defaultHandlers[0]))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="354" column="9" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="354" bodyend="355"/>
+      </memberdef>
+      <memberdef kind="define" id="encoding_8c_1a7ce72abf876ad72dc5140d3079362209" prot="public" static="no">
+        <name>MAX_ENCODING_HANDLERS</name>
+        <initializer>50</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="358" column="9" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="358" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="encoding_8c_1ad64b32cd1ac457e612e70abaaa0d3606" prot="public" static="no">
+        <type>struct _xmlCharEncodingAlias</type>
+        <definition>typedef struct _xmlCharEncodingAlias xmlCharEncodingAlias</definition>
+        <argsstring></argsstring>
+        <name>xmlCharEncodingAlias</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="56" column="36" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="56" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="encoding_8c_1a0f206357777d4261850839925dfa51ac" prot="public" static="no">
+        <type>xmlCharEncodingAlias *</type>
+        <definition>typedef xmlCharEncodingAlias* xmlCharEncodingAliasPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlCharEncodingAliasPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="57" column="30" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="57" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="encoding_8c_1a1eb9d62da2629499a780b7a7beaab225" prot="public" static="yes" mutable="no">
+        <type>xmlCharEncodingAliasPtr</type>
+        <definition>xmlCharEncodingAliasPtr xmlCharEncodingAliases</definition>
+        <argsstring></argsstring>
+        <name>xmlCharEncodingAliases</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="63" column="32" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="63" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="encoding_8c_1ae0b8f6a0a3b37d9f3e652ae2a6fb6925" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlCharEncodingAliasesNb</definition>
+        <argsstring></argsstring>
+        <name>xmlCharEncodingAliasesNb</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="64" column="12" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="64" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="encoding_8c_1adc5367e953dc731ed4e84972ee67867d" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlCharEncodingAliasesMax</definition>
+        <argsstring></argsstring>
+        <name>xmlCharEncodingAliasesMax</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="65" column="12" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="65" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="encoding_8c_1a8a7b77b6b029913376d2b8ca441cbe97" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int xmlLittleEndian</definition>
+        <argsstring></argsstring>
+        <name>xmlLittleEndian</name>
+        <initializer>= 1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="67" column="12" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="67" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="encoding_8c_1a87893f16f35ecbb69bcf11e2259ae4cf" prot="public" static="yes" mutable="no">
+        <type>const xmlEncTableEntry</type>
+        <definition>const xmlEncTableEntry xmlEncTable[]</definition>
+        <argsstring>[]</argsstring>
+        <name>xmlEncTable</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="74" column="31" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="74" bodyend="232"/>
+      </memberdef>
+      <memberdef kind="variable" id="encoding_8c_1a4dc86467f2af22a05548fd77359a716d" prot="public" static="yes" mutable="no">
+        <type>const <ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref></type>
+        <definition>const xmlCharEncodingHandler defaultHandlers[32]</definition>
+        <argsstring>[32]</argsstring>
+        <name>defaultHandlers</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="319" column="37" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="319" bodyend="352"/>
+      </memberdef>
+      <memberdef kind="variable" id="encoding_8c_1a0b77a10bb2ca5f0d91e198bb18f5132c" prot="public" static="yes" mutable="no">
+        <type>xmlCharEncodingHandlerPtr *</type>
+        <definition>xmlCharEncodingHandlerPtr* globalHandlers</definition>
+        <argsstring></argsstring>
+        <name>globalHandlers</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="359" column="34" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="359" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="encoding_8c_1aeb7ebb719ee887c83f955c6147618ed5" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int nbCharEncodingHandler</definition>
+        <argsstring></argsstring>
+        <name>nbCharEncodingHandler</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="360" column="12" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="360" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="encoding_8c_1add9e03890ad352c91ad90c942f1854a4" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError asciiToAscii</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>asciiToAscii</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2275" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2275" bodyend="2317" declfile="/builds/GNOME/libxml2/encoding.c" declline="235" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ad768a12496994f806f53c1779d825c61" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError UTF8ToUTF8</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *inb, int *inlenb, int flush)</argsstring>
+        <name>UTF8ToUTF8</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>inb</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlenb</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2382" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2382" bodyend="2408" declfile="/builds/GNOME/libxml2/encoding.c" declline="238" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a41a2fd7fca0597fe4237500710de812c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError latin1ToUTF8</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>latin1ToUTF8</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2320" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2320" bodyend="2359" declfile="/builds/GNOME/libxml2/encoding.c" declline="241" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a8920484e2c56852dfd31fcff0f15d96d" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError UTF16LEToUTF8</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *inb, int *inlenb, int flush)</argsstring>
+        <name>UTF16LEToUTF8</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>inb</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlenb</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2489" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2489" bodyend="2555" declfile="/builds/GNOME/libxml2/encoding.c" declline="244" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a895ff358879add817c5a11ad33942aa0" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError UTF16BEToUTF8</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *inb, int *inlenb, int flush)</argsstring>
+        <name>UTF16BEToUTF8</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>inb</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlenb</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2686" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2686" bodyend="2752" declfile="/builds/GNOME/libxml2/encoding.c" declline="247" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a2e85eaa3da510fb7ce620738cff91035" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError UTF8ToLatin1</definition>
+        <argsstring>(void *vctxt, unsigned char *outb, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>UTF8ToLatin1</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>outb</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2413" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2413" bodyend="2462" declfile="/builds/GNOME/libxml2/encoding.c" declline="253" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1aa07afe8e7eedb379842a35d71b54396d" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError UTF8ToUTF16</definition>
+        <argsstring>(void *vctxt, unsigned char *outb, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>UTF8ToUTF16</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>outb</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2662" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2662" bodyend="2682" declfile="/builds/GNOME/libxml2/encoding.c" declline="256" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ac1d3d49001e852fd5f721064bfc2b115" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError UTF8ToUTF16LE</definition>
+        <argsstring>(void *vctxt, unsigned char *outb, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>UTF8ToUTF16LE</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>outb</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2559" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2559" bodyend="2659" declfile="/builds/GNOME/libxml2/encoding.c" declline="259" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1aefecd22733fe6fbbbef9b2489b5e1438" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError UTF8ToUTF16BE</definition>
+        <argsstring>(void *vctxt, unsigned char *outb, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>UTF8ToUTF16BE</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>outb</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2756" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2756" bodyend="2855" declfile="/builds/GNOME/libxml2/encoding.c" declline="262" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a8193cda12ad5b77012a141ada9447952" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError UTF8ToHtmlWrapper</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>UTF8ToHtmlWrapper</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2860" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2860" bodyend="2865" declfile="/builds/GNOME/libxml2/encoding.c" declline="276" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a9f9e316538a7ec8bfd8a6faabec710d8" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError EightBitToUtf8</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>EightBitToUtf8</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2951" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2951" bodyend="3002" declfile="/builds/GNOME/libxml2/encoding.c" declline="285" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a6120fdd6eb769b91ce842c010469376a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError Utf8ToEightBit</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>Utf8ToEightBit</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2869" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2869" bodyend="2948" declfile="/builds/GNOME/libxml2/encoding.c" declline="288" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1af96a32f1dd06c54951409ec6c4f265df" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>static xmlParserErrors xmlCharEncIconv</definition>
+        <argsstring>(const char *name, xmlCharEncFlags flags, xmlCharEncodingHandler **out)</argsstring>
+        <name>xmlCharEncIconv</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a8280d3be9d7f56a2ca3c2fb61eae0f02" kindref="member">xmlCharEncFlags</ref></type>
+          <declname>flags</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1318" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1318" bodyend="1428" declfile="/builds/GNOME/libxml2/encoding.c" declline="364" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ace87d2e2032eabf6471b793a975fbdd1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+        <definition>xmlCharEncoding xmlDetectCharEncoding</definition>
+        <argsstring>(const unsigned char *in, int len)</argsstring>
+        <name>xmlDetectCharEncoding</name>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Guess the encoding of the entity using the first bytes of the entity content according to the non-normative appendix F of the XML-1.0 recommendation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to the first bytes of the XML entity, must be at least 2 bytes long (at least 4 if encoding is UTF4 variant). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the length of the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> value. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="390" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="390" bodyend="436"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ab5e20da0f542d63dfe5c45654302c049" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupEncodingAliases</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupEncodingAliases</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Unregisters all aliases. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000113"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative.</para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="446" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="446" bodyend="462"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a8835da4a90445edc5f22a6b662249638" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const char *</type>
+        <definition>const char * xmlGetEncodingAlias</definition>
+        <argsstring>(const char *alias)</argsstring>
+        <name>xmlGetEncodingAlias</name>
+        <param>
+          <type>const char *</type>
+          <declname>alias</declname>
+        </param>
+        <briefdescription>
+<para>Lookup an encoding name for the given alias. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000114"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function is not thread-safe.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>alias</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the alias name as parsed, in UTF-8 format (ASCII actually) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NULL if not found, otherwise the original name. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="473" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="473" bodyend="498"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ab4adfd7611d30d063e17e6e16ff371d0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlAddEncodingAlias</definition>
+        <argsstring>(const char *name, const char *alias)</argsstring>
+        <name>xmlAddEncodingAlias</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>alias</declname>
+        </param>
+        <briefdescription>
+<para>Registers an alias <computeroutput>alias</computeroutput> for an encoding named <computeroutput>name</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Existing aliases will be overwritten.</para>
+<para><xrefsect id="deprecated_1_deprecated000115"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding name as parsed, in UTF-8 format (ASCII actually) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>alias</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the alias name as parsed, in UTF-8 format (ASCII actually) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="512" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="512" bodyend="572"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1aa9df146c5232d5749d1649a029f0033f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlDelEncodingAlias</definition>
+        <argsstring>(const char *alias)</argsstring>
+        <name>xmlDelEncodingAlias</name>
+        <param>
+          <type>const char *</type>
+          <declname>alias</declname>
+        </param>
+        <briefdescription>
+<para>Unregisters an encoding alias. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000116"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>alias</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the alias name as parsed, in UTF-8 format (ASCII actually) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="584" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="584" bodyend="606"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a7b7316c1cb5a625eccb84cf9fff5ca0b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlCompareEncTableEntries</definition>
+        <argsstring>(const void *vkey, const void *ventry)</argsstring>
+        <name>xmlCompareEncTableEntries</name>
+        <param>
+          <type>const void *</type>
+          <declname>vkey</declname>
+        </param>
+        <param>
+          <type>const void *</type>
+          <declname>ventry</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="609" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="609" bodyend="614"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1afe06f7c47d57cdc7b67f38b9c8934fd6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+        <definition>static xmlCharEncoding xmlParseCharEncodingInternal</definition>
+        <argsstring>(const char *name)</argsstring>
+        <name>xmlParseCharEncodingInternal</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="617" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="617" bodyend="631"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a718e050ac4299a27b3af39855656467f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+        <definition>xmlCharEncoding xmlParseCharEncoding</definition>
+        <argsstring>(const char *name)</argsstring>
+        <name>xmlParseCharEncoding</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Compare the string to the encoding schemes already known. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Note that the comparison is case insensitive accordingly to the section [XML] 4.3.3 Character Encoding in Entities.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding name as parsed, in UTF-8 format (ASCII actually) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>one of the <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> values or XML_CHAR_ENCODING_NONE if not recognized. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="643" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="643" bodyend="652"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a04bbd694f58688406ec935af2de16ffe" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const char *</type>
+        <definition>const char * xmlGetCharEncodingName</definition>
+        <argsstring>(xmlCharEncoding enc)</argsstring>
+        <name>xmlGetCharEncodingName</name>
+        <param>
+          <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+          <declname>enc</declname>
+        </param>
+        <briefdescription>
+<para>The &quot;canonical&quot; name for XML encoding. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>C.f. <ulink url="http://www.w3.org/TR/REC-xml#charencoding">http://www.w3.org/TR/REC-xml#charencoding</ulink> Section 4.3.3 Character Encoding in Entities</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>enc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the canonical name for the given encoding. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="663" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="663" bodyend="681"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a5bc4bf171af5605c008bdd0dfbfe848b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+        <definition>xmlCharEncodingHandler * xmlNewCharEncodingHandler</definition>
+        <argsstring>(const char *name, xmlCharEncodingInputFunc input, xmlCharEncodingOutputFunc output)</argsstring>
+        <name>xmlNewCharEncodingHandler</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1ad3c1740abcc2cbbaa74bc5936c5b4840" kindref="member">xmlCharEncodingInputFunc</ref></type>
+          <declname>input</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref></type>
+          <declname>output</declname>
+        </param>
+        <briefdescription>
+<para>Create and registers an <ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000117"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding name, in UTF-8 format (ASCII actually) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="encoding_8h_1ad3c1740abcc2cbbaa74bc5936c5b4840" kindref="member">xmlCharEncodingInputFunc</ref> to read that encoding </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref> to write that encoding </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the <ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> created (or NULL in case of error). </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="701" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="701" bodyend="751"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a0c306137e500997ce849e7f7a30ab063" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>xmlParserErrors xmlCharEncNewCustomHandler</definition>
+        <argsstring>(const char *name, xmlCharEncConvFunc input, xmlCharEncConvFunc output, xmlCharEncConvCtxtDtor ctxtDtor, void *inputCtxt, void *outputCtxt, xmlCharEncodingHandler **out)</argsstring>
+        <name>xmlCharEncNewCustomHandler</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a49f186c3f41a935815d9fcebc9e02e92" kindref="member">xmlCharEncConvFunc</ref></type>
+          <declname>input</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a49f186c3f41a935815d9fcebc9e02e92" kindref="member">xmlCharEncConvFunc</ref></type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1af9e9e7f799971762707fcff3bfe04017" kindref="member">xmlCharEncConvCtxtDtor</ref></type>
+          <declname>ctxtDtor</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>inputCtxt</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>outputCtxt</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Create a custom <ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>input callback which converts to UTF-8 </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>output callback which converts from UTF-8 </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctxtDtor</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>context destructor </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inputCtxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>context for input callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>outputCtxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>context for output callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to resulting handler </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="766" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="766" bodyend="807"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a0a5ccf5d8910103cc83f1f1ec782a2c5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitCharEncodingHandlers</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitCharEncodingHandlers</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000118"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="813" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="813" bodyend="815"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a2c1a5b905a084fd053656a2d62fac5c3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitEncodingInternal</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitEncodingInternal</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Initialize the char encoding support. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="821" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="821" bodyend="827"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ac5e85e586873364aba7828e98009620f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupCharEncodingHandlers</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupCharEncodingHandlers</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Cleanup the memory allocated for the char encoding support, it unregisters all the encoding handlers and the aliases. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000119"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function will be made private. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all.</para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="840" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="840" bodyend="859"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a57efb79496bb85f5215355266600cc50" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRegisterCharEncodingHandler</definition>
+        <argsstring>(xmlCharEncodingHandler *handler)</argsstring>
+        <name>xmlRegisterCharEncodingHandler</name>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+          <declname>handler</declname>
+        </param>
+        <briefdescription>
+<para>Register the char encoding handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000120"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> handler block </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="870" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="870" bodyend="892"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a395840d6d47656faebeed023bf35077c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>static xmlParserErrors xmlFindExtraHandler</definition>
+        <argsstring>(const char *norig, const char *name, xmlCharEncFlags flags, xmlCharEncConvImpl impl, void *implCtxt, xmlCharEncodingHandler **out)</argsstring>
+        <name>xmlFindExtraHandler</name>
+        <param>
+          <type>const char *</type>
+          <declname>norig</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a8280d3be9d7f56a2ca3c2fb61eae0f02" kindref="member">xmlCharEncFlags</ref></type>
+          <declname>flags</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1aeaace285ae5305c799468365fb3f4ec1" kindref="member">xmlCharEncConvImpl</ref></type>
+          <declname>impl</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>implCtxt</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Search the non-default handlers for an exact match. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>norig</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>name of the char encoding </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>potentially aliased name of the encoding </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>bit mask of flags </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>impl</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a conversion implementation (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>implCtxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data for conversion implementation (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to resulting handler </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> error code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="906" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="906" bodyend="961"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1aa562a04aafc51696623af161b6972a85" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>xmlParserErrors xmlLookupCharEncodingHandler</definition>
+        <argsstring>(xmlCharEncoding enc, xmlCharEncodingHandler **out)</argsstring>
+        <name>xmlLookupCharEncodingHandler</name>
+        <param>
+          <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+          <declname>enc</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Find or create a handler matching the encoding. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The following converters are looked up in order:</para>
+<para><itemizedlist>
+<listitem><para>Built-in handler (UTF-8, UTF-16, ISO-8859-1, ASCII)</para>
+</listitem><listitem><para>User-registered global handler (deprecated)</para>
+</listitem><listitem><para>iconv if enabled</para>
+</listitem><listitem><para>ICU if enabled</para>
+</listitem></itemizedlist>
+</para>
+<para>The handler must be closed with <ref refid="encoding_8h_1a464305f13dfff8d7d68bfd88f4314b7d" kindref="member">xmlCharEncCloseFunc</ref>.</para>
+<para>If the encoding is UTF-8, a NULL handler and no error code will be returned.</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>enc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> value. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to result </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>XML_ERR_OK, XML_ERR_UNSUPPORTED_ENCODING or another <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> error code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="985" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="985" bodyend="1018"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ad1c55c14ba9fc94c69a2a39d7d8fb94e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+        <definition>xmlCharEncodingHandler * xmlGetCharEncodingHandler</definition>
+        <argsstring>(xmlCharEncoding enc)</argsstring>
+        <name>xmlGetCharEncodingHandler</name>
+        <param>
+          <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+          <declname>enc</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000121"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="encoding_8h_1aa562a04aafc51696623af161b6972a85" kindref="member">xmlLookupCharEncodingHandler</ref> which has better error reporting.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>enc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> value. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the handler or NULL if no handler was found or an error occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1029" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1029" bodyend="1034"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ac86f02e54ed9ddf3cd1ac2b9d1c350d2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>xmlParserErrors xmlCreateCharEncodingHandler</definition>
+        <argsstring>(const char *name, xmlCharEncFlags flags, xmlCharEncConvImpl impl, void *implCtxt, xmlCharEncodingHandler **out)</argsstring>
+        <name>xmlCreateCharEncodingHandler</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a8280d3be9d7f56a2ca3c2fb61eae0f02" kindref="member">xmlCharEncFlags</ref></type>
+          <declname>flags</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1aeaace285ae5305c799468365fb3f4ec1" kindref="member">xmlCharEncConvImpl</ref></type>
+          <declname>impl</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>implCtxt</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Find or create a handler matching the encoding. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The following converters are looked up in order:</para>
+<para><itemizedlist>
+<listitem><para>Built-in handler (UTF-8, UTF-16, ISO-8859-1, ASCII)</para>
+</listitem><listitem><para>Custom implementation if provided</para>
+</listitem><listitem><para>User-registered global handler (deprecated)</para>
+</listitem><listitem><para>iconv if enabled</para>
+</listitem><listitem><para>ICU if enabled</para>
+</listitem></itemizedlist>
+</para>
+<para>The handler must be closed with <ref refid="encoding_8h_1a464305f13dfff8d7d68bfd88f4314b7d" kindref="member">xmlCharEncCloseFunc</ref>.</para>
+<para>If the encoding is UTF-8, a NULL handler and no error code will be returned.</para>
+<para><computeroutput>flags</computeroutput> can contain XML_ENC_INPUT, XML_ENC_OUTPUT or both.</para>
+<para><simplesect kind="since"><para>2.14.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a string describing the char encoding. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>bit mask of flags </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>impl</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a conversion implementation (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>implCtxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data for conversion implementation (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to result </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>XML_ERR_OK, XML_ERR_UNSUPPORTED_ENCODING or another <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> error code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1064" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1064" bodyend="1143"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a91556ecf36fe2ba7f225a250011132f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>xmlParserErrors xmlOpenCharEncodingHandler</definition>
+        <argsstring>(const char *name, int output, xmlCharEncodingHandler **out)</argsstring>
+        <name>xmlOpenCharEncodingHandler</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Find or create a handler matching the encoding. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The following converters are looked up in order:</para>
+<para><itemizedlist>
+<listitem><para>Built-in handler (UTF-8, UTF-16, ISO-8859-1, ASCII)</para>
+</listitem><listitem><para>User-registered global handler (deprecated)</para>
+</listitem><listitem><para>iconv if enabled</para>
+</listitem><listitem><para>ICU if enabled</para>
+</listitem></itemizedlist>
+</para>
+<para>The handler must be closed with <ref refid="encoding_8h_1a464305f13dfff8d7d68bfd88f4314b7d" kindref="member">xmlCharEncCloseFunc</ref>.</para>
+<para>If the encoding is UTF-8, a NULL handler and no error code will be returned.</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a string describing the char encoding. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>boolean, use handler for output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to result </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>XML_ERR_OK, XML_ERR_UNSUPPORTED_ENCODING or another <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> error code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1168" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1168" bodyend="1173"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a6f4e57d8e4ff597fc1319abf59686aab" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+        <definition>xmlCharEncodingHandler * xmlFindCharEncodingHandler</definition>
+        <argsstring>(const char *name)</argsstring>
+        <name>xmlFindCharEncodingHandler</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>If the encoding is UTF-8, this will return a no-op handler that shouldn&apos;t be used. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000122"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="encoding_8h_1a91556ecf36fe2ba7f225a250011132f4" kindref="member">xmlOpenCharEncodingHandler</ref> which has better error reporting.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a string describing the char encoding. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the handler or NULL if no handler was found or an error occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1187" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1187" bodyend="1206"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a5f23ac839247c686c1c255106fcebfa8" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError xmlIconvConvert</definition>
+        <argsstring>(void *vctxt, unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>xmlIconvConvert</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+<para>The value of <computeroutput>inlen</computeroutput> after return is the number of bytes consumed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The value of <computeroutput>outlen</computeroutput> after return is the number of bytes produced.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>vctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>conversion context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of bytes to store the result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>outlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>out</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of input bytes </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>in</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flush</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>end of input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1232" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1232" bodyend="1275"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a93c7f45d16bc6c3e39d5e8184bb20dcd" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlIconvFree</definition>
+        <argsstring>(void *vctxt)</argsstring>
+        <name>xmlIconvFree</name>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1278" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1278" bodyend="1288"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a18f07c0e9c3254ef478347cbc1c48b04" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>static xmlParserErrors xmlEncConvertError</definition>
+        <argsstring>(xmlCharEncError code)</argsstring>
+        <name>xmlEncConvertError</name>
+        <param>
+          <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+          <declname>code</declname>
+        </param>
+        <briefdescription>
+<para>Convert <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> to <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>code</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1649" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1649" bodyend="1668"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a5d4db859d2c504a928f2c926883f6cec" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>xmlCharEncError xmlEncInputChunk</definition>
+        <argsstring>(xmlCharEncodingHandler *handler, unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int flush)</argsstring>
+        <name>xmlEncInputChunk</name>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+          <declname>handler</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+<para>The value of <computeroutput>inlen</computeroutput> after return is the number of bytes consumed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The value of <computeroutput>outlen</computeroutput> after return is the number of bytes produced.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of bytes to store the result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>outlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>out</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of input bytes </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>in</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flush</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>end of input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1683" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1683" bodyend="1722"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1abd07d392f83a5c0ca8abc44ff3a1eab6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>static xmlCharEncError xmlEncOutputChunk</definition>
+        <argsstring>(xmlCharEncodingHandler *handler, unsigned char *out, int *outlen, const unsigned char *in, int *inlen)</argsstring>
+        <name>xmlEncOutputChunk</name>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+          <declname>handler</declname>
+        </param>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <briefdescription>
+<para>The value of <computeroutput>inlen</computeroutput> after return is the number of bytes consumed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The value of <computeroutput>outlen</computeroutput> after return is the number of bytes produced.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of bytes to store the result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>outlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>out</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of input bytes </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>in</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1736" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1736" bodyend="1766"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a7526e0c051c5d69070692a3095cae99f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCharEncFirstLine</definition>
+        <argsstring>(xmlCharEncodingHandler *handler, struct _xmlBuffer *out, struct _xmlBuffer *in)</argsstring>
+        <name>xmlCharEncFirstLine</name>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+          <declname>handler</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="struct__xmlBuffer" kindref="compound">_xmlBuffer</ref> *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="struct__xmlBuffer" kindref="compound">_xmlBuffer</ref> *</type>
+          <declname>in</declname>
+        </param>
+        <briefdescription>
+<para>DEPERECATED: Don&apos;t use. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> for the output. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> for the input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1777" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1777" bodyend="1780"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a76919f6e690698372b5047dc2868d9cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref></type>
+        <definition>xmlCharEncError xmlCharEncInput</definition>
+        <argsstring>(xmlParserInputBuffer *input, size_t *sizeOut, int flush)</argsstring>
+        <name>xmlCharEncInput</name>
+        <param>
+          <type><ref refid="tree_8h_1a7a0ca7c6b30d7a9103b28626f820cab9" kindref="member">xmlParserInputBuffer</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>sizeOut</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flush</declname>
+        </param>
+        <briefdescription>
+<para>Generic front-end for input encoding conversion. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><computeroutput>sizeOut</computeroutput> should be set to the maximum output size (or SIZE_MAX). After return, it is set to the number of bytes written.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a parser input buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sizeOut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to output size </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flush</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>end of input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1794" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1794" bodyend="1882"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a3069c5bfd874a044e0a785c2ecb80296" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCharEncInFunc</definition>
+        <argsstring>(xmlCharEncodingHandler *handler, struct _xmlBuffer *out, struct _xmlBuffer *in)</argsstring>
+        <name>xmlCharEncInFunc</name>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+          <declname>handler</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="struct__xmlBuffer" kindref="compound">_xmlBuffer</ref> *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="struct__xmlBuffer" kindref="compound">_xmlBuffer</ref> *</type>
+          <declname>in</declname>
+        </param>
+        <briefdescription>
+<para>Generic front-end for input encoding conversion. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> for the output. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> for the input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1893" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1893" bodyend="1922"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a029c3cb088229adac34c31f86c31ba57" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlSerializeDecCharRef</definition>
+        <argsstring>(char *buf, int val)</argsstring>
+        <name>xmlSerializeDecCharRef</name>
+        <param>
+          <type>char *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1935" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1935" bodyend="1960"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a91d317c1a3a1838b80690e0a2ebb8966" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCharEncOutput</definition>
+        <argsstring>(xmlOutputBuffer *output, int init)</argsstring>
+        <name>xmlCharEncOutput</name>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>init</declname>
+        </param>
+        <briefdescription>
+<para>Generic front-end for output encoding conversion. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>A first call with <computeroutput>init</computeroutput> set to 1 has to be made to write a BOM.</para>
+<para>When using GNU libiconv, unsupported characters in the output encoding will be automatically replaced with a numeric character reference.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a parser output buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>init</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>is this an initialization call without data </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1977" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1977" bodyend="2082"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a9c801a86f817c221a333427442ffb61a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCharEncOutFunc</definition>
+        <argsstring>(xmlCharEncodingHandler *handler, struct _xmlBuffer *out, struct _xmlBuffer *in)</argsstring>
+        <name>xmlCharEncOutFunc</name>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+          <declname>handler</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="struct__xmlBuffer" kindref="compound">_xmlBuffer</ref> *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="struct__xmlBuffer" kindref="compound">_xmlBuffer</ref> *</type>
+          <declname>in</declname>
+        </param>
+        <briefdescription>
+<para>Generic front-end for output encoding conversion. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>A first call with <computeroutput>in</computeroutput> set to NULL has to be made to write a BOM.</para>
+<para>When using GNU libiconv, unsupported characters in the output encoding will be automatically replaced with a numeric character reference.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> for the output. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> for the input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2100" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2100" bodyend="2182"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a464305f13dfff8d7d68bfd88f4314b7d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCharEncCloseFunc</definition>
+        <argsstring>(xmlCharEncodingHandler *handler)</argsstring>
+        <name>xmlCharEncCloseFunc</name>
+        <param>
+          <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+          <declname>handler</declname>
+        </param>
+        <briefdescription>
+<para>Releases an <ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Must be called after a handler is no longer in use.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding handler </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2192" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2192" bodyend="2206"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a760f4b7aa4d2f83108648b92f981afb9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>long</type>
+        <definition>long xmlByteConsumed</definition>
+        <argsstring>(xmlParserCtxt *ctxt)</argsstring>
+        <name>xmlByteConsumed</name>
+        <param>
+          <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>This function provides the current index of the parser relative to the start of the current entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This function is computed in bytes from the beginning starting at zero and finishing at the size in byte of the file if parsing a file. The function is of constant cost if the input is UTF-8 but can be costly if run on non-UTF-8 input.</para>
+<para><xrefsect id="deprecated_1_deprecated000123"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the index in bytes from the beginning of the entity or -1 in case the index could not be computed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2223" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2223" bodyend="2266"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1ac64d2efd0f6a0c9d54fd322c91e8cdf2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsolat1ToUTF8</definition>
+        <argsstring>(unsigned char *out, int *outlen, const unsigned char *in, int *inlen)</argsstring>
+        <name>xmlIsolat1ToUTF8</name>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <briefdescription>
+<para>Take a block of ISO Latin 1 chars in and try to convert it to an UTF-8 block of chars out. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The value of <computeroutput>inlen</computeroutput> after return is the number of bytes consumed. The value of <computeroutput>outlen</computeroutput> after return is the number of bytes produced.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of bytes to store the result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>outlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>out</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of ISO Latin 1 chars </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>in</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2375" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2375" bodyend="2379"/>
+      </memberdef>
+      <memberdef kind="function" id="encoding_8c_1a12da51f471cd0ce77557595894ddb915" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlUTF8ToIsolat1</definition>
+        <argsstring>(unsigned char *out, int *outlen, const unsigned char *in, int *inlen)</argsstring>
+        <name>xmlUTF8ToIsolat1</name>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <briefdescription>
+<para>Take a block of UTF-8 chars in and try to convert it to an ISO Latin 1 block of chars out. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The value of <computeroutput>inlen</computeroutput> after return is the number of bytes consumed. The value of <computeroutput>outlen</computeroutput> after return is the number of bytes produced.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of bytes to store the result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>outlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>out</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of UTF-8 chars </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>in</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or an <ref refid="encoding_8h_1a7d722be91a73fd9f6f9791d88a23a37b" kindref="member">xmlCharEncError</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="2478" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="2478" bodyend="2485"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/encoding.c"/>
+  </compounddef>
+</doxygen>

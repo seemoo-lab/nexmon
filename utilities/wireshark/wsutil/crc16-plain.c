@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /**
@@ -39,9 +27,9 @@
  *
  * Modified 2009-03-16 not to include <stdint.h> as our Win32 environment
  * appears not to have it; we're using GLib types, instead.
+ * Modified 2023-06-28 to use C99 types.
  *****************************************************************************/
 #include "wsutil/crc16-plain.h"
-#include <stdlib.h>
 
 /**
  * Static table used for the table_driven implementation.
@@ -135,7 +123,7 @@ crc16_plain_t crc16_plain_update(crc16_plain_t crc, const unsigned char *data, s
  *    ReflectOut   = False
  *    Algorithm    = table-driven
  *****************************************************************************/
-static const guint16 crc16_table_8005_noreflect_noxor[256] = {
+static const uint16_t crc16_table_8005_noreflect_noxor[256] = {
     0x0000, 0x8005, 0x800f, 0x000a, 0x801b, 0x001e, 0x0014, 0x8011,
     0x8033, 0x0036, 0x003c, 0x8039, 0x0028, 0x802d, 0x8027, 0x0022,
     0x8063, 0x0066, 0x006c, 0x8069, 0x0078, 0x807d, 0x8077, 0x0072,
@@ -178,10 +166,10 @@ static const guint16 crc16_table_8005_noreflect_noxor[256] = {
  * \param data_len Number of bytes in the \a data buffer.
  * \return         The crc value.
  *****************************************************************************/
-guint16 crc16_8005_noreflect_noxor(const guint8 *data, guint64 data_len)
+uint16_t crc16_8005_noreflect_noxor(const uint8_t *data, uint64_t data_len)
 {
-    guint tbl_idx;
-    guint16 crc = 0;
+    unsigned tbl_idx;
+    uint16_t crc = 0;
 
     while (data_len--) {
         tbl_idx = ((crc >> 8) ^ *data) & 0xff;
@@ -193,7 +181,7 @@ guint16 crc16_8005_noreflect_noxor(const guint8 *data, guint64 data_len)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

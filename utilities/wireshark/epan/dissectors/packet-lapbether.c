@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,12 +18,13 @@
 void proto_register_lapbether(void);
 void proto_reg_handoff_lapbether(void);
 
-static int proto_lapbether = -1;
+static int proto_lapbether;
 
-static int hf_lapbether_length = -1;
+static int hf_lapbether_length;
 
-static gint ett_lapbether = -1;
+static int ett_lapbether;
 
+static dissector_handle_t lapbether_handle;
 static dissector_handle_t lapb_handle;
 
 static int
@@ -48,7 +37,7 @@ dissect_lapbether(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "LAPBETHER");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    len = tvb_get_guint8(tvb, 0) + tvb_get_guint8(tvb, 1) * 256;
+    len = tvb_get_uint8(tvb, 0) + tvb_get_uint8(tvb, 1) * 256;
 
     if (tree) {
 
@@ -76,7 +65,7 @@ proto_register_lapbether(void)
           "LAPBEther Length Field", HFILL }},
 
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_lapbether,
     };
 
@@ -84,27 +73,25 @@ proto_register_lapbether(void)
         "LAPBETHER", "lapbether");
     proto_register_field_array (proto_lapbether, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+  lapbether_handle = register_dissector("lapbether", dissect_lapbether, proto_lapbether);
 }
 
 /* The registration hand-off routine */
 void
 proto_reg_handoff_lapbether(void)
 {
-  dissector_handle_t lapbether_handle;
-
   /*
    * Get a handle for the LAPB dissector.
    */
   lapb_handle = find_dissector_add_dependency("lapb", proto_lapbether);
 
-  lapbether_handle = create_dissector_handle(dissect_lapbether,
-                                             proto_lapbether);
   dissector_add_uint("ethertype", ETHERTYPE_DEC, lapbether_handle);
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

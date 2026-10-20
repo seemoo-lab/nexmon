@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -37,44 +25,44 @@ enum {
     FORCE_CLIENT_NO       = 2
 };
 
-static int proto_bthcrp = -1;
+static int proto_bthcrp;
 
-static int hf_bthcrp_notification_pdu_id                                   = -1;
-static int hf_bthcrp_control_pdu_id                                        = -1;
-static int hf_bthcrp_control_transaction_id                                = -1;
-static int hf_bthcrp_control_parameter_length                              = -1;
-static int hf_bthcrp_control_status                                        = -1;
-static int hf_bthcrp_callback_context_id                                   = -1;
-static int hf_bthcrp_control_callback_timeout                              = -1;
-static int hf_bthcrp_control_timeout                                       = -1;
-static int hf_bthcrp_control_1284_id                                       = -1;
-static int hf_bthcrp_control_register                                      = -1;
-static int hf_bthcrp_control_start_byte                                    = -1;
-static int hf_bthcrp_control_number_of_bytes                               = -1;
-static int hf_bthcrp_control_client_credit_granted                         = -1;
-static int hf_bthcrp_control_server_credit_granted                         = -1;
-static int hf_bthcrp_control_client_credit_return                          = -1;
-static int hf_bthcrp_control_server_credit_return                          = -1;
-static int hf_bthcrp_control_client_credit_query                           = -1;
-static int hf_bthcrp_control_server_credit_query                           = -1;
-static int hf_bthcrp_control_status_reserved_76                            = -1;
-static int hf_bthcrp_control_status_paper_empty                            = -1;
-static int hf_bthcrp_control_status_select                                 = -1;
-static int hf_bthcrp_control_status_not_error                              = -1;
-static int hf_bthcrp_control_status_reserved_20                            = -1;
-static int hf_bthcrp_data                                                  = -1;
+static int hf_bthcrp_notification_pdu_id;
+static int hf_bthcrp_control_pdu_id;
+static int hf_bthcrp_control_transaction_id;
+static int hf_bthcrp_control_parameter_length;
+static int hf_bthcrp_control_status;
+static int hf_bthcrp_callback_context_id;
+static int hf_bthcrp_control_callback_timeout;
+static int hf_bthcrp_control_timeout;
+static int hf_bthcrp_control_1284_id;
+static int hf_bthcrp_control_register;
+static int hf_bthcrp_control_start_byte;
+static int hf_bthcrp_control_number_of_bytes;
+static int hf_bthcrp_control_client_credit_granted;
+static int hf_bthcrp_control_server_credit_granted;
+static int hf_bthcrp_control_client_credit_return;
+static int hf_bthcrp_control_server_credit_return;
+static int hf_bthcrp_control_client_credit_query;
+static int hf_bthcrp_control_server_credit_query;
+static int hf_bthcrp_control_status_reserved_76;
+static int hf_bthcrp_control_status_paper_empty;
+static int hf_bthcrp_control_status_select;
+static int hf_bthcrp_control_status_not_error;
+static int hf_bthcrp_control_status_reserved_20;
+static int hf_bthcrp_data;
 
-static gint ett_bthcrp                                                     = -1;
+static int ett_bthcrp;
 
-static expert_field ei_bthcrp_control_parameter_length = EI_INIT;
-static expert_field ei_bthcrp_unexpected_data = EI_INIT;
+static expert_field ei_bthcrp_control_parameter_length;
+static expert_field ei_bthcrp_unexpected_data;
 
 static dissector_handle_t bthcrp_handle;
 
-static gint     force_client     = FORCE_CLIENT_DEFAULT;
-static gint     psm_control      = 0;
-static gint     psm_data_stream  = 0;
-static gint     psm_notification = 0;
+static int      force_client     = FORCE_CLIENT_DEFAULT;
+static int      psm_control;
+static int      psm_data_stream;
+static int      psm_notification;
 
 static const value_string control_pdu_id_vals[] = {
     { 0x0001,   "CR_DataChannelCreditGrant" },
@@ -120,19 +108,19 @@ void proto_register_bthcrp(void);
 void proto_reg_handoff_bthcrp(void);
 
 
-static gint
+static int
 dissect_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        gint offset,  gboolean is_client_message)
+        int offset,  bool is_client_message)
 {
-    /* flow: reqests: only client -> server; responses: only server ->  */
+    /* flow: requests: only client -> server; responses: only server ->  */
     proto_item   *pitem;
-    guint16       control_pdu_id;
-    guint         credits;
-    guint         timeout;
-    guint         context_id;
-    guint         notification_register;
-    guint         number;
-    gint          parameter_length;
+    uint16_t      control_pdu_id;
+    unsigned      credits;
+    unsigned      timeout;
+    unsigned      context_id;
+    unsigned      notification_register;
+    unsigned      number;
+    int           parameter_length;
 
     pitem = proto_tree_add_item(tree, hf_bthcrp_control_pdu_id, tvb, offset, 2, ENC_BIG_ENDIAN);
     control_pdu_id = tvb_get_ntohs(tvb, offset);
@@ -140,7 +128,7 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     col_append_fstr(pinfo->cinfo, COL_INFO, "Control: %s %s",
             ((is_client_message) ? "Request" : "Response"),
-            val_to_str(control_pdu_id, control_pdu_id_vals,  "Unknown PDU ID"));
+            val_to_str_const(control_pdu_id, control_pdu_id_vals,  "Unknown PDU ID"));
 
     if (control_pdu_id >= 0x8000) {
         proto_item_append_text(pitem, " (Vendor Specific)");
@@ -245,9 +233,9 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 col_append_fstr(pinfo->cinfo, COL_INFO, ", Number Of Bytes: %u", number);
                 offset += 2;
             } else {
-                const guint8 *id;
+                const uint8_t *id;
 
-                proto_tree_add_item_ret_string(tree, hf_bthcrp_control_1284_id, tvb, offset, tvb_reported_length_remaining(tvb, offset), ENC_ASCII | ENC_NA, wmem_packet_scope(), &id);
+                proto_tree_add_item_ret_string(tree, hf_bthcrp_control_1284_id, tvb, offset, tvb_reported_length_remaining(tvb, offset), ENC_ASCII | ENC_NA, pinfo->pool, &id);
                 col_append_fstr(pinfo->cinfo, COL_INFO, " - 1284 ID: %s", id);
                 offset += tvb_reported_length_remaining(tvb, offset);
             }
@@ -258,8 +246,8 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         case 0x0009: /* CR_RegisterNotification */
             if (is_client_message) {
                 proto_tree_add_item(tree, hf_bthcrp_control_register, tvb, offset, 1, ENC_BIG_ENDIAN);
-                notification_register = tvb_get_guint8(tvb, offset);
-                col_append_fstr(pinfo->cinfo, COL_INFO, " -  Register: %s", val_to_str(notification_register, register_vals, "unknown register"));
+                notification_register = tvb_get_uint8(tvb, offset);
+                col_append_fstr(pinfo->cinfo, COL_INFO, " -  Register: %s", val_to_str_const(notification_register, register_vals, "unknown register"));
                 offset += 1;
 
                 proto_tree_add_item(tree, hf_bthcrp_callback_context_id, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -297,8 +285,8 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 }
 
 
-static gint
-dissect_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset)
+static int
+dissect_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
     /* flow: server <-> client */
     tvbuff_t *next_tvb;
@@ -314,12 +302,12 @@ dissect_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset)
 }
 
 
-static gint
+static int
 dissect_notification(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        gint offset, gboolean is_client_message)
+        int offset, bool is_client_message)
 {
     /* flow: only server -> client */
-    guint16       notification_pdu_id;
+    uint16_t      notification_pdu_id;
     proto_item   *pitem;
 
     if (is_client_message) {
@@ -331,7 +319,7 @@ dissect_notification(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     notification_pdu_id = tvb_get_ntohs(tvb, offset);
     offset += 2;
 
-    col_append_fstr(pinfo->cinfo, COL_INFO, "Notification: %s", val_to_str(notification_pdu_id, notification_pdu_id_vals,  "Unknown PDU ID"));
+    col_append_fstr(pinfo->cinfo, COL_INFO, "Notification: %s", val_to_str_const(notification_pdu_id, notification_pdu_id_vals,  "Unknown PDU ID"));
 
     if (notification_pdu_id >= 0x8000) {
         proto_item_append_text(pitem, " (Vendor Specific)");
@@ -355,29 +343,29 @@ dissect_notification(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     return offset;
 }
 
-static gint
+static int
 dissect_bthcrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item      *main_item;
     proto_tree      *main_tree;
-    gint             offset = 0;
-    gint             protocol = -1;
-    gboolean         is_client_message = FALSE;
-    gint             previous_proto;
+    int              offset = 0;
+    int              protocol = -1;
+    bool             is_client_message = false;
+    int              previous_proto;
 
     previous_proto = (GPOINTER_TO_INT(wmem_list_frame_data(wmem_list_frame_prev(wmem_list_tail(pinfo->layers)))));
     if (previous_proto == proto_btl2cap) {
         btl2cap_data_t  *l2cap_data;
         wmem_tree_key_t  key[10];
-        guint32          interface_id;
-        guint32          adapter_id;
-        guint32          sdp_psm = SDP_PSM_DEFAULT;
-        guint32          direction;
-        guint32          bd_addr_oui;
-        guint32          bd_addr_id;
-        guint32          service_type;
-        guint32          service_channel;
-        guint32          frame_number;
+        uint32_t         interface_id;
+        uint32_t         adapter_id;
+        uint32_t         sdp_psm = SDP_PSM_DEFAULT;
+        uint32_t         direction;
+        uint32_t         bd_addr_oui;
+        uint32_t         bd_addr_id;
+        uint32_t         service_type;
+        uint32_t         service_channel;
+        uint32_t         frame_number;
         service_info_t  *service_info;
 
         l2cap_data = (btl2cap_data_t *) data;
@@ -436,11 +424,11 @@ dissect_bthcrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                     service_info->protocol == BTSDP_HARDCOPY_DATA_CHANNEL_PROTOCOL_UUID) &&
                     ((!l2cap_data->is_local_psm && pinfo->p2p_dir == P2P_DIR_SENT) ||
                     (l2cap_data->is_local_psm && pinfo->p2p_dir == P2P_DIR_RECV))) {
-                is_client_message = TRUE;
+                is_client_message = true;
             } else if (service_info->protocol == BTSDP_HARDCOPY_NOTIFICATION_PROTOCOL_UUID &&
                     ((l2cap_data->is_local_psm && pinfo->p2p_dir == P2P_DIR_SENT) ||
                     (!l2cap_data->is_local_psm && pinfo->p2p_dir == P2P_DIR_RECV))) {
-                is_client_message = TRUE;
+                is_client_message = true;
             }
 
             protocol = service_info->protocol;
@@ -485,7 +473,7 @@ dissect_bthcrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     } else if (protocol == BTSDP_HARDCOPY_NOTIFICATION_PROTOCOL_UUID) {
         offset = dissect_notification(tvb, pinfo, main_tree, offset, is_client_message);
     } else {
-        col_append_fstr(pinfo->cinfo, COL_INFO, "HCRP stream");
+        col_append_str(pinfo->cinfo, COL_INFO, "HCRP stream");
     }
 
     if (tvb_reported_length_remaining(tvb, offset)) {
@@ -628,7 +616,7 @@ proto_register_bthcrp(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_bthcrp
     };
 
@@ -645,7 +633,7 @@ proto_register_bthcrp(void)
     expert_bthcrp = expert_register_protocol(proto_bthcrp);
     expert_register_field_array(expert_bthcrp, ei, array_length(ei));
 
-    module = prefs_register_protocol(proto_bthcrp, NULL);
+    module = prefs_register_protocol_subtree("Bluetooth", proto_bthcrp, NULL);
     prefs_register_static_text_preference(module, "hcrp.version",
             "Bluetooth Profile HCRP version: 1.2",
             "Version of profile supported by this dissector.");
@@ -654,7 +642,7 @@ proto_register_bthcrp(void)
 
     prefs_register_enum_preference(module, "hcrp.force_client", "Force Client",
          "If \"yes\" localhost will be treat as Client, \"no\" as Server",
-         &force_client, force_client_enum, FALSE);
+         &force_client, force_client_enum, false);
 
     prefs_register_uint_preference(module, "hcrp.control.psm", "L2CAP PSM for Control",
          "L2CAP PSM for Control",
@@ -682,7 +670,7 @@ proto_reg_handoff_bthcrp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

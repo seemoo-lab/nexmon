@@ -1,0 +1,10 @@
+<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+    <sch:pattern id="">
+        <sch:rule context="boo0">
+            <sch:report test="not(0)">
+                <sch:name path="&#9;e|namespace::*|e"/>
+            </sch:report>
+            <sch:report test="0"></sch:report>
+        </sch:rule>
+    </sch:pattern>
+</sch:schema>

@@ -7,29 +7,18 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Based on the RANAP dissector
  *
- * References: ETSI TS 125 453 V7.9.0 (2008-02)
+ * References: ETSI TS 125 453 V17.0.0 (2022-04)
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <wsutil/array.h>
 
 #include <epan/strutil.h>
 #include <epan/asn1.h>
@@ -52,28 +41,24 @@
 void proto_register_pcap(void);
 void proto_reg_handoff_pcap(void);
 
-static range_t *global_ssn_range;
-
-static dissector_table_t sccp_ssn_table;
-
 #include "packet-pcap-val.h"
 
-static dissector_handle_t pcap_handle = NULL;
+static dissector_handle_t pcap_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_pcap = -1;
+static int proto_pcap;
 
 #include "packet-pcap-hf.c"
 
 /* Initialize the subtree pointers */
-static int ett_pcap = -1;
+static int ett_pcap;
 
 #include "packet-pcap-ett.c"
 
 /* Global variables */
-static guint32 ProcedureCode;
-static guint32 ProtocolIE_ID;
-/*static guint32 ProtocolExtensionID;*/
+static uint32_t ProcedureCode;
+static uint32_t ProtocolIE_ID;
+/*static uint32_t ProtocolExtensionID;*/
 
 /* Dissector tables */
 static dissector_table_t pcap_ies_dissector_table;
@@ -145,19 +130,8 @@ dissect_pcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 void
 proto_reg_handoff_pcap(void)
 {
-    static gboolean prefs_initialized = FALSE;
-    static range_t *ssn_range;
-
-    if (! prefs_initialized) {
-        sccp_ssn_table = find_dissector_table("sccp.ssn");
-        prefs_initialized = TRUE;
 #include "packet-pcap-dis-tab.c"
-    } else {
-        dissector_delete_uint_range("sccp.ssn", ssn_range, pcap_handle);
-        g_free(ssn_range);
-    }
-    ssn_range = range_copy(global_ssn_range);
-    dissector_add_uint_range("sccp.ssn", ssn_range, pcap_handle);
+    dissector_add_for_decode_as_with_preference("sccp.ssn", pcap_handle);
 }
 
 /*--- proto_register_pcap -------------------------------------------*/
@@ -171,12 +145,12 @@ void proto_register_pcap(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 		  &ett_pcap,
 #include "packet-pcap-ettarr.c"
   };
 
-  module_t *pcap_module;
+  /* module_t *pcap_module; */
 
   /* Register protocol */
   proto_pcap = proto_register_protocol(PNAME, PSNAME, PFNAME);
@@ -184,7 +158,7 @@ void proto_register_pcap(void) {
   proto_register_field_array(proto_pcap, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
-  pcap_module = prefs_register_protocol(proto_pcap, proto_reg_handoff_pcap);
+  /* pcap_module = prefs_register_protocol(proto_pcap, NULL); */
 
   /* Register dissector */
   pcap_handle = register_dissector("pcap", dissect_pcap, proto_pcap);
@@ -200,13 +174,6 @@ void proto_register_pcap(void) {
   pcap_proc_out_dissector_table = register_dissector_table("pcap.proc.out", "PCAP-ELEMENTARY-PROCEDURE Outcome", proto_pcap, FT_UINT32, BASE_DEC);
 
 
-  /* Preferences */
-  /* Set default SSNs */
-  range_convert_str(&global_ssn_range, "", MAX_SSN);
-
-  prefs_register_range_preference(pcap_module, "ssn", "SCCP SSNs",
-                                  "SCCP (and SUA) SSNs to decode as PCAP",
-                                  &global_ssn_range, MAX_SSN);
 }
 
 

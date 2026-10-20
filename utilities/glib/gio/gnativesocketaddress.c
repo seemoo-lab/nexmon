@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008 Christian Kellner, Samuel Cormier-Iijima
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,24 +32,23 @@
 
 
 /**
- * SECTION:gnativesocketaddress
- * @short_description: Native GSocketAddress
- * @include: gio/gio.h
- *
- * An socket address of some unknown native type.
- */
-
-/**
  * GNativeSocketAddress:
  *
- * An socket address, corresponding to a general struct
- * sockadd address of a type not otherwise handled by glib.
+ * A socket address of some unknown native type.
+ *
+ * This corresponds to a general `struct sockaddr` of a type not otherwise
+ * handled by GLib.
+ *
+ * Since: 2.46
  */
 
 struct _GNativeSocketAddressPrivate
 {
   struct sockaddr *sockaddr;
-  struct sockaddr_storage storage;
+  union {
+    struct sockaddr_storage storage;
+    struct sockaddr sa;
+  } storage;
   gsize sockaddr_len;
 };
 
@@ -58,7 +59,7 @@ g_native_socket_address_dispose (GObject *object)
 {
   GNativeSocketAddress *address = G_NATIVE_SOCKET_ADDRESS (object);
 
-  if (address->priv->sockaddr != (struct sockaddr *)&address->priv->storage)
+  if (address->priv->sockaddr != &address->priv->storage.sa)
     g_free (address->priv->sockaddr);
 
   G_OBJECT_CLASS (g_native_socket_address_parent_class)->dispose (object);
@@ -85,7 +86,8 @@ g_native_socket_address_get_native_size (GSocketAddress *address)
 
   addr = G_NATIVE_SOCKET_ADDRESS (address);
 
-  return addr->priv->sockaddr_len;
+  g_assert (addr->priv->sockaddr_len <= G_MAXSSIZE);
+  return (gssize) addr->priv->sockaddr_len;
 }
 
 static gboolean
@@ -150,7 +152,7 @@ g_native_socket_address_new (gpointer        native,
   addr = g_object_new (G_TYPE_NATIVE_SOCKET_ADDRESS, NULL);
 
   if (len <= sizeof(addr->priv->storage))
-    addr->priv->sockaddr = (struct sockaddr*)&addr->priv->storage;
+    addr->priv->sockaddr = &addr->priv->storage.sa;
   else
     addr->priv->sockaddr = g_malloc (len);
 

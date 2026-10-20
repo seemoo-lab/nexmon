@@ -1,0 +1,10 @@
+This example relies on the GNU Modula-2 compiler (gm2).
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix [--with-m2-libraries-prefix=/some/prefix]
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

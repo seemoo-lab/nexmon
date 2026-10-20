@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2014 Руслан Ижбулатов <lrn1986@gmail.com>
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -89,18 +91,18 @@ typedef NTSTATUS
                          PULONG                result_size);
 
 typedef NTSTATUS
-(* NtNotifyChangeMultipleKeysFunc)(HANDLE             key_handle,
-                                   ULONG              subkey_count,
-                                   POBJECT_ATTRIBUTES subkeys,
-                                   HANDLE             event,
-                                   PIO_APC_ROUTINE    apc_routine,
-                                   PVOID              apc_closure,
-                                   PIO_STATUS_BLOCK   status_block,
-                                   ULONG              filter,
-                                   BOOLEAN            watch_tree,
-                                   PVOID              buffer,
-                                   ULONG              buffer_size,
-                                   BOOLEAN            async);
+(NTAPI * NtNotifyChangeMultipleKeysFunc)(HANDLE             key_handle,
+                                         ULONG              subkey_count,
+                                         POBJECT_ATTRIBUTES subkeys,
+                                         HANDLE             event,
+                                         PIO_APC_ROUTINE    apc_routine,
+                                         PVOID              apc_closure,
+                                         PIO_STATUS_BLOCK   status_block,
+                                         ULONG              filter,
+                                         BOOLEAN            watch_tree,
+                                         PVOID              buffer,
+                                         ULONG              buffer_size,
+                                         BOOLEAN            async);
 
 static NtQueryKeyFunc nt_query_key = NULL;
 static NtNotifyChangeMultipleKeysFunc nt_notify_change_multiple_keys = NULL;
@@ -125,16 +127,34 @@ typedef enum
   G_WIN32_REGISTRY_UPDATED_PATH = 1,
 } GWin32RegistryKeyUpdateFlag;
 
-static gunichar2 *
-g_wcsdup (const gunichar2 *str,
-          gssize           str_size)
+static gsize
+g_utf16_len (const gunichar2 *str)
 {
-  if (str_size == -1)
-    {
-      str_size = wcslen (str) + 1;
-      str_size *= sizeof (gunichar2);
-    }
-  return g_memdup (str, str_size);
+  gsize result;
+
+  for (result = 0; str[0] != 0; str++, result++)
+    ;
+
+  return result;
+}
+
+static gunichar2 *
+g_wcsdup (const gunichar2 *str, gssize str_len)
+{
+  gsize str_len_unsigned;
+  gsize str_size;
+
+  g_return_val_if_fail (str != NULL, NULL);
+
+  if (str_len < 0)
+    str_len_unsigned = g_utf16_len (str);
+  else
+    str_len_unsigned = (gsize) str_len;
+
+  g_assert (str_len_unsigned <= G_MAXSIZE / sizeof (gunichar2) - 1);
+  str_size = (str_len_unsigned + 1) * sizeof (gunichar2);
+
+  return g_memdup2 (str, str_size);
 }
 
 /**
@@ -247,7 +267,7 @@ g_win32_registry_value_iter_copy (const GWin32RegistryValueIter *iter)
   new_iter->value_name_size = iter->value_name_size;
 
   if (iter->value_data != NULL)
-    new_iter->value_data = g_memdup (iter->value_data, iter->value_data_size);
+    new_iter->value_data = g_memdup2 (iter->value_data, iter->value_data_size);
 
   new_iter->value_data_size = iter->value_data_size;
 
@@ -268,8 +288,8 @@ g_win32_registry_value_iter_copy (const GWin32RegistryValueIter *iter)
   new_iter->value_data_expanded_charsize = iter->value_data_expanded_charsize;
 
   if (iter->value_data_expanded_u8 != NULL)
-    new_iter->value_data_expanded_u8 = g_memdup (iter->value_data_expanded_u8,
-                                                 iter->value_data_expanded_charsize);
+    new_iter->value_data_expanded_u8 = g_memdup2 (iter->value_data_expanded_u8,
+                                                  iter->value_data_expanded_charsize);
 
   new_iter->value_data_expanded_u8_size = iter->value_data_expanded_charsize;
 
@@ -327,23 +347,21 @@ G_DEFINE_BOXED_TYPE (GWin32RegistryValueIter, g_win32_registry_value_iter,
                      g_win32_registry_value_iter_free)
 
 /**
- * SECTION:gwin32registrykey
- * @title: GWin32RegistryKey
- * @short_description: W32 registry access helper
- * @include: gio/win32/gwin32registrykey.h
+ * GWin32RegistryKey:
  *
- * #GWin32RegistryKey represents a single Windows Registry key.
+ * `GWin32RegistryKey` represents a single Windows Registry key.
  *
- * #GWin32RegistryKey is used by a number of helper functions that read
+ * `GWin32RegistryKey` is used by a number of helper functions that read
  * Windows Registry. All keys are opened with read-only access, and at
  * the moment there is no API for writing into registry keys or creating
  * new ones.
  *
- * #GWin32RegistryKey implements the #GInitable interface, so if it is manually
- * constructed by e.g. g_object_new() you must call g_initable_init() and check
- * the results before using the object. This is done automatically
- * in g_win32_registry_key_new() and g_win32_registry_key_get_child(), so these
- * functions can return %NULL.
+ * `GWin32RegistryKey` implements the [iface@Gio.Initable] interface, so if it
+ * is manually constructed by e.g. [ctor@GObject.Object.new] you must call
+ * [method@Gio.Initable.init] and check the results before using the object.
+ * This is done automatically in [ctor@Gio.Win32RegistryKey.new] and
+ * [method@Gio.Win32RegistryKey.get_child], so these functions can return
+ * `NULL`.
  *
  * To increase efficiency, a UTF-16 variant is available for all functions
  * that deal with key or value names in the registry. Use these to perform
@@ -352,17 +370,17 @@ G_DEFINE_BOXED_TYPE (GWin32RegistryValueIter, g_win32_registry_value_iter,
  * of UTF-16 functions avoids the overhead of converting names to UTF-8 and
  * back.
  *
- * All functions operate in current user's context (it is not possible to
- * access registry tree of a different user).
+ * All functions operate in the current user’s context (it is not possible to
+ * access the registry tree of a different user).
  *
- * Key paths must use '\\' as a separator, '/' is not supported. Key names
- * must not include '\\', because it's used as a separator. Value names
- * can include '\\'.
+ * Key paths must use `\\` as a separator, `/` is not supported. Key names
+ * must not include `\\`, because it’s used as a separator. Value names
+ * can include `\\`.
  *
  * Key and value names are not case sensitive.
  *
- * Full key name (excluding the pre-defined ancestor's name) can't exceed
- * 255 UTF-16 characters, give or take. Value name can't exceed 16383 UTF-16
+ * A full key name (excluding the pre-defined ancestor’s name) can’t exceed
+ * 255 UTF-16 characters, give or take. A value name can’t exceed 16383 UTF-16
  * characters. Tree depth is limited to 512 levels.
  **/
 
@@ -453,6 +471,7 @@ g_win32_registry_key_dispose (GObject *object)
  *
  * Creates an object that represents a registry key specified by @path.
  * @path must start with one of the following pre-defined names:
+ *
  * - HKEY_CLASSES_ROOT
  * - HKEY_CURRENT_CONFIG
  * - HKEY_CURRENT_USER
@@ -462,6 +481,7 @@ g_win32_registry_key_dispose (GObject *object)
  * - HKEY_PERFORMANCE_NLSTEXT
  * - HKEY_PERFORMANCE_TEXT
  * - HKEY_USERS
+ *
  * @path must not end with '\\'.
  *
  * Returns: (nullable) (transfer full): a #GWin32RegistryKey or %NULL if can't
@@ -484,10 +504,11 @@ g_win32_registry_key_new (const gchar  *path,
 /**
  * g_win32_registry_key_new_w:
  * @path: (in) (transfer none): absolute full name of a key to open (in UTF-16)
- * @error: (inout) (nullable): a pointer to a %NULL #GError, or %NULL
+ * @error: (inout) (optional) (nullable): a pointer to a %NULL #GError, or %NULL
  *
  * Creates an object that represents a registry key specified by @path.
  * @path must start with one of the following pre-defined names:
+ *
  * - HKEY_CLASSES_ROOT
  * - HKEY_CURRENT_CONFIG
  * - HKEY_CURRENT_USER
@@ -497,6 +518,7 @@ g_win32_registry_key_new (const gchar  *path,
  * - HKEY_PERFORMANCE_NLSTEXT
  * - HKEY_PERFORMANCE_TEXT
  * - HKEY_USERS
+ *
  * @path must not end with L'\\'.
  *
  * Returns: (nullable) (transfer full): a #GWin32RegistryKey or %NULL if can't
@@ -628,7 +650,7 @@ g_win32_registry_key_initable_init (GInitable     *initable,
  * g_win32_registry_key_get_child:
  * @key: (in) (transfer none): a parent #GWin32RegistryKey
  * @subkey: (in) (transfer none): name of a child key to open (in UTF-8), relative to @key
- * @error: (inout) (nullable): a pointer to a %NULL #GError, or %NULL
+ * @error: (inout) (optional) (nullable): a pointer to a %NULL #GError, or %NULL
  *
  * Opens a @subkey of the @key.
  *
@@ -662,7 +684,7 @@ g_win32_registry_key_get_child (GWin32RegistryKey  *key,
  * g_win32_registry_key_get_child_w:
  * @key: (in) (transfer none): a parent #GWin32RegistryKey
  * @subkey: (in) (transfer none): name of a child key to open (in UTF-8), relative to @key
- * @error: (inout) (nullable): a pointer to a %NULL #GError, or %NULL
+ * @error: (inout) (optional) (nullable): a pointer to a %NULL #GError, or %NULL
  *
  * Opens a @subkey of the @key.
  *
@@ -739,7 +761,7 @@ g_win32_registry_key_get_child_w (GWin32RegistryKey  *key,
  * g_win32_registry_subkey_iter_init:
  * @iter: (in) (transfer none): a pointer to a #GWin32RegistrySubkeyIter
  * @key: (in) (transfer none): a #GWin32RegistryKey to iterate over
- * @error: (inout) (nullable): a pointer to %NULL #GError, or %NULL
+ * @error: (inout) (optional) (nullable): a pointer to %NULL #GError, or %NULL
  *
  * Initialises (without allocating) a #GWin32RegistrySubkeyIter.  @iter may be
  * completely uninitialised prior to this call; its old value is
@@ -946,7 +968,7 @@ g_win32_registry_subkey_iter_next (GWin32RegistrySubkeyIter  *iter,
  **/
 gboolean
 g_win32_registry_subkey_iter_get_name_w (GWin32RegistrySubkeyIter  *iter,
-                                         gunichar2                **subkey_name,
+                                         const gunichar2          **subkey_name,
                                          gsize                     *subkey_name_len,
                                          GError                   **error)
 {
@@ -988,7 +1010,7 @@ g_win32_registry_subkey_iter_get_name_w (GWin32RegistrySubkeyIter  *iter,
  **/
 gboolean
 g_win32_registry_subkey_iter_get_name (GWin32RegistrySubkeyIter  *iter,
-                                       gchar                    **subkey_name,
+                                       const gchar              **subkey_name,
                                        gsize                     *subkey_name_len,
                                        GError                   **error)
 {
@@ -1013,13 +1035,15 @@ g_win32_registry_subkey_iter_get_name (GWin32RegistrySubkeyIter  *iter,
                                           &subkey_name_len_glong,
                                           error);
 
-  if (iter->subkey_name_u8 != NULL)
-    {
-      *subkey_name_len = subkey_name_len_glong;
-      return TRUE;
-    }
+  if (iter->subkey_name_u8 == NULL)
+    return FALSE;
 
-  return FALSE;
+  *subkey_name = iter->subkey_name_u8;
+
+  if (subkey_name_len)
+    *subkey_name_len = subkey_name_len_glong;
+
+  return TRUE;
 }
 
 /**
@@ -1725,7 +1749,7 @@ static void
 _g_win32_registry_key_reread (GWin32RegistryKey        *key,
                               GWin32RegistryKeyPrivate *buf)
 {
-  if (g_once_init_enter (&nt_query_key))
+  if (g_once_init_enter_pointer (&nt_query_key))
     {
       NtQueryKeyFunc func;
       HMODULE ntdll = GetModuleHandleW (L"ntdll.dll");
@@ -1735,7 +1759,7 @@ _g_win32_registry_key_reread (GWin32RegistryKey        *key,
       else
         func = NULL;
 
-      g_once_init_leave (&nt_query_key, func);
+      g_once_init_leave_pointer (&nt_query_key, func);
     }
 
   /* Assume that predefined keys never get renamed. Also, their handles probably
@@ -1839,8 +1863,118 @@ g_win32_registry_key_get_path_w (GWin32RegistryKey *key)
 }
 
 /**
+ * g_win32_registry_get_os_dirs_w:
+ *
+ * Returns a list of directories for DLL lookups.
+ * Can be used with g_win32_registry_key_get_value_w().
+ *
+ * Returns: (array zero-terminated=1) (transfer none): a %NULL-terminated array of UTF-16 strings.
+ *
+ * Since: 2.66
+ */
+const gunichar2 * const *
+g_win32_registry_get_os_dirs_w (void)
+{
+  static gunichar2 **mui_os_dirs = NULL;
+
+  if (g_once_init_enter_pointer (&mui_os_dirs))
+    {
+      gunichar2 **new_mui_os_dirs;
+      gunichar2 *system32 = NULL;
+      gunichar2 *syswow64 = NULL;
+      UINT buffer_size;
+      gsize array_index = 0;
+
+      buffer_size = GetSystemWow64DirectoryW (NULL, 0);
+
+      if (buffer_size > 0)
+        {
+          UINT copied;
+          syswow64 = g_malloc (buffer_size * sizeof (gunichar2));
+          copied = GetSystemWow64DirectoryW (syswow64, buffer_size);
+          if (copied <= 0)
+            g_clear_pointer (&syswow64, g_free);
+        }
+
+      buffer_size = GetSystemDirectoryW (NULL, 0);
+
+      if (buffer_size > 0)
+        {
+          UINT copied;
+          system32 = g_malloc (buffer_size * sizeof (gunichar2));
+          copied = GetSystemDirectoryW (system32, buffer_size);
+          if (copied <= 0)
+            g_clear_pointer (&system32, g_free);
+        }
+
+      new_mui_os_dirs = g_new0 (gunichar2 *, 3);
+
+      if (system32 != NULL)
+        new_mui_os_dirs[array_index++] = system32;
+
+      if (syswow64 != NULL)
+        new_mui_os_dirs[array_index++] = syswow64;
+
+      new_mui_os_dirs[array_index++] = NULL;
+
+      g_once_init_leave_pointer (&mui_os_dirs, new_mui_os_dirs);
+    }
+
+  return (const gunichar2 * const *) mui_os_dirs;
+}
+
+/**
+ * g_win32_registry_get_os_dirs:
+ *
+ * Returns a list of directories for DLL lookups.
+ * Can be used with g_win32_registry_key_get_value().
+ *
+ * Returns: (array zero-terminated=1) (transfer none): a %NULL-terminated array of UTF-8 strings.
+ *
+ * Since: 2.66
+ */
+const gchar * const *
+g_win32_registry_get_os_dirs (void)
+{
+  static gchar **mui_os_dirs = NULL;
+
+  if (g_once_init_enter_pointer (&mui_os_dirs))
+    {
+      gchar **new_mui_os_dirs;
+      gsize array_index;
+      gsize new_array_index;
+      const gunichar2 * const *mui_os_dirs_utf16 = g_win32_registry_get_os_dirs_w ();
+
+      for (array_index = 0; mui_os_dirs_utf16[array_index] != NULL; array_index++)
+        ;
+
+      new_mui_os_dirs = g_new0 (gchar *, array_index + 1);
+
+      for (array_index = 0, new_array_index = 0;
+           mui_os_dirs_utf16[array_index] != NULL;
+           array_index++)
+        {
+          new_mui_os_dirs[new_array_index] = g_utf16_to_utf8 (mui_os_dirs_utf16[array_index],
+                                                              -1, NULL, NULL, NULL);
+          if (new_mui_os_dirs[new_array_index] != NULL)
+            new_array_index += 1;
+          else
+            g_critical ("Failed to convert to a system directory #%zu to UTF-8", array_index);
+        }
+
+      g_once_init_leave_pointer (&mui_os_dirs, new_mui_os_dirs);
+    }
+
+  return (const gchar * const *) mui_os_dirs;
+}
+
+/**
  * g_win32_registry_key_get_value:
  * @key: (in) (transfer none): a #GWin32RegistryKey
+ * @mui_dll_dirs: (in) (transfer none) (array zero-terminated=1) (optional): a %NULL-terminated
+ *     array of directory names where the OS
+ *     should look for a DLL indicated in a MUI string, if the
+ *     DLL path in the string is not absolute
  * @auto_expand: (in) %TRUE to automatically expand G_WIN32_REGISTRY_VALUE_EXPAND_STR
  *     to G_WIN32_REGISTRY_VALUE_STR.
  * @value_name: (in) (transfer none): name of the value to get (in UTF-8).
@@ -1848,18 +1982,38 @@ g_win32_registry_key_get_path_w (GWin32RegistryKey *key)
  * @value_type: (out) (optional): type of the value retrieved.
  * @value_data: (out callee-allocates) (optional): contents of the value.
  * @value_data_size: (out) (optional): size of the buffer pointed
- *   by @value_data.
+ *   by @value_data, in bytes.
  * @error: (nullable): a pointer to %NULL #GError, or %NULL
  *
  * Get data from a value of a key. String data is guaranteed to be
  * appropriately terminated and will be in UTF-8.
  *
+ * When not %NULL, @mui_dll_dirs indicates that `RegLoadMUIStringW()` API
+ * should be used instead of the usual `RegQueryValueExW()`. This implies
+ * that the value being queried is of type `REG_SZ` or `REG_EXPAND_SZ` (if it is not, the function
+ * falls back to `RegQueryValueExW()`), and that this string must undergo special processing
+ * (see [`SHLoadIndirectString()` documentation](https://docs.microsoft.com/en-us/windows/win32/api/shlwapi/nf-shlwapi-shloadindirectstring) for an explanation on what
+ * kinds of strings are processed) to get the result.
+ *
+ * If no specific MUI DLL directories need to be used, pass
+ * the return value of g_win32_registry_get_os_dirs() as @mui_dll_dirs
+ * (as an bonus, the value from g_win32_registry_get_os_dirs()
+ * does not add any extra UTF8->UTF16 conversion overhead).
+ *
+ * @auto_expand works with @mui_dll_dirs, but only affects the processed
+ * string, making it somewhat useless. The unprocessed string is always expanded
+ * internally, if its type is `REG_EXPAND_SZ` - there is no need to enable
+ * @auto_expand for this to work.
+ *
+ * The API for this function changed in GLib 2.66 to add the @mui_dll_dirs argument.
+ *
  * Returns: %TRUE on success, %FALSE on failure.
  *
- * Since: 2.46
+ * Since: 2.66
  **/
 gboolean
 g_win32_registry_key_get_value (GWin32RegistryKey        *key,
+                                const gchar * const      *mui_dll_dirs,
                                 gboolean                  auto_expand,
                                 const gchar              *value_name,
                                 GWin32RegistryValueType  *value_type,
@@ -1874,6 +2028,9 @@ g_win32_registry_key_get_value (GWin32RegistryKey        *key,
   gchar *value_data_u8;
   gsize value_data_u8_len;
   gboolean result;
+  gsize mui_dll_dirs_count;
+  gunichar2 **mui_dll_dirs_utf16;
+  const gchar * const *mui_os_dirs;
 
   g_return_val_if_fail (G_IS_WIN32_REGISTRY_KEY (key), FALSE);
   g_return_val_if_fail (value_name != NULL, FALSE);
@@ -1889,7 +2046,48 @@ g_win32_registry_key_get_value (GWin32RegistryKey        *key,
   if (value_name_w == NULL)
     return FALSE;
 
+  mui_dll_dirs_utf16 = NULL;
+  mui_os_dirs = g_win32_registry_get_os_dirs ();
+
+  if (mui_dll_dirs != NULL &&
+      mui_dll_dirs != mui_os_dirs)
+    {
+      gsize i;
+
+      mui_dll_dirs_count = g_strv_length ((gchar **) mui_dll_dirs);
+      mui_dll_dirs_utf16 = g_new0 (gunichar2 *, mui_dll_dirs_count + 1);
+
+      for (i = 0; mui_dll_dirs[i] != NULL; i++)
+        {
+          mui_dll_dirs_utf16[i] = g_utf8_to_utf16 (mui_dll_dirs[i], -1, NULL, NULL, error);
+
+          if (mui_dll_dirs_utf16[i] == NULL)
+            break;
+        }
+
+      if (mui_dll_dirs[i] != NULL)
+        {
+          g_prefix_error (error,
+                          "A mui_dll_dirs string #%zu `%s' failed to convert: ",
+                          i, mui_dll_dirs[i]);
+
+          for (i = 0; i < mui_dll_dirs_count; i++)
+            g_free (mui_dll_dirs_utf16[i]);
+
+          g_free (mui_dll_dirs_utf16);
+          g_free (value_name_w);
+
+          return FALSE;
+        }
+    }
+  else if (mui_dll_dirs != NULL &&
+           mui_dll_dirs == mui_os_dirs)
+    {
+      mui_dll_dirs_utf16 = (gunichar2 **) g_win32_registry_get_os_dirs_w ();
+    }
+
   result = g_win32_registry_key_get_value_w (key,
+                                             (const gunichar2 * const *) mui_dll_dirs_utf16,
                                              auto_expand,
                                              value_name_w,
                                              &value_type_g,
@@ -1898,6 +2096,14 @@ g_win32_registry_key_get_value (GWin32RegistryKey        *key,
                                              error);
 
   g_free (value_name_w);
+  if (mui_dll_dirs_utf16 != NULL &&
+      mui_dll_dirs != mui_os_dirs)
+    {
+      gsize array_index;
+      for (array_index = 0; mui_dll_dirs_utf16[array_index] != NULL; array_index++)
+        g_free (mui_dll_dirs_utf16[array_index]);
+      g_free (mui_dll_dirs_utf16);
+    }
 
   if (!result)
     return FALSE;
@@ -1944,9 +2150,98 @@ g_win32_registry_key_get_value (GWin32RegistryKey        *key,
   return TRUE;
 }
 
+/* A wrapper that calls either RegQueryValueExW() or
+ * RegLoadMUIStringW() depending on the value of the
+ * last argument.
+ * Apart from the extra argument, the function behaves
+ * just like RegQueryValueExW(), with a few caveats.
+ */
+static LSTATUS
+MuiRegQueryValueExW (HKEY                     hKey,
+                     LPCWSTR                  lpValueName,
+                     LPDWORD                  lpReserved,
+                     LPDWORD                  lpType,
+                     LPBYTE                   lpData,
+                     LPDWORD                  lpcbData,
+                     const gunichar2 * const *mui_dll_dirs)
+{
+  gsize dir_index;
+  LSTATUS result = ERROR_PATH_NOT_FOUND;
+  DWORD bufsize;
+  DWORD data_size;
+  PVOID old_value;
+
+  if (mui_dll_dirs == NULL)
+    return RegQueryValueExW (hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+
+  bufsize = 0;
+
+  if (lpcbData != NULL)
+    bufsize = *lpcbData;
+
+  if (mui_dll_dirs[0] != NULL)
+    {
+      /* Optimization: check that the value actually exists,
+       * before we start trying different mui dll dirs
+       */
+      result = RegQueryValueExW (hKey, lpValueName, NULL, NULL, NULL, 0);
+
+      if (result == ERROR_FILE_NOT_FOUND)
+        return result;
+    }
+
+  Wow64DisableWow64FsRedirection (&old_value);
+
+  /* Try with NULL dir first */
+  result = RegLoadMUIStringW (hKey,
+                              lpValueName,
+                              (wchar_t *) lpData,
+                              bufsize,
+                              &data_size,
+                              0,
+                              NULL);
+
+  /* Not a MUI value, load normally */
+  if (result == ERROR_INVALID_DATA)
+    {
+      Wow64RevertWow64FsRedirection (old_value);
+
+      return RegQueryValueExW (hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+    }
+
+  for (dir_index = 0;
+       result == ERROR_FILE_NOT_FOUND &&
+       mui_dll_dirs[dir_index] != NULL;
+       dir_index++)
+    result = RegLoadMUIStringW (hKey,
+                                lpValueName,
+                                (wchar_t *) lpData,
+                                bufsize,
+                                &data_size,
+                                0,
+                                mui_dll_dirs[dir_index]);
+
+  Wow64RevertWow64FsRedirection (old_value);
+
+  if (lpcbData != NULL &&
+      result == ERROR_MORE_DATA)
+    *lpcbData = data_size;
+
+  if (lpType != NULL &&
+      result != ERROR_INVALID_DATA &&
+      result != ERROR_FILE_NOT_FOUND)
+    *lpType = REG_SZ;
+
+  return result;
+}
+
 /**
  * g_win32_registry_key_get_value_w:
  * @key: (in) (transfer none): a #GWin32RegistryKey
+ * @mui_dll_dirs: (in) (transfer none) (array zero-terminated=1) (optional): a %NULL-terminated
+ *     array of directory names where the OS
+ *     should look for a DLL indicated in a MUI string, if the
+ *     DLL path in the string is not absolute
  * @auto_expand: (in) %TRUE to automatically expand G_WIN32_REGISTRY_VALUE_EXPAND_STR
  *     to G_WIN32_REGISTRY_VALUE_STR.
  * @value_name: (in) (transfer none): name of the value to get (in UTF-16).
@@ -1954,10 +2249,8 @@ g_win32_registry_key_get_value (GWin32RegistryKey        *key,
  * @value_type: (out) (optional): type of the value retrieved.
  * @value_data: (out callee-allocates) (optional): contents of the value.
  * @value_data_size: (out) (optional): size of the buffer pointed
- *   by @value_data.
+ *   by @value_data, in bytes.
  * @error: (nullable): a pointer to %NULL #GError, or %NULL
- *
- * Get data from a value of a key.
  *
  * Get data from a value of a key. String data is guaranteed to be
  * appropriately terminated and will be in UTF-16.
@@ -1965,15 +2258,33 @@ g_win32_registry_key_get_value (GWin32RegistryKey        *key,
  * When calling with value_data == NULL (to get data size without getting
  * the data itself) remember that returned size corresponds to possibly
  * unterminated string data (if value is some kind of string), because
- * termination cannot be checked and fixed unless the data is retreived
+ * termination cannot be checked and fixed unless the data is retrieved
  * too.
+ *
+ * When not %NULL, @mui_dll_dirs indicates that `RegLoadMUIStringW()` API
+ * should be used instead of the usual `RegQueryValueExW()`. This implies
+ * that the value being queried is of type `REG_SZ` or `REG_EXPAND_SZ` (if it is not, the function
+ * falls back to `RegQueryValueExW()`), and that this string must undergo special processing
+ * (see [`SHLoadIndirectString()` documentation](https://docs.microsoft.com/en-us/windows/win32/api/shlwapi/nf-shlwapi-shloadindirectstring) for an explanation on what
+ * kinds of strings are processed) to get the result.
+ *
+ * If no specific MUI DLL directories need to be used, pass
+ * the return value of g_win32_registry_get_os_dirs_w() as @mui_dll_dirs.
+ *
+ * @auto_expand works with @mui_dll_dirs, but only affects the processed
+ * string, making it somewhat useless. The unprocessed string is always expanded
+ * internally, if its type is `REG_EXPAND_SZ` - there is no need to enable
+ * @auto_expand for this to work.
+ *
+ * The API for this function changed in GLib 2.66 to add the @mui_dll_dirs argument.
  *
  * Returns: %TRUE on success, %FALSE on failure.
  *
- * Since: 2.46
+ * Since: 2.66
  **/
 gboolean
 g_win32_registry_key_get_value_w (GWin32RegistryKey        *key,
+                                  const gunichar2 * const  *mui_dll_dirs,
                                   gboolean                  auto_expand,
                                   const gunichar2          *value_name,
                                   GWin32RegistryValueType  *value_type,
@@ -2000,12 +2311,13 @@ g_win32_registry_key_get_value_w (GWin32RegistryKey        *key,
                         value_data_size != NULL, FALSE);
 
   req_value_data_size = 0;
-  status = RegQueryValueExW (key->priv->handle,
-                             value_name,
-                             NULL,
-                             &value_type_w,
-                             NULL,
-                             &req_value_data_size);
+  status = MuiRegQueryValueExW (key->priv->handle,
+                                value_name,
+                                NULL,
+                                &value_type_w,
+                                NULL,
+                                &req_value_data_size,
+                                mui_dll_dirs);
 
   if (status != ERROR_MORE_DATA && status != ERROR_SUCCESS)
     {
@@ -2032,12 +2344,13 @@ g_win32_registry_key_get_value_w (GWin32RegistryKey        *key,
 
   req_value_data = g_malloc (req_value_data_size + sizeof (gunichar2) * 2);
   req_value_data_size2 = req_value_data_size;
-  status = RegQueryValueExW (key->priv->handle,
-                             value_name,
-                             NULL,
-                             &value_type_w2,
-                             (gpointer) req_value_data,
-                             &req_value_data_size2);
+  status = MuiRegQueryValueExW (key->priv->handle,
+                                value_name,
+                                NULL,
+                                &value_type_w2,
+                                (gpointer) req_value_data,
+                                &req_value_data_size2,
+                                mui_dll_dirs);
 
   if (status != ERROR_SUCCESS)
     {
@@ -2116,17 +2429,20 @@ key_changed (PVOID            closure,
              ULONG            reserved)
 {
   GWin32RegistryKey *key = G_WIN32_REGISTRY_KEY (closure);
+  gpointer user_data;
+  GWin32RegistryKeyWatchCallbackFunc callback;
+
+  callback = g_steal_pointer (&key->priv->callback);
+  user_data = g_steal_pointer (&key->priv->user_data);
 
   g_free (status_block);
   g_atomic_int_set (&key->priv->change_indicator, G_WIN32_KEY_CHANGED);
   g_atomic_int_set (&key->priv->watch_indicator, G_WIN32_KEY_UNWATCHED);
   key->priv->update_flags = G_WIN32_REGISTRY_UPDATED_NOTHING;
 
-  if (key->priv->callback)
-    key->priv->callback (key, key->priv->user_data);
+  if (callback)
+    callback (key, user_data);
 
-  key->priv->callback = NULL;
-  key->priv->user_data = NULL;
   g_object_unref (key);
 }
 
@@ -2190,17 +2506,17 @@ g_win32_registry_key_watch (GWin32RegistryKey                   *key,
       return FALSE;
     }
 
-  if (g_once_init_enter (&nt_notify_change_multiple_keys))
+  if (g_once_init_enter_pointer (&nt_notify_change_multiple_keys))
   {
     NtNotifyChangeMultipleKeysFunc func;
-    HMODULE ntdll = GetModuleHandle ("ntdll.dll");
+    HMODULE ntdll = GetModuleHandleW (L"ntdll.dll");
 
     if (ntdll != NULL)
       func = (NtNotifyChangeMultipleKeysFunc) GetProcAddress (ntdll, "NtNotifyChangeMultipleKeys");
     else
       func = NULL;
 
-    g_once_init_leave (&nt_notify_change_multiple_keys, func);
+    g_once_init_leave_pointer (&nt_notify_change_multiple_keys, func);
   }
 
   if (nt_notify_change_multiple_keys== NULL)
@@ -2241,9 +2557,7 @@ g_win32_registry_key_watch (GWin32RegistryKey                   *key,
                                            0,
                                            TRUE);
 
-  g_assert (status != STATUS_SUCCESS);
-
-  if (status == STATUS_PENDING)
+  if (status == STATUS_PENDING || status == STATUS_SUCCESS)
     return TRUE;
 
   g_atomic_int_set (&key->priv->change_indicator, G_WIN32_KEY_UNKNOWN);
@@ -2334,8 +2648,6 @@ g_win32_registry_key_set_property (GObject      *object,
   switch (prop_id)
     {
     case PROP_PATH:
-      g_assert (priv->absolute_path_w == NULL);
-      g_assert (priv->absolute_path == NULL);
       path = g_value_get_string (value);
 
       if (path == NULL)
@@ -2346,20 +2658,21 @@ g_win32_registry_key_set_property (GObject      *object,
       if (path_w == NULL)
         break;
 
-      g_free (priv->absolute_path_w);
-      g_free (priv->absolute_path);
+      /* Construct only */
+      g_assert (priv->absolute_path_w == NULL);
+      g_assert (priv->absolute_path == NULL);
       priv->absolute_path_w = path_w;
       priv->absolute_path = g_value_dup_string (value);
       break;
 
     case PROP_PATH_UTF16:
-      g_assert (priv->absolute_path_w == NULL);
-      g_assert (priv->absolute_path == NULL);
       path_w = (gunichar2 *) g_value_get_pointer (value);
 
       if (path_w == NULL)
         break;
 
+      /* Construct only */
+      g_assert (priv->absolute_path_w == NULL);
       priv->absolute_path_w = g_wcsdup (path_w, -1);
       break;
 
@@ -2386,9 +2699,7 @@ g_win32_registry_key_class_init (GWin32RegistryKeyClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_PATH,
-                                   g_param_spec_string ("path",
-                                                        "Path",
-                                                        "Path to the key in the registry",
+                                   g_param_spec_string ("path", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -2403,9 +2714,7 @@ g_win32_registry_key_class_init (GWin32RegistryKeyClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_PATH_UTF16,
-                                   g_param_spec_pointer ("path-utf16",
-                                                        "Path (UTF-16)",
-                                                        "Path to the key in the registry, in UTF-16",
+                                   g_param_spec_pointer ("path-utf16", NULL, NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_STATIC_STRINGS));

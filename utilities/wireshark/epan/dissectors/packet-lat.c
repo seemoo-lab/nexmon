@@ -5,29 +5,16 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/unit_strings.h>
 #include "etypes.h"
 
 void proto_register_lat(void);
@@ -39,24 +26,26 @@ void proto_reg_handoff_lat(void);
  *	http://www.bitsavers.org/pdf/dec/ethernet/lat/AA-NL26A-TE_LAT_Specification_Jun89.pdf
  */
 
-static int proto_lat = -1;
-static int hf_lat_rrf = -1;
-static int hf_lat_master = -1;
-static int hf_lat_msg_typ = -1;
-static int hf_lat_nbr_slots = -1;
-static int hf_lat_dst_cir_id = -1;
-static int hf_lat_src_cir_id = -1;
-static int hf_lat_msg_seq_nbr = -1;
-static int hf_lat_msg_ack_nbr = -1;
-static int hf_lat_min_rcv_datagram_size = -1;
-static int hf_lat_prtcl_ver = -1;
-static int hf_lat_prtcl_eco = -1;
-static int hf_lat_max_sim_slots = -1;
-static int hf_lat_nbr_dl_bufs = -1;
-static int hf_lat_server_circuit_timer = -1;
-static int hf_lat_keep_alive_timer = -1;
-static int hf_lat_facility_number = -1;
-static int hf_lat_prod_type_code = -1;
+static dissector_handle_t lat_handle;
+
+static int proto_lat;
+static int hf_lat_rrf;
+static int hf_lat_master;
+static int hf_lat_msg_typ;
+static int hf_lat_nbr_slots;
+static int hf_lat_dst_cir_id;
+static int hf_lat_src_cir_id;
+static int hf_lat_msg_seq_nbr;
+static int hf_lat_msg_ack_nbr;
+static int hf_lat_min_rcv_datagram_size;
+static int hf_lat_prtcl_ver;
+static int hf_lat_prtcl_eco;
+static int hf_lat_max_sim_slots;
+static int hf_lat_nbr_dl_bufs;
+static int hf_lat_server_circuit_timer;
+static int hf_lat_keep_alive_timer;
+static int hf_lat_facility_number;
+static int hf_lat_prod_type_code;
 static const value_string prod_type_code_vals[] = {
 	{ 1, "Ethernet terminal server" },
 	{ 2, "DECserver 100" },
@@ -79,35 +68,35 @@ static const value_string prod_type_code_vals[] = {
 	{ 19, "Actor" },
 	{ 0, NULL }
 };
-static int hf_lat_prod_vers_numb = -1;
-static int hf_lat_slave_node_name = -1;
-static int hf_lat_master_node_name = -1;
-static int hf_lat_location_text = -1;
-static int hf_lat_param_code = -1;
-static int hf_lat_param_len = -1;
-static int hf_lat_param_data = -1;
-static int hf_lat_slot_dst_slot_id = -1;
-static int hf_lat_slot_src_slot_id = -1;
-static int hf_lat_slot_byte_count = -1;
-static int hf_lat_slot_credits = -1;
-static int hf_lat_slot_type = -1;
-static int hf_lat_start_slot_service_class = -1;
-static int hf_lat_start_slot_minimum_attention_slot_size = -1;
-static int hf_lat_start_slot_minimum_data_slot_size = -1;
-static int hf_lat_start_slot_obj_srvc = -1;
-static int hf_lat_start_slot_subj_dscr = -1;
-static int hf_lat_start_slot_class_1_param_code = -1;
-static int hf_lat_status_remaining = -1;
-static int hf_lat_slot_data = -1;
-static int hf_lat_data_b_slot_control_flags = -1;
-static int hf_lat_data_b_slot_control_flags_enable_input_flow_control = -1;
-static int hf_lat_data_b_slot_control_flags_disable_input_flow_control = -1;
-static int hf_lat_data_b_slot_control_flags_enable_output_flow_control = -1;
-static int hf_lat_data_b_slot_control_flags_disable_output_flow_control = -1;
-static int hf_lat_data_b_slot_control_flags_break_detected = -1;
-static int hf_lat_data_b_slot_control_flags_set_port_char = -1;
-static int hf_lat_data_b_slot_control_flags_report_port_char = -1;
-static const int *data_b_slot_control_flags_fields[] = {
+static int hf_lat_prod_vers_numb;
+static int hf_lat_slave_node_name;
+static int hf_lat_master_node_name;
+static int hf_lat_location_text;
+static int hf_lat_param_code;
+static int hf_lat_param_len;
+static int hf_lat_param_data;
+static int hf_lat_slot_dst_slot_id;
+static int hf_lat_slot_src_slot_id;
+static int hf_lat_slot_byte_count;
+static int hf_lat_slot_credits;
+static int hf_lat_slot_type;
+static int hf_lat_start_slot_service_class;
+static int hf_lat_start_slot_minimum_attention_slot_size;
+static int hf_lat_start_slot_minimum_data_slot_size;
+static int hf_lat_start_slot_obj_srvc;
+static int hf_lat_start_slot_subj_dscr;
+static int hf_lat_start_slot_class_1_param_code;
+static int hf_lat_status_remaining;
+static int hf_lat_slot_data;
+static int hf_lat_data_b_slot_control_flags;
+static int hf_lat_data_b_slot_control_flags_enable_input_flow_control;
+static int hf_lat_data_b_slot_control_flags_disable_input_flow_control;
+static int hf_lat_data_b_slot_control_flags_enable_output_flow_control;
+static int hf_lat_data_b_slot_control_flags_disable_output_flow_control;
+static int hf_lat_data_b_slot_control_flags_break_detected;
+static int hf_lat_data_b_slot_control_flags_set_port_char;
+static int hf_lat_data_b_slot_control_flags_report_port_char;
+static int * const data_b_slot_control_flags_fields[] = {
 	&hf_lat_data_b_slot_control_flags_enable_input_flow_control,
 	&hf_lat_data_b_slot_control_flags_disable_input_flow_control,
 	&hf_lat_data_b_slot_control_flags_enable_output_flow_control,
@@ -117,11 +106,11 @@ static const int *data_b_slot_control_flags_fields[] = {
 	&hf_lat_data_b_slot_control_flags_report_port_char,
 	NULL
 };
-static int hf_lat_data_b_slot_stop_output_channel_char = -1;
-static int hf_lat_data_b_slot_start_output_channel_char = -1;
-static int hf_lat_data_b_slot_stop_input_channel_char = -1;
-static int hf_lat_data_b_slot_start_input_channel_char = -1;
-static int hf_lat_data_b_slot_param_code = -1;
+static int hf_lat_data_b_slot_stop_output_channel_char;
+static int hf_lat_data_b_slot_start_output_channel_char;
+static int hf_lat_data_b_slot_stop_input_channel_char;
+static int hf_lat_data_b_slot_start_input_channel_char;
+static int hf_lat_data_b_slot_param_code;
 static const value_string data_b_slot_param_code_vals[] = {
 	{ 0, "End of parameters" },
 	{ 1, "Parity and frame size" },
@@ -132,39 +121,39 @@ static const value_string data_b_slot_param_code_vals[] = {
 	{ 6, "Status" },
 	{ 0, NULL }
 };
-static int hf_lat_slot_data_remaining = -1;
-static int hf_lat_attention_slot_control_flags = -1;
-static int hf_lat_attention_slot_control_flags_abort = -1;
-static const int *attention_slot_control_flags_fields[] = {
+static int hf_lat_slot_data_remaining;
+static int hf_lat_attention_slot_control_flags;
+static int hf_lat_attention_slot_control_flags_abort;
+static int * const attention_slot_control_flags_fields[] = {
 	&hf_lat_attention_slot_control_flags_abort,
 	NULL
 };
-static int hf_lat_mbz = -1;
-static int hf_lat_reason = -1;
-static int hf_lat_circuit_disconnect_reason = -1;
-static int hf_lat_reason_text = -1;
-static int hf_lat_high_prtcl_ver = -1;
-static int hf_lat_low_prtcl_ver = -1;
-static int hf_lat_cur_prtcl_ver = -1;
-static int hf_lat_cur_prtcl_eco = -1;
-static int hf_lat_msg_inc = -1;
-static int hf_lat_change_flags = -1;
-static int hf_lat_data_link_rcv_frame_size = -1;
-static int hf_lat_node_multicast_timer = -1;
-static int hf_lat_node_status = -1;
-static int hf_lat_node_group_len = -1;
-static int hf_lat_node_groups = -1;
-static int hf_lat_node_name = -1;
-static int hf_lat_node_description = -1;
-static int hf_lat_service_name_count = -1;
-static int hf_lat_service_rating = -1;
-static int hf_lat_node_service_len = -1;
-static int hf_lat_node_service_class = -1;
+static int hf_lat_mbz;
+static int hf_lat_reason;
+static int hf_lat_circuit_disconnect_reason;
+static int hf_lat_reason_text;
+static int hf_lat_high_prtcl_ver;
+static int hf_lat_low_prtcl_ver;
+static int hf_lat_cur_prtcl_ver;
+static int hf_lat_cur_prtcl_eco;
+static int hf_lat_msg_inc;
+static int hf_lat_change_flags;
+static int hf_lat_data_link_rcv_frame_size;
+static int hf_lat_node_multicast_timer;
+static int hf_lat_node_status;
+static int hf_lat_node_group_len;
+static int hf_lat_node_groups;
+static int hf_lat_node_name;
+static int hf_lat_node_description;
+static int hf_lat_service_name_count;
+static int hf_lat_service_rating;
+static int hf_lat_node_service_len;
+static int hf_lat_node_service_class;
 
-static int hf_lat_prtcl_format = -1;
-static int hf_lat_request_identifier = -1;
-static int hf_lat_entry_identifier = -1;
-static int hf_lat_command_type = -1;
+static int hf_lat_prtcl_format;
+static int hf_lat_request_identifier;
+static int hf_lat_entry_identifier;
+static int hf_lat_command_type;
 static const value_string command_type_vals[] = {
 	{ 1, "Solicit non-queued access to the service" },
 	{ 2, "Solicit queued access to the service" },
@@ -174,26 +163,26 @@ static const value_string command_type_vals[] = {
 	{ 6, "Send status of multiple entries" },
 	{ 0, NULL }
 };
-static int hf_lat_command_modifier = -1;
-static int hf_lat_command_modifier_send_status_periodically = -1;
-static int hf_lat_command_modifier_send_status_on_queue_depth_change = -1;
-static const int *lat_command_modifier_fields[] = {
+static int hf_lat_command_modifier;
+static int hf_lat_command_modifier_send_status_periodically;
+static int hf_lat_command_modifier_send_status_on_queue_depth_change;
+static int * const lat_command_modifier_fields[] = {
 	&hf_lat_command_modifier_send_status_periodically,
 	&hf_lat_command_modifier_send_status_on_queue_depth_change,
 	NULL
 };
-static int hf_lat_obj_node_name = -1;
-static int hf_lat_subj_group_len = -1;
-static int hf_lat_subj_group = -1;
-static int hf_lat_subj_node_name = -1;
-static int hf_lat_subj_port_name = -1;
-static int hf_lat_status_retransmit_timer = -1;
-static int hf_lat_entries_counter = -1;
-static int hf_lat_entry_length = -1;
-static int hf_lat_entry_status = -1;
-static int hf_lat_entry_status_rejected = -1;
-static int hf_lat_entry_status_additional_information = -1;
-static const int *lat_entry_status_fields[] = {
+static int hf_lat_obj_node_name;
+static int hf_lat_subj_group_len;
+static int hf_lat_subj_group;
+static int hf_lat_subj_node_name;
+static int hf_lat_subj_port_name;
+static int hf_lat_status_retransmit_timer;
+static int hf_lat_entries_counter;
+static int hf_lat_entry_length;
+static int hf_lat_entry_status;
+static int hf_lat_entry_status_rejected;
+static int hf_lat_entry_status_additional_information;
+static int * const lat_entry_status_fields[] = {
 	&hf_lat_entry_status_rejected,
 	&hf_lat_entry_status_additional_information,
 	NULL
@@ -208,7 +197,7 @@ static const value_string additional_information_vals[] = {
 	{ 4, "Queue-depth status report is not supported" },
 	{ 0, NULL }
 };
-static int hf_lat_entry_error = -1;
+static int hf_lat_entry_error;
 static const value_string entry_error_vals[] = {
 	{ 1, "reason is unknown" },
 	{ 2, "user requested disconnect" },
@@ -231,75 +220,75 @@ static const value_string entry_error_vals[] = {
 	{ 19, "Inconsistent or illegal request parameters" },
 	{ 0, NULL }
 };
-static int hf_lat_elapsed_queue_time = -1;
-static int hf_lat_min_queue_position = -1;
-static int hf_lat_max_queue_position = -1;
-static int hf_lat_obj_srvc_name = -1;
-static int hf_lat_obj_port_name = -1;
-static int hf_lat_subj_description = -1;
+static int hf_lat_elapsed_queue_time;
+static int hf_lat_min_queue_position;
+static int hf_lat_max_queue_position;
+static int hf_lat_obj_srvc_name;
+static int hf_lat_obj_port_name;
+static int hf_lat_subj_description;
 
-static int hf_lat_solicit_identifier = -1;
-static int hf_lat_response_timer = -1;
-static int hf_lat_dst_node_name = -1;
-static int hf_lat_src_node_group_len = -1;
-static int hf_lat_src_node_groups = -1;
-static int hf_lat_src_node_name = -1;
-static int hf_lat_dst_srvc_name = -1;
+static int hf_lat_solicit_identifier;
+static int hf_lat_response_timer;
+static int hf_lat_dst_node_name;
+static int hf_lat_src_node_group_len;
+static int hf_lat_src_node_groups;
+static int hf_lat_src_node_name;
+static int hf_lat_dst_srvc_name;
 
-static int hf_lat_response_status = -1;
-static int hf_lat_response_status_node_does_not_offer_requested_service = -1;
-static const int *lat_response_status_fields[] = {
+static int hf_lat_response_status;
+static int hf_lat_response_status_node_does_not_offer_requested_service;
+static int * const lat_response_status_fields[] = {
 	&hf_lat_response_status_node_does_not_offer_requested_service,
 	NULL
 };
-static int hf_lat_src_node_status = -1;
-static int hf_lat_src_node_status_node_is_disabled = -1;
-static int hf_lat_src_node_status_start_message_can_be_sent = -1;
-static int hf_lat_src_node_status_command_message_can_be_sent = -1;
-static const int *lat_src_node_status_fields[] = {
+static int hf_lat_src_node_status;
+static int hf_lat_src_node_status_node_is_disabled;
+static int hf_lat_src_node_status_start_message_can_be_sent;
+static int hf_lat_src_node_status_command_message_can_be_sent;
+static int * const lat_src_node_status_fields[] = {
 	&hf_lat_src_node_status_node_is_disabled,
 	&hf_lat_src_node_status_start_message_can_be_sent,
 	&hf_lat_src_node_status_command_message_can_be_sent,
 	NULL
 };
-static int hf_lat_source_node_addr = -1;
-static int hf_lat_src_node_mc_timer = -1;
-static int hf_lat_src_node_desc = -1;
-static int hf_lat_srvc_count = -1;
-static int hf_lat_srvc_entry_len = -1;
-static int hf_lat_srvc_class_len = -1;
-static int hf_lat_srvc_class = -1;
-static int hf_lat_srvc_status = -1;
-static int hf_lat_srvc_status_enabled = -1;
-static int hf_lat_srvc_status_supports_queueing = -1;
-static const int *lat_srvc_status_fields[] = {
+static int hf_lat_source_node_addr;
+static int hf_lat_src_node_mc_timer;
+static int hf_lat_src_node_desc;
+static int hf_lat_srvc_count;
+static int hf_lat_srvc_entry_len;
+static int hf_lat_srvc_class_len;
+static int hf_lat_srvc_class;
+static int hf_lat_srvc_status;
+static int hf_lat_srvc_status_enabled;
+static int hf_lat_srvc_status_supports_queueing;
+static int * const lat_srvc_status_fields[] = {
 	&hf_lat_srvc_status_enabled,
 	&hf_lat_srvc_status_supports_queueing,
 	NULL
 };
-static int hf_lat_srvc_rating = -1;
-static int hf_lat_srvc_group_len = -1;
-static int hf_lat_srvc_groups = -1;
-static int hf_lat_srvc_name = -1;
-static int hf_lat_srvc_desc = -1;
+static int hf_lat_srvc_rating;
+static int hf_lat_srvc_group_len;
+static int hf_lat_srvc_groups;
+static int hf_lat_srvc_name;
+static int hf_lat_srvc_desc;
 
-static int hf_lat_service_name = -1;
-static int hf_lat_service_description = -1;
-static int hf_lat_unknown_command_data = -1;
+static int hf_lat_service_name;
+static int hf_lat_service_description;
+static int hf_lat_unknown_command_data;
 
-static gint ett_lat = -1;
-static gint ett_data_b_slot_control_flags = -1;
-static gint ett_lat_attention_slot_control_flags = -1;
-static gint ett_lat_command_modifier = -1;
-static gint ett_lat_entry_status = -1;
-static gint ett_lat_response_status = -1;
-static gint ett_lat_src_node_status = -1;
-static gint ett_lat_srvc_status = -1;
+static int ett_lat;
+static int ett_data_b_slot_control_flags;
+static int ett_lat_attention_slot_control_flags;
+static int ett_lat_command_modifier;
+static int ett_lat_entry_status;
+static int ett_lat_response_status;
+static int ett_lat_src_node_status;
+static int ett_lat_srvc_status;
 
-static expert_field ei_slot_data_len_invalid = EI_INIT;
-static expert_field ei_entry_length_too_short = EI_INIT;
-static expert_field ei_srvc_entry_len_too_short = EI_INIT;
-static expert_field ei_mbz_data_nonzero = EI_INIT;
+static expert_field ei_slot_data_len_invalid;
+static expert_field ei_entry_length_too_short;
+static expert_field ei_srvc_entry_len_too_short;
+static expert_field ei_mbz_data_nonzero;
 
 /* LAT message types. */
 #define LAT_MSG_TYP_RUN				0
@@ -340,9 +329,9 @@ static void dissect_lat_response_information(tvbuff_t *tvb, int offset,
 static int dissect_lat_string(tvbuff_t *tvb, int offset, int hf,
     proto_tree *tree);
 
-static guint dissect_lat_header(tvbuff_t *tvb, int offset, proto_tree *tree);
+static unsigned dissect_lat_header(tvbuff_t *tvb, int offset, proto_tree *tree);
 
-static void dissect_lat_slots(tvbuff_t *tvb, int offset, guint nbr_slots,
+static void dissect_lat_slots(tvbuff_t *tvb, int offset, unsigned nbr_slots,
     proto_tree *tree, packet_info *pinfo);
 
 static int
@@ -351,15 +340,15 @@ dissect_lat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 	int offset = 0;
 	proto_item *ti;
 	proto_tree *lat_tree = NULL;
-	guint8 command;
+	uint8_t command;
 
-	col_add_str(pinfo->cinfo, COL_PROTOCOL, "LAT");
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "LAT");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	command = tvb_get_guint8(tvb, offset) >> 2;
+	command = tvb_get_uint8(tvb, offset) >> 2;
 
-	col_add_fstr(pinfo->cinfo, COL_INFO, "%s",
-	    val_to_str(command, msg_typ_vals, "Unknown command (%u)"));
+	col_add_str(pinfo->cinfo, COL_INFO,
+	    val_to_str(pinfo->pool, command, msg_typ_vals, "Unknown command (%u)"));
 
 	if (tree) {
 		ti = proto_tree_add_item(tree, proto_lat, tvb, offset, -1,
@@ -423,10 +412,10 @@ dissect_lat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 /*
  * Virtual circuit message header.
  */
-static guint
+static unsigned
 dissect_lat_header(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-	guint32 nbr_slots;
+	uint32_t nbr_slots;
 
 	proto_tree_add_item_ret_uint(tree, hf_lat_nbr_slots, tvb, offset, 1,
 	    ENC_LITTLE_ENDIAN, &nbr_slots);
@@ -450,9 +439,9 @@ dissect_lat_header(tvbuff_t *tvb, int offset, proto_tree *tree)
 static void
 dissect_lat_start(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-	guint8 timer;
-	guint32 param_code;
-	guint32 param_len;
+	uint8_t timer;
+	uint32_t param_code;
+	uint32_t param_len;
 
 	dissect_lat_header(tvb, offset, tree);
 	offset += 1 + 2 + 2 + 1 + 1;
@@ -466,13 +455,11 @@ dissect_lat_start(tvbuff_t *tvb, int offset, proto_tree *tree)
 	offset += 1;
 	proto_tree_add_item(tree, hf_lat_nbr_dl_bufs, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 	offset += 1;
-	timer = tvb_get_guint8(tvb, offset);
+	timer = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint_format_value(tree, hf_lat_server_circuit_timer, tvb,
 	    offset, 1, timer, "%u milliseconds", timer*10);
 	offset += 1;
-	timer = tvb_get_guint8(tvb, offset);
-	proto_tree_add_uint_format_value(tree, hf_lat_keep_alive_timer, tvb,
-	    offset, 1, timer, "%u seconds", timer);
+	proto_tree_add_item(tree, hf_lat_keep_alive_timer, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 	offset += 1;
 	proto_tree_add_item(tree, hf_lat_facility_number, tvb, offset, 2, ENC_LITTLE_ENDIAN);
 	offset += 2;
@@ -499,7 +486,7 @@ static void
 dissect_lat_run(tvbuff_t *tvb, int offset, proto_tree *tree,
     packet_info *pinfo)
 {
-	guint8 nbr_slots;
+	uint8_t nbr_slots;
 
 	nbr_slots = dissect_lat_header(tvb, offset, tree);
 	offset += 1 + 2 + 2 + 1 + 1;
@@ -549,9 +536,9 @@ static const value_string reason_code_vals[] = {
 static int
 dissect_lat_channel_char(proto_tree *tree, int hf, tvbuff_t *tvb, int offset)
 {
-	guint8 character;
+	uint8_t character;
 
-	character = tvb_get_guint8(tvb, offset);
+	character = tvb_get_uint8(tvb, offset);
 	if (g_ascii_isprint(character)) {
 		proto_tree_add_uint_format_value(tree, hf, tvb, offset, 1,
 		    character, "'%c'", character);
@@ -594,11 +581,11 @@ static const value_string start_slot_class_1_param_code_vals[] = {
 
 static int
 dissect_lat_terminal_parameters(tvbuff_t *tvb, int offset,
-    guint32 slot_byte_count, proto_item *length_ti, proto_tree *tree,
+    uint32_t slot_byte_count, proto_item *length_ti, proto_tree *tree,
     packet_info *pinfo)
 {
-	guint32 param_code;
-	guint32 param_len;
+	uint32_t param_code;
+	uint32_t param_len;
 	int length_dissected = 0;
 
 	for (;;) {
@@ -633,20 +620,20 @@ end_slot:
 }
 
 static void
-dissect_lat_slots(tvbuff_t *tvb, int offset, guint nbr_slots, proto_tree *tree,
+dissect_lat_slots(tvbuff_t *tvb, int offset, unsigned nbr_slots, proto_tree *tree,
     packet_info *pinfo)
 {
-	guint i;
+	unsigned i;
 	proto_item *length_ti;
-	guint32 slot_byte_count;
-	guint32 slot_type_byte;
+	uint32_t slot_byte_count;
+	uint32_t slot_type_byte;
 	int slot_padding;
-	guint32 start_slot_service_class;
-	guint32 name_len;
+	uint32_t start_slot_service_class;
+	uint32_t name_len;
 	int length_dissected;
-	guint32 param_code;
-	guint32 param_len;
-	guint32 mbz;
+	uint32_t param_code;
+	uint32_t param_len;
+	uint32_t mbz;
 	proto_item *mbz_ti;
 
 	for (i = 0; i < nbr_slots; i++) {
@@ -663,7 +650,7 @@ dissect_lat_slots(tvbuff_t *tvb, int offset, guint nbr_slots, proto_tree *tree,
 		offset += 1;
 		slot_padding = slot_byte_count & 1;
 
-		slot_type_byte = tvb_get_guint8(tvb, offset);
+		slot_type_byte = tvb_get_uint8(tvb, offset);
 		switch (slot_type_byte >> 4) {
 
 		case START_SLOT:
@@ -693,7 +680,7 @@ dissect_lat_slots(tvbuff_t *tvb, int offset, guint nbr_slots, proto_tree *tree,
 			slot_byte_count -= 1;
 
 			CHECK_SLOT_DATA_BOUNDS(1);
-			name_len = tvb_get_guint8(tvb, offset);
+			name_len = tvb_get_uint8(tvb, offset);
 			CHECK_SLOT_DATA_BOUNDS(1 + name_len);
 			proto_tree_add_item(tree, hf_lat_start_slot_obj_srvc,
 			    tvb, offset, 1, ENC_ASCII|ENC_LITTLE_ENDIAN);
@@ -701,7 +688,7 @@ dissect_lat_slots(tvbuff_t *tvb, int offset, guint nbr_slots, proto_tree *tree,
 			slot_byte_count -= 1 + name_len;
 
 			CHECK_SLOT_DATA_BOUNDS(1);
-			name_len = tvb_get_guint8(tvb, offset);
+			name_len = tvb_get_uint8(tvb, offset);
 			CHECK_SLOT_DATA_BOUNDS(1 + name_len);
 			proto_tree_add_item(tree, hf_lat_start_slot_subj_dscr,
 			    tvb, offset, 1, ENC_ASCII|ENC_LITTLE_ENDIAN);
@@ -925,13 +912,13 @@ static const value_string node_status_vals[] = {
 static void
 dissect_lat_service_announcement(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-	guint8 timer;
-	guint32 node_group_len;
-	guint32 service_name_count;
-	guint32 node_service_len;
-	guint i;
+	uint8_t timer;
+	uint32_t node_group_len;
+	uint32_t service_name_count;
+	uint32_t node_service_len;
+	unsigned i;
 
-	timer = tvb_get_guint8(tvb, offset);
+	timer = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint_format_value(tree, hf_lat_server_circuit_timer, tvb,
 	    offset, 1, timer, "%u milliseconds", timer*10);
 	offset += 1;
@@ -957,7 +944,7 @@ dissect_lat_service_announcement(tvbuff_t *tvb, int offset, proto_tree *tree)
 	proto_tree_add_item(tree, hf_lat_data_link_rcv_frame_size, tvb, offset, 2, ENC_LITTLE_ENDIAN);
 	offset += 2;
 
-	timer = tvb_get_guint8(tvb, offset);
+	timer = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint_format(tree, hf_lat_node_multicast_timer, tvb,
 	    offset, 1, timer, "Multicast timer: %u seconds", timer);
 	offset += 1;
@@ -1004,9 +991,9 @@ dissect_lat_service_announcement(tvbuff_t *tvb, int offset, proto_tree *tree)
 static void
 dissect_lat_command(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-	guint32 subj_group_len;
-	guint32 param_code;
-	guint32 param_len;
+	uint32_t subj_group_len;
+	uint32_t param_code;
+	uint32_t param_len;
 
 	proto_tree_add_item(tree, hf_lat_prtcl_format, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 	offset += 1;
@@ -1076,9 +1063,9 @@ static void
 dissect_lat_status(tvbuff_t *tvb, int offset, proto_tree *tree,
     packet_info *pinfo)
 {
-	guint32 entries_counter;
-	guint32 subj_node_name_len;
-	guint i;
+	uint32_t entries_counter;
+	uint32_t subj_node_name_len;
+	unsigned i;
 
 	proto_tree_add_item(tree, hf_lat_prtcl_format, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 	offset += 1;
@@ -1118,12 +1105,12 @@ dissect_lat_status(tvbuff_t *tvb, int offset, proto_tree *tree,
 
 	for (i = 0; i < entries_counter; i++) {
 		proto_item *entry_length_ti;
-		guint32 entry_length;
-		guint entry_padding;
-		guint64 entry_status;
+		uint32_t entry_length;
+		unsigned entry_padding;
+		uint64_t entry_status;
 		proto_item *mbz_ti;
-		guint32 mbz;
-		guint name_len;
+		uint32_t mbz;
+		unsigned name_len;
 
 		entry_length_ti = proto_tree_add_item_ret_uint(tree, hf_lat_entry_length, tvb, offset, 1,
 		    ENC_LITTLE_ENDIAN, &entry_length);
@@ -1214,7 +1201,7 @@ dissect_lat_status(tvbuff_t *tvb, int offset, proto_tree *tree,
 			expert_add_info(pinfo, entry_length_ti, &ei_entry_length_too_short);
 			goto end_entry;
 		}
-		name_len = tvb_get_guint8(tvb, offset);
+		name_len = tvb_get_uint8(tvb, offset);
 		if (entry_length < 1 + name_len) {
 			expert_add_info(pinfo, entry_length_ti, &ei_entry_length_too_short);
 			offset += entry_length;
@@ -1229,7 +1216,7 @@ dissect_lat_status(tvbuff_t *tvb, int offset, proto_tree *tree,
 			expert_add_info(pinfo, entry_length_ti, &ei_entry_length_too_short);
 			goto end_entry;
 		}
-		name_len = tvb_get_guint8(tvb, offset);
+		name_len = tvb_get_uint8(tvb, offset);
 		if (entry_length < 1 + name_len) {
 			expert_add_info(pinfo, entry_length_ti, &ei_entry_length_too_short);
 			offset += entry_length;
@@ -1244,7 +1231,7 @@ dissect_lat_status(tvbuff_t *tvb, int offset, proto_tree *tree,
 			expert_add_info(pinfo, entry_length_ti, &ei_entry_length_too_short);
 			goto end_entry;
 		}
-		name_len = tvb_get_guint8(tvb, offset);
+		name_len = tvb_get_uint8(tvb, offset);
 		if (entry_length < 1 + name_len) {
 			expert_add_info(pinfo, entry_length_ti, &ei_entry_length_too_short);
 			offset += entry_length;
@@ -1260,8 +1247,8 @@ dissect_lat_status(tvbuff_t *tvb, int offset, proto_tree *tree,
 		offset += entry_padding;
 	}
 	for (;;) {
-		guint32 param_code;
-		guint32 param_len;
+		uint32_t param_code;
+		uint32_t param_len;
 
 		proto_tree_add_item_ret_uint(tree, hf_lat_param_code, tvb, offset, 1, ENC_LITTLE_ENDIAN, &param_code);
 		offset += 1;
@@ -1277,7 +1264,7 @@ dissect_lat_status(tvbuff_t *tvb, int offset, proto_tree *tree,
 static void
 dissect_lat_solicit_information(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-	guint32 src_node_group_len;
+	uint32_t src_node_group_len;
 
 	proto_tree_add_item(tree, hf_lat_prtcl_format, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 	offset += 1;
@@ -1318,8 +1305,8 @@ dissect_lat_solicit_information(tvbuff_t *tvb, int offset, proto_tree *tree)
 	offset = dissect_lat_string(tvb, offset, hf_lat_dst_srvc_name, tree);
 
 	for (;;) {
-		guint32 param_code;
-		guint32 param_len;
+		uint32_t param_code;
+		uint32_t param_len;
 
 		proto_tree_add_item_ret_uint(tree, hf_lat_param_code, tvb, offset, 1, ENC_LITTLE_ENDIAN, &param_code);
 		offset += 1;
@@ -1336,9 +1323,9 @@ static void
 dissect_lat_response_information(tvbuff_t *tvb, int offset, proto_tree *tree,
     packet_info *pinfo)
 {
-	guint32 srvc_count;
-	guint32 src_node_group_len;
-	guint i;
+	uint32_t srvc_count;
+	uint32_t src_node_group_len;
+	unsigned i;
 
 	proto_tree_add_item(tree, hf_lat_prtcl_format, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 	offset += 1;
@@ -1396,11 +1383,11 @@ dissect_lat_response_information(tvbuff_t *tvb, int offset, proto_tree *tree,
 
 	for (i = 0; i < srvc_count; i++) {
 		proto_item *srvc_entry_len_ti;
-		guint32 srvc_entry_len;
-		guint32 srvc_class_len;
-		guint j;
-		guint32 srvc_group_len;
-		guint string_len;
+		uint32_t srvc_entry_len;
+		uint32_t srvc_class_len;
+		unsigned j;
+		uint32_t srvc_group_len;
+		unsigned string_len;
 
 		srvc_entry_len_ti = proto_tree_add_item_ret_uint(tree, hf_lat_srvc_entry_len,
 		    tvb, offset, 1, ENC_LITTLE_ENDIAN, &srvc_entry_len);
@@ -1467,7 +1454,7 @@ dissect_lat_response_information(tvbuff_t *tvb, int offset, proto_tree *tree,
 			expert_add_info(pinfo, srvc_entry_len_ti, &ei_srvc_entry_len_too_short);
 			goto end_entry;
 		}
-		string_len = tvb_get_guint8(tvb, offset);
+		string_len = tvb_get_uint8(tvb, offset);
 		if (srvc_entry_len < 1 + string_len) {
 			expert_add_info(pinfo, srvc_entry_len_ti, &ei_srvc_entry_len_too_short);
 			offset += srvc_entry_len;
@@ -1482,7 +1469,7 @@ dissect_lat_response_information(tvbuff_t *tvb, int offset, proto_tree *tree,
 			expert_add_info(pinfo, srvc_entry_len_ti, &ei_srvc_entry_len_too_short);
 			goto end_entry;
 		}
-		string_len = tvb_get_guint8(tvb, offset);
+		string_len = tvb_get_uint8(tvb, offset);
 		if (srvc_entry_len < 1 + string_len) {
 			expert_add_info(pinfo, srvc_entry_len_ti, &ei_srvc_entry_len_too_short);
 			offset += srvc_entry_len;
@@ -1499,8 +1486,8 @@ dissect_lat_response_information(tvbuff_t *tvb, int offset, proto_tree *tree,
 	}
 
 	for (;;) {
-		guint32 param_code;
-		guint32 param_len;
+		uint32_t param_code;
+		uint32_t param_len;
 
 		proto_tree_add_item_ret_uint(tree, hf_lat_param_code, tvb, offset, 1, ENC_LITTLE_ENDIAN, &param_code);
 		offset += 1;
@@ -1516,7 +1503,7 @@ dissect_lat_response_information(tvbuff_t *tvb, int offset, proto_tree *tree,
 static int
 dissect_lat_string(tvbuff_t *tvb, int offset, int hf, proto_tree *tree)
 {
-	gint item_length;
+	int item_length;
 
 	proto_tree_add_item_ret_length(tree, hf, tvb, offset, 1, ENC_ASCII|ENC_LITTLE_ENDIAN, &item_length);
 	return offset + item_length;
@@ -1588,7 +1575,7 @@ proto_register_lat(void)
 
 	    { &hf_lat_keep_alive_timer,
 		{ "Keep-alive timer", "lat.keep_alive_timer", FT_UINT8,
-		  BASE_DEC, NULL, 0x0, NULL, HFILL}},
+		  BASE_DEC|BASE_UNIT_STRING, UNS(&units_second_seconds), 0x0, NULL, HFILL}},
 
 	    { &hf_lat_facility_number,
 		{ "Facility number", "lat.facility_number", FT_UINT16,
@@ -1716,7 +1703,7 @@ proto_register_lat(void)
 	    { &hf_lat_data_b_slot_control_flags_report_port_char,
 	        { "Report port characteristics",
 	          "lat.data_b_slot.control_flags.report_port_characteristics",
-	          FT_BOOLEAN, 8, NULL, 0x20, NULL, HFILL }},
+	          FT_BOOLEAN, 8, NULL, 0x40, NULL, HFILL }},
 
 	    { &hf_lat_data_b_slot_stop_output_channel_char,
 	        { "Output channel stop character",
@@ -1870,7 +1857,7 @@ proto_register_lat(void)
 		  8, NULL, 0x02, NULL, HFILL}},
 
 	    { &hf_lat_obj_node_name,
-		{ "Destinaton node name", "lat.obj_node.name", FT_UINT_STRING,
+		{ "Destination node name", "lat.obj_node.name", FT_UINT_STRING,
 		  BASE_NONE, NULL, 0x0,
 		  NULL, HFILL}},
 
@@ -2021,7 +2008,7 @@ proto_register_lat(void)
 		  BASE_NONE, NULL, 0x0, NULL, HFILL}},
 
 	    { &hf_lat_srvc_count,
-		{ "Service count", "lat.srvc_status", FT_UINT8,
+		{ "Service count", "lat.srvc_count", FT_UINT8,
 		  BASE_DEC, NULL, 0x0, "Total number of service entries in the message", HFILL}},
 
 	    { &hf_lat_srvc_entry_len,
@@ -2080,7 +2067,7 @@ proto_register_lat(void)
 		{ "Unknown command data", "lat.unknown_command_data", FT_BYTES,
 		  BASE_NONE, NULL, 0x0, NULL, HFILL}},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_lat,
 		&ett_data_b_slot_control_flags,
 		&ett_lat_attention_slot_control_flags,
@@ -2104,6 +2091,7 @@ proto_register_lat(void)
 
 	proto_lat = proto_register_protocol("Local Area Transport",
 	    "LAT", "lat");
+	lat_handle = register_dissector("lat", dissect_lat, proto_lat);
 	proto_register_field_array(proto_lat, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 	expert_lat = expert_register_protocol(proto_lat);
@@ -2113,14 +2101,11 @@ proto_register_lat(void)
 void
 proto_reg_handoff_lat(void)
 {
-	dissector_handle_t lat_handle;
-
-	lat_handle = create_dissector_handle(dissect_lat, proto_lat);
 	dissector_add_uint("ethertype", ETHERTYPE_LAT, lat_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

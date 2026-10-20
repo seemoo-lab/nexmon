@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/handlers.c	default netlink message handlers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2006 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -22,10 +16,13 @@
 extern "C" {
 #endif
 
+struct nlmsgerr;
+struct sockaddr_nl;
+struct ucred;
+
 struct nl_cb;
 struct nl_sock;
 struct nl_msg;
-struct ucred;
 
 /**
  * @name Callback Typedefs
@@ -36,7 +33,7 @@ struct ucred;
  * nl_recvmsgs() callback for message processing customization
  * @ingroup cb
  * @arg msg		netlink message being processed
- * @arg arg		argument passwd on through caller
+ * @arg arg		argument passed on through caller
  */
 typedef int (*nl_recvmsg_msg_cb_t)(struct nl_msg *msg, void *arg);
 
@@ -57,7 +54,7 @@ typedef int (*nl_recvmsg_err_cb_t)(struct sockaddr_nl *nla,
  * @ingroup cb
  */
 enum nl_cb_action {
-	/** Proceed with wathever would come next */
+	/** Proceed with whatever would come next */
 	NL_OK,
 	/** Skip this message */
 	NL_SKIP,
@@ -96,7 +93,7 @@ enum nl_cb_type {
 	NL_CB_OVERRUN,
 	/** Message wants to be skipped */
 	NL_CB_SKIPPED,
-	/** Message is an acknowledge */
+	/** Message is an acknowledgement */
 	NL_CB_ACK,
 	/** Called for every message received */
 	NL_CB_MSG_IN,
@@ -108,6 +105,8 @@ enum nl_cb_type {
 	NL_CB_SEQ_CHECK,
 	/** Sending of an acknowledge message has been requested */
 	NL_CB_SEND_ACK,
+	/** Flag NLM_F_DUMP_INTR is set in message */
+	NL_CB_DUMP_INTR,
 	__NL_CB_TYPE_MAX,
 };
 
@@ -136,6 +135,8 @@ extern void nl_cb_overwrite_recv(struct nl_cb *,
 extern void nl_cb_overwrite_send(struct nl_cb *,
 				 int (*func)(struct nl_sock *,
 					     struct nl_msg *));
+
+extern enum nl_cb_type nl_cb_active_type(struct nl_cb *cb);
 
 #ifdef __cplusplus
 }

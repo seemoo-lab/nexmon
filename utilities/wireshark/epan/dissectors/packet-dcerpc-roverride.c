@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,18 +21,18 @@
 void proto_register_roverride (void);
 void proto_reg_handoff_roverride (void);
 
-static int proto_roverride = -1;
-static int hf_roverride_opnum = -1;
+static int proto_roverride;
+static int hf_roverride_opnum;
 
 
-static gint ett_roverride = -1;
+static int ett_roverride;
 
 
 static e_guid_t uuid_roverride = { 0x5d978990, 0x4851, 0x11ca, { 0x99, 0x37, 0x08, 0x00, 0x1e, 0x03, 0x94, 0x48 } };
-static guint16  ver_roverride = 1;
+static uint16_t ver_roverride = 1;
 
 
-static dcerpc_sub_dissector roverride_dissectors[] = {
+static const dcerpc_sub_dissector roverride_dissectors[] = {
 	{ 0, "roverride_get_login_info",        NULL, NULL},
 	{ 1, "roverride_check_passwd",          NULL, NULL},
 	{ 2, "roverride_is_passwd_overridden",  NULL, NULL},
@@ -63,7 +51,7 @@ proto_register_roverride (void)
 		  { "Operation", "roverride.opnum", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_roverride,
 	};
 	proto_roverride = proto_register_protocol ("Remote Override interface", "roverride", "roverride");
@@ -79,7 +67,7 @@ proto_reg_handoff_roverride (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -37,7 +37,7 @@
 
 
 <p style="margin-left:11%; margin-top: 1em">bind_textdomain_codeset
-&minus; set encoding of message translations</p>
+- set encoding of message translations</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
@@ -70,7 +70,7 @@ domain.</p>
 <p style="margin-left:11%; margin-top: 1em">By default, the
 <b>gettext</b> family of functions returns translated
 messages in the locale&rsquo;s character encoding, which can
-be retrieved as <b>nl_langinfo(CODESET)</b>. The need for
+be retrieved as <b>nl_langinfo (CODESET)</b>. The need for
 calling <b>bind_textdomain_codeset</b> arises for programs
 which store strings in a locale independent way (e.g. UTF-8)
 and want to avoid an extra character set conversion on the

@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -81,8 +83,43 @@ typedef enum
   G_SEEK_END
 } GSeekType;
 
+/**
+ * GIOFlags:
+ * @G_IO_FLAG_APPEND: Turns on append mode, corresponds to %O_APPEND
+ *     (see the documentation of the UNIX open() syscall)
+ * @G_IO_FLAG_NONBLOCK: Turns on nonblocking mode, corresponds to
+ *     %O_NONBLOCK/%O_NDELAY (see the documentation of the UNIX open()
+ *     syscall)
+ * @G_IO_FLAG_IS_READABLE: Indicates that the io channel is readable.
+ *     This flag cannot be changed.
+ * @G_IO_FLAG_IS_WRITABLE: Indicates that the io channel is writable.
+ *     This flag cannot be changed.
+ * @G_IO_FLAG_IS_WRITEABLE: A misspelled version of @G_IO_FLAG_IS_WRITABLE
+ *     that existed before the spelling was fixed in GLib 2.30. It is kept
+ *     here for compatibility reasons. Deprecated since 2.30
+ * @G_IO_FLAG_IS_SEEKABLE: Indicates that the io channel is seekable,
+ *     i.e. that g_io_channel_seek_position() can be used on it.
+ *     This flag cannot be changed.
+ * @G_IO_FLAG_MASK: The mask that specifies all the valid flags.
+ * @G_IO_FLAG_GET_MASK: The mask of the flags that are returned from
+ *     g_io_channel_get_flags()
+ * @G_IO_FLAG_SET_MASK: The mask of the flags that the user can modify
+ *     with g_io_channel_set_flags()
+ *
+ * Specifies properties of a #GIOChannel. Some of the flags can only be
+ * read with g_io_channel_get_flags(), but not changed with
+ * g_io_channel_set_flags().
+ */
 typedef enum
 {
+  /**
+   * G_IO_FLAG_NONE:
+   *
+   * No special flags set.
+   *
+   * Since: 2.74
+   */
+  G_IO_FLAG_NONE GLIB_AVAILABLE_ENUMERATOR_IN_2_74 = 0,
   G_IO_FLAG_APPEND = 1 << 0,
   G_IO_FLAG_NONBLOCK = 1 << 1,
   G_IO_FLAG_IS_READABLE = 1 << 2,	/* Read only flag */
@@ -92,7 +129,7 @@ typedef enum
   G_IO_FLAG_MASK = (1 << 5) - 1,
   G_IO_FLAG_GET_MASK = G_IO_FLAG_MASK,
   G_IO_FLAG_SET_MASK = G_IO_FLAG_APPEND | G_IO_FLAG_NONBLOCK
-} GIOFlags;
+} G_GNUC_FLAG_ENUM GIOFlags;
 
 struct _GIOChannel
 {
@@ -115,7 +152,7 @@ struct _GIOChannel
   /* Group the flags together, immediately after partial_write_buf, to save memory */
 
   guint use_buffer     : 1;	/* The encoding uses the buffers */
-  guint do_encode      : 1;	/* The encoding uses the GIConv coverters */
+  guint do_encode      : 1;	/* The encoding uses the GIConv converters */
   guint close_on_unref : 1;	/* Close the channel on final unref */
   guint is_readable    : 1;	/* Cached GIOFlag */
   guint is_writeable   : 1;	/* ditto */
@@ -345,7 +382,7 @@ void        g_io_channel_win32_make_pollfd (GIOChannel   *channel,
 					    GIOCondition  condition,
 					    GPollFD      *fd);
 
-/* This can be used to wait a until at least one of the channels is readable.
+/* This can be used to wait until at least one of the channels is readable.
  * On Unix you would do a select() on the file descriptors of the channels.
  */
 GLIB_AVAILABLE_IN_ALL
@@ -367,7 +404,7 @@ GIOChannel *g_io_channel_win32_new_messages (guint hwnd);
 #endif
 
 /* Create an IO channel for C runtime (emulated Unix-like) file
- * descriptors. After calling g_io_add_watch() on a IO channel
+ * descriptors. After calling g_io_add_watch() on an IO channel
  * returned by this function, you shouldn't call read() on the file
  * descriptor. This is because adding polling for a file descriptor is
  * implemented on Win32 by starting a thread that sits blocked in a
@@ -398,17 +435,6 @@ void        g_io_channel_win32_set_debug (GIOChannel *channel,
                                           gboolean    flag);
 
 #endif
-
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#define g_io_channel_new_file g_io_channel_new_file_utf8
-
-GLIB_AVAILABLE_IN_ALL
-GIOChannel *g_io_channel_new_file_utf8 (const gchar  *filename,
-                                        const gchar  *mode,
-                                        GError      **error);
-#endif
-#endif /* __GTK_DOC_IGNORE__ */
 
 G_END_DECLS
 

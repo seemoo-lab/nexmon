@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,15 +33,13 @@
 
 
 /**
- * SECTION:gfileicon
- * @short_description: Icons pointing to an image file
- * @include: gio/gio.h
- * @see_also: #GIcon, #GLoadableIcon
+ * GFileIcon:
  * 
- * #GFileIcon specifies an icon by pointing to an image file
+ * `GFileIcon` specifies an icon by pointing to an image file
  * to be used as icon.
  * 
- **/
+ * It implements [iface@Gio.LoadableIcon].
+ */
 
 static void g_file_icon_icon_iface_init          (GIconIface          *iface);
 static void g_file_icon_loadable_icon_iface_init (GLoadableIconIface  *iface);
@@ -112,6 +112,19 @@ g_file_icon_set_property (GObject      *object,
 }
 
 static void
+g_file_icon_constructed (GObject *object)
+{
+#ifndef G_DISABLE_ASSERT
+  GFileIcon *icon = G_FILE_ICON (object);
+#endif
+
+  G_OBJECT_CLASS (g_file_icon_parent_class)->constructed (object);
+
+  /* Must have be set during construction */
+  g_assert (icon->file != NULL);
+}
+
+static void
 g_file_icon_finalize (GObject *object)
 {
   GFileIcon *icon;
@@ -132,6 +145,7 @@ g_file_icon_class_init (GFileIconClass *klass)
   gobject_class->get_property = g_file_icon_get_property;
   gobject_class->set_property = g_file_icon_set_property;
   gobject_class->finalize = g_file_icon_finalize;
+  gobject_class->constructed = g_file_icon_constructed;
 
   /**
    * GFileIcon:file:
@@ -139,9 +153,7 @@ g_file_icon_class_init (GFileIconClass *klass)
    * The file containing the icon.
    */
   g_object_class_install_property (gobject_class, PROP_FILE,
-                                   g_param_spec_object ("file",
-                                                        P_("file"),
-                                                        P_("The file containing the icon"),
+                                   g_param_spec_object ("file", NULL, NULL,
                                                         G_TYPE_FILE,
                                                         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK));
 }
@@ -174,7 +186,7 @@ g_file_icon_new (GFile *file)
  * 
  * Gets the #GFile associated with the given @icon.
  * 
- * Returns: (transfer none): a #GFile, or %NULL.
+ * Returns: (transfer none): a #GFile.
  **/
 GFile *
 g_file_icon_get_file (GFileIcon *icon)
@@ -226,6 +238,9 @@ g_file_icon_from_tokens (gchar  **tokens,
   GIcon *icon;
   GFile *file;
 
+  /* This is guaranteed by the GIcon interface */
+  g_assert (num_tokens >= 0);
+
   icon = NULL;
 
   if (version != 0)
@@ -233,7 +248,7 @@ g_file_icon_from_tokens (gchar  **tokens,
       g_set_error (error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
-                   _("Can't handle version %d of GFileIcon encoding"),
+                   _("Can’t handle version %d of GFileIcon encoding"),
                    version);
       goto out;
     }
@@ -322,6 +337,7 @@ g_file_icon_load_async (GLoadableIcon       *icon,
   GTask *task;
 
   task = g_task_new (icon, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_icon_load_async);
   
   g_file_read_async (file_icon->file, 0,
                      cancellable,

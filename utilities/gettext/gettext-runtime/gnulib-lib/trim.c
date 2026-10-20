@@ -1,9 +1,9 @@
 /* Removes leading and/or trailing whitespaces
-   Copyright (C) 2006-2016 Free Software Foundation, Inc.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Davide Angelocola <davide.angelocola@gmail.com> */
 
@@ -26,104 +26,88 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "mbchar.h"
-#include "mbiter.h"
-#include "xalloc.h"
-
-/* Use this to suppress gcc's "...may be used before initialized" warnings. */
-#ifdef lint
-# define IF_LINT(Code) Code
+#if GNULIB_MCEL_PREFER
+# include "mcel.h"
 #else
-# define IF_LINT(Code) /* empty */
+# include "mbchar.h"
+# include "mbuiterf.h"
 #endif
+#include "xalloc.h"
 
 char *
 trim2 (const char *s, int how)
 {
-  char *d;
-
-  d = strdup (s);
-
-  if (!d)
-    xalloc_die ();
+  const char *start = s;
+  const char *end;
 
   if (MB_CUR_MAX > 1)
     {
-      mbi_iterator_t i;
-
-      /* Trim leading whitespaces. */
+#if GNULIB_MCEL_PREFER
+      /* Skip leading whitespace. */
       if (how != TRIM_TRAILING)
-        {
-          mbi_init (i, d, strlen (d));
+        for (; *start; )
+          {
+            mcel_t g = mcel_scanz (start);
+            if (!c32isspace (g.ch))
+              break;
+            start += g.len;
+          }
 
-          for (; mbi_avail (i) && mb_isspace (mbi_cur (i)); mbi_advance (i))
-            ;
-
-          memmove (d, mbi_cur_ptr (i), strlen (mbi_cur_ptr (i)) + 1);
-        }
-
-      /* Trim trailing whitespaces. */
+      /* Find start of any trailing whitespace.  */
       if (how != TRIM_LEADING)
-        {
-          unsigned int state = 0;
-          char *r IF_LINT (= NULL); /* used only while state = 2 */
+        for (const char *p = end = start; *p; )
+          {
+            mcel_t g = mcel_scanz (p);
+            p += g.len;
+            if (!c32isspace (g.ch))
+              end = p;
+          }
+#else
+      mbuif_state_t state;
+      mbuif_init (state);
 
-          mbi_init (i, d, strlen (d));
+      /* Skip leading whitespace. */
+      if (how != TRIM_TRAILING)
+        while (mbuif_avail (state, start))
+          {
+            mbchar_t cur = mbuif_next (state, start);
+            if (!mb_isspace (cur))
+              break;
+            start += mb_len (cur);
+          }
 
-          for (; mbi_avail (i); mbi_advance (i))
-            {
-              if (state == 0 && mb_isspace (mbi_cur (i)))
-                continue;
-
-              if (state == 0 && !mb_isspace (mbi_cur (i)))
-                {
-                  state = 1;
-                  continue;
-                }
-
-              if (state == 1 && !mb_isspace (mbi_cur (i)))
-                continue;
-
-              if (state == 1 && mb_isspace (mbi_cur (i)))
-                {
-                  state = 2;
-                  r = (char *) mbi_cur_ptr (i);
-                }
-              else if (state == 2 && mb_isspace (mbi_cur (i)))
-                {
-                  /* empty */
-                }
-              else
-                {
-                  state = 1;
-                }
-            }
-
-          if (state == 2)
-            *r = '\0';
-        }
+      /* Find start of any trailing whitespace.  */
+      if (how != TRIM_LEADING)
+        for (const char *p = end = start; mbuif_avail (state, p); )
+          {
+            mbchar_t cur = mbuif_next (state, p);
+            p += mb_len (cur);
+            if (!mb_isspace (cur))
+              end = p;
+          }
+#endif
     }
   else
     {
-      char *p;
-
-      /* Trim leading whitespaces. */
+      /* Skip leading whitespace. */
       if (how != TRIM_TRAILING)
-        {
-          for (p = d; *p && isspace ((unsigned char) *p); p++)
-            ;
+        while (isspace ((unsigned char) *start))
+          start++;
 
-          memmove (d, p, strlen (p) + 1);
-        }
-
-      /* Trim trailing whitespaces. */
+      /* Find start of any trailing whitespace.  */
       if (how != TRIM_LEADING)
-        {
-          for (p = d + strlen (d) - 1;
-               p >= d && isspace ((unsigned char) *p); p--)
-            *p = '\0';
-        }
+        for (const char *p = end = start; *p; )
+          if (!isspace ((unsigned char) *p++))
+            end = p;
     }
+
+  /* Create trimmed copy.  */
+  size_t dlen = how == TRIM_LEADING ? strlen (start) : end - start;
+  char *d = malloc (dlen + 1);
+  if (!d)
+    xalloc_die ();
+  char *d_end = mempcpy (d, start, dlen);
+  *d_end = '\0';
 
   return d;
 }

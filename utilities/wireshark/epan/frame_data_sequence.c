@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -42,7 +30,7 @@
 #define NODES_PER_LEVEL         (1<<LOG2_NODES_PER_LEVEL)
 
 struct _frame_data_sequence {
-  guint32      count;           /* Total number of frames */
+  uint32_t     count;           /* Total number of frames */
   void        *ptree_root;      /* Pointer to the root node */
 };
 
@@ -188,14 +176,14 @@ frame_data_sequence_add(frame_data_sequence *fds, frame_data *fdata)
  * Find the frame_data for the specified frame number.
  */
 frame_data *
-frame_data_sequence_find(frame_data_sequence *fds, guint32 num)
+frame_data_sequence_find(frame_data_sequence *fds, uint32_t num)
 {
   frame_data *leaf;
   frame_data **level1;
   frame_data ***level2;
   frame_data ****level3;
 
-  if (num == 0) {
+  if (num == 0 || fds == NULL) {
     /* There is no frame number 0 */
     return NULL;
   }
@@ -238,9 +226,10 @@ frame_data_sequence_find(frame_data_sequence *fds, guint32 num)
 
 /* recursively frees a frame_data radix level */
 static void
-free_frame_data_array(void *array, guint count, guint level, gboolean last)
+// NOLINTNEXTLINE(misc-no-recursion)
+free_frame_data_array(void *array, unsigned count, unsigned level, bool last)
 {
-  guint i, level_count;
+  unsigned i, level_count;
 
   if (last) {
     /* if we are the last in our given parent's row, we may not have
@@ -267,9 +256,11 @@ free_frame_data_array(void *array, guint count, guint level, gboolean last)
     frame_data **real_array = (frame_data **) array;
 
     for (i=0; i < level_count-1; i++) {
-      free_frame_data_array(real_array[i], count, level-1, FALSE);
+      // We recurse here, but we're limited to four levels.
+      free_frame_data_array(real_array[i], count, level-1, false);
     }
 
+    // We recurse here, but we're limited to four levels.
     free_frame_data_array(real_array[level_count-1], count, level-1, last);
   }
   else if (level == 1) {
@@ -291,18 +282,32 @@ free_frame_data_array(void *array, guint count, guint level, gboolean last)
 void
 free_frame_data_sequence(frame_data_sequence *fds)
 {
-  guint32 count  = fds->count;
-  guint   levels = 0;
+  unsigned   levels;
 
   /* calculate how many levels we have */
-  while (count) {
-    levels++;
-    count >>= LOG2_NODES_PER_LEVEL;
+  if (fds->count == 0) {
+    /* The tree is empty; there are no levels. */
+    levels = 0;
+  } else if (fds->count <= NODES_PER_LEVEL) {
+    /* It's a 1-level tree. */
+    levels = 1;
+  } else if (fds->count <= NODES_PER_LEVEL*NODES_PER_LEVEL) {
+    /* It's a 2-level tree. */
+    levels = 2;
+  } else if (fds->count <= NODES_PER_LEVEL*NODES_PER_LEVEL*NODES_PER_LEVEL) {
+    /* It's a 3-level tree. */
+    levels = 3;
+  } else {
+    /* fds->count is 2^32-1 at most, and NODES_PER_LEVEL^4
+       2^(LOG2_NODES_PER_LEVEL*4), and LOG2_NODES_PER_LEVEL is 10,
+       so fds->count is always less < NODES_PER_LEVEL^4. */
+    /* It's a 4-level tree. */
+    levels = 4;
   }
 
   /* call the recursive free function */
   if (levels > 0) {
-    free_frame_data_array(fds->ptree_root, fds->count, levels, TRUE);
+    free_frame_data_array(fds->ptree_root, fds->count, levels, true);
   }
 
   /* free the header struct */
@@ -310,20 +315,28 @@ free_frame_data_sequence(frame_data_sequence *fds)
 }
 
 void
-find_and_mark_frame_depended_upon(gpointer data, gpointer user_data)
+find_and_mark_frame_depended_upon(void *key, void *value _U_, void *user_data)
 {
   frame_data   *dependent_fd;
-  guint32       dependent_frame = GPOINTER_TO_UINT(data);
+  uint32_t      dependent_frame = GPOINTER_TO_UINT(key);
   frame_data_sequence *frames   = (frame_data_sequence *)user_data;
 
   if (dependent_frame && frames) {
     dependent_fd = frame_data_sequence_find(frames, dependent_frame);
-    dependent_fd->flags.dependent_of_displayed = 1;
+    /* Don't recurse for packets we've already marked. Note we assume that no
+     * packet depends on a future packet; we assume that in other places too.
+     */
+    if (!(dependent_fd->dependent_of_displayed || dependent_fd->passed_dfilter)) {
+      dependent_fd->dependent_of_displayed = 1;
+      if (dependent_fd->dependent_frames) {
+        g_hash_table_foreach(dependent_fd->dependent_frames, find_and_mark_frame_depended_upon, frames);
+      }
+    }
   }
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

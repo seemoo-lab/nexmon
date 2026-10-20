@@ -1,23 +1,12 @@
-/* progress_dlg.h
+/** @file
+ *
  * Definitions for progress dialog box routines
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PROGRESS_DLG_H__
@@ -48,15 +37,15 @@ typedef struct progdlg progdlg_t;
  *   the main window.
  * @param task_title The task to do, e.g. "Loading"
  * @param item_title The item to do, e.g. "capture.cap"
- * @param terminate_is_stop TRUE if the operation can't be cancelled, just
+ * @param terminate_is_stop true if the operation can't be cancelled, just
  *   stopped (i.e., it has a "Stop" button and clicking it doesn't undo
- *   anything already done), FALSE if it can
+ *   anything already done), false if it can
  * @param stop_flag A pointer to a Boolean variable that will be
- *   set to TRUE if the user hits that button
+ *   set to true if the user hits that button
  * @return The newly created progress dialog
  */
-progdlg_t *create_progress_dlg(gpointer top_level_window, const gchar *task_title, const gchar *item_title,
-    gboolean terminate_is_stop, gboolean *stop_flag);
+progdlg_t *create_progress_dlg(void *top_level_window, const char *task_title, const char *item_title,
+    bool terminate_is_stop, bool *stop_flag);
 
 /**
  * Create a progress dialog, but only if it's not likely to disappear
@@ -66,19 +55,16 @@ progdlg_t *create_progress_dlg(gpointer top_level_window, const gchar *task_titl
  *   May be NULL.
  * @param task_title The task to do, e.g. "Loading"
  * @param item_title The item to do, e.g. "capture.cap"
- * @param terminate_is_stop TRUE if the operation can't be cancelled, just
+ * @param terminate_is_stop true if the operation can't be cancelled, just
  *   stopped (i.e., it has a "Stop" button and clicking it doesn't undo
- *   anything already done), FALSE if it can
+ *   anything already done), false if it can
  * @param stop_flag A pointer to a Boolean variable that will be
- *   set to TRUE if the user hits that button
- * @param start_time A pointer to a GTimeVal structure which holds
- *   the time at which the caller started to process the data
+ *   set to true if the user hits that button
  * @param progress The current progress (0..1)
  * @return The newly created progress dialog
  */
-progdlg_t *delayed_create_progress_dlg(gpointer top_level_window, const gchar *task_title, const gchar *item_title,
-    gboolean terminate_is_stop, gboolean *stop_flag,
-    const GTimeVal *start_time, gfloat progress);
+progdlg_t *delayed_create_progress_dlg(void *top_level_window, const char *task_title, const char *item_title,
+    bool terminate_is_stop, bool *stop_flag, float progress);
 
 /**
  * Update the progress information of the progress dialog box.
@@ -87,7 +73,7 @@ progdlg_t *delayed_create_progress_dlg(gpointer top_level_window, const gchar *t
  * @param percentage The current percentage value (0..1)
  * @param status the New status string to show, e.g. "3000KB of 6000KB"
  */
-void update_progress_dlg(progdlg_t *dlg, gfloat percentage, const gchar *status);
+void update_progress_dlg(progdlg_t *dlg, float percentage, const char *status);
 
 /**
  * Destroy or hide the progress bar.
@@ -101,16 +87,3 @@ void destroy_progress_dlg(progdlg_t *dlg);
 #endif /* __cplusplus */
 
 #endif /* __PROGRESS_DLG_H__ */
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

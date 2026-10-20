@@ -1,0 +1,189 @@
+﻿ESnet 400G Testbed Configuration
+Prepared by Ezra Kissel
+
+
+  Hardware
+
+
+Node 1: Supermicro AS -2124US-TNRP
+Node 2: GIGABYTE R19
+
+
+2x AMD EPYC 7302 16-Core Processor
+16x 32GB SK Hynix DDR4 3200 MT/s (512GB RAM)
+16x 3.84TB Micron 9200 Pro NVMe SSDs
+NIVIDIA/Mellanox ConnectX-6 EN MCX613106A-VDAT 200Gbps dual-port
+* Attached to NUMA node 1
+
+
+Switch: Edgecore AS9716-32D 400Gbps
+
+
+BIOS
+NPS=2
+Performance mode
+Disable power limit control
+Fixed P-states
+Disable C state
+IOMMU enabled (SR-IOV)
+x2APIC MSI Interrupts
+Drivers and Software
+MLNX_OFED 5.9-0.5.5
+NIC firmware 20.33.1048
+iperf 3.13-mt-beta2 (cJSON 1.7.15)
+Linux
+Ubuntu 22.04.2 LTS
+Kernel 5.15.0-70-generic
+Disable irqbalance
+MTU 9000
+GRUB cmdline: iommu=pt
+
+
+NIC tuning
+/usr/sbin/ethtool -G eth100 rx 8192 tx 8192
+/usr/sbin/ethtool -G eth200 rx 8192 tx 8192
+/usr/sbin/ethtool -C eth100 adaptive-rx on
+/usr/sbin/ethtool -C eth200 adaptive-rx on
+
+
+set_irq_affinity_bynode.sh 1 eth100 eth200
+
+
+Set CPU governors
+cpupower frequency-set -g performance
+cpupower idle-set -d 2
+
+
+
+
+$ numactl -H
+available: 2 nodes (0-1)
+node 0 cpus: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47
+node 0 size: 257810 MB
+node 0 free: 248767 MB
+node 1 cpus: 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63
+node 1 size: 257970 MB
+node 1 free: 239704 MB
+node distances:
+node   0   1 
+  0:  10  32 
+  1:  32  10 
+
+
+sysctl settings
+{
+    "kernel.pid_max": "4194303",
+    "net.ipv4.tcp_max_syn_backlog": "4096",
+    "net.ipv4.tcp_fin_timeout": "15",
+    "net.ipv4.tcp_wmem": [
+        "4096",
+        "87380",
+        "536870912"
+    ],
+    "net.ipv4.tcp_rmem": [
+        "4096",
+        "87380",
+        "536870912"
+    ],
+    "net.ipv4.udp_rmem_min": "16384",
+    "net.ipv4.tcp_window_scaling": "1",
+    "net.ipv4.tcp_slow_start_after_idle": "0",
+    "net.ipv4.tcp_timestamps": "1",
+    "net.ipv4.tcp_low_latency": "1",
+    "net.ipv4.tcp_keepalive_intvl": "15",
+    "net.ipv4.tcp_rfc1337": "1",
+    "net.ipv4.tcp_keepalive_time": "300",
+    "net.ipv4.tcp_keepalive_probes": "5",
+    "net.ipv4.tcp_sack": "1",
+    "net.ipv4.neigh.default.unres_qlen": "6",
+    "net.ipv4.neigh.default.proxy_qlen": "96",
+    "net.ipv4.ipfrag_low_thresh": "446464",
+    "net.ipv4.ipfrag_high_thresh": "512000",
+    "net.core.netdev_max_backlog": "250000",
+    "net.core.rmem_default": "16777216",
+    "net.core.wmem_default": "16777216",
+    "net.core.rmem_max": "536870912",
+    "net.core.wmem_max": "536870912",
+    "net.core.optmem_max": "40960",
+    "net.core.dev_weight": "128",
+    "net.core.somaxconn": "1024",
+    "net.ipv4.udp_wmem_min": "16384",
+    "net.core.default_qdisc": "fq"
+}
+
+
+
+
+Example run
+
+
+$ numactl -N 1 ~/work/repos/iperf/src/iperf3 -s
+-----------------------------------------------------------
+Server listening on 5201 (test #1)
+-----------------------------------------------------------
+
+
+
+
+$ numactl -N 1 src/iperf3 -c 10.10.2.20 -t 20 -i 10 -P 8 -Z -l 1m
+Connecting to host 10.10.2.20, port 5201
+[  5] local 10.10.2.21 port 56346 connected to 10.10.2.20 port 5201
+[  7] local 10.10.2.21 port 56348 connected to 10.10.2.20 port 5201
+[  9] local 10.10.2.21 port 56362 connected to 10.10.2.20 port 5201
+[ 11] local 10.10.2.21 port 56374 connected to 10.10.2.20 port 5201
+[ 13] local 10.10.2.21 port 56388 connected to 10.10.2.20 port 5201
+[ 15] local 10.10.2.21 port 56400 connected to 10.10.2.20 port 5201
+[ 17] local 10.10.2.21 port 56406 connected to 10.10.2.20 port 5201
+[ 19] local 10.10.2.21 port 56418 connected to 10.10.2.20 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-10.01  sec  19.6 GBytes  16.8 Gbits/sec    0   41.4 MBytes       
+[  7]   0.00-10.01  sec  22.3 GBytes  19.2 Gbits/sec    0   6.95 MBytes       
+[  9]   0.00-10.01  sec  28.9 GBytes  24.8 Gbits/sec    0   36.2 MBytes       
+[ 11]   0.00-10.01  sec  35.0 GBytes  30.1 Gbits/sec    0   10.2 MBytes       
+[ 13]   0.00-10.01  sec  34.8 GBytes  29.8 Gbits/sec    0   11.4 MBytes       
+[ 15]   0.00-10.01  sec  26.4 GBytes  22.6 Gbits/sec    0   13.7 MBytes       
+[ 17]   0.00-10.01  sec  34.3 GBytes  29.4 Gbits/sec    0   7.77 MBytes       
+[ 19]   0.00-10.01  sec  21.4 GBytes  18.4 Gbits/sec    0   17.3 MBytes       
+[SUM]   0.00-10.01  sec   223 GBytes   191 Gbits/sec    0             
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[  5]  10.01-20.01  sec  23.9 GBytes  20.6 Gbits/sec   22   12.3 MBytes       
+[  7]  10.01-20.01  sec  16.0 GBytes  13.7 Gbits/sec    0   7.12 MBytes       
+[  9]  10.01-20.01  sec  24.7 GBytes  21.3 Gbits/sec    0   18.0 MBytes       
+[ 11]  10.01-20.01  sec  34.3 GBytes  29.5 Gbits/sec    0   10.3 MBytes       
+[ 13]  10.01-20.01  sec  34.3 GBytes  29.4 Gbits/sec    0   11.4 MBytes       
+[ 15]  10.01-20.01  sec  26.7 GBytes  22.9 Gbits/sec    0   29.0 MBytes       
+[ 17]  10.01-20.01  sec  33.9 GBytes  29.1 Gbits/sec    0   7.77 MBytes       
+[ 19]  10.01-20.01  sec  27.0 GBytes  23.2 Gbits/sec   24   17.0 MBytes       
+[SUM]  10.01-20.01  sec   221 GBytes   190 Gbits/sec   46             
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-20.01  sec  43.5 GBytes  18.7 Gbits/sec   22             sender
+[  5]   0.00-20.04  sec  43.4 GBytes  18.6 Gbits/sec                  receiver
+[  7]   0.00-20.01  sec  38.3 GBytes  16.4 Gbits/sec    0             sender
+[  7]   0.00-20.04  sec  38.3 GBytes  16.4 Gbits/sec                  receiver
+[  9]   0.00-20.01  sec  53.6 GBytes  23.0 Gbits/sec    0             sender
+[  9]   0.00-20.04  sec  53.5 GBytes  22.9 Gbits/sec                  receiver
+[ 11]   0.00-20.01  sec  69.3 GBytes  29.8 Gbits/sec    0             sender
+[ 11]   0.00-20.04  sec  69.3 GBytes  29.7 Gbits/sec                  receiver
+[ 13]   0.00-20.01  sec  69.1 GBytes  29.6 Gbits/sec    0             sender
+[ 13]   0.00-20.04  sec  69.1 GBytes  29.6 Gbits/sec                  receiver
+[ 15]   0.00-20.01  sec  53.1 GBytes  22.8 Gbits/sec    0             sender
+[ 15]   0.00-20.04  sec  53.0 GBytes  22.7 Gbits/sec                  receiver
+[ 17]   0.00-20.01  sec  68.2 GBytes  29.3 Gbits/sec    0             sender
+[ 17]   0.00-20.04  sec  68.2 GBytes  29.2 Gbits/sec                  receiver
+[ 19]   0.00-20.01  sec  48.4 GBytes  20.8 Gbits/sec   24             sender
+[ 19]   0.00-20.04  sec  48.3 GBytes  20.7 Gbits/sec                  receiver
+[SUM]   0.00-20.01  sec   443 GBytes   190 Gbits/sec   46             sender
+[SUM]   0.00-20.04  sec   443 GBytes   190 Gbits/sec                  receiver
+
+
+iperf Done.
+
+
+
+
+References
+
+
+AMD 2nd Gen EPYC CPU Tuning Guide for InfiniBand HPC - HPC-Works - Confluence (atlassian.net)
+Direct from Development - NUMA Configurations for AMD EPYC 2nd Generation Workloads (dell.com)

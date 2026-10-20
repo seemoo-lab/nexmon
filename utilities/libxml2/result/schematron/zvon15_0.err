@@ -1,0 +1,3 @@
+./test/schematron/zvon15_0.xml:1: element AAA: schematron error : /AAA line 1: Attribute name is forbidden in element AAA 
+./test/schematron/zvon15_0.xml:3: element CCC: schematron error : /AAA/CCC line 3: Attribute color is forbidden in element CCC 
+./test/schematron/zvon15_0.xml fails to validate

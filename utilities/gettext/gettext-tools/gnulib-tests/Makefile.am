@@ -1,5 +1,5 @@
 ## Makefile for the gettext-tools/gnulib-tests subdirectory of GNU gettext
-## Copyright (C) 2007, 2009-2010, 2015-2016 Free Software Foundation, Inc.
+## Copyright (C) 2007-2025 Free Software Foundation, Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -12,14 +12,22 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## Process this file with automake to produce Makefile.in.
+
+AM_CFLAGS =
 
 # Rules generated and collected by gnulib-tool.
 include Makefile.gnulib
 
 AUTOMAKE_OPTIONS += 1.11 color-tests
 
-# Ensure that test-quotearg.c finds libintl.h.
-AM_CPPFLAGS += -I../intl
+# Ensure that copy-acl.c, set-acl.c find libintl.h.
+AM_CPPFLAGS += -I../../gettext-runtime/intl
+
+
+# Remove .deps directories created by 'configure'.
+# I would say that this left-over is an Automake 1.16.1 bug.
+distclean-local:
+	rm -rf $(DEPDIR) */$(DEPDIR)

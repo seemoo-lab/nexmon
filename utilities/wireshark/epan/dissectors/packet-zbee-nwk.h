@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef PACKET_ZBEE_NWK_H
 #define PACKET_ZBEE_NWK_H
@@ -66,6 +54,8 @@
 #define ZBEE_NWK_CMD_ED_TIMEOUT_REQUEST         0x0b    /* r21 */
 #define ZBEE_NWK_CMD_ED_TIMEOUT_RESPONSE        0x0c    /* r21 */
 #define ZBEE_NWK_CMD_LINK_PWR_DELTA             0x0d    /* r22 */
+#define ZBEE_NWK_CMD_COMMISSIONING_REQUEST      0x0e    /* r23 */
+#define ZBEE_NWK_CMD_COMMISSIONING_RESPONSE     0x0f    /* r23 */
 
 /*  ZigBee NWK Route Options Flags */
 #define ZBEE_NWK_CMD_ROUTE_OPTION_REPAIR        0x80    /* ZigBee 2004 only. */
@@ -98,6 +88,7 @@
 #define ZBEE_NWK_CMD_NWK_REPORT_COUNT_MASK      0x1f
 #define ZBEE_NWK_CMD_NWK_REPORT_ID_MASK         0xe0
 #define ZBEE_NWK_CMD_NWK_REPORT_ID_PAN_CONFLICT 0x00
+#define ZBEE_NWK_CMD_NWK_REPORT_ID_ZBOSS_KEY_TRACE 6
 
 /* ZigBee NWK Update Options. */
 #define ZBEE_NWK_CMD_NWK_UPDATE_COUNT_MASK      0x1f
@@ -137,30 +128,30 @@
 #define ZBEE_SEC_CONST_KEYSIZE              16
 
 typedef struct{
-    gboolean    security;
-    gboolean    discovery;
-    gboolean    multicast;          /* ZigBee 2006 and Later */
-    gboolean    route;              /* ZigBee 2006 and Later */
-    gboolean    ext_dst;            /* ZigBee 2006 and Later */
-    gboolean    ext_src;            /* ZigBee 2006 and Later */
-    guint16     type;
-    guint8      version;
+    bool        security;
+    bool        discovery;
+    bool        multicast;          /* ZigBee 2006 and Later */
+    bool        route;              /* ZigBee 2006 and Later */
+    bool        ext_dst;            /* ZigBee 2006 and Later */
+    bool        ext_src;            /* ZigBee 2006 and Later */
+    uint16_t    type;
+    uint8_t     version;
 
-    guint16     dst;
-    guint16     src;
-    guint64     dst64;              /* ZigBee 2006 and Later */
-    guint64     src64;              /* ZigBee 2006 and Later */
-    guint8      radius;
-    guint8      seqno;
+    uint16_t    dst;
+    uint16_t    src;
+    uint64_t    dst64;              /* ZigBee 2006 and Later */
+    uint64_t    src64;              /* ZigBee 2006 and Later */
+    uint8_t     radius;
+    uint8_t     seqno;
 
-    guint8      mcast_mode;         /* ZigBee 2006 and Later */
-    guint8      mcast_radius;       /* ZigBee 2006 and Later */
-    guint8      mcast_max_radius;   /* ZigBee 2006 and Later */
+    uint8_t     mcast_mode;         /* ZigBee 2006 and Later */
+    uint8_t     mcast_radius;       /* ZigBee 2006 and Later */
+    uint8_t     mcast_max_radius;   /* ZigBee 2006 and Later */
 
-    guint8      payload_offset;
-    guint8      payload_len;
+    uint8_t     payload_offset;
+    uint8_t     payload_len;
 
-    guint16     cluster_id;     /* an application-specific message identifier that
+    uint16_t    cluster_id;     /* an application-specific message identifier that
                                  * happens to be included in the transport (APS) layer header.
                                  */
 
@@ -169,26 +160,36 @@ typedef struct{
 
 /* Key used for link key hash table. */
 typedef struct {
-    guint64     lt_addr64; /* lesser than address */
-    guint64     gt_addr64; /* greater than address */
+    uint64_t    lt_addr64; /* lesser than address */
+    uint64_t    gt_addr64; /* greater than address */
 } table_link_key_t;
+
+
+typedef enum
+{
+    ZBEE_APS_NO_RELAY,
+    ZBEE_APS_RELAY_UPSTREAM,
+    ZBEE_APS_RELAY_DOWNSTREAM
+} aps_relay_type_t;
 
 /* Values in the key rings. */
 typedef struct {
-    guint       frame_num;
-    gchar      *label;
-    guint8      key[ZBEE_SEC_CONST_KEYSIZE];
+    unsigned    frame_num;
+    char       *label;
+    uint8_t     key[ZBEE_SEC_CONST_KEYSIZE];
 } key_record_t;
 
 typedef struct {
-    gint                    src_pan;    /* source pan */
-    gint                    src;        /* short source address from nwk */
+    int                     src_pan;    /* source pan */
+    int                     src;        /* short source address from nwk */
 #if 0
-    gint                    ieee_src;   /* short source address from mac */
+    int                     ieee_src;   /* short source address from mac */
 #endif
     ieee802154_map_rec     *map_rec;    /* extended src from nwk */
     key_record_t           *nwk;        /* Network key found for this packet */
     key_record_t           *link;       /* Link key found for this packet */
+    aps_relay_type_t        relay_type ; /* Is it upstream/downstream relayed packet? */
+    uint64_t                joiner_addr64; /* long address from Relay frame */
 } zbee_nwk_hints_t;
 
 extern ieee802154_map_tab_t zbee_nwk_map;
@@ -218,10 +219,11 @@ extern GHashTable *zbee_table_link_keyring;
 #define ZBEE_IP_BEACON_TLV_TYPE_MASK           0xf0
 #define ZBEE_IP_BEACON_TLV_TYPE_LFDI           0x0
 
+
 #endif /* PACKET_ZBEE_NWK_H */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

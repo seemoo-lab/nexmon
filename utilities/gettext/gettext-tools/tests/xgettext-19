@@ -1,0 +1,27 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test that msgid and msgid_plural are checked to be compatible as
+# format strings.
+# <https://savannah.gnu.org/bugs/?63630>
+
+cat <<\EOF > xg-test19.c
+      if (filedata->is_separate)
+        printf (ngettext ("\nIn linked file '%s' the dynamic section at offset %#" PRIx64 " contains %" PRIu64 " entry:\n",
+                          "\nIn linked file '%s' the dynamic section at offset %#" PRIx64 " contains %" PRIu64 " entries:\n",
+                          filedata->dynamic_nent),
+                filedata->file_name,
+                filedata->dynamic_addr,
+                filedata->dynamic_nent);
+      else
+        printf (ngettext ("\nDynamic section at offset %#" PRIx64 " contains %" PRId64 " entry:\n",
+                          "\nDynamic section at offset %#" PRIx64 " contains %" PRIu64 " entries:\n",
+                          filedata->dynamic_nent),
+                filedata->dynamic_addr,
+                filedata->dynamic_nent);
+EOF
+
+: ${XGETTEXT=xgettext}
+LANGUAGE= LC_ALL=C ${XGETTEXT} --omit-header --add-comments -d xg-test19.tmp xg-test19.c 2>xg-test19.err
+test $? = 1 || Exit 1
+grep "format specifications in 'msgid_plural' and 'msgid' for argument 2 are not the same" xg-test19.err || Exit 1

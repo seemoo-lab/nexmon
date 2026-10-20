@@ -1,0 +1,81 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Rust support: UTF-8 characters and Unicode escapes.
+
+cat <<\EOF > xg-rs-2.rs
+pub trait TestCase {
+  fn main () {
+    gettext("Russian (Русский): Здравствуйте"));
+    gettext("Vietnamese (Tiếng Việt): Chào bạn"));
+    gettext("Japanese (日本語): こんにちは"));
+    gettext("Thai (ภาษาไทย): สวัสดีครับ"));
+    gettext("Script: 𝒞"));
+    gettext("Russian (\u{0420}\u{0443}\u{0441}\u{0441}\u{043a}\u{0438}\u{0439}): \u{0417}\u{0434}\u{0440}\u{0430}\u{0432}\u{0441}\u{0442}\u{0432}\u{0443}\u{0439}\u{0442}\u{0435}"));
+    gettext("Vietnamese (Ti\u{1ebf}ng Vi\u{1ec7}t): Ch\u{00e0}o b\u{1ea1}n"));
+    gettext("Japanese (\u{65e5}\u{672c}\u{8a9e}): \u{3053}\u{3093}\u{306b}\u{3061}\u{306f}"));
+    gettext("Thai (\u{0e20}\u{0e32}\u{0e29}\u{0e32}\u{0e44}\u{0e17}\u{0e22}): \u{0e2a}\u{0e27}\u{0e31}\u{0e2a}\u{0e14}\u{0e35}\u{0e04}\u{0e23}\u{0e31}\u{0e1a}"));
+    gettext("Script: \u{1d49e}"));
+    // And now a comment with Русский and 日本語 and Unicode escapes: B\u{00f6}se B\u{00fc}bchen
+    gettext("This string has a multilingual comment"));
+    // Unicode identifiers.
+    String あ = "";
+    String 𐀀 = "";
+  }
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+# delete POT-Creation-Date: line because the date depends on local time.
+${XGETTEXT} --output xg-rs-2.tmp --add-location -c xg-rs-2.rs || Exit 1
+sed -e '/\"POT-Creation-Date:.*/d' < xg-rs-2.tmp | LC_ALL=C tr -d '\r' > xg-rs-2.po || Exit 1
+
+cat <<\EOF > xg-rs-2.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: xg-rs-2.rs:3 xg-rs-2.rs:8
+msgid "Russian (Русский): Здравствуйте"
+msgstr ""
+
+#: xg-rs-2.rs:4 xg-rs-2.rs:9
+msgid "Vietnamese (Tiếng Việt): Chào bạn"
+msgstr ""
+
+#: xg-rs-2.rs:5 xg-rs-2.rs:10
+msgid "Japanese (日本語): こんにちは"
+msgstr ""
+
+#: xg-rs-2.rs:6 xg-rs-2.rs:11
+msgid "Thai (ภาษาไทย): สวัสดีครับ"
+msgstr ""
+
+#: xg-rs-2.rs:7 xg-rs-2.rs:12
+msgid "Script: 𝒞"
+msgstr ""
+
+#. And now a comment with Русский and 日本語 and Unicode escapes: B\u{00f6}se B\u{00fc}bchen
+#: xg-rs-2.rs:14
+msgid "This string has a multilingual comment"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-rs-2.ok xg-rs-2.po || Exit 1
+
+exit 0

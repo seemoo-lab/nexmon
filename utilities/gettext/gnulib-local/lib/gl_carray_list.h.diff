@@ -1,0 +1,19 @@
+*** gl_carray_list.h.orig
+--- gl_carray_list.h
+***************
+*** 24,30 ****
+  extern "C" {
+  #endif
+
+! extern const struct gl_list_implementation gl_carray_list_implementation;
+  #define GL_CARRAY_LIST &gl_carray_list_implementation
+
+  #ifdef __cplusplus
+--- 24,30 ----
+  extern "C" {
+  #endif
+
+! extern DLL_VARIABLE const struct gl_list_implementation gl_carray_list_implementation;
+  #define GL_CARRAY_LIST &gl_carray_list_implementation
+
+  #ifdef __cplusplus

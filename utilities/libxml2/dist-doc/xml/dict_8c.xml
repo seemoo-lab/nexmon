@@ -1,0 +1,1490 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="dict_8c" kind="file" language="C++">
+    <compoundname>dict.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">errno.h</includes>
+    <includes local="no">limits.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="yes">private/dict.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/globals.h</includes>
+    <includes local="yes">private/threads.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="dict_8h" local="no">libxml/dict.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="xmlstring_8h" local="no">libxml/xmlstring.h</includes>
+    <includes local="no">unistd.h</includes>
+    <includes local="no">sys/random.h</includes>
+    <includes local="no">time.h</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/dict.c</label>
+        <link refid="dict_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+        <childnode refid="34" relation="include">
+        </childnode>
+      </node>
+      <node id="30">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+      </node>
+      <node id="31">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="29">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>errno.h</label>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="13">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="4">
+        <label>limits.h</label>
+      </node>
+      <node id="7">
+        <label>private/dict.h</label>
+      </node>
+      <node id="8">
+        <label>private/error.h</label>
+      </node>
+      <node id="9">
+        <label>private/globals.h</label>
+      </node>
+      <node id="10">
+        <label>private/threads.h</label>
+      </node>
+      <node id="17">
+        <label>stdarg.h</label>
+      </node>
+      <node id="21">
+        <label>stddef.h</label>
+      </node>
+      <node id="15">
+        <label>stdio.h</label>
+      </node>
+      <node id="5">
+        <label>stdlib.h</label>
+      </node>
+      <node id="6">
+        <label>string.h</label>
+      </node>
+      <node id="33">
+        <label>sys/random.h</label>
+      </node>
+      <node id="34">
+        <label>time.h</label>
+      </node>
+      <node id="32">
+        <label>unistd.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlDictStrings" prot="public">_xmlDictStrings</innerclass>
+    <innerclass refid="struct__xmlDict" prot="public">_xmlDict</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="dict_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="19" column="9" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="19" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="dict_8c_1a3c75bb398badb69c7577b21486f9963f" prot="public" static="no">
+        <name>SIZE_MAX</name>
+        <initializer>((size_t) -1)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="38" column="11" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="38" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="dict_8c_1afb0faaeade82cf30238af9728b029e7c" prot="public" static="no">
+        <name>MAX_FILL_NUM</name>
+        <initializer>7</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="41" column="9" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="dict_8c_1a89c6ae53ecaaa3016685dc3775109bef" prot="public" static="no">
+        <name>MAX_FILL_DENOM</name>
+        <initializer>8</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="42" column="9" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="42" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="dict_8c_1a47e02d2a245933d9ccb2b84b6e5b8bee" prot="public" static="no">
+        <name>MIN_HASH_SIZE</name>
+        <initializer>8</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="43" column="9" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="dict_8c_1ae45ebbc1b8ae629cb8880d87ba77cf59" prot="public" static="no">
+        <name>MAX_HASH_SIZE</name>
+        <initializer>(1u &lt;&lt; 31)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="44" column="9" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="44" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="dict_8c_1a92b8c37465869a5ec32b2561ba218f33" prot="public" static="no">
+        <name>HASH_ROL31</name>
+        <param><defname>x</defname></param>
+        <param><defname>n</defname></param>
+        <initializer>((x) &lt;&lt; (n) | ((x) &amp; 0x7FFFFFFF) &gt;&gt; (31 - (n)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="513" column="9" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="513" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="dict_8c_1a50089bb5b99f5f67daa6946ef5962465" prot="public" static="no">
+        <type>struct _xmlDictStrings</type>
+        <definition>typedef struct _xmlDictStrings xmlDictStrings</definition>
+        <argsstring></argsstring>
+        <name>xmlDictStrings</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="46" column="30" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="dict_8c_1a57c7cd4ad03207b54ce7572d7a2074e3" prot="public" static="no">
+        <type>xmlDictStrings *</type>
+        <definition>typedef xmlDictStrings* xmlDictStringsPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlDictStringsPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="47" column="24" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="dict_8c_1ae7496835b6eb4c0eccaf26d3ceff7787" prot="public" static="no">
+        <type>xmlHashedString</type>
+        <definition>typedef xmlHashedString xmlDictEntry</definition>
+        <argsstring></argsstring>
+        <name>xmlDictEntry</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="57" column="25" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="57" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="dict_8c_1a29181976da10f7fcacabd615cb292d96" prot="public" static="yes" mutable="no">
+        <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref></type>
+        <definition>xmlMutex xmlDictMutex</definition>
+        <argsstring></argsstring>
+        <name>xmlDictMutex</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="81" column="17" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="81" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="dict_8c_1a8747d3b925059b941c7885239226a073" prot="public" static="yes" mutable="no">
+        <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref></type>
+        <definition>xmlMutex xmlRngMutex</definition>
+        <argsstring></argsstring>
+        <name>xmlRngMutex</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="916" column="17" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="916" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="dict_8c_1aaa7aa92218462921e648bd424d050439" prot="public" static="yes" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned globalRngState[2]</definition>
+        <argsstring>[2]</argsstring>
+        <name>globalRngState</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="918" column="17" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="918" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="dict_8c_1ac8b65dba9c4e1e779a033cfad543f637" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlInitializeDict</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitializeDict</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000111"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>0. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="89" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="89" bodyend="92"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1acc65f396b97dce90ed5104b6646bfceb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitDictInternal</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitDictInternal</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Initialize mutex. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="98" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="98" bodyend="100"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a7091aefc9ceb5f1313515480c4b62026" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDictCleanup</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlDictCleanup</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000112"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function is a no-op. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="109" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="109" bodyend="110"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a5310f006059aa0c8faf84fe289164738" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupDictInternal</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupDictInternal</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Free the dictionary mutex. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="116" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="116" bodyend="118"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1ac0b7adc74a3208dcf7f0a06a2c09fb7c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>static const xmlChar * xmlDictAddString</definition>
+        <argsstring>(xmlDictPtr dict, const xmlChar *name, unsigned int namelen)</argsstring>
+        <name>xmlDictAddString</name>
+        <param>
+          <type>xmlDictPtr</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>unsigned int</type>
+          <declname>namelen</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="130" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="130" bodyend="183"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a072088285f3e7f157add87b957031e92" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>static const xmlChar * xmlDictAddQString</definition>
+        <argsstring>(xmlDictPtr dict, const xmlChar *prefix, unsigned int plen, const xmlChar *name, unsigned int namelen)</argsstring>
+        <name>xmlDictAddQString</name>
+        <param>
+          <type>xmlDictPtr</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>unsigned int</type>
+          <declname>plen</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>unsigned int</type>
+          <declname>namelen</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="197" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="197" bodyend="256"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1ab2325dd6b47c753a6dfb4620aa85c5cd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+        <definition>xmlDict * xmlDictCreate</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlDictCreate</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Create a new dictionary. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>the newly created dictionary, or NULL if an error occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="264" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="264" bodyend="285"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1ab8f9e6e2dd55687f487f7bc9615caa39" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+        <definition>xmlDict * xmlDictCreateSub</definition>
+        <argsstring>(xmlDict *sub)</argsstring>
+        <name>xmlDictCreateSub</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>sub</declname>
+        </param>
+        <briefdescription>
+<para>Create a new dictionary, inheriting strings from the read-only dictionary <computeroutput>sub</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>On lookup, strings are first searched in the new dictionary, then in <computeroutput>sub</computeroutput>, and if not found are created in the new dictionary.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>sub</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an existing dictionary </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the newly created dictionary, or NULL if an error occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="297" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="297" bodyend="306"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1ac35fc16acda235c214c7f2a043af5c51" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlDictReference</definition>
+        <argsstring>(xmlDict *dict)</argsstring>
+        <name>xmlDictReference</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <briefdescription>
+<para>Increment the reference counter of a dictionary. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the dictionary </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success and -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="315" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="315" bodyend="321"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a8c96faa88b84f4cba7359bb0b22ec35d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDictFree</definition>
+        <argsstring>(xmlDict *dict)</argsstring>
+        <name>xmlDictFree</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <briefdescription>
+<para>Free the hash <computeroutput>dict</computeroutput> and its contents. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The userdata is deallocated with <computeroutput>f</computeroutput> if provided.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the dictionary </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="330" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="330" bodyend="360"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1ae98630502265a7baabb2a9d67b0f2b40" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlDictOwns</definition>
+        <argsstring>(xmlDict *dict, const xmlChar *str)</argsstring>
+        <name>xmlDictOwns</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>check if a string is owned by the dictionary </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the dictionary </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if true, 0 if false and -1 in case of error -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="371" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="371" bodyend="385"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1afd7448ee71febf328ee836082735c00b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlDictSize</definition>
+        <argsstring>(xmlDict *dict)</argsstring>
+        <name>xmlDictSize</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <briefdescription>
+<para>Query the number of elements installed in the hash <computeroutput>dict</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the dictionary </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of elements in the dictionary or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="395" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="395" bodyend="401"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a81fac15f257f79b3993c2d58dfd5b866" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t xmlDictSetLimit</definition>
+        <argsstring>(xmlDict *dict, size_t limit)</argsstring>
+        <name>xmlDictSetLimit</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>limit</declname>
+        </param>
+        <briefdescription>
+<para>Set a size limit for the dictionary Added in 2.9.0. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the dictionary </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>limit</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the limit in bytes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the previous limit of the dictionary or 0 </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="412" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="412" bodyend="420"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1aba24a53035673d84f72096fc5ea024cf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t xmlDictGetUsage</definition>
+        <argsstring>(xmlDict *dict)</argsstring>
+        <name>xmlDictGetUsage</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <briefdescription>
+<para>Get how much memory is used by a dictionary for strings Added in 2.9.0. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the dictionary </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the amount of strings allocated </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="430" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="430" bodyend="442"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a65a88c308406772b8419f48bd07f1417" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>static unsigned xmlDictHashName</definition>
+        <argsstring>(unsigned seed, const xmlChar *data, size_t maxLen, size_t *plen)</argsstring>
+        <name>xmlDictHashName</name>
+        <param>
+          <type>unsigned</type>
+          <declname>seed</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>maxLen</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>plen</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="453" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="453" bodyend="468"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a070c02d28082d5dfb95d42ed79630a4b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>static unsigned xmlDictHashQName</definition>
+        <argsstring>(unsigned seed, const xmlChar *prefix, const xmlChar *name, size_t *pplen, size_t *plen)</argsstring>
+        <name>xmlDictHashQName</name>
+        <param>
+          <type>unsigned</type>
+          <declname>seed</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>pplen</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>plen</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="472" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="472" bodyend="498"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a0ec716084dc050c925e50568ff42abbb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>unsigned xmlDictComputeHash</definition>
+        <argsstring>(const xmlDict *dict, const xmlChar *string)</argsstring>
+        <name>xmlDictComputeHash</name>
+        <param>
+          <type>const <ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>string</declname>
+        </param>
+        <briefdescription>
+<para>Compute the hash value of a C string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>dictionary </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>string</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>C string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the hash value. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="508" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="508" bodyend="511"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a304e6ca0f50405ddc51f53e1dd2e4bb4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>unsigned xmlDictCombineHash</definition>
+        <argsstring>(unsigned v1, unsigned v2)</argsstring>
+        <name>xmlDictCombineHash</name>
+        <param>
+          <type>unsigned</type>
+          <declname>v1</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>v2</declname>
+        </param>
+        <briefdescription>
+<para>Combine two hash values. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first hash value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>v2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second hash value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the combined hash value. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="524" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="524" bodyend="533"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a90f267c13d202f819b1b56463e268bc5" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlDictEntry *</type>
+        <definition>static xmlDictEntry * xmlDictFindEntry</definition>
+        <argsstring>(const xmlDict *dict, const xmlChar *prefix, const xmlChar *name, int len, unsigned hashValue, int *pfound)</argsstring>
+        <name>xmlDictFindEntry</name>
+        <param>
+          <type>const <ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>hashValue</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>pfound</declname>
+        </param>
+        <briefdescription>
+<para>Try to find a matching hash table entry. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If an entry was found, set <computeroutput>found</computeroutput> to 1 and return the entry. Otherwise, set <computeroutput>found</computeroutput> to 0 and return the location where a new entry should be inserted.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>dict </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>optional QName prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>length of string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>hashValue</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>valid hash value of string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pfound</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>result of search </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="549" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="549" bodyend="599"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a8ef69b150da1f5303cc45719a667e5a6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlDictGrow</definition>
+        <argsstring>(xmlDictPtr dict, unsigned size)</argsstring>
+        <name>xmlDictGrow</name>
+        <param>
+          <type>xmlDictPtr</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Resize the dictionary hash table. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>dictionary </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new size of the dictionary </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="609" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="609" bodyend="664"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1af872447f7691fef015dd716bacd250ba" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const xmlDictEntry *</type>
+        <definition>static const xmlDictEntry * xmlDictLookupInternal</definition>
+        <argsstring>(xmlDict *dict, const xmlChar *prefix, const xmlChar *name, int maybeLen, int update)</argsstring>
+        <name>xmlDictLookupInternal</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>maybeLen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>update</declname>
+        </param>
+        <briefdescription>
+<para>Internal lookup and update function. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>dict </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>optional QName prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>maybeLen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>length of string or -1 if unknown </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>update</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>whether the string should be added </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="677" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="677" bodyend="813"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a84f7c91566b9ad4859c0b3674e9e3111" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlDictLookup</definition>
+        <argsstring>(xmlDict *dict, const xmlChar *name, int len)</argsstring>
+        <name>xmlDictLookup</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Lookup a string and add it to the dictionary if it wasn&apos;t found. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>dictionary </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>length of the key, if -1 it is recomputed </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the interned copy of the string or NULL if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="825" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="825" bodyend="832"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a400cef357b3c07403339adf9698abc03" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlHashedString</type>
+        <definition>xmlHashedString xmlDictLookupHashed</definition>
+        <argsstring>(xmlDict *dict, const xmlChar *name, int len)</argsstring>
+        <name>xmlDictLookupHashed</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Lookup a dictionary entry and add the string to the dictionary if it wasn&apos;t found. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>dictionary </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>length of the key, if -1 it is recomputed </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the dictionary entry. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="844" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="844" bodyend="858"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1ab89ba11cd92b90bcc5cf2df28fc751a8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlDictExists</definition>
+        <argsstring>(xmlDict *dict, const xmlChar *name, int len)</argsstring>
+        <name>xmlDictExists</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Check if a string exists in the dictionary. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the dictionary </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the userdata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of the name, if -1 it is recomputed </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the internal copy of the name or NULL if not found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="869" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="869" bodyend="876"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a577d1b2ae5de897fb37289e647a71ec4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlDictQLookup</definition>
+        <argsstring>(xmlDict *dict, const xmlChar *prefix, const xmlChar *name)</argsstring>
+        <name>xmlDictQLookup</name>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Lookup the QName <computeroutput>prefix:name</computeroutput> and add it to the dictionary if it wasn&apos;t found. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the dictionary </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the interned copy of the string or NULL if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="889" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="889" bodyend="896"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1af6e5aa8ad8338a7c26b6cfdd94655970" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitRandom</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitRandom</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="926" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="926" bodyend="985"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a9c9d5ac5cf579050f2551d19770bdbfe" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupRandom</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupRandom</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="992" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="992" bodyend="994"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1ae1061aff55cd86a2227374d4bcfa1b04" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>static unsigned xoroshiro64ss</definition>
+        <argsstring>(unsigned *s)</argsstring>
+        <name>xoroshiro64ss</name>
+        <param>
+          <type>unsigned *</type>
+          <declname>s</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="998" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="998" bodyend="1008"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1aac7a7e7c7fd42a5551f9639c4f99785c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>unsigned xmlGlobalRandom</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlGlobalRandom</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="1017" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="1017" bodyend="1025"/>
+      </memberdef>
+      <memberdef kind="function" id="dict_8c_1a9257299bb8833372af9821f9f21435da" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>unsigned xmlRandom</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlRandom</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="1034" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="1034" bodyend="1036"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/dict.c"/>
+  </compounddef>
+</doxygen>

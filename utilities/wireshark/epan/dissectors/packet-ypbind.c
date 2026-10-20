@@ -9,19 +9,7 @@
  *
  *    2001  Ronnie Sahlberg, added dissectors for the commands
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,24 +20,24 @@
 void proto_register_ypbind(void);
 void proto_reg_handoff_ypbind(void);
 
-static int proto_ypbind = -1;
-static int hf_ypbind_procedure_v1 = -1;
-static int hf_ypbind_procedure_v2 = -1;
-static int hf_ypbind_domain = -1;
-static int hf_ypbind_resp_type = -1;
-/* static int hf_ypbind_error = -1; */
-static int hf_ypbind_addr = -1;
-static int hf_ypbind_port = -1;
-static int hf_ypbind_setdom_version = -1;
+static int proto_ypbind;
+static int hf_ypbind_procedure_v1;
+static int hf_ypbind_procedure_v2;
+static int hf_ypbind_domain;
+static int hf_ypbind_resp_type;
+/* static int hf_ypbind_error; */
+static int hf_ypbind_addr;
+static int hf_ypbind_port;
+static int hf_ypbind_setdom_version;
 
-static gint ett_ypbind = -1;
+static int ett_ypbind;
 
 
 static int
-dissect_ypbind_domain_v2_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_ypbind_domain_v2_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	/* domain */
-	return dissect_rpc_string(tvb, tree, hf_ypbind_domain, 0, NULL);
+	return dissect_rpc_string(tvb, pinfo, tree, hf_ypbind_domain, 0, NULL);
 }
 
 #define YPBIND_RESP_TYPE_SUCC_VAL	1
@@ -75,7 +63,7 @@ static const value_string error_vals[] = {
 static int
 dissect_ypbind_domain_v2_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
 {
-	guint32 type;
+	uint32_t type;
 	int offset = 0;
 
 	/* response type */
@@ -105,12 +93,12 @@ dissect_ypbind_domain_v2_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree
 }
 
 static int
-dissect_ypbind_setdomain_v2_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_ypbind_setdomain_v2_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 
 	/* domain */
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_ypbind_domain, offset, NULL);
 
 	/* ip address */
@@ -207,7 +195,7 @@ proto_register_ypbind(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ypbind,
 	};
 
@@ -226,7 +214,7 @@ proto_reg_handoff_ypbind(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

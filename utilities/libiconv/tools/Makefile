@@ -66,6 +66,8 @@ ALL = \
  jisx0208.h \
  jisx0212.h \
  cp932ext.h \
+ cp50221_0208_ext.h \
+ cp50221_0212_ext.h \
  gb2312.h \
  isoir165ext.h \
  gb12345ext.h \
@@ -118,6 +120,59 @@ ALL = \
  cp865.h \
  cp869.h \
  cp1125.h \
+ ebcdic037.h \
+ ebcdic273.h \
+ ebcdic277.h \
+ ebcdic278.h \
+ ebcdic280.h \
+ ebcdic282.h \
+ ebcdic284.h \
+ ebcdic285.h \
+ ebcdic297.h \
+ ebcdic423.h \
+ ebcdic424.h \
+ ebcdic425.h \
+ ebcdic500.h \
+ ebcdic838.h \
+ ebcdic870.h \
+ ebcdic871.h \
+ ebcdic875.h \
+ ebcdic880.h \
+ ebcdic905.h \
+ ebcdic924.h \
+ ebcdic1025.h \
+ ebcdic1026.h \
+ ebcdic1047.h \
+ ebcdic1097.h \
+ ebcdic1112.h \
+ ebcdic1122.h \
+ ebcdic1123.h \
+ ebcdic1130.h \
+ ebcdic1132.h \
+ ebcdic1137.h \
+ ebcdic1140.h \
+ ebcdic1141.h \
+ ebcdic1142.h \
+ ebcdic1143.h \
+ ebcdic1144.h \
+ ebcdic1145.h \
+ ebcdic1146.h \
+ ebcdic1147.h \
+ ebcdic1148.h \
+ ebcdic1149.h \
+ ebcdic1153.h \
+ ebcdic1154.h \
+ ebcdic1155.h \
+ ebcdic1156.h \
+ ebcdic1157.h \
+ ebcdic1158.h \
+ ebcdic1160.h \
+ ebcdic1164.h \
+ ebcdic1165.h \
+ ebcdic1166.h \
+ ebcdic4971.h \
+ ebcdic12712.h \
+ ebcdic16804.h \
  jisx0213.h \
  tds565.h \
  atarist.h \
@@ -328,6 +383,12 @@ jisx0212.h : $(TABLESDIR)/unicode.org-mappings/EASTASIA/JIS/JIS0212.TXT cjk_tab_
 cp932ext.h : $(TABLESDIR)/unicode.org-mappings/VENDORS/MICSFT/WINDOWS/CP932.TXT cjk_tab_to_h
 	(echo '#' ; grep '^0x\(87\|E[D-F]\|F[0-9A-F]\)[0-9A-F][0-9A-F]' < $< ) | ./cjk_tab_to_h 'CP932 extensions' cp932ext > $@
 
+cp50221_0208_ext.h : CP50221-0208-EXT.TXT 8bit_tab_to_h
+	./8bit_tab_to_h 'CP50221 JISX0208 extensions' cp50221_0208_ext < $<
+
+cp50221_0212_ext.h : CP50221-0212-EXT.TXT 8bit_tab_to_h
+	./8bit_tab_to_h 'CP50221 JISX0212 extensions' cp50221_0212_ext < $<
+
 gb2312.h : $(TABLESDIR)/unicode.org-mappings/EASTASIA/GB/GB2312.TXT cjk_tab_to_h
 	./cjk_tab_to_h GB2312.1980-0 gb2312 < $< > $@
 
@@ -500,6 +561,166 @@ cp869.h : $(TABLESDIR)/unicode.org-mappings/VENDORS/MICSFT/PC/CP869.TXT 8bit_tab
 
 cp1125.h : $(TABLESDIR)/csets-new/CP1125.TXT 8bit_tab_to_h
 	./8bit_tab_to_h CP1125 cp1125 < $<
+
+
+ebcdic037.h : ../tests/IBM-037.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-037 ebcdic037
+
+ebcdic273.h : ../tests/IBM-273.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-273 ebcdic273
+
+ebcdic277.h : ../tests/IBM-277.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-277 ebcdic277
+
+ebcdic278.h : ../tests/IBM-278.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-278 ebcdic278
+
+ebcdic280.h : ../tests/IBM-280.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-280 ebcdic280
+
+ebcdic282.h : ../tests/IBM-282.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-282 ebcdic282
+
+ebcdic284.h : ../tests/IBM-284.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-284 ebcdic284
+
+ebcdic285.h : ../tests/IBM-285.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-285 ebcdic285
+
+ebcdic297.h : ../tests/IBM-297.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-297 ebcdic297
+
+ebcdic423.h : ../tests/IBM-423.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-423 ebcdic423
+
+ebcdic424.h : ../tests/IBM-424.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-424 ebcdic424
+
+ebcdic425.h : ../tests/IBM-425.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-425 ebcdic425
+
+ebcdic500.h : ../tests/IBM-500.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-500 ebcdic500
+
+ebcdic838.h : ../tests/IBM-838.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-838 ebcdic838
+
+ebcdic870.h : ../tests/IBM-870.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-870 ebcdic870
+
+ebcdic871.h : ../tests/IBM-871.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-871 ebcdic871
+
+ebcdic875.h : ../tests/IBM-875.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-875 ebcdic875
+
+ebcdic880.h : ../tests/IBM-880.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-880 ebcdic880
+
+ebcdic905.h : ../tests/IBM-905.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-905 ebcdic905
+
+ebcdic924.h : ../tests/IBM-924.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-924 ebcdic924
+
+ebcdic1025.h : ../tests/IBM-1025.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1025 ebcdic1025
+
+ebcdic1026.h : ../tests/IBM-1026.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1026 ebcdic1026
+
+ebcdic1047.h : ../tests/IBM-1047.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1047 ebcdic1047
+
+ebcdic1097.h : ../tests/IBM-1097.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1097 ebcdic1097
+
+ebcdic1112.h : ../tests/IBM-1112.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1112 ebcdic1112
+
+ebcdic1122.h : ../tests/IBM-1122.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1122 ebcdic1122
+
+ebcdic1123.h : ../tests/IBM-1123.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1123 ebcdic1123
+
+ebcdic1130.h : ../tests/IBM-1130.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1130 ebcdic1130
+
+ebcdic1132.h : ../tests/IBM-1132.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1132 ebcdic1132
+
+ebcdic1137.h : ../tests/IBM-1137.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1137 ebcdic1137
+
+ebcdic1140.h : ../tests/IBM-1140.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1140 ebcdic1140
+
+ebcdic1141.h : ../tests/IBM-1141.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1141 ebcdic1141
+
+ebcdic1142.h : ../tests/IBM-1142.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1142 ebcdic1142
+
+ebcdic1143.h : ../tests/IBM-1143.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1143 ebcdic1143
+
+ebcdic1144.h : ../tests/IBM-1144.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1144 ebcdic1144
+
+ebcdic1145.h : ../tests/IBM-1145.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1145 ebcdic1145
+
+ebcdic1146.h : ../tests/IBM-1146.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1146 ebcdic1146
+
+ebcdic1147.h : ../tests/IBM-1147.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1147 ebcdic1147
+
+ebcdic1148.h : ../tests/IBM-1148.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1148 ebcdic1148
+
+ebcdic1149.h : ../tests/IBM-1149.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1149 ebcdic1149
+
+ebcdic1153.h : ../tests/IBM-1153.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1153 ebcdic1153
+
+ebcdic1154.h : ../tests/IBM-1154.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1154 ebcdic1154
+
+ebcdic1155.h : ../tests/IBM-1155.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1155 ebcdic1155
+
+ebcdic1156.h : ../tests/IBM-1156.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1156 ebcdic1156
+
+ebcdic1157.h : ../tests/IBM-1157.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1157 ebcdic1157
+
+ebcdic1158.h : ../tests/IBM-1158.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1158 ebcdic1158
+
+ebcdic1160.h : ../tests/IBM-1160.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1160 ebcdic1160
+
+ebcdic1164.h : ../tests/IBM-1164.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1164 ebcdic1164
+
+ebcdic1165.h : ../tests/IBM-1165.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1165 ebcdic1165
+
+ebcdic1166.h : ../tests/IBM-1166.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-1166 ebcdic1166
+
+ebcdic4971.h : ../tests/IBM-4971.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-4971 ebcdic4971
+
+ebcdic12712.h : ../tests/IBM-12712.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-12712 ebcdic12712
+
+ebcdic16804.h : ../tests/IBM-16804.TXT 8bit_tab_to_h
+	(echo '#'; cat $<) | ./8bit_tab_to_h IBM-16804 ebcdic16804
 
 
 jisx0213.h : JISX0213.TXT cjk_tab_to_h

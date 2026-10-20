@@ -83,15 +83,20 @@ the GNU C library function asprintf(), and the C++ autoptr programming idiom.
 
 Distribution
 ------------
-    http://www.haible.de/bruno/gnu/libasprintf-1.0.tar.gz
+
+    https://haible.de/bruno/gnu/libasprintf-1.0.tar.gz
 
 Homepage
 --------
-    http://www.haible.de/bruno/packages-libasprintf.html
 
-Bug reports to:
----------------
-    <bug-gnu-gettext@gnu.org>
+    https://haible.de/bruno/packages-libasprintf.html
+
+Bug reports
+-----------
+
+Report bugs
+  - in the bug tracker at <https://savannah.gnu.org/projects/gettext>
+  - or by email to <bug-gettext@gnu.org>.
 
 
 Bruno Haible <brunoe@clisp.org>

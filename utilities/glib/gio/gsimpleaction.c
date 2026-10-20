@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,24 +27,12 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gsimpleaction
- * @title: GSimpleAction
- * @short_description: A simple GAction implementation
- * @include: gio/gio.h
- *
- * A #GSimpleAction is the obvious simple implementation of the #GAction
- * interface. This is the easiest way to create an action for purposes of
- * adding it to a #GSimpleActionGroup.
- *
- * See also #GtkAction.
- */
-
-/**
  * GSimpleAction:
  *
- * #GSimpleAction is an opaque data structure and can only be accessed
- * using the following functions.
- **/
+ * A `GSimpleAction` is the obvious simple implementation of the
+ * [iface@Gio.Action] interface. This is the easiest way to create an action for
+ * purposes of adding it to a [class@Gio.SimpleActionGroup].
+ */
 
 struct _GSimpleAction
 {
@@ -371,12 +361,14 @@ g_simple_action_class_init (GSimpleActionClass *class)
   /**
    * GSimpleAction::activate:
    * @simple: the #GSimpleAction
-   * @parameter: (allow-none): the parameter to the activation
+   * @parameter: (nullable): the parameter to the activation, or %NULL if it has
+   *   no parameter
    *
    * Indicates that the action was just activated.
    *
-   * @parameter will always be of the expected type.  In the event that
-   * an incorrect type was given, no signal will be emitted.
+   * @parameter will always be of the expected type, i.e. the parameter type
+   * specified when the action was created. If an incorrect type is given when
+   * activating the action, this signal is not emitted.
    *
    * Since GLib 2.40, if no handler is connected to this signal then the
    * default behaviour for boolean-stated actions with a %NULL parameter
@@ -393,20 +385,22 @@ g_simple_action_class_init (GSimpleActionClass *class)
                   G_TYPE_SIMPLE_ACTION,
                   G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
                   0, NULL, NULL,
-                  g_cclosure_marshal_VOID__VARIANT,
+                  NULL,
                   G_TYPE_NONE, 1,
                   G_TYPE_VARIANT);
 
   /**
    * GSimpleAction::change-state:
    * @simple: the #GSimpleAction
-   * @value: (allow-none): the requested value for the state
+   * @value: (nullable): the requested value for the state
    *
    * Indicates that the action just received a request to change its
    * state.
    *
-   * @value will always be of the correct state type.  In the event that
-   * an incorrect type was given, no signal will be emitted.
+   * @value will always be of the correct state type, i.e. the type of the
+   * initial state passed to g_simple_action_new_stateful(). If an incorrect
+   * type is given when requesting to change the state, this signal is not
+   * emitted.
    *
    * If no handler is connected to this signal then the default
    * behaviour is to call g_simple_action_set_state() to set the state
@@ -441,7 +435,7 @@ g_simple_action_class_init (GSimpleActionClass *class)
                   G_TYPE_SIMPLE_ACTION,
                   G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
                   0, NULL, NULL,
-                  g_cclosure_marshal_VOID__VARIANT,
+                  NULL,
                   G_TYPE_NONE, 1,
                   G_TYPE_VARIANT);
 
@@ -454,9 +448,7 @@ g_simple_action_class_init (GSimpleActionClass *class)
    * Since: 2.28
    **/
   g_object_class_install_property (object_class, PROP_NAME,
-                                   g_param_spec_string ("name",
-                                                        P_("Action Name"),
-                                                        P_("The name used to invoke the action"),
+                                   g_param_spec_string ("name", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -471,9 +463,7 @@ g_simple_action_class_init (GSimpleActionClass *class)
    * Since: 2.28
    **/
   g_object_class_install_property (object_class, PROP_PARAMETER_TYPE,
-                                   g_param_spec_boxed ("parameter-type",
-                                                       P_("Parameter Type"),
-                                                       P_("The type of GVariant passed to activate()"),
+                                   g_param_spec_boxed ("parameter-type", NULL, NULL,
                                                        G_TYPE_VARIANT_TYPE,
                                                        G_PARAM_READWRITE |
                                                        G_PARAM_CONSTRUCT_ONLY |
@@ -490,9 +480,7 @@ g_simple_action_class_init (GSimpleActionClass *class)
    * Since: 2.28
    **/
   g_object_class_install_property (object_class, PROP_ENABLED,
-                                   g_param_spec_boolean ("enabled",
-                                                         P_("Enabled"),
-                                                         P_("If the action can be activated"),
+                                   g_param_spec_boolean ("enabled", NULL, NULL,
                                                          TRUE,
                                                          G_PARAM_READWRITE |
                                                          G_PARAM_STATIC_STRINGS));
@@ -506,9 +494,7 @@ g_simple_action_class_init (GSimpleActionClass *class)
    * Since: 2.28
    **/
   g_object_class_install_property (object_class, PROP_STATE_TYPE,
-                                   g_param_spec_boxed ("state-type",
-                                                       P_("State Type"),
-                                                       P_("The type of the state kept by the action"),
+                                   g_param_spec_boxed ("state-type", NULL, NULL,
                                                        G_TYPE_VARIANT_TYPE,
                                                        G_PARAM_READABLE |
                                                        G_PARAM_STATIC_STRINGS));
@@ -521,9 +507,7 @@ g_simple_action_class_init (GSimpleActionClass *class)
    * Since: 2.28
    **/
   g_object_class_install_property (object_class, PROP_STATE,
-                                   g_param_spec_variant ("state",
-                                                         P_("State"),
-                                                         P_("The state the action is in"),
+                                   g_param_spec_variant ("state", NULL, NULL,
                                                          G_VARIANT_TYPE_ANY,
                                                          NULL,
                                                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
@@ -563,7 +547,7 @@ g_simple_action_set_enabled (GSimpleAction *simple,
 /**
  * g_simple_action_set_state_hint:
  * @simple: a #GSimpleAction
- * @state_hint: (allow-none): a #GVariant representing the state hint
+ * @state_hint: (nullable): a #GVariant representing the state hint
  *
  * Sets the state hint for the action.
  *
@@ -591,11 +575,13 @@ g_simple_action_set_state_hint (GSimpleAction *simple,
 /**
  * g_simple_action_new:
  * @name: the name of the action
- * @parameter_type: (allow-none): the type of parameter to the activate function
+ * @parameter_type: (nullable): the type of parameter that will be passed to
+ *   handlers for the #GSimpleAction::activate signal, or %NULL for no parameter
  *
  * Creates a new action.
  *
- * The created action is stateless.  See g_simple_action_new_stateful().
+ * The created action is stateless. See g_simple_action_new_stateful() to create
+ * an action that has state.
  *
  * Returns: a new #GSimpleAction
  *
@@ -616,15 +602,16 @@ g_simple_action_new (const gchar        *name,
 /**
  * g_simple_action_new_stateful:
  * @name: the name of the action
- * @parameter_type: (allow-none): the type of the parameter to the activate function
+ * @parameter_type: (nullable): the type of the parameter that will be passed to
+ *   handlers for the #GSimpleAction::activate signal, or %NULL for no parameter
  * @state: the initial state of the action
  *
  * Creates a new stateful action.
  *
- * @state is the initial state of the action.  All future state values
- * must have the same #GVariantType as the initial state.
+ * All future state values must have the same #GVariantType as the initial
+ * @state.
  *
- * If the @state GVariant is floating, it is consumed.
+ * If the @state #GVariant is floating, it is consumed.
  *
  * Returns: a new #GSimpleAction
  *

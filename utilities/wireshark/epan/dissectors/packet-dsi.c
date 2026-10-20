@@ -8,25 +8,14 @@
  *
  * Copied from packet-pop.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/unit_strings.h>
 
 #include "packet-tcp.h"
 #include "packet-afp.h"
@@ -37,15 +26,21 @@
 
 http://developer.apple.com/DOCUMENTATION/macos8/pdf/ASAppleTalkFiling2.1_2.2.pdf
 
+  which is no longer available and does not appear to be in the Wayback Machine.
+
   The netatalk source code by Wesley Craig & Adrian Sun
 
   The Data Stream Interface description from
-  http://developer.apple.com/documentation/Networking/Conceptual/AFPClient/AFPClient-6.html
 
-(no longer available, apparently)
+http://developer.apple.com/documentation/Networking/Conceptual/AFPClient/AFPClient-6.html
+
+  which is no longer available, but is archived at
+
+https://web.archive.org/web/20040924082047/http://developer.apple.com/documentation/Networking/Conceptual/AFPClient/AFPClient-6.html
 
   Also, AFP 3.3 documents parts of DSI at:
-  http://developer.apple.com/mac/library/documentation/Networking/Conceptual/AFP/Introduction/Introduction.html
+
+http://developer.apple.com/mac/library/documentation/Networking/Conceptual/AFP/Introduction/Introduction.html
 
  * What a Data Stream Interface packet looks like:
  * 0                               32
@@ -63,34 +58,36 @@ http://developer.apple.com/DOCUMENTATION/macos8/pdf/ASAppleTalkFiling2.1_2.2.pdf
 void proto_register_dsi(void);
 void proto_reg_handoff_dsi(void);
 
-static int proto_dsi = -1;
-static int hf_dsi_flags = -1;
-static int hf_dsi_command = -1;
-static int hf_dsi_requestid = -1;
-static int hf_dsi_offset = -1;
-static int hf_dsi_error = -1;
-static int hf_dsi_length = -1;
-static int hf_dsi_reserved = -1;
+static dissector_handle_t dsi_handle;
 
-static gint ett_dsi = -1;
+static int proto_dsi;
+static int hf_dsi_flags;
+static int hf_dsi_command;
+static int hf_dsi_requestid;
+static int hf_dsi_offset;
+static int hf_dsi_error;
+static int hf_dsi_length;
+static int hf_dsi_reserved;
 
-static int hf_dsi_open_type     = -1;
-static int hf_dsi_open_len      = -1;
-static int hf_dsi_open_quantum  = -1;
-static int hf_dsi_replay_cache_size = -1;
-static int hf_dsi_open_option   = -1;
+static int ett_dsi;
 
-static int hf_dsi_attn_flag             = -1;
-static int hf_dsi_attn_flag_shutdown    = -1;
-static int hf_dsi_attn_flag_crash       = -1;
-static int hf_dsi_attn_flag_msg         = -1;
-static int hf_dsi_attn_flag_reconnect   = -1;
-static int hf_dsi_attn_flag_time        = -1;
-static int hf_dsi_attn_flag_bitmap      = -1;
+static int hf_dsi_open_type;
+static int hf_dsi_open_len;
+static int hf_dsi_open_quantum;
+static int hf_dsi_replay_cache_size;
+static int hf_dsi_open_option;
 
-static gint ett_dsi_open        = -1;
-static gint ett_dsi_attn        = -1;
-static gint ett_dsi_attn_flag   = -1;
+static int hf_dsi_attn_flag;
+static int hf_dsi_attn_flag_shutdown;
+static int hf_dsi_attn_flag_crash;
+static int hf_dsi_attn_flag_msg;
+static int hf_dsi_attn_flag_reconnect;
+static int hf_dsi_attn_flag_time;
+static int hf_dsi_attn_flag_bitmap;
+
+static int ett_dsi_open;
+static int ett_dsi_attn;
+static int ett_dsi_attn_flag;
 
 static const value_string dsi_attn_flag_vals[] = {
 	{0x0, "Reserved" },                                           /* 0000 */
@@ -112,12 +109,12 @@ static const value_string dsi_open_type_vals[] = {
 	{0,                   NULL } };
 
 /* desegmentation of DSI */
-static gboolean dsi_desegment = TRUE;
+static bool dsi_desegment = true;
 
 static dissector_handle_t afp_handle;
 static dissector_handle_t afp_server_status_handle;
 
-#define TCP_PORT_DSI      548
+#define TCP_PORT_DSI      548 /* Not IANA registered */
 
 #define DSI_BLOCKSIZ       16
 
@@ -153,21 +150,21 @@ static const value_string func_vals[] = {
 	{0,                   NULL } };
 static value_string_ext func_vals_ext = VALUE_STRING_EXT_INIT(func_vals);
 
-static gint
-dissect_dsi_open_session(tvbuff_t *tvb, proto_tree *dsi_tree, gint offset, gint dsi_length)
+static int
+dissect_dsi_open_session(tvbuff_t *tvb, proto_tree *dsi_tree, int offset, int dsi_length)
 {
 	proto_tree      *tree;
-	guint8		type;
-	guint8		len;
+	uint8_t		type;
+	uint8_t		len;
 
 	tree = proto_tree_add_subtree(dsi_tree, tvb, offset, -1, ett_dsi_open, NULL, "Open Session");
 
 	while( dsi_length >2 ) {
 
-		type = tvb_get_guint8(tvb, offset);
+		type = tvb_get_uint8(tvb, offset);
 		proto_tree_add_item(tree, hf_dsi_open_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset++;
-		len = tvb_get_guint8(tvb, offset);
+		len = tvb_get_uint8(tvb, offset);
 		proto_tree_add_item(tree, hf_dsi_open_len, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset++;
 		switch (type) {
@@ -191,12 +188,12 @@ dissect_dsi_open_session(tvbuff_t *tvb, proto_tree *dsi_tree, gint offset, gint 
 	return offset;
 }
 
-static gint
-dissect_dsi_attention(tvbuff_t *tvb, proto_tree *dsi_tree, gint offset)
+static int
+dissect_dsi_attention(tvbuff_t *tvb, proto_tree *dsi_tree, int offset)
 {
 	proto_tree      *tree;
 	proto_item	*ti;
-	guint16		flag;
+	uint16_t		flag;
 
 	if (!tvb_reported_length_remaining(tvb,offset))
 		return offset;
@@ -224,28 +221,26 @@ dissect_dsi_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 {
 	proto_tree      *dsi_tree;
 	proto_item	*dsi_ti;
-	guint8		dsi_flags,dsi_command;
-	guint16		dsi_requestid;
-	gint32		dsi_code;
-	guint32		dsi_length;
-	guint32		dsi_reserved;
-	struct		aspinfo aspinfo;
+	uint8_t		dsi_flags,dsi_command;
+	uint16_t		dsi_requestid;
+	int32_t		dsi_code;
+	uint32_t		dsi_length;
+	struct		atp_asp_dsi_info atp_asp_dsi_info;
 
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "DSI");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	dsi_flags = tvb_get_guint8(tvb, 0);
-	dsi_command = tvb_get_guint8(tvb, 1);
+	dsi_flags = tvb_get_uint8(tvb, 0);
+	dsi_command = tvb_get_uint8(tvb, 1);
 	dsi_requestid = tvb_get_ntohs(tvb, 2);
 	dsi_code = tvb_get_ntohl(tvb, 4);
 	dsi_length = tvb_get_ntohl(tvb, 8);
-	dsi_reserved = tvb_get_ntohl(tvb, 12);
 
 	col_add_fstr(pinfo->cinfo, COL_INFO, "%s %s (%u)",
-			val_to_str(dsi_flags, flag_vals,
+			val_to_str(pinfo->pool, dsi_flags, flag_vals,
 				   "Unknown flag (0x%02x)"),
-			val_to_str_ext(dsi_command, &func_vals_ext,
+			val_to_str_ext(pinfo->pool, dsi_command, &func_vals_ext,
 				   "Unknown function (0x%02x)"),
 			dsi_requestid);
 
@@ -271,11 +266,10 @@ dissect_dsi_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 				4, 4, dsi_code);
 			break;
 		}
-		proto_tree_add_uint_format_value(dsi_tree, hf_dsi_length, tvb,
-			8, 4, dsi_length,
-			"%u bytes", dsi_length);
-		proto_tree_add_uint(dsi_tree, hf_dsi_reserved, tvb,
-			12, 4, dsi_reserved);
+		proto_tree_add_item(dsi_tree, hf_dsi_length, tvb,
+			8, 4, ENC_BIG_ENDIAN);
+		proto_tree_add_item(dsi_tree, hf_dsi_reserved, tvb,
+			12, 4, ENC_BIG_ENDIAN);
 	}
 
 	switch (dsi_command) {
@@ -303,14 +297,13 @@ dissect_dsi_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 		{
 			tvbuff_t   *new_tvb;
 
-			aspinfo.reply = (dsi_flags == DSIFL_REPLY);
-			aspinfo.command = dsi_command;
-			aspinfo.seq = dsi_requestid;
-			aspinfo.code = dsi_code;
+			atp_asp_dsi_info.reply = (dsi_flags == DSIFL_REPLY);
+			atp_asp_dsi_info.tid = dsi_requestid;
+			atp_asp_dsi_info.code = dsi_code;
 			proto_item_set_len(dsi_ti, DSI_BLOCKSIZ);
 
 			new_tvb = tvb_new_subset_remaining(tvb, DSI_BLOCKSIZ);
-			call_dissector_with_data(afp_handle, new_tvb, pinfo, tree, &aspinfo);
+			call_dissector_with_data(afp_handle, new_tvb, pinfo, tree, &atp_asp_dsi_info);
 		}
 		break;
 	default:
@@ -322,14 +315,14 @@ dissect_dsi_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 	return tvb_captured_length(tvb);
 }
 
-static guint
+static unsigned
 get_dsi_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-	guint32 plen;
-	guint8	dsi_flags,dsi_command;
+	uint32_t plen;
+	uint8_t	dsi_flags,dsi_command;
 
-	dsi_flags = tvb_get_guint8(tvb, offset);
-	dsi_command = tvb_get_guint8(tvb, offset+ 1);
+	dsi_flags = tvb_get_uint8(tvb, offset);
+	dsi_command = tvb_get_uint8(tvb, offset+ 1);
 	if ( dsi_flags > DSIFL_MAX || !dsi_command || dsi_command > DSIFUNC_MAX)
 	{
 	    /* it's not a known dsi pdu start sequence */
@@ -389,7 +382,7 @@ proto_register_dsi(void)
 
 		{ &hf_dsi_length,
 		  { "Length",           "dsi.length",
-		    FT_UINT32, BASE_DEC, NULL, 0x0,
+		    FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0,
 		    "Total length of the data that follows the DSI header.", HFILL }},
 
 		{ &hf_dsi_reserved,
@@ -444,15 +437,15 @@ proto_register_dsi(void)
 		    "Attention flag, don't reconnect bit", HFILL }},
 		{ &hf_dsi_attn_flag_time,
 		  { "Minutes",          "dsi.attn_flag.time",
-		    FT_UINT16, BASE_DEC, NULL, 0xfff,
+		    FT_UINT16, BASE_DEC, NULL, 0x0fff,
 		    "Number of minutes", HFILL }},
 		{ &hf_dsi_attn_flag_bitmap,
 		  { "Bitmap",          "dsi.attn_flag.bitmap",
-		    FT_UINT16, BASE_HEX, NULL, 0xfff,
+		    FT_UINT16, BASE_HEX, NULL, 0x0fff,
 		    "Attention extended bitmap", HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dsi,
 		&ett_dsi_open,
 		&ett_dsi_attn,
@@ -470,22 +463,21 @@ proto_register_dsi(void)
 				       "Whether the DSI dissector should reassemble messages spanning multiple TCP segments."
 				       " To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
 				       &dsi_desegment);
+
+	dsi_handle = register_dissector("dsi", dissect_dsi, proto_dsi);
 }
 
 void
 proto_reg_handoff_dsi(void)
 {
-	dissector_handle_t dsi_handle;
-
-	dsi_handle = create_dissector_handle(dissect_dsi, proto_dsi);
-	dissector_add_uint("tcp.port", TCP_PORT_DSI, dsi_handle);
+	dissector_add_uint_with_preference("tcp.port", TCP_PORT_DSI, dsi_handle);
 
 	afp_handle = find_dissector_add_dependency("afp", proto_dsi);
 	afp_server_status_handle = find_dissector_add_dependency("afp_server_status", proto_dsi);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,8 +1,10 @@
-# snprintf.m4 serial 6
-dnl Copyright (C) 2002-2004, 2007-2016 Free Software Foundation, Inc.
+# snprintf.m4
+# serial 7
+dnl Copyright (C) 2002-2004, 2007-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl Libintl 0.17 will replace snprintf only if it does not support %1$s,
 dnl but defers to any gnulib snprintf replacements.  Therefore, gnulib
@@ -46,6 +48,14 @@ AC_DEFUN([gl_REPLACE_SNPRINTF],
   AC_LIBOBJ([snprintf])
   if test $ac_cv_func_snprintf = yes; then
     REPLACE_SNPRINTF=1
+  else
+    AC_CHECK_DECLS_ONCE([snprintf])
+    if test $ac_cv_have_decl_snprintf = yes; then
+      dnl If the function is declared but does not appear to exist, it may be
+      dnl defined as an inline function. In order to avoid a conflict, we have
+      dnl to define rpl_snprintf, not snprintf.
+      REPLACE_SNPRINTF=1
+    fi
   fi
   gl_PREREQ_SNPRINTF
 ])

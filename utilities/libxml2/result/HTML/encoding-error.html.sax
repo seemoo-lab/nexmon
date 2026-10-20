@@ -1,0 +1,25 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.startElement(html)
+SAX.characters(
+    , 5)
+SAX.startElement(head)
+SAX.characters(
+        , 9)
+SAX.startElement(meta, charset='utf-8')
+SAX.endElement(meta)
+SAX.characters(
+    , 5)
+SAX.endElement(head)
+SAX.characters(
+    , 5)
+SAX.startElement(body)
+SAX.error: Invalid bytes in character encoding
+SAX.characters(&#65533;, 3)
+SAX.endElement(body)
+SAX.characters(
+, 1)
+SAX.endElement(html)
+SAX.characters(
+, 1)
+SAX.endDocument()

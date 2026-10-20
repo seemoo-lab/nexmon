@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref ITU-T Rec. Q.1990 (07/2001)
  */
@@ -36,13 +24,13 @@
 void proto_register_bctp(void);
 void proto_reg_handoff_bctp(void);
 
-static int proto_bctp = -1;
-static int hf_bctp_bvei = -1;
-static int hf_bctp_bvi = -1;
-static int hf_bctp_tpei = -1;
-static int hf_bctp_tpi = -1;
+static int proto_bctp;
+static int hf_bctp_bvei;
+static int hf_bctp_bvi;
+static int hf_bctp_tpei;
+static int hf_bctp_tpi;
 
-static gint ett_bctp = -1;
+static int ett_bctp;
 static dissector_table_t bctp_dissector_table;
 static dissector_handle_t text_handle;
 
@@ -61,7 +49,7 @@ static const range_string tpi_vals[] = {
 
 static const value_string bvei_vals[] = {
 	{0,"No indication"},
-	{0,"Version Error Indication, BCTP version not supported"},
+	{1,"Version Error Indication, BCTP version not supported"},
 	{0,NULL}
 };
 
@@ -70,7 +58,7 @@ static int dissect_bctp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, voi
 	proto_item* pi = proto_tree_add_item(tree, proto_bctp, tvb,0,2, ENC_NA);
 	proto_tree* pt = proto_item_add_subtree(pi,ett_bctp);
 	tvbuff_t* sub_tvb = tvb_new_subset_remaining(tvb, 2);
-	guint8 tpi = tvb_get_guint8(tvb,1) & 0x3f;
+	uint8_t tpi = tvb_get_uint8(tvb,1) & 0x3f;
 
 	proto_tree_add_item(pt, hf_bctp_bvei, tvb,0,2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(pt, hf_bctp_bvi, tvb,0,2, ENC_BIG_ENDIAN);
@@ -97,7 +85,7 @@ proto_register_bctp (void)
 		{&hf_bctp_tpei, {"TPEI", "bctp.tpei", FT_UINT16, BASE_HEX, NULL, 0x0040, "Tunneled Protocol Error Indicator", HFILL }},
 		{&hf_bctp_tpi, {"TPI", "bctp.tpi", FT_UINT16, BASE_HEX, NULL, 0x003F, "Tunneled Protocol Indicator", HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_bctp
 	};
 
@@ -117,7 +105,7 @@ proto_reg_handoff_bctp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

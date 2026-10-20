@@ -1,0 +1,477 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlEntity" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlEntity</compoundname>
+    <includes local="no">entities.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlEntity_1a1cb76d737bf6f5b53e6c970073cba051" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* _private</definition>
+        <argsstring></argsstring>
+        <name>_private</name>
+        <qualifiedname>_xmlEntity::_private</qualifiedname>
+        <briefdescription>
+<para>application data </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="48" column="20" bodyfile="entities.h" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1ac5b2f541d66059a7c8de2599ba543e70" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a6d83aa11b89106b2ec14162b1474c8fc" kindref="member">xmlElementType</ref></type>
+        <definition>xmlElementType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlEntity::type</qualifiedname>
+        <briefdescription>
+<para>XML_ENTITY_DECL, must be second ! </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="50" column="29" bodyfile="entities.h" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlEntity::name</qualifiedname>
+        <briefdescription>
+<para>Entity name. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="52" column="28" bodyfile="entities.h" bodystart="52" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1aff6ebaaa61a2b60c033a82790133fb5e" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* children</definition>
+        <argsstring></argsstring>
+        <name>children</name>
+        <qualifiedname>_xmlEntity::children</qualifiedname>
+        <briefdescription>
+<para>First child link. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="54" column="19" bodyfile="entities.h" bodystart="54" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a557b64ca596f6376407afcd1b0c959a7" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* last</definition>
+        <argsstring></argsstring>
+        <name>last</name>
+        <qualifiedname>_xmlEntity::last</qualifiedname>
+        <briefdescription>
+<para>Last child link. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="56" column="19" bodyfile="entities.h" bodystart="56" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a1bbdd81f913e63a073409c6d4e4b23c6" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlDtd" kindref="compound">_xmlDtd</ref> *</type>
+        <definition>struct _xmlDtd* parent</definition>
+        <argsstring></argsstring>
+        <name>parent</name>
+        <qualifiedname>_xmlEntity::parent</qualifiedname>
+        <briefdescription>
+<para>-&gt; DTD </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="58" column="18" bodyfile="entities.h" bodystart="58" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1aec42d72625408c533e1ee43b0f668988" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlEntity::next</qualifiedname>
+        <briefdescription>
+<para>next sibling link </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="60" column="19" bodyfile="entities.h" bodystart="60" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a6b50e54b959fb7df6b6af04da9f8da49" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* prev</definition>
+        <argsstring></argsstring>
+        <name>prev</name>
+        <qualifiedname>_xmlEntity::prev</qualifiedname>
+        <briefdescription>
+<para>previous sibling link </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="62" column="19" bodyfile="entities.h" bodystart="62" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1aeeffa6cba73333db3d9b2aa59f366304" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlDoc" kindref="compound">_xmlDoc</ref> *</type>
+        <definition>struct _xmlDoc* doc</definition>
+        <argsstring></argsstring>
+        <name>doc</name>
+        <qualifiedname>_xmlEntity::doc</qualifiedname>
+        <briefdescription>
+<para>the containing document </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="64" column="18" bodyfile="entities.h" bodystart="64" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a92029984d123fe732154559fcf4e5662" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* orig</definition>
+        <argsstring></argsstring>
+        <name>orig</name>
+        <qualifiedname>_xmlEntity::orig</qualifiedname>
+        <briefdescription>
+<para>content without ref substitution </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="67" column="28" bodyfile="entities.h" bodystart="67" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a26031fb504d7c8616a5b161b0fbc8c62" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* content</definition>
+        <argsstring></argsstring>
+        <name>content</name>
+        <qualifiedname>_xmlEntity::content</qualifiedname>
+        <briefdescription>
+<para>content or ndata if unparsed </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="69" column="25" bodyfile="entities.h" bodystart="69" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a9f59b34b1f25fe00023291b678246bcc" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int length</definition>
+        <argsstring></argsstring>
+        <name>length</name>
+        <qualifiedname>_xmlEntity::length</qualifiedname>
+        <briefdescription>
+<para>the content length </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="71" column="27" bodyfile="entities.h" bodystart="71" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1af76cc1f1cb7092176790601561cc9f04" prot="public" static="no" mutable="no">
+        <type><ref refid="entities_8h_1a64131e2e263dff72c78d311eff342f3a" kindref="member">xmlEntityType</ref></type>
+        <definition>xmlEntityType etype</definition>
+        <argsstring></argsstring>
+        <name>etype</name>
+        <qualifiedname>_xmlEntity::etype</qualifiedname>
+        <briefdescription>
+<para>The entity type. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="73" column="28" bodyfile="entities.h" bodystart="73" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1aa62583214ac1842ed1878911111f8169" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* ExternalID</definition>
+        <argsstring></argsstring>
+        <name>ExternalID</name>
+        <qualifiedname>_xmlEntity::ExternalID</qualifiedname>
+        <briefdescription>
+<para>External identifier for PUBLIC. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="75" column="22" bodyfile="entities.h" bodystart="75" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a57a6e63e1025b7cca37eb3404d6ab0d8" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* SystemID</definition>
+        <argsstring></argsstring>
+        <name>SystemID</name>
+        <qualifiedname>_xmlEntity::SystemID</qualifiedname>
+        <briefdescription>
+<para>URI for a SYSTEM or PUBLIC Entity. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="77" column="24" bodyfile="entities.h" bodystart="77" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a35bc905ab64ab5e31e6a9ba8e7b32392" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlEntity" kindref="compound">_xmlEntity</ref> *</type>
+        <definition>struct _xmlEntity* nexte</definition>
+        <argsstring></argsstring>
+        <name>nexte</name>
+        <qualifiedname>_xmlEntity::nexte</qualifiedname>
+        <briefdescription>
+<para>unused </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="80" column="21" bodyfile="entities.h" bodystart="80" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1ae14779c7ab7f4d9d699c216f3f9f12ad" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* URI</definition>
+        <argsstring></argsstring>
+        <name>URI</name>
+        <qualifiedname>_xmlEntity::URI</qualifiedname>
+        <briefdescription>
+<para>the full URI as computed </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="82" column="29" bodyfile="entities.h" bodystart="82" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1aa695a8c4a65e8e7c5b752e3e846a44a9" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int owner</definition>
+        <argsstring></argsstring>
+        <name>owner</name>
+        <qualifiedname>_xmlEntity::owner</qualifiedname>
+        <briefdescription>
+<para>unused </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="84" column="28" bodyfile="entities.h" bodystart="84" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlEntity::flags</qualifiedname>
+        <briefdescription>
+<para>various flags </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="86" column="28" bodyfile="entities.h" bodystart="86" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEntity_1a126c9dd99b0e8ab47b821754f9427114" prot="public" static="no" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long expandedSize</definition>
+        <argsstring></argsstring>
+        <name>expandedSize</name>
+        <qualifiedname>_xmlEntity::expandedSize</qualifiedname>
+        <briefdescription>
+<para>expanded size </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="88" column="21" bodyfile="entities.h" bodystart="88" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>An entity declaration. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="8">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlDict</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDictStrings</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlEntity</label>
+        <link refid="struct__xmlEntity"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="1" relation="usage">
+          <edgelabel>nexte</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="entities.h" line="46" column="1" bodyfile="entities.h" bodystart="46" bodyend="89"/>
+    <listofallmembers>
+      <member refid="struct__xmlEntity_1a1cb76d737bf6f5b53e6c970073cba051" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>_private</name></member>
+      <member refid="struct__xmlEntity_1aff6ebaaa61a2b60c033a82790133fb5e" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>children</name></member>
+      <member refid="struct__xmlEntity_1a26031fb504d7c8616a5b161b0fbc8c62" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>content</name></member>
+      <member refid="struct__xmlEntity_1aeeffa6cba73333db3d9b2aa59f366304" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>doc</name></member>
+      <member refid="struct__xmlEntity_1af76cc1f1cb7092176790601561cc9f04" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>etype</name></member>
+      <member refid="struct__xmlEntity_1a126c9dd99b0e8ab47b821754f9427114" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>expandedSize</name></member>
+      <member refid="struct__xmlEntity_1aa62583214ac1842ed1878911111f8169" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>ExternalID</name></member>
+      <member refid="struct__xmlEntity_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>flags</name></member>
+      <member refid="struct__xmlEntity_1a557b64ca596f6376407afcd1b0c959a7" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>last</name></member>
+      <member refid="struct__xmlEntity_1a9f59b34b1f25fe00023291b678246bcc" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>length</name></member>
+      <member refid="struct__xmlEntity_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>name</name></member>
+      <member refid="struct__xmlEntity_1aec42d72625408c533e1ee43b0f668988" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>next</name></member>
+      <member refid="struct__xmlEntity_1a35bc905ab64ab5e31e6a9ba8e7b32392" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>nexte</name></member>
+      <member refid="struct__xmlEntity_1a92029984d123fe732154559fcf4e5662" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>orig</name></member>
+      <member refid="struct__xmlEntity_1aa695a8c4a65e8e7c5b752e3e846a44a9" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>owner</name></member>
+      <member refid="struct__xmlEntity_1a1bbdd81f913e63a073409c6d4e4b23c6" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>parent</name></member>
+      <member refid="struct__xmlEntity_1a6b50e54b959fb7df6b6af04da9f8da49" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>prev</name></member>
+      <member refid="struct__xmlEntity_1a57a6e63e1025b7cca37eb3404d6ab0d8" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>SystemID</name></member>
+      <member refid="struct__xmlEntity_1ac5b2f541d66059a7c8de2599ba543e70" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>type</name></member>
+      <member refid="struct__xmlEntity_1ae14779c7ab7f4d9d699c216f3f9f12ad" prot="public" virt="non-virtual"><scope>_xmlEntity</scope><name>URI</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

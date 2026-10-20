@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>594</width>
-    <height>620</height>
+    <width>750</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -41,7 +41,7 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,1,0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0,1,0,0,0,0">
      <item>
       <widget class="QComboBox" name="cbDirections">
        <property name="sizeAdjustPolicy">
@@ -50,7 +50,7 @@
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer">
+      <spacer name="charsetSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -65,7 +65,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Show and save data as</string>
+        <string>Show as</string>
        </property>
       </widget>
      </item>
@@ -74,6 +74,38 @@
        <property name="currentIndex">
         <number>-1</number>
        </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="deltaSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QComboBox" name="deltaComboBox">
+       <item>
+        <property name="text">
+         <string>No delta times</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Turn delta times</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>All delta times</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item>
@@ -99,6 +131,16 @@
      <item>
       <widget class="QSpinBox" name="streamNumberSpinBox"/>
      </item>
+     <item>
+      <widget class="QLabel" name="subStreamNumberLabel">
+       <property name="text">
+        <string>Substream</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="subStreamNumberSpinBox"/>
+     </item>
     </layout>
    </item>
    <item>
@@ -112,6 +154,13 @@
      </item>
      <item>
       <widget class="FindLineEdit" name="leFind"/>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="caseCheckBox">
+       <property name="text">
+        <string>Case sensitive</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="bFind">
@@ -135,12 +184,12 @@
   <customwidget>
    <class>FollowStreamText</class>
    <extends>QTextEdit</extends>
-   <header>follow_stream_text.h</header>
+   <header>widgets/follow_stream_text.h</header>
   </customwidget>
   <customwidget>
    <class>FindLineEdit</class>
    <extends>QLineEdit</extends>
-   <header>find_line_edit.h</header>
+   <header>widgets/find_line_edit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -3,7 +3,7 @@
 
 # Test of general operation.
 
-cat <<EOF > mu-test1.in
+cat <<\EOF > mu-test1.in
 msgid "eight"
 msgstr "eighth"
 

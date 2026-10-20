@@ -56,7 +56,7 @@ COMPILE = $(CC) -c $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(XCFLAGS)
 SOURCES = 
 POFILES = @POFILES@
 GMOFILES = @GMOFILES@
-DISTFILES = LINGUAS ChangeLog Makefile.in.in POTFILES.in $(GETTEXT_PACKAGE).pot \
+DISTFILES = LINGUAS Makefile.in.in POTFILES.in $(GETTEXT_PACKAGE).pot \
 $(POFILES) $(GMOFILES) $(SOURCES)
 
 POTFILES = \
@@ -93,7 +93,7 @@ all-yes: $(CATALOGS)
 all-no:
 
 $(srcdir)/$(GETTEXT_PACKAGE).pot: $(POTFILES)
-	$(XGETTEXT) --default-domain=$(GETTEXT_PACKAGE) \
+	$(XGETTEXT) --default-domain=$(GETTEXT_PACKAGE) --from-code=UTF-8 \
 	  --msgid-bugs-address='http://bugzilla.gnome.org/enter_bug.cgi?product=glib&keywords=I18N+L10N&component=general' \
 	  --add-comments --keyword=_ --keyword=N_ \
 	  --keyword=C_:1c,2 \
@@ -105,21 +105,21 @@ $(srcdir)/$(GETTEXT_PACKAGE).pot: $(POTFILES)
 	  --flag=C_:2:pass-c-format \
 	  --flag=NC_:2:pass-c-format \
 	  --flag=g_dngettext:2:pass-c-format \
-          --flag=g_strdup_printf:1:c-format \
-          --flag=g_string_printf:2:c-format \
-          --flag=g_string_append_printf:2:c-format \
-          --flag=g_error_new:3:c-format \
-          --flag=g_set_error:4:c-format \
-          --flag=g_markup_printf_escaped:1:c-format \
-          --flag=g_log:3:c-format \
-          --flag=g_print:1:c-format \
-          --flag=g_printerr:1:c-format \
-          --flag=g_printf:1:c-format \
-          --flag=g_fprintf:2:c-format \
-          --flag=g_sprintf:2:c-format \
-          --flag=g_snprintf:3:c-format \
-          --flag=g_scanner_error:2:c-format \
-          --flag=g_scanner_warn:2:c-format \
+	  --flag=g_strdup_printf:1:c-format \
+	  --flag=g_string_printf:2:c-format \
+	  --flag=g_string_append_printf:2:c-format \
+	  --flag=g_error_new:3:c-format \
+	  --flag=g_set_error:4:c-format \
+	  --flag=g_markup_printf_escaped:1:c-format \
+	  --flag=g_log:3:c-format \
+	  --flag=g_print:1:c-format \
+	  --flag=g_printerr:1:c-format \
+	  --flag=g_printf:1:c-format \
+	  --flag=g_fprintf:2:c-format \
+	  --flag=g_sprintf:2:c-format \
+	  --flag=g_snprintf:3:c-format \
+	  --flag=g_scanner_error:2:c-format \
+	  --flag=g_scanner_warn:2:c-format \
 	  $(POTFILES) \
 	&& test ! -f $(GETTEXT_PACKAGE).po \
 	   || ( rm -f $(srcdir)/$(GETTEXT_PACKAGE).pot \
@@ -226,7 +226,7 @@ update-po: Makefile
 	  if $(MSGMERGE) $$lang.po $(GETTEXT_PACKAGE).pot -o $$tmpdir/$$lang.new.po; then \
 	    if cmp $$lang.po $$tmpdir/$$lang.new.po >/dev/null 2>&1; then \
 	      rm -f $$tmpdir/$$lang.new.po; \
-            else \
+	    else \
 	      if mv -f $$tmpdir/$$lang.new.po $$lang.po; then \
 	        :; \
 	      else \

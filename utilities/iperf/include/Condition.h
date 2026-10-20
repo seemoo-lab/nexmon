@@ -1,48 +1,48 @@
-/*--------------------------------------------------------------- 
- * Copyright (c) 1999,2000,2001,2002,2003                              
- * The Board of Trustees of the University of Illinois            
- * All Rights Reserved.                                           
- *--------------------------------------------------------------- 
- * Permission is hereby granted, free of charge, to any person    
- * obtaining a copy of this software (Iperf) and associated       
- * documentation files (the "Software"), to deal in the Software  
- * without restriction, including without limitation the          
- * rights to use, copy, modify, merge, publish, distribute,        
- * sublicense, and/or sell copies of the Software, and to permit     
+/*---------------------------------------------------------------
+ * Copyright (c) 1999,2000,2001,2002,2003
+ * The Board of Trustees of the University of Illinois
+ * All Rights Reserved.
+ *---------------------------------------------------------------
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software (Iperf) and associated
+ * documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit
  * persons to whom the Software is furnished to do
- * so, subject to the following conditions: 
+ * so, subject to the following conditions:
  *
- *     
- * Redistributions of source code must retain the above 
- * copyright notice, this list of conditions and 
- * the following disclaimers. 
  *
- *     
- * Redistributions in binary form must reproduce the above 
- * copyright notice, this list of conditions and the following 
- * disclaimers in the documentation and/or other materials 
- * provided with the distribution. 
- * 
- *     
- * Neither the names of the University of Illinois, NCSA, 
- * nor the names of its contributors may be used to endorse 
+ * Redistributions of source code must retain the above
+ * copyright notice, this list of conditions and
+ * the following disclaimers.
+ *
+ *
+ * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following
+ * disclaimers in the documentation and/or other materials
+ * provided with the distribution.
+ *
+ *
+ * Neither the names of the University of Illinois, NCSA,
+ * nor the names of its contributors may be used to endorse
  * or promote products derived from this Software without
- * specific prior written permission. 
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
- * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT 
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+ * specific prior written permission.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * ________________________________________________________________
- * National Laboratory for Applied Network Research 
- * National Center for Supercomputing Applications 
- * University of Illinois at Urbana-Champaign 
+ * National Laboratory for Applied Network Research
+ * National Center for Supercomputing Applications
+ * University of Illinois at Urbana-Champaign
  * http://www.ncsa.uiuc.edu
- * ________________________________________________________________ 
+ * ________________________________________________________________
  *
  * Condition.h
  * by Mark Gates <mgates@nlanr.net>
@@ -59,21 +59,39 @@
 #include "util.h"
 
 #if   defined( HAVE_POSIX_THREAD )
-typedef struct Condition {
+struct Condition {
     pthread_cond_t mCondition;
     pthread_mutex_t mMutex;
-} Condition;
+};
 #elif defined( HAVE_WIN32_THREAD )
-typedef struct Condition {
+struct Condition {
     HANDLE mCondition;
     HANDLE mMutex;
-} Condition;
+};
 #else
-typedef struct Condition {
+struct Condition {
     int mCondition;
     int mMutex;
-} Condition;
+};
 #endif
+
+struct AwaitMutex {
+    struct Condition await;
+    int ready;
+};
+
+struct BarrierMutex {
+    struct Condition await;
+    struct timeval release_time;
+    int count;
+    int timeout;
+};
+
+struct ReferenceMutex {
+    Mutex lock;
+    int count;
+    int maxcount;
+};
 
 #define Condition_Lock( Cond ) Mutex_Lock( &Cond.mMutex )
 
@@ -112,11 +130,29 @@ typedef struct Condition {
     #define Condition_Destroy( Cond )
 #endif
 
+#define Condition_Destroy_Reference(Ref) do { \
+	Mutex_Destroy(&(Ref)->lock);	     \
+    } while ( 0 )
+
+#if defined (HAVE_CLOCK_GETTIME)
+  #define SETABSTIME(ts, seconds) do { \
+    clock_gettime(CLOCK_REALTIME, &ts); \
+    ts.tv_sec  += seconds; \
+} while (0)
+#else
+  #define SETABSTIME(ts, seconds) do { \
+    struct timeval t1; \
+    gettimeofday(&t1, NULL);
+    ts.tv_sec = t1.tv_sec + Seconds; \
+    ts.tv_nsec = t1.tv_sec * 1000; \
+} while (0)
+#endif
+
     // sleep this thread, waiting for condition signal
 #if   defined( HAVE_POSIX_THREAD )
     #define Condition_Wait( Cond ) pthread_cond_wait( &(Cond)->mCondition, &(Cond)->mMutex )
 #elif defined( HAVE_WIN32_THREAD )
-    // atomically release mutex and wait on condition,                      
+    // atomically release mutex and wait on condition,
     // then re-acquire the mutex
     #define Condition_Wait( Cond ) do {                                         \
         SignalObjectAndWait( (Cond)->mMutex, (Cond)->mCondition, INFINITE, 0 ); \
@@ -129,16 +165,20 @@ typedef struct Condition {
     // sleep this thread, waiting for condition signal,
     // but bound sleep time by the relative time inSeconds.
 #if   defined( HAVE_POSIX_THREAD )
-    #define Condition_TimedWait( Cond, inSeconds ) do {                         \
+    #define Condition_TimedWait( Cond, inSeconds ) do {                \
         struct timespec absTimeout;                                             \
-        absTimeout.tv_sec  = time( NULL ) + inSeconds;                          \
-        absTimeout.tv_nsec = 0;                                                 \
-       pthread_cond_timedwait( &(Cond)->mCondition, &(Cond)->mMutex, &absTimeout ); \
+        SETABSTIME(absTimeout, inSeconds);					\
+        pthread_cond_timedwait( &(Cond)->mCondition, &(Cond)->mMutex, &absTimeout ); \
+    } while ( 0 )
+    #define Condition_TimedLock( Cond, inSeconds ) do {		\
+        struct timespec absTimeout;                                             \
+        SETABSTIME(absTimeout, inSeconds);					\
+        pthread_mutex_timedlock(&Cond.mMutex, &absTimeout);	        \
     } while ( 0 )
 #elif defined( HAVE_WIN32_THREAD )
     // atomically release mutex and wait on condition,
     // then re-acquire the mutex
-    #define Condition_TimedWait( Cond, inSeconds ) do {                         \
+#define Condition_TimedWait( Cond, inSeconds ) do {			\
         SignalObjectAndWait( (Cond)->mMutex, (Cond)->mCondition, inSeconds*1000, false ); \
         Mutex_Lock( &(Cond)->mMutex );                          \
     } while ( 0 )

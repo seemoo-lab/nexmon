@@ -1,0 +1,40 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test D support: function call like syntax in templates.
+
+cat <<\EOF > xg-d-4.d
+void main ()
+{
+  tr!"Test string 1";
+  tr!("Test string 2");
+  tr !("Test string 3");
+  tr!("%.0sa piece of cake", "%s pieces of cake");
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -k'tr!' -k'tr!:1,2' -d xg-d-4.tmp xg-d-4.d || Exit 1
+LC_ALL=C tr -d '\r' < xg-d-4.tmp.po > xg-d-4.po || Exit 1
+
+cat <<\EOF > xg-d-4.ok
+msgid "Test string 1"
+msgstr ""
+
+msgid "Test string 2"
+msgstr ""
+
+msgid "Test string 3"
+msgstr ""
+
+#, c-format, d-format
+msgid "%.0sa piece of cake"
+msgid_plural "%s pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-d-4.ok xg-d-4.po || Exit 1
+
+exit 0

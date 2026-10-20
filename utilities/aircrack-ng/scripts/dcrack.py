@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import os
@@ -12,6 +12,9 @@ import gzip
 import json
 import datetime
 import re
+import socket
+import tempfile
+import errno
 
 if sys.version_info[0] >= 3:
 	from socketserver import ThreadingTCPServer
@@ -48,41 +51,80 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		s.wfile.write(bytes(result, "UTF-8"))
 
 	def do_POST(s):
-		if ("dict" in s.path):
-			s.do_upload_dict()
+		POST_failure = True
 
-		if ("cap" in s.path):
-			s.do_upload_cap()
+		# Read data here and pass it, so we can handle chunked encoding
+		if ("dict" in s.path) or ("cap" in s.path):
 
-		s.send_response(200)
-		s.send_header("Content-type", "text/plain")
-		s.end_headers()
-		s.wfile.write(bytes("OK", "UTF-8"))
+			tmp_file = "/tmp/" + next(tempfile._get_candidate_names())
+			with open(tmp_file, "wb") as fid:
+				if s.headers.get('Content-Length'):
+					cl = int(s.headers['Content-Length'])
+					fid.write(s.rfile.read(cl))
+					POST_failure = False
+				# elif s.headers.get('Transfer-Encoding') and s.headers['Transfer-Encoding'] == "chunked":
+				elif s.headers.get('Transfer-Encoding') == "chunked":
+					# With Python3, we need to handle chunked encoding
+					# If someone has a better solution, I'm all ears
 
-	def do_upload_dict(s):
+					while True:
+						chunk_size_hex = ""
+
+						# Get size
+						while True:
+							c = s.rfile.read(1)
+							if sys.version_info[0] >= 3:
+								c = chr(c[0])
+							if c == '\r':
+								# Skip next char ('\n')
+								c = s.rfile.read(1)
+								break
+							chunk_size_hex += c
+
+						# If string is empty, that's the end of it
+						if not chunk_size_hex:
+							break
+
+						# Convert from hex to integer
+						chunk_size = int(chunk_size_hex, 16)
+
+						# Read the amount of bytes
+						fid.write(s.rfile.read(chunk_size))
+					POST_failure = False
+
+			if (POST_failure == False):
+				if ("dict" in s.path):
+					s.do_upload_dict(tmp_file)
+
+				if ("cap" in s.path):
+					s.do_upload_cap(tmp_file)
+
+		try:
+			s.send_response(200)
+			s.send_header("Content-type", "text/plain")
+			s.end_headers()
+			if POST_failure == False:
+				s.wfile.write(bytes("OK", "UTF-8"))
+			else:
+				s.wfile.write(bytes("NO", "UTF-8"))
+		except BrokenPipeError as bpe:
+			# Connection closed, ignore
+			pass
+
+	def do_upload_dict(s, filename):
 		con = get_con()
 
 		f = "dcrack-dict"
 		c = f + ".gz"
-		o = open(c, "wb")
-		cl = int(s.headers['Content-Length'])
-		o.write(s.rfile.read(cl))
-		o.close()
+		os.rename(filename, c)
 
 		decompress(f)
-	
-		sha1 = hashlib.sha1()
-		x = open(f, "rb")
-		sha1.update(x.read())
-		x.close()
-		h = sha1.hexdigest()
 
-		x = open(f, "rb")
-		for i, l in enumerate(x):
-			pass
+		h = get_sha1sum_string(f)
 
-		i = i + 1
-		x.close()
+		with open(f, "rb") as fid:
+			for i, l in enumerate(fid):	pass
+			i += 1
 
 		n = "%s-%s.txt" % (f, h)
 		os.rename(f, n)
@@ -92,15 +134,30 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		c.execute("INSERT into dict values (?, ?, 0)", (h, i))
 		con.commit()
 
-	def do_upload_cap(s):
-		cl = int(s.headers['Content-Length'])
-		f = open("dcrack.cap.tmp.gz", "wb")
-		f.write(s.rfile.read(cl))
-		f.close()
+	def do_upload_cap(s, filename):
 
-		decompress("dcrack.cap.tmp")
-		os.rename("dcrack.cap.tmp.gz", "dcrack.cap.gz")
-		os.rename("dcrack.cap.tmp", "dcrack.cap")
+		tmp_cap = "/tmp/" + next(tempfile._get_candidate_names()) + ".cap"
+		os.rename(filename, tmp_cap + ".gz")
+
+		decompress(tmp_cap)
+        
+		# Check file is valid
+		output = subprocess.check_output(['wpaclean', tmp_cap + ".tmp", tmp_cap])
+		try:
+			os.remove(tmp_cap + ".tmp")
+		except:
+			pass
+
+		output_split = output.splitlines()
+		if len(output_split) > 2:
+			# We got more than 2 lines, which means there is a network
+			#  in there with a WPA/2 PSK handshake
+			os.rename(tmp_cap + ".gz", "dcrack.cap.gz")
+			os.rename(tmp_cap, "dcrack.cap")
+		else:
+			 # If nothing in the file, just delete it
+			os.remove(tmp_cap)
+			os.remove(tmp_cap + ".gz")
 
 	def do_req(s, path):
 		con = get_con()
@@ -146,18 +203,43 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		return "error"
 
 	def remove(s, path):
-		con = get_con()
-
 		p = path.split("/")
 		n = p[4].upper()
+		not_found = 0
 
+		# Validate BSSID
+		if not is_bssid_value(n):
+			return "NO"
+
+		con = get_con()
+
+		# Delete from nets
 		c = con.cursor()
-		c.execute("DELETE from nets where bssid = ?", (n,))
+		c.execute("SELECT * from nets where bssid = ?", (n,))
+		r = c.fetchall()
+		if r:
+			con.commit()
+			not_found += 1
+			c = con.cursor()
+			c.execute("DELETE from nets where bssid = ?", (n,))
 		con.commit()
 
-		c.execute("DELETE from work where net = ?", (n,))
+		# Delete from works
+		c = con.cursor()
+		c.execute("SELECT * from work where net = ?", (n,))
+		r = c.fetchall()
+		if r:
+			con.commit()
+			not_found += 1
+			c = con.cursor()
+			c.execute("DELETE from work where net = ?", (n,))
 		con.commit()
-		
+
+		# If both failed, return NO.
+		if not_found == 2:
+			return "NO"
+
+		# Otherwise, return OK
 		return "OK"
 
 	def get_status(s):
@@ -166,10 +248,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		c = con.cursor()
 		c.execute("SELECT * from clients")
 	
-		clients = []
-
-		for r in c.fetchall():
-			clients.append(r['speed'])
+		clients = [r['speed'] for r in c.fetchall()]
 
 		nets = []
 
@@ -207,10 +286,9 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
 		pf = "dcrack-pass.txt"
 
-		f = open(pf, "w")
-		f.write(pw)
-		f.write("\n")
-		f.close()
+		with open(pf, "w") as fid:
+			fid.write(pw)
+			fid.write("\n")
 
 		cmd = ["aircrack-ng", "-w", pf, "-b", net, "-q", "dcrack.cap"]
 		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, \
@@ -249,10 +327,13 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
 		p = path.split("/")
 		n = p[4].upper()
+		if not is_bssid_value(n):
+			return "NO"
 
 		x  = urlparse(path)
 		qs = parse_qs(x.query)
 
+		# TODO: Verify client ID sending it
 		if "pass" in qs:
 			return s.do_result_pass(n, qs['pass'][0])
 
@@ -315,9 +396,8 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		s.end_headers()
 
 		# XXX openat
-		f = open(fn, "rb")
-		s.wfile.write(f.read())
-		f.close()
+		with open(fn, "rb") as fid:
+			s.wfile.write(fid.read())
 
 		return None
 
@@ -327,12 +407,31 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		p = path.split("/")
 
 		n = p[4].upper()
+		# Validate BSSID
+		if not is_bssid_value(n):
+			return "NO"
 
+		# Only add network if it isn't already in there
+		# Update it if it failed cracking only
 		c = con.cursor()
-		c.execute("INSERT into nets values (?, NULL, 1)", (n,))
-		con.commit()
+		c.execute("SELECT * from nets where bssid = ?", (n,))
+		r = c.fetchone()
+		if r == None:
+			# Not in there, add it
+			c.execute("INSERT into nets values (?, NULL, 1)", (n,))
+			con.commit()
+			return "OK"
 
-		return "OK"
+		# Network already exists but has failed cracking
+		if r['state'] == 2 and r['pass'] == None:
+			c.execute("UPDATE nets SET state = 1 WHERE bssid = ?", (n,))
+			con.commit()
+			return "OK"
+
+        # State == 1: Just added or being worked on
+        # State == 2 and Pass exists: Already successfully cracked
+		con.commit()
+		return "NO"
 
 	def do_dict_set(s, path):
 		con = get_con()
@@ -340,6 +439,9 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		p = path.split("/")
 
 		h = p[4]
+		# Validate hash
+		if not is_sha1sum(h):
+			return "NO"
 
 		c = con.cursor()
 		c.execute("UPDATE dict set current = 0")
@@ -394,7 +496,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 					s = row['start'] - i
 				break
 
-			if (i >= row['start'] and i <= row['end']):
+			if (row['start'] <= i <= row['end']):
 				i = row['end']
 			else:
 				found = True
@@ -464,9 +566,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		d = p[4]
 
 		try:
-			f = open("dcrack-dict-%s.txt" % d)
-			f.close()
-
+			with open("dcrack-dict-%s.txt" % d): pass
 			return "OK"
 		except:
 			return "NO"
@@ -514,11 +614,19 @@ def init_db():
 def server():
 	init_db()
 
-	server_class = ThreadingTCPServer 
-	httpd = server_class(('', port), ServerHandler)
+	server_class = ThreadingTCPServer
+	try:
+		httpd = server_class(('', port), ServerHandler)
+	except socket.error as exc:
+		print("Failed listening on port %d" % port)
+		return
 
 	print("Starting server")
-	httpd.serve_forever()
+	try:
+		httpd.serve_forever()
+	except KeyboardInterrupt:
+		print("Bye!")
+	httpd.server_close()
 
 def usage():
 	print("""dcrack v0.3
@@ -542,7 +650,7 @@ def get_speed():
 	speed = p.stdout.readline()
 	speed = speed.split()
 	speed = speed[len(speed) - 2]
-	return int(speed)
+	return int(float(speed))
 
 def get_cid():
 	return random.getrandbits(64)
@@ -579,11 +687,23 @@ def get_work():
 	crack = json.loads(stuff)
 
 	if "interval" in crack:
-		print("Waiting")
-		return int(crack['interval'])
+		# Validate value
+		try:
+			interval = int(crack['interval'])
+			if (interval < 0):
+				raise ValueError('Interval must be above or equal to 0')
+		except:
+			# In case of failure, default to 60 sec
+			interval = 60
+		print("Waiting %d sec" % interval)
+		return interval
 
 	wl  = setup_dict(crack)
 	cap = get_cap(crack)
+
+	# If there's anything wrong with it, skip cracking
+	if wl == None or cap == None:
+		return
 
 	print("Cracking")
 
@@ -599,6 +719,7 @@ def get_work():
 
 	cracker = None
 
+	KEY_FOUND_STR = "KEY FOUND! [ "
 	if ("not in dictionary" in res):
 		print("No luck")
 		u = "%snet/%s/result?wl=%s&start=%d&end=%d&found=0" % \
@@ -606,14 +727,18 @@ def get_work():
 			crack['start'], crack['end'])
 
 		stuff = urlopen(u).read()
-	elif "KEY FOUND" in res:
-		pw = re.sub("^.*\[ ", "", res)
+	elif KEY_FOUND_STR in res:
+		start_pos = res.find(KEY_FOUND_STR) + len(KEY_FOUND_STR)
 
-		i = pw.rfind(" ]")
-		if i == -1:
+		end_pos = res.rfind(" ]")
+		if end_pos == -1 or end_pos - start_pos < 1:
 			raise BaseException("Can't parse output")
+		if end_pos - start_pos < 8:
+			raise BaseException("Failed parsing - Key too short")
+		if end_pos - start_pos > 63:
+			raise BaseException("Failed parsing - Key too long")
 
-		pw = pw[:i]
+		pw = res[start_pos:end_pos]
 
 		print("Key for %s is %s" % (crack['net'], pw))
 
@@ -623,65 +748,72 @@ def get_work():
 	return 0
 
 def decompress(fn):
-	f = gzip.open(fn + ".gz")
-	o = open(fn, "wb")
-	o.writelines(f)
-	o.close()
-	f.close()
+	with gzip.open(fn + ".gz") as fid1:
+		with open(fn, "wb") as fid2:
+			fid2.writelines(fid1)
 
 def setup_dict(crack):
 	global url
 
 	d = crack['dict']
+	if not re.compile("^[a-f0-9]{5,40}").match(d):
+		print("Invalid dictionary: %s" % d)
+		return None
+
+	#if not re.match("^[0-9]+$", d['start']) or not re.match("^[0-9]+$", d['end']):
+	if crack['start'] < 0 or crack['end'] < 0:
+		print("Wordlist: Invalid start or end line positions")
+		return None
+	if crack['end'] <= crack['start']:
+		print("Wordlist: End line position must be greater than start position")
+		return None
 
 	fn = "dcrack-client-dict-%s.txt" % d
 
 	try:
-		f = open(fn)
-		f.close()
+		with open(fn): pass
 	except:
 		print("Downloading dictionary %s" % d)
 
 		u = "%sdict/%s" % (url, d)
 		stuff = urlopen(u)
 
-		f = open(fn + ".gz", "wb")
-		f.write(stuff.read())
-		f.close()
+		with open(fn + ".gz", "wb") as fid:
+			fid.write(stuff.read())
 
 		print("Uncompressing dictionary")
 		decompress(fn)
-	
-		sha1 = hashlib.sha1()
-		f = open(fn, "rb")
-		sha1.update(f.read())
-		f.close()
-		h = sha1.hexdigest()
+
+		h = get_sha1sum_string(fn)
 
 		if h != d:
-			print("bad dictionary")
-			exit(1)
+			print("Bad dictionary, SHA1 don't match")
+			return None
 
+	# Split wordlist
 	s = "dcrack-client-dict-%s-%d:%d.txt" \
 		% (d, crack['start'], crack['end']) 
 
 	try:
-		f = open(s)
-		f.close()
+		with open(s): pass
 	except:
 		print("Splitting dict %s" % s)
-		f = open(fn, "rb")
-		o = open(s, "wb")
+		with open(fn, "rb") as fid1:
+			with open(s, "wb") as fid2:
+				for i, l in enumerate(fid1):
+					if i >= crack['end']:
+						break
+					if i >= crack['start']:
+						fid2.write(l)
 
-		for i, l in enumerate(f):
-			if i >= crack['end']:
-				break
-
-			if i >= crack['start']:
-				o.write(l)
-
-		f.close()
-		o.close()
+	# Verify wordlist isn't empty
+	try:
+		if os.stat(s).st_size == 0:
+			print("Empty dictionary file!")
+			return None
+	except:
+		print("Dictionary does not exists!")
+		return None;
 
 	return s
 
@@ -696,8 +828,7 @@ def get_cap(crack):
 		return fn
 
 	try:
-		f = open(fn, "rb")
-		f.close()
+		with open(fn, "rb"): pass
 		check_cap(fn, bssid)
 	except:
 		pass
@@ -710,9 +841,8 @@ def get_cap(crack):
 
 	stuff = urlopen(u)
 
-	f = open(fn + ".gz", "wb")
-	f.write(stuff.read())
-	f.close()
+	with open(fn + ".gz", "wb") as fid:
+		fid.write(stuff.read())
 
 	print("Uncompressing cap")
 	decompress(fn)
@@ -721,7 +851,8 @@ def get_cap(crack):
 	check_cap(fn, bssid)
 
 	if bssid not in nets:
-		raise BaseException("Can't find net %s" % bssid)
+		printf("Can't find net %s" % bssid)
+		return None
 
 	return fn
 
@@ -801,6 +932,7 @@ def client():
 
 	try_ping(speed)
 	t = threading.Thread(target=pinger, args=(speed,))
+	t.daemon = True
 	t.start()
 
 	while True:
@@ -817,7 +949,6 @@ def do_client():
 	except KeyboardInterrupt:
 		if cracker:
 			cracker.kill()
-		print("one more time...")
 
 def upload_file(url, f):
 	x  = urlparse(url)
@@ -825,21 +956,18 @@ def upload_file(url, f):
 
 	# XXX not quite HTTP form
 
-	f = open(f, "rb")
-	c.request("POST", x.path, f)
-	res = c.getresponse()
-	stuff = res.read()
-	c.close()
-	f.close()
+	with open(f, "rb") as fid:
+		c.request("POST", x.path, fid)
+		res = c.getresponse()
+		stuff = res.read()
+		c.close()
 
 	return stuff
 
 def compress_file(f):
-	i = open(f, "rb")
-	o = gzip.open(f + ".gz", "wb")
-	o.writelines(i)
-	o.close()
-	i.close()
+	with open(f, "rb") as fid1:
+		with gzip.open(f + ".gz", "wb") as fid2:
+			fid2.writelines(fid1)
 
 def send_dict():
 	global url
@@ -850,14 +978,31 @@ def send_dict():
 
 	d = sys.argv[4]
 
-	print("Calculating dictionary hash for %s" % d)
+	# Check if file exists
+	try:
+		if os.stat(d).st_size == 0:
+			print("Empty dictionary file!")
+			return
+	except:
+		print("Dictionary does not exists!")
+		return;
 
-	sha1 = hashlib.sha1()
-	f = open(d, "rb")
-	sha1.update(f.read())
-	f.close()
+	print("Cleaning up dictionary")
+	new_dict = "/tmp/" + next(tempfile._get_candidate_names()) + ".txt"
+	with open(new_dict, 'w') as fout:
+		with open(d) as fid:
+			for line in fid:
+				cleaned_line = line.rstrip("\n")
+				if len(cleaned_line) >= 8 and len(cleaned_line) <= 63:
+					fout.write(cleaned_line + "\n")
 
-	h = sha1.hexdigest()
+	if os.stat(new_dict).st_size == 0:
+		os.remove(new_dict)
+		print("No valid passphrase in dictionary")
+		return
+
+	print("Calculating dictionary hash for cleaned up %s" % d)
+	h = get_sha1sum_string(new_dict)
 
 	print("Hash is %s" % h)
 
@@ -867,9 +1012,11 @@ def send_dict():
 	if "NO" in str(stuff):
 		u = url + "dict/create"
 		print("Compressing dictionary")
-		compress_file(d)
+		compress_file(new_dict)
+		os.remove(new_dict)
 		print("Uploading dictionary")
-		upload_file(u, d + ".gz")
+		upload_file(u, new_dict + ".gz")
+		os.remove(new_dict + ".gz")
 
 	print("Setting dictionary to %s" % d)
 	u = url + "dict/" + h + "/set"
@@ -884,18 +1031,52 @@ def send_cap():
 
 	cap = sys.argv[4]
 
+	# Check if file exists
+	try:
+		if os.stat(cap).st_size <= 24:
+			# It may exists but contain no packets.
+			print("Empty capture file!")
+			return
+	except:
+		print("Capture file does not exists!")
+		return;
+
 	print("Cleaning cap %s" % cap)
-	subprocess.Popen(["wpaclean", cap + ".clean", cap], \
+	clean_cap = "/tmp/" + next(tempfile._get_candidate_names()) + ".cap"
+	subprocess.Popen(["wpaclean", clean_cap, cap], \
 	   stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
 
+	# Check cleaned file size (24 bytes -> 0 packets in file)
+	if os.stat(clean_cap).st_size <= 24:
+		print("Empty cleaned PCAP file, something's wrong with the original PCAP!")
+		return
+
 	print("Compressing cap")
-	compress_file(cap + ".clean")
+	compress_file(clean_cap)
+	os.remove(clean_cap)
 
 	u = url + "cap/create"
-	upload_file(u, cap + ".clean.gz")
+	ret = upload_file(u, clean_cap + ".gz")
+	ret = ret.decode("UTF-8")
+	if ret == "OK":
+		print("Upload successful")
+	elif ret == "NO":
+		print("Failed uploading wordlist")
+	else:
+		print("Unknown return value from server: %s" % (ret,))
+
+	# Delete temporary file
+	os.remove(clean_cap + ".gz")
 
 def cmd_crack():
-	net_cmd("crack")
+	ret = net_cmd("crack")
+	ret = ret.decode("UTF-8")
+	if ret == "OK":
+		print("Cracking job successfully added")
+	elif ret == "NO":
+		print("Failed adding cracking job!")
+	else:
+		print("Unknown return value from server: %s" % (ret,))
 
 def net_cmd(op):
 	global url
@@ -908,7 +1089,7 @@ def net_cmd(op):
 
 	print("%s %s" % (op, bssid))
 	u = "%snet/%s/%s" % (url, bssid, op)
-	stuff = urlopen(u).read()
+	return urlopen(u).read()
 
 def cmd_remove():
 	net_cmd("remove")
@@ -919,16 +1100,12 @@ def cmd_status():
 
 	stuff = json.loads(stuff.decode("utf-8"))
 
-#	print(stuff)
-#	print("=============")
-
-	i = 0
 	speed = 0
-	for c in stuff['clients']:
-		i += 1
+	idx = 0
+	for idx, c in enumerate(stuff['clients'], start=1):
 		speed += c
 
-	print("Clients\t%d\nSpeed\t%d\n" % (i, speed))
+	print("Clients\t%d\nSpeed\t%d\n" % (idx, speed))
 
 	need = 0
 
@@ -980,6 +1157,22 @@ def do_cmd():
 		print("Unknown cmd %s" % cmd)
 		usage()
 
+def get_sha1sum_string(f):
+		sha1 = hashlib.sha1()
+		with open(f, "rb") as fid:
+			sha1.update(fid.read())
+		return sha1.hexdigest()
+
+def is_sha1sum(h):
+	if re.match("[0-9a-fA-F]{40}", h):
+		return True
+	return False
+
+def is_bssid_value(b):
+	if re.match("([A-Fa-f0-9]{2}:){5}[A-Fa-f0-9]{2}", b):
+		return True
+	return False
+
 def main():
 	if len(sys.argv) < 2:
 		usage()
@@ -989,9 +1182,23 @@ def main():
 	if cmd == "server":
 		server()
 	elif cmd == "client":
-		client()
+		try:
+			client()
+		except KeyboardInterrupt:
+			pass
 	elif cmd == "cmd":
-		do_cmd()
+		try:
+			do_cmd()
+		except URLError as ue:
+			if "Connection refused" in ue.reason:
+				print("Connection to %s refused" % (sys.argv[2],))
+			else:
+				print(ue.reason)
+		except socket.error as se:
+			if se.errno == errno.ECONNREFUSED:
+				print("Connection refused")
+			else:
+				print(se)
 	else:
 		print("Unknown cmd", cmd)
 		usage()

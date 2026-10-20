@@ -14,7 +14,7 @@ QUIET_SPARSE	= @/bin/true
 endif
 
 PREFIX		?= /usr/local
-CFLAGS		+= -std=c99 -O2 -fomit-frame-pointer -Wall -D_BSD_SOURCE
+CFLAGS		+= -std=c99 -O2 -fomit-frame-pointer -Wall -D_DEFAULT_SOURCE
 LDFLAGS		?=
 
 SRCS		= ssb_sprom.c utils.c

@@ -1,0 +1,5 @@
+<reference xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:include href="../ents/issue733-1.xml" xpointer="a"/>
+    <xi:include href="../ents/issue733-2.xml" xpointer="a"/>
+    <xi:include href="../ents/issue733-1.xml" xpointer="b"/>
+</reference>

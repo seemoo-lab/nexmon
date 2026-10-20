@@ -1,0 +1,56 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of JavaScript support: A hairy JSX case.
+
+cat <<\EOF > xg-js-14.js
+const App = () => (
+  <div>
+    {gettext('one')}
+    <Foo>
+      <Foo>{foo && <Bar bar={<span>{gettext('two')}</span>} />}</Foo>
+    </Foo>
+    <Baz title={gettext('three')} />
+  </div>
+);
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --no-location -o xg-js-14.tmp xg-js-14.js 2>xg-js-14.err
+test $? = 0 || { cat xg-js-14.err; Exit 1; }
+func_filter_POT_Creation_Date xg-js-14.tmp xg-js-14.pot
+
+cat <<\EOF > xg-js-14.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "one"
+msgstr ""
+
+msgid "two"
+msgstr ""
+
+msgid "three"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-js-14.ok xg-js-14.pot
+result=$?
+
+exit $result

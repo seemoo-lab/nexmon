@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+modules=@WITH_MODULES@
+
+Name: libXML
+Version: @VERSION@
+Description: libXML library version2.
+Requires@XML_PC_PRIVATE@: @XML_PC_REQUIRES@
+Libs: @XML_LIBDIR@ @XML_LIBS@ @XML_PC_LIBS_PRIVATE@ @XML_PC_LIBS@ @LIBS@
+Cflags: @XML_INCLUDEDIR@ @XML_PC_CFLAGS_PRIVATE@ @XML_STATIC_CFLAGS@

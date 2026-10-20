@@ -1,18 +1,18 @@
 /* Character set conversion.
-   Copyright (C) 1999-2001, 2007, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 1999-2001, 2007, 2009-2026 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -26,9 +26,6 @@
 # include <stdint.h>
 # include <stdlib.h>
 # include "unistr.h"
-# ifndef uintptr_t
-#  define uintptr_t unsigned long
-# endif
 #endif
 
 #if REPLACE_ICONV_UTF
@@ -198,7 +195,10 @@ utf32be_mbtowc (ucs4_t *pwc, const unsigned char *s, size_t n)
 {
   if (n >= 4)
     {
-      ucs4_t wc = (s[0] << 24) + (s[1] << 16) + (s[2] << 8) + s[3];
+      ucs4_t wc =   ((ucs4_t) s[0] << 24)
+                  + ((ucs4_t) s[1] << 16)
+                  + ((ucs4_t) s[2] << 8)
+                  +  (ucs4_t) s[3];
       if (wc < 0x110000 && !(wc >= 0xd800 && wc < 0xe000))
         {
           *pwc = wc;
@@ -240,7 +240,10 @@ utf32le_mbtowc (ucs4_t *pwc, const unsigned char *s, size_t n)
 {
   if (n >= 4)
     {
-      ucs4_t wc = s[0] + (s[1] << 8) + (s[2] << 16) + (s[3] << 24);
+      ucs4_t wc =    (ucs4_t) s[0]
+                  + ((ucs4_t) s[1] << 8)
+                  + ((ucs4_t) s[2] << 16)
+                  + ((ucs4_t) s[3] << 24);
       if (wc < 0x110000 && !(wc >= 0xd800 && wc < 0xe000))
         {
           *pwc = wc;

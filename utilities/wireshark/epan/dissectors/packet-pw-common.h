@@ -6,25 +6,12 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_PW_COMMON_H
 #define PACKET_PW_COMMON_H
 
-#include <glib.h>
 #include <epan/packet.h>
 
 #define PWC_SIZEOF_CW 4
@@ -73,7 +60,7 @@ typedef enum {
 }
 pwc_demux_type_t;
 
-extern void pwc_item_append_cw(proto_item* item, const guint32 cw, const gboolean append_text);
+extern void pwc_item_append_cw(proto_item* item, const uint32_t cw, const bool append_text);
 extern void pwc_item_append_text_n_items(proto_item* item, const int n, const char * const item_text);
 
 #endif

@@ -1,0 +1,1891 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="error_8c" kind="file" language="C++">
+    <compoundname>error.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="no">stdarg.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/globals.h</includes>
+    <includes local="yes">private/parser.h</includes>
+    <includes local="yes">private/string.h</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/error.c</label>
+        <link refid="error_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="8">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="11">
+        <label>limits.h</label>
+      </node>
+      <node id="27">
+        <label>private/error.h</label>
+      </node>
+      <node id="28">
+        <label>private/globals.h</label>
+      </node>
+      <node id="29">
+        <label>private/parser.h</label>
+      </node>
+      <node id="30">
+        <label>private/string.h</label>
+      </node>
+      <node id="4">
+        <label>stdarg.h</label>
+      </node>
+      <node id="16">
+        <label>stddef.h</label>
+      </node>
+      <node id="10">
+        <label>stdio.h</label>
+      </node>
+      <node id="5">
+        <label>stdlib.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="error_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="9" column="9" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="9" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="error_8c_1a7ad381a94b466fcf3f1c87641c86984b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlIsCatastrophicError</definition>
+        <argsstring>(int level, int code)</argsstring>
+        <name>xmlIsCatastrophicError</name>
+        <param>
+          <type>int</type>
+          <declname>level</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>code</declname>
+        </param>
+        <briefdescription>
+<para>This currently comprises. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><itemizedlist>
+<listitem><para>OOM errors</para>
+</listitem><listitem><para>assertion failures</para>
+</listitem><listitem><para>invalid argument errors</para>
+</listitem><listitem><para>I/O errors</para>
+</listitem><listitem><para>unexpected errors from external libraries</para>
+</listitem></itemizedlist>
+</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>error level </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>code</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>error code </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true if an error is catastrophic. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="38" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="38" bodyend="59"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a3d8ba02de1060ae2e81f187188b356d2" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlVSetError</definition>
+        <argsstring>(xmlError *err, void *ctxt, xmlNodePtr node, int domain, int code, xmlErrorLevel level, const char *file, int line, const char *str1, const char *str2, const char *str3, int int1, int col, const char *fmt, va_list ap)</argsstring>
+        <name>xmlVSetError</name>
+        <param>
+          <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>domain</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>code</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a99cf79f750085bec4b5c3f2e188f47ae" kindref="member">xmlErrorLevel</ref></type>
+          <declname>level</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str1</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str2</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str3</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>int1</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>col</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>fmt</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>ap</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="68" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="68" bodyend="150"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1abd70a3db45c1cc4aa72435118196a7a6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlSetError</definition>
+        <argsstring>(xmlError *err, void *ctxt, xmlNodePtr node, int domain, int code, xmlErrorLevel level, const char *file, int line, const char *str1, const char *str2, const char *str3, int int1, int col, const char *fmt,...)</argsstring>
+        <name>xmlSetError</name>
+        <param>
+          <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>domain</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>code</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a99cf79f750085bec4b5c3f2e188f47ae" kindref="member">xmlErrorLevel</ref></type>
+          <declname>level</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str1</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str2</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str3</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>int1</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>col</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>fmt</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="153" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="153" bodyend="170"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a5efe7c5b5f0c89161c784821fe8ce094" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlVUpdateError</definition>
+        <argsstring>(xmlError *err, void *ctxt, xmlNodePtr node, int domain, int code, xmlErrorLevel level, const char *file, int line, const char *str1, const char *str2, const char *str3, int int1, int col, const char *fmt, va_list ap)</argsstring>
+        <name>xmlVUpdateError</name>
+        <param>
+          <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>domain</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>code</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a99cf79f750085bec4b5c3f2e188f47ae" kindref="member">xmlErrorLevel</ref></type>
+          <declname>level</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str1</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str2</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str3</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>int1</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>col</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>fmt</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>ap</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="173" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="173" bodyend="216"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a7fb6d7aa1d1fa7dc8f52d9f6ed356c7c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlGenericErrorDefaultFunc</definition>
+        <argsstring>(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlGenericErrorDefaultFunc</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Default handler for out-of-context error messages. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data (unused) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments to format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="232" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="232" bodyend="241"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1ab1b127a183bcaaf7de7f08928dd5994a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSetGenericErrorFunc</definition>
+        <argsstring>(void *ctx, xmlGenericErrorFunc handler)</argsstring>
+        <name>xmlSetGenericErrorFunc</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+          <declname>handler</declname>
+        </param>
+        <briefdescription>
+<para>Set the thread-local &quot;generic&quot; handler and context for error messages. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000129"><xreftitle>Deprecated</xreftitle><xrefdescription><para>See <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc</ref> for alternatives.</para>
+</xrefdescription></xrefsect></para>
+<para>If you only want to disable parser errors being printed to stderr, use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOERROR.</para>
+<para>The generic error handler will only receive fragments of error messages which should be concatenated or printed to a stream.</para>
+<para>If <computeroutput>handler</computeroutput> is NULL, use the built-in default handler which prints to stderr.</para>
+<para>Since this is a thread-local setting, it&apos;s a good idea to reset the error handler to its default value after collecting the errors you&apos;re interested in. To get the original values, you have to access xmlGenericError and xmlGenericErrorContext directly, making this function kind of useless.</para>
+<para>For multi-threaded applications, this must be set separately for each thread.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new error handling context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new handler function </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="272" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="272" bodyend="278"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a45950b585823204441216f768579b5f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSetStructuredErrorFunc</definition>
+        <argsstring>(void *ctx, xmlStructuredErrorFunc handler)</argsstring>
+        <name>xmlSetStructuredErrorFunc</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>handler</declname>
+        </param>
+        <briefdescription>
+<para>Set the thread-local &quot;structured&quot; handler and context for error messages. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000130"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use a per-context error handler.</para>
+</xrefdescription></xrefsect></para>
+<para>If you only want to disable parser errors being printed to stderr, use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOERROR.</para>
+<para>It&apos;s recommended to use the per-context error handlers instead:</para>
+<para><itemizedlist>
+<listitem><para><ref refid="parser_8h_1ae5ed5da325b136d630c2f774623ff06a" kindref="member">xmlCtxtSetErrorHandler</ref> (since 2.13.0)</para>
+</listitem><listitem><para><ref refid="xmlreader_8h_1a45c194b6a20004bb560871eee5151ae2" kindref="member">xmlTextReaderSetStructuredErrorHandler</ref></para>
+</listitem><listitem><para><ref refid="xpath_8h_1aafaae3e28020918cf6441389795943fa" kindref="member">xmlXPathSetErrorHandler</ref> (since 2.13.0)</para>
+</listitem><listitem><para><ref refid="xinclude_8h_1a9cdfa104cc6daeff5876365bfdd7f02d" kindref="member">xmlXIncludeSetErrorHandler</ref> (since 2.13.0)</para>
+</listitem><listitem><para><ref refid="xmlschemas_8h_1a127a79ab69f0666a6125184a6f7443d0" kindref="member">xmlSchemaSetParserStructuredErrors</ref></para>
+</listitem><listitem><para><ref refid="xmlschemas_8h_1a0f6271e2b4ac67e8ccfe8cd668152ce2" kindref="member">xmlSchemaSetValidStructuredErrors</ref></para>
+</listitem><listitem><para><ref refid="relaxng_8h_1a994aac8ce0fa8ac1c97090858395a8d6" kindref="member">xmlRelaxNGSetParserStructuredErrors</ref></para>
+</listitem><listitem><para><ref refid="relaxng_8h_1a54b060a45d314de14c2f79f5cfcd0fee" kindref="member">xmlRelaxNGSetValidStructuredErrors</ref></para>
+</listitem></itemizedlist>
+</para>
+<para>If <computeroutput>handler</computeroutput> is NULL, the error handler is deactivated.</para>
+<para>The structured error handler takes precedence over &quot;generic&quot; handlers, even per-context generic handlers.</para>
+<para>Since this is a thread-local setting, it&apos;s a good idea to reset the error handler to its default value after collecting the errors you&apos;re interested in. To get the original values, you have to access xmlStructuredError and xmlStructuredErrorContext directly, making this function kind of useless.</para>
+<para>For multi-threaded applications, this must be set separately for each thread.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new error handling context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new handler function </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="318" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="318" bodyend="321"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a4c835caa1ac445d4f8b1c73638ba85c9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlParserPrintFileInfo</definition>
+        <argsstring>(struct _xmlParserInput *input)</argsstring>
+        <name>xmlParserPrintFileInfo</name>
+        <param>
+          <type>struct <ref refid="struct__xmlParserInput" kindref="compound">_xmlParserInput</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <briefdescription>
+<para>Displays the associated file and line information for the current input. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000131"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="xmlerror_8h_1a5941264be0066259e1bb8ebca9837fe1" kindref="member">xmlFormatError</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="339" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="339" bodyend="349"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1af857d92fde88be5d5de7e91430c0483b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlParserPrintFileContextInternal</definition>
+        <argsstring>(xmlParserInputPtr input, xmlGenericErrorFunc channel, void *data)</argsstring>
+        <name>xmlParserPrintFileContextInternal</name>
+        <param>
+          <type>xmlParserInputPtr</type>
+          <declname>input</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+          <declname>channel</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Displays current context within the input content for error reporting. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> input </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>channel</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>output callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data for output callback </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="361" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="361" bodyend="385"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a47bc7a12167669aee6b1989133154c4f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlParserPrintFileContext</definition>
+        <argsstring>(struct _xmlParserInput *input)</argsstring>
+        <name>xmlParserPrintFileContext</name>
+        <param>
+          <type>struct <ref refid="struct__xmlParserInput" kindref="compound">_xmlParserInput</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <briefdescription>
+<para>Displays current context within the input content for error reporting. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000132"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="xmlerror_8h_1a5941264be0066259e1bb8ebca9837fe1" kindref="member">xmlFormatError</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="396" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="396" bodyend="399"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a5941264be0066259e1bb8ebca9837fe1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFormatError</definition>
+        <argsstring>(const xmlError *err, xmlGenericErrorFunc channel, void *data)</argsstring>
+        <name>xmlFormatError</name>
+        <param>
+          <type>const <ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+          <declname>channel</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Report a formatted error to a printf-like callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This can result in a verbose multi-line report including additional information from the parser context.</para>
+<para><simplesect kind="since"><para>2.13.0 </para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>channel</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data for callback </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="413" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="413" bodyend="621"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a3d515e1acab421ca9be14fc966b64753" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRaiseMemoryError</definition>
+        <argsstring>(xmlStructuredErrorFunc schannel, xmlGenericErrorFunc channel, void *data, int domain, xmlError *error)</argsstring>
+        <name>xmlRaiseMemoryError</name>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>schannel</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+          <declname>channel</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>domain</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+          <declname>error</declname>
+        </param>
+        <briefdescription>
+<para>Update the global and optional error structure, then forward the error to an error handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This function doesn&apos;t make memory allocations which are likely to fail after an OOM error.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schannel</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the structured callback channel </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>channel</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the old callback channel </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the callback data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>domain</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the domain for the error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>optional error struct to be filled </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="637" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="637" bodyend="661"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a38b5ce7f0a28493e26cd993544a458e0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlVRaiseError</definition>
+        <argsstring>(xmlStructuredErrorFunc schannel, xmlGenericErrorFunc channel, void *data, void *ctx, xmlNode *node, int domain, int code, xmlErrorLevel level, const char *file, int line, const char *str1, const char *str2, const char *str3, int int1, int col, const char *msg, va_list ap)</argsstring>
+        <name>xmlVRaiseError</name>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>schannel</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+          <declname>channel</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>domain</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>code</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a99cf79f750085bec4b5c3f2e188f47ae" kindref="member">xmlErrorLevel</ref></type>
+          <declname>level</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str1</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str2</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str3</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>int1</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>col</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>ap</declname>
+        </param>
+        <briefdescription>
+<para>Update the appropriate global or contextual error structure, then forward the error message down the parser or generic error callback handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schannel</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the structured callback channel </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>channel</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the old callback channel </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the callback data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the parser context or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>domain</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the domain for the error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>code</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the code for the error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlerror_8h_1a99cf79f750085bec4b5c3f2e188f47ae" kindref="member">xmlErrorLevel</ref> for the error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file source of the error (or NULL) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>line</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the line of the error or 0 if N/A </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra string info </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra string info </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra string info </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>int1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra int info </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>col</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>column number of the error or 0 if N/A </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message to display/transmit </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ap</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra parameters for the message display </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="688" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="688" bodyend="744"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1af49fbb1771b44e1674a69e6a3744bc35" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRaiseError</definition>
+        <argsstring>(xmlStructuredErrorFunc schannel, xmlGenericErrorFunc channel, void *data, void *ctx, xmlNode *node, int domain, int code, xmlErrorLevel level, const char *file, int line, const char *str1, const char *str2, const char *str3, int int1, int col, const char *msg,...)</argsstring>
+        <name>xmlRaiseError</name>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>schannel</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+          <declname>channel</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>domain</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>code</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a99cf79f750085bec4b5c3f2e188f47ae" kindref="member">xmlErrorLevel</ref></type>
+          <declname>level</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str1</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str2</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str3</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>int1</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>col</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Update the appropriate global or contextual error structure, then forward the error message down the parser or generic error callback handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schannel</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the structured callback channel </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>channel</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the old callback channel </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the callback data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the parser context or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>domain</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the domain for the error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>code</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the code for the error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="xmlerror_8h_1a99cf79f750085bec4b5c3f2e188f47ae" kindref="member">xmlErrorLevel</ref> for the error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file source of the error (or NULL) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>line</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the line of the error or 0 if N/A </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra string info </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra string info </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra string info </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>int1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra int info </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>col</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>column number of the error or 0 if N/A </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments to format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="771" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="771" bodyend="788"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1aa400e554c7e3817a036cc8b0cd853a08" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlVFormatLegacyError</definition>
+        <argsstring>(void *ctx, const char *level, const char *fmt, va_list ap)</argsstring>
+        <name>xmlVFormatLegacyError</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>level</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>fmt</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>ap</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="791" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="791" bodyend="824"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1aae147cdcd7fe91e04d4267816c8d438a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlParserError</definition>
+        <argsstring>(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlParserError</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>This is the default SAX error handler, but it will never be called. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If it isn&apos;t replaced by the user, errors will be handled by <ref refid="xmlerror_8h_1a5941264be0066259e1bb8ebca9837fe1" kindref="member">xmlFormatError</ref>.</para>
+<para><xrefsect id="deprecated_1_deprecated000133"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Do not call directly.</para>
+</xrefdescription></xrefsect></para>
+<para>Format an error message with additional detail from the parser context and print to generic error handler.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments to format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="841" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="841" bodyend="848"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1abad0bdb03736ce72902b303ec8525e6e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlParserWarning</definition>
+        <argsstring>(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlParserWarning</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>This is the default SAX warning handler, but it will never be called. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If it isn&apos;t replaced by the user, warnings will be handled by <ref refid="xmlerror_8h_1a5941264be0066259e1bb8ebca9837fe1" kindref="member">xmlFormatError</ref>.</para>
+<para><xrefsect id="deprecated_1_deprecated000134"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Do not call directly.</para>
+</xrefdescription></xrefsect></para>
+<para>Format an warning message with additional detail from the parser context and print to generic error handler.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments to format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="865" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="865" bodyend="872"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a4871dd90907de06048499857eb00383f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlParserValidityError</definition>
+        <argsstring>(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlParserValidityError</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>This is the default validity error handler, but it will never be called. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If it isn&apos;t replaced by the user, errors will be handled by <ref refid="xmlerror_8h_1a5941264be0066259e1bb8ebca9837fe1" kindref="member">xmlFormatError</ref>.</para>
+<para><xrefsect id="deprecated_1_deprecated000135"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Do not call directly.</para>
+</xrefdescription></xrefsect></para>
+<para>Format an error message with additional detail from the parser context and print to generic error handler.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments to format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="889" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="889" bodyend="896"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a090360e73f17c032faf53786c1dc2cc4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlParserValidityWarning</definition>
+        <argsstring>(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlParserValidityWarning</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>This is the default validity warning handler, but it will never be called. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If it isn&apos;t replaced by the user, warnings will be handled by <ref refid="xmlerror_8h_1a5941264be0066259e1bb8ebca9837fe1" kindref="member">xmlFormatError</ref>.</para>
+<para><xrefsect id="deprecated_1_deprecated000136"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Do not call directly.</para>
+</xrefdescription></xrefsect></para>
+<para>Format an warning message with additional detail from the parser context and print to generic error handler.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments to format </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="913" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="913" bodyend="920"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a71773096ad55a1eddf199f1662c2ba6c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+        <definition>const xmlError * xmlGetLastError</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlGetLastError</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Get the last error raised in this thread. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>a pointer to the error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="935" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="935" bodyend="942"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a20391fdd8a3d0fce203b4ff5eb5adac9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlResetError</definition>
+        <argsstring>(xmlError *err)</argsstring>
+        <name>xmlResetError</name>
+        <param>
+          <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <briefdescription>
+<para>Reset the error to success. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the error </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="950" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="950" bodyend="968"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a36e961bff49c5588f185a9789222c73d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlResetLastError</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlResetLastError</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Reset the last error to success. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="974" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="974" bodyend="980"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1ad4e17358c11ea8d7661fee271eda6f54" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCopyError</definition>
+        <argsstring>(const xmlError *from, xmlError *to)</argsstring>
+        <name>xmlCopyError</name>
+        <param>
+          <type>const <ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <briefdescription>
+<para>Copy an error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a source error </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a target error </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="990" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="990" bodyend="1005"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1afa4f17de790459555f9362cd7d16183b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const char *</type>
+        <definition>const char * xmlErrString</definition>
+        <argsstring>(xmlParserErrors code)</argsstring>
+        <name>xmlErrString</name>
+        <param>
+          <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+          <declname>code</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>code</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an error message for a code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="1012" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="1012" bodyend="1336"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1a62d9f44dc4ab8cec80e0163bca84ad40" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlVPrintErrorMessage</definition>
+        <argsstring>(const char *fmt, va_list ap)</argsstring>
+        <name>xmlVPrintErrorMessage</name>
+        <param>
+          <type>const char *</type>
+          <declname>fmt</declname>
+        </param>
+        <param>
+          <type>va_list</type>
+          <declname>ap</declname>
+        </param>
+        <briefdescription>
+<para>Prints to stderr. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fmt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ap</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="1345" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="1345" bodyend="1347"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1acb8d5e8ba6beeaf691dc3b7a20bfde6f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlPrintErrorMessage</definition>
+        <argsstring>(const char *fmt,...)</argsstring>
+        <name>xmlPrintErrorMessage</name>
+        <param>
+          <type>const char *</type>
+          <declname>fmt</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Prints to stderr. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fmt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="1356" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="1356" bodyend="1362"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8c_1ae9aa845ad1c9c317d95b739b50bff714" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlAbort</definition>
+        <argsstring>(const char *fmt,...)</argsstring>
+        <name>xmlAbort</name>
+        <param>
+          <type>const char *</type>
+          <declname>fmt</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+<para>Print message to stderr and abort. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fmt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>printf-like format string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/error.c" line="1371" column="1" bodyfile="/builds/GNOME/libxml2/error.c" bodystart="1371" bodyend="1379"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/error.c"/>
+  </compounddef>
+</doxygen>

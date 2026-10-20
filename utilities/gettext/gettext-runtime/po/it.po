@@ -1,171 +1,104 @@
 # Italian messages for gettext-runtime.
-# Copyright (C) 1997, 2005, 2006, 2007, 2010 Free Software Foundation, Inc.
+# Copyright (C) 1997, 2005, 2006, 2007, 2010, 2024 Free Software Foundation, Inc.
 # This file is distributed under the same license as the gettext package.
 # Marco Colombo <m.colombo@ed.ac.uk>, 2005, 2006, 2007, 2010, 2013, 2015.
 # Giovanni Bortolozzo <borto@pluto.linux.it>, 1997.
+# Michele Locati <michele@locati.it>, 2024, 2025.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: gettext-runtime 0.19.4.73\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
-"PO-Revision-Date: 2015-08-05 12:00+0100\n"
-"Last-Translator: Marco Colombo <m.colombo@ed.ac.uk>\n"
+"Project-Id-Version: GNU gettext-runtime 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2025-06-28 23:48+0200\n"
+"PO-Revision-Date: 2025-07-10 12:25+0200\n"
+"Last-Translator: Michele Locati <michele@locati.it>\n"
 "Language-Team: Italian <tp@lists.linux.it>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8-bit\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 
-#: gnulib-lib/closeout.c:66
-msgid "write error"
-msgstr "errore di scrittura"
-
-#: gnulib-lib/error.c:191
-msgid "Unknown system error"
-msgstr "Errore di sistema sconosciuto"
-
-#: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
-#, c-format
-msgid "%s: option '%s' is ambiguous; possibilities:"
-msgstr "%s: l'opzione '%s' è ambigua; scelte:"
-
-#: gnulib-lib/getopt.c:619
-#, c-format
-msgid "%s: option '%s' is ambiguous\n"
-msgstr "%s: l'opzione '%s' è ambigua\n"
-
-#: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
-#, c-format
-msgid "%s: option '--%s' doesn't allow an argument\n"
-msgstr "%s: l'opzione '--%s' non accetta argomenti\n"
-
-#: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
-#, c-format
-msgid "%s: option '%c%s' doesn't allow an argument\n"
-msgstr "%s: l'opzione '%c%s' non accetta argomenti\n"
-
-#: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
-#, c-format
-msgid "%s: option '--%s' requires an argument\n"
-msgstr "%s: l'opzione '%s' richiede un argomento\n"
-
-#: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
-#, c-format
-msgid "%s: unrecognized option '--%s'\n"
-msgstr "%s: opzione '--%s' non riconosciuta\n"
-
-#: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
-#, c-format
-msgid "%s: unrecognized option '%c%s'\n"
-msgstr "%s: opzione '%c%s' non riconosciuta\n"
-
-#: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
-#, c-format
-msgid "%s: invalid option -- '%c'\n"
-msgstr "%s: opzione non valida -- '%c'\n"
-
-#: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
-#: gnulib-lib/getopt.c:1136
-#, c-format
-msgid "%s: option requires an argument -- '%c'\n"
-msgstr "%s: l'opzione richiede un argomento -- '%c'\n"
-
-#: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
-#, c-format
-msgid "%s: option '-W %s' is ambiguous\n"
-msgstr "%s: l'opzione '-W %s' è ambigua\n"
-
-#: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
-#, c-format
-msgid "%s: option '-W %s' doesn't allow an argument\n"
-msgstr "%s: l'opzione '-W %s' non accetta argomenti\n"
-
-#: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
-#, c-format
-msgid "%s: option '-W %s' requires an argument\n"
-msgstr "%s: l'opzione '-W %s' richiede un argomento\n"
-
-#: gnulib-lib/xmalloc.c:38
-#, c-format
-msgid "memory exhausted"
-msgstr "memoria esaurita"
-
-#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:123
+#: src/envsubst.c:112 src/gettext.c:138 src/ngettext.c:128
+#: src/printf_gettext.c:111 src/printf_ngettext.c:116
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <%s>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"Licenza GPLv3+: GNU GPL versione 3 o superiore <http://gnu.org/licenses/gpl.html>\n"
-"\n"
-"Questo è software libero: siete liberi di cambiarlo e redistribuirlo.\n"
-"NON c'è alcuna garanzia, fino agli estremi permessi dalla legge.\n"
+"Licenza GPLv3+: GNU GPL versione 3 o successiva <%s>\n"
+"Questo è software libero: siete liberi di modificarlo e ridistribuirlo.\n"
+"Non c'è ALCUNA GARANZIA, nella misura consentita dalla legge.\n"
 
-#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:129
+#: src/envsubst.c:118 src/gettext.c:144 src/ngettext.c:134
+#: src/printf_gettext.c:117 src/printf_ngettext.c:122
 #, c-format
 msgid "Written by %s.\n"
 msgstr "Scritto da %s.\n"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/envsubst.c:118
+#: src/envsubst.c:118 src/printf_gettext.c:117 src/printf_ngettext.c:122
 msgid "Bruno Haible"
 msgstr "Bruno Haible"
 
-#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:141
+#: src/envsubst.c:127 src/gettext.c:162 src/ngettext.c:146
 #, c-format
 msgid "too many arguments"
 msgstr "troppi argomenti"
 
-#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:153
+#: src/envsubst.c:138 src/gettext.c:172 src/ngettext.c:158
+#: src/printf_ngettext.c:133
 #, c-format
 msgid "missing arguments"
 msgstr "argomenti mancanti"
 
-#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:207
+#: src/envsubst.c:176 src/gettext.c:249 src/ngettext.c:216
+#: src/printf_gettext.c:165 src/printf_ngettext.c:197
 #, c-format
 msgid "Try '%s --help' for more information.\n"
-msgstr "Usare '%s --help' per maggiori informazioni.\n"
+msgstr "Usare \"%s --help\" per maggiori informazioni.\n"
 
-#: src/envsubst.c:176
+#: src/envsubst.c:181
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [SHELL-FORMAT]\n"
 msgstr "Uso: %s [OPZIONE] [FORMATO-SHELL]\n"
 
-#: src/envsubst.c:181
+#: src/envsubst.c:186
 #, c-format, no-wrap
 msgid "Substitutes the values of environment variables.\n"
 msgstr "Sostituisce i valori delle variabili d'ambiente.\n"
 
-#: src/envsubst.c:185
+#: src/envsubst.c:190
 #, c-format, no-wrap
 msgid "Operation mode:\n"
-msgstr "Modo di operazione:\n"
+msgstr "Modalità operativa:\n"
 
-#: src/envsubst.c:188
+#: src/envsubst.c:193
 #, c-format, no-wrap
 msgid "  -v, --variables             output the variables occurring in SHELL-FORMAT\n"
 msgstr "  -v, --variables             mostra le variabili che appaiono in FORMATO-SHELL\n"
 
-#: src/envsubst.c:192
+#: src/envsubst.c:197 src/gettext.c:280 src/ngettext.c:248
+#: src/printf_gettext.c:188 src/printf_ngettext.c:224
 #, c-format, no-wrap
 msgid "Informative output:\n"
 msgstr "Output informativo:\n"
 
-#: src/envsubst.c:195
+#: src/envsubst.c:200
 #, c-format, no-wrap
 msgid "  -h, --help                  display this help and exit\n"
 msgstr "  -h, --help                  mostra questo aiuto ed esce\n"
 
-#: src/envsubst.c:198
+#: src/envsubst.c:203
 #, c-format, no-wrap
 msgid "  -V, --version               output version information and exit\n"
 msgstr "  -V, --version               mostra le informazioni sulla versione ed esce\n"
 
-#: src/envsubst.c:202
+#: src/envsubst.c:207
 #, c-format, no-wrap
 msgid ""
 "In normal operation mode, standard input is copied to standard output,\n"
@@ -178,78 +111,118 @@ msgstr ""
 "Nella modalità operativa normale, lo standard input viene copiato sullo\n"
 "standard output, con i riferimenti alle variabili d'ambiente nella forma\n"
 "$VARIABILE o ${VARIABILE} sostituiti dai valori corrispondenti.\n"
-"Se un FORMATO-SHELL è indicato, solo quelle variabili d'ambiente che sono\n"
-"referenziate in FORMATO-SHELL verranno sostituite; in caso contrario, saranno\n"
-"sostituiti tutti i riferimenti alle variabili d'ambiente che appaiono sullo\n"
-"standard input.\n"
+"Se è indicato un FORMATO-SHELL, solo le variabili d'ambiente referenziate\n"
+"in FORMATO-SHELL verranno sostituite; in caso contrario saranno sostituiti\n"
+"tutti i riferimenti alle variabili d'ambiente che appaiono sullo standard\n"
+"input.\n"
 
-#: src/envsubst.c:211
+#: src/envsubst.c:216
 #, c-format, no-wrap
 msgid ""
 "When --variables is used, standard input is ignored, and the output consists\n"
 "of the environment variables that are referenced in SHELL-FORMAT, one per line.\n"
 msgstr ""
-"Quando --variables è usato, lo standard input viene ignorato; l'output\n"
-"consiste delle variabili d'ambiente che sono referenziate in FORMATO-SHELL,\n"
-"una per riga.\n"
+"Quando viene usato --variables, lo standard input viene ignorato; l'output\n"
+"consiste delle variabili d'ambiente referenziate in FORMATO-SHELL, una per\n"
+"riga.\n"
 
-#. TRANSLATORS: The placeholder indicates the bug-reporting address
-#. for this package.  Please add _another line_ saying
+#. TRANSLATORS: The first placeholder is the web address of the Savannah
+#. project of this package.  The second placeholder is the bug-reporting
+#. email address for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:245
-msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
-msgstr "Segnalare i bug a <bug-gnu-gettext@gnu.org>.\n"
+#: src/envsubst.c:225 src/gettext.c:304 src/ngettext.c:269
+#: src/printf_gettext.c:277 src/printf_ngettext.c:313
+#, c-format
+msgid ""
+"Report bugs in the bug tracker at <%s>\n"
+"or by email to <%s>.\n"
+msgstr ""
+"Segnalare i bug nel bug tracker all'indirizzo <%s>\n"
+"o tramite email a <%s>.\n"
+"Segnalare gli errori di traduzione a <tp@lists.linux.it>.\n"
 
-#: src/envsubst.c:442
+#: src/envsubst.c:453
 #, c-format
 msgid "error while reading \"%s\""
 msgstr "errore durante la lettura di \"%s\""
 
-#: src/envsubst.c:443
+#: src/envsubst.c:453
 msgid "standard input"
 msgstr "standard input"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/gettext.c:140 src/ngettext.c:129
+#: src/gettext.c:144 src/ngettext.c:134
 msgid "Ulrich Drepper"
 msgstr "Ulrich Drepper"
 
-#: src/gettext.c:244
+#: src/gettext.c:254
 #, c-format, no-wrap
 msgid ""
 "Usage: %s [OPTION] [[TEXTDOMAIN] MSGID]\n"
 "or:    %s [OPTION] -s [MSGID]...\n"
 msgstr ""
-"Uso: %s [OPZIONE] [[DOMINIOTESTO] MSGID]\n"
-"  o: %s [OPZIONE] -s [MSGID]...\n"
+"Uso: %s [OPZIONE] [[DOMINIOTESTO] IDMSG]\n"
+"o:   %s [OPZIONE] -s [IDMSG]...\n"
 
-#: src/gettext.c:250
+#: src/gettext.c:260
 #, c-format, no-wrap
 msgid "Display native language translation of a textual message.\n"
-msgstr "Mostra la traduzione di un messaggio di testo in linguaggio nativo.\n"
+msgstr "Mostra la traduzione di un messaggio testuale nella lingua nativa.\n"
 
-#: src/gettext.c:254
+#: src/gettext.c:263 src/ngettext.c:230 src/printf_gettext.c:179
+#: src/printf_ngettext.c:211
+#, c-format
+msgid "Options and arguments:\n"
+msgstr "Opzioni e argomenti:\n"
+
+#: src/gettext.c:266
 #, c-format, no-wrap
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
+msgstr "  -d, --domain=DOMINIOTESTO ricava i messaggi tradotti da DOMINIOTESTO\n"
+
+#: src/gettext.c:268 src/ngettext.c:235
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for MSGID\n"
+msgstr "  -c, --context=CONTESTO    specifica il contesto per IDMSG\n"
+
+#: src/gettext.c:270 src/ngettext.c:237
+#, c-format
+msgid "  -e                        enable expansion of some escape sequences\n"
+msgstr "  -e                        abilita l'espansione di alcune sequenze di escape\n"
+
+#: src/gettext.c:272
+#, c-format
+msgid "  -n                        suppress trailing newline\n"
+msgstr "  -n                        sopprime il ritorno a capo finale\n"
+
+#: src/gettext.c:274 src/ngettext.c:239
+#, c-format
+msgid "  -E                        (ignored for compatibility)\n"
+msgstr "  -E                        (ignorato per compatibilità)\n"
+
+#: src/gettext.c:276
+#, c-format
 msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -n                        suppress trailing newline\n"
-"  -V, --version             display version information and exit\n"
 "  [TEXTDOMAIN] MSGID        retrieve translated message corresponding\n"
 "                            to MSGID from TEXTDOMAIN\n"
 msgstr ""
-"  -d, --domain=DOMINIOTESTO recupera i messaggi tradotti da DOMINIOTESTO\n"
-"  -e                        abilita l'espansione di alcune sequenze di escape\n"
-"  -E                        (ignorato per compatibilità)\n"
-"  -h, --help                mostra questo aiuto ed esce\n"
-"  -V, --version             mostra le informazioni sulla versione ed esce\n"
-"  [DOMINIOTESTO] MSGID      recupera da DOMINIOTESTO i messaggi tradotti\n"
-"                            corrispondenti a MSGID\n"
+"  [DOMINIOTESTO] IDMSG      ricava il messaggio tradotto corrispondente a\n"
+"                            IDMSG da DOMINIOTESTO\n"
 
-#: src/gettext.c:265
+#: src/gettext.c:282 src/ngettext.c:250 src/printf_gettext.c:190
+#: src/printf_ngettext.c:226
+#, c-format
+msgid "  -h, --help                display this help and exit\n"
+msgstr "  -h, --help                mostra questo aiuto ed esce\n"
+
+#: src/gettext.c:284 src/ngettext.c:252 src/printf_gettext.c:192
+#: src/printf_ngettext.c:228
+#, c-format
+msgid "  -V, --version             display version information and exit\n"
+msgstr "  -V, --version             mostra le informazioni sulla versione ed esce\n"
+
+#: src/gettext.c:288
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -262,52 +235,51 @@ msgid ""
 "Standard search directory: %s\n"
 msgstr ""
 "Se il parametro DOMINIOTESTO non è indicato, il dominio è determinato dalla\n"
-"variabile d'ambiente TEXTDOMAIN. Se il catalogo dei messaggi non si trova\n"
-"nella directory solita, può essere specificata un'altra posizione con la\n"
+"variabile d'ambiente TEXTDOMAIN.  Se il catalogo dei messaggi non si trova\n"
+"nella directory normale, può essere specificata un'altra posizione con la\n"
 "variabile d'ambiente TEXTDOMAINDIR.\n"
-"Quando è usato con l'opzione -s, il programma si comporta come il comando \n"
-"'echo' ma, invece di copiare semplicemente gli argomenti su standard output,\n"
-"traduce i messaggi trovati nel catalogo selezionato.\n"
+"Quando usato con l'opzione -s, il programma si comporta come il comando \"echo\"\n"
+"ma, invece di copiare semplicemente gli argomenti su standard output, traduce\n"
+"i messaggi trovati nel catalogo selezionato.\n"
 "Directory di ricerca standard: %s\n"
 
-#: src/ngettext.c:212
+#: src/ngettext.c:221
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n"
-msgstr "Uso: %s [OPZIONE] [DOMINIOTESTO] MSGID MSGID-PLURAL NUMERO\n"
+msgstr "Uso: %s [OPZIONE] [DOMINIOTESTO] IDMSG IDMSG-PLURALE CONTEGGIO\n"
 
-#: src/ngettext.c:217
+#: src/ngettext.c:226
 #, c-format, no-wrap
 msgid ""
 "Display native language translation of a textual message whose grammatical\n"
 "form depends on a number.\n"
 msgstr ""
 "Mostra la traduzione di un messaggio di testo, la cui forma grammaticale\n"
-"dipende da un numero, in linguaggio nativo.\n"
-
-#: src/ngettext.c:222
-#, c-format, no-wrap
-msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -V, --version             display version information and exit\n"
-"  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
-"  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
-"  COUNT                     choose singular/plural form based on this value\n"
-msgstr ""
-"  -d, --domain=DOMINIOTESTO recupera i messaggi tradotti da DOMINIOTESTO\n"
-"  -e                        abilita l'espansione di alcune sequenze di escape\n"
-"  -E                        (ignorato per compatibilità)\n"
-"  -h, --help                mostra questo aiuto ed esce\n"
-"  -V, --version             mostra le informazioni sulla versione ed esce\n"
-"  [DOMINIOTESTO]            recupera da DOMINIOTESTO i messaggi tradotti\n"
-"  MSGID MSGID-PLURAL        traduce MSGID (singolare) e MSGID-PLURAL (plurale)\n"
-"  NUMERO                    sceglie la forma singolare/plurale in base a\n"
-"                            questo valore\n"
-"\n"
+"dipende da un numero, nella lingua nativa.\n"
 
 #: src/ngettext.c:233
+#, c-format, no-wrap
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
+msgstr "  -d, --domain=DOMINIOTESTO ricava messaggio tradotto da DOMINIOTESTO\n"
+
+#: src/ngettext.c:241
+#, c-format
+msgid "  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
+msgstr "  [DOMINIOTESTO]            ricava messaggio tradotto da DOMINIOTESTO\n"
+
+#: src/ngettext.c:243
+#, c-format
+msgid "  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
+msgstr "  IDMSG IDMSG-PLURALE       traduce IDMSG (singolare)/IDMSG-PLURALE (plurale)\n"
+
+#: src/ngettext.c:245 src/printf_ngettext.c:219
+#, c-format
+msgid "  COUNT                     choose singular/plural form based on this value\n"
+msgstr ""
+"  CONTEGGIO                 seleziona la forma singolare/plurale in base a\n"
+"                            questo valore\n"
+
+#: src/ngettext.c:256
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -317,7 +289,278 @@ msgid ""
 "Standard search directory: %s\n"
 msgstr ""
 "Se il parametro DOMINIOTESTO non è indicato, il dominio è determinato dalla\n"
-"variabile d'ambiente TEXTDOMAIN. Se il catalogo dei messaggi non si trova\n"
-"nella directory solita, può essere specificata un'altra posizione con la\n"
+"variabile d'ambiente TEXTDOMAIN.  Se il catalogo dei messaggi non si trova\n"
+"nella directory normale, può essere specificata un'altra posizione con la\n"
 "variabile d'ambiente TEXTDOMAINDIR.\n"
 "Directory di ricerca standard: %s\n"
+
+#: src/printf-command.c:154
+#, c-format
+msgid "In the directive number %zu, the argument number 0 is not a positive integer."
+msgstr "Nella direttiva numero %zu, l'argomento numero 0 non è un intero positivo."
+
+#: src/printf-command.c:237
+#, c-format
+msgid "The string ends in the middle of a directive."
+msgstr "La stringa termina nel mezzo di una direttiva."
+
+#: src/printf-command.c:242
+#, c-format
+msgid "In the directive number %zu, the character '%c' is not a valid conversion specifier."
+msgstr "Nella direttiva numero %zu, il carattere \"%c\" non è uno specificatore di conversione valido."
+
+#: src/printf-command.c:246
+#, c-format
+msgid "The character that terminates the directive number %zu is not a valid conversion specifier."
+msgstr "Il carattere che termina la direttiva numero %zu non è uno specificatore di conversione valido."
+
+#: src/printf-command.c:255 src/printf-command.c:259
+#, c-format
+msgid "In the directive number %zu, the flag '%c' is invalid for the conversion '%c'."
+msgstr "Nella direttiva numero %zu, il flag \"%c\" non è valido per la conversione \"%c\"."
+
+#: src/printf-command.c:278 src/printf-command.c:292
+#, c-format
+msgid "The string refers to arguments both through absolute argument numbers and through unnumbered argument specifications."
+msgstr "La stringa fa riferimento ad argomenti attraverso specifiche di argomento sia con numero che senza numero."
+
+#: src/printf-command.c:394
+#, c-format
+msgid "The string ends in the middle of an escape sequence."
+msgstr "La stringa termina nel mezzo di una sequenza di escape."
+
+#: src/printf-command.c:402
+#, c-format
+msgid "The escape sequence '%c%c' is unsupported (not in POSIX)."
+msgstr "La sequenza di escape \"%c%c\" non è supportata (non in POSIX)."
+
+#: src/printf-command.c:403
+#, c-format
+msgid "The escape sequence '%c%c' is invalid."
+msgstr "La sequenza di escape \"%c%c\" non è valida."
+
+#: src/printf-command.c:407
+#, c-format
+msgid "This escape sequence is invalid."
+msgstr "La sequenza di escape non è valida."
+
+#: src/printf-command.c:455 src/printf-command.c:501 src/printf-command.c:568
+#: src/printf-command.c:638 src/printf-command.c:691
+#, c-format
+msgid "write error"
+msgstr "errore di scrittura"
+
+#: src/printf-command.c:529 src/printf-command.c:556 src/printf-command.c:597
+#: src/printf-command.c:626 src/printf-command.c:679
+#, c-format
+msgid "%s: expected a numeric value"
+msgstr "%s: valore numerico atteso"
+
+#: src/printf-command.c:550 src/printf-command.c:620 src/printf-command.c:673
+#, c-format
+msgid "%s: value not completely converted"
+msgstr "%s: valore non convertito completamente"
+
+#: src/printf-command.c:717
+#, c-format
+msgid "The translated format string consumes %zu arguments, whereas the original format string consumes only %zu arguments."
+msgstr "La stringa di formato tradotta consuma %zu argomenti, mentre il formato originale ne consuma solo %zu."
+
+#: src/printf-command.c:728
+#, c-format
+msgid "warning: ignoring excess arguments, starting with %s"
+msgstr "attenzione: argomenti in eccesso ignorati, a partire da %s"
+
+#: src/printf_gettext.c:128
+#, c-format
+msgid "missing format string"
+msgstr "stringa di formato mancante"
+
+#: src/printf_gettext.c:170
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION] FORMAT [ARGUMENT]...\n"
+msgstr "Uso: %s [OPZIONE] FORMATO [ARGOMENTO]...\n"
+
+#: src/printf_gettext.c:175
+#, c-format, no-wrap
+msgid ""
+"Produces formatted output, applying the native language translation of FORMAT\n"
+"to the ARGUMENTs.\n"
+msgstr ""
+"Produce un output formattato, applicando la traduzione in lingua madre di FORMATO\n"
+"agli ARGOMENTI.\n"
+
+#: src/printf_gettext.c:181 src/printf_ngettext.c:213
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for FORMAT\n"
+msgstr "  -c, --context=CONTESTO    specifica il contesto per FORMATO\n"
+
+#: src/printf_gettext.c:183
+#, c-format
+msgid "  FORMAT                    format string\n"
+msgstr "  FORMATO                   stringa di formato\n"
+
+#: src/printf_gettext.c:185 src/printf_ngettext.c:221
+#, c-format
+msgid "  ARGUMENT                  string or numeric argument\n"
+msgstr "  ARGOMENTO                 stringa o argomento numerico\n"
+
+#: src/printf_gettext.c:196
+#, c-format, no-wrap
+msgid ""
+"The format string consists of\n"
+"  - plain text,\n"
+"  - directives, that start with '%c',\n"
+"  - escape sequences, that start with a backslash.\n"
+msgstr ""
+"La stringa di formato consiste in\n"
+"  - testo normale,\n"
+"  - direttive, che iniziano con \"%c\",\n"
+"  - sequenze di escape, che iniziano con un backslash.\n"
+
+#: src/printf_gettext.c:204 src/printf_ngettext.c:240
+#, c-format, no-wrap
+msgid ""
+"A directive that consumes an argument\n"
+"  - starts with '%s' or '%s' where %s is a positive integer,\n"
+"  - is optionally followed by any of the characters '%c', '%c', '%c', '%c', '%c',\n"
+"    each of which acts as a flag,\n"
+"  - is optionally followed by a width specification (a nonnegative integer),\n"
+"  - is optionally followed by '%c' and a precision specification (an optional\n"
+"    nonnegative integer),\n"
+"  - is finished by a specifier\n"
+"      - '%c', that prints a character,\n"
+"      - '%c', that prints a string,\n"
+"      - '%c', '%c', that print an integer,\n"
+"      - '%c', '%c', '%c', '%c', that print an unsigned (nonnegative) integer,\n"
+"      - '%c', '%c', that print a floating-point number in scientific notation,\n"
+"      - '%c', '%c', that print a floating-point number without an exponent,\n"
+"      - '%c', '%c', that print a floating-point number in general notation,\n"
+"      - '%c', '%c', that print a floating-point number in hexadecimal notation.\n"
+"Additionally there is the directive '%s', that prints a single '%c'.\n"
+msgstr ""
+"Una direttiva che richiede un argomento\n"
+"  - inizia con \"%s\" o \"%s\", dove %s è un numero intero positivo,\n"
+"  - è facoltativamente seguita da uno qualsiasi dei caratteri \"%c\", \"%c\", \"%c\", \"%c\", \"%c\",\n"
+"    ognuno dei quali funge da flag,\n"
+"  - è facoltativamente seguita da una specifica di larghezza (un numero intero\n"
+"    non negativo),\n"
+"  - è facoltativamente seguita da \"%c\" e da una specifica di precisione\n"
+"    (un intero non negativo opzionale),\n"
+"  - è completata da un identificatore\n"
+"      - \"%c\", che stampa un carattere,\n"
+"      - \"%c\", che stampa una stringa,\n"
+"      - \"%c\", \"%c\", che stampano un numero intero,\n"
+"      - \"%c\", \"%c\", \"%c\", \"%c\", che stampano un numero intero senza\n"
+"        segno (non negativo),\n"
+"      - \"%c\", \"%c\", che stampano un numero in virgola mobile in notazione\n"
+"        scientifica,\n"
+"      - \"%c\", \"%c\", che stampano un numero in virgola mobile senza\n"
+"        esponente,\n"
+"      - \"%c\", \"%c\", che stampano un numero in virgola mobile in notazione\n"
+"        generale,\n"
+"      - \"%c\", \"%c\", che stampano un numero in virgola mobile in notazione\n"
+"        esadecimale.\n"
+"Inoltre, la direttiva \"%s\" stampa un singolo \"%c\".\n"
+
+#: src/printf_gettext.c:233 src/printf_ngettext.c:269
+#, c-format, no-wrap
+msgid ""
+"If a directive specifies the argument by its number ('%s' notation),\n"
+"all directives that consume an argument must do so.\n"
+msgstr ""
+"Se una direttiva specifica l'argomento con il suo numero (notazione \"%s\"),\n"
+"tutte le direttive che utilizzano un argomento devono farlo.\n"
+
+#. TRANSLATORS: Most of the placeholders expand to 2 characters.
+#. The last placeholder expands to 4 characters.
+#: src/printf_gettext.c:240 src/printf_ngettext.c:276
+#, c-format
+msgid ""
+"The escape sequences are:\n"
+"\n"
+"  %s      backslash\n"
+"  %s      alert (BEL)\n"
+"  %s      backspace (BS)\n"
+"  %s      form feed (FF)\n"
+"  %s      new line (LF)\n"
+"  %s      carriage return (CR)\n"
+"  %s      horizontal tab (HT)\n"
+"  %s      vertical tab (VT)\n"
+"  %s    octal number with 1 to 3 octal digits\n"
+msgstr ""
+"Le sequenze di escape sono:\n"
+"\n"
+"  %s      backslash\n"
+"  %s      allarme (BEL)\n"
+"  %s      backspace (BS)\n"
+"  %s      avanzamento pagina (FF)\n"
+"  %s      nuova riga (LF)\n"
+"  %s      ritorno a capo (CR)\n"
+"  %s      tabulazione orizzontale (HT)\n"
+"  %s      tabulazione verticale (VT)\n"
+"  %s    numero ottale con da 1 a 3 cifre ottali\n"
+
+#: src/printf_gettext.c:255 src/printf_ngettext.c:291
+#, c-format
+msgid "Environment variables:\n"
+msgstr "Variabili d'ambiente:\n"
+
+#: src/printf_gettext.c:259 src/printf_ngettext.c:295
+#, c-format, no-wrap
+msgid ""
+"The translation of the format string is looked up in the translation domain\n"
+"given by the environment variable %s.\n"
+msgstr ""
+"La traduzione della stringa di formato viene cercata nel dominio di\n"
+"traduzione specificato dalla variabile d'ambiente %s.\n"
+
+#: src/printf_gettext.c:264 src/printf_ngettext.c:300
+#, c-format, no-wrap
+msgid ""
+"It is looked up in the catalogs directory given by the environment variable\n"
+"%s or, if not present, in the default catalogs directory.\n"
+"This binary is configured to use the default catalogs directory:\n"
+"%s\n"
+msgstr ""
+"Viene cercato nella directory dei cataloghi indicata dalla variabile di\n"
+"ambiente %s o, se non presente, nella directory dei cataloghi predefinita.\n"
+"Questo binario è configurato per usare la directory predefinita dei cataloghi:\n"
+"%s\n"
+
+#: src/printf_ngettext.c:202
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION] FORMAT FORMAT-PLURAL COUNT [ARGUMENT]...\n"
+msgstr "Uso: %s [OPZIONE] FORMATO FORMATO-PLURALE CONTEGGIO [ARGOMENTO]...\n"
+
+#: src/printf_ngettext.c:207
+#, c-format, no-wrap
+msgid ""
+"Produces formatted output, applying the native language translation of FORMAT\n"
+"and FORMAT-PLURAL, depending on COUNT, to the ARGUMENTs.\n"
+msgstr ""
+"Produce un output formattato, applicando la traduzione in lingua madre di\n"
+"FORMATO e FORMATO-PLURALE, a seconda di CONTEGGIO, agli ARGOMENTI.\n"
+
+#: src/printf_ngettext.c:215
+#, c-format
+msgid "  FORMAT                    English singular form of format string\n"
+msgstr "  FORMATO                   Forma singolare inglese della stringa di formato\n"
+
+#: src/printf_ngettext.c:217
+#, c-format
+msgid "  FORMAT-PLURAL             English plural form of format string\n"
+msgstr "  FORMATO-PLURALE           Forma plurale inglese della stringa di formato\n"
+
+#: src/printf_ngettext.c:232
+#, c-format, no-wrap
+msgid ""
+"Each format string consists of\n"
+"  - plain text,\n"
+"  - directives, that start with '%c',\n"
+"  - escape sequences, that start with a backslash.\n"
+msgstr ""
+"Ciascuna stringa di formato consiste in\n"
+"  - testo normale,\n"
+"  - direttive, che iniziano con \"%c\",\n"
+"  - sequenze di escape, che iniziano con un backslash.\n"

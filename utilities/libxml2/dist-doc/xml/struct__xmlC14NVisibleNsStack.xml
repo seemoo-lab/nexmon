@@ -1,0 +1,235 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlC14NVisibleNsStack" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlC14NVisibleNsStack</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlC14NVisibleNsStack_1ac479666f0b6fc6d38fc4c00d5de78b3d" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nsCurEnd</definition>
+        <argsstring></argsstring>
+        <name>nsCurEnd</name>
+        <qualifiedname>_xmlC14NVisibleNsStack::nsCurEnd</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="43" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlC14NVisibleNsStack_1ab4fa6e66b54367eaf20c0bb7dbeb14e6" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nsPrevStart</definition>
+        <argsstring></argsstring>
+        <name>nsPrevStart</name>
+        <qualifiedname>_xmlC14NVisibleNsStack::nsPrevStart</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="44" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="44" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlC14NVisibleNsStack_1ae42c3eb9546015bcd2759fb3b918d584" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nsPrevEnd</definition>
+        <argsstring></argsstring>
+        <name>nsPrevEnd</name>
+        <qualifiedname>_xmlC14NVisibleNsStack::nsPrevEnd</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="45" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlC14NVisibleNsStack_1a0e8b493ec7967cae99b3d0847eb5b341" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nsMax</definition>
+        <argsstring></argsstring>
+        <name>nsMax</name>
+        <qualifiedname>_xmlC14NVisibleNsStack::nsMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="46" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlC14NVisibleNsStack_1a16e6b582c6c07c09df77b5e54b2d647b" prot="public" static="no" mutable="no">
+        <type>xmlNsPtr *</type>
+        <definition>xmlNsPtr* nsTab</definition>
+        <argsstring></argsstring>
+        <name>nsTab</name>
+        <qualifiedname>_xmlC14NVisibleNsStack::nsTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="47" column="13" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlC14NVisibleNsStack_1a00b65a74571749401c015aba99b888bd" prot="public" static="no" mutable="no">
+        <type>xmlNodePtr *</type>
+        <definition>xmlNodePtr* nodeTab</definition>
+        <argsstring></argsstring>
+        <name>nodeTab</name>
+        <qualifiedname>_xmlC14NVisibleNsStack::nodeTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="48" column="15" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="48" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="5">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlC14NVisibleNsStack</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>nsTab</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDict</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDictStrings</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/c14n.c" line="42" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="42" bodyend="49"/>
+    <listofallmembers>
+      <member refid="struct__xmlC14NVisibleNsStack_1a00b65a74571749401c015aba99b888bd" prot="public" virt="non-virtual"><scope>_xmlC14NVisibleNsStack</scope><name>nodeTab</name></member>
+      <member refid="struct__xmlC14NVisibleNsStack_1ac479666f0b6fc6d38fc4c00d5de78b3d" prot="public" virt="non-virtual"><scope>_xmlC14NVisibleNsStack</scope><name>nsCurEnd</name></member>
+      <member refid="struct__xmlC14NVisibleNsStack_1a0e8b493ec7967cae99b3d0847eb5b341" prot="public" virt="non-virtual"><scope>_xmlC14NVisibleNsStack</scope><name>nsMax</name></member>
+      <member refid="struct__xmlC14NVisibleNsStack_1ae42c3eb9546015bcd2759fb3b918d584" prot="public" virt="non-virtual"><scope>_xmlC14NVisibleNsStack</scope><name>nsPrevEnd</name></member>
+      <member refid="struct__xmlC14NVisibleNsStack_1ab4fa6e66b54367eaf20c0bb7dbeb14e6" prot="public" virt="non-virtual"><scope>_xmlC14NVisibleNsStack</scope><name>nsPrevStart</name></member>
+      <member refid="struct__xmlC14NVisibleNsStack_1a16e6b582c6c07c09df77b5e54b2d647b" prot="public" virt="non-virtual"><scope>_xmlC14NVisibleNsStack</scope><name>nsTab</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

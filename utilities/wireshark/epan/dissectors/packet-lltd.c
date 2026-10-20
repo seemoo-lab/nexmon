@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,135 +14,139 @@
 #include <epan/packet.h>
 #include <epan/etypes.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_lltd(void);
 void proto_reg_handoff_lltd(void);
 
-static int proto_lltd = -1;
+static dissector_handle_t lltd_handle;
 
-static int hf_lltd_version                  = -1;
-static int hf_lltd_type_of_service          = -1;
-static int hf_lltd_reserved                 = -1;
-static int hf_lltd_discovery_func           = -1;
-static int hf_lltd_discovery_real_dest_addr = -1;
-static int hf_lltd_discovery_real_src_addr  = -1;
-static int hf_lltd_discovery_xid            = -1;
-static int hf_lltd_discovery_seq_num        = -1;
-static int hf_lltd_discover_gen_num         = -1;
-static int hf_lltd_discover_num_stations    = -1;
-static int hf_lltd_discover_station         = -1;
-static int hf_lltd_hello_gen_num            = -1;
-static int hf_lltd_hello_current_address    = -1;
-static int hf_lltd_hello_apparent_address   = -1;
-static int hf_lltd_tlv_type                 = -1;
-static int hf_lltd_tlv_length               = -1;
-static int hf_lltd_host_id                  = -1;
-static int hf_lltd_char_p                   = -1;
-static int hf_lltd_char_x                   = -1;
-static int hf_lltd_char_f                   = -1;
-static int hf_lltd_char_m                   = -1;
-static int hf_lltd_char_l                   = -1;
-static int hf_lltd_char_reserved            = -1;
-static int hf_lltd_physical_medium          = -1;
-static int hf_lltd_wireless_mode            = -1;
-static int hf_lltd_bssid                    = -1;
-static int hf_lltd_ssid                     = -1;
-static int hf_lltd_ipv4_address             = -1;
-static int hf_lltd_ipv6_address             = -1;
-static int hf_lltd_max_operation_rate       = -1;
-static int hf_lltd_performance_count_freq   = -1;
-static int hf_lltd_link_speed               = -1;
-static int hf_lltd_rssi                     = -1;
-static int hf_lltd_machine_name             = -1;
-static int hf_lltd_support_info             = -1;
-static int hf_lltd_device_uuid              = -1;
-static int hf_lltd_qos_char_e               = -1;
-static int hf_lltd_qos_char_q               = -1;
-static int hf_lltd_qos_char_p               = -1;
-static int hf_lltd_qos_char_reserved        = -1;
-static int hf_lltd_80211_physical_medium    = -1;
-static int hf_lltd_sees_list_working_set    = -1;
-static int hf_lltd_repeater_ap_lineage      = -1;
-static int hf_lltd_emit_num_descs           = -1;
-static int hf_lltd_emit_type                = -1;
-static int hf_lltd_emit_pause               = -1;
-static int hf_lltd_emit_src_addr            = -1;
-static int hf_lltd_emit_dest_addr           = -1;
-static int hf_lltd_queryresp_more_descs     = -1;
-static int hf_lltd_queryresp_memory_descs   = -1;
-static int hf_lltd_queryresp_num_descs      = -1;
-static int hf_lltd_queryresp_type           = -1;
-static int hf_lltd_queryresp_real_src_addr  = -1;
-static int hf_lltd_queryresp_ethernet_src_addr  = -1;
-static int hf_lltd_queryresp_ethernet_dest_addr = -1;
-static int hf_lltd_flat_crc_bytes           = -1;
-static int hf_lltd_flat_crc_packets         = -1;
-static int hf_lltd_query_large_tlv_type     = -1;
-static int hf_lltd_query_large_tlv_offset   = -1;
-static int hf_lltd_querylargeresp_more_descs    = -1;
-static int hf_lltd_querylargeresp_memory_descs  = -1;
-static int hf_lltd_querylargeresp_num_descs = -1;
-static int hf_lltd_querylargeresp_data      = -1;
+static int proto_lltd;
 
-static int hf_lltd_qos_diag_func            = -1;
-static int hf_lltd_qos_real_dest_addr       = -1;
-static int hf_lltd_qos_real_src_addr        = -1;
-static int hf_lltd_qos_seq_num              = -1;
-static int hf_lltd_qos_initialize_interrupt_mod = -1;
-static int hf_lltd_qos_ready_sink_link_speed = -1;
-static int hf_lltd_qos_ready_perf_count_freq = -1;
-static int hf_lltd_qos_probe_controller_transmit_timestamp = -1;
-static int hf_lltd_qos_probe_sink_receive_timestamp = -1;
-static int hf_lltd_qos_probe_sink_transmit_timestamp = -1;
-static int hf_lltd_qos_probe_test_type      = -1;
-static int hf_lltd_qos_probe_packet_id      = -1;
-static int hf_lltd_qos_probe_t              = -1;
-static int hf_lltd_qos_probe_8021p_value    = -1;
-static int hf_lltd_qos_probe_payload        = -1;
-static int hf_lltd_qos_error_value          = -1;
-static int hf_lltd_qos_count_snapshot_history = -1;
-static int hf_lltd_qos_query_resp_r         = -1;
-static int hf_lltd_qos_query_resp_e         = -1;
-static int hf_lltd_qos_query_resp_num_events = -1;
-static int hf_lltd_qos_query_resp_controller_timestamp = -1;
-static int hf_lltd_qos_query_resp_sink_timestamp = -1;
-static int hf_lltd_qos_query_resp_packet_id = -1;
-static int hf_lltd_qos_query_resp_reserved  = -1;
-static int hf_lltd_qos_counter_result_subsec_span = -1;
-static int hf_lltd_qos_counter_result_byte_scale = -1;
-static int hf_lltd_qos_counter_result_packet_scale = -1;
-static int hf_lltd_qos_counter_result_history_size = -1;
-static int hf_lltd_qos_snapshot_bytes_recv  = -1;
-static int hf_lltd_qos_snapshot_packets_recv= -1;
-static int hf_lltd_qos_snapshot_bytes_sent  = -1;
-static int hf_lltd_qos_snapshot_packets_sent= -1;
+static int hf_lltd_version;
+static int hf_lltd_type_of_service;
+static int hf_lltd_reserved;
+static int hf_lltd_discovery_func;
+static int hf_lltd_discovery_real_dest_addr;
+static int hf_lltd_discovery_real_src_addr;
+static int hf_lltd_discovery_xid;
+static int hf_lltd_discovery_seq_num;
+static int hf_lltd_discover_gen_num;
+static int hf_lltd_discover_num_stations;
+static int hf_lltd_discover_station;
+static int hf_lltd_hello_gen_num;
+static int hf_lltd_hello_current_address;
+static int hf_lltd_hello_apparent_address;
+static int hf_lltd_tlv_type;
+static int hf_lltd_tlv_length;
+static int hf_lltd_host_id;
+static int hf_lltd_char_p;
+static int hf_lltd_char_x;
+static int hf_lltd_char_f;
+static int hf_lltd_char_m;
+static int hf_lltd_char_l;
+static int hf_lltd_char_reserved;
+static int hf_lltd_physical_medium;
+static int hf_lltd_wireless_mode;
+static int hf_lltd_bssid;
+static int hf_lltd_ssid;
+static int hf_lltd_ipv4_address;
+static int hf_lltd_ipv6_address;
+static int hf_lltd_max_operation_rate;
+static int hf_lltd_performance_count_freq;
+static int hf_lltd_link_speed;
+static int hf_lltd_rssi;
+static int hf_lltd_machine_name;
+static int hf_lltd_support_info;
+static int hf_lltd_device_uuid;
+static int hf_lltd_qos_char_e;
+static int hf_lltd_qos_char_q;
+static int hf_lltd_qos_char_p;
+static int hf_lltd_qos_char_reserved;
+static int hf_lltd_80211_physical_medium;
+static int hf_lltd_sees_list_working_set;
+static int hf_lltd_repeater_ap_lineage;
+static int hf_lltd_emit_num_descs;
+static int hf_lltd_emit_type;
+static int hf_lltd_emit_pause;
+static int hf_lltd_emit_src_addr;
+static int hf_lltd_emit_dest_addr;
+static int hf_lltd_queryresp_more_descs;
+static int hf_lltd_queryresp_memory_descs;
+static int hf_lltd_queryresp_num_descs;
+static int hf_lltd_queryresp_type;
+static int hf_lltd_queryresp_real_src_addr;
+static int hf_lltd_queryresp_ethernet_src_addr;
+static int hf_lltd_queryresp_ethernet_dest_addr;
+static int hf_lltd_flat_crc_bytes;
+static int hf_lltd_flat_crc_packets;
+static int hf_lltd_query_large_tlv_type;
+static int hf_lltd_query_large_tlv_offset;
+static int hf_lltd_querylargeresp_more_descs;
+static int hf_lltd_querylargeresp_memory_descs;
+static int hf_lltd_querylargeresp_num_descs;
+static int hf_lltd_querylargeresp_data;
+
+static int hf_lltd_qos_diag_func;
+static int hf_lltd_qos_real_dest_addr;
+static int hf_lltd_qos_real_src_addr;
+static int hf_lltd_qos_seq_num;
+static int hf_lltd_qos_initialize_interrupt_mod;
+static int hf_lltd_qos_ready_sink_link_speed;
+static int hf_lltd_qos_ready_perf_count_freq;
+static int hf_lltd_qos_probe_controller_transmit_timestamp;
+static int hf_lltd_qos_probe_sink_receive_timestamp;
+static int hf_lltd_qos_probe_sink_transmit_timestamp;
+static int hf_lltd_qos_probe_test_type;
+static int hf_lltd_qos_probe_packet_id;
+static int hf_lltd_qos_probe_t;
+static int hf_lltd_qos_probe_8021p_value;
+static int hf_lltd_qos_probe_payload;
+static int hf_lltd_qos_error_value;
+static int hf_lltd_qos_count_snapshot_history;
+static int hf_lltd_qos_query_resp_r;
+static int hf_lltd_qos_query_resp_e;
+static int hf_lltd_qos_query_resp_num_events;
+static int hf_lltd_qos_query_resp_controller_timestamp;
+static int hf_lltd_qos_query_resp_sink_timestamp;
+static int hf_lltd_qos_query_resp_packet_id;
+static int hf_lltd_qos_query_resp_reserved;
+static int hf_lltd_qos_counter_result_subsec_span;
+static int hf_lltd_qos_counter_result_byte_scale;
+static int hf_lltd_qos_counter_result_packet_scale;
+static int hf_lltd_qos_counter_result_history_size;
+static int hf_lltd_qos_snapshot_bytes_recv;
+static int hf_lltd_qos_snapshot_packets_recv;
+static int hf_lltd_qos_snapshot_bytes_sent;
+static int hf_lltd_qos_snapshot_packets_sent;
 
 
-static gint ett_lltd                = -1;
-static gint ett_base_header         = -1;
-static gint ett_discover_stations   = -1;
-static gint ett_tlv                 = -1;
-static gint ett_tlv_item            = -1;
-static gint ett_characteristics     = -1;
-static gint ett_qos_characteristics = -1;
-static gint ett_repeater_ap_lineage = -1;
-static gint ett_emitee_descs        = -1;
-static gint ett_emitee_descs_item   = -1;
-static gint ett_recvee_descs        = -1;
-static gint ett_recvee_descs_item   = -1;
-static gint ett_qos_event_descs     = -1;
-static gint ett_qos_event_item      = -1;
-static gint ett_qos_snapshot_list   = -1;
-static gint ett_qos_snapshot_item   = -1;
+static int ett_lltd;
+static int ett_base_header;
+static int ett_discover_stations;
+static int ett_tlv;
+static int ett_tlv_item;
+static int ett_characteristics;
+static int ett_qos_characteristics;
+static int ett_repeater_ap_lineage;
+static int ett_emitee_descs;
+static int ett_emitee_descs_item;
+static int ett_recvee_descs;
+static int ett_recvee_descs_item;
+static int ett_qos_event_descs;
+static int ett_qos_event_item;
+static int ett_qos_snapshot_list;
+static int ett_qos_snapshot_item;
 
-static expert_field ei_lltd_tlv_length_invalid = EI_INIT;
-static expert_field ei_lltd_too_many_paths = EI_INIT;
-static expert_field ei_lltd_type_of_service = EI_INIT;
-static expert_field ei_lltd_char_reserved = EI_INIT;
-static expert_field ei_lltd_qos_seq_num = EI_INIT;
-static expert_field ei_lltd_discovery_func = EI_INIT;
-static expert_field ei_lltd_tlv_type = EI_INIT;
-static expert_field ei_lltd_qos_diag_func = EI_INIT;
+static expert_field ei_lltd_tlv_length_invalid;
+static expert_field ei_lltd_too_many_paths;
+static expert_field ei_lltd_type_of_service;
+static expert_field ei_lltd_char_reserved;
+static expert_field ei_lltd_qos_seq_num;
+static expert_field ei_lltd_discovery_func;
+static expert_field ei_lltd_tlv_type;
+static expert_field ei_lltd_qos_diag_func;
 
 #define LLTD_CHARACTERISTIC_P_MASK          0x80000000
 #define LLTD_CHARACTERISTIC_X_MASK          0x40000000
@@ -235,7 +227,7 @@ static const value_string lltd_tlv_type_vals[] = {
     { 0x12,     "Device UUID" },
     { 0x13,     "Hardware ID" },
     { 0x14,     "QoS Characteristics" },
-    { 0x15,     "802.11 Phyiscal Medium" },
+    { 0x15,     "802.11 Physical Medium" },
     { 0x16,     "AP Association Table" },
     { 0x18,     "Detailed Icon Image" },
     { 0x19,     "Sees-List Working Set" },
@@ -316,30 +308,30 @@ static const value_string lltd_qos_error_vals[] = {
 };
 
 
-const true_false_string tfs_full_half_duplex = { "Full Duplex", "Half Duplex" };
+static const true_false_string tfs_full_half_duplex = { "Full Duplex", "Half Duplex" };
 
 
 static int
-dissect_lltd_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offset, gboolean* end)
+dissect_lltd_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset, bool* end)
 {
-    guint8     i, type, length = 0;
+    uint8_t    type, length = 0;
     proto_item *tlv_item, *type_item;
     proto_tree *tlv_tree, *type_tree;
-    guint32 temp32;
+    uint32_t i, temp32;
 
-    type = tvb_get_guint8(tvb, offset);
+    type = tvb_get_uint8(tvb, offset);
     if (type == 0)
     {
         /* End of Property type doesn't have length */
         tlv_tree = proto_tree_add_subtree(tree, tvb, offset, 1, ett_tlv_item, &tlv_item, "TLV Item (End of Property List)");
-        *end = TRUE;
+        *end = true;
     }
     else
     {
-        length = tvb_get_guint8(tvb, offset+1);
+        length = tvb_get_uint8(tvb, offset+1);
         tlv_tree = proto_tree_add_subtree_format(tree, tvb, offset, length+2, ett_tlv_item, &tlv_item,
-                    "TLV Item (%s)", val_to_str(type, lltd_tlv_type_vals, "Unknown (0x%02x)"));
-        *end = FALSE;
+                    "TLV Item (%s)", val_to_str(pinfo->pool, type, lltd_tlv_type_vals, "Unknown (0x%02x)"));
+        *end = false;
     }
 
     proto_tree_add_item(tlv_tree, hf_lltd_tlv_type, tvb, offset, 1, ENC_NA);
@@ -350,7 +342,7 @@ dissect_lltd_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 of
     if ((type != 0) && (length > tvb_reported_length_remaining(tvb, offset+2)))
     {
         expert_add_info_format(pinfo, tlv_item, &ei_lltd_tlv_length_invalid, "TLV Length field too big");
-        *end = TRUE;
+        *end = true;
         return 2;
     }
 
@@ -415,7 +407,7 @@ dissect_lltd_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 of
             expert_add_info_format(pinfo, tlv_item, &ei_lltd_tlv_length_invalid, "SSID length too large");
         }
 
-        proto_tree_add_item(tlv_tree, hf_lltd_ssid, tvb, offset+2, length, ENC_NA|ENC_ASCII);
+        proto_tree_add_item(tlv_tree, hf_lltd_ssid, tvb, offset+2, length, ENC_ASCII);
         break;
     case 0x07: /* IPv4 Address */
         if (length != 4)
@@ -517,7 +509,7 @@ dissect_lltd_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 of
     case 0x15: /* 802.11 Physical Medium */
         if (length != 1)
         {
-            expert_add_info_format(pinfo, tlv_item, &ei_lltd_tlv_length_invalid, "Invalid 802.11 Phyiscal Medium length");
+            expert_add_info_format(pinfo, tlv_item, &ei_lltd_tlv_length_invalid, "Invalid 802.11 Physical Medium length");
         }
 
         proto_tree_add_item(tlv_tree, hf_lltd_80211_physical_medium, tvb, offset+2, 1, ENC_BIG_ENDIAN);
@@ -559,14 +551,14 @@ dissect_lltd_discovery(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int 
 {
     proto_item *header_item, *func_item;
     proto_tree *header_tree, *func_tree, *func_subtree;
-    guint8     func;
-    guint16    temp16;
-    gboolean   end_tlv = FALSE;
+    uint8_t    func;
+    uint16_t   temp16;
+    bool       end_tlv = false;
     int loop_offset, start_offset;
 
-    func = tvb_get_guint8(tvb, offset);
+    func = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_lltd_discovery_func, tvb, offset, 1, ENC_NA);
-    col_add_fstr(pinfo->cinfo, COL_INFO, "%s", val_to_str(func, lltd_discovery_vals, "Unknown (0x%02x)"));
+    col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, func, lltd_discovery_vals, "Unknown (0x%02x)"));
     offset++;
 
     /* Demultiplex header */
@@ -599,7 +591,7 @@ dissect_lltd_discovery(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int 
 
         func_tree = proto_tree_add_subtree(tree, tvb, offset+28, 0, ett_tlv, &func_item, "TLVs");
         start_offset = loop_offset = offset+28;
-        while ((end_tlv == FALSE) && (tvb_reported_length_remaining(tvb, loop_offset) >= 1))
+        while ((end_tlv == false) && (tvb_reported_length_remaining(tvb, loop_offset) >= 1))
         {
             loop_offset += dissect_lltd_tlv(tvb, pinfo, func_tree, loop_offset, &end_tlv);
         }
@@ -677,13 +669,13 @@ dissect_lltd_qos(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 {
     proto_item *header_item;
     proto_tree *header_tree, *func_tree, *func_subtree;
-    guint8     func;
-    guint16    seq_num, temp16;
+    uint8_t    func;
+    uint16_t   seq_num, temp16;
     int loop_offset;
 
-    func = tvb_get_guint8(tvb, offset);
+    func = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_lltd_qos_diag_func, tvb, offset, 1, ENC_NA);
-    col_add_fstr(pinfo->cinfo, COL_INFO, "%s", val_to_str(func, lltd_qos_diag_vals, "Unknown (0x%02x)"));
+    col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, func, lltd_qos_diag_vals, "Unknown (0x%02x)"));
     offset++;
 
     header_tree = proto_tree_add_subtree(tree, tvb, offset, 14, ett_base_header, &header_item, "Base header");
@@ -753,7 +745,7 @@ dissect_lltd_qos(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
         proto_tree_add_item(tree, hf_lltd_qos_counter_result_byte_scale, tvb, offset+15, 1, ENC_BIG_ENDIAN);
         proto_tree_add_item(tree, hf_lltd_qos_counter_result_packet_scale, tvb, offset+16, 1, ENC_BIG_ENDIAN);
         proto_tree_add_item(tree, hf_lltd_qos_counter_result_history_size, tvb, offset+17, 1, ENC_BIG_ENDIAN);
-        temp16 = tvb_get_guint8(tvb, offset+17);
+        temp16 = tvb_get_uint8(tvb, offset+17);
         if (temp16 > 0)
         {
             func_tree = proto_tree_add_subtree(tree, tvb, offset+18, temp16*4, ett_qos_snapshot_list, NULL, "Snapshot List");
@@ -782,7 +774,7 @@ dissect_lltd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 {
     proto_item *ti;
     proto_tree *lltd_tree;
-    guint8     tos;
+    uint8_t    tos;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "LLTD");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -792,7 +784,7 @@ dissect_lltd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
     proto_tree_add_item(lltd_tree, hf_lltd_version, tvb, 0, 1, ENC_NA);
     proto_tree_add_item(lltd_tree, hf_lltd_type_of_service, tvb, 1, 1, ENC_NA);
-    tos = tvb_get_guint8(tvb, 1);
+    tos = tvb_get_uint8(tvb, 1);
     proto_tree_add_item(lltd_tree, hf_lltd_reserved, tvb, 2, 1, ENC_NA);
 
     switch(tos)
@@ -836,11 +828,11 @@ proto_register_lltd(void)
         { &hf_lltd_tlv_type, {"Type", "lltd.tlv.type", FT_UINT8, BASE_HEX, VALS(lltd_tlv_type_vals), 0, NULL, HFILL }},
         { &hf_lltd_tlv_length, {"Length", "lltd.tlv.length", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
         { &hf_lltd_host_id, { "Host ID", "lltd.host_id", FT_ETHER, BASE_NONE, NULL, 0, NULL, HFILL }},
-        { &hf_lltd_char_p, {"Public NAT", "lltd.characteristic.public_nat", FT_BOOLEAN, 32, TFS(&tfs_true_false), LLTD_CHARACTERISTIC_P_MASK, NULL, HFILL }},
-        { &hf_lltd_char_x, {"Private NAT", "lltd.characteristic.private_nat", FT_BOOLEAN, 32, TFS(&tfs_true_false), LLTD_CHARACTERISTIC_X_MASK, NULL, HFILL }},
+        { &hf_lltd_char_p, {"Public NAT", "lltd.characteristic.public_nat", FT_BOOLEAN, 32, NULL, LLTD_CHARACTERISTIC_P_MASK, NULL, HFILL }},
+        { &hf_lltd_char_x, {"Private NAT", "lltd.characteristic.private_nat", FT_BOOLEAN, 32, NULL, LLTD_CHARACTERISTIC_X_MASK, NULL, HFILL }},
         { &hf_lltd_char_f, {"Duplex", "lltd.characteristic.duplex", FT_BOOLEAN, 32, TFS(&tfs_full_half_duplex), LLTD_CHARACTERISTIC_F_MASK, NULL, HFILL }},
         { &hf_lltd_char_m, {"Management Web Page", "lltd.characteristic.web_page", FT_BOOLEAN, 32, TFS(&tfs_present_absent), LLTD_CHARACTERISTIC_M_MASK, NULL, HFILL }},
-        { &hf_lltd_char_l, {"Looping Outbound Packets", "lltd.characteristic.loop", FT_BOOLEAN, 32, TFS(&tfs_true_false), LLTD_CHARACTERISTIC_L_MASK, NULL, HFILL }},
+        { &hf_lltd_char_l, {"Looping Outbound Packets", "lltd.characteristic.loop", FT_BOOLEAN, 32, NULL, LLTD_CHARACTERISTIC_L_MASK, NULL, HFILL }},
         { &hf_lltd_char_reserved, {"Reserved", "lltd.characteristic.reserved", FT_UINT32, BASE_HEX, NULL, LLTD_CHARACTERISTIC_RESERVE_MASK, NULL, HFILL }},
         { &hf_lltd_physical_medium, {"Physical Medium", "lltd.physical_medium", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
         { &hf_lltd_wireless_mode, {"Wireless Mode", "lltd.wireless_mode", FT_UINT8, BASE_HEX, VALS(lltd_wireless_mode_vals), 0, NULL, HFILL }},
@@ -855,7 +847,7 @@ proto_register_lltd(void)
         { &hf_lltd_machine_name, { "Machine Name", "lltd.machine_name", FT_STRING /*FT_UCS2_LE */, BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_lltd_support_info, { "Support Information", "lltd.support_info", FT_STRING /*FT_UCS2_LE */, BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_lltd_device_uuid, { "Device UUID", "lltd.device_uuid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
-        { &hf_lltd_qos_char_e, {"Layer 2 Forwarding", "lltd.qos_characteristic.layer2_forwarding", FT_BOOLEAN, 32, TFS(&tfs_true_false), LLTD_QOS_CHARACTERISTIC_E_MASK, NULL, HFILL }},
+        { &hf_lltd_qos_char_e, {"Layer 2 Forwarding", "lltd.qos_characteristic.layer2_forwarding", FT_BOOLEAN, 32, NULL, LLTD_QOS_CHARACTERISTIC_E_MASK, NULL, HFILL }},
         { &hf_lltd_qos_char_q, {"802.1q VLAN", "lltd.qos_characteristic.vlan", FT_BOOLEAN, 32, TFS(&tfs_supported_not_supported), LLTD_QOS_CHARACTERISTIC_Q_MASK, NULL, HFILL }},
         { &hf_lltd_qos_char_p, {"802.1q Priority Tagging", "lltd.qos_characteristic.tagging", FT_BOOLEAN, 32, TFS(&tfs_supported_not_supported), LLTD_QOS_CHARACTERISTIC_P_MASK, NULL, HFILL }},
         { &hf_lltd_qos_char_reserved, {"Reserved", "lltd.qos_characteristic.reserved", FT_UINT32, BASE_HEX, NULL, LLTD_QOS_CHARACTERISTIC_RESERVE_MASK, NULL, HFILL }},
@@ -867,8 +859,8 @@ proto_register_lltd(void)
         { &hf_lltd_emit_pause, {"Pause (ms)", "lltd.emit.pause", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
         { &hf_lltd_emit_src_addr, { "Source Address", "lltd.emit.src_addr", FT_ETHER, BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_lltd_emit_dest_addr, { "Destination Address", "lltd.emit.dest_addr", FT_ETHER, BASE_NONE, NULL, 0, NULL, HFILL }},
-        { &hf_lltd_queryresp_more_descs, {"More RecveeDescs", "lltd.queryresp.more", FT_BOOLEAN, 16, TFS(&tfs_true_false), LLTD_QUERY_RESP_M_MASK, NULL, HFILL }},
-        { &hf_lltd_queryresp_memory_descs, {"No memory left", "lltd.queryresp.memory", FT_BOOLEAN, 16, TFS(&tfs_true_false), LLTD_QUERY_RESP_E_MASK, NULL, HFILL }},
+        { &hf_lltd_queryresp_more_descs, {"More RecveeDescs", "lltd.queryresp.more", FT_BOOLEAN, 16, NULL, LLTD_QUERY_RESP_M_MASK, NULL, HFILL }},
+        { &hf_lltd_queryresp_memory_descs, {"No memory left", "lltd.queryresp.memory", FT_BOOLEAN, 16, NULL, LLTD_QUERY_RESP_E_MASK, NULL, HFILL }},
         { &hf_lltd_queryresp_num_descs, {"Number of RecveeDescs", "lltd.queryresp.num_descs", FT_UINT16, BASE_DEC, NULL, LLTD_QUERY_RESP_NUM_DESCS_MASK, NULL, HFILL }},
         { &hf_lltd_queryresp_type, {"Type", "lltd.queryresp.type", FT_UINT16, BASE_HEX, VALS(lltd_queryresp_type_vals), 0, NULL, HFILL }},
         { &hf_lltd_queryresp_real_src_addr, { "Real Source Address", "lltd.queryresp.real_src_addr", FT_ETHER, BASE_NONE, NULL, 0, NULL, HFILL }},
@@ -878,8 +870,8 @@ proto_register_lltd(void)
         { &hf_lltd_flat_crc_packets, {"Current Transmit Credit (packets)", "lltd.flat.crc_packets", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
         { &hf_lltd_query_large_tlv_type, {"Type", "lltd.query_large_tlv.type", FT_UINT8, BASE_HEX, VALS(lltd_query_large_tlv_type_vals), 0, NULL, HFILL }},
         { &hf_lltd_query_large_tlv_offset, {"Offset", "lltd.query_large_tlv.offset", FT_UINT24, BASE_DEC, NULL, 0, NULL, HFILL }},
-        { &hf_lltd_querylargeresp_more_descs, {"More RecveeDescs", "lltd.querylargeresp.more", FT_BOOLEAN, 16, TFS(&tfs_true_false), LLTD_QUERY_RESP_M_MASK, NULL, HFILL }},
-        { &hf_lltd_querylargeresp_memory_descs, {"No memory left", "lltd.querylargeresp.memory", FT_BOOLEAN, 16, TFS(&tfs_true_false), LLTD_QUERY_RESP_E_MASK, NULL, HFILL }},
+        { &hf_lltd_querylargeresp_more_descs, {"More RecveeDescs", "lltd.querylargeresp.more", FT_BOOLEAN, 16, NULL, LLTD_QUERY_RESP_M_MASK, NULL, HFILL }},
+        { &hf_lltd_querylargeresp_memory_descs, {"No memory left", "lltd.querylargeresp.memory", FT_BOOLEAN, 16, NULL, LLTD_QUERY_RESP_E_MASK, NULL, HFILL }},
         { &hf_lltd_querylargeresp_num_descs, {"Number of RecveeDescs", "lltd.querylargeresp.num_descs", FT_UINT16, BASE_DEC, NULL, LLTD_QUERY_RESP_NUM_DESCS_MASK, NULL, HFILL }},
         { &hf_lltd_querylargeresp_data, { "Data", "lltd.querylargeresp.data", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 
@@ -900,8 +892,8 @@ proto_register_lltd(void)
         { &hf_lltd_qos_probe_payload, {"Payload", "lltd.qos_probe.payload", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_lltd_qos_error_value, {"Error Code", "lltd.qos_error", FT_UINT16, BASE_DEC, VALS(lltd_qos_error_vals), 0, NULL, HFILL }},
         { &hf_lltd_qos_count_snapshot_history, {"History Size", "lltd.qos_count_snapshot.history", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
-        { &hf_lltd_qos_query_resp_r, {"Receipt", "lltd.qos_query_resp.receipt", FT_BOOLEAN, 16, TFS(&tfs_true_false), LLTD_QUERY_RESP_M_MASK, NULL, HFILL }},
-        { &hf_lltd_qos_query_resp_e, {"No memory left", "lltd.qos_query_resp.memory", FT_BOOLEAN, 16, TFS(&tfs_true_false), LLTD_QUERY_RESP_E_MASK, NULL, HFILL }},
+        { &hf_lltd_qos_query_resp_r, {"Receipt", "lltd.qos_query_resp.receipt", FT_BOOLEAN, 16, NULL, LLTD_QUERY_RESP_M_MASK, NULL, HFILL }},
+        { &hf_lltd_qos_query_resp_e, {"No memory left", "lltd.qos_query_resp.memory", FT_BOOLEAN, 16, NULL, LLTD_QUERY_RESP_E_MASK, NULL, HFILL }},
         { &hf_lltd_qos_query_resp_num_events, {"Number of Events", "lltd.qos_query_resp.num_events", FT_UINT16, BASE_DEC, NULL, LLTD_QUERY_RESP_NUM_DESCS_MASK, NULL, HFILL }},
         { &hf_lltd_qos_query_resp_controller_timestamp, {"Controller Transmit Timestamp", "lltd.qos_query_resp.controller_timestamp", FT_UINT64, BASE_DEC, NULL, 0, NULL, HFILL }},
         { &hf_lltd_qos_query_resp_sink_timestamp, {"Sink Receive Timestamp", "lltd.qos_query_resp.sink_timestamp", FT_UINT64, BASE_DEC, NULL, 0, NULL, HFILL }},
@@ -917,7 +909,7 @@ proto_register_lltd(void)
         { &hf_lltd_qos_snapshot_packets_sent, {"Packets Sent", "lltd.qos_snapshot.packets_sent", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }}
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_lltd,
         &ett_base_header,
         &ett_discover_stations,
@@ -940,11 +932,11 @@ proto_register_lltd(void)
         { &ei_lltd_tlv_length_invalid, { "lltd.tlv.length.invalid", PI_MALFORMED, PI_ERROR, "Invalid length", EXPFILL }},
         { &ei_lltd_char_reserved, { "lltd.characteristic.reserved.not_zero", PI_PROTOCOL, PI_WARN, "Non zero reserve bits", EXPFILL }},
         { &ei_lltd_too_many_paths, { "lltd.too_many_paths", PI_PROTOCOL, PI_WARN, "Too many paths to root", EXPFILL }},
-        { &ei_lltd_tlv_type, { "lltd.tlv.type.invalid", PI_PROTOCOL, PI_WARN, "Invalid TLV Type 0x%02x", EXPFILL }},
-        { &ei_lltd_discovery_func, { "lltd.discovery.invalid", PI_PROTOCOL, PI_WARN, "Invalid function 0x%02x", EXPFILL }},
+        { &ei_lltd_tlv_type, { "lltd.tlv.type.invalid", PI_PROTOCOL, PI_WARN, "Invalid TLV Type", EXPFILL }},
+        { &ei_lltd_discovery_func, { "lltd.discovery.invalid", PI_PROTOCOL, PI_WARN, "Invalid function", EXPFILL }},
         { &ei_lltd_qos_seq_num, { "lltd.qos.seq_num.cannot_be_zero", PI_PROTOCOL, PI_WARN, "Sequence number can not be 0", EXPFILL }},
-        { &ei_lltd_qos_diag_func, { "lltd.qos_diag.invalid", PI_PROTOCOL, PI_WARN, "Invalid function 0x%02x", EXPFILL }},
-        { &ei_lltd_type_of_service, { "lltd.tos.invalid", PI_PROTOCOL, PI_WARN, "Invalid Type of Service value 0x%02x", EXPFILL }},
+        { &ei_lltd_qos_diag_func, { "lltd.qos_diag.invalid", PI_PROTOCOL, PI_WARN, "Invalid function", EXPFILL }},
+        { &ei_lltd_type_of_service, { "lltd.tos.invalid", PI_PROTOCOL, PI_WARN, "Invalid Type of Service value", EXPFILL }},
     };
 
     expert_module_t* expert_lltd;
@@ -954,18 +946,18 @@ proto_register_lltd(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_lltd = expert_register_protocol(proto_lltd);
     expert_register_field_array(expert_lltd, ei, array_length(ei));
+
+    lltd_handle = register_dissector("lltd", dissect_lltd, proto_lltd);
 }
 
 void
 proto_reg_handoff_lltd(void)
 {
-    dissector_handle_t lltd_handle;
-    lltd_handle = create_dissector_handle(dissect_lltd, proto_lltd);
     dissector_add_uint("ethertype", ETHERTYPE_LLTD, lltd_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

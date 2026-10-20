@@ -1,12 +1,14 @@
-# isnand.m4 serial 11
-dnl Copyright (C) 2007-2016 Free Software Foundation, Inc.
+# isnand.m4
+# serial 15
+dnl Copyright (C) 2007-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl Check how to get or define isnand().
 
-AC_DEFUN([gl_FUNC_ISNAND],
+AC_DEFUN_ONCE([gl_FUNC_ISNAND],
 [
   AC_REQUIRE([gl_MATH_H_DEFAULTS])
   ISNAND_LIBM=
@@ -18,8 +20,7 @@ AC_DEFUN([gl_FUNC_ISNAND],
     fi
   fi
   dnl The variable gl_func_isnand set here is used by isnan.m4.
-  if test $gl_cv_func_isnand_no_libm = yes \
-     || test $gl_cv_func_isnand_in_libm = yes; then
+  if test $gl_cv_func_isnand_no_libm = yes || test -n "$ISNAND_LIBM"; then
     gl_func_isnand=yes
   else
     gl_func_isnand=no
@@ -53,12 +54,12 @@ AC_DEFUN([gl_HAVE_ISNAND_IN_LIBM],
   AC_CACHE_CHECK([whether isnan(double) can be used with libm],
     [gl_cv_func_isnand_in_libm],
     [
-      save_LIBS="$LIBS"
+      saved_LIBS="$LIBS"
       LIBS="$LIBS -lm"
       AC_LINK_IFELSE(
         [AC_LANG_PROGRAM(
            [[#include <math.h>
-             #if __GNUC__ >= 4
+             #if (__GNUC__ >= 4) || (__clang_major__ >= 4)
              # undef isnand
              # define isnand(x) __builtin_isnan ((double)(x))
              #elif defined isnan
@@ -69,7 +70,7 @@ AC_DEFUN([gl_HAVE_ISNAND_IN_LIBM],
            [[return isnand (x);]])],
         [gl_cv_func_isnand_in_libm=yes],
         [gl_cv_func_isnand_in_libm=no])
-      LIBS="$save_LIBS"
+      LIBS="$saved_LIBS"
     ])
 ])
 
@@ -81,7 +82,7 @@ AC_DEFUN([gl_HAVE_ISNAND_NO_LIBM],
       AC_LINK_IFELSE(
         [AC_LANG_PROGRAM(
            [[#include <math.h>
-             #if __GNUC__ >= 4
+             #if (__GNUC__ >= 4) || (__clang_major__ >= 4)
              # undef isnand
              # define isnand(x) __builtin_isnan ((double)(x))
              #else

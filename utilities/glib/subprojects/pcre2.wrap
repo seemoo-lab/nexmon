@@ -1,0 +1,18 @@
+[wrap-file]
+directory = pcre2-10.46
+source_url = https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.46/pcre2-10.46.tar.bz2
+source_filename = pcre2-10.46.tar.bz2
+source_hash = 15fbc5aba6beee0b17aecb04602ae39432393aba1ebd8e39b7cabf7db883299f
+patch_filename = pcre2_10.46-1_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/pcre2_10.46-1/get_patch
+patch_hash = 761d16c89b9c13812842916b7ee970650ee7c1810f83bc567351faf7365b66be
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/pcre2_10.46-1/pcre2-10.46.tar.bz2
+wrapdb_version = 10.46-1
+# https://github.com/zherczeg/sljit/pull/355
+diff_files = pcre2/fix-build-on-apple-platforms.patch
+
+[provide]
+libpcre2-8 = libpcre2_8
+libpcre2-16 = libpcre2_16
+libpcre2-32 = libpcre2_32
+libpcre2-posix = libpcre2_posix

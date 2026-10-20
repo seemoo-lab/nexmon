@@ -1,7 +1,5 @@
 /* Unicode CLDR plural rule parser and converter
-   Copyright (C) 2015-2016 Free Software Foundation, Inc.
-
-   This file was written by Daiki Ueno <ueno@gnu.org>, 2015.
+   Copyright (C) 2015-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,18 +12,19 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Daiki Ueno, Bruno Haible, and Michele Locati.  */
 
-#include "basename.h"
+#include <config.h>
+
+#include "basename-lgpl.h"
 #include "cldr-plural-exp.h"
+#include "closeout.h"
 #include "c-ctype.h"
 #include <errno.h>
 #include <error.h>
-#include <getopt.h>
+#include "options.h"
 #include "gettext.h"
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -35,152 +34,289 @@
 #include "relocatable.h"
 #include <stdlib.h>
 #include <string.h>
-#include "xalloc.h"
+#include "string-buffer.h"
 
 #define _(s) gettext(s)
 
 
+/**
+ * Extract the rules from a CLDR plurals.xml file
+ * @return NULL in case of errors, the CLDR rules otherwise
+ * @example "one: i = 1 and v = 0 @integer 1; other: @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, \u2026 @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, \u2026"
+ */
 static char *
 extract_rules (FILE *fp,
                const char *real_filename, const char *logical_filename,
                const char *locale)
 {
-  xmlDocPtr doc;
-  xmlNodePtr node, n;
-  size_t locale_length;
-  char *buffer = NULL, *p;
-  size_t bufmax = 0;
-  size_t buflen = 0;
-
-  doc = xmlReadFd (fileno (fp), logical_filename, NULL,
-                   XML_PARSE_NONET
-                   | XML_PARSE_NOWARNING
-                   | XML_PARSE_NOERROR
-                   | XML_PARSE_NOBLANKS);
+  xmlDocPtr doc = xmlReadFd (fileno (fp), logical_filename, NULL,
+                             XML_PARSE_NONET
+                             | XML_PARSE_NOWARNING
+                             | XML_PARSE_NOBLANKS);
   if (doc == NULL)
-    error (EXIT_FAILURE, 0, _("memory exhausted"));
+    error (EXIT_FAILURE, 0, _("Could not parse file %s as XML"), logical_filename);
 
-  node = xmlDocGetRootElement (doc);
+  struct string_buffer buffer;
+  sb_init (&buffer);
+
+  xmlNode *node = xmlDocGetRootElement (doc);
   if (!node || !xmlStrEqual (node->name, BAD_CAST "supplementalData"))
     {
       error_at_line (0, 0,
                      logical_filename,
                      xmlGetLineNo (node),
-                     _("\
-The root element must be <%s>"),
+                     _("The root element must be <%s>"),
                      "supplementalData");
       goto out;
     }
 
-  for (n = node->children; n; n = n->next)
-    {
-      if (n->type == XML_ELEMENT_NODE
-          && xmlStrEqual (n->name, BAD_CAST "plurals"))
-        break;
-    }
-  if (!n)
-    {
-      error (0, 0, _("The element <%s> does not contain a <%s> element"),
-             "supplementalData", "plurals");
-      goto out;
-    }
+  {
+    xmlNode *n;
 
-  locale_length = strlen (locale);
-  for (n = n->children; n; n = n->next)
-    {
-      xmlChar *locales;
-      xmlChar *cp;
-      xmlNodePtr n2;
-      bool found = false;
+    for (n = node->children; n; n = n->next)
+      {
+        if (n->type == XML_ELEMENT_NODE
+            && xmlStrEqual (n->name, BAD_CAST "plurals")
+            && xmlHasProp (n, BAD_CAST "type"))
+          {
+            xmlChar *type = xmlGetProp (n, BAD_CAST "type");
+            bool is_cardinal = xmlStrEqual (type, BAD_CAST "cardinal") != 0;
+            xmlFree (type);
+            if (is_cardinal)
+               break;
+          }
+      }
+    if (!n)
+      {
+        error (0, 0, _("The element <%s> does not contain a <%s> element"),
+               "supplementalData", "plurals");
+        goto out;
+      }
 
-      if (n->type != XML_ELEMENT_NODE
-          || !xmlStrEqual (n->name, BAD_CAST "pluralRules"))
-        continue;
-
-      if (!xmlHasProp (n, BAD_CAST "locales"))
-        {
-          error_at_line (0, 0,
-                         logical_filename,
-                         xmlGetLineNo (n),
-                         _("\
-The element <%s> does not have attribute <%s>"),
-                         "pluralRules", "locales");
-          continue;
-        }
-
-      cp = locales = xmlGetProp (n, BAD_CAST "locales");
-      while (*cp != '\0')
-        {
-          while (c_isspace (*cp))
-            cp++;
-          if (xmlStrncmp (cp, BAD_CAST locale, locale_length) == 0
-              && (*(cp + locale_length) == '\0'
-                  || c_isspace (*(cp + locale_length))))
-            {
-              found = true;
-              break;
-            }
-          while (*cp && !c_isspace (*cp))
-            cp++;
-        }
-      xmlFree (locales);
-
-      if (!found)
-        continue;
-
-      for (n2 = n->children; n2; n2 = n2->next)
-        {
-          xmlChar *count;
-          xmlChar *content;
-          size_t length;
-
-          if (n2->type != XML_ELEMENT_NODE
-              || !xmlStrEqual (n2->name, BAD_CAST "pluralRule"))
-            continue;
-
-          if (!xmlHasProp (n2, BAD_CAST "count"))
-            {
+    size_t locale_length = strlen (locale);
+    for (n = n->children; n; n = n->next)
+      {
+        if (n->type == XML_ELEMENT_NODE
+            && xmlStrEqual (n->name, BAD_CAST "pluralRules"))
+          {
+            if (!xmlHasProp (n, BAD_CAST "locales"))
               error_at_line (0, 0,
                              logical_filename,
-                             xmlGetLineNo (n2),
-                             _("\
-The element <%s> does not have attribute <%s>"),
-                             "pluralRule", "count");
-              break;
-            }
+                             xmlGetLineNo (n),
+                             _("The element <%s> does not have attribute <%s>"),
+                             "pluralRules", "locales");
+            else
+              {
+                xmlChar *locales = xmlGetProp (n, BAD_CAST "locales");
+                bool found = false;
+                {
+                  xmlChar *cp = locales;
+                  while (*cp != '\0')
+                    {
+                      while (c_isspace (*cp))
+                        cp++;
+                      if (xmlStrncmp (cp, BAD_CAST locale, locale_length) == 0
+                          && (*(cp + locale_length) == '\0'
+                              || c_isspace (*(cp + locale_length))))
+                        {
+                          found = true;
+                          break;
+                        }
+                      while (*cp && !c_isspace (*cp))
+                        cp++;
+                    }
+                }
+                xmlFree (locales);
 
-          count = xmlGetProp (n2, BAD_CAST "count");
-          content = xmlNodeGetContent (n2);
-          length = xmlStrlen (count) + strlen (": ")
-            + xmlStrlen (content) + strlen ("; ");
+                if (found)
+                  for (xmlNode *n2 = n->children; n2; n2 = n2->next)
+                    {
+                      if (n2->type == XML_ELEMENT_NODE
+                          && xmlStrEqual (n2->name, BAD_CAST "pluralRule"))
+                        {
+                          if (!xmlHasProp (n2, BAD_CAST "count"))
+                            {
+                              error_at_line (0, 0,
+                                             logical_filename,
+                                             xmlGetLineNo (n2),
+                                             _("The element <%s> does not have attribute <%s>"),
+                                             "pluralRule", "count");
+                              break;
+                            }
 
-          if (buflen + length + 1 > bufmax)
-            {
-              bufmax *= 2;
-              if (bufmax < buflen + length + 1)
-                bufmax = buflen + length + 1;
-              buffer = (char *) xrealloc (buffer, bufmax);
-            }
+                          xmlChar *count = xmlGetProp (n2, BAD_CAST "count");
+                          xmlChar *content = xmlNodeGetContent (n2);
+                          sb_xappendf (&buffer, "%s: %s; ", count, content);
+                          xmlFree (count);
+                          xmlFree (content);
+                        }
+                    }
+              }
+          }
+      }
+  }
 
-          sprintf (buffer + buflen, "%s: %s; ", count, content);
-          xmlFree (count);
-          xmlFree (content);
-
-          buflen += length;
-        }
-    }
-
-  if (buffer)
-    {
-      /* Scrub the last semicolon, if any.  */
-      p = strrchr (buffer, ';');
-      if (p)
-        *p = '\0';
-    }
+  {
+    /* Scrub the last semicolon, if any.  */
+    char *p = strrchr ((char *) sb_xcontents_c (&buffer), ';');
+    if (p)
+      *p = '\0';
+  }
 
  out:
   xmlFreeDoc (doc);
-  return buffer;
+  return sb_xdupfree_c (&buffer);
+}
+
+/**
+ * Find the position after the string in format XcY (eg "1c9")
+ * @param str the possible starting position of the string XcY
+ * @return NULL if str does not start with a XcY string,
+ *         the position of str after the XcY string (and after a comma/spaces
+           after it) otherwise
+ */
+static const char *
+get_XcY_end (const char *str)
+{
+  bool found_c = false;
+  if (str[0] < '0' || str[0] > '9')
+    return NULL;
+  str++;
+  while (str[0] != '\0')
+    {
+      if (str[0] == 'c')
+        {
+          if (found_c || str[1] < '0' || str[1] > '9')
+            return NULL;
+          found_c = true;
+        }
+      else if ((str[0] < '0' || str[0] > '9') && str[0] != '.')
+        break;
+      str++;
+    }
+  if (!found_c)
+    return NULL;
+  while (str[0] == ' ')
+    str++;
+  if (str[0] == ',')
+    {
+      str++;
+      while (str[0] == ' ')
+        str++;
+    }
+  return str;
+}
+
+static void
+force_spaces (char *input)
+{
+  while (input[0] != '\0')
+    {
+      if (c_isspace (input[0]))
+        input[0] = ' ';
+      input++;
+    }
+}
+
+static char *
+remove_XcY (const char *input)
+{
+  const char *p = (char *) input;
+  const char *p_next;
+  struct string_buffer buffer;
+  sb_init (&buffer);
+  for (;;)
+    {
+      int comma_and_spaces = -1;
+      const char *p_next1 = strstr (p, "@integer ");
+      const char *p_next2 = strstr (p, "@decimal ");
+      if (p_next1 == NULL && p_next2 == NULL)
+        {
+          sb_append_c (&buffer, p);
+          break;
+        }
+      if (p_next1 != NULL && (p_next2 == NULL || p_next1 < p_next2))
+        p_next = p_next1 + /* strlen ("@integer ") */ 9;
+      else
+        p_next = p_next2 + /* strlen ("@decimal ") */ 9;
+      while (p < p_next)
+        sb_append1 (&buffer, *p++);
+      while (p[0] == ' ')
+        sb_append1 (&buffer, *p++);
+      for (;;)
+        {
+          const char *XcY_end;
+          if (p[0] < '0' || p[0] > '9')
+            break;
+          XcY_end = get_XcY_end (p);
+          if (XcY_end != NULL)
+            {
+              p = XcY_end;
+              continue;
+            }
+          if (comma_and_spaces >= 0)
+            {
+              sb_append1 (&buffer, ',');
+              while (comma_and_spaces > 0)
+                {
+                  sb_append1 (&buffer, ' ');
+                  comma_and_spaces--;
+                }
+            }
+          while ((p[0] >= '0' && p[0] <= '9') || p[0] == '.' || p[0] == '~')
+            {
+              sb_append1 (&buffer, p[0]);
+              p++;
+            }
+          if (p[0] != ',')
+            break;
+          comma_and_spaces = 0;
+          p++;
+          while (p[0] == ' ')
+            {
+              comma_and_spaces++;
+              p++;
+            }
+        }
+      if (comma_and_spaces > 0 && (
+          (p[0] == '\xE2' && p[1] == '\x80' && p[2] == '\xA6')
+          ||
+          (p[0] == '.' && p[1] == '.' && p[2] == '.')
+      ))
+        {
+          sb_append1 (&buffer, ',');
+          while (comma_and_spaces > 0)
+            {
+              sb_append1 (&buffer, ' ');
+              comma_and_spaces--;
+            }
+        }
+    }
+  return sb_dupfree_c (&buffer);
+}
+
+static void
+remove_empty_examples (char *input)
+{
+  const char *prefixes[] =
+    {
+      " @integer \xE2\x80\xA6", " @integer ...",
+      " @decimal \xE2\x80\xA6", " @decimal ..."
+    };
+  int num_prefixes = sizeof (prefixes) / sizeof (prefixes[0]);
+  int i;
+  for (i = 0; i < num_prefixes; i++)
+    {
+      const char *prefix = prefixes[i];
+      size_t prefix_length = strlen (prefix);
+      char *p = input;
+      while ((p = strstr (p, prefix)) != NULL)
+        {
+          memmove (p, p + prefix_length, strlen (p + prefix_length) + 1);
+          while (p[0] == ' ')
+            memmove (p, p + 1, strlen (p + 1) + 1);
+        }
+    }
 }
 
 /* Display usage information and exit.  */
@@ -218,80 +354,91 @@ Similarly for optional arguments.\n\
       printf (_("\
   -V, --version               output version information and exit\n"));
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"),
-             stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+             "https://savannah.gnu.org/projects/gettext",
+             "bug-gettext@gnu.org");
     }
   exit (status);
 }
 
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "cldr", no_argument, NULL, 'c' },
-  { "help", no_argument, NULL, 'h' },
-  { "version", no_argument, NULL, 'V' },
-  { NULL, 0, NULL, 0 }
-};
-
 int
 main (int argc, char **argv)
 {
-  bool opt_cldr_format = false;
-  bool do_help = false;
-  bool do_version = false;
-  int optchar;
-
   /* Set program name for messages.  */
   set_program_name (argv[0]);
 
-#ifdef HAVE_SETLOCALE
   /* Set locale via LC_ALL.  */
   setlocale (LC_ALL, "");
-#endif
 
   /* Set the text message domain.  */
   bindtextdomain (PACKAGE, relocate (LOCALEDIR));
+  bindtextdomain ("gnulib", relocate (GNULIB_LOCALEDIR));
   bindtextdomain ("bison-runtime", relocate (BISON_LOCALEDIR));
   textdomain (PACKAGE);
 
-  while ((optchar = getopt_long (argc, argv, "chV", long_options, NULL)) != EOF)
-    switch (optchar)
-      {
-      case '\0':                /* Long option.  */
-        break;
+  /* Ensure that write errors on stdout are detected.  */
+  atexit (close_stdout);
 
-      case 'c':
-        opt_cldr_format = true;
-        break;
+  /* Default values for command line options.  */
+  bool opt_cldr_format = false;
+  bool do_help = false;
+  bool do_version = false;
 
-      case 'h':
-        do_help = true;
-        break;
+  /* Parse command line options.  */
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "cldr",    'c', no_argument },
+    { "help",    'h', no_argument },
+    { "version", 'V', no_argument },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  start_options (argc, argv, options, MOVE_OPTIONS_FIRST, 0);
+  {
+    int optchar;
+    while ((optchar = get_next_option ()) != -1)
+      switch (optchar)
+        {
+        case '\0':          /* Long option with key == 0.  */
+          break;
 
-      case 'V':
-        do_version = true;
-        break;
+        case 'c':
+          opt_cldr_format = true;
+          break;
 
-      default:
-        usage (EXIT_FAILURE);
-        /* NOTREACHED */
-      }
+        case 'h':
+          do_help = true;
+          break;
+
+        case 'V':
+          do_version = true;
+          break;
+
+        default:
+          usage (EXIT_FAILURE);
+          /* NOTREACHED */
+        }
+  }
 
   /* Version information requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "2015");
+              "2015-2026", "https://gnu.org/licenses/gpl.html");
       printf (_("Written by %s.\n"), proper_name ("Daiki Ueno"));
       exit (EXIT_SUCCESS);
     }
@@ -305,30 +452,37 @@ There is NO WARRANTY, to the extent permitted by law.\n\
       /* Two arguments: Read CLDR rules from a file.  */
       const char *locale = argv[optind];
       const char *logical_filename = argv[optind + 1];
-      char *extracted_rules;
-      FILE *fp;
 
       LIBXML_TEST_VERSION
 
-      fp = fopen (logical_filename, "r");
+      FILE *fp = fopen (logical_filename, "r");
       if (fp == NULL)
-        error (1, 0, _("%s cannot be read"), logical_filename);
+        error (EXIT_FAILURE, 0, _("%s cannot be read"), logical_filename);
 
-      extracted_rules = extract_rules (fp, logical_filename, logical_filename,
-                                       locale);
+      char *extracted_rules =
+        extract_rules (fp, logical_filename, logical_filename, locale);
       fclose (fp);
       if (extracted_rules == NULL)
-        error (1, 0, _("cannot extract rules for %s"), locale);
+        error (EXIT_FAILURE, 0, _("cannot extract rules for %s"), locale);
 
       if (opt_cldr_format)
         printf ("%s\n", extracted_rules);
       else
         {
-          struct cldr_plural_rule_list_ty *result;
-
-          result = cldr_plural_parse (extracted_rules);
+          force_spaces (extracted_rules);
+          {
+            char *tmp = remove_XcY (extracted_rules);
+            if (tmp != NULL)
+              {
+                free (extracted_rules);
+                extracted_rules = tmp;
+                remove_empty_examples (extracted_rules);
+              }
+          }
+          struct cldr_plural_rule_list_ty *result =
+            cldr_plural_parse (extracted_rules);
           if (result == NULL)
-            error (1, 0, _("cannot parse CLDR rule"));
+            error (EXIT_FAILURE, 0, _("cannot parse CLDR rule"));
 
           cldr_plural_rule_list_print (result, stdout);
           cldr_plural_rule_list_free (result);
@@ -342,16 +496,13 @@ There is NO WARRANTY, to the extent permitted by law.\n\
       size_t line_size = 0;
       for (;;)
         {
-          int line_len;
-          struct cldr_plural_rule_list_ty *result;
-
-          line_len = getline (&line, &line_size, stdin);
+          int line_len = getline (&line, &line_size, stdin);
           if (line_len < 0)
             break;
           if (line_len > 0 && line[line_len - 1] == '\n')
             line[--line_len] = '\0';
 
-          result = cldr_plural_parse (line);
+          struct cldr_plural_rule_list_ty *result = cldr_plural_parse (line);
           if (result)
             {
               cldr_plural_rule_list_print (result, stdout);
@@ -363,7 +514,7 @@ There is NO WARRANTY, to the extent permitted by law.\n\
     }
   else
     {
-      error (1, 0, _("extra operand %s"), argv[optind]);
+      error (EXIT_FAILURE, 0, _("extra operand %s"), argv[optind]);
     }
 
   return 0;

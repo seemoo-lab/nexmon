@@ -1,8 +1,10 @@
-# wctob.m4 serial 10
-dnl Copyright (C) 2008-2016 Free Software Foundation, Inc.
+# wctob.m4
+# serial 15
+dnl Copyright (C) 2008-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_WCTOB],
 [
@@ -11,13 +13,12 @@ AC_DEFUN([gl_FUNC_WCTOB],
   AC_CHECK_FUNCS_ONCE([wctob])
   if test $ac_cv_func_wctob = no; then
     HAVE_WCTOB=0
-    HAVE_DECL_WCTOB=0
   else
     HAVE_WCTOB=1
 
     dnl Solaris 9 has the wctob() function but it does not work.
     dnl Cygwin 1.7.2 has the wctob() function but it clobbers caller-owned
-    dnl registers, see <http://cygwin.com/ml/cygwin/2010-05/msg00015.html>.
+    dnl registers, see <https://cygwin.com/ml/cygwin/2010-05/msg00015.html>.
     AC_REQUIRE([AC_PROG_CC])
     AC_REQUIRE([gt_LOCALE_FR])
     AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
@@ -31,6 +32,9 @@ changequote(,)dnl
             # Guess no on Solaris <= 9 and Cygwin.
           solaris2.[1-9] | solaris2.[1-9].* | cygwin*)
             gl_cv_func_wctob_works="guessing no" ;;
+            # Guess no on native Windows.
+          mingw* | windows*)
+            gl_cv_func_wctob_works="guessing no" ;;
             # Guess yes otherwise.
           *) gl_cv_func_wctob_works="guessing yes" ;;
         esac
@@ -40,13 +44,6 @@ changequote([,])dnl
             AC_RUN_IFELSE(
               [AC_LANG_SOURCE([[
 #include <locale.h>
-/* Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-   <wchar.h>.
-   BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be
-   included before <wchar.h>.  */
-#include <stddef.h>
-#include <stdio.h>
-#include <time.h>
 #include <wchar.h>
 
 register long global __asm__ ("%ebx");
@@ -71,14 +68,7 @@ int main ()
           AC_RUN_IFELSE(
             [AC_LANG_SOURCE([[
 #include <locale.h>
-#include <string.h>
-/* Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-   <wchar.h>.
-   BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be
-   included before <wchar.h>.  */
-#include <stddef.h>
-#include <stdio.h>
-#include <time.h>
+#include <stdlib.h>
 #include <wchar.h>
 int main ()
 {
@@ -101,23 +91,6 @@ int main ()
       *yes) ;;
       *) REPLACE_WCTOB=1 ;;
     esac
-    if test $REPLACE_WCTOB = 0; then
-
-      dnl IRIX 6.5 has the wctob() function but does not declare it.
-      AC_CHECK_DECLS([wctob], [], [], [[
-/* Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-   <wchar.h>.
-   BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be included
-   before <wchar.h>.  */
-#include <stddef.h>
-#include <stdio.h>
-#include <time.h>
-#include <wchar.h>
-]])
-      if test $ac_cv_have_decl_wctob != yes; then
-        HAVE_DECL_WCTOB=0
-      fi
-    fi
   fi
 ])
 

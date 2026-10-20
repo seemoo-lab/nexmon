@@ -1,5 +1,6 @@
-# alloca.m4 serial 4 (gettext-0.18.2)
-dnl Copyright (C) 2002-2003, 2006, 2011 Free Software Foundation, Inc.
+# alloca.m4
+# serial 100
+dnl Copyright (C) 2002-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -22,10 +23,8 @@ AC_DEFUN([gl_FUNC_ALLOCA],
   Need own alloca
 #endif
     ],
-    ALLOCA_H=alloca.h,
-    ALLOCA_H=)
-  AC_SUBST([ALLOCA_H])
-  AM_CONDITIONAL([GL_GENERATE_ALLOCA_H], [test -n "$ALLOCA_H"])
+    [GL_GENERATE_ALLOCA_H=true],
+    [GL_GENERATE_ALLOCA_H=false])
 ])
 
 # Prerequisites of lib/alloca.c.

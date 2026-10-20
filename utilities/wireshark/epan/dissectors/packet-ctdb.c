@@ -6,90 +6,80 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/exceptions.h>
+#include <epan/tfs.h>
 #include <epan/expert.h>
 void proto_register_ctdb(void);
 void proto_reg_handoff_ctdb(void);
 
+static dissector_handle_t ctdb_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_ctdb = -1;
-static int hf_ctdb_length = -1;
-static int hf_ctdb_opcode = -1;
-static int hf_ctdb_magic = -1;
-static int hf_ctdb_version = -1;
-static int hf_ctdb_dst = -1;
-static int hf_ctdb_src = -1;
-static int hf_ctdb_id = -1;
-static int hf_ctdb_flags_immediate = -1;
-static int hf_ctdb_dbid = -1;
-static int hf_ctdb_callid = -1;
-static int hf_ctdb_status = -1;
-static int hf_ctdb_keylen = -1;
-static int hf_ctdb_datalen = -1;
-static int hf_ctdb_errorlen = -1;
-static int hf_ctdb_key = -1;
-static int hf_ctdb_keyhash = -1;
-static int hf_ctdb_data = -1;
-static int hf_ctdb_error = -1;
-static int hf_ctdb_dmaster = -1;
-static int hf_ctdb_request_in = -1;
-static int hf_ctdb_response_in = -1;
-static int hf_ctdb_time = -1;
-static int hf_ctdb_generation = -1;
-static int hf_ctdb_hopcount = -1;
-static int hf_ctdb_rsn = -1;
-static int hf_ctdb_ctrl_opcode = -1;
-static int hf_ctdb_srvid = -1;
-static int hf_ctdb_clientid = -1;
-static int hf_ctdb_ctrl_flags = -1;
-static int hf_ctdb_recmaster = -1;
-static int hf_ctdb_recmode = -1;
-static int hf_ctdb_num_nodes = -1;
-static int hf_ctdb_vnn = -1;
-static int hf_ctdb_node_flags = -1;
-static int hf_ctdb_node_ip = -1;
-static int hf_ctdb_pid = -1;
-static int hf_ctdb_process_exists = -1;
+static int proto_ctdb;
+static int hf_ctdb_length;
+static int hf_ctdb_opcode;
+static int hf_ctdb_magic;
+static int hf_ctdb_version;
+static int hf_ctdb_dst;
+static int hf_ctdb_src;
+static int hf_ctdb_id;
+static int hf_ctdb_flags_immediate;
+static int hf_ctdb_dbid;
+static int hf_ctdb_callid;
+static int hf_ctdb_status;
+static int hf_ctdb_keylen;
+static int hf_ctdb_datalen;
+static int hf_ctdb_errorlen;
+static int hf_ctdb_key;
+static int hf_ctdb_keyhash;
+static int hf_ctdb_data;
+static int hf_ctdb_error;
+static int hf_ctdb_dmaster;
+static int hf_ctdb_request_in;
+static int hf_ctdb_response_in;
+static int hf_ctdb_time;
+static int hf_ctdb_generation;
+static int hf_ctdb_hopcount;
+static int hf_ctdb_rsn;
+static int hf_ctdb_ctrl_opcode;
+static int hf_ctdb_srvid;
+static int hf_ctdb_clientid;
+static int hf_ctdb_ctrl_flags;
+static int hf_ctdb_recmaster;
+static int hf_ctdb_recmode;
+static int hf_ctdb_num_nodes;
+static int hf_ctdb_vnn;
+static int hf_ctdb_node_flags;
+static int hf_ctdb_node_ip;
+static int hf_ctdb_pid;
+static int hf_ctdb_process_exists;
 
 /* Initialize the subtree pointers */
-static gint ett_ctdb = -1;
-static gint ett_ctdb_key = -1;
+static int ett_ctdb;
+static int ett_ctdb_key;
 
-static expert_field ei_ctdb_too_many_nodes = EI_INIT;
+static expert_field ei_ctdb_too_many_nodes;
 
 /* this tree keeps track of caller/reqid for ctdb transactions */
-static wmem_tree_t *ctdb_transactions=NULL;
+static wmem_tree_t *ctdb_transactions;
 typedef struct _ctdb_trans_t {
-	guint32 key_hash;
-	guint32 request_in;
-	guint32 response_in;
+	uint32_t key_hash;
+	uint32_t request_in;
+	uint32_t response_in;
 	nstime_t req_time;
 } ctdb_trans_t;
 
 /* this tree keeps track of CONTROL request/responses */
-static wmem_tree_t *ctdb_controls=NULL;
+static wmem_tree_t *ctdb_controls;
 typedef struct _ctdb_control_t {
-	guint32 opcode;
-	guint32 request_in;
-	guint32 response_in;
+	uint32_t opcode;
+	uint32_t request_in;
+	uint32_t response_in;
 	nstime_t req_time;
 } ctdb_control_t;
 
@@ -118,6 +108,7 @@ static const value_string ctdb_opcodes[] = {
 
 #define CTDB_CONTROL_PROCESS_EXISTS		0
 #define CTDB_CONTROL_STATISTICS			1
+/* note: #2 removed upstream */
 #define CTDB_CONTROL_CONFIG			2
 #define CTDB_CONTROL_PING			3
 #define CTDB_CONTROL_GETDBPATH			4
@@ -126,8 +117,9 @@ static const value_string ctdb_opcodes[] = {
 #define CTDB_CONTROL_GET_DEBUG			7
 #define CTDB_CONTROL_SET_DEBUG			8
 #define CTDB_CONTROL_GET_DBMAP			9
-#define CTDB_CONTROL_GET_NODEMAP		10
-#define CTDB_CONTROL_SET_DMASTER		11
+#define CTDB_CONTROL_GET_NODEMAPv4		10 /* obsolete */
+#define CTDB_CONTROL_SET_DMASTER		11 /* obsolete */
+/* note: #12 removed upstream */
 #define CTDB_CONTROL_CLEAR_DB			12
 #define CTDB_CONTROL_PULL_DB			13
 #define CTDB_CONTROL_PUSH_DB			14
@@ -135,7 +127,7 @@ static const value_string ctdb_opcodes[] = {
 #define CTDB_CONTROL_SET_RECMODE		16
 #define CTDB_CONTROL_STATISTICS_RESET		17
 #define CTDB_CONTROL_DB_ATTACH			18
-#define CTDB_CONTROL_SET_CALL			19
+#define CTDB_CONTROL_SET_CALL			19 /* obsolete */
 #define CTDB_CONTROL_TRAVERSE_START		20
 #define CTDB_CONTROL_TRAVERSE_ALL		21
 #define CTDB_CONTROL_TRAVERSE_DATA		22
@@ -144,22 +136,24 @@ static const value_string ctdb_opcodes[] = {
 #define CTDB_CONTROL_GET_DBNAME			25
 #define CTDB_CONTROL_ENABLE_SEQNUM		26
 #define CTDB_CONTROL_UPDATE_SEQNUM		27
+/* note: #28 removed upstream */
 #define CTDB_CONTROL_SET_SEQNUM_FREQUENCY	28
 #define CTDB_CONTROL_DUMP_MEMORY		29
 #define CTDB_CONTROL_GET_PID			30
 #define CTDB_CONTROL_GET_RECMASTER		31
 #define CTDB_CONTROL_SET_RECMASTER		32
 #define CTDB_CONTROL_FREEZE			33
-#define CTDB_CONTROL_THAW			34
-#define CTDB_CONTROL_GET_VNN			35
+#define CTDB_CONTROL_THAW			34 /* obsolete */
+#define CTDB_CONTROL_GET_PNN			35
 #define CTDB_CONTROL_SHUTDOWN			36
 #define CTDB_CONTROL_GET_MONMODE		37
+/* note: #38, #39, #40 and #41 removed upstream */
 #define CTDB_CONTROL_SET_MONMODE		38
 #define CTDB_CONTROL_MAX_RSN			39
 #define CTDB_CONTROL_SET_RSN_NONEMPTY		40
 #define CTDB_CONTROL_DELETE_LOW_RSN		41
-#define CTDB_CONTROL_TAKEOVER_IP		42
-#define CTDB_CONTROL_RELEASE_IP			43
+#define CTDB_CONTROL_TAKEOVER_IPv4		42 /* obsolete */
+#define CTDB_CONTROL_RELEASE_IPv4		43 /* obsolete */
 #define CTDB_CONTROL_TCP_CLIENT			44
 #define CTDB_CONTROL_TCP_ADD			45
 #define CTDB_CONTROL_TCP_REMOVE			46
@@ -167,19 +161,101 @@ static const value_string ctdb_opcodes[] = {
 #define CTDB_CONTROL_SET_TUNABLE		48
 #define CTDB_CONTROL_GET_TUNABLE		49
 #define CTDB_CONTROL_LIST_TUNABLES		50
-#define CTDB_CONTROL_GET_PUBLIC_IPS		51
+#define CTDB_CONTROL_GET_PUBLIC_IPSv4		51 /* obsolete */
 #define CTDB_CONTROL_MODIFY_FLAGS		52
 #define CTDB_CONTROL_GET_ALL_TUNABLES		53
-#define CTDB_CONTROL_KILL_TCP			54
+#define CTDB_CONTROL_KILL_TCP			54 /* obsolete */
 #define CTDB_CONTROL_GET_TCP_TICKLE_LIST	55
 #define CTDB_CONTROL_SET_TCP_TICKLE_LIST	56
-#define CTDB_CONTROL_REGISTER_SERVER_ID		57
-#define CTDB_CONTROL_UNREGISTER_SERVER_ID	58
-#define CTDB_CONTROL_CHECK_SERVER_ID		59
-#define CTDB_CONTROL_GET_SERVER_ID_LIST		60
-#define CTDB_CONTROL_DB_ATTACH_PERSISTENT  	61
-#define CTDB_CONTROL_PERSISTENT_STORE      	62
+#define CTDB_CONTROL_REGISTER_SERVER_ID		57 /* obsolete */
+#define CTDB_CONTROL_UNREGISTER_SERVER_ID	58 /* obsolete */
+#define CTDB_CONTROL_CHECK_SERVER_ID		59 /* obsolete */
+#define CTDB_CONTROL_GET_SERVER_ID_LIST		60 /* obsolete */
+#define CTDB_CONTROL_DB_ATTACH_PERSISTENT	61
+#define CTDB_CONTROL_PERSISTENT_STORE		62 /* obsolete */
 #define CTDB_CONTROL_UPDATE_RECORD         	63
+#define CTDB_CONTROL_SEND_GRATUITOUS_ARP	64
+#define CTDB_CONTROL_TRANSACTION_START		65 /* obsolete */
+#define CTDB_CONTROL_TRANSACTION_COMMIT		66 /* obsolete */
+#define CTDB_CONTROL_WIPE_DATABASE		67
+/* #68 removed */
+#define CTDB_CONTROL_UPTIME			69
+#define CTDB_CONTROL_START_RECOVERY		70
+#define CTDB_CONTROL_END_RECOVERY		71
+#define CTDB_CONTROL_RELOAD_NODES_FILE		72
+/* #73 removed */
+#define CTDB_CONTROL_TRY_DELETE_RECORDS		74
+#define CTDB_CONTROL_ENABLE_MONITOR		75
+#define CTDB_CONTROL_DISABLE_MONITOR		76
+#define CTDB_CONTROL_ADD_PUBLIC_IP		77
+#define CTDB_CONTROL_DEL_PUBLIC_IP		78
+#define CTDB_CONTROL_RUN_EVENTSCRIPTS		79 /* obsolete */
+#define CTDB_CONTROL_GET_CAPABILITIES		80
+#define CTDB_CONTROL_START_PERSISTENT_UPDATE	81 /* obsolete */
+#define CTDB_CONTROL_CANCEL_PERSISTENT_UPDATE	82 /* obsolete */
+#define CTDB_CONTROL_TRANS2_COMMIT		83 /* obsolete */
+#define CTDB_CONTROL_TRANS2_FINISHED		84 /* obsolete */
+#define CTDB_CONTROL_TRANS2_ERROR		85 /* obsolete */
+#define CTDB_CONTROL_TRANS2_COMMIT_RETRY	86 /* obsolete */
+#define CTDB_CONTROL_RECD_PING			87
+#define CTDB_CONTROL_RELEASE_IP			88
+#define CTDB_CONTROL_TAKEOVER_IP		89
+#define CTDB_CONTROL_GET_PUBLIC_IPS		90
+#define CTDB_CONTROL_GET_NODEMAP		91
+/* missing */
+#define CTDB_CONTROL_GET_EVENT_SCRIPT_STATUS	96 /* obsolete */
+#define CTDB_CONTROL_TRAVERSE_KILL		97
+#define CTDB_CONTROL_RECD_RECLOCK_LATENCY	98
+#define CTDB_CONTROL_GET_RECLOCK_FILE		99
+#define CTDB_CONTROL_SET_RECLOCK_FILE		100 /* obsolete */
+#define CTDB_CONTROL_STOP_NODE			101
+#define CTDB_CONTROL_CONTINUE_NODE		102
+#define CTDB_CONTROL_SET_NATGWSTATE		103 /* obsolete */
+#define CTDB_CONTROL_SET_LMASTERROLE		104
+#define CTDB_CONTROL_SET_RECMASTERROLE		105
+#define CTDB_CONTROL_ENABLE_SCRIPT		107 /* obsolete */
+#define CTDB_CONTROL_DISABLE_SCRIPT		108 /* obsolete */
+#define CTDB_CONTROL_SET_BAN_STATE		109
+#define CTDB_CONTROL_GET_BAN_STATE		110
+#define CTDB_CONTROL_SET_DB_PRIORITY		111 /* obsolete */
+#define CTDB_CONTROL_GET_DB_PRIORITY		112 /* obsolete */
+#define CTDB_CONTROL_TRANSACTION_CANCEL		113 /* obsolete */
+#define CTDB_CONTROL_REGISTER_NOTIFY		114
+#define CTDB_CONTROL_DEREGISTER_NOTIFY		115
+#define CTDB_CONTROL_TRANS2_ACTIVE		116 /* obsolete */
+#define CTDB_CONTROL_GET_LOG			117 /* obsolete */
+#define CTDB_CONTROL_CLEAR_LOG			118 /* obsolete */
+#define CTDB_CONTROL_TRANS3_COMMIT		119
+#define CTDB_CONTROL_GET_DB_SEQNUM		120
+#define CTDB_CONTROL_DB_SET_HEALTHY		121
+#define CTDB_CONTROL_DB_GET_HEALTH		122
+#define CTDB_CONTROL_GET_PUBLIC_IP_INFO		123
+#define CTDB_CONTROL_GET_IFACES			124
+#define CTDB_CONTROL_SET_IFACE_LINK_STATE	125
+#define CTDB_CONTROL_TCP_ADD_DELAYED_UPDATE	126
+#define CTDB_CONTROL_GET_STAT_HISTORY		127
+#define CTDB_CONTROL_SCHEDULE_FOR_DELETION	128
+#define CTDB_CONTROL_SET_DB_READONLY		129
+#define CTDB_CONTROL_CHECK_SRVIDS		130
+#define CTDB_CONTROL_TRAVERSE_START_EXT		131
+#define CTDB_CONTROL_GET_DB_STATISTICS		132
+#define CTDB_CONTROL_SET_DB_STICKY		133
+#define CTDB_CONTROL_RELOAD_PUBLIC_IPS		134
+#define CTDB_CONTROL_TRAVERSE_ALL_EXT		135
+#define CTDB_CONTROL_RECEIVE_RECORDS		136
+#define CTDB_CONTROL_IPREALLOCATED		137
+#define CTDB_CONTROL_GET_RUNSTATE		138
+#define CTDB_CONTROL_DB_DETACH			139
+#define CTDB_CONTROL_GET_NODES_FILE		140
+#define CTDB_CONTROL_DB_FREEZE			141
+#define CTDB_CONTROL_DB_THAW			142
+#define CTDB_CONTROL_DB_TRANSACTION_START	143
+#define CTDB_CONTROL_DB_TRANSACTION_COMMIT	144
+#define CTDB_CONTROL_DB_TRANSACTION_CANCEL	145
+#define CTDB_CONTROL_DB_PULL			146
+#define CTDB_CONTROL_DB_PUSH_START		147
+#define CTDB_CONTROL_DB_PUSH_CONFIRM		148
+
 
 static const value_string ctrl_opcode_vals[] = {
 	{CTDB_CONTROL_PROCESS_EXISTS,	"PROCESS_EXISTS"},
@@ -192,7 +268,7 @@ static const value_string ctrl_opcode_vals[] = {
 	{CTDB_CONTROL_GET_DEBUG,	"GET_DEBUG"},
 	{CTDB_CONTROL_SET_DEBUG,	"SET_DEBUG"},
 	{CTDB_CONTROL_GET_DBMAP,	"GET_DBMAP"},
-	{CTDB_CONTROL_GET_NODEMAP,	"GET_NODEMAP"},
+	{CTDB_CONTROL_GET_NODEMAPv4,	"GET_NODEMAPv4"},
 	{CTDB_CONTROL_SET_DMASTER,	"SET_DMASTER"},
 	{CTDB_CONTROL_CLEAR_DB,		"CLEAR_DB"},
 	{CTDB_CONTROL_PULL_DB,		"PULL_DB"},
@@ -217,15 +293,15 @@ static const value_string ctrl_opcode_vals[] = {
 	{CTDB_CONTROL_SET_RECMASTER,	"SET_RECMASTER"},
 	{CTDB_CONTROL_FREEZE,		"FREEZE"},
 	{CTDB_CONTROL_THAW,		"THAW"},
-	{CTDB_CONTROL_GET_VNN,		"GET_VNN"},
+	{CTDB_CONTROL_GET_PNN,		"GET_PNN"},
 	{CTDB_CONTROL_SHUTDOWN,		"SHUTDOWN"},
 	{CTDB_CONTROL_GET_MONMODE,	"GET_MONMODE"},
 	{CTDB_CONTROL_SET_MONMODE,	"SET_MONMODE"},
 	{CTDB_CONTROL_MAX_RSN,		"MAX_RSN"},
 	{CTDB_CONTROL_SET_RSN_NONEMPTY,	"SET_RSN_NONEMPTY"},
 	{CTDB_CONTROL_DELETE_LOW_RSN,	"DELETE_LOW_RSN"},
-	{CTDB_CONTROL_TAKEOVER_IP,	"TAKEOVER_IP"},
-	{CTDB_CONTROL_RELEASE_IP,	"RELEASE_IP"},
+	{CTDB_CONTROL_TAKEOVER_IPv4,	"TAKEOVER_IPv4"},
+	{CTDB_CONTROL_RELEASE_IPv4,	"RELEASE_IPv4"},
 	{CTDB_CONTROL_TCP_CLIENT,	"TCP_CLIENT"},
 	{CTDB_CONTROL_TCP_ADD,		"TCP_ADD"},
 	{CTDB_CONTROL_TCP_REMOVE,	"TCP_REMOVE"},
@@ -233,7 +309,7 @@ static const value_string ctrl_opcode_vals[] = {
 	{CTDB_CONTROL_SET_TUNABLE,	"SET_TUNABLE"},
 	{CTDB_CONTROL_GET_TUNABLE,	"GET_TUNABLE"},
 	{CTDB_CONTROL_LIST_TUNABLES,	"LIST_TUNABLES"},
-	{CTDB_CONTROL_GET_PUBLIC_IPS,	"GET_PUBLIC_IPS"},
+	{CTDB_CONTROL_GET_PUBLIC_IPSv4,	"GET_PUBLIC_IPSv4"},
 	{CTDB_CONTROL_MODIFY_FLAGS,	"MODIFY_FLAGS"},
 	{CTDB_CONTROL_GET_ALL_TUNABLES,	"GET_ALL_TUNABLES"},
 	{CTDB_CONTROL_KILL_TCP,		"KILL_TCP"},
@@ -246,12 +322,90 @@ static const value_string ctrl_opcode_vals[] = {
 	{CTDB_CONTROL_DB_ATTACH_PERSISTENT,	"DB_ATTACH_PERSISTENT"},
 	{CTDB_CONTROL_PERSISTENT_STORE,		"PERSISTENT_STORE"},
 	{CTDB_CONTROL_UPDATE_RECORD,		"UPDATE_RECORD"},
+	{CTDB_CONTROL_SEND_GRATUITOUS_ARP,	"SEND_GRATUITOUS_ARP"},
+	{CTDB_CONTROL_TRANSACTION_START,	"TRANSACTION_START"},
+	{CTDB_CONTROL_TRANSACTION_COMMIT,	"TRANSACTION_COMMIT"},
+	{CTDB_CONTROL_WIPE_DATABASE,		"WIPE_DATABASE"},
+	{CTDB_CONTROL_UPTIME,			"UPTIME"},
+	{CTDB_CONTROL_START_RECOVERY,		"START_RECOVERY"},
+	{CTDB_CONTROL_END_RECOVERY,		"END_RECOVERY"},
+	{CTDB_CONTROL_RELOAD_NODES_FILE,	"RELOAD_NODES_FILE"},
+	{CTDB_CONTROL_TRY_DELETE_RECORDS,	"TRY_DELETE_RECORDS"},
+	{CTDB_CONTROL_ENABLE_MONITOR,		"ENABLE_MONITOR"},
+	{CTDB_CONTROL_DISABLE_MONITOR,		"DISABLE_MONITOR"},
+	{CTDB_CONTROL_ADD_PUBLIC_IP,		"ADD_PUBLIC_IP"},
+	{CTDB_CONTROL_DEL_PUBLIC_IP,		"DEL_PUBLIC_IP"},
+	{CTDB_CONTROL_RUN_EVENTSCRIPTS,		"RUN_EVENTSCRIPTS"},
+	{CTDB_CONTROL_GET_CAPABILITIES,		"GET_CAPABILITIES"},
+	{CTDB_CONTROL_START_PERSISTENT_UPDATE,	"START_PERSISTENT_UPDATE"},
+	{CTDB_CONTROL_CANCEL_PERSISTENT_UPDATE,	"CANCEL_PERSISTENT_UPDATE"},
+	{CTDB_CONTROL_TRANS2_COMMIT,		"TRANS2_COMMIT"},
+	{CTDB_CONTROL_TRANS2_FINISHED,		"TRANS2_FINISHED"},
+	{CTDB_CONTROL_TRANS2_ERROR,		"TRANS2_ERROR"},
+	{CTDB_CONTROL_TRANS2_COMMIT_RETRY,	"TRANS2_COMMIT_RETRY"},
+	{CTDB_CONTROL_RECD_PING,		"RECD_PING"},
+	{CTDB_CONTROL_RELEASE_IP,		"RELEASE_IP"},
+	{CTDB_CONTROL_TAKEOVER_IP,		"TAKEOVER_IP"},
+	{CTDB_CONTROL_GET_PUBLIC_IPS,		"GET_PUBLIC_IPS"},
+	{CTDB_CONTROL_GET_NODEMAP,		"GET_NODEMAP"},
+	{CTDB_CONTROL_GET_EVENT_SCRIPT_STATUS,	"GET_EVENT_SCRIPT_STATUS"},
+	{CTDB_CONTROL_TRAVERSE_KILL,		"TRAVERSE_KILL"},
+	{CTDB_CONTROL_RECD_RECLOCK_LATENCY,	"RECD_RECLOCK_LATENCY"},
+	{CTDB_CONTROL_GET_RECLOCK_FILE,		"GET_RECLOCK_FILE"},
+	{CTDB_CONTROL_SET_RECLOCK_FILE,		"SET_RECLOCK_FILE"},
+	{CTDB_CONTROL_STOP_NODE,		"STOP_NODE"},
+	{CTDB_CONTROL_CONTINUE_NODE,		"CONTINUE_NODE"},
+	{CTDB_CONTROL_SET_NATGWSTATE,		"SET_NATGWSTATE"},
+	{CTDB_CONTROL_SET_LMASTERROLE,		"SET_LMASTERROLE"},
+	{CTDB_CONTROL_SET_RECMASTERROLE,	"SET_RECMASTERROLE"},
+	{CTDB_CONTROL_ENABLE_SCRIPT,		"ENABLE_SCRIPT"},
+	{CTDB_CONTROL_DISABLE_SCRIPT,		"DISABLE_SCRIPT"},
+	{CTDB_CONTROL_SET_BAN_STATE,		"SET_BAN_STATE"},
+	{CTDB_CONTROL_GET_BAN_STATE,		"GET_BAN_STATE"},
+	{CTDB_CONTROL_SET_DB_PRIORITY,		"SET_DB_PRIORITY"},
+	{CTDB_CONTROL_GET_DB_PRIORITY,		"GET_DB_PRIORITY"},
+	{CTDB_CONTROL_TRANSACTION_CANCEL,	"TRANSACTION_CANCEL"},
+	{CTDB_CONTROL_REGISTER_NOTIFY,		"REGISTER_NOTIFY"},
+	{CTDB_CONTROL_DEREGISTER_NOTIFY,	"DEREGISTER_NOTIFY"},
+	{CTDB_CONTROL_TRANS2_ACTIVE,		"TRANS2_ACTIVE"},
+	{CTDB_CONTROL_GET_LOG,			"GET_LOG"},
+	{CTDB_CONTROL_CLEAR_LOG,		"CLEAR_LOG"},
+	{CTDB_CONTROL_TRANS3_COMMIT,		"TRANS3_COMMIT"},
+	{CTDB_CONTROL_GET_DB_SEQNUM,		"GET_DB_SEQNUM"},
+	{CTDB_CONTROL_DB_SET_HEALTHY,		"DB_SET_HEALTHY"},
+	{CTDB_CONTROL_DB_GET_HEALTH,		"DB_GET_HEALTH"},
+	{CTDB_CONTROL_GET_PUBLIC_IP_INFO,	"GET_PUBLIC_IP_INFO"},
+	{CTDB_CONTROL_GET_IFACES,		"GET_IFACES"},
+	{CTDB_CONTROL_SET_IFACE_LINK_STATE,	"SET_IFACE_LINK_STATE"},
+	{CTDB_CONTROL_TCP_ADD_DELAYED_UPDATE,	"TCP_ADD_DELAYED_UPDATE"},
+	{CTDB_CONTROL_GET_STAT_HISTORY,		"GET_STAT_HISTORY"},
+	{CTDB_CONTROL_SCHEDULE_FOR_DELETION,	"SCHEDULE_FOR_DELETION"},
+	{CTDB_CONTROL_SET_DB_READONLY,		"SET_DB_READONLY"},
+	{CTDB_CONTROL_CHECK_SRVIDS,		"CHECK_SRVIDS"},
+	{CTDB_CONTROL_TRAVERSE_START_EXT,	"TRAVERSE_START_EXT"},
+	{CTDB_CONTROL_GET_DB_STATISTICS,	"GET_DB_STATISTICS"},
+	{CTDB_CONTROL_SET_DB_STICKY,		"SET_DB_STICKY"},
+	{CTDB_CONTROL_RELOAD_PUBLIC_IPS,	"RELOAD_PUBLIC_IPS"},
+	{CTDB_CONTROL_TRAVERSE_ALL_EXT,		"TRAVERSE_ALL_EXT"},
+	{CTDB_CONTROL_RECEIVE_RECORDS,		"RECEIVE_RECORDS"},
+	{CTDB_CONTROL_IPREALLOCATED,		"IPREALLOCATED"},
+	{CTDB_CONTROL_GET_RUNSTATE,		"GET_RUNSTATE"},
+	{CTDB_CONTROL_DB_DETACH,		"DB_DETACH"},
+	{CTDB_CONTROL_GET_NODES_FILE,		"GET_NODES_FILE"},
+	{CTDB_CONTROL_DB_FREEZE,		"DB_FREEZE"},
+	{CTDB_CONTROL_DB_THAW,			"DB_THAW"},
+	{CTDB_CONTROL_DB_TRANSACTION_START,	"DB_TRANSACTION_START"},
+	{CTDB_CONTROL_DB_TRANSACTION_COMMIT,	"DB_TRANSACTION_COMMIT"},
+	{CTDB_CONTROL_DB_TRANSACTION_CANCEL,	"DB_TRANSACTION_CANCEL"},
+	{CTDB_CONTROL_DB_PULL,			"DB_PULL"},
+	{CTDB_CONTROL_DB_PUSH_START,		"DB_PUSH_START"},
+	{CTDB_CONTROL_DB_PUSH_CONFIRM,		"DB_PUSH_CONFIRM"},
 	{0, NULL}
 };
 
 
 
-static int dissect_control_get_recmaster_reply(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, guint32 status, int endianess _U_)
+static int dissect_control_get_recmaster_reply(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t status, int endianess _U_)
 {
 	proto_tree_add_uint(tree, hf_ctdb_recmaster, tvb, 0, 0, status);
 
@@ -266,20 +420,20 @@ static const value_string recmode_vals[] = {
 	{0, NULL}
 };
 
-static int dissect_control_get_recmode_reply(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, guint32 status, int endianess _U_)
+static int dissect_control_get_recmode_reply(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t status, int endianess _U_)
 {
 	proto_tree_add_uint(tree, hf_ctdb_recmode, tvb, 0, 0, status);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, " RecMode:%s",
-		val_to_str(status, recmode_vals, "Unknown:%d"));
+		val_to_str(pinfo->pool, status, recmode_vals, "Unknown:%d"));
 
 	return offset;
 }
 
 #define CTDB_MAX_NODES 500 /* Arbitrary. */
-static int dissect_control_get_nodemap_reply(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, guint32 status _U_, int endianess)
+static int dissect_control_get_nodemap_reply(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t status _U_, int endianess)
 {
-	guint32 num_nodes;
+	uint32_t num_nodes;
 	proto_item *item;
 
 	/* num nodes */
@@ -313,9 +467,9 @@ static int dissect_control_get_nodemap_reply(packet_info *pinfo, proto_tree *tre
 	return offset;
 }
 
-static int dissect_control_process_exist_request(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, guint32 status _U_, int endianess)
+static int dissect_control_process_exist_request(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t status _U_, int endianess)
 {
-	guint32 pid;
+	uint32_t pid;
 
 	/* pid */
 	proto_tree_add_item(tree, hf_ctdb_pid, tvb, offset, 4, endianess);
@@ -336,17 +490,17 @@ static const true_false_string process_exists_tfs = {
 	"Process Exists"
 };
 
-static int dissect_control_process_exist_reply(packet_info *pinfo _U_, proto_tree *tree, tvbuff_t *tvb, int offset, guint32 status, int endianess _U_)
+static int dissect_control_process_exist_reply(packet_info *pinfo _U_, proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t status, int endianess _U_)
 {
 	proto_tree_add_boolean(tree, hf_ctdb_process_exists, tvb, offset, 4, status);
 	return offset;
 }
 
 /* This defines the array of dissectors for request/reply controls */
-typedef int (*control_dissector)(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, guint32 status, int endianess);
+typedef int (*control_dissector)(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t status, int endianess);
 
 typedef struct _control_dissector_array_t {
-	guint32 opcode;
+	uint32_t opcode;
 	control_dissector request_dissector;
 	control_dissector reply_dissector;
 } control_dissector_array_t;
@@ -425,7 +579,7 @@ static control_dissector_array_t control_dissectors[] = {
 	{0, NULL, NULL}
 };
 
-static control_dissector find_control_dissector(guint32 opcode, gboolean is_request)
+static control_dissector find_control_dissector(uint32_t opcode, bool is_request)
 {
 	control_dissector_array_t *cd=control_dissectors;
 
@@ -461,13 +615,13 @@ ctdb_display_trans(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, ctdb_tra
 
 	if(ctdb_trans->request_in!=pinfo->num){
 		item=proto_tree_add_uint(tree, hf_ctdb_request_in, tvb, 0, 0, ctdb_trans->request_in);
-		PROTO_ITEM_SET_GENERATED(item);
+		proto_item_set_generated(item);
 	}
 
 	if( (ctdb_trans->response_in!=0)
 	  &&(ctdb_trans->response_in!=pinfo->num) ){
 		item=proto_tree_add_uint(tree, hf_ctdb_response_in, tvb, 0, 0, ctdb_trans->response_in);
-		PROTO_ITEM_SET_GENERATED(item);
+		proto_item_set_generated(item);
 	}
 
 	if(pinfo->num==ctdb_trans->response_in){
@@ -475,7 +629,7 @@ ctdb_display_trans(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, ctdb_tra
 
 		nstime_delta(&ns, &pinfo->abs_ts, &ctdb_trans->req_time);
 		item=proto_tree_add_time(tree, hf_ctdb_time, tvb, 0, 0, &ns);
-		PROTO_ITEM_SET_GENERATED(item);
+		proto_item_set_generated(item);
 	}
 }
 
@@ -486,13 +640,13 @@ ctdb_display_control(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, ctdb_c
 
 	if(ctdb_control->request_in!=pinfo->num){
 		item=proto_tree_add_uint(tree, hf_ctdb_request_in, tvb, 0, 0, ctdb_control->request_in);
-		PROTO_ITEM_SET_GENERATED(item);
+		proto_item_set_generated(item);
 	}
 
 	if( (ctdb_control->response_in!=0)
 	  &&(ctdb_control->response_in!=pinfo->num) ){
 		item=proto_tree_add_uint(tree, hf_ctdb_response_in, tvb, 0, 0, ctdb_control->response_in);
-		PROTO_ITEM_SET_GENERATED(item);
+		proto_item_set_generated(item);
 	}
 
 	if(pinfo->num==ctdb_control->response_in){
@@ -500,26 +654,26 @@ ctdb_display_control(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, ctdb_c
 
 		nstime_delta(&ns, &pinfo->abs_ts, &ctdb_control->req_time);
 		item=proto_tree_add_time(tree, hf_ctdb_time, tvb, 0, 0, &ns);
-		PROTO_ITEM_SET_GENERATED(item);
+		proto_item_set_generated(item);
 	}
 }
 
-static guint32
-ctdb_hash(tvbuff_t *tvb, int offset, guint32 len)
+static uint32_t
+ctdb_hash(tvbuff_t *tvb, int offset, uint32_t len)
 {
-	guint32 value;
-	guint32 i;
+	uint32_t value;
+	uint32_t i;
 
 	for(value=0x238F13AF*len, i=0; i < len; i++)
-		value=(value+(tvb_get_guint8(tvb, offset+i) << (i*5 % 24)));
+		value=(value+(tvb_get_uint8(tvb, offset+i) << (i*5 % 24)));
 
 	return (1103515243 * value + 12345);
 }
 
 static int
-dissect_ctdb_key(proto_tree *tree, tvbuff_t *tvb, int offset, guint32 keylen, guint32 *key_hash, int endianess)
+dissect_ctdb_key(proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t keylen, uint32_t *key_hash, int endianess)
 {
-	guint32 keyhash;
+	uint32_t keyhash;
 	proto_item *key_item=NULL;
 	proto_item *key_tree=NULL;
 
@@ -532,7 +686,7 @@ dissect_ctdb_key(proto_tree *tree, tvbuff_t *tvb, int offset, guint32 keylen, gu
 	keyhash=ctdb_hash(tvb, offset, keylen);
 	proto_item_append_text(key_item, " (Hash:0x%08x)", keyhash);
 	key_item=proto_tree_add_uint(key_tree, hf_ctdb_keyhash, tvb, 0, 0, keyhash);
-	PROTO_ITEM_SET_GENERATED(key_item);
+	proto_item_set_generated(key_item);
 
 	offset+=keylen;
 
@@ -546,7 +700,7 @@ dissect_ctdb_key(proto_tree *tree, tvbuff_t *tvb, int offset, guint32 keylen, gu
 static int
 dissect_ctdb_reply_call(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, int endianess)
 {
-	guint32 datalen;
+	uint32_t datalen;
 
 	/* status */
 	proto_tree_add_item(tree, hf_ctdb_status, tvb, offset, 4, endianess);
@@ -570,9 +724,9 @@ dissect_ctdb_reply_call(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto
 }
 
 static int
-dissect_ctdb_reply_dmaster(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, guint32 reqid, guint32 dst, int endianess)
+dissect_ctdb_reply_dmaster(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, uint32_t reqid, uint32_t dst, int endianess)
 {
-	guint32 datalen, keylen;
+	uint32_t datalen, keylen;
 	wmem_tree_key_t tkey[3];
 	ctdb_trans_t *ctdb_trans;
 
@@ -627,9 +781,9 @@ dissect_ctdb_reply_dmaster(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_
 }
 
 static int
-dissect_ctdb_req_dmaster(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, guint32 reqid, int endianess)
+dissect_ctdb_req_dmaster(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, uint32_t reqid, int endianess)
 {
-	guint32 keylen, datalen, dmaster;
+	uint32_t keylen, datalen, dmaster;
 	wmem_tree_key_t tkey[3];
 	ctdb_trans_t *ctdb_trans;
 
@@ -694,10 +848,10 @@ dissect_ctdb_req_dmaster(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
 
 
 static int
-dissect_ctdb_req_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, guint32 reqid, guint32 src, guint32 dst, int endianess)
+dissect_ctdb_req_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, uint32_t reqid, uint32_t src, uint32_t dst, int endianess)
 {
-	guint32 datalen;
-	guint32 opcode;
+	uint32_t datalen;
+	uint32_t opcode;
 	ctdb_control_t *ctdb_control;
 	control_dissector cd;
 	int data_offset;
@@ -712,7 +866,7 @@ dissect_ctdb_req_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
 	offset+=4;
 
 	col_add_fstr(pinfo->cinfo, COL_INFO, "%s Request %d->%d",
-		val_to_str(opcode, ctrl_opcode_vals, "Unknown:%d"),
+		val_to_str(pinfo->pool, opcode, ctrl_opcode_vals, "Unknown:%d"),
 		src, dst);
 
 	/* srvid */
@@ -745,7 +899,7 @@ dissect_ctdb_req_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
 	}
 
 	/* setup request/response matching */
-	if(!pinfo->fd->flags.visited){
+	if(!pinfo->fd->visited){
 		wmem_tree_key_t tkey[4];
 
 		ctdb_control=wmem_new(wmem_file_scope(), ctdb_control_t);
@@ -775,24 +929,24 @@ dissect_ctdb_req_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
 		ctdb_control=(ctdb_control_t *)wmem_tree_lookup32_array(ctdb_controls, &tkey[0]);
 	}
 
-
-	cd=find_control_dissector(ctdb_control->opcode, TRUE);
-	if (cd) {
-		cd(pinfo, tree, tvb, data_offset, 0, endianess);
+	if (ctdb_control) {
+		cd=find_control_dissector(ctdb_control->opcode, true);
+		if (cd) {
+			cd(pinfo, tree, tvb, data_offset, 0, endianess);
+		}
+		ctdb_display_control(pinfo, tree, tvb, ctdb_control);
 	}
-
-	ctdb_display_control(pinfo, tree, tvb, ctdb_control);
 
 	return offset;
 }
 
 static int
-dissect_ctdb_reply_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, guint32 reqid, guint32 src, guint32 dst, int endianess)
+dissect_ctdb_reply_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, uint32_t reqid, uint32_t src, uint32_t dst, int endianess)
 {
 	ctdb_control_t *ctdb_control;
 	wmem_tree_key_t tkey[4];
 	proto_item *item;
-	guint32 datalen, errorlen, status;
+	uint32_t datalen, errorlen, status;
 	int data_offset;
 	control_dissector cd;
 
@@ -809,16 +963,16 @@ dissect_ctdb_reply_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_
 		return offset;
 	}
 
-	if(!pinfo->fd->flags.visited){
+	if(!pinfo->fd->visited){
 		ctdb_control->response_in = pinfo->num;
 	}
 
 	/* ctrl opcode */
 	item=proto_tree_add_uint(tree, hf_ctdb_ctrl_opcode, tvb, 0, 0, ctdb_control->opcode);
-	PROTO_ITEM_SET_GENERATED(item);
+	proto_item_set_generated(item);
 
 	col_add_fstr(pinfo->cinfo, COL_INFO, "%s Reply %d->%d",
-		val_to_str(ctdb_control->opcode, ctrl_opcode_vals, "Unknown:%d"),
+		val_to_str(pinfo->pool, ctdb_control->opcode, ctrl_opcode_vals, "Unknown:%d"),
 		src, dst);
 
 
@@ -864,7 +1018,7 @@ dissect_ctdb_reply_control(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_
 	}
 
 
-	cd=find_control_dissector(ctdb_control->opcode, FALSE);
+	cd=find_control_dissector(ctdb_control->opcode, false);
 	if (cd) {
 		cd(pinfo, tree, tvb, data_offset, status, endianess);
 	}
@@ -879,10 +1033,10 @@ static const true_false_string flags_immediate_tfs={
 };
 
 static int
-dissect_ctdb_req_call(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, guint32 reqid, guint32 caller, int endianess)
+dissect_ctdb_req_call(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, uint32_t reqid, uint32_t caller, int endianess)
 {
-	guint32 flags, keyhash;
-	guint32 keylen, datalen;
+	uint32_t flags, keyhash;
+	uint32_t keylen, datalen;
 	ctdb_trans_t *ctdb_trans=NULL;
 
 	/* flags */
@@ -935,7 +1089,7 @@ dissect_ctdb_req_call(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree 
 	offset+=datalen;
 
 	/* setup request/response matching */
-	if(!pinfo->fd->flags.visited){
+	if(!pinfo->fd->visited){
 		wmem_tree_key_t tkey[3];
 
 		ctdb_trans=wmem_new(wmem_file_scope(), ctdb_trans_t);
@@ -974,7 +1128,7 @@ dissect_ctdb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
 	proto_tree *tree=NULL;
 	proto_item *item=NULL;
 	int offset=0;
-	guint32 opcode, src, dst, reqid;
+	uint32_t opcode, src, dst, reqid;
 	int endianess;
 
 	/* does this look like CTDB? */
@@ -983,10 +1137,10 @@ dissect_ctdb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
 	}
 	switch(tvb_get_letohl(tvb, offset+4)){
 	case 0x42445443:
-		endianess=FALSE;
+		endianess=false;
 		break;
 	case 0x43544442:
-		endianess=TRUE;
+		endianess=true;
 		break;
 	default:
 		return FALSE;
@@ -1056,7 +1210,7 @@ dissect_ctdb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
 	offset+=4;
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, "%s %d->%d",
-		val_to_str(opcode, ctdb_opcodes, "Unknown:%d"),
+		val_to_str(pinfo->pool, opcode, ctdb_opcodes, "Unknown:%d"),
 		src, dst);
 
 	switch(opcode){
@@ -1087,6 +1241,11 @@ dissect_ctdb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
 	return TRUE;
 }
 
+static bool
+dissect_ctdb_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    return (bool)dissect_ctdb(tvb, pinfo, tree, data);
+}
 
 /*
  * Register the protocol with Wireshark
@@ -1157,10 +1316,10 @@ proto_register_ctdb(void)
 	  NULL, 0x0, NULL, HFILL }},
 	{ &hf_ctdb_request_in, {
 	  "Request In", "ctdb.request_in", FT_FRAMENUM, BASE_NONE,
-	  NULL, 0x0, NULL, HFILL }},
+	  FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0, NULL, HFILL }},
 	{ &hf_ctdb_response_in, {
 	  "Response In", "ctdb.response_in", FT_FRAMENUM, BASE_NONE,
-	  NULL, 0x0, NULL, HFILL }},
+	  FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0, NULL, HFILL }},
 	{ &hf_ctdb_time, {
 	  "Time since request", "ctdb.time", FT_RELATIVE_TIME, BASE_NONE,
 	  NULL, 0x0, NULL, HFILL }},
@@ -1205,11 +1364,11 @@ proto_register_ctdb(void)
 	  NULL, 0x0, NULL, HFILL }},
 	{ &hf_ctdb_process_exists, {
 	  "Process Exists", "ctdb.process_exists", FT_BOOLEAN, 32,
-	  TFS(&process_exists_tfs), 0x01, NULL, HFILL }},
+	  TFS(&process_exists_tfs), 0x00000001, NULL, HFILL }},
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ctdb,
 		&ett_ctdb_key,
 	};
@@ -1230,6 +1389,9 @@ proto_register_ctdb(void)
 	expert_ctdb = expert_register_protocol(proto_ctdb);
 	expert_register_field_array(expert_ctdb, ei, array_length(ei));
 
+	/* Register the dissector */
+	ctdb_handle = register_dissector("ctdb", dissect_ctdb, proto_ctdb);
+
 	ctdb_transactions = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
 	ctdb_controls     = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
 }
@@ -1238,16 +1400,13 @@ proto_register_ctdb(void)
 void
 proto_reg_handoff_ctdb(void)
 {
-	dissector_handle_t ctdb_handle;
+	dissector_add_for_decode_as_with_preference("tcp.port", ctdb_handle);
 
-	ctdb_handle = create_dissector_handle(dissect_ctdb, proto_ctdb);
-	dissector_add_for_decode_as("tcp.port", ctdb_handle);
-
-	heur_dissector_add("tcp", dissect_ctdb, "Cluster TDB over TCP", "ctdb_tcp", proto_ctdb, HEURISTIC_ENABLE);
+	heur_dissector_add("tcp", dissect_ctdb_heur, "Cluster TDB over TCP", "ctdb_tcp", proto_ctdb, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

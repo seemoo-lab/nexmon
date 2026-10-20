@@ -1,31 +1,20 @@
-/* font_color_preferences_frame.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef FONT_COLOR_PREFERENCES_FRAME_H
 #define FONT_COLOR_PREFERENCES_FRAME_H
 
-#include "preferences_dialog.h"
-
 #include <QFrame>
 #include <QFont>
+#include <QComboBox>
+
+#include <epan/prefs.h>
 
 namespace Ui {
 class FontColorPreferencesFrame;
@@ -44,8 +33,16 @@ protected:
 
 private:
     Ui::FontColorPreferencesFrame *ui;
+    QComboBox *colorSchemeComboBox_;
 
+    pref_t *pref_color_scheme_;
     pref_t *pref_qt_gui_font_name_;
+    pref_t *pref_active_fg_;
+    pref_t *pref_active_bg_;
+    pref_t *pref_active_style_;
+    pref_t *pref_inactive_fg_;
+    pref_t *pref_inactive_bg_;
+    pref_t *pref_inactive_style_;
     pref_t *pref_marked_fg_;
     pref_t *pref_marked_bg_;
     pref_t *pref_ignored_fg_;
@@ -54,11 +51,11 @@ private:
     pref_t *pref_client_bg_;
     pref_t *pref_server_fg_;
     pref_t *pref_server_bg_;
-    pref_t *pref_valid_fg_;
+    pref_t* pref_valid_fg_;
     pref_t *pref_valid_bg_;
-    pref_t *pref_invalid_fg_;
+    pref_t* pref_invalid_fg_;
     pref_t *pref_invalid_bg_;
-    pref_t *pref_deprecated_fg_;
+    pref_t* pref_deprecated_fg_;
     pref_t *pref_deprecated_bg_;
     QFont cur_font_;
 
@@ -66,8 +63,16 @@ private:
     void changeColor(pref_t *pref);
 
 private slots:
+    void colorChanged(pref_t *pref, const QColor &cc);
+    void colorSchemeIndexChanged(int index);
     void on_fontPushButton_clicked();
 
+    void on_activeFGPushButton_clicked();
+    void on_activeBGPushButton_clicked();
+    void on_activeStyleComboBox_currentIndexChanged(int index);
+    void on_inactiveFGPushButton_clicked();
+    void on_inactiveBGPushButton_clicked();
+    void on_inactiveStyleComboBox_currentIndexChanged(int index);
     void on_markedFGPushButton_clicked();
     void on_markedBGPushButton_clicked();
     void on_ignoredFGPushButton_clicked();
@@ -77,8 +82,11 @@ private slots:
     void on_serverFGPushButton_clicked();
     void on_serverBGPushButton_clicked();
     void on_validFilterBGPushButton_clicked();
+    void on_validFilterFGPushButton_clicked();
     void on_invalidFilterBGPushButton_clicked();
+    void on_invalidFilterFGPushButton_clicked();
     void on_deprecatedFilterBGPushButton_clicked();
+    void on_deprecatedFilterFGPushButton_clicked();
 };
 
 #endif // FONT_COLOR_PREFERENCES_FRAME_H

@@ -34,6 +34,8 @@ cat <<\EOF > f-lr-1.data
 "abc%y"
 # Invalid: flags after width
 "abc%2^d"
+# Valid: null precision
+"abc%.d"
 # Invalid: twice precision
 "abc%.4.2d"
 # Valid: three arguments

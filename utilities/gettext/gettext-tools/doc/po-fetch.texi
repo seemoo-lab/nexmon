@@ -1,0 +1,55 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
+@pindex po-fetch
+@cindex @code{po-fetch} program, usage
+
+@example
+po-fetch [@var{option}...] TP @var{domain}
+po-fetch [@var{option}...] Weblate @var{base-url} @var{project} @var{component}
+po-fetch [@var{option}...] git @var{base-url} @var{branch} @var{subdir}
+@end example
+
+The @code{po-fetch} program fetches a set of PO files, produced by translators,
+from a translation project's site on the internet,
+and updates the @code{LINGUAS} file accordingly.
+
+The first argument indicates the kind of translation project:
+
+@table @samp
+@item TP
+denotes the Translation Project (@code{translationproject.org}).
+@item Weblate
+denotes a Weblate instance.
+@item git
+denotes a web front-end to a @code{git} repository
+(such as a @code{gitweb} instance, a @code{cgit} instance,
+or a GitLab or GitHub or Forgejo instance).
+@end table
+
+@subsubsection Options
+
+@table @samp
+@item --git
+@opindex --git@r{, @code{po-fetch} option}
+Make changes in the @code{git} index, to prepare for a @code{git} commit.
+
+@end table
+
+@subsubsection Output files location
+
+The PO files and the @code{LINGUAS} file are stored in the current directory.
+
+@subsubsection Informative output
+
+@table @samp
+@item --help
+@opindex --help@r{, @code{po-fetch} option}
+Display this help and exit.
+
+@item --version
+@opindex --version@r{, @code{po-fetch} option}
+Output version information and exit.
+
+@end table

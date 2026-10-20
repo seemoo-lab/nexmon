@@ -1,0 +1,7 @@
+ELEMENT 'svg'
+  TEXT '
+  '
+  PASS '<!-- starts with a BOM -->'
+  TEXT '
+'
+END 'svg'

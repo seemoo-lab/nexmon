@@ -1,6 +1,5 @@
 /* GNU gettext - internationalization aids
-   Copyright (C) 1995-1998, 2000-2008, 2012, 2015-2016 Free Software
-   Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Peter Miller, Ulrich Drepper, and Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "write-catalog.h"
@@ -34,12 +33,12 @@
 # define STDOUT_FILENO 1
 #endif
 
-#include "ostream.h"
-#include "file-ostream.h"
+#include <textstyle.h>
+
 #include "fwriteerror.h"
-#include "error-progname.h"
 #include "xvasprintf.h"
-#include "po-xerror.h"
+#include "xstrerror.h"
+#include "xerror-handler.h"
 #include "gettext.h"
 
 /* Our regular abbreviation.  */
@@ -51,14 +50,11 @@
 
 # define ENABLE_COLOR 1
 
-# include "styled-ostream.h"
-# include "term-styled-ostream.h"
-# include "html-styled-ostream.h"
-# include "fd-ostream.h"
-
-# include "color.h"
+# include "relocatable.h"
 # include "po-charset.h"
 # include "msgl-iconv.h"
+
+# define GETTEXTSTYLESDIR  GETTEXTDATADIR "/styles"
 
 #endif
 
@@ -93,18 +89,15 @@ message_page_width_set (size_t n)
 void
 msgdomain_list_print (msgdomain_list_ty *mdlp, const char *filename,
                       catalog_output_format_ty output_syntax,
+                      xerror_handler_ty xeh,
                       bool force, bool debug)
 {
-  bool to_stdout;
-
   /* We will not write anything if, for every domain, we have no message
      or only the header entry.  */
   if (!force)
     {
       bool found_nonempty = false;
-      size_t k;
-
-      for (k = 0; k < mdlp->nitems; k++)
+      for (size_t k = 0; k < mdlp->nitems; k++)
         {
           message_list_ty *mlp = mdlp->item[k]->messages;
 
@@ -124,26 +117,22 @@ msgdomain_list_print (msgdomain_list_ty *mdlp, const char *filename,
   if (!output_syntax->supports_multiple_domains && mdlp->nitems > 1)
     {
       if (output_syntax->alternative_is_po)
-        po_xerror (PO_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false, _("\
-Cannot output multiple translation domains into a single file with the specified output format. Try using PO file syntax instead."));
+        xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
+                     _("Cannot output multiple translation domains into a single file with the specified output format. Try using PO file syntax instead."));
       else
-        po_xerror (PO_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false, _("\
-Cannot output multiple translation domains into a single file with the specified output format."));
+        xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
+                     _("Cannot output multiple translation domains into a single file with the specified output format."));
     }
   else
     {
       if (!output_syntax->supports_contexts)
         {
-          const lex_pos_ty *has_context;
-          size_t k;
-
-          has_context = NULL;
-          for (k = 0; k < mdlp->nitems; k++)
+          const lex_pos_ty *has_context = NULL;
+          for (size_t k = 0; k < mdlp->nitems; k++)
             {
               message_list_ty *mlp = mdlp->item[k]->messages;
-              size_t j;
 
-              for (j = 0; j < mlp->nitems; j++)
+              for (size_t j = 0; j < mlp->nitems; j++)
                 {
                   message_ty *mp = mlp->item[j];
 
@@ -156,28 +145,20 @@ Cannot output multiple translation domains into a single file with the specified
             }
 
           if (has_context != NULL)
-            {
-              error_with_progname = false;
-              po_xerror (PO_SEVERITY_FATAL_ERROR, NULL,
+            xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL,
                          has_context->file_name, has_context->line_number,
-                         (size_t)(-1), false, _("\
-message catalog has context dependent translations, but the output format does not support them."));
-              error_with_progname = true;
-            }
+                         (size_t)(-1), false,
+                         _("message catalog has context dependent translations, but the output format does not support them."));
         }
 
       if (!output_syntax->supports_plurals)
         {
-          const lex_pos_ty *has_plural;
-          size_t k;
-
-          has_plural = NULL;
-          for (k = 0; k < mdlp->nitems; k++)
+          const lex_pos_ty *has_plural = NULL;
+          for (size_t k = 0; k < mdlp->nitems; k++)
             {
               message_list_ty *mlp = mdlp->item[k]->messages;
-              size_t j;
 
-              for (j = 0; j < mlp->nitems; j++)
+              for (size_t j = 0; j < mlp->nitems; j++)
                 {
                   message_ty *mp = mlp->item[j];
 
@@ -191,34 +172,32 @@ message catalog has context dependent translations, but the output format does n
 
           if (has_plural != NULL)
             {
-              error_with_progname = false;
               if (output_syntax->alternative_is_java_class)
-                po_xerror (PO_SEVERITY_FATAL_ERROR, NULL,
-                           has_plural->file_name, has_plural->line_number,
-                           (size_t)(-1), false, _("\
-message catalog has plural form translations, but the output format does not support them. Try generating a Java class using \"msgfmt --java\", instead of a properties file."));
+                xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL,
+                             has_plural->file_name, has_plural->line_number,
+                             (size_t)(-1), false,
+                             _("message catalog has plural form translations, but the output format does not support them. Try generating a Java class using \"msgfmt --java\", instead of a properties file."));
               else
-                po_xerror (PO_SEVERITY_FATAL_ERROR, NULL,
-                           has_plural->file_name, has_plural->line_number,
-                           (size_t)(-1), false, _("\
-message catalog has plural form translations, but the output format does not support them."));
-              error_with_progname = true;
+                xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL,
+                             has_plural->file_name, has_plural->line_number,
+                             (size_t)(-1), false,
+                             _("message catalog has plural form translations, but the output format does not support them."));
             }
         }
     }
 
-  to_stdout = (filename == NULL || strcmp (filename, "-") == 0
-               || strcmp (filename, "/dev/stdout") == 0);
+  bool to_stdout = (filename == NULL || strcmp (filename, "-") == 0
+                    || strcmp (filename, "/dev/stdout") == 0);
 
 #if ENABLE_COLOR
   if (output_syntax->supports_color
       && (color_mode == color_yes
-          || (color_mode == color_tty && to_stdout && isatty (STDOUT_FILENO))))
+          || (color_mode == color_tty && to_stdout
+              && isatty (STDOUT_FILENO)
+              && getenv ("NO_COLOR") == NULL)))
     {
-      int fd;
-      ostream_t stream;
-
       /* Open the output file.  */
+      int fd;
       if (!to_stdout)
         {
           fd = open (filename, O_WRONLY | O_CREAT | O_TRUNC,
@@ -226,12 +205,11 @@ message catalog has plural form translations, but the output format does not sup
                      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
           if (fd < 0)
             {
-              const char *errno_description = strerror (errno);
-              po_xerror (PO_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
-                         xasprintf ("%s: %s",
-                                    xasprintf (_("cannot create output file \"%s\""),
-                                               filename),
-                                    errno_description));
+              int err = errno;
+              xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
+                           xstrerror (xasprintf (_("cannot create output file \"%s\""),
+                                                 filename),
+                                      err));
             }
         }
       else
@@ -240,42 +218,39 @@ message catalog has plural form translations, but the output format does not sup
           filename = _("standard output");
         }
 
-      style_file_prepare ();
-      stream = term_styled_ostream_create (fd, filename, style_file_name);
-      if (stream == NULL)
-        stream = fd_ostream_create (fd, filename, true);
-      output_syntax->print (mdlp, stream, page_width, debug);
+      style_file_prepare ("PO_STYLE",
+                          "GETTEXTSTYLESDIR", relocate (GETTEXTSTYLESDIR),
+                          "po-default.css");
+      ostream_t stream =
+        styled_ostream_create (fd, filename, TTYCTL_AUTO, style_file_name);
+      output_syntax->print (mdlp, stream, page_width, xeh, debug);
       ostream_free (stream);
 
       /* Make sure nothing went wrong.  */
       if (close (fd) < 0)
         {
-          const char *errno_description = strerror (errno);
-          po_xerror (PO_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
-                     xasprintf ("%s: %s",
-                                xasprintf (_("error while writing \"%s\" file"),
-                                           filename),
-                                errno_description));
+          int err = errno;
+          xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
+                       xstrerror (xasprintf (_("error while writing \"%s\" file"),
+                                             filename),
+                                  err));
         }
     }
   else
 #endif
     {
-      FILE *fp;
-      file_ostream_t stream;
-
       /* Open the output file.  */
+      FILE *fp;
       if (!to_stdout)
         {
           fp = fopen (filename, "wb");
           if (fp == NULL)
             {
-              const char *errno_description = strerror (errno);
-              po_xerror (PO_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
-                         xasprintf ("%s: %s",
-                                    xasprintf (_("cannot create output file \"%s\""),
-                                               filename),
-                                    errno_description));
+              int err = errno;
+              xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
+                           xstrerror (xasprintf (_("cannot create output file \"%s\""),
+                                                 filename),
+                                      err));
             }
         }
       else
@@ -284,42 +259,49 @@ message catalog has plural form translations, but the output format does not sup
           filename = _("standard output");
         }
 
-      stream = file_ostream_create (fp);
+      file_ostream_t stream = file_ostream_create (fp);
 
 #if ENABLE_COLOR
       if (output_syntax->supports_color && color_mode == color_html)
         {
-          html_styled_ostream_t html_stream;
-
           /* Convert mdlp to UTF-8 encoding.  */
           if (mdlp->encoding != po_charset_utf8)
             {
               mdlp = msgdomain_list_copy (mdlp, 0);
-              mdlp = iconv_msgdomain_list (mdlp, po_charset_utf8, false, NULL);
+              mdlp = iconv_msgdomain_list (mdlp, po_charset_utf8, false, NULL,
+                                           xeh);
             }
 
-          style_file_prepare ();
-          html_stream = html_styled_ostream_create (stream, style_file_name);
-          output_syntax->print (mdlp, html_stream, page_width, debug);
+          style_file_prepare ("PO_STYLE",
+                              "GETTEXTSTYLESDIR", relocate (GETTEXTSTYLESDIR),
+                              "po-default.css");
+          html_styled_ostream_t html_stream =
+            html_styled_ostream_create (stream, style_file_name);
+          output_syntax->print (mdlp, html_stream, page_width, xeh, debug);
           ostream_free (html_stream);
         }
       else
-#endif
         {
-          output_syntax->print (mdlp, stream, page_width, debug);
+          noop_styled_ostream_t styled_stream =
+            noop_styled_ostream_create (stream, false);
+          output_syntax->print (mdlp, styled_stream, page_width, xeh, debug);
+          ostream_free (styled_stream);
         }
-
-      ostream_free (stream);
+#else
+      output_syntax->print (mdlp, stream, page_width, xeh, debug);
+      /* Don't call ostream_free if file_ostream_create is a dummy.  */
+      if (stream != fp)
+#endif
+        ostream_free (stream);
 
       /* Make sure nothing went wrong.  */
       if (fwriteerror (fp))
         {
-          const char *errno_description = strerror (errno);
-          po_xerror (PO_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
-                     xasprintf ("%s: %s",
-                                xasprintf (_("error while writing \"%s\" file"),
-                                           filename),
-                                errno_description));
+          int err = errno;
+          xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
+                       xstrerror (xasprintf (_("error while writing \"%s\" file"),
+                                             filename),
+                                  err));
         }
     }
 }
@@ -355,9 +337,7 @@ cmp_by_msgid (const void *va, const void *vb)
 void
 msgdomain_list_sort_by_msgid (msgdomain_list_ty *mdlp)
 {
-  size_t k;
-
-  for (k = 0; k < mdlp->nitems; k++)
+  for (size_t k = 0; k < mdlp->nitems; k++)
     {
       message_list_ty *mlp = mdlp->item[k]->messages;
 
@@ -374,9 +354,8 @@ cmp_filepos (const void *va, const void *vb)
 {
   const lex_pos_ty *a = (const lex_pos_ty *) va;
   const lex_pos_ty *b = (const lex_pos_ty *) vb;
-  int cmp;
 
-  cmp = strcmp (a->file_name, b->file_name);
+  int cmp = strcmp (a->file_name, b->file_name);
   if (cmp == 0)
     cmp = (int) a->line_number - (int) b->line_number;
 
@@ -386,13 +365,11 @@ cmp_filepos (const void *va, const void *vb)
 static void
 msgdomain_list_sort_filepos (msgdomain_list_ty *mdlp)
 {
-  size_t j, k;
-
-  for (k = 0; k < mdlp->nitems; k++)
+  for (size_t k = 0; k < mdlp->nitems; k++)
     {
       message_list_ty *mlp = mdlp->item[k]->messages;
 
-      for (j = 0; j < mlp->nitems; j++)
+      for (size_t j = 0; j < mlp->nitems; j++)
         {
           message_ty *mp = mlp->item[j];
 
@@ -411,26 +388,24 @@ cmp_by_filepos (const void *va, const void *vb)
 {
   const message_ty *a = *(const message_ty **) va;
   const message_ty *b = *(const message_ty **) vb;
-  int cmp;
 
   /* No filepos is smaller than any other filepos.  */
-  if (a->filepos_count == 0)
+  int cmp = (a->filepos_count != 0) - (b->filepos_count != 0);
+  if (cmp != 0)
+    return cmp;
+
+  if (a->filepos_count != 0)
     {
-      if (b->filepos_count != 0)
-        return -1;
+      /* Compare on the file names...  */
+      cmp = strcmp (a->filepos[0].file_name, b->filepos[0].file_name);
+      if (cmp != 0)
+        return cmp;
+
+      /* If they are equal, compare on the line numbers...  */
+      cmp = a->filepos[0].line_number - b->filepos[0].line_number;
+      if (cmp != 0)
+        return cmp;
     }
-  if (b->filepos_count == 0)
-    return 1;
-
-  /* Compare on the file names...  */
-  cmp = strcmp (a->filepos[0].file_name, b->filepos[0].file_name);
-  if (cmp != 0)
-    return cmp;
-
-  /* If they are equal, compare on the line numbers...  */
-  cmp = a->filepos[0].line_number - b->filepos[0].line_number;
-  if (cmp != 0)
-    return cmp;
 
   /* If they are equal, compare on the msgid strings.  */
   /* Because msgids normally contain only ASCII characters or are UTF-8
@@ -454,13 +429,11 @@ cmp_by_filepos (const void *va, const void *vb)
 void
 msgdomain_list_sort_by_filepos (msgdomain_list_ty *mdlp)
 {
-  size_t k;
-
   /* It makes sense to compare filepos[0] of different messages only after
      the filepos[] array of each message has been sorted.  Sort it now.  */
   msgdomain_list_sort_filepos (mdlp);
 
-  for (k = 0; k < mdlp->nitems; k++)
+  for (size_t k = 0; k < mdlp->nitems; k++)
     {
       message_list_ty *mlp = mdlp->item[k]->messages;
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Tool to index protocols that appears in the given capture files
 #
@@ -10,19 +10,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 from optparse import OptionParser
@@ -41,8 +29,7 @@ def extract_protos_from_file_proces(tshark, file):
         cmd = [tshark, "-Tfields", "-e", "frame.protocols", "-r", file]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = p.communicate()
-        if sys.version_info[0] >= 3:
-            stdout = stdout.decode('utf-8')
+        stdout = stdout.decode('utf-8')
         if p.returncode != 0:
             return (file, {})
 
@@ -220,7 +207,7 @@ def main():
     if options.dissect_files and not options.list_all_files and not options.list_all_proto_files:
         parser.error("--list-all-files or --list-all-proto-files must be specified")
 
-    if options.dissect_files and not options.compare_dir is None:
+    if options.dissect_files and options.compare_dir is not None:
         parser.error("--dissect-files and --compare-dir cannot be specified at the same time")
 
     index_file_name = args.pop(0)
@@ -249,15 +236,15 @@ def main():
         print(indexed_files)
 
     tshark_bin = find_tshark_executable(options.bin_dir)
-    if not tshark_bin is None:
+    if tshark_bin is not None:
         print("tshark: %s [FOUND]" % tshark_bin)
     else:
         print("tshark: %s [MISSING]" % tshark_bin)
         exit(1)
 
-    if not options.compare_dir is None:
+    if options.compare_dir is not None:
         tshark_cmp = find_tshark_executable(options.compare_dir)
-        if not tshark_cmp is None:
+        if tshark_cmp is not None:
             print("tshark: %s [FOUND]" % tshark_cmp)
         else:
             print("tshark: %s [MISSING]" % tshark_cmp)

@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlXIncludeTxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlXIncludeTxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlXIncludeTxt_1a8318aeed8fbcc7900bb3d79154d514c4" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* text</definition>
+        <argsstring></argsstring>
+        <name>text</name>
+        <qualifiedname>_xmlXIncludeTxt::text</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="74" column="12" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="74" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeTxt_1a76200f4db7806b2a6732a551e69f0f06" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* url</definition>
+        <argsstring></argsstring>
+        <name>url</name>
+        <qualifiedname>_xmlXIncludeTxt::url</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="75" column="26" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="75" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xinclude.c" line="73" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="73" bodyend="76"/>
+    <listofallmembers>
+      <member refid="struct__xmlXIncludeTxt_1a8318aeed8fbcc7900bb3d79154d514c4" prot="public" virt="non-virtual"><scope>_xmlXIncludeTxt</scope><name>text</name></member>
+      <member refid="struct__xmlXIncludeTxt_1a76200f4db7806b2a6732a551e69f0f06" prot="public" virt="non-virtual"><scope>_xmlXIncludeTxt</scope><name>url</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

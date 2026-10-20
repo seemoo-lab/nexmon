@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlStepOp" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlStepOp</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlStepOp_1aa32d6d834d2924a726002c37ddd3b90c" prot="public" static="no" mutable="no">
+        <type>xmlPatOp</type>
+        <definition>xmlPatOp op</definition>
+        <argsstring></argsstring>
+        <name>op</name>
+        <qualifiedname>_xmlStepOp::op</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="156" column="14" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="156" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStepOp_1a3e19d0b7c498da553db7c10f46fcf307" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>_xmlStepOp::value</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="157" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="157" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStepOp_1ab53b8a5041dfa9c196f90b23b1444ba9" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* value2</definition>
+        <argsstring></argsstring>
+        <name>value2</name>
+        <qualifiedname>_xmlStepOp::value2</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="158" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="158" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/pattern.c" line="155" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="155" bodyend="159"/>
+    <listofallmembers>
+      <member refid="struct__xmlStepOp_1aa32d6d834d2924a726002c37ddd3b90c" prot="public" virt="non-virtual"><scope>_xmlStepOp</scope><name>op</name></member>
+      <member refid="struct__xmlStepOp_1a3e19d0b7c498da553db7c10f46fcf307" prot="public" virt="non-virtual"><scope>_xmlStepOp</scope><name>value</name></member>
+      <member refid="struct__xmlStepOp_1ab53b8a5041dfa9c196f90b23b1444ba9" prot="public" virt="non-virtual"><scope>_xmlStepOp</scope><name>value2</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

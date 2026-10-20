@@ -1,0 +1,3 @@
+./test/schematron/zvon14_0.xml:5: element CCC: schematron error : /AAA/CCC line 5: Element CCC must not be a child of element AAA 
+./test/schematron/zvon14_0.xml:9: element CCC: schematron error : /AAA/DDD/EEE/CCC line 9: Element CCC must not be a child of element EEE 
+./test/schematron/zvon14_0.xml fails to validate

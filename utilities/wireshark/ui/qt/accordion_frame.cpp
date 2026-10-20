@@ -4,27 +4,15 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-#include <glib.h>
 
 #include "accordion_frame.h"
 
 #include "ui/util.h"
+#include <ui/qt/utils/color_utils.h>
 
 #include <QLayout>
 #include <QPropertyAnimation>
@@ -35,22 +23,12 @@ AccordionFrame::AccordionFrame(QWidget *parent) :
     QFrame(parent),
     frame_height_(0)
 {
-    QString subframe_style(
-//                ".QFrame {"
-//                "  background: palette(window);"
-//                "  padding-top: 0.1em;"
-//                "  padding-bottom: 0.1em;"
-//                "  border-bottom: 1px solid palette(shadow);"
-//                "}"
-                "QLineEdit#goToLineEdit {"
-                "  max-width: 5em;"
-                "}"
-                );
-    setStyleSheet(subframe_style);
+    updateStyleSheet();
+
     animation_ = new QPropertyAnimation(this, "maximumHeight", this);
     animation_->setDuration(duration_);
     animation_->setEasingCurve(QEasingCurve::InOutQuad);
-    connect(animation_, SIGNAL(finished()), this, SLOT(animationFinished()));
+    connect(animation_, &QPropertyAnimation::finished, this, &AccordionFrame::animationFinished);
 }
 
 void AccordionFrame::animatedShow()
@@ -106,15 +84,23 @@ void AccordionFrame::animationFinished()
     }
 }
 
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */
+void AccordionFrame::updateStyleSheet()
+{
+    QString style_sheet(
+        "QLineEdit#goToLineEdit {"
+        "  max-width: 5em;"
+        "}"
+    );
+
+#ifdef Q_OS_MAC
+    style_sheet += QStringLiteral(
+        "QLineEdit {"
+        "  border: 1px solid palette(%1);"
+        "  border-radius: 3px;"
+        "  padding: 1px;"
+        "}"
+    ).arg(ColorUtils::themeIsDark() ? QStringLiteral("light") : QStringLiteral("dark"));
+#endif
+
+    setStyleSheet(style_sheet);
+}

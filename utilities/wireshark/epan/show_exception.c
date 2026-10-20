@@ -6,64 +6,72 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2000 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
+#define WS_LOG_DOMAIN LOG_DOMAIN_EPAN
 
-#include <glib.h>
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/expert.h>
 #include <epan/prefs.h>
 #include <epan/prefs-int.h>
 #include <epan/show_exception.h>
+#include <wsutil/ws_assert.h>
+#include <wsutil/array.h>
 
-static int proto_short = -1;
-static int proto_malformed = -1;
-static int proto_unreassembled = -1;
+#include <wsutil/wslog.h>
 
-static expert_field ei_malformed_dissector_bug = EI_INIT;
-static expert_field ei_malformed_reassembly = EI_INIT;
-static expert_field ei_malformed = EI_INIT;
+static int proto_short;
+static int proto_dissector_bug;
+static int proto_malformed;
+static int proto_unreassembled;
+
+static expert_field ei_dissector_bug;
+static expert_field ei_malformed_reassembly;
+static expert_field ei_malformed;
+static expert_field ei_unreassembled;
 
 void
 register_show_exception(void)
 {
-	static ei_register_info ei[] = {
-		{ &ei_malformed_dissector_bug, { "_ws.malformed.dissector_bug", PI_MALFORMED, PI_ERROR, "Dissector bug", EXPFILL }},
+	static ei_register_info ei_dissector_bug_set[] = {
+		{ &ei_dissector_bug, { "_ws.dissector_bug.expert", PI_DISSECTOR_BUG, PI_ERROR, "Dissector bug", EXPFILL }},
+	};
+	static ei_register_info ei_malformed_set[] = {
 		{ &ei_malformed_reassembly, { "_ws.malformed.reassembly", PI_MALFORMED, PI_ERROR, "Reassembly error", EXPFILL }},
 		{ &ei_malformed, { "_ws.malformed.expert", PI_MALFORMED, PI_ERROR, "Malformed Packet (Exception occurred)", EXPFILL }},
 	};
+	static ei_register_info ei_unreassembled_set[] = {
+		{ &ei_unreassembled, { "_ws.unreassembled.expert", PI_REASSEMBLE, PI_NOTE, "Unreassembled fragment (change preferences to enable reassembly)", EXPFILL }},
+	};
 
+	expert_module_t* expert_dissector_bug;
 	expert_module_t* expert_malformed;
+	expert_module_t* expert_unreassembled;
 
 	proto_short = proto_register_protocol("Short Frame", "Short frame", "_ws.short");
+	proto_dissector_bug = proto_register_protocol("Dissector Bug",
+	    "Dissector bug", "_ws.dissector_bug");
 	proto_malformed = proto_register_protocol("Malformed Packet",
 	    "Malformed packet", "_ws.malformed");
 	proto_unreassembled = proto_register_protocol(
 	    "Unreassembled Fragmented Packet",
 	    "Unreassembled fragmented packet", "_ws.unreassembled");
 
+	expert_dissector_bug = expert_register_protocol(proto_dissector_bug);
+	expert_register_field_array(expert_dissector_bug, ei_dissector_bug_set, array_length(ei_dissector_bug_set));
 	expert_malformed = expert_register_protocol(proto_malformed);
-	expert_register_field_array(expert_malformed, ei, array_length(ei));
+	expert_register_field_array(expert_malformed, ei_malformed_set, array_length(ei_malformed_set));
+	expert_unreassembled = expert_register_protocol(proto_unreassembled);
+	expert_register_field_array(expert_unreassembled, ei_unreassembled_set, array_length(ei_unreassembled_set));
 
-	/* "Short Frame", "Malformed Packet", and "Unreassembled Fragmented
-	   Packet" aren't really protocols, they're error indications;
-	   disabling them makes no sense. */
+	/* "Short Frame", "Dissector Bug", "Malformed Packet", and
+	   "Unreassembled Fragmented Packet" aren't really protocols,
+	   they're error indications; disabling them makes no sense. */
 	proto_set_cant_toggle(proto_short);
+	proto_set_cant_toggle(proto_dissector_bug);
 	proto_set_cant_toggle(proto_malformed);
 	proto_set_cant_toggle(proto_unreassembled);
 }
@@ -76,7 +84,7 @@ show_exception(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		"Dissector writer didn't bother saying what the error was";
 	proto_item *item;
 
-	if (exception == ReportedBoundsError && pinfo->fragmented)
+	if ((exception == ReportedBoundsError || exception == ContainedBoundsError) && pinfo->fragmented)
 		exception = FragmentBoundsError;
 
 	switch (exception) {
@@ -92,15 +100,15 @@ show_exception(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 	case BoundsError:
 		{
-		gboolean display_info = TRUE;
+		bool display_info = true;
 		module_t * frame_module = prefs_find_module("frame");
 		if (frame_module != NULL)
 		{
 			pref_t *display_pref = prefs_find_preference(frame_module, "disable_packet_size_limited_in_summary");
 			if (display_pref)
 			{
-				if (*display_pref->varp.boolp)
-					display_info = FALSE;
+				if (prefs_get_bool_value(display_pref, pref_current))
+					display_info = false;
 			}
 		}
 
@@ -116,13 +124,22 @@ show_exception(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		break;
 
 	case FragmentBoundsError:
-		col_append_fstr(pinfo->cinfo, COL_INFO, "[Unreassembled Packet%s]", pinfo->noreassembly_reason);
-		proto_tree_add_protocol_format(tree, proto_unreassembled,
-		    tvb, 0, 0, "[Unreassembled Packet%s: %s]",
+		col_append_fstr(pinfo->cinfo, COL_INFO, "[BoundErrorUnreassembled Packet%s]", pinfo->noreassembly_reason);
+		item = proto_tree_add_protocol_format(tree, proto_unreassembled,
+		    tvb, 0, 0, "[BoundError Unreassembled Packet%s: %s]",
 		    pinfo->noreassembly_reason, pinfo->current_proto);
-		/* Don't record FragmentBoundsError exceptions as expert events - they merely
-		 * reflect dissection done with reassembly turned off
+		/* FragmentBoundsError merely reflect dissection done with
+		 * reassembly turned off, so add a note to that effect
 		 * (any case where it's caused by something else is a bug). */
+		expert_add_info(pinfo, item, &ei_unreassembled);
+		break;
+
+	case ContainedBoundsError:
+		col_append_fstr(pinfo->cinfo, COL_INFO, "[Malformed Packet: length of contained item exceeds length of containing item]");
+		item = proto_tree_add_protocol_format(tree, proto_malformed,
+		    tvb, 0, 0, "[Malformed Packet: %s: length of contained item exceeds length of containing item]",
+		    pinfo->current_proto);
+		expert_add_info(pinfo, item, &ei_malformed);
 		break;
 
 	case ReportedBoundsError:
@@ -135,16 +152,17 @@ show_exception(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		    pinfo->current_proto,
 		    exception_message == NULL ?
 		        dissector_error_nomsg : exception_message);
-		item = proto_tree_add_protocol_format(tree, proto_malformed, tvb, 0, 0,
+		item = proto_tree_add_protocol_format(tree, proto_dissector_bug, tvb, 0, 0,
 		    "[Dissector bug, protocol %s: %s]",
 		    pinfo->current_proto,
 		    exception_message == NULL ?
 		        dissector_error_nomsg : exception_message);
-		g_warning("Dissector bug, protocol %s, in packet %u: %s",
+		ws_log(WS_LOG_DOMAIN, LOG_LEVEL_WARNING,
+		    "Dissector bug, protocol %s, in packet %u: %s",
 		    pinfo->current_proto, pinfo->num,
 		    exception_message == NULL ?
 		        dissector_error_nomsg : exception_message);
-		expert_add_info_format(pinfo, item, &ei_malformed_dissector_bug, "%s",
+		expert_add_info_format(pinfo, item, &ei_dissector_bug, "%s",
 		    exception_message == NULL ?
 		        dissector_error_nomsg : exception_message);
 		break;
@@ -167,7 +185,7 @@ show_exception(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 	default:
 		/* XXX - we want to know, if an unknown exception passed until here, don't we? */
-		g_assert_not_reached();
+		ws_assert_not_reached();
 	}
 }
 
@@ -184,7 +202,7 @@ show_reported_bounds_error(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

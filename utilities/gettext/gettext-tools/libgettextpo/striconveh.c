@@ -1,19 +1,19 @@
 /* Character set conversion with error handling.
-   Copyright (C) 2001-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
    Written by Bruno Haible and Simon Josefsson.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -21,7 +21,6 @@
 #include "striconveh.h"
 
 #include <errno.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,23 +46,9 @@
 int
 iconveh_open (const char *to_codeset, const char *from_codeset, iconveh_t *cdp)
 {
-  iconv_t cd;
+  iconv_t cd = iconv_open (to_codeset, from_codeset);
+
   iconv_t cd1;
-  iconv_t cd2;
-
-  /* Avoid glibc-2.1 bug with EUC-KR.  */
-# if ((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
-     && !defined _LIBICONV_VERSION
-  if (c_strcasecmp (from_codeset, "EUC-KR") == 0
-      || c_strcasecmp (to_codeset, "EUC-KR") == 0)
-    {
-      errno = EINVAL;
-      return -1;
-    }
-# endif
-
-  cd = iconv_open (to_codeset, from_codeset);
-
   if (STRCASEEQ (from_codeset, "UTF-8", 'U','T','F','-','8',0,0,0,0))
     cd1 = (iconv_t)(-1);
   else
@@ -73,16 +58,18 @@ iconveh_open (const char *to_codeset, const char *from_codeset, iconveh_t *cdp)
         {
           int saved_errno = errno;
           if (cd != (iconv_t)(-1))
-            iconv_close (cdp->cd);
+            iconv_close (cd);
           errno = saved_errno;
           return -1;
         }
     }
 
+  iconv_t cd2;
   if (STRCASEEQ (to_codeset, "UTF-8", 'U','T','F','-','8',0,0,0,0)
 # if (((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2) || __GLIBC__ > 2) \
       && !defined __UCLIBC__) \
-     || _LIBICONV_VERSION >= 0x0105
+     || _LIBICONV_VERSION >= 0x0105 \
+     || defined ICONV_SET_TRANSLITERATE
       || c_strcasecmp (to_codeset, "UTF-8//TRANSLIT") == 0
 # endif
      )
@@ -139,11 +126,11 @@ iconveh_close (const iconveh_t *cd)
 /* iconv_carefully is like iconv, except that it stops as soon as it encounters
    a conversion error, and it returns in *INCREMENTED a boolean telling whether
    it has incremented the input pointers past the error location.  */
-# if !defined _LIBICONV_VERSION && !(defined __GLIBC__ && !defined __UCLIBC__)
-/* Irix iconv() inserts a NUL byte if it cannot convert.
-   NetBSD iconv() inserts a question mark if it cannot convert.
-   Only GNU libiconv and GNU libc are known to prefer to fail rather
-   than doing a lossy conversion.  */
+# if !(defined _LIBICONV_VERSION && !(_LIBICONV_VERSION == 0x10b && defined __APPLE__)) \
+     && !(defined __GLIBC__ && !defined __UCLIBC__)
+/* NetBSD iconv() inserts a question mark if it cannot convert.
+   Only GNU libiconv (excluding the bastard Apple iconv) and GNU libc are
+   known to prefer to fail rather than doing a lossy conversion.  */
 static size_t
 iconv_carefully (iconv_t cd,
                  const char **inbuf, size_t *inbytesleft,
@@ -159,12 +146,10 @@ iconv_carefully (iconv_t cd,
 
   do
     {
-      size_t insize;
-
       inptr_before = inptr;
       res = (size_t)(-1);
 
-      for (insize = 1; inptr + insize <= inptr_end; insize++)
+      for (size_t insize = 1; inptr + insize <= inptr_end; insize++)
         {
           res = iconv (cd,
                        (ICONV_CONST char **) &inptr, &insize,
@@ -226,9 +211,8 @@ iconv_carefully_1 (iconv_t cd,
   char *outptr = *outbuf;
   size_t outsize = *outbytesleft;
   size_t res = (size_t)(-1);
-  size_t insize;
 
-  for (insize = 1; inptr_before + insize <= inptr_end; insize++)
+  for (size_t insize = 1; inptr_before + insize <= inptr_end; insize++)
     {
       inptr = inptr_before;
       res = iconv (cd,
@@ -247,11 +231,11 @@ iconv_carefully_1 (iconv_t cd,
 
   *inbuf = inptr;
   *inbytesleft = inptr_end - inptr;
-# if !defined _LIBICONV_VERSION && !(defined __GLIBC__ && !defined __UCLIBC__)
-  /* Irix iconv() inserts a NUL byte if it cannot convert.
-     NetBSD iconv() inserts a question mark if it cannot convert.
-     Only GNU libiconv and GNU libc are known to prefer to fail rather
-     than doing a lossy conversion.  */
+# if !(defined _LIBICONV_VERSION && !(_LIBICONV_VERSION == 0x10b && defined __APPLE__)) \
+     && !(defined __GLIBC__ && !defined __UCLIBC__)
+  /* NetBSD iconv() inserts a question mark if it cannot convert.
+     Only GNU libiconv (excluding the bastard Apple iconv) and GNU libc are
+     known to prefer to fail rather than doing a lossy conversion.  */
   if (res != (size_t)(-1) && res > 0)
     {
       /* iconv() has already incremented INPTR.  We cannot go back to a
@@ -290,16 +274,11 @@ utf8conv_carefully (bool one_character_only,
   size_t insize = *inbytesleft;
   char *outptr = *outbuf;
   size_t outsize = *outbytesleft;
-  size_t res;
-
-  res = 0;
+  size_t res = 0;
   do
     {
       ucs4_t uc;
-      int n;
-      int m;
-
-      n = u8_mbtoucr (&uc, (const uint8_t *) inptr, insize);
+      int n = u8_mbtoucr (&uc, (const uint8_t *) inptr, insize);
       if (n < 0)
         {
           errno = (n == -2 ? EINVAL : EILSEQ);
@@ -317,7 +296,7 @@ utf8conv_carefully (bool one_character_only,
           *incremented = false;
           break;
         }
-      m = u8_uctomb ((uint8_t *) outptr, uc, outsize);
+      int m = u8_uctomb ((uint8_t *) outptr, uc, outsize);
       if (m == -2)
         {
           errno = E2BIG;
@@ -366,11 +345,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
 # define tmpbuf tmp.buf
 
   char *initial_result;
-  char *result;
   size_t allocated;
-  size_t length;
-  size_t last_length = (size_t)(-1); /* only needed if offsets != NULL */
-
   if (*resultp != NULL && *lengthp >= sizeof (tmpbuf))
     {
       initial_result = *resultp;
@@ -381,45 +356,39 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
       initial_result = tmpbuf;
       allocated = sizeof (tmpbuf);
     }
-  result = initial_result;
+
+  char *result = initial_result;
 
   /* Test whether a direct conversion is possible at all.  */
   if (cd == (iconv_t)(-1))
     goto indirectly;
 
+  size_t last_length = (size_t)(-1); /* only needed if offsets != NULL */
   if (offsets != NULL)
     {
-      size_t i;
-
-      for (i = 0; i < srclen; i++)
+      for (size_t i = 0; i < srclen; i++)
         offsets[i] = (size_t)(-1);
 
       last_length = (size_t)(-1);
     }
-  length = 0;
+  size_t length = 0;
 
   /* First, try a direct conversion, and see whether a conversion error
      occurs at all.  */
   {
-    const char *inptr = src;
-    size_t insize = srclen;
-
-    /* Avoid glibc-2.1 bug and Solaris 2.7-2.9 bug.  */
-# if defined _LIBICONV_VERSION \
-     || !(((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
-          || defined __sun)
     /* Set to the initial state.  */
     iconv (cd, NULL, NULL, NULL, NULL);
-# endif
+
+    const char *inptr = src;
+    size_t insize = srclen;
 
     while (insize > 0)
       {
         char *outptr = result + length;
         size_t outsize = allocated - extra_alloc - length;
+
         bool incremented;
         size_t res;
-        bool grow;
-
         if (offsets != NULL)
           {
             if (length != last_length) /* ensure that offset[] be increasing */
@@ -445,7 +414,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                                  &incremented);
 
         length = outptr - result;
-        grow = (length + extra_alloc > allocated / 2);
+        bool grow = (length + extra_alloc > allocated / 2);
         if (res == (size_t)(-1))
           {
             if (errno == E2BIG)
@@ -457,14 +426,18 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                 if (cd2 == (iconv_t)(-1))
                   {
                     /* TO_CODESET is UTF-8.  */
-                    /* Error handling can produce up to 1 byte of output.  */
-                    if (length + 1 + extra_alloc > allocated)
+                    /* Error handling can produce up to 1 or 3 bytes of
+                       output.  */
+                    size_t extra_need =
+                      (handler == iconveh_replacement_character ? 3 : 1);
+                    if (length + extra_need + extra_alloc > allocated)
                       {
-                        char *memory;
-
                         allocated = 2 * allocated;
-                        if (length + 1 + extra_alloc > allocated)
+                        if (length + extra_need + extra_alloc > allocated)
+                          allocated = 2 * allocated;
+                        if (length + extra_need + extra_alloc > allocated)
                           abort ();
+                        char *memory;
                         if (result == initial_result)
                           memory = (char *) malloc (allocated);
                         else
@@ -482,7 +455,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                         grow = false;
                       }
                     /* The input is invalid in FROM_CODESET.  Eat up one byte
-                       and emit a question mark.  */
+                       and emit a replacement character or a question mark.  */
                     if (!incremented)
                       {
                         if (insize == 0)
@@ -490,8 +463,19 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                         inptr++;
                         insize--;
                       }
-                    result[length] = '?';
-                    length++;
+                    if (handler == iconveh_replacement_character)
+                      {
+                        /* U+FFFD in UTF-8 encoding.  */
+                        result[length+0] = '\357';
+                        result[length+1] = '\277';
+                        result[length+2] = '\275';
+                        length += 3;
+                      }
+                    else
+                      {
+                        result[length] = '?';
+                        length++;
+                      }
                   }
                 else
                   goto indirectly;
@@ -499,11 +483,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
             else
               {
                 if (result != initial_result)
-                  {
-                    int saved_errno = errno;
-                    free (result);
-                    errno = saved_errno;
-                  }
+                  free (result);
                 return -1;
               }
           }
@@ -511,9 +491,8 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
           break;
         if (grow)
           {
-            char *memory;
-
             allocated = 2 * allocated;
+            char *memory;
             if (result == initial_result)
               memory = (char *) malloc (allocated);
             else
@@ -541,17 +520,15 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
     {
       char *outptr = result + length;
       size_t outsize = allocated - extra_alloc - length;
-      size_t res;
-
-      res = iconv (cd, NULL, NULL, &outptr, &outsize);
+      size_t res = iconv (cd, NULL, NULL, &outptr, &outsize);
       length = outptr - result;
       if (res == (size_t)(-1))
         {
           if (errno == E2BIG)
             {
-              char *memory;
 
               allocated = 2 * allocated;
+              char *memory;
               if (result == initial_result)
                 memory = (char *) malloc (allocated);
               else
@@ -570,11 +547,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
           else
             {
               if (result != initial_result)
-                {
-                  int saved_errno = errno;
-                  free (result);
-                  errno = saved_errno;
-                }
+                free (result);
               return -1;
             }
         }
@@ -591,44 +564,36 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
      Use a conversion through UTF-8.  */
   if (offsets != NULL)
     {
-      size_t i;
-
-      for (i = 0; i < srclen; i++)
+      for (size_t i = 0; i < srclen; i++)
         offsets[i] = (size_t)(-1);
 
       last_length = (size_t)(-1);
     }
   length = 0;
   {
+    /* Set to the initial state.  */
+    if (cd1 != (iconv_t)(-1))
+      iconv (cd1, NULL, NULL, NULL, NULL);
+    if (cd2 != (iconv_t)(-1))
+      iconv (cd2, NULL, NULL, NULL, NULL);
+
     const bool slowly = (offsets != NULL || handler == iconveh_error);
 # define utf8bufsize 4096 /* may also be smaller or larger than tmpbufsize */
-    char utf8buf[utf8bufsize + 1];
+    char utf8buf[utf8bufsize + 3];
     size_t utf8len = 0;
     const char *in1ptr = src;
     size_t in1size = srclen;
     bool do_final_flush1 = true;
     bool do_final_flush2 = true;
 
-    /* Avoid glibc-2.1 bug and Solaris 2.7-2.9 bug.  */
-# if defined _LIBICONV_VERSION \
-     || !(((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
-          || defined __sun)
-    /* Set to the initial state.  */
-    if (cd1 != (iconv_t)(-1))
-      iconv (cd1, NULL, NULL, NULL, NULL);
-    if (cd2 != (iconv_t)(-1))
-      iconv (cd2, NULL, NULL, NULL, NULL);
-# endif
-
     while (in1size > 0 || do_final_flush1 || utf8len > 0 || do_final_flush2)
       {
         char *out1ptr = utf8buf + utf8len;
         size_t out1size = utf8bufsize - utf8len;
-        bool incremented1;
-        size_t res1;
-        int errno1;
 
         /* Conversion step 1: from FROM_CODESET to UTF-8.  */
+        bool incremented1;
+        size_t res1;
         if (in1size > 0)
           {
             if (offsets != NULL
@@ -683,19 +648,15 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
             && !(errno == E2BIG || errno == EINVAL || errno == EILSEQ))
           {
             if (result != initial_result)
-              {
-                int saved_errno = errno;
-                free (result);
-                errno = saved_errno;
-              }
+              free (result);
             return -1;
           }
         if (res1 == (size_t)(-1)
             && errno == EILSEQ && handler != iconveh_error)
           {
             /* The input is invalid in FROM_CODESET.  Eat up one byte and
-               emit a question mark.  Room for the question mark was allocated
-               at the end of utf8buf.  */
+               emit a U+FFFD character or a question mark.  Room for this
+               character was allocated at the end of utf8buf.  */
             if (!incremented1)
               {
                 if (in1size == 0)
@@ -703,10 +664,19 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                 in1ptr++;
                 in1size--;
               }
-            *out1ptr++ = '?';
+            if (handler == iconveh_replacement_character)
+              {
+                /* U+FFFD in UTF-8 encoding.  */
+                out1ptr[0] = '\357';
+                out1ptr[1] = '\277';
+                out1ptr[2] = '\275';
+                out1ptr += 3;
+              }
+            else
+              *out1ptr++ = '?';
             res1 = 0;
           }
-        errno1 = errno;
+        int errno1 = errno;
         utf8len = out1ptr - utf8buf;
 
         if (offsets != NULL
@@ -723,10 +693,9 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
               {
                 char *out2ptr = result + length;
                 size_t out2size = allocated - extra_alloc - length;
+
                 bool incremented2;
                 size_t res2;
-                bool grow;
-
                 if (in2size > 0)
                   {
                     if (cd2 != (iconv_t)(-1))
@@ -759,7 +728,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                   }
 
                 length = out2ptr - result;
-                grow = (length + extra_alloc > allocated / 2);
+                bool grow = (length + extra_alloc > allocated / 2);
                 if (res2 == (size_t)(-1))
                   {
                     if (errno == E2BIG)
@@ -768,15 +737,10 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                       break;
                     else if (errno == EILSEQ && handler != iconveh_error)
                       {
-                        /* Error handling can produce up to 10 bytes of ASCII
+                        /* Error handling can produce up to 10 bytes of UTF-8
                            output.  But TO_CODESET may be UCS-2, UTF-16 or
                            UCS-4, so use CD2 here as well.  */
-                        char scratchbuf[10];
-                        size_t scratchlen;
                         ucs4_t uc;
-                        const char *inptr;
-                        size_t insize;
-                        size_t res;
 
                         if (incremented2)
                           {
@@ -796,9 +760,12 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                             in2size -= n;
                           }
 
+                        char scratchbuf[10];
+                        size_t scratchlen;
                         if (handler == iconveh_escape_sequence)
                           {
-                            static char hex[16] = "0123456789ABCDEF";
+                            static char const hex[16] _GL_ATTRIBUTE_NONSTRING =
+                              "0123456789ABCDEF";
                             scratchlen = 0;
                             scratchbuf[scratchlen++] = '\\';
                             if (uc < 0x10000)
@@ -816,18 +783,61 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                             scratchbuf[scratchlen++] = hex[(uc>>4) & 15];
                             scratchbuf[scratchlen++] = hex[uc & 15];
                           }
+                        else if (handler == iconveh_replacement_character)
+                          {
+                            /* U+FFFD in UTF-8 encoding.  */
+                            scratchbuf[0] = '\357';
+                            scratchbuf[1] = '\277';
+                            scratchbuf[2] = '\275';
+                            scratchlen = 3;
+                          }
                         else
                           {
                             scratchbuf[0] = '?';
                             scratchlen = 1;
                           }
 
-                        inptr = scratchbuf;
-                        insize = scratchlen;
+                        const char *inptr = scratchbuf;
+                        size_t insize = scratchlen;
+                        size_t res;
                         if (cd2 != (iconv_t)(-1))
-                          res = iconv (cd2,
-                                       (ICONV_CONST char **) &inptr, &insize,
-                                       &out2ptr, &out2size);
+                          {
+                            char *out2ptr_try = out2ptr;
+                            size_t out2size_try = out2size;
+                            res = iconv (cd2,
+                                         (ICONV_CONST char **) &inptr, &insize,
+                                         &out2ptr_try, &out2size_try);
+                            if (handler == iconveh_replacement_character
+                                && (res == (size_t)(-1)
+                                    ? errno == EILSEQ
+                                    /* FreeBSD iconv(), NetBSD iconv(), and
+                                       Solaris 11 iconv() insert a '?' if they
+                                       cannot convert.  This is what we want.
+                                       But musl libc iconv() inserts a '*' if it
+                                       cannot convert.  */
+                                    : (res > 0
+                                       && !(out2ptr_try - out2ptr == 1
+                                            && *out2ptr == '?'))))
+                              {
+                                /* The iconv() call failed.
+                                   U+FFFD can't be converted to TO_CODESET.
+                                   Use '?' instead.  */
+                                scratchbuf[0] = '?';
+                                scratchlen = 1;
+                                inptr = scratchbuf;
+                                insize = scratchlen;
+                                res = iconv (cd2,
+                                             (ICONV_CONST char **) &inptr, &insize,
+                                             &out2ptr, &out2size);
+                              }
+                            else
+                              {
+                                /* Accept the results of the iconv() call.  */
+                                out2ptr = out2ptr_try;
+                                out2size = out2size_try;
+                                res = 0;
+                              }
+                          }
                         else
                           {
                             /* TO_CODESET is UTF-8.  */
@@ -849,11 +859,10 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                         length = out2ptr - result;
                         if (res == (size_t)(-1) && errno == E2BIG)
                           {
-                            char *memory;
-
                             allocated = 2 * allocated;
                             if (length + 1 + extra_alloc > allocated)
                               abort ();
+                            char *memory;
                             if (result == initial_result)
                               memory = (char *) malloc (allocated);
                             else
@@ -891,12 +900,14 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                               }
                             length = out2ptr - result;
                           }
-# if !defined _LIBICONV_VERSION && !(defined __GLIBC__ && !defined __UCLIBC__)
-                        /* Irix iconv() inserts a NUL byte if it cannot convert.
-                           NetBSD iconv() inserts a question mark if it cannot
-                           convert.
-                           Only GNU libiconv and GNU libc are known to prefer
-                           to fail rather than doing a lossy conversion.  */
+# if !(defined _LIBICONV_VERSION && !(_LIBICONV_VERSION == 0x10b && defined __APPLE__)) \
+     && !(defined __GLIBC__ && !defined __UCLIBC__)
+                        /* FreeBSD iconv(), NetBSD iconv(), and Solaris 11
+                           iconv() insert a '?' if they cannot convert.
+                           musl libc iconv() inserts a '*' if it cannot convert.
+                           Only GNU libiconv (excluding the bastard Apple iconv)
+                           and GNU libc are known to prefer to fail rather than
+                           doing a lossy conversion.  */
                         if (res != (size_t)(-1) && res > 0)
                           {
                             errno = EILSEQ;
@@ -907,22 +918,14 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                           {
                             /* Failure converting the ASCII replacement.  */
                             if (result != initial_result)
-                              {
-                                int saved_errno = errno;
-                                free (result);
-                                errno = saved_errno;
-                              }
+                              free (result);
                             return -1;
                           }
                       }
                     else
                       {
                         if (result != initial_result)
-                          {
-                            int saved_errno = errno;
-                            free (result);
-                            errno = saved_errno;
-                          }
+                          free (result);
                         return -1;
                       }
                   }
@@ -931,9 +934,8 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                   break;
                 if (grow)
                   {
-                    char *memory;
-
                     allocated = 2 * allocated;
+                    char *memory;
                     if (result == initial_result)
                       memory = (char *) malloc (allocated);
                     else
@@ -983,9 +985,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
         result = *resultp;
       else
         {
-          char *memory;
-
-          memory = (char *) malloc (memsize > 0 ? memsize : 1);
+          char *memory = (char *) malloc (memsize > 0 ? memsize : 1);
           if (memory != NULL)
             result = memory;
           else
@@ -1000,9 +1000,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
     {
       /* Shrink the allocated memory if possible.  */
       size_t memsize = length + extra_alloc;
-      char *memory;
-
-      memory = (char *) realloc (result, memsize > 0 ? memsize : 1);
+      char *memory = (char *) realloc (result, memsize > 0 ? memsize : 1);
       if (memory != NULL)
         result = memory;
     }
@@ -1041,12 +1039,7 @@ str_cd_iconveh (const char *src,
 
   if (retval < 0)
     {
-      if (result != NULL)
-        {
-          int saved_errno = errno;
-          free (result);
-          errno = saved_errno;
-        }
+      free (result);
       return NULL;
     }
 
@@ -1095,17 +1088,13 @@ mem_iconveh (const char *src, size_t srclen,
     {
 #if HAVE_ICONV
       iconveh_t cd;
-      char *result;
-      size_t length;
-      int retval;
-
       if (iconveh_open (to_codeset, from_codeset, &cd) < 0)
         return -1;
 
-      result = *resultp;
-      length = *lengthp;
-      retval = mem_cd_iconveh (src, srclen, &cd, handler, offsets,
-                               &result, &length);
+      char *result = *resultp;
+      size_t length = *lengthp;
+      int retval = mem_cd_iconveh (src, srclen, &cd, handler, offsets,
+                                   &result, &length);
 
       if (retval < 0)
         {
@@ -1118,12 +1107,8 @@ mem_iconveh (const char *src, size_t srclen,
         {
           if (iconveh_close (&cd) < 0)
             {
-              /* Return -1, but free the allocated memory, and while doing
-                 that, preserve the errno from iconveh_close.  */
-              int saved_errno = errno;
-              if (result != *resultp && result != NULL)
+              if (result != *resultp)
                 free (result);
-              errno = saved_errno;
               return -1;
             }
           *resultp = result;
@@ -1159,12 +1144,10 @@ str_iconveh (const char *src,
     {
 #if HAVE_ICONV
       iconveh_t cd;
-      char *result;
-
       if (iconveh_open (to_codeset, from_codeset, &cd) < 0)
         return NULL;
 
-      result = str_cd_iconveh (src, &cd, handler);
+      char *result = str_cd_iconveh (src, &cd, handler);
 
       if (result == NULL)
         {
@@ -1177,11 +1160,7 @@ str_iconveh (const char *src,
         {
           if (iconveh_close (&cd) < 0)
             {
-              /* Return NULL, but free the allocated memory, and while doing
-                 that, preserve the errno from iconveh_close.  */
-              int saved_errno = errno;
               free (result);
-              errno = saved_errno;
               return NULL;
             }
         }

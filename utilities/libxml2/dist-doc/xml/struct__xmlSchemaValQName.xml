@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaValQName" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaValQName</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaValQName_1a1ed8962c3c52bc7d9b3f10a3c48aec7e" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlSchemaValQName::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="90" column="13" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="90" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValQName_1acc40d5c78a0e7c2dfccb4828175258f9" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* uri</definition>
+        <argsstring></argsstring>
+        <name>uri</name>
+        <qualifiedname>_xmlSchemaValQName::uri</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="91" column="13" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="91" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="89" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="89" bodyend="92"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaValQName_1a1ed8962c3c52bc7d9b3f10a3c48aec7e" prot="public" virt="non-virtual"><scope>_xmlSchemaValQName</scope><name>name</name></member>
+      <member refid="struct__xmlSchemaValQName_1acc40d5c78a0e7c2dfccb4828175258f9" prot="public" virt="non-virtual"><scope>_xmlSchemaValQName</scope><name>uri</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

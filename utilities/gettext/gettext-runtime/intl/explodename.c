@@ -1,5 +1,4 @@
-/* Copyright (C) 1995-2016 Free Software Foundation, Inc.
-   Contributed by Ulrich Drepper <drepper@gnu.ai.mit.edu>, 1995.
+/* Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -12,7 +11,9 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Ulrich Drepper and Bruno Haible.  */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -35,20 +36,6 @@
 
 /* @@ end of prolog @@ */
 
-/* Split a locale name NAME into a leading language part and all the
-   rest.  Return a pointer to the first character after the language,
-   i.e. to the first byte of the rest.  */
-static char *_nl_find_language (const char *name);
-
-static char *
-_nl_find_language (const char *name)
-{
-  while (name[0] != '\0' && name[0] != '_' && name[0] != '@' && name[0] != '.')
-    ++name;
-
-  return (char *) name;
-}
-
 
 int
 _nl_explode_name (char *name,
@@ -64,23 +51,84 @@ _nl_explode_name (char *name,
   *codeset = NULL;
   *normalized_codeset = NULL;
 
-  /* Now we determine the single parts of the locale name.  First
-     look for the language.  Termination symbols are `_', '.', and `@'.  */
-  mask = 0;
-  *language = cp = name;
-  cp = _nl_find_language (*language);
+  /* Determine the individual parts of the locale name.
+     Accept the XPG syntax
 
-  if (*language == cp)
+             language[_territory][.codeset][@modifier]
+
+     On AIX systems, also accept the same syntax with an uppercased language,
+     and a syntax similar to RFC 5646:
+
+             language[_script]_territory[.codeset]
+
+     where script is a four-letter code for a script, per ISO 15924.
+   */
+
+  mask = 0;
+
+  /* First look for the language.  Termination symbols are `_', '.', and `@'.  */
+  *language = name;
+
+  cp = name;
+  while (cp[0] != '\0' && cp[0] != '_' && cp[0] != '@' && cp[0] != '.')
+    ++cp;
+
+  if (cp == name)
     /* This does not make sense: language has to be specified.  Use
        this entry as it is without exploding.  Perhaps it is an alias.  */
-    cp = strchr (*language, '\0');
+    cp = strchr (name, '\0');
   else
     {
       if (cp[0] == '_')
 	{
+	  *cp++ = '\0';
+#if defined _AIX
+	  /* Lowercase the language.  */
+	  {
+	    char *lcp;
+
+	    for (lcp = name; lcp < cp; lcp++)
+	      if (*lcp >= 'A' && *lcp <= 'Z')
+		*lcp += 'a' - 'A';
+	  }
+
+	  /* Next is the script or the territory.  It depends on whether
+	     there is another '_'.  */
+	  char *next = cp;
+
+	  while (cp[0] != '\0' && cp[0] != '_' && cp[0] != '@' && cp[0] != '.')
+	    ++cp;
+
+	  if (cp[0] == '_')
+	    {
+	      *cp++ = '\0';
+
+	      /* Next is the script.  Translate the script to a modifier.
+		 We don't need to support all of ISO 15924 here, only those
+		 scripts that actually occur:
+		   Latn -> latin
+		   Cyrl -> cyrillic
+		   Guru -> gurmukhi
+		   Hans -> (omitted, redundant with the territory CN or SG)
+		   Hant -> (omitted, redundant with the territory TW or HK)  */
+	      if (strcmp (next, "Latn") == 0)
+		*modifier = "latin";
+	      else if (strcmp (next, "Cyrl") == 0)
+		*modifier = "cyrillic";
+	      else if (strcmp (next, "Guru") == 0)
+		*modifier = "gurmukhi";
+	      else if (!(strcmp (next, "Hans") == 0
+			 || strcmp (next, "Hant") == 0))
+		*modifier = next;
+	      if (*modifier != NULL && (*modifier)[0] != '\0')
+		mask |= XPG_MODIFIER;
+	    }
+	  else
+	    cp = next;
+#endif
+
 	  /* Next is the territory.  */
-	  cp[0] = '\0';
-	  *territory = ++cp;
+	  *territory = cp;
 
 	  while (cp[0] != '\0' && cp[0] != '.' && cp[0] != '@')
 	    ++cp;
@@ -91,8 +139,8 @@ _nl_explode_name (char *name,
       if (cp[0] == '.')
 	{
 	  /* Next is the codeset.  */
-	  cp[0] = '\0';
-	  *codeset = ++cp;
+	  *cp++ = '\0';
+	  *codeset = cp;
 
 	  while (cp[0] != '\0' && cp[0] != '@')
 	    ++cp;
@@ -111,16 +159,16 @@ _nl_explode_name (char *name,
 		mask |= XPG_NORM_CODESET;
 	    }
 	}
-    }
 
-  if (cp[0] == '@')
-    {
-      /* Next is the modifier.  */
-      cp[0] = '\0';
-      *modifier = ++cp;
+      if (cp[0] == '@')
+	{
+	  /* Next is the modifier.  */
+	  *cp++ = '\0';
+	  *modifier = cp;
 
-      if (cp[0] != '\0')
-	mask |= XPG_MODIFIER;
+	  if (cp[0] != '\0')
+	    mask |= XPG_MODIFIER;
+	}
     }
 
   if (*territory != NULL && (*territory)[0] == '\0')

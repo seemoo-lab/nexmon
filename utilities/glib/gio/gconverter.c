@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2009 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,15 +23,17 @@
 #include "config.h"
 #include "gconverter.h"
 #include "glibintl.h"
+#include "gmemoryinputstream.h"
+#include "gmemoryoutputstream.h"
+#include "gconverteroutputstream.h"
 
 
 /**
- * SECTION:gconverter
- * @short_description: Data conversion interface
- * @include: gio/gio.h
- * @see_also: #GInputStream, #GOutputStream
+ * GConverter:
  *
- * #GConverter is implemented by objects that convert
+ * `GConverter` is an interface for streaming conversions.
+ *
+ * `GConverter` is implemented by objects that convert
  * binary data in various ways. The conversion can be
  * stateful and may fail at any place.
  *
@@ -38,7 +42,7 @@
  * replace.
  *
  * Since: 2.24
- **/
+ */
 
 
 typedef GConverterIface GConverterInterface;
@@ -55,12 +59,14 @@ g_converter_default_init (GConverterInterface *iface)
  * @inbuf: (array length=inbuf_size) (element-type guint8): the buffer
  *         containing the data to convert.
  * @inbuf_size: the number of bytes in @inbuf
- * @outbuf: (element-type guint8) (array length=outbuf_size): a buffer to write
- *    converted data in.
+ * @outbuf: (element-type guint8) (array length=outbuf_size) (not nullable): a
+ *    buffer to write converted data in.
  * @outbuf_size: the number of bytes in @outbuf, must be at least one
  * @flags: a #GConverterFlags controlling the conversion details
- * @bytes_read: (out): will be set to the number of bytes read from @inbuf on success
- * @bytes_written: (out): will be set to the number of bytes written to @outbuf on success
+ * @bytes_read: (out) (not nullable): will be set to the number of bytes read
+ *    from @inbuf on success
+ * @bytes_written: (out) (not nullable): will be set to the number of bytes
+ *    written to @outbuf on success
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * This is the main operation used when converting data. It is to be called
@@ -164,7 +170,12 @@ g_converter_convert (GConverter *converter,
   GConverterIface *iface;
 
   g_return_val_if_fail (G_IS_CONVERTER (converter), G_CONVERTER_ERROR);
+  g_return_val_if_fail (inbuf != NULL || inbuf_size == 0, G_CONVERTER_ERROR);
+  g_return_val_if_fail (outbuf != NULL, G_CONVERTER_ERROR);
   g_return_val_if_fail (outbuf_size > 0, G_CONVERTER_ERROR);
+  g_return_val_if_fail (bytes_read != NULL, G_CONVERTER_ERROR);
+  g_return_val_if_fail (bytes_written != NULL, G_CONVERTER_ERROR);
+  g_return_val_if_fail (error == NULL || *error == NULL, G_CONVERTER_ERROR);
 
   *bytes_read = 0;
   *bytes_written = 0;
@@ -198,4 +209,49 @@ g_converter_reset (GConverter *converter)
   iface = G_CONVERTER_GET_IFACE (converter);
 
   (* iface->reset) (converter);
+}
+
+/**
+ * g_converter_convert_bytes:
+ * @converter: the `GConverter` to use
+ * @bytes: the data to convert
+ * @error: location to store the error occurring
+ *
+ * Applies @converter to the data in @bytes.
+ *
+ * Returns: (transfer full): A newly-allocated
+ *   `GBytes` with the converted data, or `NULL` if an error
+ *   occurred
+ *
+ * Since: 2.82
+ */
+GBytes *
+g_converter_convert_bytes (GConverter  *converter,
+                           GBytes      *bytes,
+                           GError     **error)
+{
+  GInputStream *input;
+  GOutputStream *output;
+  GOutputStream *conv;
+  GOutputStreamSpliceFlags flags;
+  GBytes *result = NULL;
+
+  g_converter_reset (converter);
+
+  input = g_memory_input_stream_new_from_bytes (bytes);
+  output = g_memory_output_stream_new_resizable ();
+  conv = g_converter_output_stream_new (output, converter);
+
+  flags = G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE | G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET;
+
+  if (g_output_stream_splice (conv, input, flags, NULL, error) != -1)
+    {
+      result = g_memory_output_stream_steal_as_bytes (G_MEMORY_OUTPUT_STREAM (output));
+    }
+
+  g_object_unref (conv);
+  g_object_unref (output);
+  g_object_unref (input);
+
+  return result;
 }

@@ -1,18 +1,18 @@
 /* Formatted output to strings.
-   Copyright (C) 1999-2000, 2002-2003, 2006-2016 Free Software Foundation, Inc.
+   Copyright (C) 1999-2000, 2002-2003, 2006-2026 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* This file can be parametrized with the following macros:
      CHAR_T             The element type of the format string.
@@ -48,16 +48,7 @@
 #include <stddef.h>
 
 /* Get intmax_t.  */
-#if defined IN_LIBINTL || defined IN_LIBASPRINTF
-# if HAVE_STDINT_H_WITH_UINTMAX
-#  include <stdint.h>
-# endif
-# if HAVE_INTTYPES_H_WITH_UINTMAX
-#  include <inttypes.h>
-# endif
-#else
-# include <stdint.h>
-#endif
+#include <stdint.h>
 
 /* malloc(), realloc(), free().  */
 #include <stdlib.h>
@@ -332,235 +323,316 @@ PRINTF_PARSE (const CHAR_T *format, DIRECTIVES *d, arguments *a)
             }
 
           {
-            arg_type type;
-
             /* Parse argument type/size specifiers.  */
-            {
-              int flags = 0;
+            /* Relevant for the conversion characters d, i.  */
+            arg_type signed_type = TYPE_INT;
+            /* Relevant for the conversion characters b, o, u, x, X.  */
+            arg_type unsigned_type = TYPE_UINT;
+            /* Relevant for the conversion characters n.  */
+            arg_type pointer_type = TYPE_COUNT_INT_POINTER;
+            /* Relevant for the conversion characters a, A, e, E, f, F, g, G.  */
+            arg_type floatingpoint_type = TYPE_DOUBLE;
 
-              for (;;)
-                {
-                  if (*cp == 'h')
-                    {
-                      flags |= (1 << (flags & 1));
-                      cp++;
-                    }
-                  else if (*cp == 'L')
-                    {
-                      flags |= 4;
-                      cp++;
-                    }
-                  else if (*cp == 'l')
-                    {
-                      flags += 8;
-                      cp++;
-                    }
-                  else if (*cp == 'j')
-                    {
-                      if (sizeof (intmax_t) > sizeof (long))
-                        {
-                          /* intmax_t = long long */
-                          flags += 16;
-                        }
-                      else if (sizeof (intmax_t) > sizeof (int))
-                        {
-                          /* intmax_t = long */
-                          flags += 8;
-                        }
-                      cp++;
-                    }
-                  else if (*cp == 'z' || *cp == 'Z')
-                    {
-                      /* 'z' is standardized in ISO C 99, but glibc uses 'Z'
-                         because the warning facility in gcc-2.95.2 understands
-                         only 'Z' (see gcc-2.95.2/gcc/c-common.c:1784).  */
-                      if (sizeof (size_t) > sizeof (long))
-                        {
-                          /* size_t = long long */
-                          flags += 16;
-                        }
-                      else if (sizeof (size_t) > sizeof (int))
-                        {
-                          /* size_t = long */
-                          flags += 8;
-                        }
-                      cp++;
-                    }
-                  else if (*cp == 't')
-                    {
-                      if (sizeof (ptrdiff_t) > sizeof (long))
-                        {
-                          /* ptrdiff_t = long long */
-                          flags += 16;
-                        }
-                      else if (sizeof (ptrdiff_t) > sizeof (int))
-                        {
-                          /* ptrdiff_t = long */
-                          flags += 8;
-                        }
-                      cp++;
-                    }
+            if (*cp == 'h')
+              {
+                if (cp[1] == 'h')
+                  {
+                    signed_type = TYPE_SCHAR;
+                    unsigned_type = TYPE_UCHAR;
+                    pointer_type = TYPE_COUNT_SCHAR_POINTER;
+                    cp += 2;
+                  }
+                else
+                  {
+                    signed_type = TYPE_SHORT;
+                    unsigned_type = TYPE_USHORT;
+                    pointer_type = TYPE_COUNT_SHORT_POINTER;
+                    cp++;
+                  }
+              }
+            else if (*cp == 'l')
+              {
+                if (cp[1] == 'l')
+                  {
+                    signed_type = TYPE_LONGLONGINT;
+                    unsigned_type = TYPE_ULONGLONGINT;
+                    pointer_type = TYPE_COUNT_LONGLONGINT_POINTER;
+                    /* For backward compatibility only.  */
+                    floatingpoint_type = TYPE_LONGDOUBLE;
+                    cp += 2;
+                  }
+                else
+                  {
+                    signed_type = TYPE_LONGINT;
+                    unsigned_type = TYPE_ULONGINT;
+                    pointer_type = TYPE_COUNT_LONGINT_POINTER;
+                    cp++;
+                  }
+              }
+            else if (*cp == 'j')
+              {
+                if (sizeof (intmax_t) > sizeof (long))
+                  {
+                    /* intmax_t = long long */
+                    signed_type = TYPE_LONGLONGINT;
+                    unsigned_type = TYPE_ULONGLONGINT;
+                    pointer_type = TYPE_COUNT_LONGLONGINT_POINTER;
+                    /* For backward compatibility only.  */
+                    floatingpoint_type = TYPE_LONGDOUBLE;
+                  }
+                else if (sizeof (intmax_t) > sizeof (int))
+                  {
+                    /* intmax_t = long */
+                    signed_type = TYPE_LONGINT;
+                    unsigned_type = TYPE_ULONGINT;
+                    pointer_type = TYPE_COUNT_LONGINT_POINTER;
+                  }
+                cp++;
+              }
+            else if (*cp == 'z' || *cp == 'Z')
+              {
+                /* 'z' is standardized in ISO C 99, but glibc uses 'Z'
+                   because the warning facility in gcc-2.95.2 understands
+                   only 'Z' (see gcc-2.95.2/gcc/c-common.c:1784).  */
+                if (sizeof (size_t) > sizeof (long))
+                  {
+                    /* size_t = unsigned long long */
+                    signed_type = TYPE_LONGLONGINT;
+                    unsigned_type = TYPE_ULONGLONGINT;
+                    pointer_type = TYPE_COUNT_LONGLONGINT_POINTER;
+                    /* For backward compatibility only.  */
+                    floatingpoint_type = TYPE_LONGDOUBLE;
+                  }
+                else if (sizeof (size_t) > sizeof (int))
+                  {
+                    /* size_t = unsigned long */
+                    signed_type = TYPE_LONGINT;
+                    unsigned_type = TYPE_ULONGINT;
+                    pointer_type = TYPE_COUNT_LONGINT_POINTER;
+                  }
+                cp++;
+              }
+            else if (*cp == 't')
+              {
+                if (sizeof (ptrdiff_t) > sizeof (long))
+                  {
+                    /* ptrdiff_t = long long */
+                    signed_type = TYPE_LONGLONGINT;
+                    unsigned_type = TYPE_ULONGLONGINT;
+                    pointer_type = TYPE_COUNT_LONGLONGINT_POINTER;
+                    /* For backward compatibility only.  */
+                    floatingpoint_type = TYPE_LONGDOUBLE;
+                  }
+                else if (sizeof (ptrdiff_t) > sizeof (int))
+                  {
+                    /* ptrdiff_t = long */
+                    signed_type = TYPE_LONGINT;
+                    unsigned_type = TYPE_ULONGINT;
+                    pointer_type = TYPE_COUNT_LONGINT_POINTER;
+                  }
+                cp++;
+              }
+            else if (*cp == 'w')
+              {
+                /* wN and wfN are standardized in ISO C 23.  */
+                if (cp[1] == 'f')
+                  {
+                    if (cp[2] == '8')
+                      {
+                        signed_type = TYPE_INT_FAST8_T;
+                        unsigned_type = TYPE_UINT_FAST8_T;
+                        pointer_type = TYPE_COUNT_INT_FAST8_T_POINTER;
+                        cp += 3;
+                      }
+                    else if (cp[2] == '1' && cp[3] == '6')
+                      {
+                        signed_type = TYPE_INT_FAST16_T;
+                        unsigned_type = TYPE_UINT_FAST16_T;
+                        pointer_type = TYPE_COUNT_INT_FAST16_T_POINTER;
+                        cp += 4;
+                      }
+                    else if (cp[2] == '3' && cp[3] == '2')
+                      {
+                        signed_type = TYPE_INT_FAST32_T;
+                        unsigned_type = TYPE_UINT_FAST32_T;
+                        pointer_type = TYPE_COUNT_INT_FAST32_T_POINTER;
+                        cp += 4;
+                      }
+                    else if (cp[2] == '6' && cp[3] == '4')
+                      {
+                        signed_type = TYPE_INT_FAST64_T;
+                        unsigned_type = TYPE_UINT_FAST64_T;
+                        pointer_type = TYPE_COUNT_INT_FAST64_T_POINTER;
+                        cp += 4;
+                      }
+                  }
+                else
+                  {
+                    if (cp[1] == '8')
+                      {
+                        signed_type = TYPE_INT8_T;
+                        unsigned_type = TYPE_UINT8_T;
+                        pointer_type = TYPE_COUNT_INT8_T_POINTER;
+                        cp += 2;
+                      }
+                    else if (cp[1] == '1' && cp[2] == '6')
+                      {
+                        signed_type = TYPE_INT16_T;
+                        unsigned_type = TYPE_UINT16_T;
+                        pointer_type = TYPE_COUNT_INT16_T_POINTER;
+                        cp += 3;
+                      }
+                    else if (cp[1] == '3' && cp[2] == '2')
+                      {
+                        signed_type = TYPE_INT32_T;
+                        unsigned_type = TYPE_UINT32_T;
+                        pointer_type = TYPE_COUNT_INT32_T_POINTER;
+                        cp += 3;
+                      }
+                    else if (cp[1] == '6' && cp[2] == '4')
+                      {
+                        signed_type = TYPE_INT64_T;
+                        unsigned_type = TYPE_UINT64_T;
+                        pointer_type = TYPE_COUNT_INT64_T_POINTER;
+                        cp += 3;
+                      }
+                  }
+              }
+            else if (*cp == 'L')
+              {
+                signed_type = TYPE_LONGLONGINT;
+                unsigned_type = TYPE_ULONGLONGINT;
+                pointer_type = TYPE_COUNT_LONGLONGINT_POINTER;
+                floatingpoint_type = TYPE_LONGDOUBLE;
+                cp++;
+              }
 #if defined __APPLE__ && defined __MACH__
-                  /* On Mac OS X 10.3, PRIdMAX is defined as "qd".
-                     We cannot change it to "lld" because PRIdMAX must also
-                     be understood by the system's printf routines.  */
-                  else if (*cp == 'q')
-                    {
-                      if (64 / 8 > sizeof (long))
-                        {
-                          /* int64_t = long long */
-                          flags += 16;
-                        }
-                      else
-                        {
-                          /* int64_t = long */
-                          flags += 8;
-                        }
-                      cp++;
-                    }
+            /* On Mac OS X 10.3, PRIdMAX is defined as "qd".
+               We cannot change it to "lld" because PRIdMAX must also
+               be understood by the system's printf routines.  */
+            else if (*cp == 'q')
+              {
+                if (64 / 8 > sizeof (long))
+                  {
+                    /* int64_t = long long */
+                    signed_type = TYPE_LONGLONGINT;
+                    unsigned_type = TYPE_ULONGLONGINT;
+                    pointer_type = TYPE_COUNT_LONGLONGINT_POINTER;
+                    /* For backward compatibility only.  */
+                    floatingpoint_type = TYPE_LONGDOUBLE;
+                  }
+                else
+                  {
+                    /* int64_t = long */
+                    signed_type = TYPE_LONGINT;
+                    unsigned_type = TYPE_ULONGINT;
+                    pointer_type = TYPE_COUNT_LONGINT_POINTER;
+                  }
+                cp++;
+              }
 #endif
-#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-                  /* On native Windows, PRIdMAX is defined as "I64d".
-                     We cannot change it to "lld" because PRIdMAX must also
-                     be understood by the system's printf routines.  */
-                  else if (*cp == 'I' && cp[1] == '6' && cp[2] == '4')
-                    {
-                      if (64 / 8 > sizeof (long))
-                        {
-                          /* __int64 = long long */
-                          flags += 16;
-                        }
-                      else
-                        {
-                          /* __int64 = long */
-                          flags += 8;
-                        }
-                      cp += 3;
-                    }
+#if defined _WIN32 && ! defined __CYGWIN__
+            /* On native Windows, PRIdMAX is defined as "I64d".
+               We cannot change it to "lld" because PRIdMAX must also
+               be understood by the system's printf routines.  */
+            else if (*cp == 'I' && cp[1] == '6' && cp[2] == '4')
+              {
+                if (64 / 8 > sizeof (long))
+                  {
+                    /* __int64_t = long long */
+                    signed_type = TYPE_LONGLONGINT;
+                    unsigned_type = TYPE_ULONGLONGINT;
+                    pointer_type = TYPE_COUNT_LONGLONGINT_POINTER;
+                    /* For backward compatibility only.  */
+                    floatingpoint_type = TYPE_LONGDOUBLE;
+                  }
+                else
+                  {
+                    /* __int64_t = long */
+                    signed_type = TYPE_LONGINT;
+                    unsigned_type = TYPE_ULONGINT;
+                    pointer_type = TYPE_COUNT_LONGINT_POINTER;
+                  }
+                cp += 3;
+              }
 #endif
-                  else
-                    break;
-                }
+            (void) pointer_type;
 
-              /* Read the conversion character.  */
-              c = *cp++;
-              switch (c)
-                {
-                case 'd': case 'i':
-#if HAVE_LONG_LONG_INT
-                  /* If 'long long' exists and is larger than 'long':  */
-                  if (flags >= 16 || (flags & 4))
-                    type = TYPE_LONGLONGINT;
-                  else
-#endif
-                  /* If 'long long' exists and is the same as 'long', we parse
-                     "lld" into TYPE_LONGINT.  */
-                  if (flags >= 8)
-                    type = TYPE_LONGINT;
-                  else if (flags & 2)
-                    type = TYPE_SCHAR;
-                  else if (flags & 1)
-                    type = TYPE_SHORT;
-                  else
-                    type = TYPE_INT;
-                  break;
-                case 'o': case 'u': case 'x': case 'X':
-#if HAVE_LONG_LONG_INT
-                  /* If 'long long' exists and is larger than 'long':  */
-                  if (flags >= 16 || (flags & 4))
-                    type = TYPE_ULONGLONGINT;
-                  else
-#endif
-                  /* If 'unsigned long long' exists and is the same as
-                     'unsigned long', we parse "llu" into TYPE_ULONGINT.  */
-                  if (flags >= 8)
-                    type = TYPE_ULONGINT;
-                  else if (flags & 2)
-                    type = TYPE_UCHAR;
-                  else if (flags & 1)
-                    type = TYPE_USHORT;
-                  else
-                    type = TYPE_UINT;
-                  break;
-                case 'f': case 'F': case 'e': case 'E': case 'g': case 'G':
-                case 'a': case 'A':
-                  if (flags >= 16 || (flags & 4))
-                    type = TYPE_LONGDOUBLE;
-                  else
-                    type = TYPE_DOUBLE;
-                  break;
-                case 'c':
-                  if (flags >= 8)
+            /* Read the conversion character.  */
+            arg_type type;
+            c = *cp++;
+            switch (c)
+              {
+              case 'd': case 'i':
+                type = signed_type;
+                break;
+              case 'b': case 'o': case 'u': case 'x': case 'X':
+              #if SUPPORT_GNU_PRINTF_DIRECTIVES \
+                  || (__GLIBC__ + (__GLIBC_MINOR__ >= 35) > 2)
+              case 'B':
+              #endif
+                type = unsigned_type;
+                break;
+              case 'f': case 'F': case 'e': case 'E': case 'g': case 'G':
+              case 'a': case 'A':
+                type = floatingpoint_type;
+                break;
+              case 'c':
+                if (signed_type == TYPE_LONGINT
+                    /* For backward compatibility only.  */
+                    || signed_type == TYPE_LONGLONGINT)
 #if HAVE_WINT_T
-                    type = TYPE_WIDE_CHAR;
-#else
-                    goto error;
-#endif
-                  else
-                    type = TYPE_CHAR;
-                  break;
-#if HAVE_WINT_T
-                case 'C':
                   type = TYPE_WIDE_CHAR;
-                  c = 'c';
-                  break;
-#endif
-                case 's':
-                  if (flags >= 8)
-#if HAVE_WCHAR_T
-                    type = TYPE_WIDE_STRING;
 #else
-                    goto error;
-#endif
-                  else
-                    type = TYPE_STRING;
-                  break;
-#if HAVE_WCHAR_T
-                case 'S':
-                  type = TYPE_WIDE_STRING;
-                  c = 's';
-                  break;
-#endif
-                case 'p':
-                  type = TYPE_POINTER;
-                  break;
-                case 'n':
-#if HAVE_LONG_LONG_INT
-                  /* If 'long long' exists and is larger than 'long':  */
-                  if (flags >= 16 || (flags & 4))
-                    type = TYPE_COUNT_LONGLONGINT_POINTER;
-                  else
-#endif
-                  /* If 'long long' exists and is the same as 'long', we parse
-                     "lln" into TYPE_COUNT_LONGINT_POINTER.  */
-                  if (flags >= 8)
-                    type = TYPE_COUNT_LONGINT_POINTER;
-                  else if (flags & 2)
-                    type = TYPE_COUNT_SCHAR_POINTER;
-                  else if (flags & 1)
-                    type = TYPE_COUNT_SHORT_POINTER;
-                  else
-                    type = TYPE_COUNT_INT_POINTER;
-                  break;
-#if ENABLE_UNISTDIO
-                /* The unistdio extensions.  */
-                case 'U':
-                  if (flags >= 16)
-                    type = TYPE_U32_STRING;
-                  else if (flags >= 8)
-                    type = TYPE_U16_STRING;
-                  else
-                    type = TYPE_U8_STRING;
-                  break;
-#endif
-                case '%':
-                  type = TYPE_NONE;
-                  break;
-                default:
-                  /* Unknown conversion character.  */
                   goto error;
-                }
-            }
+#endif
+                else
+                  type = TYPE_CHAR;
+                break;
+#if HAVE_WINT_T
+              case 'C':
+                type = TYPE_WIDE_CHAR;
+                c = 'c';
+                break;
+#endif
+              case 's':
+                if (signed_type == TYPE_LONGINT
+                    /* For backward compatibility only.  */
+                    || signed_type == TYPE_LONGLONGINT)
+                  type = TYPE_WIDE_STRING;
+                else
+                  type = TYPE_STRING;
+                break;
+              case 'S':
+                type = TYPE_WIDE_STRING;
+                c = 's';
+                break;
+              case 'p':
+                type = TYPE_POINTER;
+                break;
+#if NEED_PRINTF_WITH_N_DIRECTIVE
+              case 'n':
+                type = pointer_type;
+                break;
+#endif
+#if ENABLE_UNISTDIO
+              /* The unistdio extensions.  */
+              case 'U':
+                if (signed_type == TYPE_LONGLONGINT)
+                  type = TYPE_U32_STRING;
+                else if (signed_type == TYPE_LONGINT)
+                  type = TYPE_U16_STRING;
+                else
+                  type = TYPE_U8_STRING;
+                break;
+#endif
+              case '%':
+                type = TYPE_NONE;
+                break;
+              default:
+                /* Unknown conversion character.  */
+                goto error;
+              }
 
             if (type != TYPE_NONE)
               {
@@ -581,17 +653,14 @@ PRINTF_PARSE (const CHAR_T *format, DIRECTIVES *d, arguments *a)
           d->count++;
           if (d->count >= d_allocated)
             {
-              size_t memory_size;
-              DIRECTIVE *memory;
-
               d_allocated = xtimes (d_allocated, 2);
-              memory_size = xtimes (d_allocated, sizeof (DIRECTIVE));
+              size_t memory_size = xtimes (d_allocated, sizeof (DIRECTIVE));
               if (size_overflow_p (memory_size))
                 /* Overflow, would lead to out of memory.  */
                 goto out_of_memory;
-              memory = (DIRECTIVE *) (d->dir != d->direct_alloc_dir
-                                      ? realloc (d->dir, memory_size)
-                                      : malloc (memory_size));
+              DIRECTIVE *memory = (DIRECTIVE *) (d->dir != d->direct_alloc_dir
+                                                 ? realloc (d->dir, memory_size)
+                                                 : malloc (memory_size));
               if (memory == NULL)
                 /* Out of memory.  */
                 goto out_of_memory;

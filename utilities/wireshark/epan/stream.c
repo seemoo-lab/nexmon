@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,23 +18,24 @@
 #include <epan/reassemble.h>
 #include <epan/stream.h>
 #include <epan/tvbuff.h>
+#include <wsutil/ws_assert.h>
 
 
 typedef struct {
     fragment_head *fd_head;          /* the reassembled data, NULL
                                       * until we add the last fragment */
-    guint32 pdu_number;              /* Number of this PDU within the stream */
+    uint32_t pdu_number;              /* Number of this PDU within the stream */
 
     /* id of this pdu (globally unique) */
-    guint32 id;
+    uint32_t id;
 } stream_pdu_t;
 
 
 struct stream_pdu_fragment
 {
-    guint32 len;                     /* the length of this fragment */
+    uint32_t len;                     /* the length of this fragment */
     stream_pdu_t *pdu;
-    gboolean final_fragment;
+    bool final_fragment;
 };
 
 struct stream {
@@ -59,12 +48,12 @@ struct stream {
     stream_pdu_t *current_pdu;
 
     /* number of PDUs added to this stream so far */
-    guint32 pdu_counter;
+    uint32_t pdu_counter;
 
     /* the framenumber and offset of the last fragment added;
        used for sanity-checking */
-    guint32 lastfrag_framenum;
-    guint32 lastfrag_offset;
+    uint32_t lastfrag_framenum;
+    uint32_t lastfrag_offset;
 };
 
 
@@ -75,40 +64,30 @@ struct stream {
 
 /* key */
 typedef struct stream_key {
-    /* streams can be attached to circuits or conversations, and we note
-       that here */
-    gboolean is_circuit;
-    union {
-        const struct circuit *circuit;
-        const struct conversation *conv;
-    } circ;
+    /* streams are attached to conversations */
+    const struct conversation *conv;
     int p2p_dir;
 } stream_key_t;
 
 
 /* hash func */
-static guint stream_hash_func(gconstpointer k)
+static unsigned stream_hash_func(const void *k)
 {
     const stream_key_t *key = (const stream_key_t *)k;
 
-    /* is_circuit is redundant to the circuit/conversation pointer */
-    return (GPOINTER_TO_UINT(key->circ.circuit)) ^ key->p2p_dir;
+    return (GPOINTER_TO_UINT(key->conv)) ^ key->p2p_dir;
 }
 
 /* compare func */
-static gboolean stream_compare_func(gconstpointer a,
-                             gconstpointer b)
+static gboolean stream_compare_func(const void *a,
+                             const void *b)
 {
     const stream_key_t *key1 = (const stream_key_t *)a;
     const stream_key_t *key2 = (const stream_key_t *)b;
-    if( key1 -> p2p_dir != key2 -> p2p_dir ||
-        key1-> is_circuit != key2 -> is_circuit )
+    if( key1 -> p2p_dir != key2 -> p2p_dir)
         return FALSE;
 
-    if( key1 -> is_circuit )
-        return (key1 -> circ.circuit == key2 -> circ.circuit );
-    else
-        return (key1 -> circ.conv == key2 -> circ.conv );
+    return (key1 -> conv == key2 -> conv );
 }
 
 /* the hash table */
@@ -125,26 +104,16 @@ static void cleanup_stream_hash( void ) {
 
 /* init function, call from stream_init() */
 static void init_stream_hash( void ) {
-    g_assert(stream_hash==NULL);
+    ws_assert(stream_hash==NULL);
     stream_hash = g_hash_table_new(stream_hash_func,
                                    stream_compare_func);
 }
 
 /* lookup function, returns null if not found */
-static stream_t *stream_hash_lookup_circ( const struct circuit *circuit, int p2p_dir )
+static stream_t *stream_hash_lookup( const struct conversation *conv, int p2p_dir )
 {
     stream_key_t key;
-    key.is_circuit=TRUE;
-    key.circ.circuit=circuit;
-    key.p2p_dir=p2p_dir;
-    return (stream_t *)g_hash_table_lookup(stream_hash, &key);
-}
-
-static stream_t *stream_hash_lookup_conv( const struct conversation *conv, int p2p_dir )
-{
-    stream_key_t key;
-    key.is_circuit=FALSE;
-    key.circ.conv = conv;
+    key.conv = conv;
     key.p2p_dir=p2p_dir;
     return (stream_t *)g_hash_table_lookup(stream_hash, &key);
 }
@@ -167,25 +136,12 @@ static stream_t *new_stream( stream_key_t *key )
 
 
 /* insert function */
-static stream_t *stream_hash_insert_circ( const struct circuit *circuit, int p2p_dir )
+static stream_t *stream_hash_insert( const struct conversation *conv, int p2p_dir )
 {
     stream_key_t *key;
 
     key = wmem_new(wmem_file_scope(), stream_key_t);
-    key->is_circuit = TRUE;
-    key->circ.circuit = circuit;
-    key->p2p_dir = p2p_dir;
-
-    return new_stream(key);
-}
-
-static stream_t *stream_hash_insert_conv( const struct conversation *conv, int p2p_dir )
-{
-    stream_key_t *key;
-
-    key = wmem_new(wmem_file_scope(), stream_key_t);
-    key->is_circuit = FALSE;
-    key->circ.conv = conv;
+    key->conv = conv;
     key->p2p_dir = p2p_dir;
 
     return new_stream(key);
@@ -198,7 +154,7 @@ static stream_t *stream_hash_insert_conv( const struct conversation *conv, int p
  */
 
 /* pdu counter, for generating unique pdu ids */
-static guint32 pdu_counter;
+static uint32_t pdu_counter;
 
 static void stream_cleanup_pdu_data(void)
 {
@@ -229,21 +185,21 @@ static stream_pdu_t *stream_new_pdu(stream_t *stream)
 /* key */
 typedef struct fragment_key {
     const stream_t *stream;
-    guint32 framenum;
-    guint32 offset;
+    uint32_t framenum;
+    uint32_t offset;
 } fragment_key_t;
 
 
 /* hash func */
-static guint fragment_hash_func(gconstpointer k)
+static unsigned fragment_hash_func(const void *k)
 {
     const fragment_key_t *key = (const fragment_key_t *)k;
-    return (GPOINTER_TO_UINT(key->stream)) + ((guint)key -> framenum) + ((guint)key->offset);
+    return (GPOINTER_TO_UINT(key->stream)) + ((unsigned)key -> framenum) + ((unsigned)key->offset);
 }
 
 /* compare func */
-static gboolean fragment_compare_func(gconstpointer a,
-                               gconstpointer b)
+static gboolean fragment_compare_func(const void *a,
+                               const void *b)
 {
     const fragment_key_t *key1 = (const fragment_key_t *)a;
     const fragment_key_t *key2 = (const fragment_key_t *)b;
@@ -266,14 +222,14 @@ static void cleanup_fragment_hash( void ) {
 
 /* init function, call from stream_init() */
 static void init_fragment_hash( void ) {
-    g_assert(fragment_hash==NULL);
+    ws_assert(fragment_hash==NULL);
     fragment_hash = g_hash_table_new(fragment_hash_func,
                                      fragment_compare_func);
 }
 
 
 /* lookup function, returns null if not found */
-static stream_pdu_fragment_t *fragment_hash_lookup( const stream_t *stream, guint32 framenum, guint32 offset )
+static stream_pdu_fragment_t *fragment_hash_lookup( const stream_t *stream, uint32_t framenum, uint32_t offset )
 {
     fragment_key_t key;
     stream_pdu_fragment_t *val;
@@ -288,8 +244,8 @@ static stream_pdu_fragment_t *fragment_hash_lookup( const stream_t *stream, guin
 
 
 /* insert function */
-static stream_pdu_fragment_t *fragment_hash_insert( const stream_t *stream, guint32 framenum, guint32 offset,
-                                                    guint32 length)
+static stream_pdu_fragment_t *fragment_hash_insert( const stream_t *stream, uint32_t framenum, uint32_t offset,
+                                                    uint32_t length)
 {
     fragment_key_t *key;
     stream_pdu_fragment_t *val;
@@ -302,7 +258,7 @@ static stream_pdu_fragment_t *fragment_hash_insert( const stream_t *stream, guin
     val = wmem_new(wmem_file_scope(), stream_pdu_fragment_t);
     val->len = length;
     val->pdu = NULL;
-    val->final_fragment = FALSE;
+    val->final_fragment = false;
 
     g_hash_table_insert(fragment_hash, key, val);
     return val;
@@ -315,30 +271,16 @@ static reassembly_table stream_reassembly_table;
 
 /* Initialise a new stream. Call this when you first identify a distinct
  * stream. */
-stream_t *stream_new_circ ( const struct circuit *circuit, int p2p_dir )
-{
-    stream_t * stream;
-
-    /* we don't want to replace the previous data if we get called twice on the
-       same circuit, so do a lookup first */
-    stream = stream_hash_lookup_circ(circuit, p2p_dir);
-    DISSECTOR_ASSERT( stream == NULL );
-
-    stream = stream_hash_insert_circ(circuit, p2p_dir);
-
-    return stream;
-}
-
-stream_t *stream_new_conv ( const struct conversation *conv, int p2p_dir )
+stream_t *stream_new ( const struct conversation *conv, int p2p_dir )
 {
     stream_t * stream;
 
     /* we don't want to replace the previous data if we get called twice on the
        same conversation, so do a lookup first */
-    stream = stream_hash_lookup_conv(conv, p2p_dir);
+    stream = stream_hash_lookup(conv, p2p_dir);
     DISSECTOR_ASSERT( stream == NULL );
 
-    stream = stream_hash_insert_conv(conv, p2p_dir);
+    stream = stream_hash_insert(conv, p2p_dir);
     return stream;
 }
 
@@ -347,13 +289,9 @@ stream_t *stream_new_conv ( const struct conversation *conv, int p2p_dir )
  *
  * Returns null if no matching stream was found.
  */
-stream_t *find_stream_circ ( const struct circuit *circuit, int p2p_dir )
+stream_t *find_stream ( const struct conversation *conv, int p2p_dir )
 {
-    return stream_hash_lookup_circ(circuit,p2p_dir);
-}
-stream_t *find_stream_conv ( const struct conversation *conv, int p2p_dir )
-{
-    return stream_hash_lookup_conv(conv,p2p_dir);
+    return stream_hash_lookup(conv,p2p_dir);
 }
 
 /* cleanup the stream routines */
@@ -366,6 +304,7 @@ void stream_cleanup( void )
     cleanup_stream_hash();
     cleanup_fragment_hash();
     stream_cleanup_pdu_data();
+    reassembly_table_destroy(&stream_reassembly_table);
 }
 
 /* initialise the stream routines */
@@ -381,13 +320,13 @@ void stream_init( void )
 
 /*****************************************************************************/
 
-stream_pdu_fragment_t *stream_find_frag( stream_t *stream, guint32 framenum, guint32 offset )
+stream_pdu_fragment_t *stream_find_frag( stream_t *stream, uint32_t framenum, uint32_t offset )
 {
     return fragment_hash_lookup( stream, framenum, offset );
 }
 
-stream_pdu_fragment_t *stream_add_frag( stream_t *stream, guint32 framenum, guint32 offset,
-                                        tvbuff_t *tvb, packet_info *pinfo, gboolean more_frags )
+stream_pdu_fragment_t *stream_add_frag( stream_t *stream, uint32_t framenum, uint32_t offset,
+                                        tvbuff_t *tvb, packet_info *pinfo, bool more_frags )
 {
     fragment_head *fd_head;
     stream_pdu_t *pdu;
@@ -422,7 +361,7 @@ stream_pdu_fragment_t *stream_add_frag( stream_t *stream, guint32 framenum, guin
         /* start a new pdu next time */
         stream->current_pdu = NULL;
 
-        frag_data -> final_fragment = TRUE;
+        frag_data -> final_fragment = true;
     }
 
     /* stashing the framenum and offset permit future sanity checks */
@@ -437,7 +376,7 @@ tvbuff_t *stream_process_reassembled(
     tvbuff_t *tvb, int offset, packet_info *pinfo,
     const char *name, const stream_pdu_fragment_t *frag,
     const struct _fragment_items *fit,
-    gboolean *update_col_infop, proto_tree *tree)
+    bool *update_col_infop, proto_tree *tree)
 {
     stream_pdu_t *pdu;
     DISSECTOR_ASSERT(frag);
@@ -458,7 +397,7 @@ tvbuff_t *stream_process_reassembled(
                                     fit, update_col_infop, tree);
 }
 
-guint32 stream_get_frag_length( const stream_pdu_fragment_t *frag)
+uint32_t stream_get_frag_length( const stream_pdu_fragment_t *frag)
 {
     DISSECTOR_ASSERT( frag );
     return frag->len;
@@ -470,14 +409,14 @@ fragment_head *stream_get_frag_data( const stream_pdu_fragment_t *frag)
     return frag->pdu->fd_head;
 }
 
-guint32 stream_get_pdu_no( const stream_pdu_fragment_t *frag)
+uint32_t stream_get_pdu_no( const stream_pdu_fragment_t *frag)
 {
     DISSECTOR_ASSERT( frag );
     return frag->pdu->pdu_number;
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

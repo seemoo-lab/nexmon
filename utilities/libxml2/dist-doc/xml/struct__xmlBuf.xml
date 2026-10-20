@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlBuf" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlBuf</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlBuf_1a26031fb504d7c8616a5b161b0fbc8c62" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* content</definition>
+        <argsstring></argsstring>
+        <name>content</name>
+        <qualifiedname>_xmlBuf::content</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="44" column="13" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="44" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuf_1a6677d24730d1e9910f9969ad3973c604" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* mem</definition>
+        <argsstring></argsstring>
+        <name>mem</name>
+        <qualifiedname>_xmlBuf::mem</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="45" column="13" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuf_1aa4fc36834fb46d7d31820ed6c7bbd38d" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t use</definition>
+        <argsstring></argsstring>
+        <name>use</name>
+        <qualifiedname>_xmlBuf::use</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="46" column="12" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuf_1a854352f53b148adc24983a58a1866d66" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <qualifiedname>_xmlBuf::size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="47" column="12" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuf_1a534d18ee34577241e871704b00316e4f" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t maxSize</definition>
+        <argsstring></argsstring>
+        <name>maxSize</name>
+        <qualifiedname>_xmlBuf::maxSize</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="48" column="12" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuf_1a8b08a4d2ec878257d64c55f64a62242c" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlBuf::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="49" column="14" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="49" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A buffer structure. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>The base of the structure is somehow compatible with struct <ref refid="struct__xmlBuffer" kindref="compound">_xmlBuffer</ref> to limit risks on application which accessed directly the input-&gt;buf-&gt;buffer structures. </para>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/buf.c" line="43" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="43" bodyend="50"/>
+    <listofallmembers>
+      <member refid="struct__xmlBuf_1a26031fb504d7c8616a5b161b0fbc8c62" prot="public" virt="non-virtual"><scope>_xmlBuf</scope><name>content</name></member>
+      <member refid="struct__xmlBuf_1a8b08a4d2ec878257d64c55f64a62242c" prot="public" virt="non-virtual"><scope>_xmlBuf</scope><name>flags</name></member>
+      <member refid="struct__xmlBuf_1a534d18ee34577241e871704b00316e4f" prot="public" virt="non-virtual"><scope>_xmlBuf</scope><name>maxSize</name></member>
+      <member refid="struct__xmlBuf_1a6677d24730d1e9910f9969ad3973c604" prot="public" virt="non-virtual"><scope>_xmlBuf</scope><name>mem</name></member>
+      <member refid="struct__xmlBuf_1a854352f53b148adc24983a58a1866d66" prot="public" virt="non-virtual"><scope>_xmlBuf</scope><name>size</name></member>
+      <member refid="struct__xmlBuf_1aa4fc36834fb46d7d31820ed6c7bbd38d" prot="public" virt="non-virtual"><scope>_xmlBuf</scope><name>use</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

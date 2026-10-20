@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlNotation" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlNotation</compoundname>
+    <includes local="no">tree.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlNotation_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlNotation::name</qualifiedname>
+        <briefdescription>
+<para>Notation name. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="299" column="33" bodyfile="tree.h" bodystart="299" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNotation_1a5a55c4785f7db07fea31a15614f73585" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* PublicID</definition>
+        <argsstring></argsstring>
+        <name>PublicID</name>
+        <qualifiedname>_xmlNotation::PublicID</qualifiedname>
+        <briefdescription>
+<para>Public identifier, if any. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="301" column="33" bodyfile="tree.h" bodystart="301" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNotation_1a57a6e63e1025b7cca37eb3404d6ab0d8" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* SystemID</definition>
+        <argsstring></argsstring>
+        <name>SystemID</name>
+        <qualifiedname>_xmlNotation::SystemID</qualifiedname>
+        <briefdescription>
+<para>System identifier, if any. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="303" column="33" bodyfile="tree.h" bodystart="303" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A DTD Notation definition. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>Should be treated as opaque. Accessing members directly is deprecated. </para>
+    </detaileddescription>
+    <location file="tree.h" line="297" column="1" bodyfile="tree.h" bodystart="297" bodyend="304"/>
+    <listofallmembers>
+      <member refid="struct__xmlNotation_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlNotation</scope><name>name</name></member>
+      <member refid="struct__xmlNotation_1a5a55c4785f7db07fea31a15614f73585" prot="public" virt="non-virtual"><scope>_xmlNotation</scope><name>PublicID</name></member>
+      <member refid="struct__xmlNotation_1a57a6e63e1025b7cca37eb3404d6ab0d8" prot="public" virt="non-virtual"><scope>_xmlNotation</scope><name>SystemID</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

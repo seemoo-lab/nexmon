@@ -53,7 +53,8 @@ X-Foo = bar
 Keywords=Keyword1;Keyword2;Key\;word3;
 EOF
 
-${XGETTEXT} --add-comments -o - xg.desktop | grep -v 'POT-Creation-Date' > xg-desktop.pot || Exit 1
+${XGETTEXT} --add-comments -o xg-de-1.tmp xg.desktop || Exit 1
+func_filter_POT_Creation_Date xg-de-1.tmp xg-desktop.pot
 
 cat <<\EOF > xg-desktop.ok
 # SOME DESCRIPTIVE TITLE.
@@ -74,19 +75,19 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: xg.desktop:4
+#: xg.desktop:3
 msgid "Foo"
 msgstr ""
 
 #. This is a comment for comment
 #. This is a comment for comment
-#: xg.desktop:7
+#: xg.desktop:6
 msgid ""
 " This is a \n"
 "multiline\t comment; for testing"
 msgstr ""
 
-#: xg.desktop:12
+#: xg.desktop:11
 msgid "Keyword1;Keyword2;Key\\;word3;"
 msgstr ""
 EOF

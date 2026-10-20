@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,6 +23,7 @@
 #include "config.h"
 
 #include <glib.h>
+#include <gcancellable.h>
 #include <glocalfileenumerator.h>
 #include <glocalfileinfo.h>
 #include <glocalfile.h>
@@ -76,7 +79,7 @@ struct _GLocalFileEnumerator
 };
 
 #define g_local_file_enumerator_get_type _g_local_file_enumerator_get_type
-G_DEFINE_TYPE (GLocalFileEnumerator, g_local_file_enumerator, G_TYPE_FILE_ENUMERATOR);
+G_DEFINE_TYPE (GLocalFileEnumerator, g_local_file_enumerator, G_TYPE_FILE_ENUMERATOR)
 
 static GFileInfo *g_local_file_enumerator_next_file (GFileEnumerator  *enumerator,
 						     GCancellable     *cancellable,
@@ -380,6 +383,9 @@ g_local_file_enumerator_next_file (GFileEnumerator  *enumerator,
     }
 
  next_file:
+
+  if (g_cancellable_set_error_if_cancelled (cancellable, error))
+    return NULL;
 
 #ifdef USE_GDIR
   filename = g_dir_read_name (local->dir);

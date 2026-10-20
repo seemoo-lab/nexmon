@@ -1,14 +1,18 @@
-# inline.m4 serial 4
-dnl Copyright (C) 2006, 2009-2016 Free Software Foundation, Inc.
+# inline.m4
+# serial 5
+dnl Copyright (C) 2006, 2009-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl Test for the 'inline' keyword or equivalent.
 dnl Define 'inline' to a supported equivalent, or to nothing if not supported,
 dnl like AC_C_INLINE does.  Also, define HAVE_INLINE if 'inline' or an
 dnl equivalent is effectively supported, i.e. if the compiler is likely to
-dnl drop unused 'static inline' functions.
+dnl actually inline 'static inline' functions when there are used.  (All
+dnl versions of gcc and clang actually drop the code of 'static inline'
+dnl functions that are unused in the current compilation unit.)
 AC_DEFUN([gl_INLINE],
 [
   AC_REQUIRE([AC_C_INLINE])

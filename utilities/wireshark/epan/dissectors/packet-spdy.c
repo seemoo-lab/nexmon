@@ -17,19 +17,7 @@
  *
  * Originally based on packet-http.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -38,14 +26,12 @@
 #include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/tap.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+#include <wsutil/zlib_compat.h>
 #include "packet-tcp.h"
-#include "packet-ssl.h"
-#include "packet-http.h"
-
-#ifdef HAVE_ZLIB
-#define ZLIB_CONST
-#include <zlib.h>
-#endif
+#include "packet-tls.h"
+#include "packet-media-type.h"
 
 void proto_register_spdy(void);
 void proto_reg_handoff_spdy(void);
@@ -59,11 +45,15 @@ void proto_reg_handoff_spdy(void);
  * entities and for decompressing request & reply header blocks.
  */
 typedef struct _spdy_conv_t {
-#ifdef HAVE_ZLIB
-  z_streamp rqst_decompressor;
-  z_streamp rply_decompressor;
+#ifdef USE_ZLIB_OR_ZLIBNG
+  zlib_streamp rqst_decompressor;
+  zlib_streamp rply_decompressor;
+#ifdef HAVE_ZLIBNG
+  uint32_t     dictionary_id;
+#else
   uLong     dictionary_id;
 #endif
+#endif /* USE_ZLIB_OR_ZLIBNG */
   wmem_tree_t  *streams;
 } spdy_conv_t;
 
@@ -145,11 +135,11 @@ static const value_string goaway_status_names[] = {
  * dissect_spdy_*_payload() functions.
  */
 typedef struct _spdy_control_frame_info_t {
-  gboolean control_bit;
-  guint16  version;
-  guint16  type;
-  guint8   flags;
-  guint32  length;  /* Actually only 24 bits. */
+  bool control_bit;
+  uint16_t version;
+  uint16_t type;
+  uint8_t  flags;
+  uint32_t length;  /* Actually only 24 bits. */
 } spdy_control_frame_info_t;
 
 /*
@@ -158,10 +148,10 @@ typedef struct _spdy_control_frame_info_t {
  * Note that there may be multiple SPDY frames in one packet.
  */
 typedef struct _spdy_header_info_t {
-  guint32 stream_id;
-  guint8 *header_block;
-  guint   header_block_len;
-  guint16 frame_type;
+  uint32_t stream_id;
+  uint8_t *header_block;
+  unsigned   header_block_len;
+  uint16_t frame_type;
 } spdy_header_info_t;
 
 static wmem_list_t *header_info_list;
@@ -172,92 +162,93 @@ static wmem_list_t *header_info_list;
  * reassembled into a single chunk.
  */
 typedef struct _spdy_data_frame_t {
-  guint8 *data;
-  guint32 length;
-  guint32 framenum;
+  uint8_t *data;
+  uint32_t length;
+  uint32_t framenum;
 } spdy_data_frame_t;
 
 typedef struct _spdy_stream_info_t {
-  http_type_t message_type;
-  gchar *content_type;
-  gchar *content_type_parameters;
-  gchar *content_encoding;
+  media_container_type_t container_type;
+  char *content_type;
+  char *content_type_parameters;
+  char *content_encoding;
   wmem_list_t *data_frames;
   tvbuff_t *assembled_data;
-  guint num_data_frames;
+  unsigned num_data_frames;
 } spdy_stream_info_t;
 
 /* Handles for metadata population. */
 
-static int spdy_tap = -1;
-static int spdy_eo_tap = -1;
+static int spdy_tap;
+static int spdy_eo_tap;
 
-static int proto_spdy = -1;
-static int hf_spdy_data = -1;
-static int hf_spdy_control_bit = -1;
-static int hf_spdy_version = -1;
-static int hf_spdy_type = -1;
-static int hf_spdy_flags = -1;
-static int hf_spdy_flags_fin = -1;
-static int hf_spdy_flags_unidirectional = -1;
-static int hf_spdy_flags_clear_settings = -1;
-static int hf_spdy_flags_persist_value = -1;
-static int hf_spdy_flags_persisted = -1;
-static int hf_spdy_length = -1;
-static int hf_spdy_header_block = -1;
-static int hf_spdy_header = -1;
-static int hf_spdy_header_name = -1;
-static int hf_spdy_header_value = -1;
-static int hf_spdy_streamid = -1;
-static int hf_spdy_associated_streamid = -1;
-static int hf_spdy_priority = -1;
-static int hf_spdy_unused = -1;
-static int hf_spdy_slot = -1;
-static int hf_spdy_num_headers = -1;
-static int hf_spdy_rst_stream_status = -1;
-static int hf_spdy_num_settings = -1;
-static int hf_spdy_setting = -1;
-static int hf_spdy_setting_id = -1;
-static int hf_spdy_setting_value = -1;
-static int hf_spdy_ping_id = -1;
-static int hf_spdy_goaway_last_good_stream_id = -1;
-static int hf_spdy_goaway_status = -1;
-static int hf_spdy_window_update_delta = -1;
+static int proto_spdy;
+static int hf_spdy_data;
+static int hf_spdy_control_bit;
+static int hf_spdy_version;
+static int hf_spdy_type;
+static int hf_spdy_flags;
+static int hf_spdy_flags_fin;
+static int hf_spdy_flags_unidirectional;
+static int hf_spdy_flags_clear_settings;
+static int hf_spdy_flags_persist_value;
+static int hf_spdy_flags_persisted;
+static int hf_spdy_length;
+static int hf_spdy_header_block;
+static int hf_spdy_header;
+static int hf_spdy_header_name;
+static int hf_spdy_header_value;
+static int hf_spdy_streamid;
+static int hf_spdy_associated_streamid;
+static int hf_spdy_priority;
+static int hf_spdy_unused;
+static int hf_spdy_slot;
+static int hf_spdy_num_headers;
+static int hf_spdy_rst_stream_status;
+static int hf_spdy_num_settings;
+static int hf_spdy_setting;
+static int hf_spdy_setting_id;
+static int hf_spdy_setting_value;
+static int hf_spdy_ping_id;
+static int hf_spdy_goaway_last_good_stream_id;
+static int hf_spdy_goaway_status;
+static int hf_spdy_window_update_delta;
 
-static gint ett_spdy = -1;
-static gint ett_spdy_flags = -1;
-static gint ett_spdy_header_block = -1;
-static gint ett_spdy_header = -1;
-static gint ett_spdy_setting = -1;
+static int ett_spdy;
+static int ett_spdy_flags;
+static int ett_spdy_header_block;
+static int ett_spdy_header;
+static int ett_spdy_setting;
 
-static gint ett_spdy_encoded_entity = -1;
+static int ett_spdy_encoded_entity;
 
-static expert_field ei_spdy_inflation_failed = EI_INIT;
-static expert_field ei_spdy_mal_frame_data = EI_INIT;
-static expert_field ei_spdy_mal_setting_frame = EI_INIT;
-static expert_field ei_spdy_invalid_rst_stream = EI_INIT;
-static expert_field ei_spdy_invalid_go_away = EI_INIT;
-static expert_field ei_spdy_invalid_frame_type = EI_INIT;
-static expert_field ei_spdy_reassembly_info = EI_INIT;
+static expert_field ei_spdy_inflation_failed;
+static expert_field ei_spdy_mal_frame_data;
+static expert_field ei_spdy_mal_setting_frame;
+static expert_field ei_spdy_invalid_rst_stream;
+static expert_field ei_spdy_invalid_go_away;
+static expert_field ei_spdy_invalid_frame_type;
+static expert_field ei_spdy_reassembly_info;
 
 static dissector_handle_t media_handle;
 static dissector_handle_t spdy_handle;
 static dissector_table_t media_type_subdissector_table;
 static dissector_table_t port_subdissector_table;
 
-static gboolean spdy_assemble_entity_bodies = TRUE;
+static bool spdy_assemble_entity_bodies = true;
 
 /*
  * Decompression of zlib encoded entities.
  */
-#ifdef HAVE_ZLIB
-static gboolean spdy_decompress_body = TRUE;
-static gboolean spdy_decompress_headers = TRUE;
+#ifdef USE_ZLIB_OR_ZLIBNG
+static bool spdy_decompress_body = true;
+static bool spdy_decompress_headers = true;
 #else
-static gboolean spdy_decompress_body = FALSE;
-static gboolean spdy_decompress_headers = FALSE;
-#endif
+static bool spdy_decompress_body;
+static bool spdy_decompress_headers;
+#endif /* USE_ZLIB_OR_ZLIBNG */
 
+#ifdef USE_ZLIB_OR_ZLIBNG
 static const char spdy_dictionary[] = {
   0x00, 0x00, 0x00, 0x07, 0x6f, 0x70, 0x74, 0x69,  /* - - - - o p t i */
   0x6f, 0x6e, 0x73, 0x00, 0x00, 0x00, 0x04, 0x68,  /* o n s - - - - h */
@@ -439,19 +430,16 @@ static const char spdy_dictionary[] = {
   0x2c, 0x65, 0x6e, 0x71, 0x3d, 0x30, 0x2e         /* - e n q - 0 -   */
 };
 
-#ifdef HAVE_ZLIB
 /* callback function used at the end of file-scope to cleanup zlib's inflate
  * streams to avoid memory leaks.
  * XXX: can we be more aggressive and call this sooner for finished streams?
  */
-static gboolean inflate_end_cb (wmem_allocator_t *allocator _U_,
+static bool inflate_end_cb (wmem_allocator_t *allocator _U_,
     wmem_cb_event_t event _U_, void *user_data) {
-
-  inflateEnd((z_streamp)user_data);
-
-  return FALSE;
+  ZLIB_PREFIX(inflateEnd)((zlib_streamp)user_data);
+  return false;
 }
-#endif
+#endif /* USE_ZLIB_OR_ZLIBNG */
 
 /*
  * Protocol initialization
@@ -469,7 +457,7 @@ spdy_init_protocol(void)
 static spdy_conv_t * get_or_create_spdy_conversation_data(packet_info *pinfo) {
   conversation_t  *conversation;
   spdy_conv_t *conv_data;
-#ifdef HAVE_ZLIB
+#ifdef USE_ZLIB_OR_ZLIBNG
   int retcode;
 #endif
 
@@ -483,14 +471,14 @@ static spdy_conv_t * get_or_create_spdy_conversation_data(packet_info *pinfo) {
 
     conv_data->streams = NULL;
     if (spdy_decompress_headers) {
-#ifdef HAVE_ZLIB
-      conv_data->rqst_decompressor = wmem_new0(wmem_file_scope(), z_stream);
-      conv_data->rply_decompressor = wmem_new0(wmem_file_scope(), z_stream);
-      retcode = inflateInit(conv_data->rqst_decompressor);
+#ifdef USE_ZLIB_OR_ZLIBNG
+      conv_data->rqst_decompressor = wmem_new0(wmem_file_scope(), zlib_stream);
+      conv_data->rply_decompressor = wmem_new0(wmem_file_scope(), zlib_stream);
+      retcode = ZLIB_PREFIX(inflateInit)(conv_data->rqst_decompressor);
       if (retcode == Z_OK) {
         wmem_register_callback(wmem_file_scope(), inflate_end_cb,
             conv_data->rqst_decompressor);
-        retcode = inflateInit(conv_data->rply_decompressor);
+        retcode = ZLIB_PREFIX(inflateInit)(conv_data->rply_decompressor);
         if (retcode == Z_OK) {
           wmem_register_callback(wmem_file_scope(), inflate_end_cb,
               conv_data->rply_decompressor);
@@ -498,11 +486,11 @@ static spdy_conv_t * get_or_create_spdy_conversation_data(packet_info *pinfo) {
       }
 
       /* XXX - use wsutil/adler32.h? */
-      conv_data->dictionary_id = adler32(0L, Z_NULL, 0);
-      conv_data->dictionary_id = adler32(conv_data->dictionary_id,
+      conv_data->dictionary_id = ZLIB_PREFIX(adler32)(0L, Z_NULL, 0);
+      conv_data->dictionary_id = ZLIB_PREFIX(adler32)(conv_data->dictionary_id,
                                          spdy_dictionary,
                                          (uInt)sizeof(spdy_dictionary));
-#endif
+#endif /* USE_ZLIB_OR_ZLIBNG */
     }
 
     conversation_add_proto_data(conversation, proto_spdy, conv_data);
@@ -515,19 +503,19 @@ static spdy_conv_t * get_or_create_spdy_conversation_data(packet_info *pinfo) {
  * Retains state on a given stream.
  */
 static void spdy_save_stream_info(spdy_conv_t *conv_data,
-                                  guint32 stream_id,
-                                  http_type_t message_type,
-                                  gchar *content_type,
-                                  gchar *content_type_params,
-                                  gchar *content_encoding) {
+                                  uint32_t stream_id,
+                                  media_container_type_t container_type,
+                                  char *content_type,
+                                  char *content_type_params,
+                                  char *content_encoding) {
   spdy_stream_info_t *si;
 
   if (conv_data->streams == NULL) {
     conv_data->streams = wmem_tree_new(wmem_file_scope());
   }
 
-  si = (spdy_stream_info_t *)wmem_alloc(wmem_file_scope(), sizeof(spdy_stream_info_t));
-  si->message_type = message_type;
+  si = wmem_new(wmem_file_scope(), spdy_stream_info_t);
+  si->container_type = container_type;
   si->content_type = content_type;
   si->content_type_parameters = content_type_params;
   si->content_encoding = content_encoding;
@@ -541,7 +529,7 @@ static void spdy_save_stream_info(spdy_conv_t *conv_data,
  * Retrieves previously saved state on a given stream.
  */
 static spdy_stream_info_t* spdy_get_stream_info(spdy_conv_t *conv_data,
-                                                guint32 stream_id)
+                                                uint32_t stream_id)
 {
   if (conv_data->streams == NULL)
     return NULL;
@@ -553,10 +541,10 @@ static spdy_stream_info_t* spdy_get_stream_info(spdy_conv_t *conv_data,
  * Adds a data chunk to a given SPDY conversation/stream.
  */
 static void spdy_add_data_chunk(spdy_conv_t *conv_data,
-                                guint32 stream_id,
-                                guint32 frame,
-                                guint8 *data,
-                                guint32 length)
+                                uint32_t stream_id,
+                                uint32_t frame,
+                                uint8_t *data,
+                                uint32_t length)
 {
   spdy_stream_info_t *si = spdy_get_stream_info(conv_data, stream_id);
 
@@ -574,7 +562,7 @@ static void spdy_add_data_chunk(spdy_conv_t *conv_data,
  * Increment the count of DATA frames found on a given stream.
  */
 static void spdy_increment_data_chunk_count(spdy_conv_t *conv_data,
-                                            guint32 stream_id) {
+                                            uint32_t stream_id) {
   spdy_stream_info_t *si = spdy_get_stream_info(conv_data, stream_id);
   if (si != NULL) {
     ++si->num_data_frames;
@@ -584,8 +572,8 @@ static void spdy_increment_data_chunk_count(spdy_conv_t *conv_data,
 /*
  * Return the number of data frames saved so far for the specified stream.
  */
-static guint spdy_get_num_data_frames(spdy_conv_t *conv_data,
-                                      guint32 stream_id) {
+static unsigned spdy_get_num_data_frames(spdy_conv_t *conv_data,
+                                      uint32_t stream_id) {
   spdy_stream_info_t *si = spdy_get_stream_info(conv_data, stream_id);
 
   return si == NULL ? 0 : si->num_data_frames;
@@ -595,7 +583,7 @@ static guint spdy_get_num_data_frames(spdy_conv_t *conv_data,
  * Reassembles DATA frames for a given stream into one tvb.
  */
 static spdy_stream_info_t* spdy_assemble_data_frames(spdy_conv_t *conv_data,
-                                                     guint32 stream_id) {
+                                                     uint32_t stream_id) {
   spdy_stream_info_t *si = spdy_get_stream_info(conv_data, stream_id);
   tvbuff_t *tvb;
 
@@ -609,9 +597,9 @@ static spdy_stream_info_t* spdy_assemble_data_frames(spdy_conv_t *conv_data,
    */
   if (si->assembled_data == NULL) {
     spdy_data_frame_t *df;
-    guint8 *data;
-    guint32 datalen;
-    guint32 offset;
+    uint8_t *data;
+    uint32_t datalen;
+    uint32_t offset;
     wmem_list_t *dflist = si->data_frames;
     wmem_list_frame_t *frame;
     if (wmem_list_count(dflist) == 0) {
@@ -631,7 +619,7 @@ static spdy_stream_info_t* spdy_assemble_data_frames(spdy_conv_t *conv_data,
       frame = wmem_list_frame_next(frame);
     }
     if (datalen != 0) {
-      data = (guint8 *)wmem_alloc(wmem_file_scope(), datalen);
+      data = (uint8_t *)wmem_alloc(wmem_file_scope(), datalen);
       dflist = si->data_frames;
       offset = 0;
       frame = wmem_list_frame_next(wmem_list_head(dflist));
@@ -657,7 +645,7 @@ static void dissect_spdy_stream_id_field(tvbuff_t *tvb,
                                          proto_tree *frame_tree,
                                          const int hfindex)
 {
-  guint32 stream_id = tvb_get_ntohl(tvb, offset) & SPDY_STREAM_ID_MASK;
+  uint32_t stream_id = tvb_get_ntohl(tvb, offset) & SPDY_STREAM_ID_MASK;
 
   /* Add stream id to tree. */
   proto_tree_add_item(frame_tree, hfindex, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -723,13 +711,13 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
                                      proto_tree *spdy_tree,
                                      proto_item *spdy_proto,
                                      spdy_conv_t *conv_data,
-                                     guint32 stream_id,
+                                     uint32_t stream_id,
                                      const spdy_control_frame_info_t *frame)
 {
   dissector_handle_t handle;
-  guint num_data_frames;
-  gboolean dissected;
-  http_message_info_t message_info;
+  unsigned num_data_frames;
+  bool dissected;
+  media_content_info_t content_info;
 
   /* Add frame description. */
   proto_item_append_text(spdy_proto, ", Stream: %d, Length: %d",
@@ -747,9 +735,9 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
     tvbuff_t *next_tvb = NULL;
     tvbuff_t    *data_tvb = NULL;
     spdy_stream_info_t *si = NULL;
-    guint8 *copied_data;
-    gboolean is_single_chunk = FALSE;
-    gboolean have_entire_body;
+    uint8_t *copied_data;
+    bool is_single_chunk = false;
+    bool have_entire_body;
     char *media_str = NULL;
 
     /*
@@ -759,10 +747,10 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
       next_tvb = tvb_new_subset_length(tvb, offset, frame->length);
       is_single_chunk = num_data_frames == 0 &&
           (frame->flags & SPDY_FLAG_FIN) != 0;
-      if (!pinfo->fd->flags.visited) {
+      if (!pinfo->fd->visited) {
         if (!is_single_chunk) {
           if (spdy_assemble_entity_bodies) {
-            copied_data = (guint8 *)tvb_memdup(wmem_file_scope(),next_tvb, 0, frame->length);
+            copied_data = (uint8_t *)tvb_memdup(wmem_file_scope(),next_tvb, 0, frame->length);
             spdy_add_data_chunk(conv_data, stream_id, pinfo->num, copied_data, frame->length);
           } else {
             spdy_increment_data_chunk_count(conv_data, stream_id);
@@ -791,7 +779,7 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
     }
     data_tvb = si->assembled_data;
     if (spdy_assemble_entity_bodies) {
-      have_entire_body = TRUE;
+      have_entire_body = true;
     }
 
     if (!have_entire_body) {
@@ -824,7 +812,7 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
       if (spdy_decompress_body &&
           (g_ascii_strcasecmp(si->content_encoding, "gzip") == 0 ||
            g_ascii_strcasecmp(si->content_encoding, "deflate") == 0)) {
-        uncomp_tvb = tvb_child_uncompress(tvb, data_tvb, 0,
+        uncomp_tvb = tvb_child_uncompress_zlib(tvb, data_tvb, 0,
                                                tvb_reported_length(data_tvb));
       }
       /*
@@ -839,8 +827,8 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
         wmem_list_t *dflist = si->data_frames;
         wmem_list_frame_t *frame_item;
         spdy_data_frame_t *df;
-        guint32 framenum = 0;
-        wmem_strbuf_t *str_frames = wmem_strbuf_new(wmem_packet_scope(), "");
+        uint32_t framenum = 0;
+        wmem_strbuf_t *str_frames = wmem_strbuf_new(pinfo->pool, "");
 
         frame_item = wmem_list_frame_next(wmem_list_head(dflist));
         while (frame_item != NULL) {
@@ -905,7 +893,7 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
        * for that content type?
        */
       if (si->content_type_parameters) {
-        media_str = wmem_strdup(wmem_packet_scope(), si->content_type_parameters);
+        media_str = wmem_strdup(pinfo->pool, si->content_type_parameters);
       }
       /*
        * Calling the string handle for the media type
@@ -916,15 +904,16 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
       handle = dissector_get_string_handle(media_type_subdissector_table,
                                            si->content_type);
     }
-    message_info.type = si->message_type;
-    message_info.media_str = media_str;
+    content_info.type = si->container_type;
+    content_info.media_str = media_str;
+    content_info.data = NULL;
     if (handle != NULL) {
       /*
        * We have a subdissector - call it.
        */
-      dissected = call_dissector_with_data(handle, data_tvb, pinfo, spdy_tree, &message_info);
+      dissected = call_dissector_with_data(handle, data_tvb, pinfo, spdy_tree, &content_info);
     } else {
-      dissected = FALSE;
+      dissected = false;
     }
 
     if (!dissected && have_entire_body && si->content_type != NULL) {
@@ -932,7 +921,7 @@ static int dissect_spdy_data_payload(tvbuff_t *tvb,
        * Calling the default media handle if there is a content-type that
        * wasn't handled above.
        */
-      call_dissector_with_data(media_handle, next_tvb, pinfo, spdy_tree, &message_info);
+      call_dissector_with_data(media_handle, next_tvb, pinfo, spdy_tree, &content_info);
     } else {
       /* Call the default data dissector */
       call_data_dissector(next_tvb, pinfo, spdy_tree);
@@ -949,7 +938,7 @@ body_dissected:
   return frame->length;
 }
 
-#ifdef HAVE_ZLIB
+#ifdef USE_ZLIB_OR_ZLIBNG
 /*
  * Performs header decompression.
  *
@@ -958,15 +947,16 @@ body_dissected:
  */
 #define DECOMPRESS_BUFSIZE   16384
 
-static guint8* spdy_decompress_header_block(tvbuff_t *tvb,
-                                            z_streamp decomp,
+static uint8_t* spdy_decompress_header_block(tvbuff_t *tvb,
+                                            packet_info *pinfo,
+                                            zlib_streamp decomp,
                                             uLong dictionary_id,
                                             int offset,
-                                            guint32 length,
-                                            guint *uncomp_length) {
+                                            uint32_t length,
+                                            unsigned *uncomp_length) {
   int retcode;
-  const guint8 *hptr = tvb_get_ptr(tvb, offset, length);
-  guint8 *uncomp_block = (guint8 *)wmem_alloc(wmem_packet_scope(), DECOMPRESS_BUFSIZE);
+  const uint8_t *hptr = tvb_get_ptr(tvb, offset, length);
+  uint8_t *uncomp_block = (uint8_t *)wmem_alloc(pinfo->pool, DECOMPRESS_BUFSIZE);
 
 #ifdef z_const
   decomp->next_in = (z_const Bytef *)hptr;
@@ -978,14 +968,14 @@ DIAG_ON(cast-qual)
   decomp->avail_in = length;
   decomp->next_out = uncomp_block;
   decomp->avail_out = DECOMPRESS_BUFSIZE;
-  retcode = inflate(decomp, Z_SYNC_FLUSH);
+  retcode = ZLIB_PREFIX(inflate)(decomp, Z_SYNC_FLUSH);
   if (retcode == Z_NEED_DICT) {
     if (decomp->adler == dictionary_id) {
-      retcode = inflateSetDictionary(decomp,
+      retcode = ZLIB_PREFIX(inflateSetDictionary)(decomp,
                                      spdy_dictionary,
                                      sizeof(spdy_dictionary));
       if (retcode == Z_OK) {
-        retcode = inflate(decomp, Z_SYNC_FLUSH);
+        retcode = ZLIB_PREFIX(inflate)(decomp, Z_SYNC_FLUSH);
       }
     }
   }
@@ -998,19 +988,19 @@ DIAG_ON(cast-qual)
   /* Handle successful inflation. */
   *uncomp_length = DECOMPRESS_BUFSIZE - decomp->avail_out;
 
-  return (guint8 *)wmem_memdup(wmem_file_scope(), uncomp_block, *uncomp_length);
+  return (uint8_t *)wmem_memdup(wmem_file_scope(), uncomp_block, *uncomp_length);
 }
-#endif
+#endif /* USE_ZLIB_OR_ZLIBNG */
 
 
 /*
  * Saves state on header data for a given stream.
  */
 static spdy_header_info_t* spdy_save_header_block(packet_info *pinfo _U_,
-                                                  guint32 stream_id,
-                                                  guint16 frame_type,
-                                                  guint8 *header,
-                                                  guint length) {
+                                                  uint32_t stream_id,
+                                                  uint16_t frame_type,
+                                                  uint8_t *header,
+                                                  unsigned length) {
   spdy_header_info_t *header_info;
 
   if (header_info_list == NULL)
@@ -1029,8 +1019,8 @@ static spdy_header_info_t* spdy_save_header_block(packet_info *pinfo _U_,
  * Retrieves saved state for a given stream.
  */
 static spdy_header_info_t* spdy_find_saved_header_block(packet_info *pinfo _U_,
-                                                        guint32 stream_id,
-                                                        guint16 frame_type) {
+                                                        uint32_t stream_id,
+                                                        uint16_t frame_type) {
   wmem_list_frame_t *frame;
 
   if ((header_info_list == NULL) || (wmem_list_head(header_info_list) == NULL))
@@ -1052,8 +1042,8 @@ static spdy_header_info_t* spdy_find_saved_header_block(packet_info *pinfo _U_,
  * also has the side effect of null terminating the content type
  * part of the original string.
  */
-static gchar* spdy_parse_content_type(gchar *content_type) {
-  gchar *cp = content_type;
+static char* spdy_parse_content_type(char *content_type) {
+  char *cp = content_type;
 
   while (*cp != '\0' && *cp != ';' && !g_ascii_isspace(*cp)) {
     *cp = g_ascii_tolower(*cp);
@@ -1082,19 +1072,19 @@ static int dissect_spdy_header_payload(
   proto_tree *frame_tree,
   const spdy_control_frame_info_t *frame,
   spdy_conv_t *conv_data) {
-  guint32 stream_id;
+  uint32_t stream_id;
   int header_block_length = frame->length;
   int hdr_offset = 0;
   tvbuff_t *header_tvb = NULL;
-  const gchar *hdr_method = NULL;
-  const gchar *hdr_path = NULL;
-  const gchar *hdr_version = NULL;
-  const gchar *hdr_host = NULL;
-  const gchar *hdr_scheme = NULL;
-  const gchar *hdr_status = NULL;
-  gchar *content_type = NULL;
-  gchar *content_encoding = NULL;
-  guint32 num_headers = 0;
+  const char *hdr_method = NULL;
+  const char *hdr_path = NULL;
+  const char *hdr_version = NULL;
+  const char *hdr_host = NULL;
+  const char *hdr_scheme = NULL;
+  const char *hdr_status = NULL;
+  char *content_type = NULL;
+  char *content_encoding = NULL;
+  uint32_t num_headers = 0;
   proto_item *header_block_item;
   proto_tree *header_block_tree;
 
@@ -1158,10 +1148,10 @@ static int dissect_spdy_header_payload(
 
     /* Generate decompressed data and store it, since none was found. */
     if (header_info == NULL) {
-      guint8 *uncomp_ptr = NULL;
-      guint uncomp_length = 0;
-#ifdef HAVE_ZLIB
-      z_streamp decomp;
+      uint8_t *uncomp_ptr = NULL;
+      unsigned uncomp_length = 0;
+#ifdef USE_ZLIB_OR_ZLIBNG
+      zlib_streamp decomp;
 
       /* Get our decompressor. */
       if (stream_id % 2 == 0) {
@@ -1184,6 +1174,7 @@ static int dissect_spdy_header_payload(
 
       /* Decompress. */
       uncomp_ptr = spdy_decompress_header_block(tvb,
+                                                pinfo,
                                                 decomp,
                                                 conv_data->dictionary_id,
                                                 offset,
@@ -1197,7 +1188,7 @@ static int dissect_spdy_header_payload(
         proto_item_append_text(frame_tree, " [Error: Header decompression failed]");
         return -1;
       }
-#endif
+#endif /* USE_ZLIB_OR_ZLIBNG */
 
       /* Store decompressed data. */
       header_info = spdy_save_header_block(pinfo, stream_id, frame->type, uncomp_ptr, uncomp_length);
@@ -1227,8 +1218,8 @@ static int dissect_spdy_header_payload(
 
   /* Process headers. */
   while (num_headers--) {
-    gchar *header_name;
-    const gchar *header_value;
+    char *header_name;
+    const char *header_value;
     proto_tree *header_tree;
     proto_item *header;
     int header_name_offset;
@@ -1250,7 +1241,7 @@ static int dissect_spdy_header_payload(
                              "Not enough frame data for header name.");
       break;
     }
-    header_name = (gchar *)tvb_get_string_enc(wmem_packet_scope(), header_tvb,
+    header_name = (char *)tvb_get_string_enc(pinfo->pool, header_tvb,
                                                     hdr_offset,
                                                     header_name_length, ENC_ASCII|ENC_NA);
     hdr_offset += header_name_length;
@@ -1269,7 +1260,7 @@ static int dissect_spdy_header_payload(
                              "Not enough frame data for header value.");
       break;
     }
-    header_value = (gchar *)tvb_get_string_enc(wmem_packet_scope(),header_tvb,
+    header_value = (char *)tvb_get_string_enc(pinfo->pool,header_tvb,
                                                      hdr_offset,
                                                      header_value_length, ENC_ASCII|ENC_NA);
     hdr_offset += header_value_length;
@@ -1333,10 +1324,10 @@ static int dissect_spdy_header_payload(
    * If we expect data on this stream, we need to remember the content
    * type and content encoding.
    */
-  if (content_type != NULL && !pinfo->fd->flags.visited) {
-    gchar *content_type_params = spdy_parse_content_type(content_type);
+  if (content_type != NULL && !pinfo->fd->visited) {
+    char *content_type_params = spdy_parse_content_type(content_type);
     spdy_save_stream_info(conv_data, stream_id,
-                          (hdr_status == NULL) ? HTTP_REQUEST : HTTP_RESPONSE,
+                          (hdr_status == NULL) ? MEDIA_CONTAINER_HTTP_REQUEST : MEDIA_CONTAINER_HTTP_RESPONSE,
                           content_type, content_type_params, content_encoding);
   }
 
@@ -1349,7 +1340,7 @@ static int dissect_spdy_rst_stream_payload(
   packet_info *pinfo,
   proto_tree *frame_tree,
   const spdy_control_frame_info_t *frame) {
-  guint32 rst_status;
+  uint32_t rst_status;
   proto_item *ti;
   const char* str;
 
@@ -1367,7 +1358,7 @@ static int dissect_spdy_rst_stream_payload(
                            "Invalid status code for RST_STREAM: %u", rst_status);
   }
 
-  str = val_to_str(rst_status, rst_stream_status_names, "Unknown (%d)");
+  str = val_to_str(pinfo->pool, rst_status, rst_stream_status_names, "Unknown (%d)");
 
   proto_item_append_text(frame_tree, ", Status: %s", str);
 
@@ -1380,7 +1371,7 @@ static int dissect_spdy_settings_payload(
   packet_info *pinfo,
   proto_tree *frame_tree,
   const spdy_control_frame_info_t *frame) {
-  guint32 num_entries;
+  uint32_t num_entries;
   proto_item *ti, *ti_setting;
   proto_tree *setting_tree;
   proto_tree *flags_tree;
@@ -1404,8 +1395,8 @@ static int dissect_spdy_settings_payload(
 
   /* Dissect each entry. */
   while (num_entries > 0) {
-    const gchar *setting_id_str;
-    guint32 setting_value;
+    const char *setting_id_str;
+    uint32_t setting_value;
 
     /* Create key/value pair subtree. */
     ti_setting = proto_tree_add_item(frame_tree, hf_spdy_setting, tvb, offset, 8, ENC_NA);
@@ -1423,7 +1414,7 @@ static int dissect_spdy_settings_payload(
     offset += 1;
 
     /* Set ID. */
-    setting_id_str = val_to_str(tvb_get_ntoh24(tvb, offset), setting_id_names, "Unknown(%d)");
+    setting_id_str = val_to_str(pinfo->pool, tvb_get_ntoh24(tvb, offset), setting_id_names, "Unknown(%d)");
 
     proto_tree_add_item(setting_tree, hf_spdy_setting_id, tvb, offset, 3, ENC_BIG_ENDIAN);
     offset += 3;
@@ -1447,7 +1438,7 @@ static int dissect_spdy_ping_payload(tvbuff_t *tvb, int offset, packet_info *pin
                                      proto_tree *frame_tree, const spdy_control_frame_info_t *frame)
 {
   /* Get ping ID. */
-  guint32 ping_id = tvb_get_ntohl(tvb, offset);
+  uint32_t ping_id = tvb_get_ntohl(tvb, offset);
 
   /* Add proto item for ping ID. */
   proto_tree_add_item(frame_tree, hf_spdy_ping_id, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -1461,7 +1452,7 @@ static int dissect_spdy_goaway_payload(tvbuff_t *tvb,
                                        packet_info *pinfo,
                                        proto_tree *frame_tree,
                                        const spdy_control_frame_info_t *frame) {
-  guint32 goaway_status;
+  uint32_t goaway_status;
   proto_item* ti;
 
   /* Get last good stream ID and add to info column and tree. */
@@ -1480,7 +1471,7 @@ static int dissect_spdy_goaway_payload(tvbuff_t *tvb,
 
   /* Add status to info column. */
   proto_item_append_text(frame_tree, " Status=%s)",
-                  val_to_str(goaway_status, rst_stream_status_names, "Unknown (%d)"));
+                  val_to_str(pinfo->pool, goaway_status, rst_stream_status_names, "Unknown (%d)"));
 
   return frame->length;
 }
@@ -1492,7 +1483,7 @@ static int dissect_spdy_window_update_payload(
     proto_tree *frame_tree,
     const spdy_control_frame_info_t *frame)
 {
-  guint32             window_update_delta;
+  uint32_t            window_update_delta;
 
   /* Get stream ID. */
   dissect_spdy_stream_id_field(tvb, offset, pinfo, frame_tree, hf_spdy_streamid);
@@ -1513,10 +1504,10 @@ static int dissect_spdy_window_update_payload(
  */
 static int dissect_spdy_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  guint8              control_bit;
+  uint8_t             control_bit;
   spdy_control_frame_info_t frame;
-  guint32             stream_id = 0;
-  const gchar         *frame_type_name;
+  uint32_t            stream_id = 0;
+  const char          *frame_type_name;
   proto_tree          *spdy_tree;
   proto_item          *spdy_item, *type_item = NULL;
   int                 offset = 0;
@@ -1531,8 +1522,8 @@ static int dissect_spdy_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
   spdy_tree = proto_item_add_subtree(spdy_item, ett_spdy);
 
   /* Add control bit. */
-  control_bit = tvb_get_guint8(tvb, offset) & 0x80;
-  proto_tree_add_item(spdy_tree, hf_spdy_control_bit, tvb, offset, 2, ENC_NA);
+  control_bit = tvb_get_uint8(tvb, offset) & 0x80;
+  proto_tree_add_item(spdy_tree, hf_spdy_control_bit, tvb, offset, 2, ENC_BIG_ENDIAN);
 
   /* Process first four bytes of frame, formatted depending on control bit. */
   if (control_bit) {
@@ -1562,13 +1553,13 @@ static int dissect_spdy_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
   }
 
   /* Add frame info. */
-  frame_type_name = val_to_str(frame.type, frame_type_names, "Unknown(%d)");
+  frame_type_name = val_to_str(pinfo->pool, frame.type, frame_type_names, "Unknown(%d)");
   col_append_sep_str(pinfo->cinfo, COL_INFO, ", ", frame_type_name);
 
   proto_item_append_text(spdy_tree, ": %s", frame_type_name);
 
   /* Add flags. */
-  frame.flags = tvb_get_guint8(tvb, offset);
+  frame.flags = tvb_get_uint8(tvb, offset);
   if (spdy_tree) {
     dissect_spdy_flags(tvb, offset, spdy_tree, &frame);
   }
@@ -1584,7 +1575,7 @@ static int dissect_spdy_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
   /*
    * Make sure there's as much data as the frame header says there is.
    */
-  if ((guint)tvb_reported_length_remaining(tvb, offset) < frame.length) {
+  if ((unsigned)tvb_reported_length_remaining(tvb, offset) < frame.length) {
     expert_add_info_format(pinfo, tree, &ei_spdy_mal_frame_data,
                            "Not enough frame data: %d vs. %d",
                            frame.length, tvb_reported_length_remaining(tvb, offset));
@@ -1651,10 +1642,10 @@ static int dissect_spdy_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
   return 8 + frame.length;
 }
 
-static guint get_spdy_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+static unsigned get_spdy_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                                   int offset, void *data _U_)
 {
-  return (guint)tvb_get_ntoh24(tvb, offset + 5) + 8;
+  return (unsigned)tvb_get_ntoh24(tvb, offset + 5) + 8;
 }
 
 /*
@@ -1664,7 +1655,7 @@ static int dissect_spdy(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 {
   col_clear(pinfo->cinfo, COL_INFO);
 
-  tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 8, get_spdy_message_len, dissect_spdy_frame, data);
+  tcp_dissect_pdus(tvb, pinfo, tree, true, 8, get_spdy_message_len, dissect_spdy_frame, data);
   return tvb_captured_length(tvb);
 }
 
@@ -1672,7 +1663,7 @@ static int dissect_spdy(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
  * Looks for SPDY frame at tvb start.
  * If not enough data for either, requests more via desegment struct.
  */
-static gboolean dissect_spdy_heur(tvbuff_t *tvb,
+static bool dissect_spdy_heur(tvbuff_t *tvb,
                                   packet_info *pinfo,
                                   proto_tree *tree,
                                    void *data _U_)
@@ -1685,17 +1676,17 @@ static gboolean dissect_spdy_heur(tvbuff_t *tvb,
    * byte, but this is a pretty reliable heuristic for
    * now.)
    */
-  guint8 first_byte = tvb_get_guint8(tvb, 0);
+  uint8_t first_byte = tvb_get_uint8(tvb, 0);
   if (first_byte != 0x80 && first_byte != 0x0) {
-    return FALSE;
+    return false;
   }
 
   /* Attempt dissection. */
   if (dissect_spdy(tvb, pinfo, tree, NULL) != 0) {
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 /*
@@ -1713,7 +1704,7 @@ void proto_register_spdy(void)
     { &hf_spdy_control_bit,
       { "Control frame",    "spdy.control_bit",
         FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x8000,
-        "TRUE if SPDY control frame", HFILL
+        "true if SPDY control frame", HFILL
       }
     },
     { &hf_spdy_version,
@@ -1743,7 +1734,7 @@ void proto_register_spdy(void)
       }
     },
     { &hf_spdy_flags_unidirectional,
-      { "Unidirectional", "spdy.flags.fin",
+      { "Unidirectional", "spdy.flags.unidirectional",
         FT_BOOLEAN, 8,
         TFS(&tfs_set_notset), SPDY_FLAG_UNIDIRECTIONAL,
         NULL, HFILL
@@ -1827,7 +1818,7 @@ void proto_register_spdy(void)
     { &hf_spdy_slot,
       { "Slot",       "spdy.slot",
           FT_UINT16, BASE_DEC, NULL, 0x00FF,
-          "Specifying the index in the server's CREDENTIAL vector of the client certificate to be used for this reques", HFILL
+          "Specifying the index in the server's CREDENTIAL vector of the client certificate to be used for this request", HFILL
       }
     },
     { &hf_spdy_num_headers,
@@ -1868,7 +1859,7 @@ void proto_register_spdy(void)
     },
     { &hf_spdy_ping_id,
       { "Ping ID",        "spdy.ping_id",
-          FT_UINT24, BASE_DEC, NULL, 0x0,
+          FT_UINT32, BASE_DEC, NULL, 0x0,
           NULL, HFILL
       }
     },
@@ -1891,7 +1882,7 @@ void proto_register_spdy(void)
       }
     },
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_spdy,
     &ett_spdy_flags,
     &ett_spdy_header_block,
@@ -1949,9 +1940,10 @@ void proto_register_spdy(void)
 
 void proto_reg_handoff_spdy(void) {
 
-  dissector_add_uint("tcp.port", TCP_PORT_SPDY, spdy_handle);
-  /* Use "0" to avoid overwriting HTTPS port and still offer support over SSL */
+  dissector_add_uint_with_preference("tcp.port", TCP_PORT_SPDY, spdy_handle);
+  /* Use "0" to avoid overwriting HTTPS port and still offer support over TLS */
   ssl_dissector_add(0, spdy_handle);
+  dissector_add_string("http.upgrade", "spdy", spdy_handle);
 
   media_handle = find_dissector_add_dependency("media", proto_spdy);
   port_subdissector_table = find_dissector_table("http.port");

@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,6 +25,7 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "gdbusprivate.h"
 #include "gdbus-tests.h"
 
 /* all tests rely on a shared mainloop */
@@ -49,7 +52,7 @@ static const TestData cases[] = {
       { "true",     NULL,     EXPLICITLY_TRUE,  REMOTE },
       { "false",    NULL,     EXPLICITLY_FALSE, REMOTE },
       { "we-close", "662100", EXPLICITLY_TRUE,  LOCAL  },
-      { NULL }
+      { NULL, NULL, 0, 0 }
 };
 
 static gboolean
@@ -57,7 +60,7 @@ quit_later_cb (gpointer data G_GNUC_UNUSED)
 {
   g_main_loop_quit (loop);
 
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 static void
@@ -135,9 +138,9 @@ test_exit_on_close_subprocess (gconstpointer test_data)
       GVariant *v;
       GError *error = NULL;
 
-      v = g_dbus_connection_call_sync (c, "org.freedesktop.DBus",
-                                       "/org/freedesktop/DBus",
-                                       "org.freedesktop.DBus",
+      v = g_dbus_connection_call_sync (c, DBUS_SERVICE_DBUS,
+                                       DBUS_PATH_DBUS,
+                                       DBUS_INTERFACE_DBUS,
                                        "ListNames",
                                        NULL,
                                        G_VARIANT_TYPE ("(as)"),
@@ -199,7 +202,7 @@ main (int   argc,
 {
   gint i;
 
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
   for (i = 0; cases[i].name != NULL; i++)
     {

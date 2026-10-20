@@ -1,0 +1,32 @@
+#!/bin/sh
+# Compile a Go program.
+
+# Copyright (C) 2025-2026 Free Software Foundation, Inc.
+# Written by Bruno Haible <haible@clisp.cons.org>, 2025.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Usage: /bin/sh gocomp.sh [OPTION] SOURCE.go ...
+#
+# Limitation: Go programs that make use of the C to Go interface ('cgo') are
+# unsupported.
+
+# Avoid error "CC environment variable is relative; must be absolute path"
+# on native Windows. Cf.
+# <https://github.com/golang/go/commit/aa161e799df7e1eba99d2be10271e76b6f758142>
+unset CC
+unset CXX
+
+test -z "$GO_VERBOSE" || echo "@GO@ build @GOCOMPFLAGS@ $@"
+exec @GO@ build @GOCOMPFLAGS@ "$@"

@@ -8,19 +8,7 @@
  *
  * Copied from packet-sscop.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,9 +18,9 @@
 void proto_register_sscf(void);
 void proto_reg_handoff_sscf(void);
 
-static int proto_sscf = -1;
+static int proto_sscf;
 
-static gint ett_sscf = -1;
+static int ett_sscf;
 
 static dissector_handle_t mtp3_handle;
 
@@ -42,8 +30,8 @@ static dissector_handle_t mtp3_handle;
 #define SSCF_SPARE_OFFSET 0
 #define SSCF_SPARE_LENGTH 3
 
-static int hf_status = -1;
-static int hf_spare = -1;
+static int hf_status;
+static int hf_spare;
 
 #define SSCF_STATUS_OOS 0x01
 #define SSCF_STATUS_PO  0x02
@@ -71,10 +59,10 @@ static const value_string sscf_status_vals[] = {
 static int
 dissect_sscf_nni(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  guint reported_length;
+  unsigned reported_length;
   proto_item *sscf_item = NULL;
   proto_tree *sscf_tree = NULL;
-  guint8 sscf_status;
+  uint8_t sscf_status;
 
   reported_length = tvb_reported_length(tvb);  /* frame length */
 
@@ -89,7 +77,7 @@ dissect_sscf_nni(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 
   } else {
 
-    sscf_status = tvb_get_guint8(tvb, SSCF_STATUS_OFFSET);
+    sscf_status = tvb_get_uint8(tvb, SSCF_STATUS_OFFSET);
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "SSCF-NNI");
     col_add_fstr(pinfo->cinfo, COL_INFO, "STATUS (%s) ",
@@ -115,7 +103,7 @@ proto_register_sscf(void)
                    NULL, 0x0, NULL, HFILL} }
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_sscf,
   };
 
@@ -135,7 +123,7 @@ proto_reg_handoff_sscf(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

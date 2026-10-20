@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_CELL_BROADCAST_H
@@ -34,7 +22,7 @@
  *
  * @return the offset after the Message Identifier
  */
-guint dissect_cbs_message_identifier(tvbuff_t *tvb, proto_tree *tree, guint offset);
+unsigned dissect_cbs_message_identifier(tvbuff_t *tvb, proto_tree *tree, unsigned offset);
 
 
 /**
@@ -46,7 +34,7 @@ guint dissect_cbs_message_identifier(tvbuff_t *tvb, proto_tree *tree, guint offs
  *
  * @return the offset after the Serial Number
  */
-guint dissect_cbs_serial_number(tvbuff_t *tvb, proto_tree *tree, guint offset);
+unsigned dissect_cbs_serial_number(tvbuff_t *tvb, proto_tree *tree, unsigned offset);
 
 
 /**
@@ -62,6 +50,6 @@ int dissect_umts_cell_broadcast_message(tvbuff_t *tvb, packet_info *pinfo, proto
 /**
  * Dissects CB Data
  */
-tvbuff_t * dissect_cbs_data(guint8 sms_encoding, tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint offset);
+tvbuff_t * dissect_cbs_data(uint8_t sms_encoding, tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned offset);
 
 #endif /* PACKET_CELL_BROADCAST_H */

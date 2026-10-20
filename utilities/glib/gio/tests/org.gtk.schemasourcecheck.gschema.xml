@@ -1,7 +1,8 @@
 <schemalist>
-  <schema id="org.gtk.schemasourcecheck" path="/tests/">
+  <schema id="org.gtk.schemasourcecheck">
     <key name="enabled" type="b">
       <default>true</default>
     </key>
+    <child name="child" schema="org.gtk.schemasourcecheck" />
   </schema>
 </schemalist>

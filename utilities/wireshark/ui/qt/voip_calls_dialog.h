@@ -1,22 +1,10 @@
-/* voip_calls_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef VOIP_CALLS_DIALOG_H
@@ -24,18 +12,23 @@
 
 #include <config.h>
 
-#include <glib.h>
+#include <mutex>
+
+#include "cfile.h"
 
 #include "ui/voip_calls.h"
+#include "ui/rtp_stream.h"
+#include "ui/rtp_stream_id.h"
 
+#include <ui/qt/models/voip_calls_info_model.h>
+#include <ui/qt/models/cache_proxy_model.h>
+#include "ui/rtp_stream_id.h"
 #include "wireshark_dialog.h"
 
 #include <QMenu>
-
-struct _capture_file;
-
-class QAbstractButton;
-class QTreeWidgetItem;
+#include <QAbstractButton>
+#include <QPushButton>
+#include <QToolButton>
 
 class SequenceInfo;
 
@@ -43,76 +36,107 @@ namespace Ui {
 class VoipCallsDialog;
 }
 
-class QTreeWidgetItem;
+// Singleton by https://refactoring.guru/design-patterns/singleton/cpp/example#example-1
 class VoipCallsDialog : public WiresharkDialog
 {
     Q_OBJECT
 
 public:
-    explicit VoipCallsDialog(QWidget &parent, CaptureFile &cf, bool all_flows = false);
-    ~VoipCallsDialog();
+    /**
+     * Returns singleton
+     */
+    static VoipCallsDialog *openVoipCallsDialogVoip(QWidget &parent, CaptureFile &cf, QObject *packet_list);
+    static VoipCallsDialog *openVoipCallsDialogSip(QWidget &parent, CaptureFile &cf, QObject *packet_list);
 
-public slots:
-    void endRetapPackets();
+    /**
+     * Should not be clonnable and assignable
+     */
+    VoipCallsDialog(VoipCallsDialog &other) = delete;
+    void operator=(const VoipCallsDialog &) = delete;
 
 signals:
     void updateFilter(QString filter, bool force = false);
-    void captureFileChanged(struct _capture_file *cf);
+    void captureFileChanged(capture_file *cf);
     void goToPacket(int packet_num);
+    void rtpPlayerDialogReplaceRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void rtpPlayerDialogAddRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void rtpPlayerDialogRemoveRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void rtpStreamsDialogSelectRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void rtpStreamsDialogDeselectRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+
+public slots:
+    void rtpPlayerReplace();
+    void rtpPlayerAdd();
+    void rtpPlayerRemove();
 
 protected:
+    explicit VoipCallsDialog(QWidget &parent, CaptureFile &cf, bool all_flows = false);
+    ~VoipCallsDialog();
+
     void contextMenuEvent(QContextMenuEvent *event);
+    virtual void removeTapListeners();
+    void captureFileClosing();
+    void captureFileClosed();
+    bool eventFilter(QObject *obj, QEvent *event);
 
 protected slots:
     void changeEvent(QEvent* event);
 
 private:
+    // We have two singletones - one for all protocols, one for sip protocol
+    static VoipCallsDialog *pinstance_voip_;
+    static VoipCallsDialog *pinstance_sip_;
+    bool all_flows_;
+    static std::mutex init_mutex_;
+
     Ui::VoipCallsDialog *ui;
+    VoipCallsInfoModel *call_infos_model_;
+    CacheProxyModel *cache_model_;
+    QSortFilterProxyModel *sorted_model_;
 
     QWidget &parent_;
     voip_calls_tapinfo_t tapinfo_;
     SequenceInfo *sequence_info_;
     QPushButton *prepare_button_;
     QPushButton *sequence_button_;
-    QPushButton *player_button_;
+    QToolButton *player_button_;
     QPushButton *copy_button_;
-    QMenu ctx_menu_;
+    bool voip_calls_tap_listeners_removed_;
+    GQueue* shown_callsinfos_; /* queue with all shown calls (voip_calls_info_t) */
 
     // Tap callbacks
-//    static void tapReset(void *tapinfo_ptr);
-    static gboolean tapPacket(void *tapinfo_ptr, packet_info *pinfo, epan_dissect_t *, const void *data);
+    static void tapReset(void *tapinfo_ptr);
+    static tap_packet_status tapPacket(void *tapinfo_ptr, packet_info *pinfo, epan_dissect_t *, const void *data, tap_flags_t flags);
     static void tapDraw(void *tapinfo_ptr);
+    static int compareCallNums(const void *a, const void *b);
 
     void updateCalls();
-    void updateWidgets();
     void prepareFilter();
     void showSequence();
     void showPlayer();
+    void removeAllCalls();
+    void invertSelection();
 
     QList<QVariant> streamRowData(int row) const;
+    QVector<rtpstream_id_t *>getSelectedRtpIds();
 
 private slots:
-    void captureFileClosing();
-    void on_callTreeWidget_itemActivated(QTreeWidgetItem *item, int);
-    void on_callTreeWidget_itemSelectionChanged();
-    void on_actionSelect_All_triggered();
-    void on_actionCopyAsCsv_triggered();
-    void on_actionCopyAsYaml_triggered();
+    void selectAll();
+    void selectNone();
+    void copyAsCSV();
+    void copyAsYAML();
+    void switchTimeOfDay();
+    void on_callTreeView_activated(const QModelIndex &index);
     void on_buttonBox_clicked(QAbstractButton *button);
     void on_buttonBox_helpRequested();
+    void updateWidgets();
+    void captureEvent(CaptureEvent e);
+    void displayFilterCheckBoxToggled(bool checked);
+    void on_actionSelectAll_triggered();
+    void on_actionSelectInvert_triggered();
+    void on_actionSelectNone_triggered();
+    void on_actionSelectRtpStreams_triggered();
+    void on_actionDeselectRtpStreams_triggered();
 };
 
 #endif // VOIP_CALLS_DIALOG_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

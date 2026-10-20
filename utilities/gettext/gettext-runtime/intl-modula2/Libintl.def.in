@@ -1,0 +1,68 @@
+(* High-level Modula-2 binding to the GNU libintl library.
+   Copyright (C) 2025-2026 Free Software Foundation, Inc.
+
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
+
+   This file is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  *)
+
+(* Written by Bruno Haible.  *)
+
+DEFINITION MODULE Libintl;
+
+FROM DynamicStrings IMPORT String;
+
+(* The values of these constants are platform-dependent. *)
+CONST LC_ALL = @VALUE_OF_LC_ALL@;
+      LC_CTYPE = @VALUE_OF_LC_CTYPE@;
+      LC_NUMERIC = @VALUE_OF_LC_NUMERIC@;
+      LC_TIME = @VALUE_OF_LC_TIME@;
+      LC_COLLATE = @VALUE_OF_LC_COLLATE@;
+      LC_MONETARY = @VALUE_OF_LC_MONETARY@;
+      LC_MESSAGES = @VALUE_OF_LC_MESSAGES@;
+
+(* const char *setlocale (int category, const char *locale); *)
+PROCEDURE SetLocale (category: INTEGER; locale: ARRAY OF CHAR);
+
+(* The *Gettext procedures return a 'String', not an 'ARRAY OF CHAR', because
+   working with 'ARRAY OF CHAR'
+     - is clumsy (manual code for copying such arrays in many places),
+     - is inefficient (copying such arrays takes time),
+     - introduces arbitrary limits on the length of such arrays. *)
+
+(* const char *gettext (const char *msgid); *)
+PROCEDURE Gettext (msgid: ARRAY OF CHAR) : String;
+
+(* const char *dgettext (const char *domainname, const char *msgid); *)
+PROCEDURE DGettext (domainname: ARRAY OF CHAR; msgid: ARRAY OF CHAR) : String;
+
+(* const char *dcgettext (const char *domainname, const char *msgid, int category); *)
+PROCEDURE DCGettext (domainname: ARRAY OF CHAR; msgid: ARRAY OF CHAR; category: INTEGER) : String;
+
+(* const char *ngettext (const char *msgid, const char *msgid_plural, unsigned long n); *)
+PROCEDURE NGettext (msgid: ARRAY OF CHAR; msgid_plural: ARRAY OF CHAR; n: CARDINAL) : String;
+
+(* const char *dngettext (const char *domainname, const char *msgid, const char *msgid_plural, unsigned long n); *)
+PROCEDURE DNGettext (domainname: ARRAY OF CHAR; msgid: ARRAY OF CHAR; msgid_plural: ARRAY OF CHAR; n: CARDINAL) : String;
+
+(* const char *dcngettext (const char *domainname, const char *msgid, const char *msgid_plural, unsigned long n, int category); *)
+PROCEDURE DCNGettext (domainname: ARRAY OF CHAR; msgid: ARRAY OF CHAR; msgid_plural: ARRAY OF CHAR; n: CARDINAL; category: INTEGER) : String;
+
+(* const char *textdomain (const char *domainname); *)
+PROCEDURE TextDomain (domainname: ARRAY OF CHAR);
+
+(* const char *bindtextdomain (const char *domainname, const char *dirname); *)
+PROCEDURE BindTextDomain (domainname: ARRAY OF CHAR; dirname: ARRAY OF CHAR);
+
+(* const char *bind_textdomain_codeset (const char *domainname, const char *codeset); *)
+PROCEDURE BindTextDomainCodeset (domainname: ARRAY OF CHAR; codeset: ARRAY OF CHAR);
+
+END Libintl.

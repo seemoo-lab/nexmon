@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +27,7 @@
 #undef G_DISABLE_ASSERT
 #undef G_LOG_DOMAIN
 
+#include <locale.h>
 #include <string.h>
 
 #include <glib.h>
@@ -33,8 +36,8 @@
 static void
 test_iconv_state (void)
 {
-  gchar *in = "\xf4\xe5\xf8\xe5\xed";
-  gchar *expected = "\xd7\xa4\xd7\x95\xd7\xa8\xd7\x95\xd7\x9d";
+  const gchar *in = "\xf4\xe5\xf8\xe5\xed";
+  const gchar *expected = "\xd7\xa4\xd7\x95\xd7\xa8\xd7\x95\xd7\x9d";
   gchar *out;
   gsize bytes_read = 0;
   gsize bytes_written = 0;
@@ -53,17 +56,19 @@ test_iconv_state (void)
   g_free (out);
 }
 
-/* some tests involving "vulgar fraction one half" */
+/* Some tests involving "vulgar fraction one half" (U+00BD). This is
+ * represented in UTF-8 as \xC2\xBD, in ISO-8859-1 as \xBD, and is not
+ * represented in ISO-8859-15. */
 static void 
 test_one_half (void)
 {
-  gchar *in = "\xc2\xbd";
+  const gchar *in_utf8 = "\xc2\xbd";
   gchar *out;
   gsize bytes_read = 0;
   gsize bytes_written = 0;
   GError *error = NULL;  
 
-  out = g_convert (in, -1, 
+  out = g_convert (in_utf8, -1,
 		   "ISO-8859-1", "UTF-8",
 		   &bytes_read, &bytes_written,
 		   &error);
@@ -74,7 +79,7 @@ test_one_half (void)
   g_assert_cmpstr (out, ==, "\xbd");
   g_free (out);
 
-  out = g_convert (in, -1, 
+  out = g_convert (in_utf8, -1,
 		   "ISO-8859-15", "UTF-8",
 		   &bytes_read, &bytes_written,
 		   &error);
@@ -86,7 +91,7 @@ test_one_half (void)
   g_clear_error (&error);
   g_free (out);
 
-  out = g_convert_with_fallback (in, -1, 
+  out = g_convert_with_fallback (in_utf8, -1,
 				 "ISO8859-15", "UTF-8",
 				 "a",
 				 &bytes_read, &bytes_written,
@@ -104,7 +109,7 @@ test_byte_order (void)
 {
   gchar in_be[4] = { 0xfe, 0xff, 0x03, 0x93}; /* capital gamma */
   gchar in_le[4] = { 0xff, 0xfe, 0x93, 0x03};
-  gchar *expected = "\xce\x93";
+  const gchar *expected = "\xce\x93";
   gchar *out;
   gsize bytes_read = 0;
   gsize bytes_written = 0;
@@ -135,7 +140,7 @@ test_byte_order (void)
 
 static void
 check_utf8_to_ucs4 (const char     *utf8,
-		    glong           utf8_len,
+		    gsize           utf8_len,
 		    const gunichar *ucs4,
 		    glong           ucs4_len,
 		    glong           error_pos)
@@ -168,7 +173,7 @@ check_utf8_to_ucs4 (const char     *utf8,
       error2 = NULL;
       result2 = g_utf8_to_ucs4 (utf8, -1, &items_read2, &items_written2, &error2);
       g_assert (error || items_read2 == items_read);
-      g_assert (error || items_written2 == items_written2);
+      g_assert (error || items_written2 == items_written);
       g_assert_cmpint (!!result, ==, !!result2);
       g_assert_cmpint (!!error, ==, !!error2);
       if (result)
@@ -289,7 +294,7 @@ check_ucs4_to_utf8 (const gunichar *ucs4,
 
 static void
 check_utf8_to_utf16 (const char      *utf8,
-		     glong            utf8_len,
+		     gsize            utf8_len,
 		     const gunichar2 *utf16,
 		     glong            utf16_len,
 		     glong            error_pos)
@@ -309,7 +314,7 @@ check_utf8_to_utf16 (const char      *utf8,
       error2 = NULL;
       result2 = g_utf8_to_utf16 (utf8, -1, &items_read2, &items_written2, &error2);
       g_assert (error || items_read2 == items_read);
-      g_assert (error || items_written2 == items_written2);
+      g_assert (error || items_written2 == items_written);
       g_assert_cmpint (!!result, ==, !!result2);
       g_assert_cmpint (!!error, ==, !!error2);
       if (result)
@@ -526,7 +531,7 @@ check_utf16_to_ucs4 (const gunichar2 *utf16,
       error2 = NULL;
       result2 = g_utf16_to_ucs4 (utf16, -1, &items_read2, &items_written2, &error2);
       g_assert (error || items_read2 == items_read);
-      g_assert (error || items_written2 == items_written2);
+      g_assert (error || items_written2 == items_written);
       g_assert_cmpint (!!result, ==, !!result2);
       g_assert_cmpint (!!error, ==, !!error2);
       if (result)
@@ -585,7 +590,7 @@ check_utf16_to_ucs4 (const gunichar2 *utf16,
 static void
 test_unicode_conversions (void)
 {
-  char *utf8;
+  const char *utf8;
   gunichar ucs4[100];
   gunichar2 utf16[100];
 
@@ -683,10 +688,254 @@ test_filename_display (void)
   g_free (display);
 }
 
+/* g_convert() should accept and produce text buffers with embedded
+ * nul bytes/characters.
+ */
+static void
+test_convert_embedded_nul (void)
+{
+  gchar *res;
+  gsize bytes_read, bytes_written;
+  GError *error = NULL;
+
+  res = g_convert ("ab\0\xf6", 4, "UTF-8", "ISO-8859-1",
+                   &bytes_read, &bytes_written, &error);
+  g_assert_no_error (error);
+  g_assert_cmpuint (bytes_read, ==, 4);
+  g_assert_cmpmem (res, bytes_written, "ab\0\xc3\xb6", 5);
+  g_free (res);
+}
+
+static void
+test_locale_to_utf8_embedded_nul (void)
+{
+  g_test_trap_subprocess ("/conversion/locale-to-utf8/embedded-nul/subprocess/utf8",
+                          0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+  g_test_trap_subprocess ("/conversion/locale-to-utf8/embedded-nul/subprocess/iconv",
+                          0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+}
+
+/* Test that embedded nul characters in UTF-8 input to g_locale_to_utf8()
+ * result in an error.
+ */
+static void
+test_locale_to_utf8_embedded_nul_utf8 (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  setlocale (LC_ALL, "");
+  g_setenv ("CHARSET", "UTF-8", TRUE);
+  g_assert_true (g_get_charset (NULL));
+
+  res = g_locale_to_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+/* Test that embedded nul characters in output of g_locale_to_utf8(),
+ * when converted from non-UTF8 input, result in an error.
+ */
+static void
+test_locale_to_utf8_embedded_nul_iconv (void)
+{
+  gchar *res;
+  GError *error = NULL;
+
+  setlocale (LC_ALL, "C");
+  g_setenv ("CHARSET", "US-ASCII", TRUE);
+  g_assert_false (g_get_charset (NULL));
+
+  res = g_locale_to_utf8 ("ab\0c", 4, NULL, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_EMBEDDED_NUL);
+  g_error_free (error);
+}
+
+static void
+test_locale_from_utf8_embedded_nul (void)
+{
+  g_test_trap_subprocess ("/conversion/locale-from-utf8/embedded-nul/subprocess/utf8",
+                          0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+  g_test_trap_subprocess ("/conversion/locale-from-utf8/embedded-nul/subprocess/iconv",
+                          0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+}
+
+/* Test that embedded nul characters in input to g_locale_from_utf8(),
+ * when converting (copying) to UTF-8 output, result in an error.
+ */
+static void
+test_locale_from_utf8_embedded_nul_utf8 (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  setlocale (LC_ALL, "");
+  g_setenv ("CHARSET", "UTF-8", TRUE);
+  g_assert_true (g_get_charset (NULL));
+
+  res = g_locale_from_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+/* Test that embedded nul characters in input to g_locale_from_utf8(),
+ * when converting to non-UTF-8 output, result in an error.
+ */
+static void
+test_locale_from_utf8_embedded_nul_iconv (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  setlocale (LC_ALL, "C");
+  g_setenv ("CHARSET", "US-ASCII", TRUE);
+  g_assert_false (g_get_charset (NULL));
+
+  res = g_locale_from_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+static void
+test_filename_to_utf8_embedded_nul (void)
+{
+  g_test_trap_subprocess ("/conversion/filename-to-utf8/embedded-nul/subprocess/utf8",
+                          0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+  g_test_trap_subprocess ("/conversion/filename-to-utf8/embedded-nul/subprocess/iconv",
+                          0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+}
+
+/* Test that embedded nul characters in UTF-8 input to g_filename_to_utf8()
+ * result in an error.
+ */
+static void
+test_filename_to_utf8_embedded_nul_utf8 (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+#ifndef G_OS_WIN32
+  /* G_FILENAME_ENCODING has no effect on Windows for g_get_filename_charsets() */
+  g_setenv ("G_FILENAME_ENCODING", "UTF-8", TRUE);
+  g_assert_true (g_get_filename_charsets (NULL));
+#endif
+
+  res = g_filename_to_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+/* Test that embedded nul characters in non-UTF-8 input of g_filename_to_utf8()
+ * result in an error.
+ */
+static void
+test_filename_to_utf8_embedded_nul_iconv (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+#ifndef G_OS_WIN32
+  /* G_FILENAME_ENCODING has no effect on Windows for g_get_filename_charsets() */
+  g_setenv ("G_FILENAME_ENCODING", "US-ASCII", TRUE);
+  g_assert_false (g_get_filename_charsets (NULL));
+#endif
+
+  res = g_filename_to_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+static void
+test_filename_from_utf8_embedded_nul (void)
+{
+  g_test_trap_subprocess ("/conversion/filename-from-utf8/embedded-nul/subprocess/utf8",
+                          0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+  g_test_trap_subprocess ("/conversion/filename-from-utf8/embedded-nul/subprocess/iconv",
+                          0, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
+}
+
+/* Test that embedded nul characters in input to g_filename_from_utf8(),
+ * when converting (copying) to UTF-8 output, result in an error.
+ */
+static void
+test_filename_from_utf8_embedded_nul_utf8 (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+#ifndef G_OS_WIN32
+  /* G_FILENAME_ENCODING has no effect on Windows for g_get_filename_charsets() */
+  g_setenv ("G_FILENAME_ENCODING", "UTF-8", TRUE);
+  g_assert_true (g_get_filename_charsets (NULL));
+#endif
+
+  res = g_filename_from_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+/* Test that embedded nul characters in input to g_filename_from_utf8(),
+ * when converting to non-UTF-8 output, result in an error.
+ */
+static void
+test_filename_from_utf8_embedded_nul_iconv (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+#ifndef G_OS_WIN32
+  /* G_FILENAME_ENCODING has no effect on Windows for g_get_filename_charsets() */
+  g_setenv ("G_FILENAME_ENCODING", "US-ASCII", TRUE);
+  g_assert_false (g_get_filename_charsets (NULL));
+#endif
+
+  res = g_filename_from_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
 static void
 test_no_conv (void)
 {
-  gchar *in = "";
+  const gchar *in = "";
   gchar *out G_GNUC_UNUSED;
   gsize bytes_read = 0;
   gsize bytes_written = 0;
@@ -698,6 +947,45 @@ test_no_conv (void)
   /* error code is unreliable, since we mishandle errno there */
   g_assert (error && error->domain == G_CONVERT_ERROR);
   g_error_free (error);
+}
+
+static void
+test_filename_from_uri_helper (const gchar *uri,
+			       const gchar *expected_filename)
+{
+  gchar *filename;
+  gchar *expected_platform_filename;
+  GError *error = NULL;
+
+  expected_platform_filename = g_strdup (expected_filename);
+#ifdef G_OS_WIN32
+  for (gchar *p = expected_platform_filename; *p; p++)
+    {
+      if (*p == '/')
+	*p = '\\';
+    }
+#endif
+
+  filename = g_filename_from_uri (uri, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_cmpstr (filename, ==, expected_platform_filename);
+  g_free (filename);
+  g_free (expected_platform_filename);
+}
+
+static void
+test_filename_from_uri_query_is_ignored (void)
+{
+  test_filename_from_uri_helper ("file:///tmp/foo?bar", "/tmp/foo");
+  test_filename_from_uri_helper ("file:///tmp/foo?bar#baz", "/tmp/foo");
+}
+
+static void
+test_filename_from_uri_fragment_is_ignored (void)
+{
+  test_filename_from_uri_helper ("file:///tmp/foo#bar", "/tmp/foo");
+  /* this doesn't have a query, only a bizarre anchor */
+  test_filename_from_uri_helper ("file:///tmp/foo#bar?baz", "/tmp/foo");
 }
 
 int
@@ -712,6 +1000,21 @@ main (int argc, char *argv[])
   g_test_add_func ("/conversion/unicode", test_unicode_conversions);
   g_test_add_func ("/conversion/filename-utf8", test_filename_utf8);
   g_test_add_func ("/conversion/filename-display", test_filename_display);
+  g_test_add_func ("/conversion/convert-embedded-nul", test_convert_embedded_nul);
+  g_test_add_func ("/conversion/locale-to-utf8/embedded-nul", test_locale_to_utf8_embedded_nul);
+  g_test_add_func ("/conversion/locale-to-utf8/embedded-nul/subprocess/utf8", test_locale_to_utf8_embedded_nul_utf8);
+  g_test_add_func ("/conversion/locale-to-utf8/embedded-nul/subprocess/iconv", test_locale_to_utf8_embedded_nul_iconv);
+  g_test_add_func ("/conversion/locale-from-utf8/embedded-nul", test_locale_from_utf8_embedded_nul);
+  g_test_add_func ("/conversion/locale-from-utf8/embedded-nul/subprocess/utf8", test_locale_from_utf8_embedded_nul_utf8);
+  g_test_add_func ("/conversion/locale-from-utf8/embedded-nul/subprocess/iconv", test_locale_from_utf8_embedded_nul_iconv);
+  g_test_add_func ("/conversion/filename-to-utf8/embedded-nul", test_filename_to_utf8_embedded_nul);
+  g_test_add_func ("/conversion/filename-to-utf8/embedded-nul/subprocess/utf8", test_filename_to_utf8_embedded_nul_utf8);
+  g_test_add_func ("/conversion/filename-to-utf8/embedded-nul/subprocess/iconv", test_filename_to_utf8_embedded_nul_iconv);
+  g_test_add_func ("/conversion/filename-from-utf8/embedded-nul", test_filename_from_utf8_embedded_nul);
+  g_test_add_func ("/conversion/filename-from-utf8/embedded-nul/subprocess/utf8", test_filename_from_utf8_embedded_nul_utf8);
+  g_test_add_func ("/conversion/filename-from-utf8/embedded-nul/subprocess/iconv", test_filename_from_utf8_embedded_nul_iconv);
+  g_test_add_func ("/conversion/filename-from-uri/query-is-ignored", test_filename_from_uri_query_is_ignored);
+  g_test_add_func ("/conversion/filename-from-uri/fragment-is-ignored", test_filename_from_uri_fragment_is_ignored);
 
   return g_test_run ();
 }

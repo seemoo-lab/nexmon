@@ -1,0 +1,83 @@
+This example implements a simple multithreaded web server.
+
+Platforms
+---------
+
+It supports systems with GNU libc.
+It may also work, with some adaptations:
+on Unix platforms (which have POSIX threads)
+other than NetBSD (which does not have uselocale() nor gettext_l).
+
+Dependencies
+------------
+
+It relies just on gettext-runtime (and libc, of course).
+
+Preparations
+------------
+
+To install the needed locales on glibc systems:
+
+$ sudo localedef -i af_ZA -f UTF-8 af_ZA.UTF-8
+$ sudo localedef -i ast_ES -f UTF-8 ast_ES.UTF-8
+$ sudo localedef -i bg_BG -f UTF-8 bg_BG.UTF-8
+$ sudo localedef -i ca_ES -f UTF-8 ca_ES.UTF-8
+$ sudo localedef -i cs_CZ -f UTF-8 cs_CZ.UTF-8
+$ sudo localedef -i da_DK -f UTF-8 da_DK.UTF-8
+$ sudo localedef -i de_DE -f UTF-8 de_DE.UTF-8
+$ sudo localedef -i el_GR -f UTF-8 el_GR.UTF-8
+$ sudo localedef -i en_US -f UTF-8 en_US.UTF-8
+$ sudo localedef -i eo    -f UTF-8 eo
+$ sudo localedef -i es_ES -f UTF-8 es_ES.UTF-8
+$ sudo localedef -i fi_FI -f UTF-8 fi_FI.UTF-8
+$ sudo localedef -i fr_FR -f UTF-8 fr_FR.UTF-8
+$ sudo localedef -i ga_IE -f UTF-8 ga_IE.UTF-8
+$ sudo localedef -i gl_ES -f UTF-8 gl_ES.UTF-8
+$ sudo localedef -i hr_HR -f UTF-8 hr_HR.UTF-8
+$ sudo localedef -i hu_HU -f UTF-8 hu_HU.UTF-8
+$ sudo localedef -i id_ID -f UTF-8 id_ID.UTF-8
+$ sudo localedef -i it_IT -f UTF-8 it_IT.UTF-8
+$ sudo localedef -i ja_JP -f UTF-8 ja_JP.UTF-8
+$ sudo localedef -i ka_GE -f UTF-8 ka_GE.UTF-8
+$ sudo localedef -i ky_KG -f UTF-8 ky_KG
+$ sudo localedef -i lv_LV -f UTF-8 lv_LV.UTF-8
+$ sudo localedef -i ms_MY -f UTF-8 ms_MY.UTF-8
+$ sudo localedef -i mt_MT -f UTF-8 mt_MT.UTF-8
+$ sudo localedef -i nb_NO -f UTF-8 nb_NO.UTF-8
+$ sudo localedef -i nl_NL -f UTF-8 nl_NL.UTF-8
+$ sudo localedef -i nn_NO -f UTF-8 nn_NO.UTF-8
+$ sudo localedef -i pl_PL -f UTF-8 pl_PL.UTF-8
+$ sudo localedef -i pt_PT -f UTF-8 pt_PT.UTF-8
+$ sudo localedef -i pt_BR -f UTF-8 pt_BR.UTF-8
+$ sudo localedef -i ro_RO -f UTF-8 ro_RO.UTF-8
+$ sudo localedef -i ru_RU -f UTF-8 ru_RU.UTF-8
+$ sudo localedef -i sk_SK -f UTF-8 sk_SK.UTF-8
+$ sudo localedef -i sl_SI -f UTF-8 sl_SI.UTF-8
+$ sudo localedef -i sq_AL -f UTF-8 sq_AL.UTF-8
+$ sudo localedef -i sr_RS -f UTF-8 sr_RS
+$ sudo localedef -i sv_SE -f UTF-8 sv_SE.UTF-8
+$ sudo localedef -i ta_IN -f UTF-8 ta_IN
+$ sudo localedef -i tr_TR -f UTF-8 tr_TR.UTF-8
+$ sudo localedef -i uk_UA -f UTF-8 uk_UA.UTF-8
+$ sudo localedef -i vi_VN -f UTF-8 vi_VN
+$ sudo localedef -i zh_CN -f UTF-8 zh_CN.UTF-8
+$ sudo localedef -i zh_HK -f UTF-8 zh_HK.UTF-8
+$ sudo localedef -i zh_TW -f UTF-8 zh_TW.UTF-8
+
+On Debian and Debian-based systems, if you want these locales to be
+persistent across automatic system updates, the approach is different:
+There, you need to enable the locales in the file /etc/locale.gen and
+then run
+$ sudo locale-gen
+
+Building
+--------
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRegRange" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRegRange</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRegRange_1a186b6342d483ea691785eb9a6d88605b" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int neg</definition>
+        <argsstring></argsstring>
+        <name>neg</name>
+        <qualifiedname>_xmlRegRange::neg</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="218" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="218" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegRange_1a32ff668be30ecb40c2caffb8df2b8107" prot="public" static="no" mutable="no">
+        <type>xmlRegAtomType</type>
+        <definition>xmlRegAtomType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlRegRange::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="219" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="219" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegRange_1a37722a150250e2a5a98e5e0d11e53449" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int start</definition>
+        <argsstring></argsstring>
+        <name>start</name>
+        <qualifiedname>_xmlRegRange::start</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="220" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="220" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegRange_1abce9f5dc9c83f2639b72024fdee5d388" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int end</definition>
+        <argsstring></argsstring>
+        <name>end</name>
+        <qualifiedname>_xmlRegRange::end</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="221" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="221" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegRange_1aea8a1bbbc335738f28aeedfacfb5ce2c" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* blockName</definition>
+        <argsstring></argsstring>
+        <name>blockName</name>
+        <qualifiedname>_xmlRegRange::blockName</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="222" column="13" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="222" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="217" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="217" bodyend="223"/>
+    <listofallmembers>
+      <member refid="struct__xmlRegRange_1aea8a1bbbc335738f28aeedfacfb5ce2c" prot="public" virt="non-virtual"><scope>_xmlRegRange</scope><name>blockName</name></member>
+      <member refid="struct__xmlRegRange_1abce9f5dc9c83f2639b72024fdee5d388" prot="public" virt="non-virtual"><scope>_xmlRegRange</scope><name>end</name></member>
+      <member refid="struct__xmlRegRange_1a186b6342d483ea691785eb9a6d88605b" prot="public" virt="non-virtual"><scope>_xmlRegRange</scope><name>neg</name></member>
+      <member refid="struct__xmlRegRange_1a37722a150250e2a5a98e5e0d11e53449" prot="public" virt="non-virtual"><scope>_xmlRegRange</scope><name>start</name></member>
+      <member refid="struct__xmlRegRange_1a32ff668be30ecb40c2caffb8df2b8107" prot="public" virt="non-virtual"><scope>_xmlRegRange</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

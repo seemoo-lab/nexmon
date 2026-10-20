@@ -3,7 +3,7 @@
 
 # Test --no-location and --omit-header options together.
 
-cat <<EOF > mcomm-test7.in1
+cat <<\EOF > mcomm-test7.in1
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -20,7 +20,7 @@ msgid "1"
 msgstr "1x"
 EOF
 
-cat <<EOF > mcomm-test7.in2
+cat <<\EOF > mcomm-test7.in2
 #: hunt.c:759
 msgid "2"
 msgstr "2x"

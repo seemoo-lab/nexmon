@@ -1,7 +1,5 @@
 /* GNU gettext - internationalization aids
-   Copyright (C) 1995-1998, 2000-2009, 2015-2016 Free Software Foundation, Inc.
-
-   This file was written by Peter Miller <millerp@canb.auug.org.au>
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,14 +12,16 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Peter Miller, Ulrich Drepper, and Bruno Haible.  */
 
 #ifndef _MESSAGE_H
 #define _MESSAGE_H
 
 #include "str-list.h"
 #include "pos.h"
-#include "hash.h"
+#include "mem-hash-map.h"
 
 #include <stdbool.h>
 
@@ -45,36 +45,46 @@ enum format_type
 {
   format_c,
   format_objc,
-  format_sh,
+  format_cplusplus_brace,
   format_python,
   format_python_brace,
+  format_java,
+  format_java_printf,
+  format_csharp,
+  format_javascript,
+  format_scheme,
   format_lisp,
   format_elisp,
   format_librep,
-  format_scheme,
-  format_smalltalk,
-  format_java,
-  format_csharp,
+  format_rust,
+  format_go,
+  format_ruby,
+  format_sh,
+  format_sh_printf,
   format_awk,
+  format_lua,
   format_pascal,
-  format_ycp,
+  format_modula2,
+  format_d,
+  format_ocaml,
+  format_smalltalk,
+  format_qt,
+  format_qt_plural,
+  format_kde,
+  format_kde_kuit,
+  format_boost,
   format_tcl,
   format_perl,
   format_perl_brace,
   format_php,
   format_gcc_internal,
   format_gfc_internal,
-  format_qt,
-  format_qt_plural,
-  format_kde,
-  format_kde_kuit,
-  format_boost,
-  format_lua,
-  format_javascript
+  format_ycp
 };
-#define NFORMATS 28     /* Number of format_type enum values.  */
-extern DLL_VARIABLE const char *const format_language[NFORMATS];
-extern DLL_VARIABLE const char *const format_language_pretty[NFORMATS];
+#define NFORMATS 37     /* Number of format_type enum values.  */
+extern LIBGETTEXTSRC_DLL_VARIABLE const char *const format_language[NFORMATS];
+extern LIBGETTEXTSRC_DLL_VARIABLE const char *const format_language_pretty[NFORMATS];
+extern LIBGETTEXTSRC_DLL_VARIABLE const char *const format_flag[NFORMATS];
 
 /* Is current msgid a format string?  */
 enum is_format
@@ -89,6 +99,9 @@ enum is_format
 
 extern bool
        possible_format_p (enum is_format);
+
+extern bool
+       not_format_p (enum is_format);
 
 
 /* Range of an unsigned integer argument.  */
@@ -115,16 +128,18 @@ enum is_wrap
 #endif
 
 
-/* Kinds of syntax checks which apply to strings.  */
+/* Kinds of syntax checks which apply to an msgid.  */
 enum syntax_check_type
 {
   sc_ellipsis_unicode,
   sc_space_ellipsis,
   sc_quote_unicode,
-  sc_bullet_unicode
+  sc_bullet_unicode,
+  sc_url,
+  sc_email
 };
-#define NSYNTAXCHECKS 4
-extern DLL_VARIABLE const char *const syntax_check_name[NSYNTAXCHECKS];
+#define NSYNTAXCHECKS 6
+extern LIBGETTEXTSRC_DLL_VARIABLE const char *const syntax_check_name[NSYNTAXCHECKS];
 
 /* Is current msgid subject to a syntax check?  */
 #if 0
@@ -200,7 +215,8 @@ struct message_ty
   /* Do we want the string to be wrapped in the emitted PO file?  */
   enum is_wrap do_wrap;
 
-  /* Do we want to apply extra syntax checks on the string?  */
+  /* Do we want to apply or inhibit extra syntax checks on the string?
+     This is only relevant within xgettext.  */
   enum is_syntax_check do_syntax_check[NSYNTAXCHECKS];
 
   /* The prev_msgctxt, prev_msgid and prev_msgid_plural strings appearing
@@ -238,7 +254,8 @@ extern void
 extern void
        message_comment_dot_append (message_ty *mp, const char *comment);
 extern void
-       message_comment_filepos (message_ty *mp, const char *name, size_t line);
+       message_comment_filepos (message_ty *mp,
+                                const char *file_name, size_t line_number);
 extern message_ty *
        message_copy (message_ty *mp);
 
@@ -286,7 +303,7 @@ extern bool
 extern message_list_ty *
        message_list_copy (message_list_ty *mlp, int copy_level);
 extern message_ty *
-       message_list_search (message_list_ty *mlp,
+       message_list_search (const message_list_ty *mlp,
                             const char *msgctxt, const char *msgid);
 /* Return the message in MLP which maximizes the fuzzy_search_goal_function.
    Only messages with a fuzzy_search_goal_function > FUZZY_THRESHOLD are

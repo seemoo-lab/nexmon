@@ -1,0 +1,130 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Python support: bytes and strings with hexadecimal escape sequences that
+# are invalid UTF-8.
+
+cat <<\EOF > xg-py-5-b.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "ŕ"
+msgstr ""
+EOF
+
+cat <<\EOF > xg-py-5-u.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "à"
+msgstr ""
+EOF
+
+: ${XGETTEXT=xgettext}
+: ${DIFF=diff}
+
+# With the encoding set to ISO-8859-2 on the command line:
+
+cat <<\EOF > xg-py-5-b1.py
+_(b"\xE0")
+EOF
+
+${XGETTEXT} --no-location -o xg-py-5-b1.tmp --from-code=iso-8859-2 xg-py-5-b1.py 2>xg-py-5-b1.err
+test $? = 0 || { cat xg-py-5-b1.err; Exit 1; }
+func_filter_POT_Creation_Date xg-py-5-b1.tmp xg-py-5-b1.pot
+
+${DIFF} xg-py-5-b.ok xg-py-5-b1.pot || Exit 1
+
+# With the encoding set to ISO-8859-2 inside the source file:
+
+cat <<\EOF > xg-py-5-b2.py
+# -*- coding: iso-8859-2 -*-
+_(b"\xE0")
+EOF
+
+${XGETTEXT} --no-location -o xg-py-5-b2.tmp xg-py-5-b2.py 2>xg-py-5-b2.err
+test $? = 0 || { cat xg-py-5-b2.err; Exit 1; }
+func_filter_POT_Creation_Date xg-py-5-b2.tmp xg-py-5-b2.pot
+
+${DIFF} xg-py-5-b.ok xg-py-5-b2.pot || Exit 1
+
+# With the encoding being UTF-8 by default:
+
+cat <<\EOF > xg-py-5-b3.py
+_(b"\xE0")
+EOF
+
+LANGUAGE= LC_ALL=C ${XGETTEXT} --no-location -o xg-py-5-b3.tmp xg-py-5-b3.py 2>xg-py-5-b3.err
+result=$?
+cat xg-py-5-b3.err
+test $result = 1 || Exit 1
+grep 'is not UTF-8 encoded' xg-py-5-b3.err >/dev/null || Exit 1
+
+# With the encoding set to ISO-8859-1 on the command line:
+
+cat <<\EOF > xg-py-5-u1.py
+_("\xE0")
+EOF
+
+${XGETTEXT} --no-location -o xg-py-5-u1.tmp --from-code=iso-8859-2 xg-py-5-u1.py 2>xg-py-5-u1.err
+test $? = 0 || { cat xg-py-5-u1.err; Exit 1; }
+func_filter_POT_Creation_Date xg-py-5-u1.tmp xg-py-5-u1.pot
+
+${DIFF} xg-py-5-u.ok xg-py-5-u1.pot || Exit 1
+
+# With the encoding set to ISO-8859-1 inside the source file:
+
+cat <<\EOF > xg-py-5-u2.py
+# -*- coding: iso-8859-1 -*-
+_("\xE0")
+EOF
+
+${XGETTEXT} --no-location -o xg-py-5-u2.tmp xg-py-5-u2.py 2>xg-py-5-u2.err
+test $? = 0 || { cat xg-py-5-u2.err; Exit 1; }
+func_filter_POT_Creation_Date xg-py-5-u2.tmp xg-py-5-u2.pot
+
+${DIFF} xg-py-5-u.ok xg-py-5-u2.pot || Exit 1
+
+# With the encoding being UTF-8 by default:
+
+cat <<\EOF > xg-py-5-u3.py
+_("\xE0")
+EOF
+
+${XGETTEXT} --no-location -o xg-py-5-u3.tmp xg-py-5-u3.py 2>xg-py-5-u3.err
+test $? = 0 || { cat xg-py-5-u3.err; Exit 1; }
+func_filter_POT_Creation_Date xg-py-5-u3.tmp xg-py-5-u3.pot
+
+${DIFF} xg-py-5-u.ok xg-py-5-u3.pot || Exit 1
+
+exit 0

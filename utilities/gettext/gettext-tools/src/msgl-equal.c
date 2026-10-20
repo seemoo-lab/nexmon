@@ -1,7 +1,5 @@
 /* Message list test for equality.
-   Copyright (C) 2001-2002, 2005-2006, 2008, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,12 +12,12 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
 
 /* Specification.  */
 #include "msgl-equal.h"
@@ -42,12 +40,11 @@ msgstr_equal_ignoring_potcdate (const char *msgstr1, size_t msgstr1_len,
 {
   const char *msgstr1_end = msgstr1 + msgstr1_len;
   const char *msgstr2_end = msgstr2 + msgstr2_len;
-  const char *ptr1;
-  const char *ptr2;
   const char *const field = "POT-Creation-Date:";
   const ptrdiff_t fieldlen = sizeof ("POT-Creation-Date:") - 1;
 
   /* Search for the occurrence of field in msgstr1.  */
+  const char *ptr1;
   for (ptr1 = msgstr1;;)
     {
       if (msgstr1_end - ptr1 < fieldlen)
@@ -64,6 +61,7 @@ msgstr_equal_ignoring_potcdate (const char *msgstr1, size_t msgstr1_len,
     }
 
   /* Search for the occurrence of field in msgstr2.  */
+  const char *ptr2;
   for (ptr2 = msgstr2;;)
     {
       if (msgstr2_end - ptr2 < fieldlen)
@@ -118,13 +116,11 @@ pos_equal (const lex_pos_ty *pos1, const lex_pos_ty *pos2)
 bool
 string_list_equal (const string_list_ty *slp1, const string_list_ty *slp2)
 {
-  size_t i, i1, i2;
-
-  i1 = (slp1 != NULL ? slp1->nitems : 0);
-  i2 = (slp2 != NULL ? slp2->nitems : 0);
+  size_t i1 = (slp1 != NULL ? slp1->nitems : 0);
+  size_t i2 = (slp2 != NULL ? slp2->nitems : 0);
   if (i1 != i2)
     return false;
-  for (i = 0; i < i1; i++)
+  for (size_t i = 0; i < i1; i++)
     if (strcmp (slp1->item[i], slp2->item[i]) != 0)
       return false;
   return true;
@@ -134,8 +130,6 @@ bool
 message_equal (const message_ty *mp1, const message_ty *mp2,
                bool ignore_potcdate)
 {
-  size_t i, i1, i2;
-
   if (!(mp1->msgctxt != NULL
         ? mp2->msgctxt != NULL && strcmp (mp1->msgctxt, mp2->msgctxt) == 0
         : mp2->msgctxt == NULL))
@@ -166,18 +160,18 @@ message_equal (const message_ty *mp1, const message_ty *mp2,
   if (!string_list_equal (mp1->comment_dot, mp2->comment_dot))
     return false;
 
-  i1 = mp1->filepos_count;
-  i2 = mp2->filepos_count;
+  size_t i1 = mp1->filepos_count;
+  size_t i2 = mp2->filepos_count;
   if (i1 != i2)
     return false;
-  for (i = 0; i < i1; i++)
+  for (size_t i = 0; i < i1; i++)
     if (!pos_equal (&mp1->filepos[i], &mp2->filepos[i]))
       return false;
 
   if (mp1->is_fuzzy != mp2->is_fuzzy)
     return false;
 
-  for (i = 0; i < NFORMATS; i++)
+  for (size_t i = 0; i < NFORMATS; i++)
     if (mp1->is_format[i] != mp2->is_format[i])
       return false;
 
@@ -212,13 +206,11 @@ bool
 message_list_equal (const message_list_ty *mlp1, const message_list_ty *mlp2,
                     bool ignore_potcdate)
 {
-  size_t i, i1, i2;
-
-  i1 = mlp1->nitems;
-  i2 = mlp2->nitems;
+  size_t i1 = mlp1->nitems;
+  size_t i2 = mlp2->nitems;
   if (i1 != i2)
     return false;
-  for (i = 0; i < i1; i++)
+  for (size_t i = 0; i < i1; i++)
     if (!message_equal (mlp1->item[i], mlp2->item[i], ignore_potcdate))
       return false;
   return true;
@@ -238,13 +230,11 @@ msgdomain_list_equal (const msgdomain_list_ty *mdlp1,
                       const msgdomain_list_ty *mdlp2,
                       bool ignore_potcdate)
 {
-  size_t i, i1, i2;
-
-  i1 = mdlp1->nitems;
-  i2 = mdlp2->nitems;
+  size_t i1 = mdlp1->nitems;
+  size_t i2 = mdlp2->nitems;
   if (i1 != i2)
     return false;
-  for (i = 0; i < i1; i++)
+  for (size_t i = 0; i < i1; i++)
     if (!msgdomain_equal (mdlp1->item[i], mdlp2->item[i], ignore_potcdate))
       return false;
   return true;

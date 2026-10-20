@@ -9,63 +9,81 @@
 #  GCRYPT_DLLS         - (Windows) List of required Libgcrypt DLLs.
 
 
-IF (GCRYPT_INCLUDE_DIRS)
+if(GCRYPT_INCLUDE_DIRS)
   # Already in cache, be silent
-  SET(GCRYPT_FIND_QUIETLY TRUE)
-ENDIF (GCRYPT_INCLUDE_DIRS)
+  set(GCRYPT_FIND_QUIETLY TRUE)
+endif()
 
-INCLUDE(FindWSWinLibs)
-FindWSWinLibs("gnutls-.*" "GCRYPT_HINTS")
+include(FindWSWinLibs)
+FindWSWinLibs("libgcrypt-.*" "GCRYPT_HINTS")
 
-FIND_PATH(GCRYPT_INCLUDE_DIR gcrypt.h
-  HINTS
-    "${GCRYPT_HINTS}"
+find_path(GCRYPT_INCLUDE_DIR
+  NAMES gcrypt.h
   PATH_SUFFIXES
     include
+  HINTS
+    "${GCRYPT_INCLUDEDIR}"
+    "${GCRYPT_HINTS}"
 )
 
-SET(GCRYPT_NAMES gcrypt libgcrypt-20)
-FIND_LIBRARY(GCRYPT_LIBRARY NAMES ${GCRYPT_NAMES} libgcc_s_sjlj-1 HINTS "${GCRYPT_HINTS}/bin")
-FIND_LIBRARY(GCRYPT_ERROR_LIBRARY NAMES gpg-error libgpg-error-0 libgpg-error6-0 HINTS "${GCRYPT_HINTS}/bin")
+# libgcrypt-20 is used in libgcrypt-1.8.3-win??ws (from Debian).
+# libgcrypt is used in libgcrypt-1.10.1-2-win??ws (from Debian).
+find_library(GCRYPT_LIBRARY
+  NAMES gcrypt libgcrypt libgcrypt-20
+  PATH_SUFFIXES
+    lib
+  HINTS
+    "${GCRYPT_LIBDIR}"
+    "${GCRYPT_HINTS}"
+)
+
+# libgpg-error6-0 is used in libgcrypt-1.7.6-win??ws (built from source).
+# libgpg-error-0 is used in libgcrypt-1.8.3-win??ws (from Debian).
+# libgpg-error is used in libgcrypt-1.10.1-2-win??ws (from Debian).
+find_library(GCRYPT_ERROR_LIBRARY
+  NAMES gpg-error libgpg-error libgpg-error-0 libgpg-error6-0
+  PATH_SUFFIXES
+    lib
+  HINTS
+    "${GCRYPT_LIBDIR}"
+    "${GCRYPT_HINTS}"
+)
 
 # Try to retrieve version from header if found (available since libgcrypt 1.3.0)
 if(GCRYPT_INCLUDE_DIR)
-  set(_version_regex "^#define[ \t]+GCRYPT_VERSION[ \t]+\"([^\"]+)\".*")
+  set(_version_regex "^#define[ \t]+GCRYPT_VERSION[ \t]+\"([0-9\.]+\.[0-9]+).*")
   file(STRINGS "${GCRYPT_INCLUDE_DIR}/gcrypt.h" GCRYPT_VERSION REGEX "${_version_regex}")
   string(REGEX REPLACE "${_version_regex}" "\\1" GCRYPT_VERSION "${GCRYPT_VERSION}")
   unset(_version_regex)
 endif()
 
-# handle the QUIETLY and REQUIRED arguments and set GCRYPT_FOUND to TRUE if
-# all listed variables are TRUE and the requested version matches.
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(GCRYPT
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(GCRYPT
   REQUIRED_VARS   GCRYPT_LIBRARY GCRYPT_INCLUDE_DIR
   VERSION_VAR     GCRYPT_VERSION)
 
-IF(GCRYPT_FOUND)
-  SET( GCRYPT_LIBRARIES ${GCRYPT_LIBRARY} ${GCRYPT_ERROR_LIBRARY})
-  SET( GCRYPT_INCLUDE_DIRS ${GCRYPT_INCLUDE_DIR})
-  if (WIN32)
-    set ( GCRYPT_DLL_DIR "${GCRYPT_HINTS}/bin"
+if(GCRYPT_FOUND)
+  set(GCRYPT_LIBRARIES ${GCRYPT_LIBRARY} ${GCRYPT_ERROR_LIBRARY})
+  set(GCRYPT_INCLUDE_DIRS ${GCRYPT_INCLUDE_DIR})
+  if(WIN32)
+    set(GCRYPT_DLL_DIR "${GCRYPT_HINTS}/bin"
       CACHE PATH "Path to the Libgcrypt DLLs"
     )
-    file( GLOB _gcrypt_dlls RELATIVE "${GCRYPT_DLL_DIR}"
-      "${GCRYPT_DLL_DIR}/libgcc_s_*.dll"
+    file(GLOB _gcrypt_dlls RELATIVE "${GCRYPT_DLL_DIR}"
       "${GCRYPT_DLL_DIR}/libgcrypt-*.dll"
       "${GCRYPT_DLL_DIR}/libgpg-error*.dll"
     )
-    set ( GCRYPT_DLLS ${_gcrypt_dlls}
+    set(GCRYPT_DLLS ${_gcrypt_dlls}
       # We're storing filenames only. Should we use STRING instead?
       CACHE FILEPATH "Libgcrypt DLL list"
     )
-    mark_as_advanced( GCRYPT_DLL_DIR GCRYPT_DLLS )
+    mark_as_advanced(GCRYPT_DLL_DIR GCRYPT_DLLS)
   endif()
-ELSE(GCRYPT_FOUND)
-  SET( GCRYPT_LIBRARIES )
-  SET( GCRYPT_INCLUDE_DIRS )
-  SET( GCRYPT_DLL_DIR )
-  SET( GCRYPT_DLLS )
-ENDIF(GCRYPT_FOUND)
+else()
+  set(GCRYPT_LIBRARIES)
+  set(GCRYPT_INCLUDE_DIRS)
+  set(GCRYPT_DLL_DIR)
+  set(GCRYPT_DLLS)
+endif()
 
-MARK_AS_ADVANCED( GCRYPT_LIBRARIES GCRYPT_INCLUDE_DIRS )
+mark_as_advanced(GCRYPT_LIBRARIES GCRYPT_INCLUDE_DIRS)

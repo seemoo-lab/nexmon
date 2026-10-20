@@ -2,106 +2,47 @@
  *
  * Copyright 2015, Dario Lombardo <lomato@gmail.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
+#include "json.h"
 
 #include <string.h>
 
-#include "wtap-int.h"
+#include "wtap_module.h"
 #include "file_wrappers.h"
 
-#include "json.h"
-#include <wsutil/jsmn.h>
+#include <wsutil/wsjson.h>
 
-static gboolean json_read_file(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
-    Buffer *buf, int *err, gchar **err_info)
+/* Maximum size of json file. */
+#define MAX_FILE_SIZE  (50*1024*1024)
+
+static int json_file_type_subtype = -1;
+
+void register_json(void);
+
+wtap_open_return_val json_open(wtap *wth, int *err, char **err_info)
 {
-    gint64 file_size;
-    int packet_size;
-
-    if ((file_size = wtap_file_size(wth, err)) == -1)
-        return FALSE;
-
-    if (file_size > MAX_FILE_SIZE) {
-        /*
-         * Don't blow up trying to allocate space for an
-         * immensely-large file.
-         */
-        *err = WTAP_ERR_BAD_FILE;
-        *err_info = g_strdup_printf("mime_file: File has %" G_GINT64_MODIFIER "d-byte packet, bigger than maximum of %u",
-            file_size, MAX_FILE_SIZE);
-        return FALSE;
-    }
-    packet_size = (int)file_size;
-
-    phdr->rec_type = REC_TYPE_PACKET;
-    phdr->presence_flags = 0; /* yes, we have no bananas^Wtime stamp */
-
-    phdr->caplen = packet_size;
-    phdr->len = packet_size;
-
-    phdr->ts.secs = 0;
-    phdr->ts.nsecs = 0;
-
-    return wtap_read_packet_bytes(fh, buf, packet_size, err, err_info);
-}
-
-static gboolean json_seek_read(wtap *wth, gint64 seek_off, struct wtap_pkthdr *phdr, Buffer *buf,
-    int *err, gchar **err_info)
-{
-    /* there is only one packet */
-    if (seek_off > 0) {
-        *err = 0;
-        return FALSE;
-    }
-
-    if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
-        return FALSE;
-
-    return json_read_file(wth, wth->random_fh, phdr, buf, err, err_info);
-}
-
-static gboolean json_read(wtap *wth, int *err, gchar **err_info, gint64 *data_offset)
-{
-    gint64 offset;
-
-    *err = 0;
-
-    offset = file_tell(wth->fh);
-
-    /* there is only ever one packet */
-    if (offset != 0)
-        return FALSE;
-
-    *data_offset = offset;
-
-    return json_read_file(wth, wth->fh, &wth->phdr, wth->frame_buffer, err, err_info);
-}
-
-wtap_open_return_val json_open(wtap *wth, int *err, gchar **err_info)
-{
-    guint8* filebuf;
+    int64_t filesize;
+    uint8_t* filebuf;
     int bytes_read;
 
-    filebuf = (guint8*)g_malloc0(MAX_FILE_SIZE);
+    /* XXX checking the full file contents might be a bit expensive, maybe
+     * resort to simpler heuristics like '{' or '[' (with some other chars)? */
+    if ((filesize = wtap_file_size(wth, err)) == -1)
+        return WTAP_OPEN_ERROR;
+
+    if (filesize > MAX_FILE_SIZE) {
+        /* Avoid allocating space for an immensely-large file. */
+        filesize = MAX_FILE_SIZE;
+    }
+
+    filebuf = (uint8_t*)g_malloc0(filesize);
     if (!filebuf)
         return WTAP_OPEN_ERROR;
 
-    bytes_read = file_read(filebuf, MAX_FILE_SIZE, wth->fh);
+    bytes_read = file_read(filebuf, (unsigned int) filesize, wth->fh);
     if (bytes_read < 0) {
         /* Read error. */
         *err = file_error(wth->fh, err_info);
@@ -114,7 +55,17 @@ wtap_open_return_val json_open(wtap *wth, int *err, gchar **err_info)
         return WTAP_OPEN_NOT_MINE;
     }
 
-    if (jsmn_is_json(filebuf, bytes_read) == FALSE) {
+    /* We could reduce the maximum size to read and accept if the parser
+     * returns JSMN_ERROR_PART (i.e., only fail on JSMN_ERROR_INVAL as we
+     * shouldn't get JSMN_ERROR_NOMEM if tokens is NULL.) That way we
+     * could handle bigger files without testing the entire file.
+     * packet-json shows excess unparsed data at the end with the
+     * data-text-lines dissector.
+     */
+    int num_tokens = json_parse_len((const char*)filebuf, bytes_read, NULL, 0);
+    if (num_tokens <= 0) {
+        /* 0 tokens needed is a degenerate case, e.g., nothing but whitespace
+         * until the first NUL. Reject that too. */
         g_free(filebuf);
         return WTAP_OPEN_NOT_MINE;
     }
@@ -124,19 +75,46 @@ wtap_open_return_val json_open(wtap *wth, int *err, gchar **err_info)
         return WTAP_OPEN_ERROR;
     }
 
-    wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_JSON;
+    wth->file_type_subtype = json_file_type_subtype;
     wth->file_encap = WTAP_ENCAP_JSON;
     wth->file_tsprec = WTAP_TSPREC_SEC;
-    wth->subtype_read = json_read;
-    wth->subtype_seek_read = json_seek_read;
+    wth->subtype_read = wtap_full_file_read;
+    wth->subtype_seek_read = wtap_full_file_seek_read;
     wth->snapshot_length = 0;
 
     g_free(filebuf);
     return WTAP_OPEN_MINE;
 }
 
+static const struct supported_block_type json_blocks_supported[] = {
+    /*
+     * This is a file format that we dissect, so we provide only one
+     * "packet" with the file's contents, and don't support any
+     * options.
+     */
+    { WTAP_BLOCK_PACKET, ONE_BLOCK_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info json_info = {
+    "JavaScript Object Notation", "json", "json", NULL,
+    false, BLOCKS_SUPPORTED(json_blocks_supported),
+    NULL, NULL, NULL
+};
+
+void register_json(void)
+{
+    json_file_type_subtype = wtap_register_file_type_subtype(&json_info);
+
+    /*
+     * Register name for backwards compatibility with the
+     * wtap_filetypes table in Lua.
+     */
+    wtap_register_backwards_compatibility_lua_name("JSON",
+                                                   json_file_type_subtype);
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -2,10 +2,12 @@
  *
  * Copyright © 2010 Red Hat, Inc
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,12 +30,10 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gtlsserverconnection
- * @short_description: TLS server-side connection
- * @include: gio/gio.h
+ * GTlsServerConnection:
  *
- * #GTlsServerConnection is the server-side subclass of #GTlsConnection,
- * representing a server-side TLS connection.
+ * `GTlsServerConnection` is the server-side subclass of
+ * [class@Gio.TlsConnection], representing a server-side TLS connection.
  *
  * Since: 2.28
  */
@@ -53,9 +53,7 @@ g_tls_server_connection_default_init (GTlsServerConnectionInterface *iface)
    * Since: 2.28
    */
   g_object_interface_install_property (iface,
-				       g_param_spec_enum ("authentication-mode",
-							  P_("Authentication Mode"),
-							  P_("The client authentication mode"),
+				       g_param_spec_enum ("authentication-mode", NULL, NULL,
 							  G_TYPE_TLS_AUTHENTICATION_MODE,
 							  G_TLS_AUTHENTICATION_NONE,
 							  G_PARAM_READWRITE |
@@ -65,7 +63,7 @@ g_tls_server_connection_default_init (GTlsServerConnectionInterface *iface)
 /**
  * g_tls_server_connection_new:
  * @base_io_stream: the #GIOStream to wrap
- * @certificate: (allow-none): the default server certificate, or %NULL
+ * @certificate: (nullable): the default server certificate, or %NULL
  * @error: #GError for error reporting, or %NULL to ignore.
  *
  * Creates a new #GTlsServerConnection wrapping @base_io_stream (which

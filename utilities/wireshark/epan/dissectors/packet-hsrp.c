@@ -9,19 +9,7 @@
  *
  * Copied from packet-vrrp.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -141,101 +129,104 @@
 void proto_register_hsrp(void);
 void proto_reg_handoff_hsrp(void);
 
-static gint proto_hsrp = -1;
+static dissector_handle_t hsrp_handle;
 
-static gint hf_hsrp_version = -1;
-static gint hf_hsrp_opcode = -1;
+static int proto_hsrp;
+
+static int hf_hsrp_version;
+static int hf_hsrp_opcode;
 /* Opcode 0-2 */
-static gint hf_hsrp_state = -1;
-static gint hf_hsrp_hellotime = -1;
-static gint hf_hsrp_holdtime = -1;
-static gint hf_hsrp_priority = -1;
-static gint hf_hsrp_group = -1;
-static gint hf_hsrp_reserved = -1;
-static gint hf_hsrp_auth_data = -1;
-static gint hf_hsrp_virt_ip_addr = -1;
+static int hf_hsrp_state;
+static int hf_hsrp_hellotime;
+static int hf_hsrp_holdtime;
+static int hf_hsrp_priority;
+static int hf_hsrp_group;
+static int hf_hsrp_reserved;
+static int hf_hsrp_auth_data;
+static int hf_hsrp_virt_ip_addr;
 /* Advertise (3) */
-static gint hf_hsrp_adv_type = -1;
-static gint hf_hsrp_adv_length = -1;
-static gint hf_hsrp_adv_state = -1;
-static gint hf_hsrp_adv_reserved1 = -1;
-static gint hf_hsrp_adv_activegrp = -1;
-static gint hf_hsrp_adv_passivegrp = -1;
-static gint hf_hsrp_adv_reserved2 = -1;
+static int hf_hsrp_adv_type;
+static int hf_hsrp_adv_length;
+static int hf_hsrp_adv_state;
+static int hf_hsrp_adv_reserved1;
+static int hf_hsrp_adv_activegrp;
+static int hf_hsrp_adv_passivegrp;
+static int hf_hsrp_adv_reserved2;
 
-static gint ett_hsrp = -1;
+static int ett_hsrp;
 
 /* HSRPv2 */
-static gint hf_hsrp2_version = -1;
-static gint hf_hsrp2_opcode = -1;
-static gint hf_hsrp2_state = -1;
-static gint hf_hsrp2_group_state_tlv = -1;
-static gint hf_hsrp2_interface_state_tlv = -1;
-static gint hf_hsrp2_text_auth_tlv = -1;
-static gint hf_hsrp2_md5_auth_tlv = -1;
-static gint hf_hsrp2_ipversion = -1;
-static gint hf_hsrp2_hellotime = -1;
-static gint hf_hsrp2_holdtime = -1;
-static gint hf_hsrp2_priority = -1;
-static gint hf_hsrp2_identifier = -1;
-static gint hf_hsrp2_group = -1;
-static gint hf_hsrp2_virt_ip_addr = -1;
-static gint hf_hsrp2_virt_ip_addr_v6 = -1;
-static gint hf_hsrp2_auth_data = -1;
-static gint hf_hsrp2_active_group = -1;
-static gint hf_hsrp2_passive_group = -1;
-static gint hf_hsrp2_md5_algorithm = -1;
-static gint hf_hsrp2_md5_padding = -1;
-static gint hf_hsrp2_md5_flags = -1;
-static gint hf_hsrp2_md5_ip_address= -1;
-static gint hf_hsrp2_md5_key_id= -1;
-static gint hf_hsrp2_md5_auth_data= -1;
+static int hf_hsrp2_version;
+static int hf_hsrp2_opcode;
+static int hf_hsrp2_state;
+static int hf_hsrp2_group_state_tlv;
+static int hf_hsrp2_interface_state_tlv;
+static int hf_hsrp2_text_auth_tlv;
+static int hf_hsrp2_md5_auth_tlv;
+static int hf_hsrp2_ipversion;
+static int hf_hsrp2_hellotime;
+static int hf_hsrp2_holdtime;
+static int hf_hsrp2_priority;
+static int hf_hsrp2_identifier;
+static int hf_hsrp2_group;
+static int hf_hsrp2_virt_ip_addr;
+static int hf_hsrp2_virt_ip_addr_v6;
+static int hf_hsrp2_auth_data;
+static int hf_hsrp2_active_group;
+static int hf_hsrp2_passive_group;
+static int hf_hsrp2_md5_algorithm;
+static int hf_hsrp2_md5_padding;
+static int hf_hsrp2_md5_flags;
+static int hf_hsrp2_md5_ip_address;
+static int hf_hsrp2_md5_key_id;
+static int hf_hsrp2_md5_auth_data;
 
-static gint ett_hsrp2_group_state_tlv = -1;
-static gint ett_hsrp2_interface_state_tlv = -1;
-static gint ett_hsrp2_text_auth_tlv = -1;
-static gint ett_hsrp2_md5_auth_tlv = -1;
+static int ett_hsrp2_group_state_tlv;
+static int ett_hsrp2_interface_state_tlv;
+static int ett_hsrp2_text_auth_tlv;
+static int ett_hsrp2_md5_auth_tlv;
 
-static expert_field ei_hsrp_unknown_tlv = EI_INIT;
+static expert_field ei_hsrp_unknown_tlv;
 
 #define UDP_PORT_HSRP   1985
 #define UDP_PORT_HSRP2_V6   2029
+#define UDP_PORT_HSRP_RANGE   "1985,2029"
 #define HSRP_DST_IP_ADDR 0xE0000002
 #define HSRP2_DST_IP_ADDR 0xE0000066
 
 struct hsrp_packet {          /* Multicast to 224.0.0.2, TTL 1, UDP, port 1985 */
-        guint8  version;      /* RFC2281 describes version 0 */
-        guint8  opcode;
-        guint8  state;
+        uint8_t version;      /* RFC2281 describes version 0 */
+        uint8_t opcode;
+        uint8_t state;
 #define HSRP_DEFAULT_HELLOTIME 3
-        guint8  hellotime;    /* In seconds */
+        uint8_t hellotime;    /* In seconds */
 #define HSRP_DEFAULT_HOLDTIME 10
-        guint8  holdtime;     /* In seconds */
-        guint8  priority;     /* Higher is stronger, highest IP address tie-breaker */
-        guint8  group;        /* Identifies the standby group */
-        guint8  reserved;
-        guint8  auth_data[8]; /* Clear-text password, recommended default is `cisco' */
-        guint32 virt_ip_addr; /* The virtual IP address used by this group */
+        uint8_t holdtime;     /* In seconds */
+        uint8_t priority;     /* Higher is stronger, highest IP address tie-breaker */
+        uint8_t group;        /* Identifies the standby group */
+        uint8_t reserved;
+        uint8_t auth_data[8]; /* Clear-text password, recommended default is `cisco' */
+        uint32_t virt_ip_addr; /* The virtual IP address used by this group */
 };
 
 struct hsrpv2_packet {        /* Multicast to 224.0.0.102, TTL 1, UDP, port 1985 */
-        guint8  version;
-        guint8  opcode;
-        guint8  state;
+        uint8_t version;
+        uint8_t opcode;
+        uint8_t state;
 #define HSRP2_DEFAULT_HELLOTIME 3000
-        guint32 hellotime;    /* In msecs */
+        uint32_t hellotime;    /* In msecs */
 #define HSRP2_DEFAULT_HOLDTIME 10000
-        guint32 holdtime;     /* In msecs */
-        guint32 priority;     /* Higher is stronger, highest IP address tie-breaker */
-        guint16 group;        /* Identifies the standby group */
-        guint8  identifier[6]; /* Identifier of sender's MAC address */
-        guint8  auth_data[8]; /* Clear-text password, recommended default is `cisco' */
-        gchar   virt_ip_addr[16]; /* The virtual IPv4/IPv6 address used by this group */
-        guint8  md5_algorithm;  /* MD5 Hash algorithm */
-        guint8  md5_flags;      /* Undefined */
-        guint8  md5_ip_address; /* IP address of sender interface */
-        guint8  md5_key_id;     /* Name of key chain */
-        guint8  md5_auth_data[16]; /* MD5 digest data */
+        uint32_t holdtime;     /* In msecs */
+        uint32_t priority;     /* Higher is stronger, highest IP address tie-breaker */
+        uint16_t group;        /* Identifies the standby group */
+        uint8_t identifier[6]; /* Identifier of sender's MAC address */
+        uint8_t auth_data[8]; /* Clear-text password, recommended default is `cisco' */
+        char    virt_ip_addr[16]; /* The virtual IPv4/IPv6 address used by this group */
+        uint8_t md5_algorithm;  /* MD5 Hash algorithm */
+        uint8_t md5_flags;      /* Undefined */
+        uint8_t md5_ip_address; /* IP address of sender interface */
+        uint8_t md5_key_id;     /* Name of key chain */
+        uint8_t md5_auth_data[16]; /* MD5 digest data */
 };
 
 #define HSRP_OPCODE_HELLO     0
@@ -326,14 +317,14 @@ static const value_string hsrp2_md5_algorithm_vals[] = {
 };
 
 static void
-process_hsrp_md5_tlv_sequence(tvbuff_t *tvb, proto_tree *hsrp_tree, guint offset)
+process_hsrp_md5_tlv_sequence(tvbuff_t *tvb, proto_tree *hsrp_tree, unsigned offset)
 {
-        guint8 type = tvb_get_guint8(tvb, offset);
-        guint8 len = tvb_get_guint8(tvb, offset+1);
+        uint8_t type = tvb_get_uint8(tvb, offset);
+        uint8_t len = tvb_get_uint8(tvb, offset+1);
         proto_item *ti;
         proto_tree *md5_auth_tlv;
 
-        ti = proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp2_md5_auth_tlv, tvb, offset, 1, type, "Type=%d Len=%d", type, len);
+        ti = proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp2_md5_auth_tlv, tvb, offset, 2+len, type, "Type=%d Len=%d", type, len);
         offset+=2;
 
         /* Making MD5 Authentication TLV subtree */
@@ -356,7 +347,7 @@ static int
 dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
         tvbuff_t   *next_tvb;
-        guint32 hsrpv1 = g_htonl(HSRP_DST_IP_ADDR),
+        uint32_t hsrpv1 = g_htonl(HSRP_DST_IP_ADDR),
                 hsrpv2 = g_htonl(HSRP2_DST_IP_ADDR);
 
         /* Return if this isn't really HSRP traffic
@@ -371,25 +362,25 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
          */
         if (pinfo->dst.type == AT_IPv4 && memcmp(pinfo->dst.data, &hsrpv1, 4) == 0) {
                 /* HSRPv1 */
-                guint8 opcode, state = 0;
+                uint8_t opcode, state = 0;
                 proto_item *ti;
                 proto_tree *hsrp_tree;
-                gint offset;
-                guint8 hellotime, holdtime;
-                gchar auth_buf[8 + 1];
+                int offset;
+                uint8_t hellotime, holdtime;
+                char *auth;
 
                 col_set_str(pinfo->cinfo, COL_PROTOCOL, "HSRP");
 
-                opcode = tvb_get_guint8(tvb, 1);
+                opcode = tvb_get_uint8(tvb, 1);
                 col_set_str(pinfo->cinfo, COL_INFO,
                                      val_to_str_const(opcode, hsrp_opcode_vals, "Unknown"));
 
                 if (opcode < 3) {
-                        state = tvb_get_guint8(tvb, 2);
+                        state = tvb_get_uint8(tvb, 2);
                         col_append_fstr(pinfo->cinfo, COL_INFO, " (state %s)",
                                      val_to_str_const(state, hsrp_state_vals, "Unknown"));
                 } else if (opcode == 3) {
-                        state = tvb_get_guint8(tvb, 6);
+                        state = tvb_get_uint8(tvb, 6);
                         col_append_fstr(pinfo->cinfo, COL_INFO, " (state %s)",
                                         val_to_str_const(state, hsrp_adv_state_vals, "Unknown"));
                 }
@@ -405,13 +396,13 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                 if (opcode < 3) {
                         proto_tree_add_uint(hsrp_tree, hf_hsrp_state, tvb, offset, 1, state);
                         offset++;
-                        hellotime = tvb_get_guint8(tvb, offset);
+                        hellotime = tvb_get_uint8(tvb, offset);
                         proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp_hellotime, tvb, offset, 1, hellotime,
                                            "%sDefault (%u)",
                                            (hellotime == HSRP_DEFAULT_HELLOTIME) ? "" : "Non-",
                                            hellotime);
                         offset++;
-                        holdtime = tvb_get_guint8(tvb, offset);
+                        holdtime = tvb_get_uint8(tvb, offset);
                         proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp_holdtime, tvb, offset, 1, holdtime,
                                            "%sDefault (%u)",
                                            (holdtime == HSRP_DEFAULT_HOLDTIME) ? "" : "Non-",
@@ -423,12 +414,11 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                         offset++;
                         proto_tree_add_item(hsrp_tree, hf_hsrp_reserved, tvb, offset, 1, ENC_BIG_ENDIAN);
                         offset++;
-                        tvb_memcpy(tvb, auth_buf, offset, 8);
-                        auth_buf[sizeof auth_buf - 1] = '\0';
-                        proto_tree_add_string_format_value(hsrp_tree, hf_hsrp_auth_data, tvb, offset, 8, auth_buf,
+                        auth = (char *) tvb_get_string_enc(pinfo->pool, tvb, offset, 8, ENC_ASCII|ENC_NA);
+                        proto_tree_add_string_format_value(hsrp_tree, hf_hsrp_auth_data, tvb, offset, 8, auth,
                                              "%sDefault (%s)",
-                                             (tvb_strneql(tvb, offset, "cisco", strlen("cisco"))) == 0 ? "" : "Non-",
-                                             auth_buf);
+                                             (strcmp(auth, "cisco") == 0) ? "" : "Non-",
+                                             auth);
                         offset += 8;
                         proto_tree_add_item(hsrp_tree, hf_hsrp_virt_ip_addr, tvb, offset, 4, ENC_BIG_ENDIAN);
                         /* offset += 4; */
@@ -453,9 +443,9 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                 }
                 /* is MD5 authentication being used with HSRPv1? */
                 if (tvb_captured_length(tvb) == 50) { /* 20 bytes of regular HSRP data + 30 bytes of authentication payload */
-                        guint offset2 = offset + 4; /* this now points to the start of a possible TLV sequence */
-                        guint8 type = tvb_get_guint8(tvb, offset2);
-                        guint8 len = tvb_get_guint8(tvb, offset2+1);
+                        unsigned offset2 = offset + 4; /* this now points to the start of a possible TLV sequence */
+                        uint8_t type = tvb_get_uint8(tvb, offset2);
+                        uint8_t len = tvb_get_uint8(tvb, offset2+1);
                         if (type == 4 && len == 28) {
                                 /* MD5 Authentication TLV */
                                 if (tree) {
@@ -469,10 +459,10 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         } else if ((pinfo->dst.type == AT_IPv4 && memcmp(pinfo->dst.data, &hsrpv2, 4) == 0) ||
                    (pinfo->dst.type == AT_IPv6 && pinfo->destport == UDP_PORT_HSRP2_V6)) {
                 /* HSRPv2 */
-                guint offset = 0, offset2;
+                unsigned offset = 0, offset2;
                 proto_item *ti = NULL;
                 proto_tree *hsrp_tree = NULL;
-                guint8 type,len;
+                uint8_t type,len;
 
                 col_set_str(pinfo->cinfo, COL_PROTOCOL, "HSRPv2");
 
@@ -482,27 +472,27 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                 }
 
                 while (tvb_reported_length_remaining(tvb, offset) > 0) {
-                        type = tvb_get_guint8(tvb, offset);
-                        len = tvb_get_guint8(tvb, offset+1);
+                        type = tvb_get_uint8(tvb, offset);
+                        len = tvb_get_uint8(tvb, offset+1);
 
                         offset2 = offset;
                         if (type == 1 && len == 40) {
                                 /* Group State TLV */
-                                guint8 opcode, state = 0, ipver;
-                                guint32 hellotime, holdtime;
+                                uint8_t opcode, state = 0, ipver;
+                                uint32_t hellotime, holdtime;
                                 proto_tree *group_state_tlv;
 
                                 if (tree) {
-                                        ti = proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp2_group_state_tlv, tvb, offset, 2, type,
+                                        ti = proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp2_group_state_tlv, tvb, offset, 2+len, type,
                                         "Type=%d Len=%d", type, len);
                                 }
                                 offset+=2;
 
-                                opcode = tvb_get_guint8(tvb, offset+1);
-                                col_add_fstr(pinfo->cinfo, COL_INFO, "%s",
+                                opcode = tvb_get_uint8(tvb, offset+1);
+                                col_set_str(pinfo->cinfo, COL_INFO,
                                                      val_to_str_const(opcode, hsrp2_opcode_vals, "Unknown"));
 
-                                state = tvb_get_guint8(tvb, offset+2);
+                                state = tvb_get_uint8(tvb, offset+2);
                                 col_append_fstr(pinfo->cinfo, COL_INFO, " (state %s)",
                                                 val_to_str_const(state, hsrp2_state_vals, "Unknown"));
 
@@ -515,7 +505,7 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                                         offset++;
                                         proto_tree_add_uint(group_state_tlv, hf_hsrp2_state, tvb, offset, 1, state);
                                         offset++;
-                                        ipver = tvb_get_guint8(tvb, offset);
+                                        ipver = tvb_get_uint8(tvb, offset);
                                         proto_tree_add_uint(group_state_tlv, hf_hsrp2_ipversion, tvb, offset, 1, ipver);
                                         offset++;
                                         proto_tree_add_item(group_state_tlv, hf_hsrp2_group, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -553,7 +543,7 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                                 }
                         } else if (type == 2 && len == 4) {
                                 /* Interface State TLV */
-                                guint16 active,passive;
+                                uint16_t active,passive;
                                 active = tvb_get_ntohs(tvb, offset+2);
                                 passive = tvb_get_ntohs(tvb, offset+4);
 
@@ -561,7 +551,7 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
                                 if (tree) {
                                         proto_tree *interface_state_tlv;
-                                        ti = proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp2_interface_state_tlv, tvb, offset, 1, type,
+                                        ti = proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp2_interface_state_tlv, tvb, offset, 2+len, type,
                                         "Type=%d Len=%d", type, len);
                                         offset+=2;
 
@@ -574,23 +564,25 @@ dissect_hsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                                 }
                         } else if (type == 3 && len == 8) {
                                 /* Text Authentication TLV */
+                                /* FIXME: Is the length of the authentication string really restricted to 8 bytes
+                                 *        or is it maybe padded to multiples of 4 or 8 bytes?
+                                 */
                                 if (tree) {
                                         proto_tree *text_auth_tlv;
-                                        gchar auth_buf[8 + 1];
+                                        char *auth;
 
-                                        ti = proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp2_text_auth_tlv, tvb, offset, 1, type,
+                                        ti = proto_tree_add_uint_format_value(hsrp_tree, hf_hsrp2_text_auth_tlv, tvb, offset, 2+len, type,
                                         "Type=%d Len=%d", type, len);
                                         offset+=2;
 
                                         /* Making Text Authentication TLV subtree */
                                         text_auth_tlv = proto_item_add_subtree(ti, ett_hsrp2_text_auth_tlv);
 
-                                        tvb_memcpy(tvb, auth_buf, offset, 8);
-                                        auth_buf[sizeof auth_buf - 1] = '\0';
-                                        proto_tree_add_string_format_value(text_auth_tlv, hf_hsrp2_auth_data, tvb, offset, 8, auth_buf,
+                                        auth = (char *) tvb_get_string_enc(pinfo->pool, tvb, offset, 8, ENC_ASCII|ENC_NA);
+                                        proto_tree_add_string_format_value(text_auth_tlv, hf_hsrp2_auth_data, tvb, offset, 8, auth,
                                                              "%sDefault (%s)",
-                                                             (tvb_strneql(tvb, offset, "cisco", strlen("cisco"))) == 0 ? "" : "Non-",
-                                                             auth_buf);
+                                                             (strcmp(auth, "cisco") == 0) ? "" : "Non-",
+                                                             auth);
                                         /* offset += 8; */
                                 }
                         } else if (type == 4 && len == 28) {
@@ -689,12 +681,12 @@ void proto_register_hsrp(void)
 
                 { &hf_hsrp_adv_activegrp,
                   { "Adv active groups", "hsrp.adv.activegrp",
-                    FT_UINT8, BASE_DEC, NULL, 0x0,
+                    FT_UINT16, BASE_DEC, NULL, 0x0,
                     "Advertisement active group count", HFILL }},
 
                 { &hf_hsrp_adv_passivegrp,
                   { "Adv passive groups", "hsrp.adv.passivegrp",
-                    FT_UINT8, BASE_DEC, NULL, 0x0,
+                    FT_UINT16, BASE_DEC, NULL, 0x0,
                     "Advertisement passive group count", HFILL }},
 
                 { &hf_hsrp_adv_reserved2,
@@ -804,7 +796,7 @@ void proto_register_hsrp(void)
 
                 { &hf_hsrp2_md5_flags,
                   { "MD5 Flags", "hsrp2.md5_flags",
-                    FT_UINT8, BASE_DEC, NULL, 0x0,
+                    FT_UINT16, BASE_DEC, NULL, 0x0,
                     "Undefined", HFILL }},
 
                 { &hf_hsrp2_md5_ip_address,
@@ -823,7 +815,7 @@ void proto_register_hsrp(void)
                     "MD5 digest string is contained.", HFILL }}
         };
 
-        static gint *ett[] = {
+        static int *ett[] = {
                 &ett_hsrp,
                 &ett_hsrp2_group_state_tlv,
                 &ett_hsrp2_interface_state_tlv,
@@ -835,24 +827,20 @@ void proto_register_hsrp(void)
                 { &ei_hsrp_unknown_tlv, { "hsrp.unknown_tlv", PI_UNDECODED, PI_WARN, "Unknown TLV sequence (HSRPv1)", EXPFILL }},
         };
 
-        proto_hsrp = proto_register_protocol("Cisco Hot Standby Router Protocol",
-            "HSRP", "hsrp");
+        proto_hsrp = proto_register_protocol("Cisco Hot Standby Router Protocol", "HSRP", "hsrp");
+
         proto_register_field_array(proto_hsrp, hf, array_length(hf));
         proto_register_subtree_array(ett, array_length(ett));
         expert_hsrp = expert_register_protocol(proto_hsrp);
         expert_register_field_array(expert_hsrp, ei, array_length(ei));
 
-        return;
+        hsrp_handle = register_dissector("hsrp", dissect_hsrp, proto_hsrp);
 }
 
 void
 proto_reg_handoff_hsrp(void)
 {
-        dissector_handle_t hsrp_handle;
-
-        hsrp_handle = create_dissector_handle(dissect_hsrp, proto_hsrp);
-        dissector_add_uint("udp.port", UDP_PORT_HSRP, hsrp_handle);
-        dissector_add_uint("udp.port", UDP_PORT_HSRP2_V6, hsrp_handle);
+        dissector_add_uint_range_with_preference("udp.port", UDP_PORT_HSRP_RANGE, hsrp_handle);
 }
 
 /*

@@ -1,0 +1,32 @@
+diff --git a/src/parser.c b/src/parser.c
+index ff8fce9..edb5420 100644
+--- a/src/parser.c
++++ b/src/parser.c
+@@ -195927,8 +195927,10 @@ void tree_sitter_rust_external_scanner_deserialize(void *, const char *, unsigne
+ #define TS_PUBLIC
+ #elif defined(_WIN32)
+ #define TS_PUBLIC __declspec(dllexport)
+-#else
++#elif defined __GNUC__ || defined __clang__
+ #define TS_PUBLIC __attribute__((visibility("default")))
++#else
++#define TS_PUBLIC
+ #endif
+ 
+ TS_PUBLIC const TSLanguage *tree_sitter_rust(void) {
+diff --git a/src/tree_sitter/parser.h b/src/tree_sitter/parser.h
+index 799f599..130b4d0 100644
+--- a/src/tree_sitter/parser.h
++++ b/src/tree_sitter/parser.h
+@@ -155,8 +155,10 @@ static inline bool set_contains(TSCharacterRange *ranges, uint32_t len, int32_t
+ 
+ #ifdef _MSC_VER
+ #define UNUSED __pragma(warning(suppress : 4101))
+-#else
++#elif defined __GNUC__ || defined __clang__
+ #define UNUSED __attribute__((unused))
++#else
++#define UNUSED
+ #endif
+ 
+ #define START_LEXER()           \

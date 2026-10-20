@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,10 +21,10 @@
 void proto_register_rs_bind (void);
 void proto_reg_handoff_rs_bind (void);
 
-static int proto_rs_bind = -1;
-static int hf_rs_bind_opnum = -1;
+static int proto_rs_bind;
+static int hf_rs_bind_opnum;
 
-static gint ett_rs_bind = -1;
+static int ett_rs_bind;
 
 
 static e_guid_t uuid_rs_bind =
@@ -44,10 +32,10 @@ static e_guid_t uuid_rs_bind =
                                  0xa5}
 
 };
-static guint16 ver_rs_bind = 2;
+static uint16_t ver_rs_bind = 2;
 
 
-static dcerpc_sub_dissector rs_bind_dissectors[] = {
+static const dcerpc_sub_dissector rs_bind_dissectors[] = {
   {0, "get_update_site", NULL, NULL},
   {0, NULL, NULL, NULL},
 
@@ -61,7 +49,7 @@ proto_register_rs_bind (void)
                 { "Operation", "rs_bind.opnum", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_rs_bind,
   };
   proto_rs_bind =
@@ -79,7 +67,7 @@ proto_reg_handoff_rs_bind (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

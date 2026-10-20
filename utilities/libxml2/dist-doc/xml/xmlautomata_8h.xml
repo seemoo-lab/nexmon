@@ -1,0 +1,1442 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlautomata_8h" kind="file" language="C++">
+    <compoundname>xmlautomata.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="xmlstring_8h" local="no">libxml/xmlstring.h</includes>
+    <includedby refid="relaxng_8c" local="no">/builds/GNOME/libxml2/relaxng.c</includedby>
+    <includedby refid="xmlregexp_8c" local="no">/builds/GNOME/libxml2/xmlregexp.c</includedby>
+    <includedby refid="xmlschemas_8c" local="no">/builds/GNOME/libxml2/xmlschemas.c</includedby>
+    <includedby refid="valid_8h" local="no">valid.h</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="5">
+        <label>stdarg.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="4">
+        <label>HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>HTMLtree.h</label>
+        <link refid="HTMLtree_8h"/>
+      </node>
+      <node id="7">
+        <label>SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+      </node>
+      <node id="8">
+        <label>relaxng.h</label>
+        <link refid="relaxng_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>xinclude.h</label>
+        <link refid="xinclude_8h"/>
+      </node>
+      <node id="1">
+        <label>xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>xmlreader.h</label>
+        <link refid="xmlreader_8h"/>
+      </node>
+      <node id="11">
+        <label>xmlschemas.h</label>
+        <link refid="xmlschemas_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>xmlschemastypes.h</label>
+        <link refid="xmlschemastypes_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" prot="public" static="no">
+        <type>struct _xmlAutomata</type>
+        <definition>typedef struct _xmlAutomata xmlAutomata</definition>
+        <argsstring></argsstring>
+        <name>xmlAutomata</name>
+        <briefdescription>
+<para>A libxml automata description. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It can be compiled into a regexp </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="31" column="27" bodyfile="xmlautomata.h" bodystart="31" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlautomata_8h_1a56d15851853f9f25e50ce52393875f77" prot="public" static="no">
+        <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+        <definition>typedef xmlAutomata* xmlAutomataPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlAutomataPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="32" column="21" bodyfile="xmlautomata.h" bodystart="32" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" prot="public" static="no">
+        <type>struct _xmlAutomataState</type>
+        <definition>typedef struct _xmlAutomataState xmlAutomataState</definition>
+        <argsstring></argsstring>
+        <name>xmlAutomataState</name>
+        <briefdescription>
+<para>A state in the automata description. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="37" column="32" bodyfile="xmlautomata.h" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlautomata_8h_1a53e9489f89267b2e02fc7a5e890ba671" prot="public" static="no">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>typedef xmlAutomataState* xmlAutomataStatePtr</definition>
+        <argsstring></argsstring>
+        <name>xmlAutomataStatePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="38" column="26" bodyfile="xmlautomata.h" bodystart="38" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xmlautomata_8h_1a4364abd34feea889a2ade7829ac93766" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+        <definition>xmlAutomata * xmlNewAutomata</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlNewAutomata</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Create a new automata. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000406"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>the new object or NULL in case of failure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="45" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="5643" bodyend="5663" declfile="xmlautomata.h" declline="45" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1a3f820610481205fad68711a6ef8736c7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeAutomata</definition>
+        <argsstring>(xmlAutomata *am)</argsstring>
+        <name>xmlFreeAutomata</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <briefdescription>
+<para>Free an automata. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000407"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="48" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="5673" bodyend="5677" declfile="xmlautomata.h" declline="48" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1ae0d15cfdf0a3cc974e0852b0e2c6d35b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataGetInitState</definition>
+        <argsstring>(xmlAutomata *am)</argsstring>
+        <name>xmlAutomataGetInitState</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <briefdescription>
+<para>Initial state lookup. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000409"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the initial state of the automata </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="52" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="5703" bodyend="5707" declfile="xmlautomata.h" declline="52" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1a0776046f7367c47dca8e4df14b264e4b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlAutomataSetFinalState</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *state)</argsstring>
+        <name>xmlAutomataSetFinalState</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>state</declname>
+        </param>
+        <briefdescription>
+<para>Makes that state a final state. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000410"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a state in this automata </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="55" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="5719" bodyend="5724" declfile="xmlautomata.h" declline="55" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1aefef086e6f1d5a901db7e3c075b95e3d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewState</definition>
+        <argsstring>(xmlAutomata *am)</argsstring>
+        <name>xmlAutomataNewState</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <briefdescription>
+<para>Create a new disconnected state in the automata. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000418"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="59" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6229" bodyend="6233" declfile="xmlautomata.h" declline="59" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1af7c76b1b3f0efca56806a53a56226038" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewTransition</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, const xmlChar *token, void *data)</argsstring>
+        <name>xmlAutomataNewTransition</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Add a transition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds a transition from the <computeroutput>from</computeroutput> state to the target state activated by the value of <computeroutput>token</computeroutput></para>
+<para><xrefsect id="deprecated_1_deprecated000411"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>data passed to the callback function if the transition is activated </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="62" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="5743" bodyend="5768" declfile="xmlautomata.h" declline="62" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1acb4e88ae8d370ddb10495add597b4d93" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewTransition2</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, const xmlChar *token, const xmlChar *token2, void *data)</argsstring>
+        <name>xmlAutomataNewTransition2</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token2</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds a transition from the <computeroutput>from</computeroutput> state to the target state activated by the value of <computeroutput>token</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000412"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the first input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the second input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>data passed to the callback function if the transition is activated </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="69" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="5786" bodyend="5826" declfile="xmlautomata.h" declline="69" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1a6e0ea2fee40a99150c703b36f6b06b39" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewNegTrans</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, const xmlChar *token, const xmlChar *token2, void *data)</argsstring>
+        <name>xmlAutomataNewNegTrans</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token2</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds a transition from the <computeroutput>from</computeroutput> state to the target state activated by any value except (<computeroutput>token</computeroutput>,<computeroutput>token2</computeroutput>) Note that if <computeroutput>token2</computeroutput> is not NULL, then (X, NULL) won&apos;t match to follow the semantic of XSD ##other. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000413"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the first input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the second input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>data passed to the callback function if the transition is activated </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="77" column="21" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="5846" bodyend="5892" declfile="xmlautomata.h" declline="77" declcolumn="21"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1adb32d2d0271ba76652f3edb98092746e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewCountTrans</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, const xmlChar *token, int min, int max, void *data)</argsstring>
+        <name>xmlAutomataNewCountTrans</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>max</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds a transition from the <computeroutput>from</computeroutput> state to the target state activated by a succession of input of value <computeroutput>token</computeroutput> and whose number is between <computeroutput>min</computeroutput> and <computeroutput>max</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000415"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>min</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the minimum successive occurrences of token </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>max</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the maximum successive occurrences of token </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>data associated to the transition </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="86" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6008" bodyend="6064" declfile="xmlautomata.h" declline="86" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1ab07f7a3e318e98597074ed6ed1d8b01a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewCountTrans2</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, const xmlChar *token, const xmlChar *token2, int min, int max, void *data)</argsstring>
+        <name>xmlAutomataNewCountTrans2</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token2</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>max</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds a transition from the <computeroutput>from</computeroutput> state to the target state activated by a succession of input of value <computeroutput>token</computeroutput> and <computeroutput>token2</computeroutput> and whose number is between <computeroutput>min</computeroutput> and <computeroutput>max</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000414"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the second input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>min</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the minimum successive occurrences of token </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>max</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the maximum successive occurrences of token </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>data associated to the transition </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="95" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="5913" bodyend="5988" declfile="xmlautomata.h" declline="95" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1a1130c6b3e5d39cb0944bea5a1ee82892" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewOnceTrans</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, const xmlChar *token, int min, int max, void *data)</argsstring>
+        <name>xmlAutomataNewOnceTrans</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>max</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds a transition from the <computeroutput>from</computeroutput> state to the target state activated by a succession of input of value <computeroutput>token</computeroutput> and whose number is between <computeroutput>min</computeroutput> and <computeroutput>max</computeroutput>, moreover that transition can only be crossed once. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000417"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>min</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the minimum successive occurrences of token </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>max</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the maximum successive occurrences of token </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>data associated to the transition </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="105" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6174" bodyend="6218" declfile="xmlautomata.h" declline="105" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1a4fbb9c6938a3afec71b1bbbd0c0a9fb0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewOnceTrans2</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, const xmlChar *token, const xmlChar *token2, int min, int max, void *data)</argsstring>
+        <name>xmlAutomataNewOnceTrans2</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>token2</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>max</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds a transition from the <computeroutput>from</computeroutput> state to the target state activated by a succession of input of value <computeroutput>token</computeroutput> and <computeroutput>token2</computeroutput> and whose number is between <computeroutput>min</computeroutput> and <computeroutput>max</computeroutput>, moreover that transition can only be crossed once. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000416"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>token2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the second input string associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>min</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the minimum successive occurrences of token </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>max</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the maximum successive occurrences of token </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>data associated to the transition </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="114" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6086" bodyend="6151" declfile="xmlautomata.h" declline="114" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1ac4f9205265a6bbc643eb4e097a52136a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewAllTrans</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, int lax)</argsstring>
+        <name>xmlAutomataNewAllTrans</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>lax</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds a an ALL transition from the <computeroutput>from</computeroutput> state to the target state. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>That transition is an epsilon transition allowed only when all transitions from the <computeroutput>from</computeroutput> node have been activated.</para>
+<para><xrefsect id="deprecated_1_deprecated000420"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>lax</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>allow to transition if not all all transitions have been activated </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="124" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6273" bodyend="6281" declfile="xmlautomata.h" declline="124" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1afdc625539abc6af168075a0d528375ad" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewEpsilon</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to)</argsstring>
+        <name>xmlAutomataNewEpsilon</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds an epsilon transition from the <computeroutput>from</computeroutput> state to the target state. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000419"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="130" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6248" bodyend="6256" declfile="xmlautomata.h" declline="130" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1a3cf399ff33dca2669765d9c1819b6067" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewCountedTrans</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, int counter)</argsstring>
+        <name>xmlAutomataNewCountedTrans</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>counter</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds an epsilon transition from the <computeroutput>from</computeroutput> state to the target state which will increment the counter provided. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000422"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>counter</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the counter associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="135" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6322" bodyend="6330" declfile="xmlautomata.h" declline="135" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1a7011873a2f63782074a2cb9070aea7bb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+        <definition>xmlAutomataState * xmlAutomataNewCounterTrans</definition>
+        <argsstring>(xmlAutomata *am, xmlAutomataState *from, xmlAutomataState *to, int counter)</argsstring>
+        <name>xmlAutomataNewCounterTrans</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>from</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *</type>
+          <declname>to</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>counter</declname>
+        </param>
+        <briefdescription>
+<para>If <computeroutput>to</computeroutput> is NULL, this creates first a new target state in the automata and then adds an epsilon transition from the <computeroutput>from</computeroutput> state to the target state which will be allowed only if the counter is within the right range. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000423"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the starting point of the transition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target point of the transition or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>counter</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the counter associated to that transition </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the target state or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="141" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6346" bodyend="6354" declfile="xmlautomata.h" declline="141" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1a8477677722e413a10d1a1496650c33e0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlAutomataNewCounter</definition>
+        <argsstring>(xmlAutomata *am, int min, int max)</argsstring>
+        <name>xmlAutomataNewCounter</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>max</declname>
+        </param>
+        <briefdescription>
+<para>Create a new counter. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000421"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>min</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the minimal value on the counter </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>max</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the maximal value on the counter </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the counter number or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="147" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6294" bodyend="6306" declfile="xmlautomata.h" declline="147" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1aecbffa32eb826f0b8559db90c0f5fd8f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>struct _xmlRegexp *</type>
+        <definition>struct _xmlRegexp * xmlAutomataCompile</definition>
+        <argsstring>(xmlAutomata *am)</argsstring>
+        <name>xmlAutomataCompile</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <briefdescription>
+<para>Compile the automata into a Reg Exp ready for being executed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The automata should be free after this point.</para>
+<para><xrefsect id="deprecated_1_deprecated000424"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the compiled regexp or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="153" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6366" bodyend="6377" declfile="xmlautomata.h" declline="153" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlautomata_8h_1ac978b1ae4049005ad1a4b872e84efbd0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlAutomataIsDeterminist</definition>
+        <argsstring>(xmlAutomata *am)</argsstring>
+        <name>xmlAutomataIsDeterminist</name>
+        <param>
+          <type><ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *</type>
+          <declname>am</declname>
+        </param>
+        <briefdescription>
+<para>Checks if an automata is determinist. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000425"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>am</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an automata </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if true, 0 if not, and -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlautomata.h" line="156" column="5" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="6388" bodyend="6396" declfile="xmlautomata.h" declline="156" declcolumn="5"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>API to build regexp automata. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>These are internal functions and shouldn&apos;t be used.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xmlautomata.h"/>
+  </compounddef>
+</doxygen>

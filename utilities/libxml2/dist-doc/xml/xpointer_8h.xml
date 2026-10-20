@@ -1,0 +1,244 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xpointer_8h" kind="file" language="C++">
+    <compoundname>xpointer.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="xpath_8h" local="no">libxml/xpath.h</includes>
+    <includedby refid="xinclude_8c" local="no">/builds/GNOME/libxml2/xinclude.c</includedby>
+    <includedby refid="xpointer_8c" local="no">/builds/GNOME/libxml2/xpointer.c</includedby>
+    <incdepgraph>
+      <node id="14">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xpath.h</label>
+        <link refid="xpath_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>xpointer.h</label>
+        <link refid="xpointer_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="6">
+        <label>limits.h</label>
+      </node>
+      <node id="8">
+        <label>stdarg.h</label>
+      </node>
+      <node id="15">
+        <label>stddef.h</label>
+      </node>
+      <node id="5">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xpointer_8h_1ad266411e3b0eb3176b33ea279b67ed40" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xpath_8h_1a61100c9bec26c0de1d0329962c85c091" kindref="member">xmlXPathContext</ref> *</type>
+        <definition>xmlXPathContext * xmlXPtrNewContext</definition>
+        <argsstring>(xmlDoc *doc, xmlNode *here, xmlNode *origin)</argsstring>
+        <name>xmlXPtrNewContext</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>here</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>origin</declname>
+        </param>
+        <briefdescription>
+<para>Create a new XPointer context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000434"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Same as xmlXPathNewContext.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>here</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>unused </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>origin</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>unused </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the <ref refid="xpath_8h_1a61100c9bec26c0de1d0329962c85c091" kindref="member">xmlXPathContext</ref> just allocated. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpointer.h" line="40" column="5" bodyfile="/builds/GNOME/libxml2/xpointer.c" bodystart="583" bodyend="593" declfile="xpointer.h" declline="40" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xpointer_8h_1a20078f45c75ddf4a44d8ff835439e980" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xpath_8h_1a60f7ba568242d9876ac3b78d1c9b2893" kindref="member">xmlXPathObject</ref> *</type>
+        <definition>xmlXPathObject * xmlXPtrEval</definition>
+        <argsstring>(const xmlChar *str, xmlXPathContext *ctx)</argsstring>
+        <name>xmlXPtrEval</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type><ref refid="xpath_8h_1a61100c9bec26c0de1d0329962c85c091" kindref="member">xmlXPathContext</ref> *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Evaluate an XPointer expression. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This function can only return nodesets. The caller has to free the object.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XPointer expression </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XPath context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the <ref refid="xpath_8h_1a60f7ba568242d9876ac3b78d1c9b2893" kindref="member">xmlXPathObject</ref> resulting from the evaluation or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpointer.h" line="44" column="5" bodyfile="/builds/GNOME/libxml2/xpointer.c" bodystart="607" bodyend="670" declfile="xpointer.h" declline="44" declcolumn="5"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>XPointer framework and schemes. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>API to evaluate XPointer expressions. The following schemes are supported:</para>
+<para><itemizedlist>
+<listitem><para>element()</para>
+</listitem><listitem><para>xmlns()</para>
+</listitem><listitem><para>xpath1()</para>
+</listitem></itemizedlist>
+</para>
+<para>xpointer() is an alias for the xpath1() scheme. The point and range extensions are not supported.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xpointer.h"/>
+  </compounddef>
+</doxygen>

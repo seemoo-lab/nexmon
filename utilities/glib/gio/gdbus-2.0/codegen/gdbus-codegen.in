@@ -4,10 +4,12 @@
 #
 # Copyright (C) 2008-2011 Red Hat, Inc.
 #
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
+# version 2.1 of the License, or (at your option) any later version.
 #
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,16 +26,32 @@ import os
 import sys
 
 srcdir = os.getenv('UNINSTALLED_GLIB_SRCDIR', None)
+filedir = os.path.dirname(__file__)
 
 if srcdir is not None:
     path = os.path.join(srcdir, 'gio', 'gdbus-2.0')
-elif os.name == 'nt':
-    # Makes gdbus-codegen 'relocatable' at runtime on Windows.
-    path = os.path.join(os.path.dirname(__file__), '..', 'share', 'glib-2.0')
+elif os.path.basename(filedir) == 'bin':
+    # Make the prefix containing gdbus-codegen 'relocatable' at runtime by
+    # adding /some/prefix/bin/../share/glib-2.0 to the python path
+    path = os.path.join(filedir, '..', 'share', 'glib-2.0')
 else:
-    path = os.path.join('@datadir@', 'glib-2.0')
+    # Assume that the modules we need are in the current directory and add the
+    # parent directory to the python path.
+    path = os.path.join(filedir, '..')
 
-sys.path.insert(0, os.path.abspath(path))
+# Canonicalize, then do further testing
+path = os.path.abspath(path)
+
+# If the above path detection failed, use the hard-coded datadir. This can
+# happen when, for instance, bindir and datadir are not in the same prefix or
+# on Windows where we cannot make any guarantees about the directory structure.
+#
+# In these cases our installation cannot be relocatable, but at least we should
+# be able to find the codegen module.
+if not os.path.isfile(os.path.join(path, 'codegen', 'codegen_main.py')):
+    path = os.path.join('@DATADIR@', 'glib-2.0')
+
+sys.path.insert(0, path)
 from codegen import codegen_main
 
 sys.exit(codegen_main.codegen_main())

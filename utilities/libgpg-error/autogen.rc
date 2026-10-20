@@ -1,0 +1,25 @@
+# autogen.sh configuration for libgpg-error                   -*- sh -*-
+
+display_name="Libgpg-error"
+patches_to="gnupg-devel@gnupg.org"
+#autogen_use_force=no
+
+case "$myhost:$myhostsub" in
+  w32:ce)
+    extraoptions=
+    ;;
+  w32:64)
+    extraoptions=
+    ;;
+  w32:)
+    extraoptions=
+    ;;
+esac
+
+case "$myhost" in
+  w32)
+    configure_opts=
+    ;;
+esac
+
+final_info="./configure --sysconfdir=/etc --enable-maintainer-mode && make"

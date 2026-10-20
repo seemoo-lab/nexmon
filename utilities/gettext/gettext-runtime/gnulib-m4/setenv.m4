@@ -1,8 +1,10 @@
-# setenv.m4 serial 26
-dnl Copyright (C) 2001-2004, 2006-2016 Free Software Foundation, Inc.
+# setenv.m4
+# serial 36
+dnl Copyright (C) 2001-2004, 2006-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_SETENV],
 [
@@ -35,10 +37,12 @@ AC_DEFUN([gl_FUNC_SETENV],
       ]])],
       [gl_cv_func_setenv_works=yes], [gl_cv_func_setenv_works=no],
       [case "$host_os" in
-                 # Guess yes on glibc systems.
-         *-gnu*) gl_cv_func_setenv_works="guessing yes" ;;
-                 # If we don't know, assume the worst.
-         *)      gl_cv_func_setenv_works="guessing no" ;;
+                             # Guess yes on glibc systems.
+         *-gnu* | gnu*)      gl_cv_func_setenv_works="guessing yes" ;;
+                             # Guess yes on musl systems.
+         *-musl* | midipix*) gl_cv_func_setenv_works="guessing yes" ;;
+                             # If we don't know, obey --enable-cross-guesses.
+         *)                  gl_cv_func_setenv_works="$gl_cross_guess_normal" ;;
        esac
       ])])
     case "$gl_cv_func_setenv_works" in
@@ -81,8 +85,6 @@ AC_DEFUN([gl_FUNC_UNSETENV],
       [AC_COMPILE_IFELSE(
          [AC_LANG_PROGRAM(
             [[
-#undef _BSD
-#define _BSD 1 /* unhide unsetenv declaration in OSF/1 5.1 <stdlib.h> */
 #include <stdlib.h>
 extern
 #ifdef __cplusplus
@@ -104,35 +106,39 @@ int unsetenv (const char *name);
     dnl OpenBSD 4.7 unsetenv("") does not fail.
     AC_CACHE_CHECK([whether unsetenv obeys POSIX],
       [gl_cv_func_unsetenv_works],
-      [AC_RUN_IFELSE([AC_LANG_PROGRAM([[
-       #include <stdlib.h>
-       #include <errno.h>
-       extern char **environ;
-      ]], [[
-       char entry1[] = "a=1";
-       char entry2[] = "b=2";
-       char *env[] = { entry1, entry2, NULL };
-       if (putenv ((char *) "a=1")) return 1;
-       if (putenv (entry2)) return 2;
-       entry2[0] = 'a';
-       unsetenv ("a");
-       if (getenv ("a")) return 3;
-       if (!unsetenv ("") || errno != EINVAL) return 4;
-       entry2[0] = 'b';
-       environ = env;
-       if (!getenv ("a")) return 5;
-       entry2[0] = 'a';
-       unsetenv ("a");
-       if (getenv ("a")) return 6;
-      ]])],
-      [gl_cv_func_unsetenv_works=yes], [gl_cv_func_unsetenv_works=no],
-      [case "$host_os" in
-                 # Guess yes on glibc systems.
-         *-gnu*) gl_cv_func_unsetenv_works="guessing yes" ;;
-                 # If we don't know, assume the worst.
-         *)      gl_cv_func_unsetenv_works="guessing no" ;;
-       esac
-      ])])
+      [AC_RUN_IFELSE(
+         [AC_LANG_PROGRAM([[
+            #include <stdlib.h>
+            #include <errno.h>
+            extern char **environ;
+           ]GL_MDA_DEFINES],
+           [[
+            char entry1[] = "a=1";
+            char entry2[] = "b=2";
+            char *env[] = { entry1, entry2, NULL };
+            if (putenv ((char *) "a=1")) return 1;
+            if (putenv (entry2)) return 2;
+            entry2[0] = 'a';
+            unsetenv ("a");
+            if (getenv ("a")) return 3;
+            if (!unsetenv ("") || errno != EINVAL) return 4;
+            entry2[0] = 'b';
+            environ = env;
+            if (!getenv ("a")) return 5;
+            entry2[0] = 'a';
+            unsetenv ("a");
+            if (getenv ("a")) return 6;
+           ]])],
+         [gl_cv_func_unsetenv_works=yes],
+         [gl_cv_func_unsetenv_works=no],
+         [case "$host_os" in
+                    # Guess yes on glibc systems.
+            *-gnu*) gl_cv_func_unsetenv_works="guessing yes" ;;
+                    # If we don't know, obey --enable-cross-guesses.
+            *)      gl_cv_func_unsetenv_works="$gl_cross_guess_normal" ;;
+          esac
+         ])
+      ])
     case "$gl_cv_func_unsetenv_works" in
       *yes) ;;
       *)
@@ -145,11 +151,11 @@ int unsetenv (const char *name);
 # Prerequisites of lib/setenv.c.
 AC_DEFUN([gl_PREREQ_SETENV],
 [
-  AC_REQUIRE([AC_FUNC_ALLOCA])
   AC_REQUIRE([gl_ENVIRON])
   AC_CHECK_HEADERS_ONCE([unistd.h])
   AC_CHECK_HEADERS([search.h])
-  AC_CHECK_FUNCS([tsearch])
+  AC_CHECK_DECLS_ONCE([_putenv])
+  gl_CHECK_FUNCS_ANDROID([tsearch], [[#include <search.h>]])
 ])
 
 # Prerequisites of lib/unsetenv.c.
@@ -157,4 +163,5 @@ AC_DEFUN([gl_PREREQ_UNSETENV],
 [
   AC_REQUIRE([gl_ENVIRON])
   AC_CHECK_HEADERS_ONCE([unistd.h])
+  AC_CHECK_DECLS_ONCE([_putenv])
 ])

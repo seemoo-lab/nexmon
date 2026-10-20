@@ -1,0 +1,1902 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="relaxng_8h" kind="file" language="C++">
+    <compoundname>relaxng.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes refid="xmlstring_8h" local="no">libxml/xmlstring.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includedby refid="relaxng_8c" local="no">/builds/GNOME/libxml2/relaxng.c</includedby>
+    <includedby refid="threads_8c" local="no">/builds/GNOME/libxml2/threads.c</includedby>
+    <includedby refid="xmlreader_8c" local="no">/builds/GNOME/libxml2/xmlreader.c</includedby>
+    <includedby refid="xmlreader_8h" local="no">xmlreader.h</includedby>
+    <incdepgraph>
+      <node id="22">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>relaxng.h</label>
+        <link refid="relaxng_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="9">
+        <label>limits.h</label>
+      </node>
+      <node id="6">
+        <label>stdarg.h</label>
+      </node>
+      <node id="14">
+        <label>stddef.h</label>
+      </node>
+      <node id="8">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="1">
+        <label>relaxng.h</label>
+        <link refid="relaxng_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>xmlreader.h</label>
+        <link refid="xmlreader_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlRelaxNGValidErr</name>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443abe71afdd1c4d0f7a65992b82ee9001f3" prot="public">
+          <name>XML_RELAXNG_OK</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a43c1765c7ec66a17b485f2369cfd836b" prot="public">
+          <name>XML_RELAXNG_ERR_MEMORY</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443aec2d4717b83362f46afb9d637b50180d" prot="public">
+          <name>XML_RELAXNG_ERR_TYPE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a808c96586f8446bd48157e8a3fec5317" prot="public">
+          <name>XML_RELAXNG_ERR_TYPEVAL</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a70fc6be7a1898c7676ffc5725765a662" prot="public">
+          <name>XML_RELAXNG_ERR_DUPID</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443ac7e6d3f1ac92e2e1a2c6a7682143a7a5" prot="public">
+          <name>XML_RELAXNG_ERR_TYPECMP</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443ad093c8b624ed98dd71117b96dbb70b3a" prot="public">
+          <name>XML_RELAXNG_ERR_NOSTATE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a2534a000acdf215b39a19248e4c3c5a1" prot="public">
+          <name>XML_RELAXNG_ERR_NODEFINE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a056661edec1bc878e06f9b52973d91ab" prot="public">
+          <name>XML_RELAXNG_ERR_LISTEXTRA</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a5352f60be233c8cfa18922ae097f5125" prot="public">
+          <name>XML_RELAXNG_ERR_LISTEMPTY</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a0ab658169e5cc141813b944cb72fc06e" prot="public">
+          <name>XML_RELAXNG_ERR_INTERNODATA</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a073c193cf4e6f2dabe5893f038f12e05" prot="public">
+          <name>XML_RELAXNG_ERR_INTERSEQ</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a71b1e7f484a15fd87261e2c9e11ec8d3" prot="public">
+          <name>XML_RELAXNG_ERR_INTEREXTRA</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a0c6501178aff75e5b57cbadcf21d88d1" prot="public">
+          <name>XML_RELAXNG_ERR_ELEMNAME</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a1199d27a9422d50d71284081f7895e59" prot="public">
+          <name>XML_RELAXNG_ERR_ATTRNAME</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a54205668782ee1e8ef066773ff94dcfd" prot="public">
+          <name>XML_RELAXNG_ERR_ELEMNONS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a7e5b36da0cbb63b545672b0fa0c0f9ae" prot="public">
+          <name>XML_RELAXNG_ERR_ATTRNONS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443ad9bab3c37261470a5e186d2f576200ce" prot="public">
+          <name>XML_RELAXNG_ERR_ELEMWRONGNS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a5451f40e5a0420bbeb905017e3c24c14" prot="public">
+          <name>XML_RELAXNG_ERR_ATTRWRONGNS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a34f507673f70aad7ab98ecb65151818e" prot="public">
+          <name>XML_RELAXNG_ERR_ELEMEXTRANS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a1b9092a19dc42ecf2bc09bb7d616e793" prot="public">
+          <name>XML_RELAXNG_ERR_ATTREXTRANS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443af329b42b0fcf8b3b7ae3409f5afd5912" prot="public">
+          <name>XML_RELAXNG_ERR_ELEMNOTEMPTY</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443ad24ca8e4e43cb72a66ba92cd91cae066" prot="public">
+          <name>XML_RELAXNG_ERR_NOELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443af4256a7bc77eaf08834846116dcd6f62" prot="public">
+          <name>XML_RELAXNG_ERR_NOTELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443afd88223af05680f2180811952c3bb618" prot="public">
+          <name>XML_RELAXNG_ERR_ATTRVALID</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a27ffea0856d05bfbc078136aa2390c83" prot="public">
+          <name>XML_RELAXNG_ERR_CONTENTVALID</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443abc29b5dbcf72b9b0654d7e93bf6caae4" prot="public">
+          <name>XML_RELAXNG_ERR_EXTRACONTENT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a3c5d0e4a5ae81649eebb38ab2a6a44c1" prot="public">
+          <name>XML_RELAXNG_ERR_INVALIDATTR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a9d6ffaece2ddbbb8dbe97122fdf7b096" prot="public">
+          <name>XML_RELAXNG_ERR_DATAELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a0c149bd75f8cd77d29bd1737fc3d5c22" prot="public">
+          <name>XML_RELAXNG_ERR_VALELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a753b65c028ad321e6dc2d951784aff76" prot="public">
+          <name>XML_RELAXNG_ERR_LISTELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443adb6362148ccd088606100f7c66cbff07" prot="public">
+          <name>XML_RELAXNG_ERR_DATATYPE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a5324568c0d4a414e7b7b3ad3b2230eae" prot="public">
+          <name>XML_RELAXNG_ERR_VALUE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a2aa289628a29c93cef5317064fd478df" prot="public">
+          <name>XML_RELAXNG_ERR_LIST</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a2f8a5f69933a759a71a760acd3cb6f11" prot="public">
+          <name>XML_RELAXNG_ERR_NOGRAMMAR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a4ebb2f5a83228209be331e056f460ccf" prot="public">
+          <name>XML_RELAXNG_ERR_EXTRADATA</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a16000d7fd0dfea56bb803aaf6b21195d" prot="public">
+          <name>XML_RELAXNG_ERR_LACKDATA</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a539e8760ac167f9c38aad2c58a5763e9" prot="public">
+          <name>XML_RELAXNG_ERR_INTERNAL</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443ab5cb16cbff108ee88e6afc0223c7932b" prot="public">
+          <name>XML_RELAXNG_ERR_ELEMWRONG</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a983e3c2f1b7e4a301fe5ad1670355443a38df6293f9847ab49784de2d4fc2ad82" prot="public">
+          <name>XML_RELAXNG_ERR_TEXTWRONG</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>List of possible Relax NG validation errors. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="66" column="1" bodyfile="relaxng.h" bodystart="66" bodyend="107"/>
+      </memberdef>
+      <memberdef kind="enum" id="relaxng_8h_1a5bc499f94345ab11e7d8cd8f3b39c763" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlRelaxNGParserFlag</name>
+        <enumvalue id="relaxng_8h_1a5bc499f94345ab11e7d8cd8f3b39c763aa85792abc2d8d9771f7763cbc0e329f5" prot="public">
+          <name>XML_RELAXNGP_NONE</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a5bc499f94345ab11e7d8cd8f3b39c763aa59a22c149ddf59cc88ecc67bdd8ea1d" prot="public">
+          <name>XML_RELAXNGP_FREE_DOC</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="relaxng_8h_1a5bc499f94345ab11e7d8cd8f3b39c763ae5f564406a52b23434ed8a8fd0872feb" prot="public">
+          <name>XML_RELAXNGP_CRNG</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>List of possible Relax NG Parser flags. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="112" column="1" bodyfile="relaxng.h" bodystart="112" bodyend="116"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="relaxng_8h_1af56beae0a5d7122bf604f6d99ad72c87" prot="public" static="no">
+        <type>struct _xmlRelaxNG</type>
+        <definition>typedef struct _xmlRelaxNG xmlRelaxNG</definition>
+        <argsstring></argsstring>
+        <name>xmlRelaxNG</name>
+        <briefdescription>
+<para>RelaxNG schema. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="29" column="26" bodyfile="relaxng.h" bodystart="29" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="relaxng_8h_1a293765a19652f436bbe88ae36f1b442a" prot="public" static="no">
+        <type><ref refid="relaxng_8h_1af56beae0a5d7122bf604f6d99ad72c87" kindref="member">xmlRelaxNG</ref> *</type>
+        <definition>typedef xmlRelaxNG* xmlRelaxNGPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlRelaxNGPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="30" column="20" bodyfile="relaxng.h" bodystart="30" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="relaxng_8h_1a2f9c0f7741e83f942b6c98ed4e0ba69c" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xmlRelaxNGValidityErrorFunc) (void *ctx, const char *msg,...)</definition>
+        <argsstring>)(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlRelaxNGValidityErrorFunc</name>
+        <briefdescription>
+<para>Signature of an error callback from a Relax-NG validation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="40" column="9" bodyfile="relaxng.h" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="relaxng_8h_1ade2d403c9c2a4a5b08e8342e68a9a34b" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xmlRelaxNGValidityWarningFunc) (void *ctx, const char *msg,...)</definition>
+        <argsstring>)(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlRelaxNGValidityWarningFunc</name>
+        <briefdescription>
+<para>Signature of a warning callback from a Relax-NG validation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="51" column="9" bodyfile="relaxng.h" bodystart="51" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" prot="public" static="no">
+        <type>struct _xmlRelaxNGParserCtxt</type>
+        <definition>typedef struct _xmlRelaxNGParserCtxt xmlRelaxNGParserCtxt</definition>
+        <argsstring></argsstring>
+        <name>xmlRelaxNGParserCtxt</name>
+        <briefdescription>
+<para>RelaxNG parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="56" column="36" bodyfile="relaxng.h" bodystart="56" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="relaxng_8h_1a0d3dff07e7040f22194094c05df4cfde" prot="public" static="no">
+        <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+        <definition>typedef xmlRelaxNGParserCtxt* xmlRelaxNGParserCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlRelaxNGParserCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="57" column="30" bodyfile="relaxng.h" bodystart="57" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" prot="public" static="no">
+        <type>struct _xmlRelaxNGValidCtxt</type>
+        <definition>typedef struct _xmlRelaxNGValidCtxt xmlRelaxNGValidCtxt</definition>
+        <argsstring></argsstring>
+        <name>xmlRelaxNGValidCtxt</name>
+        <briefdescription>
+<para>RelaxNG validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="60" column="35" bodyfile="relaxng.h" bodystart="60" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="relaxng_8h_1a5ca43f93a6c03081dce145920997ac57" prot="public" static="no">
+        <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+        <definition>typedef xmlRelaxNGValidCtxt* xmlRelaxNGValidCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlRelaxNGValidCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="61" column="29" bodyfile="relaxng.h" bodystart="61" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="relaxng_8h_1a50035c7cd85628c117ec86bf8efc381f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxNGInitTypes</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlRelaxNGInitTypes</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Initialize the default type libraries. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>0 in case of success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="119" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="2726" bodyend="2756" declfile="relaxng.h" declline="119" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a454897b4be0e4260f5f46b29748085c4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGCleanupTypes</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlRelaxNGCleanupTypes</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Cleanup the default Schemas type library associated to RelaxNG. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000290"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function will be made private. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all.</para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="122" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="2768" bodyend="2779" declfile="relaxng.h" declline="122" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a64347e3276e74723c55f65b0f6a7c906" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+        <definition>xmlRelaxNGParserCtxt * xmlRelaxNGNewParserCtxt</definition>
+        <argsstring>(const char *URL)</argsstring>
+        <name>xmlRelaxNGNewParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML RelaxNGs parse context for that file/resource expected to contain an XML RelaxNGs file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the location of the schema </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="128" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="6554" bodyend="6570" declfile="relaxng.h" declline="128" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1aa679c263489fad6103d762a273bcbb37" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+        <definition>xmlRelaxNGParserCtxt * xmlRelaxNGNewMemParserCtxt</definition>
+        <argsstring>(const char *buffer, int size)</argsstring>
+        <name>xmlRelaxNGNewMemParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>buffer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML RelaxNGs parse context for that memory buffer expected to contain an XML RelaxNGs file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a char array containing the schemas </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size of the array </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="130" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="6581" bodyend="6598" declfile="relaxng.h" declline="130" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a0bc8a5b3171d4026e6165a5a2d620a0e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+        <definition>xmlRelaxNGParserCtxt * xmlRelaxNGNewDocParserCtxt</definition>
+        <argsstring>(xmlDoc *doc)</argsstring>
+        <name>xmlRelaxNGNewDocParserCtxt</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML RelaxNGs parser context for that document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Note: since the process of compiling a RelaxNG schemas modifies the document, the <computeroutput>doc</computeroutput> parameter is duplicated internally.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a preparsed document tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="133" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="6609" bodyend="6632" declfile="relaxng.h" declline="133" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1ada7d916ac2a6904c717d2532d26d486c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxParserSetFlag</definition>
+        <argsstring>(xmlRelaxNGParserCtxt *ctxt, int flag)</argsstring>
+        <name>xmlRelaxParserSetFlag</name>
+        <param>
+          <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flag</declname>
+          <defname>flags</defname>
+        </param>
+        <briefdescription>
+<para>Semi private function used to pass information to a parser context which are a combination of <ref refid="relaxng_8h_1a5bc499f94345ab11e7d8cd8f3b39c763" kindref="member">xmlRelaxNGParserFlag</ref> . </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a RelaxNG parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of flags values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if success and -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="136" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="1328" bodyend="1341" declfile="relaxng.h" declline="136" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a782c0c5009de50beac026cad6d874acf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxParserSetIncLImit</definition>
+        <argsstring>(xmlRelaxNGParserCtxt *ctxt, int limit)</argsstring>
+        <name>xmlRelaxParserSetIncLImit</name>
+        <param>
+          <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>limit</declname>
+        </param>
+        <briefdescription>
+<para>Semi private function used to set the include recursion limit to a parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Set to 0 to use the default value.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a RelaxNG parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>limit</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new include depth limit </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if success and -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="140" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="1352" bodyend="1358" declfile="relaxng.h" declline="140" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1aa67ca6122cd3c66b0af297fe07d28014" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGFreeParserCtxt</definition>
+        <argsstring>(xmlRelaxNGParserCtxt *ctxt)</argsstring>
+        <name>xmlRelaxNGFreeParserCtxt</name>
+        <param>
+          <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free the resources associated to the schema parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="144" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="6640" bodyend="6668" declfile="relaxng.h" declline="144" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1ab5a0ad9aedbbed5f8adcd7d7f6628a1d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGSetParserErrors</definition>
+        <argsstring>(xmlRelaxNGParserCtxt *ctxt, xmlRelaxNGValidityErrorFunc err, xmlRelaxNGValidityWarningFunc warn, void *ctx)</argsstring>
+        <name>xmlRelaxNGSetParserErrors</name>
+        <param>
+          <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1a2f9c0f7741e83f942b6c98ed4e0ba69c" kindref="member">xmlRelaxNGValidityErrorFunc</ref></type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1ade2d403c9c2a4a5b08e8342e68a9a34b" kindref="member">xmlRelaxNGValidityWarningFunc</ref></type>
+          <declname>warn</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the callback functions used to handle errors for a validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000291"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="relaxng_8h_1a994aac8ce0fa8ac1c97090858395a8d6" kindref="member">xmlRelaxNGSetParserStructuredErrors</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warn</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the warning callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>contextual data for the callbacks </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="146" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="7441" bodyend="7451" declfile="relaxng.h" declline="146" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1ad518b46969273106f59b61b501a53e12" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxNGGetParserErrors</definition>
+        <argsstring>(xmlRelaxNGParserCtxt *ctxt, xmlRelaxNGValidityErrorFunc *err, xmlRelaxNGValidityWarningFunc *warn, void **ctx)</argsstring>
+        <name>xmlRelaxNGGetParserErrors</name>
+        <param>
+          <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1a2f9c0f7741e83f942b6c98ed4e0ba69c" kindref="member">xmlRelaxNGValidityErrorFunc</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1ade2d403c9c2a4a5b08e8342e68a9a34b" kindref="member">xmlRelaxNGValidityWarningFunc</ref> *</type>
+          <declname>warn</declname>
+        </param>
+        <param>
+          <type>void **</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Get the callback information used to handle errors for a validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error callback result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warn</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the warning callback result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>contextual data for the callbacks result </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of failure, 0 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="151" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="7463" bodyend="7476" declfile="relaxng.h" declline="151" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a994aac8ce0fa8ac1c97090858395a8d6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGSetParserStructuredErrors</definition>
+        <argsstring>(xmlRelaxNGParserCtxt *ctxt, xmlStructuredErrorFunc serror, void *ctx)</argsstring>
+        <name>xmlRelaxNGSetParserStructuredErrors</name>
+        <param>
+          <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>serror</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the callback functions used to handle errors for a parsing context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>serror</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>contextual data for the callbacks </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="156" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="7486" bodyend="7496" declfile="relaxng.h" declline="156" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a7132fb6a2b28c499a123d2d5d1bdb15d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGSetResourceLoader</definition>
+        <argsstring>(xmlRelaxNGParserCtxt *ctxt, xmlResourceLoader loader, void *vctxt)</argsstring>
+        <name>xmlRelaxNGSetResourceLoader</name>
+        <param>
+          <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="parser_8h_1a7c18bf0fce4a02394bd219d9422c27ed" kindref="member">xmlResourceLoader</ref></type>
+          <declname>loader</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>vctxt</declname>
+        </param>
+        <briefdescription>
+<para>Set the callback function used to load external resources. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>loader</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>vctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>contextual data for the callbacks </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="161" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="7506" bodyend="7512" declfile="relaxng.h" declline="161" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a50ab345468b74af7772987057fa6e107" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="relaxng_8h_1af56beae0a5d7122bf604f6d99ad72c87" kindref="member">xmlRelaxNG</ref> *</type>
+        <definition>xmlRelaxNG * xmlRelaxNGParse</definition>
+        <argsstring>(xmlRelaxNGParserCtxt *ctxt)</argsstring>
+        <name>xmlRelaxNGParse</name>
+        <param>
+          <type><ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>parse a schema definition resource and build an internal XML Schema structure which can be used to validate instances. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the internal XML RelaxNG structure built from the resource or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="165" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="7282" bodyend="7428" declfile="relaxng.h" declline="165" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a31107b081ec39c441e0513bde67930a8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGFree</definition>
+        <argsstring>(xmlRelaxNG *schema)</argsstring>
+        <name>xmlRelaxNGFree</name>
+        <param>
+          <type><ref refid="relaxng_8h_1af56beae0a5d7122bf604f6d99ad72c87" kindref="member">xmlRelaxNG</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Deallocate a RelaxNG structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="167" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="751" bodyend="773" declfile="relaxng.h" declline="167" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a3d41072074b698d939aed3f178743084" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGDump</definition>
+        <argsstring>(FILE *output, xmlRelaxNG *schema)</argsstring>
+        <name>xmlRelaxNGDump</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1af56beae0a5d7122bf604f6d99ad72c87" kindref="member">xmlRelaxNG</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Dump a RelaxNG structure back. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="170" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="7703" bodyend="7724" declfile="relaxng.h" declline="170" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a3d533c6208d86e5a4339f8b3c8e76054" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGDumpTree</definition>
+        <argsstring>(FILE *output, xmlRelaxNG *schema)</argsstring>
+        <name>xmlRelaxNGDumpTree</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1af56beae0a5d7122bf604f6d99ad72c87" kindref="member">xmlRelaxNG</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Dump the transformed RelaxNG tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="175" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="7735" bodyend="7748" declfile="relaxng.h" declline="175" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a66db9c7079a79db835ccb4d43daa4f17" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGSetValidErrors</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt, xmlRelaxNGValidityErrorFunc err, xmlRelaxNGValidityWarningFunc warn, void *ctx)</argsstring>
+        <name>xmlRelaxNGSetValidErrors</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1a2f9c0f7741e83f942b6c98ed4e0ba69c" kindref="member">xmlRelaxNGValidityErrorFunc</ref></type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1ade2d403c9c2a4a5b08e8342e68a9a34b" kindref="member">xmlRelaxNGValidityWarningFunc</ref></type>
+          <declname>warn</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the error and warning callback information. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000292"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="relaxng_8h_1a54b060a45d314de14c2f79f5cfcd0fee" kindref="member">xmlRelaxNGSetValidStructuredErrors</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warn</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the warning function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="182" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="10663" bodyend="10673" declfile="relaxng.h" declline="182" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a4ae01dcb5cb6c78da51d9e46ed085de1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxNGGetValidErrors</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt, xmlRelaxNGValidityErrorFunc *err, xmlRelaxNGValidityWarningFunc *warn, void **ctx)</argsstring>
+        <name>xmlRelaxNGGetValidErrors</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1a2f9c0f7741e83f942b6c98ed4e0ba69c" kindref="member">xmlRelaxNGValidityErrorFunc</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="relaxng_8h_1ade2d403c9c2a4a5b08e8342e68a9a34b" kindref="member">xmlRelaxNGValidityWarningFunc</ref> *</type>
+          <declname>warn</declname>
+        </param>
+        <param>
+          <type>void **</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Get the error and warning callback information. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error function result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warn</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the warning function result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context result </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error and 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="187" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="10704" bodyend="10717" declfile="relaxng.h" declline="187" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a54b060a45d314de14c2f79f5cfcd0fee" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGSetValidStructuredErrors</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt, xmlStructuredErrorFunc serror, void *ctx)</argsstring>
+        <name>xmlRelaxNGSetValidStructuredErrors</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>serror</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the structured error callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>serror</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the structured error function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="192" column="1" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="10683" bodyend="10692" declfile="relaxng.h" declline="192" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a2665fe0923b134890b9b96d9d89b8090" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+        <definition>xmlRelaxNGValidCtxt * xmlRelaxNGNewValidCtxt</definition>
+        <argsstring>(xmlRelaxNG *schema)</argsstring>
+        <name>xmlRelaxNGNewValidCtxt</name>
+        <param>
+          <type><ref refid="relaxng_8h_1af56beae0a5d7122bf604f6d99ad72c87" kindref="member">xmlRelaxNG</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML RelaxNGs validation context based on the given schema. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a precompiled XML RelaxNGs </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the validation context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="195" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="10587" bodyend="10609" declfile="relaxng.h" declline="195" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1aa73636a81ca635477193a4da8df1cde4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGFreeValidCtxt</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt)</argsstring>
+        <name>xmlRelaxNGFreeValidCtxt</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free the resources associated to the schema validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="197" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="10617" bodyend="10650" declfile="relaxng.h" declline="197" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a34f9ad3aa62b9241253be64deb2b170a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxNGValidateDoc</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt, xmlDoc *doc)</argsstring>
+        <name>xmlRelaxNGValidateDoc</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Validate a document tree in memory. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Relax-NG validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a parsed document tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the document is valid, a positive error code number otherwise and -1 in case of internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="199" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="10728" bodyend="10749" declfile="relaxng.h" declline="199" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a617bad952c19562ca9fbda5a4c45a812" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxNGValidatePushElement</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt, xmlDoc *doc, xmlNode *elem)</argsstring>
+        <name>xmlRelaxNGValidatePushElement</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>elem</declname>
+        </param>
+        <briefdescription>
+<para>Push a new element start on the RelaxNG validation stack. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document instance </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an element instance </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if no validation problem was found or 0 if validating the element requires a full node, and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="205" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="8100" bodyend="8171" declfile="relaxng.h" declline="205" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a7426ffc3b41beaaa26ae13c9a00f6fd0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxNGValidatePushCData</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt, const xmlChar *data, int len)</argsstring>
+        <name>xmlRelaxNGValidatePushCData</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>check the CData parsed for validation in the current stack </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the RelaxNG validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>some character data read </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of the data </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if no validation problem was found or -1 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="209" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="8182" bodyend="8205" declfile="relaxng.h" declline="209" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a53172ae2f9eb1cbbc20a0632791df59e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxNGValidatePopElement</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt, xmlDoc *doc, xmlNode *elem)</argsstring>
+        <name>xmlRelaxNGValidatePopElement</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>elem</declname>
+        </param>
+        <briefdescription>
+<para>Pop the element end from the RelaxNG validation stack. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the RelaxNG validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document instance </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an element instance </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if no validation problem was found or 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="213" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="8216" bodyend="8243" declfile="relaxng.h" declline="213" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1a9d31de303a375c9677f8fb362dd69d46" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlRelaxNGValidateFullElement</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt, xmlDoc *doc, xmlNode *elem)</argsstring>
+        <name>xmlRelaxNGValidateFullElement</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>elem</declname>
+        </param>
+        <briefdescription>
+<para>Validate a full subtree when <ref refid="relaxng_8h_1a617bad952c19562ca9fbda5a4c45a812" kindref="member">xmlRelaxNGValidatePushElement</ref> returned 0 and the content of the node has been expanded. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document instance </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an element instance </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if no validation problem was found or -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="217" column="5" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="8255" bodyend="8279" declfile="relaxng.h" declline="217" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="relaxng_8h_1ad181997c60bd68e68c61b3ed3ca6091c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRelaxNGValidCtxtClearErrors</definition>
+        <argsstring>(xmlRelaxNGValidCtxt *ctxt)</argsstring>
+        <name>xmlRelaxNGValidCtxtClearErrors</name>
+        <param>
+          <type><ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Clear errors in the context, allowing to recover from errors during streaming validation and continue it. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="remark"><para>it doesn&apos;s reset the last internal libxml2 error </para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="relaxng.h" line="221" column="21" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="8289" bodyend="8296" declfile="relaxng.h" declline="221" declcolumn="21"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>implementation of the Relax-NG validation </para>
+    </briefdescription>
+    <detaileddescription>
+<para>implementation of the Relax-NG validation</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="relaxng.h"/>
+  </compounddef>
+</doxygen>

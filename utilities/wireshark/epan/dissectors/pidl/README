@@ -26,6 +26,10 @@ The following files:
 ../packet-dcerpc-frsrpc.h
 ../packet-dcerpc-frstrans.h
 ../packet-dcerpc-initshutdown.h
+../packet-dcerpc-iwbemlevel1login.h
+../packet-dcerpc-iwbemloginclientid.h
+../packet-dcerpc-iwbemloginclientidex.h
+../packet-dcerpc-iwbemservices.h
 ../packet-dcerpc-lsa.h
 ../packet-dcerpc-mapi.h
 ../packet-dcerpc-misc.h
@@ -98,14 +102,19 @@ and compiling:
 
 pidl complains that inline arrays aren't supported for these:
 
-	dnsserver.idl
-	eventlog.idl
+	dnsserver/dnsserver.idl
+	eventlog/eventlog.idl
+
+pidl complains about a syntax error due to a line commented out with a
+// comment for these:
+
+	nspi/nspi.idl
 
 pidl generates possibly-incorrect code for these - this needs checking:
 
 	rfr/rfr.idl
 
-pidl rejects these with errors:
+pidl complains about not being able to open include files for these:
 
-	srvsvc.idl
-	wkssvc.cnf
+	samr/samr.idl
+	winspool/winspool.idl

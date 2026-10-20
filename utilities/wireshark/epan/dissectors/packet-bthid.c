@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,34 +19,34 @@
 #include "packet-btl2cap.h"
 #include "packet-btsdp.h"
 
-static int proto_bthid                                                     = -1;
-static int hf_bthid_transaction_type                                       = -1;
-static int hf_bthid_parameter_reserved                                     = -1;
-static int hf_bthid_parameter_reserved_31                                  = -1;
-static int hf_bthid_parameter_reserved_32                                  = -1;
-static int hf_bthid_parameter_reserved_2                                   = -1;
-static int hf_bthid_parameter_result_code                                  = -1;
-static int hf_bthid_parameter_control_operation                            = -1;
-static int hf_bthid_parameter_size                                         = -1;
-static int hf_bthid_protocol                                               = -1;
-static int hf_bthid_idle_rate                                              = -1;
-static int hf_bthid_parameter_report_type                                  = -1;
-static int hf_bthid_report_id                                              = -1;
-static int hf_bthid_buffer_size                                            = -1;
-static int hf_bthid_protocol_code                                          = -1;
-static int hf_bthid_data                                                   = -1;
+static int proto_bthid;
+static int hf_bthid_transaction_type;
+static int hf_bthid_parameter_reserved;
+static int hf_bthid_parameter_reserved_31;
+static int hf_bthid_parameter_reserved_32;
+static int hf_bthid_parameter_reserved_2;
+static int hf_bthid_parameter_result_code;
+static int hf_bthid_parameter_control_operation;
+static int hf_bthid_parameter_size;
+static int hf_bthid_protocol;
+static int hf_bthid_idle_rate;
+static int hf_bthid_parameter_report_type;
+static int hf_bthid_report_id;
+static int hf_bthid_buffer_size;
+static int hf_bthid_protocol_code;
+static int hf_bthid_data;
 
-static gint ett_bthid             = -1;
+static int ett_bthid;
 
-static expert_field ei_bthid_parameter_control_operation_deprecated = EI_INIT;
-static expert_field ei_bthid_transaction_type_deprecated = EI_INIT;
+static expert_field ei_bthid_parameter_control_operation_deprecated;
+static expert_field ei_bthid_transaction_type_deprecated;
 
 static dissector_handle_t bthid_handle;
 static dissector_handle_t usb_hid_boot_keyboard_input_report_handle;
 static dissector_handle_t usb_hid_boot_keyboard_output_report_handle;
 static dissector_handle_t usb_hid_boot_mouse_input_report_handle;
 
-static gboolean show_deprecated = FALSE;
+static bool show_deprecated;
 
 static const value_string transaction_type_vals[] = {
     { 0x00,   "HANDSHAKE" },
@@ -131,14 +119,14 @@ static const value_string protocol_code_vals[] = {
 void proto_register_bthid(void);
 void proto_reg_handoff_bthid(void);
 
-static gint
+static int
 dissect_hid_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        gint offset, guint report_type)
+        int offset, unsigned report_type)
 {
     unsigned int protocol_code;
 
     proto_tree_add_item(tree, hf_bthid_protocol_code, tvb, offset, 1, ENC_BIG_ENDIAN);
-    protocol_code = tvb_get_guint8(tvb, offset);
+    protocol_code = tvb_get_uint8(tvb, offset);
     col_append_fstr(pinfo->cinfo, COL_INFO, " - %s", val_to_str_const(protocol_code, protocol_code_vals, "unknown type"));
     offset += 1;
 
@@ -169,12 +157,12 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 {
     proto_item   *ti;
     proto_tree   *bthid_tree;
-    gint          offset = 0;
-    guint         transaction_type;
-    guint         parameter;
-    guint         protocol;
-    guint         idle_rate;
-    guint8        control_operation;
+    int           offset = 0;
+    unsigned      transaction_type;
+    unsigned      parameter;
+    unsigned      protocol;
+    unsigned      idle_rate;
+    uint8_t       control_operation;
     proto_item   *pitem;
 
     ti = proto_tree_add_item(tree, proto_bthid, tvb, offset, -1, ENC_NA);
@@ -196,7 +184,7 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
     }
 
     pitem = proto_tree_add_item(bthid_tree, hf_bthid_transaction_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-    transaction_type = tvb_get_guint8(tvb, offset);
+    transaction_type = tvb_get_uint8(tvb, offset);
     parameter = transaction_type & 0x0F;
     transaction_type = transaction_type >> 4;
 
@@ -210,7 +198,7 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
             break;
         case 0x01: /* HID_CONTROL */
             pitem = proto_tree_add_item(bthid_tree, hf_bthid_parameter_control_operation, tvb, offset, 1, ENC_BIG_ENDIAN);
-            control_operation = tvb_get_guint8(tvb, offset);
+            control_operation = tvb_get_uint8(tvb, offset);
             col_append_fstr(pinfo->cinfo, COL_INFO, " - Control Operation: %s", val_to_str_const(parameter, control_operation_vals, "reserved"));
             if (control_operation < 3 && show_deprecated)
                 expert_add_info(pinfo, pitem, &ei_bthid_parameter_control_operation_deprecated);
@@ -258,7 +246,7 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
             offset += 1;
 
             proto_tree_add_item(bthid_tree, hf_bthid_protocol, tvb, offset, 1, ENC_BIG_ENDIAN);
-            protocol = tvb_get_guint8(tvb, offset) & 0x01;
+            protocol = tvb_get_uint8(tvb, offset) & 0x01;
             offset += 1;
 
             col_append_fstr(pinfo->cinfo, COL_INFO, " - Protocol: %s",
@@ -282,7 +270,7 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
             offset += 1;
 
             pitem = proto_tree_add_item(bthid_tree, hf_bthid_idle_rate, tvb, offset, 1, ENC_BIG_ENDIAN);
-            idle_rate = tvb_get_guint8(tvb, offset);
+            idle_rate = tvb_get_uint8(tvb, offset);
             proto_item_append_text(pitem, " (%u.%03u ms)", idle_rate * 4 / 1000, idle_rate * 4 % 1000);
             col_append_fstr(pinfo->cinfo, COL_INFO, " - Idle Rate: %u.%03u ms", idle_rate*4/1000, idle_rate*4%1000);
             offset += 1;
@@ -290,6 +278,7 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
         case 0x0B: /* DATC */
             if (show_deprecated)
                 expert_add_info(pinfo, pitem, &ei_bthid_transaction_type_deprecated);
+            /* FALL THROUGH */
         case 0x0A: /* DATA */
             proto_tree_add_item(bthid_tree, hf_bthid_parameter_reserved_32, tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(bthid_tree, hf_bthid_parameter_report_type, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -390,7 +379,7 @@ proto_register_bthid(void)
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_bthid
     };
 
@@ -407,7 +396,7 @@ proto_register_bthid(void)
     expert_bthid = expert_register_protocol(proto_bthid);
     expert_register_field_array(expert_bthid, ei, array_length(ei));
 
-    module = prefs_register_protocol(proto_bthid, NULL);
+    module = prefs_register_protocol_subtree("Bluetooth", proto_bthid, NULL);
     prefs_register_static_text_preference(module, "hid.version",
             "Bluetooth Profile HID version: 1.1",
             "Version of profile supported by this dissector.");
@@ -434,7 +423,7 @@ proto_reg_handoff_bthid(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

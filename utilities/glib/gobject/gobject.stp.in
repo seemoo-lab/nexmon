@@ -1,18 +1,18 @@
-global gtypes
-global gtypenames
-global gsignalnames
+global gobject_types_2_0_@LT_CURRENT@_@LT_REVISION@
+global gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@
+global gobject_signal_names_2_0_@LT_CURRENT@_@LT_REVISION@
 
 /* These are needed to keep track of gtype and signal names for the below
  * probes.
  */
 probe process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0.so.0.@LT_CURRENT@.@LT_REVISION@").mark("type__new")
 {
-  gtypes[pid(),user_string($arg1)] = $arg3;
-  gtypenames[pid(),$arg3] = user_string($arg1);
+  gobject_types_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),user_string($arg1)] = $arg3;
+  gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg3] = user_string($arg1);
 }
 probe process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0.so.0.@LT_CURRENT@.@LT_REVISION@").mark("signal__new")
 {
-  gsignalnames[pid(),$arg1] = user_string($arg2);
+  gobject_signal_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg1] = user_string($arg2);
 }
 
 /**
@@ -39,7 +39,7 @@ probe gobject.object_new = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0.so.
 {
   object = $arg1; 
   gtype = $arg2; 
-  type = gtypenames[pid(),$arg2]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg2];
   probestr = sprintf("gobject.object_new(%s) -> %p", type, object);
 }
 
@@ -55,7 +55,7 @@ probe gobject.object_ref = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0.so.
 {
   object = $arg1; 
   gtype = $arg2; 
-  type = gtypenames[pid(),gtype]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),gtype];
   old_refcount = $arg3; 
   refcount = old_refcount+1; 
   probestr = sprintf("gobject.object_ref(%p[%s]) -> %d", object, type, refcount);
@@ -70,9 +70,11 @@ probe gobject.object_ref = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0.so.
  */
 probe gobject.object_unref = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0.so.0.@LT_CURRENT@.@LT_REVISION@").mark("object__unref")
 {
+  /* Beware that if old_refcount is larger than 1 and other threads might race
+   * and destroy object. In that case, object might be a dangling pointer. */
   object = $arg1; 
   gtype = $arg2; 
-  type = gtypenames[pid(),gtype]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),gtype];
   old_refcount = $arg3; 
   refcount = old_refcount-1; 
   probestr = sprintf("gobject.object_unref(%p [%s]) -> %d", object, type, refcount);
@@ -89,7 +91,7 @@ probe gobject.object_dispose = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0
 {
   object = $arg1; 
   gtype = $arg2; 
-  type = gtypenames[pid(),$arg2]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg2];
   last_unref = $arg3; 
   probestr = sprintf("gobject.object_dispose(%p[%s])", object, type);
 }
@@ -105,7 +107,7 @@ probe gobject.object_dispose_end = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject
 {
   object = $arg1; 
   gtype = $arg2; 
-  type = gtypenames[pid(),$arg2]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg2];
   last_unref = $arg3; 
   probestr = sprintf("gobject.object_dispose_end(%p[%s])", object, type);
 }
@@ -120,7 +122,7 @@ probe gobject.object_finalize = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.
 {
   object = $arg1; 
   gtype = $arg2; 
-  type = gtypenames[pid(),$arg2]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg2];
   probestr = sprintf("gobject.object_finalize(%p[%s])", object, type);
 }
 
@@ -134,7 +136,7 @@ probe gobject.object_finalize_end = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobjec
 {
   object = $arg1; 
   gtype = $arg2; 
-  type = gtypenames[pid(),$arg2]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg2];
   probestr = sprintf("gobject.object_finalize_end(%p[%s])", object, type);
 }
 
@@ -150,7 +152,7 @@ probe gobject.signal_new = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0.so.
   gsignal = $arg1; 
   name = user_string($arg2); 
   gtype = $arg3; 
-  type = gtypenames[pid(),$arg3]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg3];
   probestr = sprintf("gobject.signal_new(%s, %s) -> %d", name, type, gsignal);
 }
 
@@ -167,12 +169,12 @@ probe gobject.signal_emit = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.0.so
 {
   gsignal = $arg1; 
   detail = $arg2; 
-  signal = gsignalnames[pid(),$arg1]; 
+  signal = gobject_signal_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg1];
   if (detail != 0)
     signal = signal . "::" . gquarks[pid(), detail]
   object = $arg3; 
   gtype = $arg4; 
-  type = gtypenames[pid(),$arg4]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg4];
   probestr = sprintf("gobject.signal_emit(%p[%s], %s)", object, type, signal);
 }
 
@@ -189,11 +191,11 @@ probe gobject.signal_emit_end = process("@ABS_GLIB_RUNTIME_LIBDIR@/libgobject-2.
 {
   gsignal = $arg1; 
   detail = $arg2; 
-  signal = gsignalnames[pid(),$arg1]; 
+  signal = gobject_signal_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg1];
   if (detail != 0)
     signal = signal . "::" . gquarks[pid(), detail]
   object = $arg3; 
   gtype = $arg4; 
-  type = gtypenames[pid(),$arg4]; 
+  type = gobject_type_names_2_0_@LT_CURRENT@_@LT_REVISION@[pid(),$arg4];
   probestr = sprintf("gobject.signal_emit_end(%p[%s], %s)", object, type, signal);
 }

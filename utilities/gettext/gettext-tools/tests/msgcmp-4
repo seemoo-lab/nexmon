@@ -87,8 +87,8 @@ EOF
 : ${MSGCMP=msgcmp}
 LC_MESSAGES=C LC_ALL= \
 ${MSGCMP} --use-fuzzy mc-test4.po1 mc-test4.pot > mc-test4.out11 2>&1 || Exit 1
-if grep -v 'warning:' mc-test4.out11 > /dev/null; then
-  Exit 1;
+if grep -v '^==' mc-test4.out11 | grep -v 'warning:' > /dev/null; then
+  Exit 1
 fi
 
 # Verify that without fuzzies, not all msgids of the POT file are covered.
@@ -96,7 +96,7 @@ fi
 LC_MESSAGES=C LC_ALL= \
 ${MSGCMP} mc-test4.po1 mc-test4.pot > mc-test4.out12 2>&1
 test $? = 1 || { Exit 1; }
-grep -v 'warning:' mc-test4.out12 > /dev/null || Exit 1
+grep -v '^=='  mc-test4.out12 | grep -v 'warning:' > /dev/null || Exit 1
 
 cat <<\EOF > mc-test4.po2
 msgid ""
@@ -145,8 +145,8 @@ EOF
 : ${MSGCMP=msgcmp}
 LC_MESSAGES=C LC_ALL= \
 ${MSGCMP} mc-test4.po2 mc-test4.pot > mc-test4.out2 2>&1 || Exit 1
-if grep -v 'warning:' mc-test4.out2 > /dev/null; then
-  Exit 1;
+if grep -v '^=='  mc-test4.out2 | grep -v 'warning:' > /dev/null; then
+  Exit 1
 fi
 
 exit $result

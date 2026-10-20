@@ -1,6 +1,5 @@
 ## Makefile for the gettext-runtime/man subdirectory of GNU gettext
-## Copyright (C) 2001-2003, 2006, 2009, 2015-2016 Free Software Foundation,
-## Inc.
+## Copyright (C) 2001-2025 Free Software Foundation, Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -13,7 +12,7 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## Process this file with automake to produce Makefile.in.
 
@@ -24,12 +23,12 @@ EXTRA_DIST =
 
 # A manual page for each of the bin_PROGRAMS in src/Makefile.am.
 
-man_aux = gettext.x ngettext.x envsubst.x
+man_aux = gettext.x ngettext.x printf_gettext.x printf_ngettext.x envsubst.x
 
 # Likewise, plus additional manual pages for the libintl functions.
 
-man_MAN1GEN = gettext.1 ngettext.1
-man_MAN1IN = gettext.1.in ngettext.1.in
+man_MAN1GEN = gettext.1 ngettext.1 printf_gettext.1 printf_ngettext.1
+man_MAN1IN = gettext.1.in ngettext.1.in printf_gettext.1.in printf_ngettext.1.in
 man_MAN1OTHER = envsubst.1
 man_MAN1 = $(man_MAN1GEN) $(man_MAN1OTHER)
 man_MAN3 = gettext.3 ngettext.3 \
@@ -40,8 +39,8 @@ man_MAN3LINK = dgettext.3 dcgettext.3 dngettext.3 dcngettext.3
 man_MANS = $(man_MAN1)
 notrans_man_MANS = $(man_MAN3) $(man_MAN3LINK)
 
-man_HTML1GEN = gettext.1.html ngettext.1.html
-man_HTML1IN = gettext.1.html.in ngettext.1.html.in
+man_HTML1GEN = gettext.1.html ngettext.1.html printf_gettext.1.html printf_ngettext.1.html
+man_HTML1IN = gettext.1.html.in ngettext.1.html.in printf_gettext.1.html.in printf_ngettext.1.html.in
 man_HTML1OTHER = envsubst.1.html
 man_HTML1 = $(man_HTML1GEN) $(man_HTML1OTHER)
 man_HTML3 = gettext.3.html ngettext.3.html \
@@ -63,6 +62,10 @@ HELP2MAN = $(PERL) -w -- $(srcdir)/help2man
 
 # groff 1.17 or newer.
 MAN2HTML = groff -mandoc -Thtml
+# Some versions of groff -Thtml map '\-' to '&minus;' = U+2212, which yields
+# the wrong result when copy&pasting command-line options and such.
+# Also remove 'CreationDate:' lines, for reproducible builds.
+MAN2HTML_POSTPROCESS = sed -e 's/\&minus;/-/g' -e '/CreationDate:/d'
 
 UPDATEMODE =
 
@@ -70,7 +73,7 @@ UPDATEMODE =
 gt_man2html = \
 	if test -f $${srcdir}$$m; then \
 	  $(MAN2HTML) $${srcdir}$$m > t-$@ && \
-	  sed -e '/CreationDate:/d' < t-$@ > t2-$@ && \
+	  $(MAN2HTML_POSTPROCESS) < t-$@ > t2-$@ && \
 	  mv t2-$@ $@; \
 	  rm -f t-$@ t2-$@; \
 	fi
@@ -100,10 +103,12 @@ $(man_MAN1GEN): Makefile
 	if test -f $${srcdir}$@.in; then \
 	  sed -e 's|@''localedir''@|$(localedir)|g' $${srcdir}$@.in > t-$@ && \
 	  mv t-$@ $@; \
-        fi
+	fi
 
 gettext.1: gettext.1.in
 ngettext.1: ngettext.1.in
+printf_gettext.1: printf_gettext.1.in
+printf_ngettext.1: printf_ngettext.1.in
 
 $(man_MAN1IN) $(man_MAN1OTHER): help2man $(top_srcdir)/../.version
 	progname=`echo $@ | sed -e 's/\.in$$//' -e 's/\.1$$//'`; \
@@ -112,6 +117,8 @@ $(man_MAN1IN) $(man_MAN1OTHER): help2man $(top_srcdir)/../.version
 
 gettext.1.in: gettext.x ../src/gettext.c
 ngettext.1.in: ngettext.x ../src/ngettext.c
+printf_gettext.1.in: printf_gettext.x ../src/printf_gettext.c
+printf_ngettext.1.in: printf_ngettext.x ../src/printf_ngettext.c
 envsubst.1: envsubst.x ../src/envsubst.c
 
 $(man_MAN3): $(top_srcdir)/../.version
@@ -135,10 +142,12 @@ $(man_HTML1GEN): Makefile
 	if test -f $${srcdir}$@.in; then \
 	  sed -e 's|@''localedir''@|$(localedir)|g' $${srcdir}$@.in > t-$@ && \
 	  mv t-$@ $@; \
-        fi
+	fi
 
 gettext.1.html: gettext.1.html.in
 ngettext.1.html: ngettext.1.html.in
+printf_gettext.1.html: printf_gettext.1.html.in
+printf_ngettext.1.html: printf_ngettext.1.html.in
 
 $(man_HTML1IN):
 	srcdir=''; \
@@ -149,6 +158,8 @@ $(man_HTML1IN):
 
 gettext.1.html.in: gettext.1.in
 ngettext.1.html.in: ngettext.1.in
+printf_gettext.1.html.in: printf_gettext.1.in
+printf_ngettext.1.html.in: printf_ngettext.1.in
 
 $(man_HTML1OTHER):
 	srcdir=''; \

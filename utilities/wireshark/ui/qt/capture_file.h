@@ -1,22 +1,10 @@
-/* capture_file.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef CAPTURE_FILE_H
@@ -26,12 +14,8 @@
 
 #include <config.h>
 
-#include <glib.h>
-
-typedef struct _capture_file capture_file;
-typedef struct _capture_session capture_session;
-
-struct _packet_info;
+#include "cfile.h"
+#include "capture_event.h"
 
 class CaptureFile : public QObject
 {
@@ -50,25 +34,63 @@ public:
      */
     bool isValid() const;
 
-    /** Get the current selected row
+    /** Return the full pathname.
      *
-     * @return the current selected index of the packet list if the capture
-     * file is open and a packet is selected, otherwise -1.
+     * @return The entire pathname, converted from the native OS's encoding
+     * to Unicode if necessary, or a null string if the conversion can't
+     * be done.
      */
-    int currentRow();
-
-    /** Return a filename suitable for use in a window title.
-     *
-     * @return One of: the basename of the capture file without an extension,
-     *  the basename followed by "[closing]", "[closed]", or "[no capture file]".
-     */
-    const QString fileTitle() { return fileName() + file_state_; }
+    const QString filePath();
 
     /** Return the plain filename.
      *
-     * @return The basename of the capture file without an extension.
+     * @return The last component of the pathname, including the extension,
+     * converted from the native OS's encoding to Unicode if necessary, or
+     * a null string if the conversion can't be done.
      */
     const QString fileName();
+
+    /** Return the plain filename without an extension.
+     *
+     * @return The last component of the pathname, without the extension,
+     * converted from the native OS's encoding to Unicode if necessary, or
+     * a null string if the conversion can't be done.
+     */
+    const QString fileBaseName();
+
+    /** Return a string representing the file suitable for use for
+     *  display in the UI in places such as a main window title.
+     *
+     * @return One of:
+     *
+     *    the devices on which the capture was done, if the file is a
+     *    temporary file for a capture;
+     *
+     *    the last component of the capture file's name, converted
+     *    from the native OS's encoding to Unicode if necessary (and
+     *    with REPLACEMENT CHARACTER inserted if the string can't
+     *    be converted).
+     *
+     *    a null string, if there is no capture file.
+     */
+    const QString fileDisplayName();
+
+    /** Return a string representing the file suitable for use in an
+     *  auxiliary window title.
+     *
+     * @return One of:
+     *
+     *    the result of fileDisplayName(), if the file is open;
+     *
+     *    the result of fileDisplayName() followed by [closing], if
+     *    the file is being closed;
+     *
+     *    the result of fileDisplayName() followed by [closed], if
+     *    the file has been closed;
+     *
+     *    [no capture file], if there is no capture file.
+     */
+    const QString fileTitle();
 
     /** Return the current packet information.
      *
@@ -86,38 +108,17 @@ public:
      */
     void reload();
 
+    /** Return any set display filter
+     */
+    QString displayFilter() const;
+
     // XXX This shouldn't be needed.
     static capture_file *globalCapFile();
 
-    gpointer window();
+    void *window();
 
 signals:
-    void captureFileOpened() const;
-    void captureFileReadStarted() const;
-    void captureFileReadFinished() const;
-    void captureFileReloadStarted() const;
-    void captureFileReloadFinished() const;
-    void captureFileRescanStarted() const;
-    void captureFileRescanFinished() const;
-    void captureFileRetapStarted() const;
-    void captureFileRetapFinished() const;
-    void captureFileClosing() const;
-    void captureFileClosed() const;
-    void captureFileSaveStarted(const QString &file_path) const;
-    void captureFileSaveFinished() const;
-    void captureFileSaveFailed() const;
-    void captureFileSaveStopped() const;
-    void captureFileFlushTapsData() const;
-
-    void captureCapturePrepared(capture_session *cap_session);
-    void captureCaptureUpdateStarted(capture_session *cap_session);
-    void captureCaptureUpdateContinue(capture_session *cap_session);
-    void captureCaptureUpdateFinished(capture_session *cap_session);
-    void captureCaptureFixedStarted(capture_session *cap_session);
-    void captureCaptureFixedContinue(capture_session *cap_session);
-    void captureCaptureFixedFinished(capture_session *cap_session);
-    void captureCaptureStopping(capture_session *cap_session);
-    void captureCaptureFailed(capture_session *cap_session);
+    void captureEvent(CaptureEvent);
 
 public slots:
     /** Retap the capture file. Convenience wrapper for cf_retap_packets.
@@ -143,33 +144,19 @@ public slots:
     void setCaptureStopFlag(bool stop_flag = true);
 
 private:
-    static void captureFileCallback(gint event, gpointer data, gpointer user_data);
+    static void captureFileCallback(int event, void *data, void *user_data);
 #ifdef HAVE_LIBPCAP
-    static void captureCallback(gint event, capture_session *cap_session, gpointer user_data);
+    static void captureCallback(int event, capture_session *cap_session, void *user_data);
 #endif
 
-    void captureFileEvent(int event, gpointer data);
-    void captureEvent(int event, capture_session *cap_session);
+    void captureFileEvent(int event, void *data);
+    void captureSessionEvent(int event, capture_session *cap_session);
     const QString &getFileBasename();
 
     static QString no_capture_file_;
 
     capture_file *cap_file_;
-    QString file_name_;
     QString file_state_;
 };
 
 #endif // CAPTURE_FILE_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

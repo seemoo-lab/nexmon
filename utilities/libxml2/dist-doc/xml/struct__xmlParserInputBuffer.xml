@@ -1,0 +1,173 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlParserInputBuffer" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlParserInputBuffer</compoundname>
+    <includes local="no">xmlIO.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1ae376f130b17d169ee51be68077a89ed0" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* context</definition>
+        <argsstring></argsstring>
+        <name>context</name>
+        <qualifiedname>_xmlParserInputBuffer::context</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="127" column="27" bodyfile="xmlIO.h" bodystart="127" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1ad457859fc8bb75bc38f12ae58b961747" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1a8b061791258369d9e2c6624158e018e4" kindref="member">xmlInputReadCallback</ref></type>
+        <definition>xmlInputReadCallback readcallback</definition>
+        <argsstring></argsstring>
+        <name>readcallback</name>
+        <qualifiedname>_xmlParserInputBuffer::readcallback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="128" column="28" bodyfile="xmlIO.h" bodystart="128" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1a3eee1fb538c759394b9fabcdebe08b42" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1a9c0f6d110f2f87b9c3600328505f32ab" kindref="member">xmlInputCloseCallback</ref></type>
+        <definition>xmlInputCloseCallback closecallback</definition>
+        <argsstring></argsstring>
+        <name>closecallback</name>
+        <qualifiedname>_xmlParserInputBuffer::closecallback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="129" column="28" bodyfile="xmlIO.h" bodystart="129" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1a6eeaf4027f9a85abfc0dec98195bfc4a" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+        <definition>xmlCharEncodingHandler* encoder</definition>
+        <argsstring></argsstring>
+        <name>encoder</name>
+        <qualifiedname>_xmlParserInputBuffer::encoder</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="132" column="28" bodyfile="xmlIO.h" bodystart="132" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1a600384c79adf113b709944ece5f34f51" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+        <definition>xmlBuf* buffer</definition>
+        <argsstring></argsstring>
+        <name>buffer</name>
+        <qualifiedname>_xmlParserInputBuffer::buffer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="135" column="12" bodyfile="xmlIO.h" bodystart="135" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1a46cbcd405b6d53278132534e7af04ab5" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+        <definition>xmlBuf* raw</definition>
+        <argsstring></argsstring>
+        <name>raw</name>
+        <qualifiedname>_xmlParserInputBuffer::raw</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="137" column="12" bodyfile="xmlIO.h" bodystart="137" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1ab26d537449e341d679c99e4d287d645b" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int compressed</definition>
+        <argsstring></argsstring>
+        <name>compressed</name>
+        <qualifiedname>_xmlParserInputBuffer::compressed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="139" column="8" bodyfile="xmlIO.h" bodystart="139" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1a11614f44ef4d939bdd984953346a7572" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int error</definition>
+        <argsstring></argsstring>
+        <name>error</name>
+        <qualifiedname>_xmlParserInputBuffer::error</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="140" column="9" bodyfile="xmlIO.h" bodystart="140" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInputBuffer_1a71f51d4667ebc49f4d029065b4de45bc" prot="public" static="no" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long rawconsumed</definition>
+        <argsstring></argsstring>
+        <name>rawconsumed</name>
+        <qualifiedname>_xmlParserInputBuffer::rawconsumed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="142" column="19" bodyfile="xmlIO.h" bodystart="142" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Parser input buffer. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This struct and all related functions should ultimately be removed from the public interface. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="3">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="2">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="1">
+        <label>_xmlParserInputBuffer</label>
+        <link refid="struct__xmlParserInputBuffer"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>raw</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="xmlIO.h" line="126" column="1" bodyfile="xmlIO.h" bodystart="126" bodyend="143"/>
+    <listofallmembers>
+      <member refid="struct__xmlParserInputBuffer_1a600384c79adf113b709944ece5f34f51" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>buffer</name></member>
+      <member refid="struct__xmlParserInputBuffer_1a3eee1fb538c759394b9fabcdebe08b42" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>closecallback</name></member>
+      <member refid="struct__xmlParserInputBuffer_1ab26d537449e341d679c99e4d287d645b" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>compressed</name></member>
+      <member refid="struct__xmlParserInputBuffer_1ae376f130b17d169ee51be68077a89ed0" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>context</name></member>
+      <member refid="struct__xmlParserInputBuffer_1a6eeaf4027f9a85abfc0dec98195bfc4a" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>encoder</name></member>
+      <member refid="struct__xmlParserInputBuffer_1a11614f44ef4d939bdd984953346a7572" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>error</name></member>
+      <member refid="struct__xmlParserInputBuffer_1a46cbcd405b6d53278132534e7af04ab5" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>raw</name></member>
+      <member refid="struct__xmlParserInputBuffer_1a71f51d4667ebc49f4d029065b4de45bc" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>rawconsumed</name></member>
+      <member refid="struct__xmlParserInputBuffer_1ad457859fc8bb75bc38f12ae58b961747" prot="public" virt="non-virtual"><scope>_xmlParserInputBuffer</scope><name>readcallback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

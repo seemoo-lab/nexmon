@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -94,67 +96,67 @@ struct _GActionGroupInterface
                                                         GVariant           **state);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType                   g_action_group_get_type                         (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType                   g_action_group_get_type                         (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean                g_action_group_has_action                       (GActionGroup *action_group,
                                                                          const gchar  *action_name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gchar **                g_action_group_list_actions                     (GActionGroup *action_group);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const GVariantType *    g_action_group_get_action_parameter_type        (GActionGroup *action_group,
                                                                          const gchar  *action_name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const GVariantType *    g_action_group_get_action_state_type            (GActionGroup *action_group,
                                                                          const gchar  *action_name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GVariant *              g_action_group_get_action_state_hint            (GActionGroup *action_group,
                                                                          const gchar  *action_name);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean                g_action_group_get_action_enabled               (GActionGroup *action_group,
                                                                          const gchar  *action_name);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GVariant *              g_action_group_get_action_state                 (GActionGroup *action_group,
                                                                          const gchar  *action_name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                    g_action_group_change_action_state              (GActionGroup *action_group,
                                                                          const gchar  *action_name,
                                                                          GVariant     *value);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                    g_action_group_activate_action                  (GActionGroup *action_group,
                                                                          const gchar  *action_name,
                                                                          GVariant     *parameter);
 
 /* signals */
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                    g_action_group_action_added                     (GActionGroup *action_group,
                                                                          const gchar  *action_name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                    g_action_group_action_removed                   (GActionGroup *action_group,
                                                                          const gchar  *action_name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                    g_action_group_action_enabled_changed           (GActionGroup *action_group,
                                                                          const gchar  *action_name,
                                                                          gboolean      enabled);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                    g_action_group_action_state_changed             (GActionGroup *action_group,
                                                                          const gchar  *action_name,
                                                                          GVariant     *state);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean                g_action_group_query_action                     (GActionGroup        *action_group,
                                                                          const gchar         *action_name,
                                                                          gboolean            *enabled,
                                                                          const GVariantType **parameter_type,
                                                                          const GVariantType **state_type,
                                                                          GVariant           **state_hint,
-                                                                         GVariant           **state);
+                                                                         GVariant           **state) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 

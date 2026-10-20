@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,12 +37,9 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gwin32outputstream
- * @short_description: Streaming output operations for Windows file handles
- * @include: gio/gwin32outputstream.h
- * @see_also: #GOutputStream
+ * GWin32OutputStream:
  *
- * #GWin32OutputStream implements #GOutputStream for writing to a
+ * `GWin32OutputStream` implements [class@Gio.OutputStream] for writing to a
  * Windows file handle.
  *
  * Note that `<gio/gwin32outputstream.h>` belongs to the Windows-specific GIO
@@ -246,9 +245,7 @@ g_win32_output_stream_class_init (GWin32OutputStreamClass *klass)
    * Since: 2.26
    */
   props[PROP_HANDLE] =
-    g_param_spec_pointer ("handle",
-                          P_("File handle"),
-                          P_("The file handle to write to"),
+    g_param_spec_pointer ("handle", NULL, NULL,
                           G_PARAM_READABLE |
                           G_PARAM_WRITABLE |
                           G_PARAM_CONSTRUCT_ONLY |
@@ -262,9 +259,7 @@ g_win32_output_stream_class_init (GWin32OutputStreamClass *klass)
    * Since: 2.26
    */
   props[PROP_CLOSE_HANDLE] =
-    g_param_spec_boolean ("close-handle",
-                          P_("Close file handle"),
-                          P_("Whether to close the file handle when the stream is closed"),
+    g_param_spec_boolean ("close-handle", NULL, NULL,
                           TRUE,
                           G_PARAM_READABLE |
                           G_PARAM_WRITABLE |

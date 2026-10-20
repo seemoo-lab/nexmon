@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRegInputToken" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRegInputToken</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRegInputToken_1a050d5251f022144a70e35e06ccc3665f" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>_xmlRegInputToken::value</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="357" column="13" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="357" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegInputToken_1a735984d41155bc1032e09bece8f8d66d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* data</definition>
+        <argsstring></argsstring>
+        <name>data</name>
+        <qualifiedname>_xmlRegInputToken::data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="358" column="10" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="358" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="356" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="356" bodyend="359"/>
+    <listofallmembers>
+      <member refid="struct__xmlRegInputToken_1a735984d41155bc1032e09bece8f8d66d" prot="public" virt="non-virtual"><scope>_xmlRegInputToken</scope><name>data</name></member>
+      <member refid="struct__xmlRegInputToken_1a050d5251f022144a70e35e06ccc3665f" prot="public" virt="non-virtual"><scope>_xmlRegInputToken</scope><name>value</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

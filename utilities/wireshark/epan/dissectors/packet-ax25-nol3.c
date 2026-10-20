@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -49,6 +37,7 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/ax25_pids.h>
+#include "packet-xdlc.h"
 
 #define STRLEN	80
 
@@ -59,21 +48,21 @@ void proto_reg_handoff_ax25_nol3(void);
 static dissector_handle_t aprs_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_ax25_nol3		= -1;
-static int proto_dx			= -1;
+static int proto_ax25_nol3;
+static int proto_dx;
 
-static int hf_dx_report			= -1;
+static int hf_dx_report;
 
-/* static int hf_text			= -1; */
+/* static int hf_text; */
 
 /* Global preferences */
-static gboolean gPREF_APRS     = FALSE;
-static gboolean gPREF_DX       = FALSE;
+static bool gPREF_APRS;
+static bool gPREF_DX;
 
 /* Initialize the subtree pointers */
-static gint ett_ax25_nol3 = -1;
+static int ett_ax25_nol3;
 
-static gint ett_dx		= -1;
+static int ett_dx;
 
 
 /* Code to actually dissect the packets */
@@ -91,26 +80,26 @@ dissect_dx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* dat
 
 	col_set_str( pinfo->cinfo, COL_PROTOCOL, "DX" );
 
-	col_add_fstr( pinfo->cinfo, COL_INFO, "%s", tvb_format_text( tvb, offset, 15 ) );
+	col_add_str( pinfo->cinfo, COL_INFO, tvb_format_text( pinfo->pool, tvb, offset, 15 ) );
 
 	if ( parent_tree )
 		{
 		/* create display subtree for the protocol */
 		ti = proto_tree_add_protocol_format( parent_tree, proto_dx, tvb, 0, -1,
-		    "DX (%s)", tvb_format_text( tvb, offset, 15 ) );
+		    "DX (%s)", tvb_format_text( pinfo->pool, tvb, offset, 15 ) );
 		dx_tree = proto_item_add_subtree( ti, ett_dx );
 		offset = 0;
 
-		proto_tree_add_item( dx_tree, hf_dx_report, tvb, offset, data_len, ENC_ASCII|ENC_NA );
+		proto_tree_add_item( dx_tree, hf_dx_report, tvb, offset, data_len, ENC_ASCII );
 	}
 
 	return tvb_captured_length(tvb);
 }
 
-static gboolean
-isaprs( guint8 dti )
+static bool
+isaprs( uint8_t dti )
 {
-	gboolean b = FALSE;
+	bool b = false;
 
 	switch ( dti )
 		{
@@ -140,24 +129,27 @@ isaprs( guint8 dti )
 		case '_'	:
 		case '`'	:
 		case '{'	:
-		case '}'	: b = TRUE; break;
+		case '}'	: b = true; break;
 		default		: break;
 		}
 	return b;
 }
 
 static int
-dissect_ax25_nol3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_ )
+dissect_ax25_nol3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data)
 {
 	proto_item *ti;
 	proto_tree *ax25_nol3_tree;
 	char       *info_buffer;
 	int         offset;
 	tvbuff_t   *next_tvb = NULL;
-	guint8      dti      = 0;
-	gboolean    dissected;
+	int         control  = GPOINTER_TO_INT(data);
+	bool        ax25_ui_frame = (((control & XDLC_S_U_MASK) == XDLC_U) &&
+	                             ((control & XDLC_U_MODIFIER_MASK) == XDLC_UI));
+	uint8_t     dti      = 0;
+	bool        dissected;
 
-	info_buffer = (char *)wmem_alloc( wmem_packet_scope(), STRLEN );
+	info_buffer = (char *)wmem_alloc( pinfo->pool, STRLEN );
 	info_buffer[0] = '\0';
 
 	col_set_str( pinfo->cinfo, COL_PROTOCOL, "AX.25-NoL3");
@@ -165,18 +157,18 @@ dissect_ax25_nol3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, vo
 	col_clear( pinfo->cinfo, COL_INFO);
 
 	offset = 0;
-	g_snprintf( info_buffer, STRLEN, "Text" );
+	snprintf( info_buffer, STRLEN, "Text" );
 
-	if ( gPREF_APRS )
+	if ( gPREF_APRS && ax25_ui_frame )
 		{
-		dti = tvb_get_guint8( tvb, offset );
+		dti = tvb_get_uint8( tvb, offset );
 		if ( isaprs( dti ) )
-			g_snprintf( info_buffer, STRLEN, "APRS" );
+			snprintf( info_buffer, STRLEN, "APRS" );
 		}
 	if ( gPREF_DX )
 		{
-		if ( tvb_get_guint8( tvb, offset ) == 'D' && tvb_get_guint8( tvb, offset + 1 ) == 'X' )
-		g_snprintf( info_buffer, STRLEN, "DX cluster" );
+		if ( tvb_get_uint8( tvb, offset ) == 'D' && tvb_get_uint8( tvb, offset + 1 ) == 'X' )
+		snprintf( info_buffer, STRLEN, "DX cluster" );
 		}
 
 	col_add_str( pinfo->cinfo, COL_INFO, info_buffer );
@@ -193,20 +185,20 @@ dissect_ax25_nol3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, vo
 	ax25_nol3_tree = proto_item_add_subtree( ti, ett_ax25_nol3 );
 
 	next_tvb = tvb_new_subset_remaining(tvb, offset);
-	dissected = FALSE;
-	if ( gPREF_APRS )
+	dissected = false;
+	if ( gPREF_APRS && ax25_ui_frame )
 		{
 		if ( isaprs( dti ) )
 			{
-			dissected = TRUE;
+			dissected = true;
 			call_dissector( aprs_handle , next_tvb, pinfo, ax25_nol3_tree );
 			}
 		}
 	if ( gPREF_DX )
 		{
-		if ( tvb_get_guint8( tvb, offset ) == 'D' && tvb_get_guint8( tvb, offset + 1 ) == 'X' )
+		if ( tvb_get_uint8( tvb, offset ) == 'D' && tvb_get_uint8( tvb, offset + 1 ) == 'X' )
 			{
-			dissected = TRUE;
+			dissected = true;
 			dissect_dx( next_tvb, pinfo, ax25_nol3_tree, NULL );
 			}
 		}
@@ -241,7 +233,7 @@ proto_register_ax25_nol3(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ax25_nol3,
 		&ett_dx,
 	};
@@ -291,7 +283,7 @@ proto_reg_handoff_ax25_nol3(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

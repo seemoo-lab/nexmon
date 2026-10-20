@@ -1,7 +1,5 @@
-/* Reading XML files.
-   Copyright (C) 1995-1998, 2000-2003, 2005-2006, 2008-2009, 2014-2016 Free
-   Software Foundation, Inc.
-   This file was written by Daiki Ueno <ueno@gnu.org>.
+/* Writing XML files.
+   Copyright (C) 2015-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Daiki Ueno.  */
 
 #ifndef _WRITE_XML_H
 #define _WRITE_XML_H
@@ -36,12 +36,14 @@ extern int
                             const char *locale_name,
                             const char *template_file_name,
                             its_rule_list_ty *its_rules,
+                            bool replace_text,
                             const char *file_name);
 
 extern int
        msgdomain_write_xml_bulk (msgfmt_operand_list_ty *operands,
                                  const char *template_file_name,
                                  its_rule_list_ty *its_rules,
+                                 bool replace_text,
                                  const char *file_name);
 
 #ifdef __cplusplus

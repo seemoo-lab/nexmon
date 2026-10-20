@@ -1,8 +1,10 @@
-# mathfunc.m4 serial 11
-dnl Copyright (C) 2010-2016 Free Software Foundation, Inc.
+# mathfunc.m4
+# serial 18
+dnl Copyright (C) 2010-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 # gl_MATHFUNC(FUNC, RETTYPE, PARAMTYPES [, INCLUDES] [, EXTRA-CODE])
 # ------------------------------------------------------------------
@@ -39,11 +41,20 @@ AC_DEFUN([gl_MATHFUNC],
                                        [m4_bpatsubst(
                                           [m4_bpatsubst(
                                              [m4_bpatsubst(
-                                                [$3],
-                                                [int \*], [&i_ret])],
-                                             [float \*], [&f_ret])],
-                                          [double \*], [&d_ret])],
-                                       [long double \*], [&l_ret])],
+                                                [m4_bpatsubst(
+                                                   [m4_bpatsubst(
+                                                      [m4_bpatsubst(
+                                                         [m4_bpatsubst(
+                                                            [$3],
+                                                            [fenv_t\( const\)? \*], [&fenv_ret])],
+                                                         [fexcept_t\( const\)? \*], [&fx_ret])],
+                                                      [int\( const\)? \*],
+                                                      [&i_ret])],
+                                                   [float\( const\)? \*], [&f_ret])],
+                                                [double\( const\)? \*], [&d_ret])],
+                                             [long double\( const\)? \*], [&l_ret])],
+                                          [fp_rnd], [1])],
+                                       [fp_except_t], [1])],
                                     [int], [2])],
                                  [float], [1.618034f])],
                               [long double], [1.618033988749894848L])],
@@ -60,7 +71,7 @@ AC_DEFUN([gl_MATHFUNC],
              #endif
              #include <math.h>
              $4
-             $2 (*funcptr) $3 = ]func[;
+             $2 (* volatile funcptr) $3 = ]func[;
              int i_ret;
              float f_ret;
              double d_ret;
@@ -76,7 +87,7 @@ AC_DEFUN([gl_MATHFUNC],
     AC_CACHE_CHECK([whether func() can be used with libm],
       [gl_cv_func_]func[_in_libm],
       [
-        save_LIBS="$LIBS"
+        saved_LIBS="$LIBS"
         LIBS="$LIBS -lm"
         AC_LINK_IFELSE(
           [AC_LANG_PROGRAM(
@@ -85,7 +96,7 @@ AC_DEFUN([gl_MATHFUNC],
                #endif
                #include <math.h>
                $4
-               $2 (*funcptr) $3 = ]func[;
+               $2 (* volatile funcptr) $3 = ]func[;
                int i_ret;
                float f_ret;
                double d_ret;
@@ -96,7 +107,7 @@ AC_DEFUN([gl_MATHFUNC],
              ]])],
           [gl_cv_func_]func[_in_libm=yes],
           [gl_cv_func_]func[_in_libm=no])
-        LIBS="$save_LIBS"
+        LIBS="$saved_LIBS"
       ])
     if test $gl_cv_func_[]func[]_in_libm = yes; then
       FUNC[]_LIBM=-lm

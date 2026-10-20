@@ -1,8 +1,5 @@
-/* xgettext PO and JavaProperties backends.
-   Copyright (C) 1995-1998, 2000-2003, 2005-2006, 2008-2009, 2015-2016 Free
-   Software Foundation, Inc.
-
-   This file was written by Peter Miller <millerp@canb.auug.org.au>
+/* xgettext PO, JavaProperties, and NXStringTable backends.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Peter Miller and Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "x-po.h"
@@ -31,14 +28,20 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <error.h>
 #include "message.h"
 #include "xgettext.h"
 #include "xalloc.h"
+#include "xerror-handler.h"
 #include "read-catalog.h"
 #include "read-po.h"
 #include "read-properties.h"
 #include "read-stringtable.h"
-#include "po-lex.h"
+#include "str-list.h"
+#include "msgl-header.h"
+#include "msgl-iconv.h"
+#include "msgl-ascii.h"
+#include "po-charset.h"
 #include "gettext.h"
 
 /* A convenience macro.  I don't like writing gettext() every time.  */
@@ -63,10 +66,6 @@ extract_add_message (default_catalog_reader_ty *this,
                      char *prev_msgid_plural,
                      bool force_fuzzy, bool obsolete)
 {
-  /* See whether we shall exclude this message.  */
-  if (exclude != NULL && message_list_search (exclude, msgctxt, msgid) != NULL)
-    goto discard;
-
   /* If the msgid is the empty string, it is the old header.  Throw it
      away, we have constructed a new one.  Only remember its charset.
      But if no new one was constructed, keep the old header.  This is useful
@@ -78,12 +77,10 @@ extract_add_message (default_catalog_reader_ty *this,
 
         if (charsetstr != NULL)
           {
-            size_t len;
-            char *charset;
-
             charsetstr += strlen ("charset=");
-            len = strcspn (charsetstr, " \t\n");
-            charset = XNMALLOC (len + 1, char);
+            size_t len = strcspn (charsetstr, " \t\n");
+
+            char *charset = XNMALLOC (len + 1, char);
             memcpy (charset, charsetstr, len);
             charset[len] = '\0';
 
@@ -108,6 +105,10 @@ extract_add_message (default_catalog_reader_ty *this,
         free (prev_msgid_plural);
       return;
     }
+
+  /* See whether we shall exclude this message.  */
+  if (exclude != NULL && message_list_search (exclude, msgctxt, msgid) != NULL)
+    goto discard;
 
   /* Invoke superclass method.  */
   default_add_message (this, msgctxt, msgid, msgid_pos, msgid_plural,
@@ -150,21 +151,26 @@ extract (FILE *fp,
          catalog_input_format_ty input_syntax,
          msgdomain_list_ty *mdlp)
 {
-  default_catalog_reader_ty *pop;
+  default_catalog_reader_ty *dcatr;
 
   header_charset = NULL;
 
-  pop = default_catalog_reader_alloc (&extract_methods);
-  pop->handle_comments = true;
-  pop->allow_domain_directives = false;
-  pop->allow_duplicates = false;
-  pop->allow_duplicates_if_same_msgstr = true;
-  pop->file_name = real_filename;
-  pop->mdlp = NULL;
-  pop->mlp = mdlp->item[0]->messages;
-  catalog_reader_parse ((abstract_catalog_reader_ty *) pop, fp, real_filename,
-                        logical_filename, input_syntax);
-  catalog_reader_free ((abstract_catalog_reader_ty *) pop);
+  dcatr = default_catalog_reader_alloc (&extract_methods,
+                                        textmode_xerror_handler);
+  dcatr->handle_comments = true;
+  dcatr->allow_domain_directives = false;
+  dcatr->allow_duplicates = false;
+  dcatr->allow_duplicates_if_same_msgstr = true;
+  dcatr->file_name = real_filename;
+  dcatr->mdlp = NULL;
+  dcatr->mlp = mdlp->item[0]->messages;
+
+  string_list_ty arena;
+  string_list_init (&arena);
+  catalog_reader_parse ((abstract_catalog_reader_ty *) dcatr, fp, real_filename,
+                        logical_filename, true, input_syntax, &arena);
+
+  catalog_reader_free ((abstract_catalog_reader_ty *) dcatr);
 
   if (header_charset != NULL)
     {
@@ -184,27 +190,36 @@ extract (FILE *fp,
 
                   if (charsetstr != NULL)
                     {
-                      size_t len, len1, len2, len3;
-                      char *new_header;
-
                       charsetstr += strlen ("charset=");
-                      len = strcspn (charsetstr, " \t\n");
-
-                      len1 = charsetstr - header;
-                      len2 = strlen (header_charset);
-                      len3 = (header + strlen (header)) - (charsetstr + len);
-                      new_header = XNMALLOC (len1 + len2 + len3 + 1, char);
-                      memcpy (new_header, header, len1);
-                      memcpy (new_header + len1, header_charset, len2);
-                      memcpy (new_header + len1 + len2, charsetstr + len, len3 + 1);
-                      mp->msgstr = new_header;
-                      mp->msgstr_len = len1 + len2 + len3 + 1;
+                      header_set_charset (mp, charsetstr, header_charset);
                     }
                 }
+            }
+
+          if (!input_syntax->produces_utf8)
+            {
+              /* Convert the messages to UTF-8.
+                 finalize_header() expects this.  */
+              message_list_ty *mlp = mdlp->item[0]->messages;
+              iconv_message_list (mlp, NULL, po_charset_utf8, logical_filename,
+                                  textmode_xerror_handler);
             }
         }
 
       free (header_charset);
+    }
+  else
+    {
+      if (!xgettext_omit_header && !input_syntax->produces_utf8)
+        {
+          /* finalize_header() expects the messages to be in UTF-8 encoding.
+             We don't know the encoding here; therefore we have to reject the
+             input if it is not entirely ASCII.  */
+          if (!is_ascii_msgdomain_list (mdlp))
+            error (EXIT_FAILURE, 0,
+                   _("%s: input file doesn't contain a header entry with a charset specification"),
+                   logical_filename);
+        }
     }
 }
 

@@ -4,7 +4,7 @@
 # Test output in Qt .qm format.
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} --qt -o mf-qt-1.qm "$abs_srcdir"/qttest_pl.po || Exit 1
+${MSGFMT} --qt -o mf-qt-1.qm "$wabs_srcdir"/qttest_pl.po || Exit 1
 
 : ${CMP=cmp}
 ${CMP} "$abs_srcdir"/qttest_pl.qm mf-qt-1.qm >/dev/null 2>/dev/null

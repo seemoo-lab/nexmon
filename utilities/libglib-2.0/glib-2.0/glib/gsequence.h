@@ -2,10 +2,12 @@
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007
  * Soeren Sandmann (sandmann@daimi.au.dk)
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,7 +43,7 @@ GSequence *    g_sequence_new                (GDestroyNotify            data_des
 GLIB_AVAILABLE_IN_ALL
 void           g_sequence_free               (GSequence                *seq);
 GLIB_AVAILABLE_IN_ALL
-gint           g_sequence_get_length         (GSequence                *seq);
+gint           g_sequence_get_length         (GSequence                *seq) G_GNUC_PURE;
 GLIB_AVAILABLE_IN_ALL
 void           g_sequence_foreach            (GSequence                *seq,
                                               GFunc                     func,
@@ -60,7 +62,7 @@ void           g_sequence_sort_iter          (GSequence                *seq,
                                               GSequenceIterCompareFunc  cmp_func,
                                               gpointer                  cmp_data);
 GLIB_AVAILABLE_IN_2_48
-gboolean       g_sequence_is_empty           (GSequence                *seq);
+gboolean       g_sequence_is_empty           (GSequence                *seq) G_GNUC_PURE;
 
 
 /* Getting iters */

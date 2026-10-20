@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This module provides icmp echo request/reply SRT statistics to tshark.
@@ -40,16 +28,18 @@
 #include <epan/stat_tap_ui.h>
 #include <epan/dissectors/packet-icmp.h>
 
+#include <wsutil/cmdarg_err.h>
+
 void register_tap_listener_icmpstat(void);
 
 /* used to keep track of the ICMP statistics */
 typedef struct _icmpstat_t {
     char *filter;
     GSList *rt_list;
-    guint num_rqsts;
-    guint num_resps;
-    guint min_frame;
-    guint max_frame;
+    unsigned num_rqsts;
+    unsigned num_resps;
+    unsigned min_frame;
+    unsigned max_frame;
     double min_msecs;
     double max_msecs;
     double tot_msecs;
@@ -58,6 +48,7 @@ typedef struct _icmpstat_t {
 
 /* This callback is never used by tshark but it is here for completeness.  When
  * registering below, we could just have left this function as NULL.
+ * (But this may soon change; see #20432.)
  *
  * When used by wireshark, this function will be called whenever we would need
  * to reset all state, such as when wireshark opens a new file, when it starts
@@ -72,13 +63,38 @@ icmpstat_reset(void *tapdata)
 {
     icmpstat_t *icmpstat = (icmpstat_t *)tapdata;
 
-    g_slist_free(icmpstat->rt_list);
-    memset(icmpstat, 0, sizeof(icmpstat_t));
-    icmpstat->min_msecs = 1.0 * G_MAXUINT;
+    g_slist_free_full(g_steal_pointer(&icmpstat->rt_list), g_free);
+    icmpstat->num_rqsts = 0;
+    icmpstat->num_resps = 0;
+    icmpstat->min_frame = 0;
+    icmpstat->max_frame = 0;
+    icmpstat->min_msecs = 1.0 * UINT_MAX;
+    icmpstat->max_msecs = 0.0;
+    icmpstat->tot_msecs = 0.0;
 }
 
 
-static gint compare_doubles(gconstpointer a, gconstpointer b)
+/* This callback is never used by tshark but it is here for completeness.  When
+ * registering below, we could just have left this function as NULL.
+ * (But this may soon change; see #20432.)
+ *
+ * When used by wireshark, this function will be called when our listener is
+ * being removed.
+ *
+ * So if your application has allocated any memory, this is where to free it.
+ */
+static void
+icmpstat_finish(void *tapdata)
+{
+    icmpstat_t *icmpstat = (icmpstat_t *)tapdata;
+
+    g_slist_free_full(icmpstat->rt_list, g_free);
+    g_free(icmpstat->filter);
+    g_free(icmpstat);
+}
+
+
+static int compare_doubles(const void *a, const void *b)
 {
     double ad, bd;
 
@@ -96,8 +112,8 @@ static gint compare_doubles(gconstpointer a, gconstpointer b)
 /* This callback is invoked whenever the tap system has seen a packet we might
  * be interested in.  The function is to be used to only update internal state
  * information in the *tapdata structure, and if there were state changes which
- * requires the window to be redrawn, return 1 and (*draw) will be called
- * sometime later.
+ * requires the window to be redrawn, return TAP_PACKET_REDRAW and (*draw) will
+ * be called sometime later.
  *
  * This function should be as lightweight as possible since it executes
  * together with the normal wireshark dissectors.  Try to push as much
@@ -112,24 +128,24 @@ static gint compare_doubles(gconstpointer a, gconstpointer b)
  * "icmp" tap, the third parameter type is icmp_transaction_t.
  *
  * function returns :
- *  FALSE: no updates, no need to call (*draw) later
- *  TRUE: state has changed, call (*draw) sometime later
+ *  TAP_PACKET_DONT_REDRAW: no updates, no need to call (*draw) later
+ *  TAP_PACKET_REDRAW: state has changed, call (*draw) sometime later
  */
-static gboolean
-icmpstat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data)
+static tap_packet_status
+icmpstat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data, tap_flags_t flags _U_)
 {
     icmpstat_t *icmpstat = (icmpstat_t *)tapdata;
     const icmp_transaction_t *trans = (const icmp_transaction_t *)data;
     double resp_time, *rt;
 
     if (trans == NULL)
-        return FALSE;
+        return TAP_PACKET_DONT_REDRAW;
 
     if (trans->resp_frame) {
         resp_time = nstime_to_msec(&trans->resp_time);
         rt = g_new(double, 1);
         if (rt == NULL)
-            return FALSE;
+            return TAP_PACKET_DONT_REDRAW;
         *rt = resp_time;
         icmpstat->rt_list = g_slist_prepend(icmpstat->rt_list, rt);
         icmpstat->num_resps++;
@@ -145,9 +161,9 @@ icmpstat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, 
     } else if (trans->rqst_frame)
         icmpstat->num_rqsts++;
     else
-        return FALSE;
+        return TAP_PACKET_DONT_REDRAW;
 
-    return TRUE;
+    return TAP_PACKET_REDRAW;
 }
 
 
@@ -200,6 +216,7 @@ static void compute_stats(icmpstat_t *icmpstat, double *mean, double *med, doubl
  * output device.  Since this is tshark, the only output is stdout.
  * TShark will only call this callback once, which is when tshark has finished
  * reading all packets and exits.
+ * (But this may soon change; see #20432.)
  * If used with wireshark this may be called any time, perhaps once every 3
  * seconds or so.
  * This function may even be called in parallel with (*reset) or (*draw), so
@@ -247,7 +264,7 @@ icmpstat_draw(void *tapdata)
             100.0 * lost / icmpstat->num_rqsts);
         printf("Minimum   Maximum   Mean      Median    SDeviation     Min Frame Max Frame\n");
         printf("%-10.3f%-10.3f%-10.3f%-10.3f%-10.3f     %-10u%-10u\n",
-            icmpstat->min_msecs >= G_MAXUINT ? 0.0 : icmpstat->min_msecs,
+            icmpstat->min_msecs >= UINT_MAX ? 0.0 : icmpstat->min_msecs,
             icmpstat->max_msecs, mean, med, sdev,
             icmpstat->min_frame, icmpstat->max_frame);
     } else {
@@ -265,7 +282,7 @@ icmpstat_draw(void *tapdata)
  * and it creates a new instance to store statistics in and registers this new
  * instance for the icmp tap.
  */
-static void
+static bool
 icmpstat_init(const char *opt_arg, void *userdata _U_)
 {
     icmpstat_t *icmpstat;
@@ -277,14 +294,13 @@ icmpstat_init(const char *opt_arg, void *userdata _U_)
 
     icmpstat = (icmpstat_t *)g_try_malloc(sizeof(icmpstat_t));
     if (icmpstat == NULL) {
-        fprintf(stderr, "tshark: g_try_malloc() fatal error.\n");
-        exit(1);
+        cmdarg_err("Couldn't register icmp,srt tap: Out of memory");
+        return false;
     }
     memset(icmpstat, 0, sizeof(icmpstat_t));
-    icmpstat->min_msecs = 1.0 * G_MAXUINT;
+    icmpstat->min_msecs = 1.0 * UINT_MAX;
 
-    if (filter)
-        icmpstat->filter = g_strdup(filter);
+    icmpstat->filter = g_strdup(filter);
 
 /* It is possible to create a filter and attach it to the callbacks.  Then the
  * callbacks would only be invoked if the filter matched.
@@ -297,18 +313,19 @@ icmpstat_init(const char *opt_arg, void *userdata _U_)
  */
 
     error_string = register_tap_listener("icmp", icmpstat, icmpstat->filter,
-        TL_REQUIRES_NOTHING, icmpstat_reset, icmpstat_packet, icmpstat_draw);
+        TL_REQUIRES_NOTHING, icmpstat_reset, icmpstat_packet, icmpstat_draw,
+        icmpstat_finish);
     if (error_string) {
         /* error, we failed to attach to the tap. clean up */
-        if (icmpstat->filter)
-            g_free(icmpstat->filter);
+        g_free(icmpstat->filter);
         g_free(icmpstat);
 
-        fprintf(stderr, "tshark: Couldn't register icmp,srt tap: %s\n",
-            error_string->str);
+        cmdarg_err("Couldn't register icmp,srt tap: %s", error_string->str);
         g_string_free(error_string, TRUE);
-        exit(1);
+        return false;
     }
+
+    return true;
 }
 
 static stat_tap_ui icmpstat_ui = {
@@ -325,16 +342,3 @@ register_tap_listener_icmpstat(void)
 {
     register_stat_tap_ui(&icmpstat_ui, NULL);
 }
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

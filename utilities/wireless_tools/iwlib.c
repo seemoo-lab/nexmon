@@ -12,6 +12,7 @@
 /***************************** INCLUDES *****************************/
 
 #include "iwlib.h"		/* Header */
+#include <strings.h>
 
 /************************ CONSTANTS & MACROS ************************/
 
@@ -1256,7 +1257,7 @@ iw_print_txpower(char *			buffer,
 /*------------------------------------------------------------------*/
 /*
  * Read /proc/net/wireless to get the latest statistics
- * Note : strtok not thread safe, not used in WE-12 and later.
+ * Note : the /proc parsing path is only used before WE-12.
  */
 int
 iw_get_stats(int		skfd,
@@ -1284,6 +1285,7 @@ iw_get_stats(int		skfd,
       FILE *	f = fopen(PROC_NET_WIRELESS, "r");
       char	buf[256];
       char *	bp;
+      char *	sp = NULL;
       int	t;
 
       if(f==NULL)
@@ -1301,33 +1303,33 @@ iw_get_stats(int		skfd,
 	      bp=strchr(bp,':');
 	      bp++;
 	      /* -- status -- */
-	      bp = strtok(bp, " ");
+	      bp = strtok_r(bp, " ", &sp);
 	      sscanf(bp, "%X", &t);
 	      stats->status = (unsigned short) t;
 	      /* -- link quality -- */
-	      bp = strtok(NULL, " ");
+	      bp = strtok_r(NULL, " ", &sp);
 	      if(strchr(bp,'.') != NULL)
 		stats->qual.updated |= 1;
 	      sscanf(bp, "%d", &t);
 	      stats->qual.qual = (unsigned char) t;
 	      /* -- signal level -- */
-	      bp = strtok(NULL, " ");
+	      bp = strtok_r(NULL, " ", &sp);
 	      if(strchr(bp,'.') != NULL)
 		stats->qual.updated |= 2;
 	      sscanf(bp, "%d", &t);
 	      stats->qual.level = (unsigned char) t;
 	      /* -- noise level -- */
-	      bp = strtok(NULL, " ");
+	      bp = strtok_r(NULL, " ", &sp);
 	      if(strchr(bp,'.') != NULL)
 		stats->qual.updated += 4;
 	      sscanf(bp, "%d", &t);
 	      stats->qual.noise = (unsigned char) t;
 	      /* -- discarded packets -- */
-	      bp = strtok(NULL, " ");
+	      bp = strtok_r(NULL, " ", &sp);
 	      sscanf(bp, "%d", &stats->discard.nwid);
-	      bp = strtok(NULL, " ");
+	      bp = strtok_r(NULL, " ", &sp);
 	      sscanf(bp, "%d", &stats->discard.code);
-	      bp = strtok(NULL, " ");
+	      bp = strtok_r(NULL, " ", &sp);
 	      sscanf(bp, "%d", &stats->discard.misc);
 	      fclose(f);
 	      /* No conversion needed */

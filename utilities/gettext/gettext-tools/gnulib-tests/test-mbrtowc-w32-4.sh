@@ -1,4 +1,4 @@
 #!/bin/sh
 
-# Test a CP950 locale.
-./test-mbrtowc-w32${EXEEXT} Chinese_Taiwan 950
+# Test some UTF-8 locales.
+${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001

@@ -1,0 +1,695 @@
+#! /bin/sh
+#
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# Written by Bruno Haible.
+
+# This program fetches a set of PO files, produced by translators, from
+# a translation project's site on the internet, and updates the LINGUAS
+# file accordingly.
+#
+# It uses GNU wget. Alternatives would be:
+#   - GNU wget2
+#   - curl
+#   - wcurl
+# but each alternative would require separate testing.
+
+progname=$0
+package=@PACKAGE@
+version=@VERSION@
+
+# func_exit STATUS
+# exits with a given status.
+# This function needs to be used, rather than 'exit', when a 'trap' handler is
+# in effect that refers to $?.
+func_exit ()
+{
+  (exit $1); exit $1
+}
+
+# func_tmpdir
+# creates a temporary directory.
+# Input:
+# - progname                 name of this program
+# Sets variable
+# - tmp             pathname of freshly created temporary directory
+func_tmpdir ()
+{
+  # Use the environment variable TMPDIR, falling back to /tmp. This allows
+  # users to specify a different temporary directory, for example, if their
+  # /tmp is filled up or too small.
+  : "${TMPDIR=/tmp}"
+  {
+    # Use the mktemp program if available. If not available, hide the error
+    # message.
+    tmp=`(umask 077 && mktemp -d "$TMPDIR/gtXXXXXX") 2>/dev/null` &&
+    test -n "$tmp" && test -d "$tmp"
+  } ||
+  {
+    # Use a simple mkdir command. It is guaranteed to fail if the directory
+    # already exists.  $RANDOM is bash specific and expands to empty in shells
+    # other than bash, ksh and zsh.  Its use does not increase security;
+    # rather, it minimizes the probability of failure in a very cluttered /tmp
+    # directory.
+    tmp=$TMPDIR/gt$$-$RANDOM
+    (umask 077 && mkdir "$tmp")
+  } ||
+  {
+    echo "$progname: cannot create a temporary directory in $TMPDIR" >&2
+    func_exit 1
+  }
+}
+
+# func_usage
+# outputs to stdout the --help usage message.
+func_usage ()
+{
+  echo "\
+Usage: po-fetch [OPTION...] TP DOMAIN
+       po-fetch [OPTION...] Weblate BASE-URL PROJECT COMPONENT
+       po-fetch [OPTION...] git BASE-URL BRANCH SUBDIR
+
+Fetches a set of PO files, produced by translators, from a translation
+project's site on the internet, and updates the LINGUAS file accordingly.
+
+The first argument indicates the kind of translation project:
+
+    TP         denotes the Translation Project (translationproject.org).
+    Weblate    denotes a Weblate instance.
+    git        denotes a web front-end to a git repository
+               (such as a gitweb instance, a cgit instance, or a GitLab
+               or GitHub or Forgejo instance).
+
+Options:
+      --git      Make changes in the git index, to prepare for a git commit.
+
+Output files location:
+
+The PO files and the LINGUAS file are stored in the current directory.
+
+Informative output:
+
+      --help     Show this help text.
+      --version  Show version and authorship information.
+
+Report bugs in the bug tracker at <https://savannah.gnu.org/projects/gettext>
+or by email to <bug-gettext@gnu.org>."
+}
+
+# func_version
+# outputs to stdout the --version message.
+func_version ()
+{
+  echo "$progname (GNU $package) $version"
+  echo "Copyright (C) 2002-2025 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."
+  printf 'Written by %s.\n' "Bruno Haible"
+}
+
+# func_fetch_TP DOMAIN
+# fetches a set of PO files from the Translation Project.
+# Input:
+# - tmp        an empty temporary directory
+func_fetch_TP ()
+{
+  domain="$1"
+  main_url="https://translationproject.org/latest/${domain}/"
+  # The contents of this URL is an HTML page with hyperlinks to the PO files.
+  # We use 'wget' as an HTML parsing engine.
+  # Options '--recursive --level=1' tell wget to download the HTML page and the
+  # files referenced by the hyperlinks.
+  # Options '--no-host-directories --cut-dirs=2' tell wget to not create deeply
+  # nested subdirectories. The option '--no-directories' does not work as well,
+  # because it causes modified PO files to be downloaded as *.po.1, *.po.2, etc.
+  # which is not what we want.
+  # Option '--accept=po' tells wget to create only files named *.po and throw
+  # away all other downloaded data.
+  # Option '--directory-prefix=...' tells wget to store the resulting files in
+  # the specified subdirectory. We use a temporary directory, so that when a
+  # translation disappears (for example, when a translation team was renamed),
+  # we will actually remove that PO file.
+  # Option '--no-verbose' avoids too much chatter.
+  # Option '--https-only' is a safety measure, to prevent downloading PO files
+  # from insecure 'http' URLs.
+  wget --recursive --level=1 \
+       --no-host-directories --cut-dirs=2 \
+       --accept=po \
+       --directory-prefix="$tmp" \
+       --no-verbose \
+       --https-only \
+       "${main_url}" \
+    || func_exit 1
+}
+
+# func_fetch_weblate BASE-URL PROJECT COMPONENT
+# fetches a set of PO files from a Weblate instance.
+# Input:
+# - tmp        an empty temporary directory
+func_fetch_weblate ()
+{
+  base_url="$1"
+  project="$2"
+  component="$3"
+  # Ensure $base_url ends in a slash.
+  case "$base_url" in
+    */) ;;
+    *) base_url="${base_url}/" ;;
+  esac
+  webui_url="${base_url}projects/${project}/${component}/"
+  # The contents of this URL is an HTML page with a menu entry
+  # "Files > Download translation files as ZIP file".
+  zip_url="${base_url}download/${project}/${component}/?format=zip"
+  # Download this file.
+  # (Alternatively, we could use the Weblate REST API
+  # <https://docs.weblate.org/en/latest/api.html>,
+  # to download the PO files one by one.)
+  # Option '--no-verbose' avoids too much chatter.
+  wget -O "$tmp"/_all_.zip --no-verbose "$zip_url" \
+    || func_exit 1
+  # Unpack it. It contains a subdirectory with a .pot file and some .po files.
+  (cd "$tmp" && unzip -x -n -j _all_.zip) \
+    || func_exit 1
+  rm -f "$tmp"/_all_.zip
+  # Remove all non-PO files.
+  (cd "$tmp" \
+   && for file in *; do \
+        case "$file" in \
+          *.po) ;; \
+          *) rm -f "$file" ;; \
+        esac; \
+      done \
+  )
+  # Some projects use a "File mask" of "SOME_PREFIX.*.po" rather than "*.po".
+  # Rename the PO files so that they fit the usual naming scheme.
+  # Also, make all of the PO files world-readable.
+  (cd "$tmp" \
+   && sed_trim='s/^.*\.\(.*\.po\)/\1/' \
+   && for file in *.po; do \
+        chmod a+r "$file"; \
+        case "$file" in \
+          *.*.po) g=`echo "$file" | sed -e "$sed_trim"`; mv "$file" "$g";; \
+        esac; \
+      done \
+  )
+}
+
+# func_fetch_gitweb BASE-URL BRANCH SUBDIR
+# fetches a set of PO files from a git repository via the gitweb protocol.
+# Input:
+# - tmp        an empty temporary directory
+func_fetch_gitweb ()
+{
+  base_url="$1"
+  branch="$2"
+  subdir="$3"
+  # Validate the base_url.
+  case "$base_url" in
+    *"?p="*) ;;
+    *)
+      echo "gitweb URL is not valid (missing 'p' parameter)" 1>&2
+      func_exit 1
+      ;;
+  esac
+  webui_url="${base_url};a=tree;hb=refs/heads/${branch}"
+  if test -n "$subdir"; then
+    webui_url="${webui_url};f=${subdir}"
+  fi
+  # The contents of this URL is an HTML page with a list of files.
+  # Download it.
+  # Option '--no-verbose' avoids too much chatter.
+  wget -O "$tmp"/_all_.html --no-verbose "$webui_url" \
+    || func_exit 1
+  # For each file, there is an HTML element
+  #   <a class="list" href="...">FILENAME</a>
+  sed -n -e 's/^.*<a class="list" href="[^"]*">\([^<>]*\)<[/]a>.*$/\1/p' < "$tmp"/_all_.html \
+    | while read filename; do
+        case "$filename" in
+          *.po)
+            if test -n "$subdir"; then
+              subdir_filename="$subdir/$filename"
+            else
+              subdir_filename="$filename"
+            fi
+            file_url="${base_url};a=blob_plain;hb=refs/heads/${branch};f=${subdir_filename}"
+            wget -O "$tmp/$filename" --no-verbose "$file_url" \
+              || func_exit 1
+            ;;
+        esac
+      done
+  rm -f "$tmp"/_all_.html
+}
+
+# func_fetch_cgit BASE-URL BRANCH SUBDIR
+# fetches a set of PO files from a git repository via the cgit protocol.
+# Input:
+# - tmp        an empty temporary directory
+func_fetch_cgit ()
+{
+  base_url="$1"
+  branch="$2"
+  subdir="$3"
+  # Validate the base_url.
+  case "$base_url" in
+    *.git) ;;
+    *)
+      echo "cgit URL is not valid (missing '.git' suffix)" 1>&2
+      func_exit 1
+      ;;
+  esac
+  webui_url="${base_url}/tree"
+  if test -n "$subdir"; then
+    webui_url="${webui_url}/${subdir}"
+  fi
+  webui_url="${webui_url}?h=${branch}"
+  # The contents of this URL is an HTML page with a list of files.
+  # Download it.
+  # Option '--no-verbose' avoids too much chatter.
+  wget -O "$tmp"/_all_.html --no-verbose "$webui_url" \
+    || func_exit 1
+  # For each file, there is an HTML element
+  #   <a class='ls-blob...>FILENAME</a>
+  sed -n -e 's/^.*<a class=.ls-blob[^<>]*>\([^<>]*\)<[/]a>.*$/\1/p' < "$tmp"/_all_.html \
+    | while read filename; do
+        case "$filename" in
+          *.po)
+            if test -n "$subdir"; then
+              subdir_filename="$subdir/$filename"
+            else
+              subdir_filename="$filename"
+            fi
+            file_url="${base_url}/plain/${subdir_filename}?h=${branch}"
+            wget -O "$tmp/$filename" --no-verbose "$file_url" \
+              || func_exit 1
+            ;;
+        esac
+      done
+  rm -f "$tmp"/_all_.html
+}
+
+# func_fetch_gitlab BASE-URL BRANCH SUBDIR
+# fetches a set of PO files from a git repository in a GitLab instance
+# browsable through some web UI.
+# Input:
+# - tmp        an empty temporary directory
+func_fetch_gitlab ()
+{
+  base_url="$1"
+  branch="$2"
+  subdir="$3"
+  # Ensure $base_url ends in a slash.
+  case "$base_url" in
+    */) ;;
+    *) base_url="${base_url}/" ;;
+  esac
+  webui_url="${base_url}-/tree/${branch}"
+  if test -n "$subdir"; then
+    webui_url="${webui_url}/${subdir}"
+  fi
+  # The contents of this URL is an HTML page. But it does not contain the list
+  # of files. Instead, the web request that returns the list of files is
+  filelist_url="${base_url}-/refs/${branch}/logs_tree"
+  if test -n "$subdir"; then
+    filelist_url="${filelist_url}/${subdir}"
+  fi
+  filelist_url="${filelist_url}?format=json&offset=0"
+  # Download it.
+  # Option '--no-verbose' avoids too much chatter.
+  wget -O "$tmp"/_all_.json --no-verbose "$filelist_url" \
+    || func_exit 1
+  # For each file, there is a JSON array element {"file_name":"FILENAME",...}.
+  sed_add_newlines='s/},{"file_name":/},\
+{"file_name":/g'
+  sed_extract_filename='s/^.*{"file_name":"\([^"]*\)",.*$/\1/p'
+  { sed -e "$sed_add_newlines" < "$tmp"/_all_.json; echo; } \
+    | sed -n -e "$sed_extract_filename" \
+    | while read filename; do
+        case "$filename" in
+          *.po)
+            if test -n "$subdir"; then
+              subdir_filename="$subdir/$filename"
+            else
+              subdir_filename="$filename"
+            fi
+            file_url="${base_url}-/raw/${branch}/${subdir_filename}"
+            wget -O "$tmp/$filename" --no-verbose "$file_url" \
+              || func_exit 1
+            ;;
+        esac
+      done
+  rm -f "$tmp"/_all_.json
+}
+
+# func_fetch_github BASE-URL BRANCH SUBDIR
+# fetches a set of PO files from a git repository in a GitHub instance
+# browsable through some web UI.
+# Input:
+# - tmp        an empty temporary directory
+func_fetch_github ()
+{
+  base_url="$1"
+  branch="$2"
+  subdir="$3"
+  # Ensure $base_url ends in a slash.
+  case "$base_url" in
+    */) ;;
+    *) base_url="${base_url}/" ;;
+  esac
+  webui_url="${base_url}tree/${branch}"
+  if test -n "$subdir"; then
+    webui_url="${webui_url}/${subdir}"
+  fi
+  # The contents of this URL is an HTML page with a list of files.
+  # But a web request with a much smaller response, that also contains the list
+  # of files, is:
+  filelist_url="${base_url}tree-commit-info/${branch}"
+  if test -n "$subdir"; then
+    filelist_url="${filelist_url}/${subdir}"
+  fi
+  # Download it.
+  # The 'Accept' header is necessary to avoid HTTP status 400 (Bad Request).
+  # Option '--no-verbose' avoids too much chatter.
+  wget -O "$tmp"/_all_.json --header="Accept: application/json" --no-verbose "$filelist_url" \
+    || func_exit 1
+  # For each file, there is a JSON object element "FILENAME":{"oid":...}.
+  sed_add_newlines='s/},"\([^"]*\)":{"oid":/},\
+"\1":{"oid":/g'
+  sed_extract_filename='s/^[^"]*"\([^"]*\)":.*/\1/p'
+  { sed -e "$sed_add_newlines" < "$tmp"/_all_.json; echo; } \
+    | sed -n -e "$sed_extract_filename" \
+    | while read filename; do
+        case "$filename" in
+          *.po)
+            if test -n "$subdir"; then
+              subdir_filename="$subdir/$filename"
+            else
+              subdir_filename="$filename"
+            fi
+            file_url="${base_url}raw/refs/heads/${branch}/${subdir_filename}"
+            wget -O "$tmp/$filename" --no-verbose "$file_url" \
+              || func_exit 1
+            ;;
+        esac
+      done
+  rm -f "$tmp"/_all_.json
+}
+
+# func_fetch_forgejo BASE-URL BRANCH SUBDIR
+# fetches a set of PO files from a git repository in a Forgejo instance
+# browsable through some web UI.
+# Input:
+# - tmp        an empty temporary directory
+func_fetch_forgejo ()
+{
+  base_url="$1"
+  branch="$2"
+  subdir="$3"
+  # Ensure $base_url ends in a slash.
+  case "$base_url" in
+    */) ;;
+    *) base_url="${base_url}/" ;;
+  esac
+  base_url_path=`echo "$base_url" | sed -e 's|^[^/]*//[^/]*||'`
+  webui_url="${base_url}src/branch/${branch}"
+  if test -n "$subdir"; then
+    webui_url="${webui_url}/${subdir}"
+  fi
+  # The contents of this URL is an HTML page with a list of files.
+  # Download it.
+  # Option '--no-verbose' avoids too much chatter.
+  wget -O "$tmp"/_all_.html --no-verbose "$webui_url" \
+    || func_exit 1
+  # For each file, there is an HTML element
+  #   <a ... href="BASE-URL-PATH/src/branch/BRANCH/SUBDIR/FILENAME" ...>
+  expected_href_prefix="${base_url_path}src/branch/${branch}"
+  if test -n "$subdir"; then
+    expected_href_prefix="${expected_href_prefix}/${subdir}"
+  fi
+  expected_href_prefix="${expected_href_prefix}/"
+  sed -n -e 's/^.*<a [^<>]* href="\([^"]*\).*$/\1/p' < "$tmp"/_all_.html \
+    | while read anchor; do
+        : echo "anchor=$anchor"
+        case "$anchor" in
+          "$expected_href_prefix"*)
+            filename=`echo "$anchor" | sed -e "s|^${expected_href_prefix}||"`
+            : echo "filename=$filename"
+            case "$filename" in
+              *.po)
+                if test -n "$subdir"; then
+                  subdir_filename="$subdir/$filename"
+                else
+                  subdir_filename="$filename"
+                fi
+                file_url="${base_url}raw/branch/${branch}/${subdir_filename}"
+                wget -O "$tmp/$filename" --no-verbose "$file_url" \
+                  || func_exit 1
+                ;;
+            esac
+            ;;
+        esac
+      done
+  rm -f "$tmp"/_all_.html
+}
+
+# Unset CDPATH.  Otherwise, output from 'cd dir' can surprise callers.
+(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
+
+# Command-line option processing.
+# Removes the OPTIONS from the arguments. Sets the variables:
+# - kind       denotes the kind of translation project
+# - do_git     true if changes should be staged in git, false otherwise
+{
+  kind=
+  do_git=false
+
+  while test $# -gt 0; do
+    case "$1" in
+      --git | --gi | --g )
+        shift
+        do_git=true
+        ;;
+      --help | --hel | --he | --h )
+        func_usage
+        func_exit $? ;;
+      --version | --versio | --versi | --vers | --ver | --ve | --v )
+        func_version
+        func_exit $? ;;
+      -- )
+        # Stop option processing
+        shift
+        break ;;
+      -* )
+        echo "po-fetch: unknown option $1" 1>&2
+        echo "Try 'po-fetch --help' for more information." 1>&2
+        func_exit 1 ;;
+      * )
+        break ;;
+    esac
+  done
+}
+
+if test $# = 0; then
+  echo "po-fetch: missing argument" 1>&2
+  echo "Try 'po-fetch --help' for more information." 1>&2
+  func_exit 1
+fi
+kind="$1"
+shift
+
+# Create a temporary directory, and prepare for cleaning it up.
+func_tmpdir
+trap 'exit_status=$?
+      if test "$signal" != EXIT; then
+        echo "caught signal SIG$signal" >&2
+      fi
+      rm -rf "$tmp"
+      exit $exit_status' EXIT
+for signal in HUP INT QUIT PIPE TERM; do
+  trap '{ signal='$signal'; func_exit 1; }' $signal
+done
+signal=EXIT
+
+# Fetch the PO files into the temporary directory.
+case "$kind" in
+  TP)
+    if test $# -lt 1; then
+      echo "po-fetch: missing argument" 1>&2
+      echo "Try 'po-fetch --help' for more information." 1>&2
+      func_exit 1
+    fi
+    func_fetch_TP "$@"
+    ;;
+  Weblate)
+    if test $# -lt 3; then
+      echo "po-fetch: missing argument" 1>&2
+      echo "Try 'po-fetch --help' for more information." 1>&2
+      func_exit 1
+    fi
+    func_fetch_weblate "$@"
+    ;;
+  git)
+    if test $# -lt 3; then
+      echo "po-fetch: missing argument" 1>&2
+      echo "Try 'po-fetch --help' for more information." 1>&2
+      func_exit 1
+    fi
+    # Download the contents of the BASE-URL.
+    # Option '--no-verbose' avoids too much chatter.
+    wget -O "$tmp"/_meta_.html --no-verbose "$1" \
+      || func_exit 1
+    # Analyze it, to find the supported protocol.
+    protocol=
+    sed_extract_generator_1='s/^.*<meta name="generator" content="\([^"]*\)".*$/\1/p'
+    sed_extract_generator_2="s/^.*<meta name='generator' content='\\([^']*\\)'.*$/\\1/p"
+    sed_extract_generator_3='s/^.*<meta content="\([^"]*\)" name="generator".*$/\1/p'
+    sed_extract_generator_4="s/^.*<meta content='\\([^']*\\)' name='generator'.*$/\\1/p"
+    generator=`sed -n -e "$sed_extract_generator_1" -e "$sed_extract_generator_2" \
+                      -e "$sed_extract_generator_3" -e "$sed_extract_generator_4" \
+                   < "$tmp"/_meta_.html`
+    case "$generator" in
+      gitweb*) protocol=gitweb ;;
+      cgit*) protocol=cgit ;;
+    esac
+    if test -z "$protocol"; then
+      sed_extract_sitename_1='s/^.*<meta property="og:site_name" content="\([^"]*\)".*$/\1/p'
+      sed_extract_sitename_2="s/^.*<meta property='og:site_name' content='\\([^']*\\)'.*$/\\1/p"
+      sed_extract_sitename_3='s/^.*<meta content="\([^"]*\)" property="og:site_name".*$/\1/p'
+      sed_extract_sitename_4="s/^.*<meta content='\\([^']*\\)' property='og:site_name'.*$/\\1/p"
+      sitename=`sed -n -e "$sed_extract_sitename_1" -e "$sed_extract_sitename_2" \
+                       -e "$sed_extract_sitename_3" -e "$sed_extract_sitename_4" \
+                    < "$tmp"/_meta_.html`
+      case "$sitename" in
+        GitLab) protocol=GitLab ;;
+        GitHub) protocol=GitHub ;;
+        Codeberg.org) protocol=Forgejo ;;
+      esac
+    fi
+    rm -f "$tmp"/_meta_.html
+    case "$protocol" in
+      gitweb)
+        func_fetch_gitweb "$@"
+        ;;
+      cgit)
+        func_fetch_cgit "$@"
+        ;;
+      GitLab)
+        func_fetch_gitlab "$@"
+        ;;
+      GitHub)
+        func_fetch_github "$@"
+        ;;
+      Forgejo)
+        func_fetch_forgejo "$@"
+        ;;
+      *)
+        echo "po-fetch: unsupported site $1" 1>&2
+        echo "Try 'po-fetch --help' for more information." 1>&2
+        func_exit 1
+        ;;
+    esac
+    ;;
+  *)
+    echo "po-fetch: invalid first argument '$kind'" 1>&2
+    echo "Try 'po-fetch --help' for more information." 1>&2
+    func_exit 1
+    ;;
+esac
+
+# Eliminate broken PO files.
+(cd "$tmp"
+ for file in *.po; do
+   if test -f "$file"; then
+     # Check against encoding error.
+     if msgcat -t UTF-8 "$file" 2>&1 >/dev/null | grep .; then
+       echo "po-fetch: warning: $file has an encoding error; skipping it" 1>&2
+       rm -f "$file"
+     else
+       # Check against other errors.
+       if msgfmt -c -o /dev/null "$file"; then
+         # Check whether it contains some translations at all.
+         if msgfmt --statistics -o /dev/null "$file" 2>&1 | grep '^0 ' >/dev/null; then
+           echo "po-fetch: note: $file has no translations; skipping it" 1>&2
+           rm -f "$file"
+         fi
+       else
+         echo "po-fetch: warning: $file has errors; skipping it" 1>&2
+         rm -f "$file"
+       fi
+     fi
+   fi
+ done
+)
+
+# Backup the LINGUAS file.
+if test -f LINGUAS; then
+  mv LINGUAS LINGUAS~
+fi
+
+# Create the new LINGUAS file.
+{ echo '# Set of available languages.'
+  echo '# This file is automatically generated from the list of PO files.'
+  (cd "$tmp"
+   for file in *.po; do
+     if test -f "$file"; then
+       echo "$file"
+     fi
+   done
+  ) | sed -e 's/\.po$//' | LC_ALL=C sort
+} > LINGUAS \
+  || func_exit 1
+if $do_git; then
+  git add LINGUAS
+fi
+
+# Update existing PO files. Remove outdated PO files.
+for file in *.po; do
+  if test -f "$file"; then
+    if test -f "$tmp/$file"; then
+      mv "$tmp/$file" "$file" || func_exit 1
+      if $do_git; then
+        git add "$file"
+      fi
+    else
+      rm -f "$file"
+      if $do_git; then
+        git rm "$file"
+      fi
+    fi
+  fi
+done
+
+# Add new PO files.
+for tmpf in "$tmp"/*.po; do
+  if test -f "$tmpf"; then
+    file=`echo "$tmpf" | sed -e 's|^.*/||'`
+    mv "$tmpf" "$file" || func_exit 1
+    if $do_git; then
+      git add "$file"
+    fi
+  fi
+done
+
+# Examples for testing:
+#   $ po-fetch TP hello
+#   $ po-fetch Weblate https://translate.codeberg.org/ gnuhealth health_dentistry
+#   $ po-fetch Weblate https://translate.codeberg.org/ lazarr lzr_gui
+#   $ po-fetch git https://gitweb.git.savannah.gnu.org/gitweb/?p=gettext.git master gettext-runtime/po
+#   $ po-fetch git https://cgit.git.savannah.gnu.org/cgit/gettext.git master gettext-runtime/po
+#   $ po-fetch git https://gitlab.com/qemu-project/qemu master po
+#   $ po-fetch git https://github.com/autotools-mirror/gettext/ master gettext-runtime/po
+#   $ po-fetch git https://codeberg.org/guix/translations/ master po/guix
+

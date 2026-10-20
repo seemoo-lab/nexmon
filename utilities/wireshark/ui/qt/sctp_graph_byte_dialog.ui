@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>987</width>
     <height>546</height>
    </rect>
   </property>
@@ -29,7 +29,7 @@
      <item>
       <widget class="QLabel" name="hintLabel">
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string></string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>
@@ -99,7 +99,7 @@
   <customwidget>
    <class>QCustomPlot</class>
    <extends>QWidget</extends>
-   <header>qcustomplot.h</header>
+   <header>widgets/qcustomplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

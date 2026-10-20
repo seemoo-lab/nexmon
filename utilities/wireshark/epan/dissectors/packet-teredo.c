@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -37,46 +25,48 @@
 void proto_reg_handoff_teredo(void);
 void proto_register_teredo(void);
 
-static int teredo_tap = -1;
+static int teredo_tap;
 
-static int proto_teredo = -1;
+static int proto_teredo;
 
-static int hf_teredo_auth = -1;
-static int hf_teredo_auth_idlen = -1;
-static int hf_teredo_auth_aulen = -1;
-static int hf_teredo_auth_id = -1;
-static int hf_teredo_auth_value = -1;
-static int hf_teredo_auth_nonce = -1;
-static int hf_teredo_auth_conf = -1;
-static int hf_teredo_orig = -1;
-static int hf_teredo_orig_port = -1;
-static int hf_teredo_orig_addr = -1;
+static int hf_teredo_auth;
+static int hf_teredo_auth_idlen;
+static int hf_teredo_auth_aulen;
+static int hf_teredo_auth_id;
+static int hf_teredo_auth_value;
+static int hf_teredo_auth_nonce;
+static int hf_teredo_auth_conf;
+static int hf_teredo_orig;
+static int hf_teredo_orig_port;
+static int hf_teredo_orig_addr;
 
-static gint ett_teredo = -1;
-static gint ett_teredo_auth = -1, ett_teredo_orig = -1;
+static int ett_teredo;
+static int ett_teredo_auth;
+static int ett_teredo_orig;
 
 typedef struct {
-	guint16 th_indtyp;
-	guint8 th_cidlen;
-	guint8 th_authdlen;
-	guint8 th_nonce[8];
-	guint8 th_conf;
+	uint16_t th_indtyp;
+	uint8_t th_cidlen;
+	uint8_t th_authdlen;
+	uint8_t th_nonce[8];
+	uint8_t th_conf;
 
-	guint8 th_ip_v_hl;
-	guint16 th_header;
-	guint16 th_orgport;
-	guint32 th_iporgaddr;
+	uint8_t th_ip_v_hl;
+	uint16_t th_header;
+	uint16_t th_orgport;
+	uint32_t th_iporgaddr;
 } e_teredohdr;
 
 static dissector_table_t teredo_dissector_table;
 /*static heur_dissector_list_t heur_subdissector_list;*/
+static dissector_handle_t teredo_handle;
 static dissector_handle_t data_handle;
 
 static int
 parse_teredo_auth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 			int offset, e_teredohdr *teredoh)
 {
-	guint idlen, aulen;
+	unsigned idlen, aulen;
 
 	col_append_sep_str (pinfo->cinfo, COL_INFO, ", ",
 					"Authentication header");
@@ -84,11 +74,11 @@ parse_teredo_auth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	teredoh->th_indtyp = 1;
 	offset += 2;
 
-	idlen = tvb_get_guint8(tvb, offset);
+	idlen = tvb_get_uint8(tvb, offset);
 	teredoh->th_cidlen = idlen;
 	offset++;
 
-	aulen = tvb_get_guint8(tvb, offset);
+	aulen = tvb_get_uint8(tvb, offset);
 	teredoh->th_authdlen = aulen;
 	offset++;
 
@@ -130,7 +120,7 @@ parse_teredo_auth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		offset += idlen + aulen + 9;
 
 	tvb_memcpy(tvb, teredoh->th_nonce, offset - 9, 8);
-	teredoh->th_conf = tvb_get_guint8(tvb, offset - 1);
+	teredoh->th_conf = tvb_get_uint8(tvb, offset - 1);
 
 	return offset;
 }
@@ -168,7 +158,7 @@ parse_teredo_orig(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		 */
 		proto_tree_add_uint(tree, hf_teredo_orig_port, tvb,
 					offset, 2,
-					(guint16)~teredoh->th_orgport);
+					(uint16_t)~teredoh->th_orgport);
 	}
 	offset += 2;
 
@@ -237,7 +227,7 @@ dissect_teredo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 						offset, teredoh);
 	}
 
-	teredoh->th_ip_v_hl = tvb_get_guint8(tvb, offset);
+	teredoh->th_ip_v_hl = tvb_get_uint8(tvb, offset);
 
 	decode_teredo_ports(tvb, offset, pinfo, tree, teredoh->th_header /* , teredoh->th_orgport*/);
 	tap_queue_packet(teredo_tap, pinfo, teredoh);
@@ -245,31 +235,31 @@ dissect_teredo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 }
 
 
-static gboolean
+static bool
 dissect_teredo_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-	guint16 val;
+	uint16_t val;
 	int offset = 0;
 
 	if (tvb_captured_length_remaining(tvb, offset) < 40)
-		return FALSE;
+		return false;
 
 	val = tvb_get_ntohs(tvb, offset);
 
 	if (val == 1) /* possible auth header */
 	{
-		guint8 idlen, aulen;
+		uint8_t idlen, aulen;
 
 		offset += 2;
 
-		idlen = tvb_get_guint8(tvb, offset);
+		idlen = tvb_get_uint8(tvb, offset);
 		offset++;
 
-		aulen = tvb_get_guint8(tvb, offset);
+		aulen = tvb_get_uint8(tvb, offset);
 		offset += 10;
 
 		if (tvb_captured_length_remaining(tvb, offset) < idlen + aulen + 40)
-			return FALSE;
+			return false;
 
 		offset += idlen + aulen;
 
@@ -281,7 +271,7 @@ dissect_teredo_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 		offset += 8;
 
 		if (tvb_captured_length_remaining(tvb, offset) < 40)
-			return FALSE;
+			return false;
 
 		val = tvb_get_ntohs(tvb, offset);
 	}
@@ -300,16 +290,16 @@ dissect_teredo_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 		offset += 40;
 
 		if (val > 65467)
-			return FALSE; /* length too big for Teredo */
+			return false; /* length too big for Teredo */
 
 		if (tvb_reported_length_remaining(tvb, offset) != val)
-			return FALSE; /* length mismatch */
+			return false; /* length mismatch */
 
 		dissect_teredo (tvb, pinfo, tree, data);
-		return TRUE;
+		return true;
 	}
 
-	return FALSE; /* not an IPv6 packet */
+	return false; /* not an IPv6 packet */
 }
 
 
@@ -359,7 +349,7 @@ proto_register_teredo(void)
 		{ &hf_teredo_orig,
 		{ "Teredo Origin Indication header", "teredo.orig",
 		  FT_NONE, BASE_NONE, NULL, 0x0,
-		  "Teredo Origin Indication", HFILL }},
+		  NULL, HFILL }},
 
 		{ &hf_teredo_orig_port,
 		{ "Origin UDP port", "teredo.orig.port",
@@ -372,16 +362,16 @@ proto_register_teredo(void)
 		  NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_teredo, &ett_teredo_auth, &ett_teredo_orig
 	};
 
 	module_t *teredo_module;
 
-	proto_teredo = proto_register_protocol(
-		"Teredo IPv6 over UDP tunneling", "Teredo", "teredo");
+	proto_teredo = proto_register_protocol("Teredo IPv6 over UDP tunneling", "Teredo", "teredo");
 	proto_register_field_array(proto_teredo, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+	teredo_handle = register_dissector("teredo", dissect_teredo, proto_teredo);
 
 /* subdissector code */
 	teredo_dissector_table = register_dissector_table("teredo", "Teredo", proto_teredo, FT_UINT16, BASE_DEC);
@@ -390,23 +380,20 @@ proto_register_teredo(void)
 
 	prefs_register_obsolete_preference(teredo_module, "heuristic_teredo");
 
+	teredo_tap    = register_tap("teredo");
 }
 
 void
 proto_reg_handoff_teredo(void)
 {
-	dissector_handle_t teredo_handle;
-
-	teredo_handle = create_dissector_handle(dissect_teredo, proto_teredo);
 	data_handle   = find_dissector("ipv6");
-	teredo_tap    = register_tap("teredo");
 
-	dissector_add_uint("udp.port", UDP_PORT_TEREDO, teredo_handle);
+	dissector_add_uint_with_preference("udp.port", UDP_PORT_TEREDO, teredo_handle);
 	heur_dissector_add("udp", dissect_teredo_heur, "Teredo over UDP", "teredo_udp", proto_teredo, HEURISTIC_DISABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

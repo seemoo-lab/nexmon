@@ -9,19 +9,7 @@
  *
  * Copied from packet-tftp.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,16 +20,16 @@
 void proto_register_xyplex(void);
 void proto_reg_handoff_xyplex(void);
 
-static int proto_xyplex = -1;
-static int hf_xyplex_type = -1;
-static int hf_xyplex_pad = -1;
-static int hf_xyplex_server_port = -1;
-static int hf_xyplex_return_port = -1;
-static int hf_xyplex_reserved = -1;
-static int hf_xyplex_reply = -1;
-static int hf_xyplex_data = -1;
+static int proto_xyplex;
+static int hf_xyplex_type;
+static int hf_xyplex_pad;
+static int hf_xyplex_server_port;
+static int hf_xyplex_return_port;
+static int hf_xyplex_reserved;
+static int hf_xyplex_reply;
+static int hf_xyplex_data;
 
-static gint ett_xyplex = -1;
+static int ett_xyplex;
 
 static dissector_handle_t xyplex_handle;
 
@@ -62,14 +50,14 @@ dissect_xyplex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
   proto_tree     *xyplex_tree;
   proto_item     *ti;
   conversation_t *conversation;
-  gint            offset = 0;
+  int             offset = 0;
 
-  guint8  prototype;
-  guint8  padding;
-  guint16 server_port;
-  guint16 return_port;
-  guint16 reserved;
-  guint16 reply;
+  uint8_t prototype;
+  uint8_t padding;
+  uint16_t server_port;
+  uint16_t return_port;
+  uint16_t reserved;
+  uint16_t reply;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "XYPLEX");
 
@@ -83,8 +71,8 @@ dissect_xyplex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
      * return_port tells the Xyplex server what TCP port
      * to open to the Unix server.
      */
-    prototype = tvb_get_guint8(tvb, offset);
-    padding = tvb_get_guint8(tvb, offset+1);
+    prototype = tvb_get_uint8(tvb, offset);
+    padding = tvb_get_uint8(tvb, offset+1);
     server_port = tvb_get_ntohs(tvb, offset+2);
     return_port = tvb_get_ntohs(tvb, offset+4);
     reserved = tvb_get_ntohs(tvb, offset+6);
@@ -111,21 +99,21 @@ dissect_xyplex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
      * return_port.
      */
     conversation = find_conversation(pinfo->num, &pinfo->src, &pinfo->dst,
-                                     PT_TCP, return_port, 0, NO_PORT_B);
+                                     CONVERSATION_TCP, return_port, 0, NO_PORT_B);
     if (conversation == NULL) {
       conversation = conversation_new(pinfo->num, &pinfo->src, &pinfo->dst,
-                                      PT_TCP, return_port, 0, NO_PORT2);
+                                      CONVERSATION_TCP, return_port, 0, NO_PORT2);
       conversation_set_dissector(conversation, xyplex_handle);
     }
     return offset;
   }
 
   if (pinfo->srcport == UDP_PORT_XYPLEX) {
-    prototype = tvb_get_guint8(tvb, offset);
-    padding = tvb_get_guint8(tvb, offset+1);
+    prototype = tvb_get_uint8(tvb, offset);
+    padding = tvb_get_uint8(tvb, offset+1);
     reply = tvb_get_ntohs(tvb, offset+2);
     col_add_fstr(pinfo->cinfo, COL_INFO, "Registration Reply: %s",
-                 val_to_str(reply, xyplex_reg_vals, "Unknown (0x%02x)"));
+                 val_to_str(pinfo->pool, reply, xyplex_reg_vals, "Unknown (0x%02x)"));
 
     if (tree) {
       proto_tree_add_uint(xyplex_tree, hf_xyplex_type, tvb,
@@ -169,12 +157,12 @@ proto_register_xyplex(void)
 
     { &hf_xyplex_server_port,
       { "Server Port",        "xyplex.server_port",
-        FT_UINT16, BASE_DEC, NULL, 0x0,
+        FT_UINT16, BASE_PT_TCP, NULL, 0x0,
         NULL, HFILL }},
 
     { &hf_xyplex_return_port,
       { "Return Port",   "xyplex.return_port",
-        FT_UINT16, BASE_DEC, NULL, 0x0,
+        FT_UINT16, BASE_PT_TCP, NULL, 0x0,
         NULL, HFILL }},
 
     { &hf_xyplex_reserved,
@@ -193,24 +181,24 @@ proto_register_xyplex(void)
         NULL, HFILL }},
 
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_xyplex,
   };
 
   proto_xyplex = proto_register_protocol("Xyplex", "XYPLEX", "xyplex");
   proto_register_field_array(proto_xyplex, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+  xyplex_handle = register_dissector("xyplex", dissect_xyplex, proto_xyplex);
 }
 
 void
 proto_reg_handoff_xyplex(void)
 {
-  xyplex_handle = create_dissector_handle(dissect_xyplex, proto_xyplex);
-  dissector_add_uint("udp.port", UDP_PORT_XYPLEX, xyplex_handle);
+  dissector_add_uint_with_preference("udp.port", UDP_PORT_XYPLEX, xyplex_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

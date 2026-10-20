@@ -1,25 +1,22 @@
-# Configure a replacement for <sys/time.h>.
-# serial 8
+# sys_time_h.m4
+# serial 12
+dnl Copyright (C) 2007, 2009-2026 Free Software Foundation, Inc.
+dnl This file is free software; the Free Software Foundation
+dnl gives unlimited permission to copy and/or distribute it,
+dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
-# Copyright (C) 2007, 2009-2016 Free Software Foundation, Inc.
-# This file is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
+# Configure a replacement for <sys/time.h>.
 
 # Written by Paul Eggert and Martin Lambers.
 
-AC_DEFUN([gl_HEADER_SYS_TIME_H],
+AC_DEFUN_ONCE([gl_SYS_TIME_H],
 [
   dnl Use AC_REQUIRE here, so that the REPLACE_GETTIMEOFDAY=0 statement
   dnl below is expanded once only, before all REPLACE_GETTIMEOFDAY=1
   dnl statements that occur in other macros.
-  AC_REQUIRE([gl_HEADER_SYS_TIME_H_BODY])
-])
-
-AC_DEFUN([gl_HEADER_SYS_TIME_H_BODY],
-[
+  AC_REQUIRE([gl_SYS_TIME_H_DEFAULTS])
   AC_REQUIRE([AC_C_RESTRICT])
-  AC_REQUIRE([gl_HEADER_SYS_TIME_H_DEFAULTS])
   AC_CHECK_HEADERS_ONCE([sys/time.h])
   gl_CHECK_NEXT_HEADERS([sys/time.h])
 
@@ -89,23 +86,37 @@ AC_DEFUN([gl_HEADER_SYS_TIME_H_BODY],
     ]], [gettimeofday])
 ])
 
+# gl_SYS_TIME_MODULE_INDICATOR([modulename])
+# sets the shell variable that indicates the presence of the given module
+# to a C preprocessor expression that will evaluate to 1.
+# This macro invocation must not occur in macros that are AC_REQUIREd.
 AC_DEFUN([gl_SYS_TIME_MODULE_INDICATOR],
 [
-  dnl Use AC_REQUIRE here, so that the default settings are expanded once only.
-  AC_REQUIRE([gl_HEADER_SYS_TIME_H_DEFAULTS])
+  dnl Ensure to expand the default settings once only.
+  gl_SYS_TIME_H_REQUIRE_DEFAULTS
   gl_MODULE_INDICATOR_SET_VARIABLE([$1])
   dnl Define it also as a C macro, for the benefit of the unit tests.
   gl_MODULE_INDICATOR_FOR_TESTS([$1])
 ])
 
-AC_DEFUN([gl_HEADER_SYS_TIME_H_DEFAULTS],
+# Initializes the default values for AC_SUBSTed shell variables.
+# This macro must not be AC_REQUIREd.  It must only be invoked, and only
+# outside of macros or in macros that are not AC_REQUIREd.
+AC_DEFUN([gl_SYS_TIME_H_REQUIRE_DEFAULTS],
 [
-  GNULIB_GETTIMEOFDAY=0;     AC_SUBST([GNULIB_GETTIMEOFDAY])
+  m4_defun(GL_MODULE_INDICATOR_PREFIX[_SYS_TIME_H_MODULE_INDICATOR_DEFAULTS], [
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_GETTIMEOFDAY])
+  ])
+  m4_require(GL_MODULE_INDICATOR_PREFIX[_SYS_TIME_H_MODULE_INDICATOR_DEFAULTS])
+  AC_REQUIRE([gl_SYS_TIME_H_DEFAULTS])
+])
+
+AC_DEFUN([gl_SYS_TIME_H_DEFAULTS],
+[
   dnl Assume POSIX behavior unless another module says otherwise.
   HAVE_GETTIMEOFDAY=1;       AC_SUBST([HAVE_GETTIMEOFDAY])
   HAVE_STRUCT_TIMEVAL=1;     AC_SUBST([HAVE_STRUCT_TIMEVAL])
   HAVE_SYS_TIME_H=1;         AC_SUBST([HAVE_SYS_TIME_H])
-  HAVE_TIMEZONE_T=0;         AC_SUBST([HAVE_TIMEZONE_T])
   REPLACE_GETTIMEOFDAY=0;    AC_SUBST([REPLACE_GETTIMEOFDAY])
   REPLACE_STRUCT_TIMEVAL=0;  AC_SUBST([REPLACE_STRUCT_TIMEVAL])
 ])

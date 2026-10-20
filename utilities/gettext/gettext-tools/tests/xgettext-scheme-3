@@ -18,7 +18,7 @@ ${XGETTEXT} --add-comments --omit-header --no-location --keyword=_ \
   -d xg-sc-3.tmp xg-sc-3.scm || Exit 1
 LC_ALL=C tr -d '\r' < xg-sc-3.tmp.po > xg-sc-3.po || Exit 1
 
-cat <<EOF > xg-sc-3.ok
+cat <<\EOF > xg-sc-3.ok
 #. a
 #. b
 #. c

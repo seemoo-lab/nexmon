@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /**
@@ -125,7 +113,7 @@ typedef enum {
     PTP_OC_CANON_TerminateDirectTransfer             = 0x9023,
     PTP_OC_CANON_SendObjectInfoByPath                = 0x9024,
     PTP_OC_CANON_SendObjectByPath                    = 0x9025,
-    PTP_OC_CANON_InitiateDirectTansferEx             = 0x9026,
+    PTP_OC_CANON_InitiateDirectTransferEx            = 0x9026,
     PTP_OC_CANON_GetAncillaryObjectHandles           = 0x9027,
     PTP_OC_CANON_GetTreeInfo                         = 0x9028,
     PTP_OC_CANON_GetTreeSize                         = 0x9029,
@@ -506,6 +494,6 @@ typedef enum {
 } ptp_respcodes;
 
 /* function prototypes */
-void dissect_ptp_opCode_openSession(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint16 *offset);
-void dissect_ptp_transactionID     (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint16 *offset);
+void dissect_ptp_opCode_openSession(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset);
+void dissect_ptp_transactionID     (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset);
 

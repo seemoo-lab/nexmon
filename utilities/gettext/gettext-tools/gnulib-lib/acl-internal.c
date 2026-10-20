@@ -1,10 +1,10 @@
 /* Test whether a file has a nontrivial ACL.  -*- coding: utf-8 -*-
 
-   Copyright (C) 2002-2003, 2005-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002-2003, 2005-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,17 +13,25 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    Written by Paul Eggert, Andreas Grünbacher, and Bruno Haible.  */
 
+#define ACL_INTERNAL_INLINE _GL_EXTERN_INLINE
 #include <config.h>
+
+/* Specification.  */
+#include "acl-internal.h"
 
 #include "acl.h"
 
-#include "acl-internal.h"
+#if defined __CYGWIN__
+# include <sys/types.h>
+# include <grp.h>
+# include <string.h>
+#endif
 
-#if USE_ACL && HAVE_ACL_GET_FILE
+#if USE_ACL && HAVE_ACL_GET_FILE /* Linux, FreeBSD, NetBSD >= 10, Mac OS X, Cygwin >= 2.5 */
 
 # if HAVE_ACL_TYPE_EXTENDED /* Mac OS X */
 
@@ -37,7 +45,7 @@ acl_extended_nontrivial (acl_t acl)
   return (acl_entries (acl) > 0);
 }
 
-# else /* Linux, FreeBSD, IRIX, Tru64 */
+# else /* Linux, FreeBSD, NetBSD >= 10, Cygwin >= 2.5 */
 
 /* ACL is an ACL, from a file, stored as type ACL_TYPE_ACCESS.
    Return 1 if the given ACL is non-trivial.
@@ -51,7 +59,7 @@ acl_access_nontrivial (acl_t acl)
      at least, allowing us to write
         return (3 < acl_entries (acl));
      but the following code is more robust.  */
-#  if HAVE_ACL_FIRST_ENTRY /* Linux, FreeBSD */
+#  if HAVE_ACL_FIRST_ENTRY /* Linux, FreeBSD, NetBSD >= 10, Cygwin >= 2.5 */
 
   acl_entry_t ace;
   int got_one;
@@ -63,50 +71,71 @@ acl_access_nontrivial (acl_t acl)
       acl_tag_t tag;
       if (acl_get_tag_type (ace, &tag) < 0)
         return -1;
-      if (!(tag == ACL_USER_OBJ || tag == ACL_GROUP_OBJ || tag == ACL_OTHER))
-        return 1;
+      switch (tag)
+        {
+        case ACL_USER_OBJ:
+        case ACL_GROUP_OBJ:
+        case ACL_OTHER:
+          break;
+#   ifdef __CYGWIN__
+        /* On Cygwin, a trivial ACL inside the Cygwin file system consists of
+           e.g.
+             user::rwx
+             group::r-x
+             other::r-x
+           but a trivial ACL outside the Cygwin file system has more entries:
+           e.g.
+             user::rwx
+             group::r-x
+             group:SYSTEM:rwx
+             group:Administrators:rwx
+             mask::r-x
+             other::r-x
+           or
+             user::rwx
+             group::r-x
+             group:SYSTEM:rwx
+             group:Administrators:rwx
+             group:Users:rwx
+             mask::rwx
+             other::r-x
+         */
+        case ACL_GROUP:
+          {
+            int ignorable = 0;
+            void *qualifier = acl_get_qualifier (ace);
+            if (qualifier != NULL)
+              {
+                gid_t group_id = *(gid_t const *) qualifier;
+                acl_free (qualifier);
+                struct group *group_details = getgrgid (group_id);
+                if (group_details != NULL)
+                  {
+                    const char *group_sid = group_details->gr_passwd;
+                    /* Ignore the ace if the group_sid is one of
+                       - S-1-5-18 (group "SYSTEM")
+                       - S-1-5-32-544 (group "Administrators")
+                       - S-1-5-32-545 (group "Users")
+                       Cf. <https://learn.microsoft.com/en-us/windows/win32/secauthz/well-known-sids>
+                       and look at the output of the 'mkgroup' command.  */
+                    ignorable = (streq (group_sid, "S-1-5-18")
+                                 || streq (group_sid, "S-1-5-32-544")
+                                 || streq (group_sid, "S-1-5-32-545"));
+                  }
+              }
+            if (!ignorable)
+              return 1;
+          }
+          break;
+        case ACL_MASK:
+          /* XXX Is it OK to ignore acl_get_permset (ace, ...) ?  */
+          break;
+#   endif
+        default:
+          return 1;
+        }
     }
   return got_one;
-
-#  elif HAVE_ACL_TO_SHORT_TEXT /* IRIX */
-  /* Don't use acl_get_entry: it is undocumented.  */
-
-  int count = acl->acl_cnt;
-  int i;
-
-  for (i = 0; i < count; i++)
-    {
-      acl_entry_t ace = &acl->acl_entry[i];
-      acl_tag_t tag = ace->ae_tag;
-
-      if (!(tag == ACL_USER_OBJ || tag == ACL_GROUP_OBJ
-            || tag == ACL_OTHER_OBJ))
-        return 1;
-    }
-  return 0;
-
-#  elif HAVE_ACL_FREE_TEXT /* Tru64 */
-  /* Don't use acl_get_entry: it takes only one argument and does not work.  */
-
-  int count = acl->acl_num;
-  acl_entry_t ace;
-
-  for (ace = acl->acl_first; count > 0; ace = ace->next, count--)
-    {
-      acl_tag_t tag;
-      acl_perm_t perm;
-
-      tag = ace->entry->acl_type;
-      if (!(tag == ACL_USER_OBJ || tag == ACL_GROUP_OBJ || tag == ACL_OTHER))
-        return 1;
-
-      perm = ace->entry->acl_perm;
-      /* On Tru64, perm can also contain non-standard bits such as
-         PERM_INSERT, PERM_DELETE, PERM_MODIFY, PERM_LOOKUP, ... */
-      if ((perm & ~(ACL_READ | ACL_WRITE | ACL_EXECUTE)) != 0)
-        return 1;
-    }
-  return 0;
 
 #  else
 
@@ -124,7 +153,7 @@ acl_default_nontrivial (acl_t acl)
 
 # endif
 
-#elif USE_ACL && HAVE_FACL && defined GETACL /* Solaris, Cygwin, not HP-UX */
+#elif USE_ACL && HAVE_FACL && defined GETACL /* Solaris, Cygwin < 2.5, not HP-UX */
 
 /* Test an ACL retrieved with GETACL.
    Return 1 if the given ACL, consisting of COUNT entries, is non-trivial.
@@ -132,9 +161,7 @@ acl_default_nontrivial (acl_t acl)
 int
 acl_nontrivial (int count, aclent_t *entries)
 {
-  int i;
-
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     {
       aclent_t *ace = &entries[i];
 
@@ -163,8 +190,6 @@ acl_nontrivial (int count, aclent_t *entries)
 int
 acl_ace_nontrivial (int count, ace_t *entries)
 {
-  int i;
-
   /* The flags in the ace_t structure changed in a binary incompatible way
      when ACL_NO_TRIVIAL etc. were introduced in <sys/acl.h> version 1.15.
      How to distinguish the two conventions at runtime?
@@ -173,7 +198,7 @@ acl_ace_nontrivial (int count, ace_t *entries)
      convention, these values are not used.  */
   int old_convention = 0;
 
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     if (entries[i].a_flags & (OLD_ACE_OWNER | OLD_ACE_GROUP | OLD_ACE_OTHER))
       {
         old_convention = 1;
@@ -182,7 +207,7 @@ acl_ace_nontrivial (int count, ace_t *entries)
 
   if (old_convention)
     /* Running on Solaris 10.  */
-    for (i = 0; i < count; i++)
+    for (int i = 0; i < count; i++)
       {
         ace_t *ace = &entries[i];
 
@@ -209,12 +234,11 @@ acl_ace_nontrivial (int count, ace_t *entries)
           0  /* everyone@ allow */
         };
 
-      for (i = 0; i < count; i++)
+      for (int i = 0; i < count; i++)
         {
           ace_t *ace = &entries[i];
-          unsigned int index1;
-          unsigned int index2;
 
+          unsigned int index1;
           if (ace->a_type == NEW_ACE_ACCESS_ALLOWED_ACE_TYPE)
             index1 = 1;
           else if (ace->a_type == NEW_ACE_ACCESS_DENIED_ACE_TYPE)
@@ -222,6 +246,7 @@ acl_ace_nontrivial (int count, ace_t *entries)
           else
             return 1;
 
+          unsigned int index2;
           if (ace->a_flags == NEW_ACE_OWNER)
             index2 = 0;
           else if (ace->a_flags == (NEW_ACE_GROUP | NEW_ACE_IDENTIFIER_GROUP))
@@ -345,17 +370,15 @@ acl_ace_nontrivial (int count, ace_t *entries)
 int
 acl_nontrivial (int count, struct acl_entry *entries)
 {
-  int i;
-
   if (count > 3)
     return 1;
 
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     {
       struct acl_entry *ace = &entries[i];
 
       if (ace->uid != ACL_NSUSER && ace->gid != ACL_NSGROUP)
-	return 1;
+        return 1;
     }
   return 0;
 }
@@ -367,9 +390,7 @@ acl_nontrivial (int count, struct acl_entry *entries)
 int
 aclv_nontrivial (int count, struct acl *entries)
 {
-  int i;
-
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     {
       struct acl *ace = &entries[i];
 
@@ -395,10 +416,8 @@ int
 acl_nontrivial (struct acl *a)
 {
   /* The normal way to iterate through an ACL is like this:
-       struct acl_entry *ace;
-       for (ace = a->acl_ext; ace != acl_last (a); ace = acl_nxt (ace))
+       for (struct acl_entry *ace = a->acl_ext; ace != acl_last (a); ace = acl_nxt (ace))
          {
-           struct ace_id *aei;
            switch (ace->ace_type)
              {
              case ACC_PERMIT:
@@ -406,7 +425,7 @@ acl_nontrivial (struct acl *a)
              case ACC_SPECIFY:
                ...;
              }
-           for (aei = ace->ace_id; aei != id_last (ace); aei = id_nxt (aei))
+           for (struct ace_id *aei = ace->ace_id; aei != id_last (ace); aei = id_nxt (aei))
              ...
          }
    */
@@ -424,9 +443,8 @@ acl_nfs4_nontrivial (nfs4_acl_int_t *a)
   return (a->aclEntryN > 0 ? 1 : 0);
 #  else
   int count = a->aclEntryN;
-  int i;
 
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     {
       nfs4_ace_int_t *ace = &a->aclEntry[i];
 
@@ -455,9 +473,7 @@ acl_nfs4_nontrivial (nfs4_acl_int_t *a)
 int
 acl_nontrivial (int count, struct acl *entries)
 {
-  int i;
-
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     {
       struct acl *ace = &entries[i];
 
@@ -479,7 +495,7 @@ void
 free_permission_context (struct permission_context *ctx)
 {
 #if USE_ACL
-# if HAVE_ACL_GET_FILE /* Linux, FreeBSD, Mac OS X, IRIX, Tru64 */
+# if HAVE_ACL_GET_FILE /* Linux, FreeBSD, NetBSD >= 10, Mac OS X, Cygwin >= 2.5 */
   if (ctx->acl)
     acl_free (ctx->acl);
 #  if !HAVE_ACL_TYPE_EXTENDED
@@ -487,7 +503,7 @@ free_permission_context (struct permission_context *ctx)
     acl_free (ctx->default_acl);
 #  endif
 
-# elif defined GETACL /* Solaris, Cygwin */
+# elif defined GETACL /* Solaris, Cygwin < 2.5 */
   free (ctx->entries);
 #  ifdef ACE_GETACL
   free (ctx->ace_entries);

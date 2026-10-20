@@ -1,0 +1,2 @@
+./test/schemas/attruse_0_1.xml:3: Schemas validity error : Element 'barA': The attribute 'attr' is required but missing.
+./test/schemas/attruse_0_1.xml fails to validate

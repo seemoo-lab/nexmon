@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -106,194 +94,194 @@ void proto_reg_handoff_fileexp (void);
 #define AFS_FLAG_FORCEVOLQUIESCE      0x10000
 #define AFS_FLAG_FORCEREVOCATIONDOWN  0x20000
 
-static int hf_fileexp_opnum = -1;
+static int hf_fileexp_opnum;
 
 
-static int hf_fileexp_afsFid_cell_high = -1;
-static int hf_fileexp_afsuuid_uuid = -1;
-static int hf_fileexp_fetchdata_pipe_t_size = -1;
-static int hf_fileexp_afsNameString_t_principalName_string = -1;
-static int hf_fileexp_afsFid_cell_low = -1;
-static int hf_fileexp_afsFid_volume_high = -1;
-static int hf_fileexp_afsFid_volume_low = -1;
-static int hf_fileexp_afsFid_Vnode = -1;
-static int hf_fileexp_afsFid_Unique = -1;
-static int hf_fileexp_interfaceversion = -1;
-static int hf_fileexp_filetype = -1;
-static int hf_fileexp_linkcount = -1;
-static int hf_fileexp_length_high = -1;
-static int hf_fileexp_length_low = -1;
-static int hf_fileexp_dataversion_high = -1;
-static int hf_fileexp_dataversion_low = -1;
-static int hf_fileexp_author = -1;
-static int hf_fileexp_owner = -1;
-static int hf_fileexp_group = -1;
-static int hf_fileexp_calleraccess = -1;
-static int hf_fileexp_anonymousaccess = -1;
-static int hf_fileexp_aclexpirationtime = -1;
-static int hf_fileexp_mode = -1;
-static int hf_fileexp_parentvnode = -1;
-static int hf_fileexp_parentunique = -1;
-static int hf_fileexp_modtime_sec = -1;
-static int hf_fileexp_modtime_msec = -1;
-static int hf_fileexp_changetime_sec = -1;
-static int hf_fileexp_changetime_msec = -1;
-static int hf_fileexp_accesstime_sec = -1;
-static int hf_fileexp_accesstime_msec = -1;
-static int hf_fileexp_servermodtime_sec = -1;
-static int hf_fileexp_servermodtime_msec = -1;
-static int hf_fileexp_typeuuid = -1;
-static int hf_fileexp_objectuuid = -1;
-static int hf_fileexp_devicenumber = -1;
-static int hf_fileexp_blocksused = -1;
-static int hf_fileexp_clientspare1 = -1;
-static int hf_fileexp_devicenumberhighbits = -1;
-static int hf_fileexp_agtypeunique = -1;
-static int hf_fileexp_himaxspare = -1;
-static int hf_fileexp_lomaxspare = -1;
-static int hf_fileexp_pathconfspare = -1;
-static int hf_fileexp_spare4 = -1;
-static int hf_fileexp_spare5 = -1;
-static int hf_fileexp_spare6 = -1;
-static int hf_fileexp_volid_hi = -1;
-static int hf_fileexp_volid_low = -1;
-static int hf_fileexp_vvage = -1;
-static int hf_fileexp_vv_hi = -1;
-static int hf_fileexp_vv_low = -1;
-static int hf_fileexp_vvpingage = -1;
-static int hf_fileexp_vvspare1 = -1;
-static int hf_fileexp_vvspare2 = -1;
-static int hf_fileexp_beginrange = -1;
-static int hf_fileexp_beginrangeext = -1;
-static int hf_fileexp_endrange = -1;
-static int hf_fileexp_endrangeext = -1;
-static int hf_fileexp_expirationtime = -1;
-static int hf_fileexp_tokenid_hi = -1;
-static int hf_fileexp_tokenid_low = -1;
-static int hf_fileexp_type_hi = -1;
-static int hf_fileexp_type_low = -1;
-static int hf_fileexp_tn_length = -1;
-static int hf_fileexp_storestatus_accesstime_sec = -1;
-static int hf_fileexp_storestatus_accesstime_usec = -1;
-static int hf_fileexp_storestatus_changetime_sec = -1;
-static int hf_fileexp_storestatus_changetime_usec = -1;
-static int hf_fileexp_storestatus_clientspare1 = -1;
-static int hf_fileexp_storestatus_cmask = -1;
-static int hf_fileexp_storestatus_devicenumber = -1;
-static int hf_fileexp_storestatus_devicenumberhighbits = -1;
-static int hf_fileexp_storestatus_devicetype = -1;
-static int hf_fileexp_storestatus_group = -1;
-static int hf_fileexp_storestatus_length_high = -1;
-static int hf_fileexp_storestatus_length_low = -1;
-static int hf_fileexp_storestatus_mask = -1;
-static int hf_fileexp_storestatus_mode = -1;
-static int hf_fileexp_storestatus_modtime_sec = -1;
-static int hf_fileexp_storestatus_modtime_usec = -1;
-static int hf_fileexp_storestatus_owner = -1;
-static int hf_fileexp_storestatus_spare1 = -1;
-static int hf_fileexp_storestatus_spare2 = -1;
-static int hf_fileexp_storestatus_spare3 = -1;
-static int hf_fileexp_storestatus_spare4 = -1;
-static int hf_fileexp_storestatus_spare5 = -1;
-static int hf_fileexp_storestatus_spare6 = -1;
-static int hf_fileexp_storestatus_trunc_high = -1;
-static int hf_afsconnparams_mask = -1;
-static int hf_fileexp_storestatus_trunc_low = -1;
-static int hf_fileexp_storestatus_typeuuid = -1;
-static int hf_fileexp_l_end_pos = -1;
-static int hf_fileexp_l_end_pos_ext = -1;
-static int hf_fileexp_l_fstype = -1;
-static int hf_fileexp_l_pid = -1;
-static int hf_fileexp_l_start_pos = -1;
-static int hf_fileexp_l_start_pos_ext = -1;
-static int hf_fileexp_l_sysid = -1;
-static int hf_fileexp_l_type = -1;
-static int hf_fileexp_l_whence = -1;
-static int hf_fileexp_acl_len = -1;
-static int hf_fileexp_setcontext_rqst_epochtime = -1;
-static int hf_fileexp_setcontext_rqst_clientsizesattrs = -1;
-static int hf_fileexp_setcontext_rqst_parm7 = -1;
-static int hf_fileexp_afsNetAddr_type = -1;
-static int hf_fileexp_afsNetAddr_data = -1;
-static int hf_fileexp_returntokenidp_high = -1;
-static int hf_fileexp_minvvp_low = -1;
-static int hf_fileexp_position_high = -1;
-static int hf_fileexp_position_low = -1;
-static int hf_fileexp_offsetp_high = -1;
-static int hf_fileexp_nextoffsetp_low = -1;
-static int hf_fileexp_cellidp_high = -1;
-static int hf_afserrorstatus_st = -1;
-static int hf_fileexp_length = -1;
-static int hf_afsconnparams_values = -1;
-static int hf_fileexp_acltype = -1;
-static int hf_fileexp_afsTaggedPath_tp_chars = -1;
-static int hf_fileexp_afsTaggedPath_tp_tag = -1;
-static int hf_fileexp_afsacl_uuid1 = -1;
-static int hf_fileexp_bulkfetchstatus_size = -1;
-static int hf_fileexp_flags = -1;
-static int hf_fileexp_afsreturndesc_tokenid_high = -1;
-static int hf_fileexp_afsreturndesc_tokenid_low = -1;
-static int hf_fileexp_afsreturndesc_type_high = -1;
-static int hf_fileexp_afsreturndesc_type_low = -1;
-static int hf_fileexp_returntokenidp_low = -1;
-static int hf_fileexp_minvvp_high = -1;
-static int hf_fileexp_offsetp_low = -1;
-static int hf_fileexp_nextoffsetp_high = -1;
-static int hf_fileexp_cellidp_low = -1;
-static int hf_fileexp_tn_tag = -1;
-static int hf_fileexp_tn_string = -1;
-static int hf_fileexp_bulkfetchvv_numvols = -1;
-static int hf_fileexp_bulkfetchvv_spare1 = -1;
-static int hf_fileexp_bulkfetchvv_spare2 = -1;
-static int hf_fileexp_bulkkeepalive_numexecfids = -1;
-static int hf_fileexp_bulkkeepalive_spare4 = -1;
-static int hf_fileexp_bulkkeepalive_spare2 = -1;
-static int hf_fileexp_bulkkeepalive_spare1 = -1;
-static int hf_fileexp_afsacl_defaultcell_uuid = -1;
-static int hf_fileexp_gettime_syncdispersion = -1;
-static int hf_fileexp_gettime_syncdistance = -1;
-static int hf_fileexp_gettime_usecondsp = -1;
-static int hf_fileexp_readdir_size = -1;
-static int hf_fileexp_afsNameString_t_principalName_size = -1;
-static int hf_fileexp_afsTaggedPath_tp_length = -1;
-static int hf_fileexp_fstype = -1;
-static int hf_fileexp_gettime_secondsp = -1;
+static int hf_fileexp_afsFid_cell_high;
+static int hf_fileexp_afsuuid_uuid;
+static int hf_fileexp_fetchdata_pipe_t_size;
+static int hf_fileexp_afsNameString_t_principalName_string;
+static int hf_fileexp_afsFid_cell_low;
+static int hf_fileexp_afsFid_volume_high;
+static int hf_fileexp_afsFid_volume_low;
+static int hf_fileexp_afsFid_Vnode;
+static int hf_fileexp_afsFid_Unique;
+static int hf_fileexp_interfaceversion;
+static int hf_fileexp_filetype;
+static int hf_fileexp_linkcount;
+static int hf_fileexp_length_high;
+static int hf_fileexp_length_low;
+static int hf_fileexp_dataversion_high;
+static int hf_fileexp_dataversion_low;
+static int hf_fileexp_author;
+static int hf_fileexp_owner;
+static int hf_fileexp_group;
+static int hf_fileexp_calleraccess;
+static int hf_fileexp_anonymousaccess;
+static int hf_fileexp_aclexpirationtime;
+static int hf_fileexp_mode;
+static int hf_fileexp_parentvnode;
+static int hf_fileexp_parentunique;
+static int hf_fileexp_modtime_sec;
+static int hf_fileexp_modtime_msec;
+static int hf_fileexp_changetime_sec;
+static int hf_fileexp_changetime_msec;
+static int hf_fileexp_accesstime_sec;
+static int hf_fileexp_accesstime_msec;
+static int hf_fileexp_servermodtime_sec;
+static int hf_fileexp_servermodtime_msec;
+static int hf_fileexp_typeuuid;
+static int hf_fileexp_objectuuid;
+static int hf_fileexp_devicenumber;
+static int hf_fileexp_blocksused;
+static int hf_fileexp_clientspare1;
+static int hf_fileexp_devicenumberhighbits;
+static int hf_fileexp_agtypeunique;
+static int hf_fileexp_himaxspare;
+static int hf_fileexp_lomaxspare;
+static int hf_fileexp_pathconfspare;
+static int hf_fileexp_spare4;
+static int hf_fileexp_spare5;
+static int hf_fileexp_spare6;
+static int hf_fileexp_volid_hi;
+static int hf_fileexp_volid_low;
+static int hf_fileexp_vvage;
+static int hf_fileexp_vv_hi;
+static int hf_fileexp_vv_low;
+static int hf_fileexp_vvpingage;
+static int hf_fileexp_vvspare1;
+static int hf_fileexp_vvspare2;
+static int hf_fileexp_beginrange;
+static int hf_fileexp_beginrangeext;
+static int hf_fileexp_endrange;
+static int hf_fileexp_endrangeext;
+static int hf_fileexp_expirationtime;
+static int hf_fileexp_tokenid_hi;
+static int hf_fileexp_tokenid_low;
+static int hf_fileexp_type_hi;
+static int hf_fileexp_type_low;
+static int hf_fileexp_tn_length;
+static int hf_fileexp_storestatus_accesstime_sec;
+static int hf_fileexp_storestatus_accesstime_usec;
+static int hf_fileexp_storestatus_changetime_sec;
+static int hf_fileexp_storestatus_changetime_usec;
+static int hf_fileexp_storestatus_clientspare1;
+static int hf_fileexp_storestatus_cmask;
+static int hf_fileexp_storestatus_devicenumber;
+static int hf_fileexp_storestatus_devicenumberhighbits;
+static int hf_fileexp_storestatus_devicetype;
+static int hf_fileexp_storestatus_group;
+static int hf_fileexp_storestatus_length_high;
+static int hf_fileexp_storestatus_length_low;
+static int hf_fileexp_storestatus_mask;
+static int hf_fileexp_storestatus_mode;
+static int hf_fileexp_storestatus_modtime_sec;
+static int hf_fileexp_storestatus_modtime_usec;
+static int hf_fileexp_storestatus_owner;
+static int hf_fileexp_storestatus_spare1;
+static int hf_fileexp_storestatus_spare2;
+static int hf_fileexp_storestatus_spare3;
+static int hf_fileexp_storestatus_spare4;
+static int hf_fileexp_storestatus_spare5;
+static int hf_fileexp_storestatus_spare6;
+static int hf_fileexp_storestatus_trunc_high;
+static int hf_afsconnparams_mask;
+static int hf_fileexp_storestatus_trunc_low;
+static int hf_fileexp_storestatus_typeuuid;
+static int hf_fileexp_l_end_pos;
+static int hf_fileexp_l_end_pos_ext;
+static int hf_fileexp_l_fstype;
+static int hf_fileexp_l_pid;
+static int hf_fileexp_l_start_pos;
+static int hf_fileexp_l_start_pos_ext;
+static int hf_fileexp_l_sysid;
+static int hf_fileexp_l_type;
+static int hf_fileexp_l_whence;
+static int hf_fileexp_acl_len;
+static int hf_fileexp_setcontext_rqst_epochtime;
+static int hf_fileexp_setcontext_rqst_clientsizesattrs;
+static int hf_fileexp_setcontext_rqst_parm7;
+static int hf_fileexp_afsNetAddr_type;
+static int hf_fileexp_afsNetAddr_data;
+static int hf_fileexp_returntokenidp_high;
+static int hf_fileexp_minvvp_low;
+static int hf_fileexp_position_high;
+static int hf_fileexp_position_low;
+static int hf_fileexp_offsetp_high;
+static int hf_fileexp_nextoffsetp_low;
+static int hf_fileexp_cellidp_high;
+static int hf_afserrorstatus_st;
+static int hf_fileexp_length;
+static int hf_afsconnparams_values;
+static int hf_fileexp_acltype;
+static int hf_fileexp_afsTaggedPath_tp_chars;
+static int hf_fileexp_afsTaggedPath_tp_tag;
+static int hf_fileexp_afsacl_uuid1;
+static int hf_fileexp_bulkfetchstatus_size;
+static int hf_fileexp_flags;
+static int hf_fileexp_afsreturndesc_tokenid_high;
+static int hf_fileexp_afsreturndesc_tokenid_low;
+static int hf_fileexp_afsreturndesc_type_high;
+static int hf_fileexp_afsreturndesc_type_low;
+static int hf_fileexp_returntokenidp_low;
+static int hf_fileexp_minvvp_high;
+static int hf_fileexp_offsetp_low;
+static int hf_fileexp_nextoffsetp_high;
+static int hf_fileexp_cellidp_low;
+static int hf_fileexp_tn_tag;
+static int hf_fileexp_tn_string;
+static int hf_fileexp_bulkfetchvv_numvols;
+static int hf_fileexp_bulkfetchvv_spare1;
+static int hf_fileexp_bulkfetchvv_spare2;
+static int hf_fileexp_bulkkeepalive_numexecfids;
+static int hf_fileexp_bulkkeepalive_spare4;
+static int hf_fileexp_bulkkeepalive_spare2;
+static int hf_fileexp_bulkkeepalive_spare1;
+static int hf_fileexp_afsacl_defaultcell_uuid;
+static int hf_fileexp_gettime_syncdispersion;
+static int hf_fileexp_gettime_syncdistance;
+static int hf_fileexp_gettime_usecondsp;
+static int hf_fileexp_readdir_size;
+static int hf_fileexp_afsNameString_t_principalName_size;
+static int hf_fileexp_afsTaggedPath_tp_length;
+static int hf_fileexp_fstype;
+static int hf_fileexp_gettime_secondsp;
 
-static int proto_fileexp = -1;
+static int proto_fileexp;
 
-static gint ett_fileexp = -1;
-static gint ett_fileexp_afsFid = -1;
-static gint ett_fileexp_afsReturnDesc = -1;
-static gint ett_fileexp_afsNetAddr = -1;
-static gint ett_fileexp_fetchstatus = -1;
-static gint ett_fileexp_afsflags = -1;
-static gint ett_fileexp_volsync = -1;
-static gint ett_fileexp_minvvp = -1;
-static gint ett_fileexp_afsfidtaggedname = -1;
-static gint ett_fileexp_afstaggedname = -1;
-static gint ett_fileexp_afstoken = -1;
-static gint ett_fileexp_afsstorestatus = -1;
-static gint ett_fileexp_afsRecordLock = -1;
-static gint ett_fileexp_afsAcl = -1;
-static gint ett_fileexp_afsNameString_t = -1;
-static gint ett_fileexp_afsConnParams = -1;
-static gint ett_fileexp_afsErrorStatus = -1;
-static gint ett_fileexp_afsNetData = -1;
-static gint ett_fileexp_afsTaggedPath = -1;
-static gint ett_fileexp_afsBulkStat = -1;
-static gint ett_fileexp_afsuuid = -1;
-static gint ett_fileexp_offsetp = -1;
-static gint ett_fileexp_returntokenidp = -1;
-static gint ett_fileexp_afsbundled_stat = -1;
+static int ett_fileexp;
+static int ett_fileexp_afsFid;
+static int ett_fileexp_afsReturnDesc;
+static int ett_fileexp_afsNetAddr;
+static int ett_fileexp_fetchstatus;
+static int ett_fileexp_afsflags;
+static int ett_fileexp_volsync;
+static int ett_fileexp_minvvp;
+static int ett_fileexp_afsfidtaggedname;
+static int ett_fileexp_afstaggedname;
+static int ett_fileexp_afstoken;
+static int ett_fileexp_afsstorestatus;
+static int ett_fileexp_afsRecordLock;
+static int ett_fileexp_afsAcl;
+static int ett_fileexp_afsNameString_t;
+static int ett_fileexp_afsConnParams;
+static int ett_fileexp_afsErrorStatus;
+static int ett_fileexp_afsNetData;
+static int ett_fileexp_afsTaggedPath;
+static int ett_fileexp_afsBulkStat;
+static int ett_fileexp_afsuuid;
+static int ett_fileexp_offsetp;
+static int ett_fileexp_returntokenidp;
+static int ett_fileexp_afsbundled_stat;
 
 
 /* vars for our macro(s) */
-static int hf_error_st = -1;
+static int hf_error_st;
 
 static e_guid_t uuid_fileexp =
   { 0x4d37f2dd, 0xed93, 0x0000, {0x02, 0xc0, 0x37, 0xcf, 0x1e, 0x00, 0x00, 0x00}
 };
-static guint16 ver_fileexp = 4;
+static uint16_t ver_fileexp = 4;
 
 /* XXX the only macro that I could not find the right way to convert easily.
 The reason is because we reset col_info if st is non zero for many rpcs.
@@ -307,10 +295,10 @@ inode, volume, etc all will be garbage.
 
 #define MACRO_ST_CLEAR(name) \
   { \
-    guint32 st; \
+    uint32_t st; \
     const char *st_str; \
     offset = dissect_ndr_uint32 (tvb, offset, pinfo, tree, di, drep, hf_error_st, &st); \
-    st_str = val_to_str_ext (st, &dce_error_vals_ext, "%u"); \
+    st_str = val_to_str_ext(pinfo->pool, st, &dce_error_vals_ext, "%u"); \
     if (st) { \
       col_add_fstr (pinfo->cinfo, COL_INFO, "%s st:%s ", name, st_str); \
     } else { \
@@ -321,7 +309,7 @@ inode, volume, etc all will be garbage.
 static int
 dissect_afsFid (tvbuff_t *tvb, int offset,
                 packet_info *pinfo, proto_tree *parent_tree,
-                dcerpc_info *di, guint8 *drep)
+                dcerpc_info *di, uint8_t *drep)
 {
 /*
         afsHyper Cell;
@@ -333,7 +321,7 @@ dissect_afsFid (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     volume_low, unique, vnode, inode;
+  uint32_t    volume_low, unique, vnode, inode;
 
   if (di->conformant_run)
     {
@@ -382,7 +370,7 @@ dissect_afsFid (tvbuff_t *tvb, int offset,
 static int
 dissect_afsConnParams (tvbuff_t *tvb, int offset,
                        packet_info *pinfo, proto_tree *parent_tree,
-                       dcerpc_info *di, guint8 *drep)
+                       dcerpc_info *di, uint8_t *drep)
 {
 /*
         unsigned32 Mask;
@@ -392,7 +380,7 @@ dissect_afsConnParams (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     mask, Values[20];
+  uint32_t    mask, Values[20];
 
   if (di->conformant_run)
     {
@@ -534,7 +522,7 @@ dissect_afsConnParams (tvbuff_t *tvb, int offset,
 static int
 dissect_afsNameString_t (tvbuff_t *tvb, int offset,
                          packet_info *pinfo, proto_tree *parent_tree,
-                         dcerpc_info *di, guint8 *drep)
+                         dcerpc_info *di, uint8_t *drep)
 {
 /*
 typedef [string] byte   NameString_t[AFS_NAMEMAX];
@@ -544,8 +532,8 @@ typedef [string] byte   NameString_t[AFS_NAMEMAX];
   proto_tree   *tree       = NULL;
   int           old_offset = offset;
 #define AFS_NAMEMAX 256
-  guint32       string_size;
-  const guint8 *namestring;
+  uint32_t      string_size;
+  const uint8_t *namestring;
 
   if (di->conformant_run)
     {
@@ -566,7 +554,7 @@ typedef [string] byte   NameString_t[AFS_NAMEMAX];
   col_append_fstr (pinfo->cinfo, COL_INFO, " String_size:%u", string_size);
   if (string_size < AFS_NAMEMAX)
     {
-      proto_tree_add_item_ret_string(tree, hf_fileexp_afsNameString_t_principalName_string, tvb, offset, string_size, ENC_ASCII|ENC_NA, wmem_packet_scope(), &namestring);
+      proto_tree_add_item_ret_string(tree, hf_fileexp_afsNameString_t_principalName_string, tvb, offset, string_size, ENC_ASCII|ENC_NA, pinfo->pool, &namestring);
       offset += string_size;
       col_append_fstr (pinfo->cinfo, COL_INFO, " Principal:%s", namestring);
     }
@@ -585,7 +573,7 @@ typedef [string] byte   NameString_t[AFS_NAMEMAX];
 static int
 dissect_afsNetAddr (tvbuff_t *tvb, int offset,
                     packet_info *pinfo, proto_tree *parent_tree,
-                    dcerpc_info *di, guint8 *drep)
+                    dcerpc_info *di, uint8_t *drep)
 {
 /*                 unsigned16 type;
                    unsigned8 data[14];
@@ -594,8 +582,8 @@ dissect_afsNetAddr (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint16     type;
-  guint8      data;
+  uint16_t    type;
+  uint8_t     data;
   int         i;
 
   if (di->conformant_run)
@@ -667,7 +655,7 @@ dissect_afsNetAddr (tvbuff_t *tvb, int offset,
 static int
 dissect_afsNetData (tvbuff_t *tvb, int offset,
                     packet_info *pinfo, proto_tree *parent_tree,
-                    dcerpc_info *di, guint8 *drep)
+                    dcerpc_info *di, uint8_t *drep)
 {
 /*
         afsNetAddr sockAddr;
@@ -700,7 +688,7 @@ dissect_afsNetData (tvbuff_t *tvb, int offset,
 static int
 dissect_afsTaggedPath (tvbuff_t *tvb, int offset,
                        packet_info *pinfo, proto_tree *parent_tree,
-                       dcerpc_info *di, guint8 *drep)
+                       dcerpc_info *di, uint8_t *drep)
 {
 /*
         codesetTag      tp_tag;
@@ -711,9 +699,9 @@ dissect_afsTaggedPath (tvbuff_t *tvb, int offset,
   proto_item   *item       = NULL;
   proto_tree   *tree       = NULL;
   int           old_offset = offset;
-  guint32       tp_tag;
-  guint16       tp_length;
-  const guint8 *tp_chars;
+  uint32_t      tp_tag;
+  uint16_t      tp_length;
+  const uint8_t *tp_chars;
 
   if (di->conformant_run)
     {
@@ -733,8 +721,8 @@ dissect_afsTaggedPath (tvbuff_t *tvb, int offset,
     dissect_ndr_uint16 (tvb, offset, pinfo, tree, di, drep,
                         hf_fileexp_afsTaggedPath_tp_length, &tp_length);
   proto_tree_add_item (tree, hf_fileexp_afsTaggedPath_tp_chars, tvb, offset,
-                       tp_length, ENC_ASCII|ENC_NA);
-  tp_chars = tvb_get_string_enc (wmem_packet_scope(), tvb, offset, 1025, ENC_ASCII);
+                       tp_length, ENC_ASCII);
+  tp_chars = tvb_get_string_enc (pinfo->pool, tvb, offset, 1025, ENC_ASCII);
   offset += 1025;
   col_append_fstr (pinfo->cinfo, COL_INFO, " :tp_chars %s", tp_chars);
 
@@ -745,7 +733,7 @@ dissect_afsTaggedPath (tvbuff_t *tvb, int offset,
 static int
 dissect_afsAcl (tvbuff_t *tvb, int offset,
                 packet_info *pinfo, proto_tree *parent_tree,
-                dcerpc_info *di, guint8 *drep)
+                dcerpc_info *di, uint8_t *drep)
 {
 /*
         unsigned32 afsACL_len;
@@ -755,7 +743,7 @@ dissect_afsAcl (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree;
   int         old_offset = offset;
-  guint32     acl_len;
+  uint32_t    acl_len;
   e_guid_t    uuid1, defaultcell;
 
   if (di->conformant_run)
@@ -806,12 +794,12 @@ dissect_afsAcl (tvbuff_t *tvb, int offset,
 static int
 dissect_afsErrorStatus (tvbuff_t *tvb, int offset,
                         packet_info *pinfo, proto_tree *parent_tree,
-                        dcerpc_info *di, guint8 *drep)
+                        dcerpc_info *di, uint8_t *drep)
 {
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     st;
+  uint32_t    st;
   const char *st_str;
 
   if (di->conformant_run)
@@ -828,7 +816,7 @@ dissect_afsErrorStatus (tvbuff_t *tvb, int offset,
   offset =
     dissect_ndr_uint32 (tvb, offset, pinfo, tree, di, drep, hf_afserrorstatus_st,
                        &st);
-  st_str = val_to_str_ext (st, &dce_error_vals_ext, "%u");
+  st_str = val_to_str_ext(pinfo->pool, st, &dce_error_vals_ext, "%u");
 
   col_append_fstr (pinfo->cinfo, COL_INFO, " st:%s ", st_str);
 
@@ -839,7 +827,7 @@ dissect_afsErrorStatus (tvbuff_t *tvb, int offset,
 static int
 dissect_afsRecordLock (tvbuff_t *tvb, int offset,
                        packet_info *pinfo, proto_tree *parent_tree,
-                       dcerpc_info *di, guint8 *drep)
+                       dcerpc_info *di, uint8_t *drep)
 {
 /*
         signed16     l_type;
@@ -856,9 +844,9 @@ dissect_afsRecordLock (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint16     l_type, l_whence;
-  guint32     l_start_pos, l_end_pos, l_pid, l_sysid, l_fstype;
-  guint32     l_start_pos_ext, l_end_pos_ext;
+  uint16_t    l_type, l_whence;
+  uint32_t    l_start_pos, l_end_pos, l_pid, l_sysid, l_fstype;
+  uint32_t    l_start_pos_ext, l_end_pos_ext;
 
   if (di->conformant_run)
     {
@@ -906,7 +894,7 @@ dissect_afsRecordLock (tvbuff_t *tvb, int offset,
 static int
 dissect_afsstorestatus (tvbuff_t *tvb, int offset,
                         packet_info *pinfo, proto_tree *parent_tree,
-                        dcerpc_info *di, guint8 *drep)
+                        dcerpc_info *di, uint8_t *drep)
 {
 /*
         unsigned32              mask;
@@ -935,11 +923,11 @@ dissect_afsstorestatus (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     mask, modtime_sec, changetime_sec, accesstime_sec, devicenumber;
-  guint32     clientspare1, devicenumberhighbits, spare1, spare2, spare3, spare4;
-  guint32     spare5, spare6, accesstime_usec, changetime_usec, owner, group, mode;
-  guint32     trunc_high, trunc_low, length_high, length_low, devicetype;
-  guint32     cmask, modtime_usec;
+  uint32_t    mask, modtime_sec, changetime_sec, accesstime_sec, devicenumber;
+  uint32_t    clientspare1, devicenumberhighbits, spare1, spare2, spare3, spare4;
+  uint32_t    spare5, spare6, accesstime_usec, changetime_usec, owner, group, mode;
+  uint32_t    trunc_high, trunc_low, length_high, length_low, devicetype;
+  uint32_t    cmask, modtime_usec;
   e_guid_t    typeuuid;
 
   if (di->conformant_run)
@@ -1097,7 +1085,7 @@ dissect_afsstorestatus (tvbuff_t *tvb, int offset,
 static int
 dissect_afstoken (tvbuff_t *tvb, int offset,
                   packet_info *pinfo, proto_tree *parent_tree,
-                  dcerpc_info *di, guint8 *drep)
+                  dcerpc_info *di, uint8_t *drep)
 {
 /*
         afsHyper tokenID;
@@ -1112,8 +1100,8 @@ dissect_afstoken (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     tokenid_hi, tokenid_low, expirationtime, type_hi, type_low;
-  guint32     beginrange, endrange, beginrangeext, endrangeext, type;
+  uint32_t    tokenid_hi, tokenid_low, expirationtime, type_hi, type_low;
+  uint32_t    beginrange, endrange, beginrangeext, endrangeext, type;
 
   if (di->conformant_run)
     {
@@ -1240,7 +1228,7 @@ dissect_afstoken (tvbuff_t *tvb, int offset,
 static int
 dissect_afstaggedname (tvbuff_t *tvb, int offset,
                        packet_info *pinfo, proto_tree *parent_tree,
-                       dcerpc_info *di, guint8 *drep)
+                       dcerpc_info *di, uint8_t *drep)
 {
 /*
         codesetTag      tn_tag;
@@ -1251,9 +1239,9 @@ dissect_afstaggedname (tvbuff_t *tvb, int offset,
   proto_item   *item       = NULL;
   proto_tree   *tree       = NULL;
   int           old_offset = offset;
-  guint32       tn_tag;
-  guint16       tn_length;
-  const guint8 *tn_string;
+  uint32_t      tn_tag;
+  uint16_t      tn_length;
+  const uint8_t *tn_string;
 
   if (di->conformant_run)
     {
@@ -1275,8 +1263,8 @@ dissect_afstaggedname (tvbuff_t *tvb, int offset,
   if (tn_length < 254)
     {
       proto_tree_add_item (tree, hf_fileexp_tn_string, tvb, offset,
-                             tn_length, ENC_ASCII|ENC_NA);
-      tn_string = tvb_get_string_enc (wmem_packet_scope(), tvb, offset, 257, ENC_ASCII);
+                             tn_length, ENC_ASCII);
+      tn_string = tvb_get_string_enc (pinfo->pool, tvb, offset, 257, ENC_ASCII);
       offset += 257;
         col_append_fstr (pinfo->cinfo, COL_INFO, " :tn_tag: %s", tn_string);
     }
@@ -1293,7 +1281,7 @@ dissect_afstaggedname (tvbuff_t *tvb, int offset,
 static int
 dissect_afsfidtaggedname (tvbuff_t *tvb, int offset,
                           packet_info *pinfo, proto_tree *parent_tree,
-                          dcerpc_info *di, guint8 *drep)
+                          dcerpc_info *di, uint8_t *drep)
 {
 /*
         afsFid fid;
@@ -1325,7 +1313,7 @@ dissect_afsfidtaggedname (tvbuff_t *tvb, int offset,
 static int
 dissect_minvvp (tvbuff_t *tvb, int offset,
                 packet_info *pinfo, proto_tree *parent_tree,
-                dcerpc_info *di, guint8 *drep)
+                dcerpc_info *di, uint8_t *drep)
 {
 /* unsigned32 minvvp_high
    unsigned32 minvvp_low
@@ -1334,7 +1322,7 @@ dissect_minvvp (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     minvvp_high, minvvp_low;
+  uint32_t    minvvp_high, minvvp_low;
 
   if (di->conformant_run)
     {
@@ -1364,7 +1352,7 @@ dissect_minvvp (tvbuff_t *tvb, int offset,
 static int
 dissect_afsuuid (tvbuff_t *tvb, int offset,
                  packet_info *pinfo, proto_tree *parent_tree,
-                 dcerpc_info *di, guint8 *drep)
+                 dcerpc_info *di, uint8_t *drep)
 {
 /* uuid  UUID
 */
@@ -1398,7 +1386,7 @@ dissect_afsuuid (tvbuff_t *tvb, int offset,
 static int
 dissect_offsetp (tvbuff_t *tvb, int offset,
                  packet_info *pinfo, proto_tree *parent_tree,
-                 dcerpc_info *di, guint8 *drep)
+                 dcerpc_info *di, uint8_t *drep)
 {
 /* unsigned32 offsetp_high
    unsigned32 offsetp_low
@@ -1407,7 +1395,7 @@ dissect_offsetp (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     offsetp_high, offsetp_low;
+  uint32_t    offsetp_high, offsetp_low;
 
   if (di->conformant_run)
     {
@@ -1437,7 +1425,7 @@ dissect_offsetp (tvbuff_t *tvb, int offset,
 static int
 dissect_returntokenidp (tvbuff_t *tvb, int offset,
                         packet_info *pinfo, proto_tree *parent_tree,
-                        dcerpc_info *di, guint8 *drep)
+                        dcerpc_info *di, uint8_t *drep)
 {
 /* unsigned32 returntokenidp_high
    unsigned32 returntokenidp_low
@@ -1446,7 +1434,7 @@ dissect_returntokenidp (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     returntokenidp_high, returntokenidp_low;
+  uint32_t    returntokenidp_high, returntokenidp_low;
 
   if (di->conformant_run)
     {
@@ -1476,7 +1464,7 @@ dissect_returntokenidp (tvbuff_t *tvb, int offset,
 static int
 dissect_volsync (tvbuff_t *tvb, int offset,
                  packet_info *pinfo, proto_tree *parent_tree,
-                 dcerpc_info *di, guint8 *drep)
+                 dcerpc_info *di, uint8_t *drep)
 {
 /*
         afsHyper VolID;
@@ -1492,8 +1480,8 @@ dissect_volsync (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     volid_hi, volid_low, vv_hi, vv_low, vvage, vvpingage;
-  guint32     vvspare1, vvspare2;
+  uint32_t    volid_hi, volid_low, vv_hi, vv_low, vvage, vvpingage;
+  uint32_t    vvspare1, vvspare2;
 
   if (di->conformant_run)
     {
@@ -1544,7 +1532,7 @@ dissect_volsync (tvbuff_t *tvb, int offset,
 static int
 dissect_afsFlags (tvbuff_t *tvb, int offset,
                   packet_info *pinfo, proto_tree *parent_tree,
-                  dcerpc_info *di, guint8 *drep)
+                  dcerpc_info *di, uint8_t *drep)
 {
 /*
   unsigned32 flags
@@ -1553,7 +1541,7 @@ dissect_afsFlags (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     flags;
+  uint32_t    flags;
 
   if (di->conformant_run)
     {
@@ -1659,7 +1647,7 @@ dissect_afsFlags (tvbuff_t *tvb, int offset,
 static int
 dissect_fetchstatus (tvbuff_t *tvb, int offset,
                      packet_info *pinfo, proto_tree *parent_tree,
-                     dcerpc_info *di, guint8 *drep)
+                     dcerpc_info *di, uint8_t *drep)
 {
 /*
         unsigned32              interfaceVersion;
@@ -1697,14 +1685,14 @@ dissect_fetchstatus (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     interfaceversion, filetype, linkcount, length_high, length_low;
-  guint32     dataversion_high, dataversion_low, author, owner, group, calleraccess;
-  guint32     anonymousaccess, aclexpirationtime, mode, parentvnode, parentunique;
-  guint32     modtime_sec, modtime_msec, changetime_sec, changetime_msec;
-  guint32     accesstime_sec, accesstime_msec, servermodtime_msec, servermodtime_sec;
-  guint32     devicenumber, blocksused, clientspare1, devicenumberhighbits;
-  guint32     agtypeunique, himaxspare, lomaxspare, pathconfspare, spare4;
-  guint32     spare5, spare6;
+  uint32_t    interfaceversion, filetype, linkcount, length_high, length_low;
+  uint32_t    dataversion_high, dataversion_low, author, owner, group, calleraccess;
+  uint32_t    anonymousaccess, aclexpirationtime, mode, parentvnode, parentunique;
+  uint32_t    modtime_sec, modtime_msec, changetime_sec, changetime_msec;
+  uint32_t    accesstime_sec, accesstime_msec, servermodtime_msec, servermodtime_sec;
+  uint32_t    devicenumber, blocksused, clientspare1, devicenumberhighbits;
+  uint32_t    agtypeunique, himaxspare, lomaxspare, pathconfspare, spare4;
+  uint32_t    spare5, spare6;
   e_guid_t    typeuuid, objectuuid;
 
   if (di->conformant_run)
@@ -1848,7 +1836,7 @@ dissect_fetchstatus (tvbuff_t *tvb, int offset,
 static int
 dissect_afsReturnDesc (tvbuff_t *tvb, int offset,
                        packet_info *pinfo, proto_tree *parent_tree,
-                       dcerpc_info *di, guint8 *drep)
+                       dcerpc_info *di, uint8_t *drep)
 {
 /*
         afsFid fid;             * useful hint *
@@ -1860,7 +1848,7 @@ dissect_afsReturnDesc (tvbuff_t *tvb, int offset,
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
   int         old_offset = offset;
-  guint32     tokenid_high, tokenid_low, type_high, type_low;
+  uint32_t    tokenid_high, tokenid_low, type_high, type_low;
 
   if (di->conformant_run)
     {
@@ -1903,7 +1891,7 @@ dissect_afsReturnDesc (tvbuff_t *tvb, int offset,
 static int
 dissect_afsReturns (tvbuff_t *tvb, int offset,
                     packet_info *pinfo, proto_tree *tree,
-                    dcerpc_info *di, guint8 *drep)
+                    dcerpc_info *di, uint8_t *drep)
 {
 /*
         long afsReturns_len;
@@ -1929,7 +1917,7 @@ dissect_afsReturns (tvbuff_t *tvb, int offset,
 static int
 dissect_afsbundled_stat (tvbuff_t *tvb, int offset,
                          packet_info *pinfo, proto_tree *parent_tree,
-                         dcerpc_info *di, guint8 *drep _U_)
+                         dcerpc_info *di, uint8_t *drep _U_)
 {
   proto_item *item       = NULL;
   proto_tree *tree       = NULL;
@@ -1975,7 +1963,7 @@ dissect_afsbundled_stat (tvbuff_t *tvb, int offset,
 static int
 dissect_afsBulkStat (tvbuff_t *tvb _U_, int offset,
                                   packet_info *pinfo _U_, proto_tree *tree _U_,
-                                  dcerpc_info *di _U_, guint8 *drep _U_)
+                                  dcerpc_info *di _U_, uint8_t *drep _U_)
 {
 /*
         unsigned32 BulkStat_len;
@@ -1997,7 +1985,7 @@ dissect_afsBulkStat (tvbuff_t *tvb _U_, int offset,
 static int
 fileexp_dissect_removefile_rqst (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2036,9 +2024,9 @@ fileexp_dissect_removefile_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_storedata_rqst (tvbuff_t *tvb, int offset,
                                 packet_info *pinfo, proto_tree *tree,
-                                dcerpc_info *di, guint8 *drep)
+                                dcerpc_info *di, uint8_t *drep)
 {
-  guint32 position_high, position_low, length;
+  uint32_t position_high, position_low, length;
 
   if (di->conformant_run)
     {
@@ -2093,7 +2081,7 @@ fileexp_dissect_storedata_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_gettoken_rqst (tvbuff_t *tvb, int offset,
                                packet_info *pinfo, proto_tree *tree,
-                               dcerpc_info *di, guint8 *drep)
+                               dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2129,7 +2117,7 @@ fileexp_dissect_gettoken_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_gettoken_resp (tvbuff_t *tvb, int offset,
                                packet_info *pinfo, proto_tree *tree,
-                               dcerpc_info *di, guint8 *drep)
+                               dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2167,7 +2155,7 @@ fileexp_dissect_gettoken_resp (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_lookuproot_rqst (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2198,9 +2186,9 @@ fileexp_dissect_lookuproot_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_fetchdata_rqst (tvbuff_t *tvb, int offset,
                                 packet_info *pinfo, proto_tree *tree,
-                                dcerpc_info *di, guint8 *drep)
+                                dcerpc_info *di, uint8_t *drep)
 {
-  guint32 position_high, position_low, length;
+  uint32_t position_high, position_low, length;
 
   if (di->conformant_run)
     {
@@ -2244,9 +2232,9 @@ fileexp_dissect_fetchdata_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_fetchacl_rqst (tvbuff_t *tvb, int offset,
                                packet_info *pinfo, proto_tree *tree,
-                               dcerpc_info *di, guint8 *drep)
+                               dcerpc_info *di, uint8_t *drep)
 {
-  guint32 acltype;
+  uint32_t acltype;
 
   if (di->conformant_run)
     {
@@ -2287,7 +2275,7 @@ fileexp_dissect_fetchacl_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_fetchstatus_rqst (tvbuff_t *tvb, int offset,
                                   packet_info *pinfo, proto_tree *tree,
-                                  dcerpc_info *di, guint8 *drep)
+                                  dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2315,9 +2303,9 @@ fileexp_dissect_fetchstatus_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_storeacl_rqst (tvbuff_t *tvb, int offset,
                                packet_info *pinfo, proto_tree *tree,
-                               dcerpc_info *di, guint8 *drep)
+                               dcerpc_info *di, uint8_t *drep)
 {
-  guint32 acltype;
+  uint32_t acltype;
 
   if (di->conformant_run)
     {
@@ -2360,7 +2348,7 @@ fileexp_dissect_storeacl_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_storestatus_rqst (tvbuff_t *tvb, int offset,
                                   packet_info *pinfo, proto_tree *tree,
-                                  dcerpc_info *di, guint8 *drep)
+                                  dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2394,7 +2382,7 @@ fileexp_dissect_storestatus_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_createfile_rqst (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2433,7 +2421,7 @@ fileexp_dissect_createfile_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_rename_rqst (tvbuff_t *tvb, int offset,
                              packet_info *pinfo, proto_tree *tree,
-                             dcerpc_info *di, guint8 *drep)
+                             dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2487,7 +2475,7 @@ fileexp_dissect_rename_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_symlink_rqst (tvbuff_t *tvb, int offset,
                               packet_info *pinfo, proto_tree *tree,
-                              dcerpc_info *di, guint8 *drep)
+                              dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2531,9 +2519,9 @@ fileexp_dissect_symlink_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_readdir_rqst (tvbuff_t *tvb, int offset,
                               packet_info *pinfo, proto_tree *tree,
-                              dcerpc_info *di, guint8 *drep)
+                              dcerpc_info *di, uint8_t *drep)
 {
-  guint32 size;
+  uint32_t size;
 
   if (di->conformant_run)
     {
@@ -2571,7 +2559,7 @@ fileexp_dissect_readdir_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_makedir_rqst (tvbuff_t *tvb, int offset,
                               packet_info *pinfo, proto_tree *tree,
-                              dcerpc_info *di, guint8 *drep)
+                              dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2609,9 +2597,9 @@ fileexp_dissect_makedir_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_removedir_rqst (tvbuff_t *tvb, int offset,
                                 packet_info *pinfo, proto_tree *tree,
-                                dcerpc_info *di, guint8 *drep)
+                                dcerpc_info *di, uint8_t *drep)
 {
-  guint32 returntokenidp_high, returntokenidp_low;
+  uint32_t returntokenidp_high, returntokenidp_low;
 
   if (di->conformant_run)
     {
@@ -2653,7 +2641,7 @@ fileexp_dissect_removedir_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_lookup_rqst (tvbuff_t *tvb, int offset,
                              packet_info *pinfo, proto_tree *tree,
-                             dcerpc_info *di, guint8 *drep)
+                             dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2685,7 +2673,7 @@ fileexp_dissect_lookup_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_lookup_resp (tvbuff_t *tvb, int offset,
                              packet_info *pinfo, proto_tree *tree,
-                             dcerpc_info *di, guint8 *drep)
+                             dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2726,9 +2714,9 @@ fileexp_dissect_lookup_resp (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_makemountpoint_rqst (tvbuff_t *tvb, int offset,
                                      packet_info *pinfo, proto_tree *tree,
-                                     dcerpc_info *di, guint8 *drep)
+                                     dcerpc_info *di, uint8_t *drep)
 {
-  guint16 type;
+  uint16_t type;
 
   if (di->conformant_run)
     {
@@ -2786,9 +2774,9 @@ fileexp_dissect_makemountpoint_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_setcontext_rqst (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
-  guint32 epochtime, clientsizesattrs, parm7;
+  uint32_t epochtime, clientsizesattrs, parm7;
 
   if (di->conformant_run)
     {
@@ -2833,7 +2821,7 @@ fileexp_dissect_setcontext_rqst (tvbuff_t *tvb, int offset,
 static int
 fileexp_dissect_setcontext_resp (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
 /* nothing but error code */
 
@@ -2849,7 +2837,7 @@ fileexp_dissect_setcontext_resp (tvbuff_t *tvb, int offset,
 static int
   fileexp_dissect_lookuproot_resp (tvbuff_t *tvb, int offset,
                                    packet_info *pinfo, proto_tree *tree,
-                                   dcerpc_info *di, guint8 *drep)
+                                   dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2883,9 +2871,9 @@ static int
 static int
   fileexp_dissect_fetchdata_resp (tvbuff_t *tvb, int offset,
                                   packet_info *pinfo, proto_tree *tree,
-                                  dcerpc_info *di, guint8 *drep)
+                                  dcerpc_info *di, uint8_t *drep)
 {
-  guint32 pipe_t_size;
+  uint32_t pipe_t_size;
 
   if (di->conformant_run)
     {
@@ -2911,7 +2899,7 @@ There is also not sign of the afsVolSync structure... Just size, and data string
 static int
   fileexp_dissect_fetchacl_resp (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2941,7 +2929,7 @@ static int
 static int
   fileexp_dissect_fetchstatus_resp (tvbuff_t *tvb, int offset,
                                     packet_info *pinfo, proto_tree *tree,
-                                    dcerpc_info *di, guint8 *drep)
+                                    dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2971,7 +2959,7 @@ static int
 static int
   fileexp_dissect_storedata_resp (tvbuff_t *tvb, int offset,
                                   packet_info *pinfo, proto_tree *tree,
-                                  dcerpc_info *di, guint8 *drep)
+                                  dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -2997,7 +2985,7 @@ static int
 static int
   fileexp_dissect_storeacl_resp (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3023,7 +3011,7 @@ static int
 static int
   fileexp_dissect_storestatus_resp (tvbuff_t *tvb, int offset,
                                     packet_info *pinfo, proto_tree *tree,
-                                    dcerpc_info *di, guint8 *drep)
+                                    dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3049,7 +3037,7 @@ static int
 static int
   fileexp_dissect_removefile_resp (tvbuff_t *tvb, int offset,
                                    packet_info *pinfo, proto_tree *tree,
-                                   dcerpc_info *di, guint8 *drep)
+                                   dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3082,7 +3070,7 @@ static int
 static int
   fileexp_dissect_createfile_resp (tvbuff_t *tvb, int offset,
                                    packet_info *pinfo, proto_tree *tree,
-                                   dcerpc_info *di, guint8 *drep)
+                                   dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3122,7 +3110,7 @@ static int
 static int
   fileexp_dissect_rename_resp (tvbuff_t *tvb, int offset,
                                packet_info *pinfo, proto_tree *tree,
-                               dcerpc_info *di, guint8 *drep)
+                               dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3169,7 +3157,7 @@ static int
 static int
   fileexp_dissect_symlink_resp (tvbuff_t *tvb, int offset,
                                 packet_info *pinfo, proto_tree *tree,
-                                dcerpc_info *di, guint8 *drep)
+                                dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3207,7 +3195,7 @@ static int
 static int
   fileexp_dissect_hardlink_resp (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3237,7 +3225,7 @@ static int
 static int
   fileexp_dissect_hardlink_rqst (tvbuff_t *tvb, int offset,
                                  packet_info *pinfo, proto_tree *tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3278,7 +3266,7 @@ static int
 static int
   fileexp_dissect_makedir_resp (tvbuff_t *tvb, int offset,
                                 packet_info *pinfo, proto_tree *tree,
-                                dcerpc_info *di, guint8 *drep)
+                                dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3316,7 +3304,7 @@ static int
 static int
   fileexp_dissect_removedir_resp (tvbuff_t *tvb, int offset,
                                   packet_info *pinfo, proto_tree *tree,
-                                  dcerpc_info *di, guint8 *drep)
+                                  dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3351,9 +3339,9 @@ static int
 static int
   fileexp_dissect_readdir_resp (tvbuff_t *tvb, int offset,
                                 packet_info *pinfo, proto_tree *tree,
-                                dcerpc_info *di, guint8 *drep)
+                                dcerpc_info *di, uint8_t *drep)
 {
-  guint32 nextoffsetp_high, nextoffsetp_low;
+  uint32_t nextoffsetp_high, nextoffsetp_low;
 
   if (di->conformant_run)
     {
@@ -3391,7 +3379,7 @@ static int
 static int
   fileexp_dissect_releasetokens_resp (tvbuff_t *tvb, int offset,
                                       packet_info *pinfo, proto_tree *tree,
-                                      dcerpc_info *di, guint8 *drep)
+                                      dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3406,7 +3394,7 @@ static int
 static int
   fileexp_dissect_releasetokens_rqst (tvbuff_t *tvb, int offset,
                                       packet_info *pinfo, proto_tree *tree,
-                                      dcerpc_info *di, guint8 *drep)
+                                      dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3430,9 +3418,9 @@ static int
 static int
   fileexp_dissect_gettime_resp (tvbuff_t *tvb, int offset,
                                 packet_info *pinfo, proto_tree *tree,
-                                dcerpc_info *di, guint8 *drep)
+                                dcerpc_info *di, uint8_t *drep)
 {
-  guint32 secondsp, usecondsp, syncdistance, syncdispersion;
+  uint32_t secondsp, usecondsp, syncdistance, syncdispersion;
 
   if (di->conformant_run)
     {
@@ -3470,13 +3458,8 @@ static int
 static int
   fileexp_dissect_gettime_rqst (tvbuff_t *tvb _U_, int offset,
                                 packet_info *pinfo _U_, proto_tree *tree _U_,
-                                dcerpc_info *di, guint8 *drep _U_)
+                                dcerpc_info *di _U_, uint8_t *drep _U_)
 {
-  if (di->conformant_run)
-    {
-      return offset;
-    }
-
   /* nothing */
 
   return offset;
@@ -3485,7 +3468,7 @@ static int
 static int
   fileexp_dissect_processquota_resp (tvbuff_t *tvb, int offset,
                                      packet_info *pinfo, proto_tree *tree,
-                                     dcerpc_info *di, guint8 *drep)
+                                     dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3514,7 +3497,7 @@ static int
 static int
   fileexp_dissect_processquota_rqst (tvbuff_t *tvb, int offset,
                                      packet_info *pinfo, proto_tree *tree,
-                                     dcerpc_info *di, guint8 *drep)
+                                     dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3544,12 +3527,8 @@ static int
 static int
   fileexp_dissect_getserverinterfaces_rqst (tvbuff_t *tvb _U_, int offset,
                                             packet_info *pinfo _U_, proto_tree *tree _U_,
-                                            dcerpc_info *di, guint8 *drep _U_)
+                                            dcerpc_info *di _U_, uint8_t *drep _U_)
 {
-  if (di->conformant_run)
-    {
-      return offset;
-    }
 
 /*
         [in, out]               dfs_interfaceList *serverInterfacesP
@@ -3561,7 +3540,7 @@ static int
 static int
   fileexp_dissect_getserverinterfaces_resp (tvbuff_t *tvb, int offset,
                                             packet_info *pinfo, proto_tree *tree,
-                                            dcerpc_info *di, guint8 *drep)
+                                            dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3580,7 +3559,7 @@ static int
 static int
   fileexp_dissect_setparams_rqst (tvbuff_t *tvb, int offset,
                                   packet_info *pinfo, proto_tree *tree,
-                                  dcerpc_info *di, guint8 *drep)
+                                  dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3602,7 +3581,7 @@ static int
 static int
   fileexp_dissect_setparams_resp (tvbuff_t *tvb, int offset,
                                   packet_info *pinfo, proto_tree *tree,
-                                  dcerpc_info *di, guint8 *drep)
+                                  dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3624,7 +3603,7 @@ static int
 static int
   fileexp_dissect_makemountpoint_resp (tvbuff_t *tvb, int offset,
                                        packet_info *pinfo, proto_tree *tree,
-                                       dcerpc_info *di, guint8 *drep)
+                                       dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3658,7 +3637,7 @@ static int
 static int
   fileexp_dissect_getstatistics_rqst (tvbuff_t *tvb _U_, int offset,
                                       packet_info *pinfo _U_, proto_tree *tree _U_,
-                                      dcerpc_info *di, guint8 *drep _U_)
+                                      dcerpc_info *di, uint8_t *drep _U_)
 {
   if (di->conformant_run)
     {
@@ -3672,12 +3651,8 @@ static int
 static int
   fileexp_dissect_getstatistics_resp (tvbuff_t *tvb _U_, int offset,
                                       packet_info *pinfo _U_, proto_tree *tree _U_,
-                                      dcerpc_info *di, guint8 *drep _U_)
+                                      dcerpc_info *di _U_, uint8_t *drep _U_)
 {
-  if (di->conformant_run)
-    {
-      return offset;
-    }
 
 /*
         [out]   afsStatistics   *Statisticsp
@@ -3689,9 +3664,9 @@ static int
 static int
   fileexp_dissect_bulkfetchvv_rqst (tvbuff_t *tvb, int offset,
                                     packet_info *pinfo, proto_tree *tree,
-                                    dcerpc_info *di, guint8 *drep)
+                                    dcerpc_info *di, uint8_t *drep)
 {
-  guint32 cellidp_high, cellidp_low, numvols, spare1, spare2;
+  uint32_t cellidp_high, cellidp_low, numvols, spare1, spare2;
 
   if (di->conformant_run)
     {
@@ -3734,13 +3709,8 @@ static int
 static int
   fileexp_dissect_bulkfetchvv_resp (tvbuff_t *tvb _U_, int offset,
                                     packet_info *pinfo _U_, proto_tree *tree _U_,
-                                    dcerpc_info *di, guint8 *drep _U_)
+                                    dcerpc_info *di _U_, uint8_t *drep _U_)
 {
-  if (di->conformant_run)
-    {
-      return offset;
-    }
-
 /*
         [out]   afsBulkVVs      *VolVVsp,
         [out]   unsigned32      *spare4
@@ -3752,9 +3722,9 @@ static int
 static int
   fileexp_dissect_bulkkeepalive_resp (tvbuff_t *tvb, int offset,
                                       packet_info *pinfo, proto_tree *tree,
-                                      dcerpc_info *di, guint8 *drep)
+                                      dcerpc_info *di, uint8_t *drep)
 {
-  guint32 spare4;
+  uint32_t spare4;
 
   if (di->conformant_run)
     {
@@ -3775,9 +3745,9 @@ static int
 static int
   fileexp_dissect_bulkkeepalive_rqst (tvbuff_t *tvb, int offset,
                                       packet_info *pinfo, proto_tree *tree,
-                                      dcerpc_info *di, guint8 *drep)
+                                      dcerpc_info *di, uint8_t *drep)
 {
-  guint32 numexecfids, spare1, spare2;
+  uint32_t numexecfids, spare1, spare2;
 
   if (di->conformant_run)
     {
@@ -3810,9 +3780,9 @@ static int
 static int
   fileexp_dissect_bulkfetchstatus_rqst (tvbuff_t *tvb, int offset,
                                         packet_info *pinfo, proto_tree *tree,
-                                        dcerpc_info *di, guint8 *drep)
+                                        dcerpc_info *di, uint8_t *drep)
 {
-  guint32 offsetp_high, offsetp_low, size;
+  uint32_t offsetp_high, offsetp_low, size;
 
   if (di->conformant_run)
     {
@@ -3854,7 +3824,7 @@ static int
 static int
   fileexp_dissect_bulkfetchstatus_resp (tvbuff_t *tvb, int offset,
                                         packet_info *pinfo, proto_tree *tree,
-                                        dcerpc_info *di, guint8 *drep)
+                                        dcerpc_info *di, uint8_t *drep)
 {
   if (di->conformant_run)
     {
@@ -3900,7 +3870,7 @@ static int
   return offset;
 }
 
-static dcerpc_sub_dissector fileexp_dissectors[] = {
+static const dcerpc_sub_dissector fileexp_dissectors[] = {
   { 0,  "SetContext",          fileexp_dissect_setcontext_rqst,          fileexp_dissect_setcontext_resp} ,
   { 1,  "LookupRoot",          fileexp_dissect_lookuproot_rqst,          fileexp_dissect_lookuproot_resp} ,
   { 2,  "FetchData",           fileexp_dissect_fetchdata_rqst,           fileexp_dissect_fetchdata_resp} ,
@@ -3959,17 +3929,17 @@ proto_register_fileexp (void)
         NULL, HFILL}
     },
     { &hf_fileexp_setcontext_rqst_epochtime,
-      { "EpochTime:", "fileexp.setcontext_rqst_epochtime",
+      { "EpochTime", "fileexp.setcontext_rqst_epochtime",
         FT_ABSOLUTE_TIME, ABSOLUTE_TIME_LOCAL, NULL, 0x0,
         NULL, HFILL}
     },
     { &hf_fileexp_setcontext_rqst_clientsizesattrs,
-      { "ClientSizeAttrs:", "fileexp.setcontext_clientsizesattrs",
+      { "ClientSizeAttrs", "fileexp.setcontext_clientsizesattrs",
         FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL}
     },
     { &hf_fileexp_setcontext_rqst_parm7,
-      { "Parm7:", "fileexp.setcontext.parm7",
+      { "Parm7", "fileexp.setcontext.parm7",
         FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL}
     },
@@ -4126,7 +4096,7 @@ proto_register_fileexp (void)
     { &hf_fileexp_objectuuid,
       { "Object uuid", "fileexp.objectuuid",
         FT_GUID, BASE_NONE, NULL, 0x0,
-        "UUID", HFILL}
+        NULL, HFILL}
     },
     { &hf_fileexp_owner,
       { "Owner", "fileexp.owner",
@@ -4176,7 +4146,7 @@ proto_register_fileexp (void)
     { &hf_fileexp_typeuuid,
       { "Type uuid", "fileexp.typeuuid",
         FT_GUID, BASE_NONE, NULL, 0x0,
-        "UUID", HFILL}
+        NULL, HFILL}
     },
     { &hf_fileexp_volid_hi,
       { "Vol id hi", "fileexp.volid_hi",
@@ -4401,7 +4371,7 @@ proto_register_fileexp (void)
     { &hf_fileexp_storestatus_typeuuid,
       { "Store status type uuid", "fileexp.storestatus_typeuuid",
         FT_GUID, BASE_NONE, NULL, 0x0,
-        "UUID", HFILL}
+        NULL, HFILL}
     },
     { &hf_fileexp_l_end_pos,
       { "l_end_pos", "fileexp.l_end_pos",
@@ -4619,7 +4589,7 @@ proto_register_fileexp (void)
         NULL, HFILL}
     },
     { &hf_fileexp_bulkkeepalive_spare4,
-      { "BulkKeepAlive spare4", "fileexp.bulkfetchkeepalive_spare2",
+      { "BulkKeepAlive spare4", "fileexp.bulkfetchkeepalive_spare4",
         FT_UINT32, BASE_HEX, NULL, 0x0,
         NULL, HFILL}
     },
@@ -4636,12 +4606,12 @@ proto_register_fileexp (void)
     { &hf_fileexp_afsacl_defaultcell_uuid,
       { "Default Cell UUID", "fileexp.defaultcell_uuid",
         FT_GUID, BASE_NONE, NULL, 0x0,
-        "UUID", HFILL}
+        NULL, HFILL}
     },
     { &hf_fileexp_afsuuid_uuid,
       { "AFS UUID", "fileexp.uuid",
         FT_GUID, BASE_NONE, NULL, 0x0,
-        "UUID", HFILL}
+        NULL, HFILL}
     },
     { &hf_fileexp_gettime_syncdispersion,
       { "GetTime Syncdispersion", "fileexp.gettime_syncdispersion",
@@ -4695,7 +4665,7 @@ proto_register_fileexp (void)
     },
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_fileexp,
     &ett_fileexp_afsReturnDesc,
     &ett_fileexp_afsFid,
@@ -4738,7 +4708,7 @@ proto_reg_handoff_fileexp (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

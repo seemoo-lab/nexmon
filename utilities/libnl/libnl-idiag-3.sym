@@ -1,0 +1,115 @@
+# The linker version script controls which symbols are exported.
+# Version tags that correspond to past releases group the symbols
+# that were part of that release. Hence, such a version tag is sealed
+# and MUST not be extended.
+# Any new symbols MUST only be added to the bottom of the file, in
+# the version tag for the next upcoming release.
+libnl_3 {
+global:
+	# ops structure
+	idiagnl_meminfo_obj_ops;
+	idiagnl_msg_obj_ops;
+	idiagnl_req_obj_ops;
+	idiagnl_vegasinfo_obj_ops;
+
+	idiagnl_attrs2str;
+	idiagnl_connect;
+	idiagnl_exts2str;
+	idiagnl_meminfo_alloc;
+	idiagnl_meminfo_get;
+	idiagnl_meminfo_get_fmem;
+	idiagnl_meminfo_get_rmem;
+	idiagnl_meminfo_get_tmem;
+	idiagnl_meminfo_get_wmem;
+	idiagnl_meminfo_put;
+	idiagnl_meminfo_set_fmem;
+	idiagnl_meminfo_set_rmem;
+	idiagnl_meminfo_set_tmem;
+	idiagnl_meminfo_set_wmem;
+	idiagnl_msg_alloc;
+	idiagnl_msg_alloc_cache;
+	idiagnl_msg_get;
+	idiagnl_msg_get_cong;
+	idiagnl_msg_get_dport;
+	idiagnl_msg_get_dst;
+	idiagnl_msg_get_expires;
+	idiagnl_msg_get_family;
+	idiagnl_msg_get_ifindex;
+	idiagnl_msg_get_inode;
+	idiagnl_msg_get_meminfo;
+	idiagnl_msg_get_retrans;
+	idiagnl_msg_get_rqueue;
+	idiagnl_msg_get_shutdown;
+	idiagnl_msg_get_sport;
+	idiagnl_msg_get_src;
+	idiagnl_msg_get_state;
+	idiagnl_msg_get_tclass;
+	idiagnl_msg_get_tcpinfo;
+	idiagnl_msg_get_timer;
+	idiagnl_msg_get_tos;
+	idiagnl_msg_get_uid;
+	idiagnl_msg_get_vegasinfo;
+	idiagnl_msg_get_wqueue;
+	idiagnl_msg_parse;
+	idiagnl_msg_put;
+	idiagnl_msg_set_cong;
+	idiagnl_msg_set_dport;
+	idiagnl_msg_set_dst;
+	idiagnl_msg_set_expires;
+	idiagnl_msg_set_family;
+	idiagnl_msg_set_ifindex;
+	idiagnl_msg_set_inode;
+	idiagnl_msg_set_meminfo;
+	idiagnl_msg_set_retrans;
+	idiagnl_msg_set_rqueue;
+	idiagnl_msg_set_shutdown;
+	idiagnl_msg_set_sport;
+	idiagnl_msg_set_src;
+	idiagnl_msg_set_state;
+	idiagnl_msg_set_tclass;
+	idiagnl_msg_set_tcpinfo;
+	idiagnl_msg_set_timer;
+	idiagnl_msg_set_tos;
+	idiagnl_msg_set_uid;
+	idiagnl_msg_set_vegasinfo;
+	idiagnl_msg_set_wqueue;
+	idiagnl_req_alloc;
+	idiagnl_req_get;
+	idiagnl_req_get_dbs;
+	idiagnl_req_get_dst;
+	idiagnl_req_get_ext;
+	idiagnl_req_get_family;
+	idiagnl_req_get_ifindex;
+	idiagnl_req_get_src;
+	idiagnl_req_get_states;
+	idiagnl_req_parse;
+	idiagnl_req_put;
+	idiagnl_req_set_dbs;
+	idiagnl_req_set_dst;
+	idiagnl_req_set_ext;
+	idiagnl_req_set_family;
+	idiagnl_req_set_ifindex;
+	idiagnl_req_set_src;
+	idiagnl_req_set_states;
+	idiagnl_send_simple;
+	idiagnl_shutdown2str;
+	idiagnl_state2str;
+	idiagnl_str2state;
+	idiagnl_str2timer;
+	idiagnl_tcpopts2str;
+	idiagnl_tcpstate2str;
+	idiagnl_timer2str;
+	idiagnl_vegasinfo_alloc;
+	idiagnl_vegasinfo_get;
+	idiagnl_vegasinfo_get_enabled;
+	idiagnl_vegasinfo_get_minrtt;
+	idiagnl_vegasinfo_get_rtt;
+	idiagnl_vegasinfo_get_rttcnt;
+	idiagnl_vegasinfo_put;
+	idiagnl_vegasinfo_set_enabled;
+	idiagnl_vegasinfo_set_minrtt;
+	idiagnl_vegasinfo_set_rtt;
+	idiagnl_vegasinfo_set_rttcnt;
+local:
+	*;
+};

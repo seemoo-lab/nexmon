@@ -1,10 +1,12 @@
 /* GMODULE - GLIB wrapper code for dynamic module loading
  * Copyright (C) 1998, 2000 Tim Janik
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -100,7 +102,8 @@ exit:
 static gpointer
 _g_module_open (const gchar *file_name,
 		gboolean     bind_lazy,
-		gboolean     bind_local)
+		gboolean     bind_local,
+                GError     **error)
 {
   gpointer handle;
   gchar* member;
@@ -123,7 +126,12 @@ _g_module_open (const gchar *file_name,
   g_free (full_name);
 
   if (!handle)
-    g_module_set_error (fetch_dlerror (TRUE));
+    {
+      const gchar *message = fetch_dlerror (TRUE);
+
+      g_module_set_error (message);
+      g_set_error_literal (error, G_MODULE_ERROR, G_MODULE_ERROR_FAILED, message);
+    }
   
   return handle;
 }
@@ -141,19 +149,10 @@ _g_module_self (void)
 }
 
 static void
-_g_module_close (gpointer handle,
-		 gboolean is_unref)
+_g_module_close (gpointer handle)
 {
-  /* are there any systems out there that have dlopen()/dlclose()
-   * without a reference count implementation?
-   */
-  is_unref |= 1;
-  
-  if (is_unref)
-    {
-      if (dlclose (handle) != 0)
-	g_module_set_error (fetch_dlerror (TRUE));
-    }
+  if (dlclose (handle) != 0)
+    g_module_set_error (fetch_dlerror (TRUE));
 }
 
 static gpointer
@@ -167,19 +166,4 @@ _g_module_symbol (gpointer     handle,
     g_module_set_error (fetch_dlerror (FALSE));
   
   return p;
-}
-
-static gchar*
-_g_module_build_path (const gchar *directory,
-		      const gchar *module_name)
-{
-  if (directory && *directory) {
-    if (strncmp (module_name, "lib", 3) == 0)
-      return g_strconcat (directory, "/", module_name, NULL);
-    else
-      return g_strconcat (directory, "/lib", module_name, "." G_MODULE_SUFFIX, NULL);
-  } else if (strncmp (module_name, "lib", 3) == 0)
-    return g_strdup (module_name);
-  else
-    return g_strconcat ("lib", module_name, "." G_MODULE_SUFFIX, NULL);
 }

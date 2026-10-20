@@ -6,35 +6,28 @@
  *
  * Copyright (C) 1999 by Gilbert Ramirez <gram@alumni.rice.edu>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include <config.h>
+#define WS_LOG_DOMAIN "randpkt"
 
 #include "randpkt_core.h"
 
 #include <time.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include "wsutil/file_util.h"
+#include <wsutil/array.h>
+#include <wsutil/file_util.h>
+#include <wsutil/wslog.h>
 #include <wiretap/wtap_opttypes.h>
 
-#define array_length(x)	(sizeof x / sizeof x[0])
+#include "ui/failure_message.h"
 
-GRand *pkt_rand = NULL;
+#define INVALID_LEN 1
+#define WRITE_ERROR 2
+
+GRand *pkt_rand;
 
 /* Types of produceable packets */
 enum {
@@ -46,7 +39,9 @@ enum {
 	PKT_FDDI,
 	PKT_GIOP,
 	PKT_ICMP,
+	PKT_IEEE802154,
 	PKT_IP,
+	PKT_IPv6,
 	PKT_LLC,
 	PKT_M2M,
 	PKT_MEGACO,
@@ -63,7 +58,7 @@ enum {
 };
 
 /* Ethernet, indicating ARP */
-guint8 pkt_arp[] = {
+uint8_t pkt_arp[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x00, 0x00,
 	0x32, 0x25, 0x0f, 0xff,
@@ -71,7 +66,7 @@ guint8 pkt_arp[] = {
 };
 
 /* Ethernet+IP+UDP, indicating DNS */
-guint8 pkt_dns[] = {
+uint8_t pkt_dns[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
@@ -89,7 +84,7 @@ guint8 pkt_dns[] = {
 };
 
 /* Ethernet+IP, indicating ICMP */
-guint8 pkt_icmp[] = {
+uint8_t pkt_icmp[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
@@ -103,15 +98,23 @@ guint8 pkt_icmp[] = {
 };
 
 /* Ethernet, indicating IP */
-guint8 pkt_ip[] = {
+uint8_t pkt_ip[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
 	0x08, 0x00
 };
 
+/* Ethernet, indicating IPv6 */
+uint8_t pkt_ipv6[] = {
+	0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01,
+	0x86, 0xdd, 0x60
+};
+
 /* TR, indicating LLC */
-guint8 pkt_llc[] = {
+uint8_t pkt_llc[] = {
 	0x10, 0x40, 0x68, 0x00,
 	0x19, 0x69, 0x95, 0x8b,
 	0x00, 0x01, 0xfa, 0x68,
@@ -119,7 +122,7 @@ guint8 pkt_llc[] = {
 };
 
 /* Ethernet, indicating WiMAX M2M */
-guint8 pkt_m2m[] = {
+uint8_t pkt_m2m[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x00, 0x00,
 	0x32, 0x25, 0x0f, 0xff,
@@ -127,7 +130,7 @@ guint8 pkt_m2m[] = {
 };
 
 /* Ethernet+IP+UDP, indicating NBNS */
-guint8 pkt_nbns[] = {
+uint8_t pkt_nbns[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
@@ -145,7 +148,7 @@ guint8 pkt_nbns[] = {
 };
 
 /* Ethernet+IP+UDP, indicating syslog */
-guint8 pkt_syslog[] = {
+uint8_t pkt_syslog[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
@@ -163,7 +166,7 @@ guint8 pkt_syslog[] = {
 };
 
 /* TR+LLC+IP, indicating TCP */
-guint8 pkt_tcp[] = {
+uint8_t pkt_tcp[] = {
 	0x10, 0x40, 0x68, 0x00,
 	0x19, 0x69, 0x95, 0x8b,
 	0x00, 0x01, 0xfa, 0x68,
@@ -180,7 +183,7 @@ guint8 pkt_tcp[] = {
 };
 
 /* Ethernet+IP, indicating UDP */
-guint8 pkt_udp[] = {
+uint8_t pkt_udp[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
@@ -194,7 +197,7 @@ guint8 pkt_udp[] = {
 };
 
 /* Ethernet+IP+UDP, indicating BVLC */
-guint8 pkt_bvlc[] = {
+uint8_t pkt_bvlc[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
@@ -211,7 +214,7 @@ guint8 pkt_bvlc[] = {
 };
 
 /* TR+LLC+IPX, indicating NCP, with NCP Type == 0x2222 */
-guint8 pkt_ncp2222[] = {
+uint8_t pkt_ncp2222[] = {
 	0x10, 0x40, 0x00, 0x00,
 	0xf6, 0x7c, 0x9b, 0x70,
 	0x68, 0x00, 0x19, 0x69,
@@ -228,7 +231,7 @@ guint8 pkt_ncp2222[] = {
 };
 
 /* Ethernet+IP+TCP, indicating GIOP */
-guint8 pkt_giop[] = {
+uint8_t pkt_giop[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
@@ -258,7 +261,7 @@ guint8 pkt_giop[] = {
 };
 
 /* Ethernet+IP+TCP, indicating BGP */
-guint8 pkt_bgp[] = {
+uint8_t pkt_bgp[] = {
 	0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01,
@@ -286,7 +289,7 @@ guint8 pkt_bgp[] = {
 };
 
 /* Ethernet+IP+TCP, indicating TDS NetLib */
-guint8 pkt_tds[] = {
+uint8_t pkt_tds[] = {
 	0x00, 0x50, 0x8b, 0x0d,
 	0x7a, 0xed, 0x00, 0x08,
 	0xa3, 0x98, 0x39, 0x81,
@@ -306,7 +309,7 @@ guint8 pkt_tds[] = {
 };
 
 /* Ethernet+IP, indicating SCTP */
-guint8 pkt_sctp[] = {
+uint8_t pkt_sctp[] = {
 	0x00, 0xa0, 0x80, 0x00,
 	0x5e, 0x46, 0x08, 0x00,
 	0x03, 0x4a, 0x00, 0x35,
@@ -321,7 +324,7 @@ guint8 pkt_sctp[] = {
 
 
 /* Ethernet+IP+SCTP, indicating MEGACO */
-guint8 pkt_megaco[] = {
+uint8_t pkt_megaco[] = {
 	0x00, 0xa0, 0x80, 0x00,
 	0x5e, 0x46, 0x08, 0x00,
 	0x03, 0x4a, 0x00, 0x35,
@@ -408,9 +411,25 @@ static randpkt_example examples[] = {
 		1000,
 	},
 
+	{ "ieee802.15.4", "IEEE 802.15.4",
+		PKT_IEEE802154, WTAP_ENCAP_IEEE802_15_4,
+		NULL,		0,
+		NULL,           0,
+		NULL,           NULL,
+		127,
+	},
+
 	{ "ip", "Internet Protocol",
 		PKT_IP,		WTAP_ENCAP_ETHERNET,
 		pkt_ip,		array_length(pkt_ip),
+		NULL,		0,
+		NULL,		NULL,
+		1000,
+	},
+
+	{ "ipv6", "Internet Protocol Version 6",
+		PKT_IPv6,	WTAP_ENCAP_ETHERNET,
+		pkt_ipv6,	array_length(pkt_ipv6),
 		NULL,		0,
 		NULL,		NULL,
 		1000,
@@ -514,7 +533,7 @@ static randpkt_example examples[] = {
 
 };
 
-guint randpkt_example_count(void)
+unsigned randpkt_example_count(void)
 {
 	return array_length(examples);
 }
@@ -536,36 +555,30 @@ randpkt_example* randpkt_find_example(int type)
 	return NULL;
 }
 
-void randpkt_loop(randpkt_example* example, guint64 produce_count)
+void randpkt_loop(randpkt_example* example, uint64_t produce_count, uint64_t packet_delay_ms)
 {
-	guint i;
-	int j;
+	unsigned i, j;
 	int err;
-	int len_random;
-	int len_this_pkt;
-	gchar* err_info;
+	unsigned len_random;
+	unsigned len_this_pkt;
+	char* err_info;
 	union wtap_pseudo_header* ps_header;
-	guint8 buffer[65536];
-	struct wtap_pkthdr* pkthdr;
+	wtap_rec rec;
 
-	pkthdr = g_new0(struct wtap_pkthdr, 1);
+	wtap_rec_init(&rec, example->sample_length);
 
-	pkthdr->rec_type = REC_TYPE_PACKET;
-	pkthdr->presence_flags = WTAP_HAS_TS;
-	pkthdr->pkt_encap = example->sample_wtap_encap;
+	wtap_setup_packet_rec(&rec, example->sample_wtap_encap);
+	rec.presence_flags = WTAP_HAS_TS;
 
-	memset(pkthdr, 0, sizeof(struct wtap_pkthdr));
-	memset(buffer, 0, sizeof(buffer));
+	ps_header = &rec.rec_header.packet_header.pseudo_header;
 
-	ps_header = &pkthdr->pseudo_header;
-
-	/* Load the sample pseudoheader into our pseudoheader buffer */
+	/* Load the sample pseudoheader into the record's pseudoheader buffer */
 	if (example->pseudo_buffer)
 		memcpy(ps_header, example->pseudo_buffer, example->pseudo_length);
 
-	/* Load the sample into our buffer */
+	/* Load the sample into the record's data buffer */
 	if (example->sample_buffer)
-		memcpy(buffer, example->sample_buffer, example->sample_length);
+		ws_buffer_append(&rec.data, example->sample_buffer, example->sample_length);
 
 	/* Produce random packets */
 	for (i = 0; i < produce_count; i++) {
@@ -577,15 +590,24 @@ void randpkt_loop(randpkt_example* example, guint64 produce_count)
 		}
 
 		len_this_pkt = example->sample_length + len_random;
-
-		pkthdr->caplen = len_this_pkt;
-		pkthdr->len = len_this_pkt;
-		pkthdr->ts.secs = i; /* just for variety */
-
-		for (j = example->pseudo_length; j < (int) sizeof(*ps_header); j++) {
-			((guint8*)ps_header)[j] = g_rand_int_range(pkt_rand, 0, 0x100);
+		if (len_this_pkt > WTAP_MAX_PACKET_SIZE_STANDARD) {
+			/*
+			 * Wiretap will fail when trying to read packets
+			 * bigger than WTAP_MAX_PACKET_SIZE_STANDARD.
+			 */
+			len_this_pkt = WTAP_MAX_PACKET_SIZE_STANDARD;
 		}
 
+		rec.rec_header.packet_header.caplen = len_this_pkt;
+		rec.rec_header.packet_header.len = len_this_pkt;
+		rec.ts.secs = i; /* just for variety */
+
+		for (j = example->pseudo_length; j < (int) sizeof(*ps_header); j++) {
+			((uint8_t*)ps_header)[j] = g_rand_int_range(pkt_rand, 0, 0x100);
+		}
+
+		ws_buffer_assure_space(&rec.data, len_this_pkt);
+		uint8_t* buffer = ws_buffer_start_ptr(&rec.data);
 		for (j = example->sample_length; j < len_this_pkt; j++) {
 			/* Add format strings here and there */
 			if ((int) (100.0*g_rand_double(pkt_rand)) < 3 && j < (len_random - 3)) {
@@ -596,79 +618,33 @@ void randpkt_loop(randpkt_example* example, guint64 produce_count)
 			}
 		}
 
-		if (!wtap_dump(example->dump, pkthdr, buffer, &err, &err_info)) {
-			fprintf(stderr, "randpkt: Error writing to %s: %s\n",
-			    example->filename, wtap_strerror(err));
-			switch (err) {
-
-			case WTAP_ERR_UNWRITABLE_ENCAP:
-				/*
-				 * This is a problem with the particular
-				 * frame we're writing and the file type
-				 * and subtype we're writing; note that,
-				 * and report the file type/subtype.
-				 */
-				fprintf(stderr,
-				    "Frame has a network type that can't be saved in a \"%s\" file.\n",
-				    wtap_file_type_subtype_short_string(WTAP_FILE_TYPE_SUBTYPE_PCAP));
-				break;
-
-			case WTAP_ERR_PACKET_TOO_LARGE:
-				/*
-				 * This is a problem with the particular
-				 * frame we're writing and the file type
-				 * and subtype we're writing; note that,
-				 * and report the file type/subtype.
-				 */
-				fprintf(stderr,
-					"Frame is too large for a \"%s\" file.\n",
-					wtap_file_type_subtype_short_string(WTAP_FILE_TYPE_SUBTYPE_PCAP));
-				break;
-
-			case WTAP_ERR_UNWRITABLE_REC_TYPE:
-				/*
-				 * This is a problem with the particular
-				 * record we're writing and the file type
-				 * and subtype we're writing; note that,
-				 * and report the file type/subtype.
-				 */
-				fprintf(stderr,
-					"Record has a record type that can't be saved in a \"%s\" file.\n",
-					wtap_file_type_subtype_short_string(WTAP_FILE_TYPE_SUBTYPE_PCAP));
-				break;
-
-			case WTAP_ERR_UNWRITABLE_REC_DATA:
-				/*
-				 * This is a problem with the particular
-				 * record we're writing and the file type
-				 * and subtype we're writing; note that,
-				 * and report the file type/subtype.
-				 */
-				fprintf(stderr,
-					"Record has data that can't be saved in a \"%s\" file.\n(%s)\n",
-					wtap_file_type_subtype_short_string(WTAP_FILE_TYPE_SUBTYPE_PCAP),
-					err_info != NULL ? err_info : "no information supplied");
-				g_free(err_info);
-				break;
-
-			default:
-				break;
+		if (!wtap_dump(example->dump, &rec, &err, &err_info)) {
+			cfile_write_failure_message(NULL,
+			    example->filename, err, err_info, 0,
+			    wtap_dump_file_type_subtype(example->dump));
+		}
+		if (packet_delay_ms) {
+			g_usleep(1000 * (unsigned long)packet_delay_ms);
+			if (!wtap_dump_flush(example->dump, &err)) {
+				cfile_write_failure_message(NULL,
+				    example->filename, err, NULL, 0,
+				    wtap_dump_file_type_subtype(example->dump));
 			}
 		}
 	}
 
-	g_free(pkthdr);
+	wtap_rec_cleanup(&rec);
 }
 
-gboolean randpkt_example_close(randpkt_example* example)
+bool randpkt_example_close(randpkt_example* example)
 {
 	int err;
-	gboolean ok = TRUE;
+	char *err_info;
+	bool ok = true;
 
-	if (!wtap_dump_close(example->dump, &err)) {
-		fprintf(stderr, "Error writing to %s: %s\n",
-			example->filename, wtap_strerror(err));
-		ok = FALSE;
+	if (!wtap_dump_close(example->dump, NULL, &err, &err_info)) {
+		cfile_close_failure_message(example->filename, err, err_info);
+		ok = false;
 	}
 
 	if (pkt_rand != NULL) {
@@ -679,29 +655,33 @@ gboolean randpkt_example_close(randpkt_example* example)
 	return ok;
 }
 
-void randpkt_example_init(randpkt_example* example, char* produce_filename, int produce_max_bytes)
+int randpkt_example_init(randpkt_example* example, char* produce_filename, int produce_max_bytes, int file_type_subtype)
 {
 	int err;
+	char *err_info;
 
 	if (pkt_rand == NULL) {
 		pkt_rand = g_rand_new();
 	}
 
-	wtap_opttypes_initialize();
-
+	const wtap_dump_params params = {
+		.encap = example->sample_wtap_encap,
+		.snaplen = produce_max_bytes,
+	};
 	if (strcmp(produce_filename, "-") == 0) {
 		/* Write to the standard output. */
-		example->dump = wtap_dump_open_stdout(WTAP_FILE_TYPE_SUBTYPE_PCAP,
-			example->sample_wtap_encap, produce_max_bytes, FALSE /* compressed */, &err);
+		example->dump = wtap_dump_open_stdout(file_type_subtype,
+			WTAP_UNCOMPRESSED, &params, &err, &err_info);
 		example->filename = "the standard output";
 	} else {
-		example->dump = wtap_dump_open(produce_filename, WTAP_FILE_TYPE_SUBTYPE_PCAP,
-			example->sample_wtap_encap, produce_max_bytes, FALSE /* compressed */, &err);
+		example->dump = wtap_dump_open(produce_filename, file_type_subtype,
+			WTAP_UNCOMPRESSED, &params, &err, &err_info);
 		example->filename = produce_filename;
 	}
 	if (!example->dump) {
-		fprintf(stderr, "randpkt: Error writing to %s\n", example->filename);
-		exit(2);
+		cfile_dump_open_failure_message(produce_filename,
+			err, err_info, file_type_subtype);
+		return WRITE_ERROR;
 	}
 
 	/* reduce max_bytes by # of bytes already in sample */
@@ -709,10 +689,12 @@ void randpkt_example_init(randpkt_example* example, char* produce_filename, int 
 		fprintf(stderr, "randpkt: Sample packet length is %d, which is greater than "
 			"or equal to\n", example->sample_length);
 		fprintf(stderr, "your requested max_bytes value of %d\n", produce_max_bytes);
-		exit(1);
+		return INVALID_LEN;
 	} else {
 		example->produce_max_bytes = produce_max_bytes - example->sample_length;
 	}
+
+	return EXIT_SUCCESS;
 }
 
 /* Parse command-line option "type" and return enum type */
@@ -721,8 +703,8 @@ int randpkt_parse_type(char *string)
 	int	num_entries = array_length(examples);
 	int	i;
 
-	/* Called with NULL, choose a random packet */
-	if (!string) {
+	/* If called with NULL, or empty string, choose a random packet */
+	if (!string || !g_strcmp0(string, "")) {
 		return examples[g_random_int_range(0, num_entries)].produceable_type;
 	}
 
@@ -733,7 +715,7 @@ int randpkt_parse_type(char *string)
 	}
 
 	/* Complain */
-	fprintf(stderr, "randpkt: Type %s not known.\n", string);
+	ws_error("randpkt: Type %s not known.\n", string);
 	return -1;
 }
 
@@ -751,7 +733,7 @@ void randpkt_example_list(char*** abbrev_list, char*** longname_list)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

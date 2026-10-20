@@ -1,0 +1,47 @@
+.TH COWPATTY "1" "June 2018" "cowpatty 4.6" "User Commands"
+.SH NAME
+cowpatty \- Brute-force dictionary attack against WPA-PSK
+.SH DESCRIPTION
+Implementation of an offline dictionary attack against WPA/WPA2 networks using PSK-based authentication (e.g. WPA-Personal)
+.SH SYNOPSIS
+\fB cowpatty\fR \fB< -d | -r >\fR < \fIHASH-FILE\fR | \fICAPTURE-FILE\fR > \fB-f\fR \fIWORDLIST\fR \fB-s\fR \fISSID\fR
+.SH OPTIONS
+.TP
+\fB\-f\fR
+Dictionary file
+.TP
+\fB\-d\fR
+Hash file (genpmk)
+.TP
+\fB\-r\fR
+Packet capture file
+.TP
+\fB\-s\fR
+Network SSID (enclose in quotes if SSID includes spaces)
+.TP
+\fB\-c\fR
+Check for valid 4\-way frames, does not crack
+.TP
+\fB\-h\fR
+Print this help information and exit
+.TP
+\fB\-v\fR
+Print verbose information (more \fB\-v\fR for more verbosity)
+.TP
+\fB\-V\fR
+Print program version and exit
+.SH AUTHOR
+cowpatty was developed Joshua Wright <jwright@hwillhackforsushi.com>.
+.PP
+This manual page was written by Samuel Henrique <samueloph@debian.org> for the Debian project, it was based on \fBcowpatty -h\fR output and can be used by other projects as well.
+.SH SEE ALSO
+.br
+.B genpmk(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B wifite(1)

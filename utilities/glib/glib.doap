@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:foaf="http://xmlns.com/foaf/0.1/"
+         xmlns:gnome="http://api.gnome.org/doap-extensions#"
+         xmlns="http://usefulinc.com/ns/doap#">
+
+  <name>GLib</name>
+  <shortname>glib</shortname>
+
+  <shortdesc xml:lang="en">Low level core library</shortdesc>
+
+  <description xml:lang="en">GLib is the low-level core library that forms the basis for projects such as GTK and GNOME. It provides data structure handling for C, portability wrappers, and interfaces for such runtime functionality as an event loop, threads, dynamic loading, and an object system.</description>
+
+  <homepage rdf:resource="http://www.gtk.org" />
+  <license rdf:resource="http://usefulinc.com/doap/licenses/lgpl" />
+  <bug-database rdf:resource="https://gitlab.gnome.org/GNOME/glib/-/issues"/>
+  <download-page rdf:resource="http://download.gnome.org/sources/glib/" />
+  <developer-forum rdf:resource="https://discourse.gnome.org/tags/glib/" />
+  <category rdf:resource="http://api.gnome.org/doap-extensions#core" />
+
+  <programming-language>C</programming-language>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Matthias Clasen</foaf:name>
+      <foaf:mbox rdf:resource="mailto:mclasen@redhat.com"/>
+      <gnome:userid>matthiasc</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Philip Withnall</foaf:name>
+      <foaf:mbox rdf:resource="mailto:philip@tecnocode.co.uk"/>
+      <foaf:mbox rdf:resource="mailto:withnall@endlessm.com"/>
+      <gnome:userid>pwithnall</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Emmanuele Bassi</foaf:name>
+      <foaf:mbox rdf:resource="mailto:ebassi@gnome.org"/>
+      <gnome:userid>ebassi</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Marco Trevisan</foaf:name>
+      <foaf:mbox rdf:resource="mailto:mail@3v1n0.net"/>
+      <gnome:userid>marcotrevi</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Sebastian Dröge</foaf:name>
+      <foaf:mbox rdf:resource="mailto:slomo@coaxion.net"/>
+      <gnome:userid>sdroege</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Alexander Larsson</foaf:name>
+      <foaf:mbox rdf:resource="mailto:alexl@redhat.com"/>
+      <gnome:userid>alexl</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Ondrej Holy</foaf:name>
+      <foaf:mbox rdf:resource="mailto:oholy@redhat.com"/>
+      <gnome:userid>oholy</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Simon McVittie</foaf:name>
+      <foaf:mbox rdf:resource="mailto:smcv@collabora.com"/>
+      <gnome:userid>smcv</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Michael Catanzaro</foaf:name>
+      <foaf:mbox rdf:resource="mailto:mcatanzaro@gnome.org"/>
+      <gnome:userid>mcatanzaro</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Patrick Griffis</foaf:name>
+      <foaf:mbox rdf:resource="mailto:pgriffis@igalia.com"/>
+      <gnome:userid>pgriffis</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Ting-Wei Lan</foaf:name>
+      <foaf:mbox rdf:resource="mailto:lantw@src.gnome.org"/>
+      <gnome:userid>lantw</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Nirbheek Chauhan</foaf:name>
+      <foaf:mbox rdf:resource="mailto:nirbheek.chauhan@gmail.com"/>
+      <gnome:userid>nirbheekc</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Chun-wei Fan</foaf:name>
+      <foaf:mbox rdf:resource="mailto:fanc999@yahoo.com.tw"/>
+      <gnome:userid>fanchunwei</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Christoph Reiter</foaf:name>
+      <foaf:mbox rdf:resource="mailto:reiter.christoph@gmail.com"/>
+      <gnome:userid>creiter</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Руслан Ижбулатов</foaf:name>
+      <foaf:mbox rdf:resource="mailto:lrn1986@gmail.com"/>
+      <gnome:userid>ruslanizhb</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>John Ralls</foaf:name>
+      <foaf:mbox rdf:resource="mailto:jralls@ceridwen.us"/>
+      <gnome:userid>jralls</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Thomas Haller</foaf:name>
+      <foaf:mbox rdf:resource="mailto:thaller@redhat.com"/>
+      <gnome:userid>thaller</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Xavier Claessens</foaf:name>
+      <foaf:mbox rdf:resource="mailto:xclaesse@gmail.com"/>
+      <gnome:userid>xclaesse</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Luca Bacci</foaf:name>
+      <foaf:mbox rdf:resource="mailto:luca.bacci982@gmail.com"/>
+      <gnome:userid>lbacci</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+
+  <repository>
+    <GitRepository>
+      <browse rdf:resource="https://gitlab.gnome.org/GNOME/glib/"/>
+      <location rdf:resource="https://gitlab.gnome.org/GNOME/glib.git"/>
+    </GitRepository>
+  </repository>
+
+</Project>

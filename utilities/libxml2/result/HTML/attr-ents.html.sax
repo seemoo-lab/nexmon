@@ -1,0 +1,30 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.startElement(html)
+SAX.characters(
+, 1)
+SAX.startElement(body)
+SAX.characters(
+, 1)
+SAX.startElement(a, href='index.cgi?a&amp;lt=1&amp;gt=2')
+SAX.characters(link, 4)
+SAX.endElement(a)
+SAX.characters(
+, 1)
+SAX.startElement(a, href='index.cgi?a&amp;lta&amp;gta')
+SAX.characters(link, 4)
+SAX.endElement(a)
+SAX.characters(
+, 1)
+SAX.startElement(a, href='index.cgi?a&lt;&gt;')
+SAX.characters(link, 4)
+SAX.endElement(a)
+SAX.characters(
+, 1)
+SAX.endElement(body)
+SAX.characters(
+, 1)
+SAX.endElement(html)
+SAX.characters(
+, 1)
+SAX.endDocument()

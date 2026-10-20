@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,40 +15,54 @@
 void proto_register_ipvs_syncd(void);
 void proto_reg_handoff_ipvs_syncd(void);
 
-static int proto_ipvs_syncd = -1;
-static int hf_conn_count = -1;
-static int hf_syncid = -1;
-static int hf_size = -1;
-static int hf_resv8 = -1;
-static int hf_proto = -1;
-static int hf_cport = -1;
-static int hf_vport = -1;
-static int hf_dport = -1;
-static int hf_caddr = -1;
-static int hf_vaddr = -1;
-static int hf_daddr = -1;
-static int hf_flags = -1;
-static int hf_flags_conn_type = -1;
-static int hf_flags_hashed_entry = -1;
-static int hf_flags_no_output_packets = -1;
-static int hf_flags_conn_not_established = -1;
-static int hf_flags_adjust_output_seq = -1;
-static int hf_flags_adjust_input_seq = -1;
-static int hf_flags_no_client_port_set = -1;
-static int hf_state = -1;
-static int hf_in_seq_init = -1;
-static int hf_in_seq_delta = -1;
-static int hf_in_seq_pdelta = -1;
-static int hf_out_seq_init = -1;
-static int hf_out_seq_delta = -1;
-static int hf_out_seq_pdelta = -1;
+static dissector_handle_t ipvs_syncd_handle;
 
-static int ett_ipvs_syncd = -1;
-static int ett_conn = -1;
-static int ett_flags = -1;
+static int proto_ipvs_syncd;
+static int hf_conn_count;
+static int hf_syncid;
+static int hf_size;
+static int hf_resv;
+static int hf_version;
+static int hf_proto;
+static int hf_cport;
+static int hf_vport;
+static int hf_dport;
+static int hf_caddr;
+static int hf_vaddr;
+static int hf_daddr;
+static int hf_flags;
+static int hf_flags_conn_type;
+static int hf_flags_hashed_entry;
+static int hf_flags_no_output_packets;
+static int hf_flags_conn_not_established;
+static int hf_flags_adjust_output_seq;
+static int hf_flags_adjust_input_seq;
+static int hf_flags_no_client_port_set;
+static int hf_state;
+static int hf_in_seq_init;
+static int hf_in_seq_delta;
+static int hf_in_seq_pdelta;
+static int hf_out_seq_init;
+static int hf_out_seq_delta;
+static int hf_out_seq_pdelta;
+
+/* Payload v1 */
+static int hf_type;
+static int hf_ver;
+static int hf_size_v1;
+static int hf_flags_v1;
+static int hf_fwmark;
+static int hf_timeout;
+static int hf_caddr6;
+static int hf_vaddr6;
+static int hf_daddr6;
+
+static int ett_ipvs_syncd;
+static int ett_conn;
+static int ett_flags;
 
 #define IPVS_SYNCD_MC_GROUP "224.0.0.18"
-#define IPVS_SYNCD_PORT 8848
+#define IPVS_SYNCD_PORT 8848 /* Not IANA registered */
 
 static const value_string proto_strings[] = {
 	{0x06, "TCP"},
@@ -72,6 +74,12 @@ static const value_string state_strings[] = {
 	{0x00, "Input"},
 	{0x04, "Output"},
 	{0x08, "Input Only"},
+	{0x00, NULL},
+};
+
+static const value_string type_strings[] = {
+	{0x0, "IPv4"},
+	{0x2, "IPv6"},
 	{0x00, NULL},
 };
 
@@ -108,7 +116,8 @@ dissect_ipvs_syncd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, v
 	proto_tree *tree;
 	proto_item *item;
 	int         offset = 0;
-	guint8      cnt    = 0;
+	uint8_t     cnt    = 0;
+	uint8_t     version = 0;
 	int         conn   = 0;
 
 	item = proto_tree_add_item(parent_tree, proto_ipvs_syncd, tvb, offset, -1, ENC_NA);
@@ -118,8 +127,14 @@ dissect_ipvs_syncd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, v
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IPVS");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	cnt = tvb_get_guint8(tvb, offset);
-	proto_tree_add_item(tree, hf_conn_count, tvb, offset, 1, ENC_BIG_ENDIAN);
+	cnt = tvb_get_uint8(tvb, offset);
+	if(cnt == 0) { //Version 1 (or after...) first byte is reserved
+		proto_tree_add_item(tree, hf_resv, tvb, offset, 1, ENC_NA);
+		col_set_str(pinfo->cinfo, COL_INFO, "v1");
+	} else {
+		proto_tree_add_item(tree, hf_conn_count, tvb, offset, 1, ENC_BIG_ENDIAN);
+		col_set_str(pinfo->cinfo, COL_INFO, "v0");
+	}
 	offset += 1;
 
 	proto_tree_add_item(tree, hf_syncid, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -128,75 +143,158 @@ dissect_ipvs_syncd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, v
 	proto_tree_add_item(tree, hf_size, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
 
+	if(cnt == 0) { //Version 1 (or after...)
+		cnt = tvb_get_uint8(tvb, offset);
+		proto_tree_add_item(tree, hf_conn_count, tvb, offset, 1, ENC_BIG_ENDIAN);
+		offset += 1;
+
+		version = tvb_get_uint8(tvb, offset);
+		proto_tree_add_item(tree, hf_version, tvb, offset, 1, ENC_BIG_ENDIAN);
+		offset += 1;
+
+		proto_tree_add_item(tree, hf_resv, tvb, offset, 2, ENC_NA);
+		offset += 2;
+	}
+	col_append_fstr(pinfo->cinfo, COL_INFO, " %u Connection(s)", cnt);
+
 	for (conn = 0; conn < cnt; conn++)
 	{
-		proto_tree *ctree;
-		proto_tree *ftree, *fi;
-		guint16 flags;
+		if(version) {
 
-		ctree = proto_tree_add_subtree_format(tree, tvb, offset, 24, ett_conn, NULL,
-						      "Connection #%d", conn+1);
+			proto_tree *ctree;
+			uint8_t type;
+			uint16_t size;
 
-		proto_tree_add_item(ctree, hf_resv8, tvb, offset, 1, ENC_BIG_ENDIAN);
-		offset += 1;
+			ctree = proto_tree_add_subtree_format(tree, tvb, offset, 36, ett_conn, NULL,
+							      "Connection #%d", conn+1);
 
-		proto_tree_add_item(ctree, hf_proto, tvb, offset, 1, ENC_BIG_ENDIAN);
-		offset += 1;
+			type = tvb_get_uint8(tvb, offset);
+			proto_tree_add_item(ctree, hf_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+			offset += 1;
 
-		proto_tree_add_item(ctree, hf_cport, tvb, offset, 2, ENC_BIG_ENDIAN);
-		offset += 2;
+			proto_tree_add_item(ctree, hf_proto, tvb, offset, 1, ENC_BIG_ENDIAN);
+			offset += 1;
 
-		proto_tree_add_item(ctree, hf_vport, tvb, offset, 2, ENC_BIG_ENDIAN);
-		offset += 2;
+			size = (tvb_get_ntohs(tvb, offset) & 0x1FFF);
+			proto_item_set_len(ctree, size);
+			proto_tree_add_item(ctree, hf_ver, tvb, offset, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ctree, hf_size_v1, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
 
-		proto_tree_add_item(ctree, hf_dport, tvb, offset, 2, ENC_BIG_ENDIAN);
-		offset += 2;
-
-		proto_tree_add_item(ctree, hf_caddr, tvb, offset, 4, ENC_BIG_ENDIAN);
-		offset += 4;
-
-		proto_tree_add_item(ctree, hf_vaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
-		offset += 4;
-
-		proto_tree_add_item(ctree, hf_daddr, tvb, offset, 4, ENC_BIG_ENDIAN);
-		offset += 4;
-
-		flags = tvb_get_ntohs(tvb, offset);
-		fi = proto_tree_add_item(ctree, hf_flags, tvb, offset, 2, ENC_BIG_ENDIAN);
-		ftree = proto_item_add_subtree(fi, ett_flags);
-		proto_tree_add_item(ftree, hf_flags_conn_type, tvb, offset, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(ftree, hf_flags_hashed_entry, tvb, offset, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(ftree, hf_flags_no_output_packets, tvb, offset, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(ftree, hf_flags_conn_not_established, tvb, offset, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(ftree, hf_flags_adjust_output_seq, tvb, offset, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(ftree, hf_flags_adjust_input_seq, tvb, offset, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(ftree, hf_flags_no_client_port_set, tvb, offset, 2, ENC_BIG_ENDIAN);
-
-		offset += 2;
-
-		proto_tree_add_item(ctree, hf_state, tvb, offset, 2, ENC_BIG_ENDIAN);
-		offset += 2;
-
-		/* we have full connection info */
-		if ( flags & IP_VS_CONN_F_SEQ_MASK )
-		{
-			proto_tree_add_item(ctree, hf_in_seq_init, tvb, offset, 4, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ctree, hf_flags_v1, tvb, offset, 4, ENC_BIG_ENDIAN);
 			offset += 4;
 
-			proto_tree_add_item(ctree, hf_in_seq_delta, tvb, offset, 4, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ctree, hf_state, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
+
+			proto_tree_add_item(ctree, hf_cport, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
+
+			proto_tree_add_item(ctree, hf_vport, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
+
+			proto_tree_add_item(ctree, hf_dport, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
+
+			proto_tree_add_item(ctree, hf_fwmark, tvb, offset, 4, ENC_BIG_ENDIAN);
 			offset += 4;
 
-			proto_tree_add_item(ctree, hf_in_seq_pdelta, tvb, offset, 4, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ctree, hf_timeout, tvb, offset, 4, ENC_BIG_ENDIAN);
 			offset += 4;
 
-			proto_tree_add_item(ctree, hf_out_seq_init, tvb, offset, 4, ENC_BIG_ENDIAN);
+			if(type == 0){ /* IPv4 */
+
+				proto_tree_add_item(ctree, hf_caddr, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+
+				proto_tree_add_item(ctree, hf_vaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+
+				proto_tree_add_item(ctree, hf_daddr, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+			} else { /* IPv6 */
+
+				proto_tree_add_item(ctree, hf_caddr6, tvb, offset, 16, ENC_NA);
+				offset += 16;
+
+				proto_tree_add_item(ctree, hf_vaddr6, tvb, offset, 16, ENC_NA);
+				offset += 16;
+
+				proto_tree_add_item(ctree, hf_daddr6, tvb, offset, 16, ENC_NA);
+				offset += 16;
+			}
+
+		} else {
+
+			proto_tree *ctree;
+			proto_tree *ftree, *fi;
+			uint16_t flags;
+
+			ctree = proto_tree_add_subtree_format(tree, tvb, offset, 24, ett_conn, NULL,
+							      "Connection #%d", conn+1);
+
+			proto_tree_add_item(ctree, hf_resv, tvb, offset, 1, ENC_NA);
+			offset += 1;
+
+			proto_tree_add_item(ctree, hf_proto, tvb, offset, 1, ENC_BIG_ENDIAN);
+			offset += 1;
+
+			proto_tree_add_item(ctree, hf_cport, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
+
+			proto_tree_add_item(ctree, hf_vport, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
+
+			proto_tree_add_item(ctree, hf_dport, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
+
+			proto_tree_add_item(ctree, hf_caddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 			offset += 4;
 
-			proto_tree_add_item(ctree, hf_out_seq_delta, tvb, offset, 4, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ctree, hf_vaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 			offset += 4;
 
-			proto_tree_add_item(ctree, hf_out_seq_pdelta, tvb, offset, 4, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ctree, hf_daddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 			offset += 4;
+
+			flags = tvb_get_ntohs(tvb, offset);
+			fi = proto_tree_add_item(ctree, hf_flags, tvb, offset, 2, ENC_BIG_ENDIAN);
+			ftree = proto_item_add_subtree(fi, ett_flags);
+			proto_tree_add_item(ftree, hf_flags_conn_type, tvb, offset, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ftree, hf_flags_hashed_entry, tvb, offset, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ftree, hf_flags_no_output_packets, tvb, offset, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ftree, hf_flags_conn_not_established, tvb, offset, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ftree, hf_flags_adjust_output_seq, tvb, offset, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ftree, hf_flags_adjust_input_seq, tvb, offset, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(ftree, hf_flags_no_client_port_set, tvb, offset, 2, ENC_BIG_ENDIAN);
+
+			offset += 2;
+
+			proto_tree_add_item(ctree, hf_state, tvb, offset, 2, ENC_BIG_ENDIAN);
+			offset += 2;
+
+			/* we have full connection info */
+			if ( flags & IP_VS_CONN_F_SEQ_MASK )
+			{
+				proto_tree_add_item(ctree, hf_in_seq_init, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+
+				proto_tree_add_item(ctree, hf_in_seq_delta, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+
+				proto_tree_add_item(ctree, hf_in_seq_pdelta, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+
+				proto_tree_add_item(ctree, hf_out_seq_init, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+
+				proto_tree_add_item(ctree, hf_out_seq_delta, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+
+				proto_tree_add_item(ctree, hf_out_seq_pdelta, tvb, offset, 4, ENC_BIG_ENDIAN);
+				offset += 4;
+
+			}
 		}
 
 	}
@@ -220,8 +318,12 @@ proto_register_ipvs_syncd(void)
 			{ "Size", "ipvs.size", FT_UINT16, BASE_DEC,
 			  NULL, 0, NULL, HFILL }},
 
-		{ &hf_resv8,
-			{ "Reserved", "ipvs.resv8", FT_UINT8, BASE_HEX,
+		{ &hf_resv,
+			{ "Reserved", "ipvs.resv", FT_BYTES, BASE_NONE,
+			  NULL, 0, NULL, HFILL }},
+
+		{ &hf_version,
+			{ "Version", "ipvs.version", FT_UINT8, BASE_DEC,
 			  NULL, 0, NULL, HFILL }},
 
 		{ &hf_proto,
@@ -262,27 +364,27 @@ proto_register_ipvs_syncd(void)
 
 		{ &hf_flags_hashed_entry,
 			{ "Hashed Entry", "ipvs.flags.hashed_entry", FT_BOOLEAN, 16,
-			  TFS(&tfs_true_false), IP_VS_CONN_F_HASHED, NULL, HFILL }},
+			  NULL, IP_VS_CONN_F_HASHED, NULL, HFILL }},
 
 		{ &hf_flags_no_output_packets,
 			{ "No Output Packets", "ipvs.flags.no_output_packets", FT_BOOLEAN, 16,
-			  TFS(&tfs_true_false), IP_VS_CONN_F_NOOUTPUT, NULL, HFILL }},
+			  NULL, IP_VS_CONN_F_NOOUTPUT, NULL, HFILL }},
 
 		{ &hf_flags_conn_not_established,
 			{ "Connection Not Established", "ipvs.flags.conn_not_established", FT_BOOLEAN, 16,
-			  TFS(&tfs_true_false), IP_VS_CONN_F_INACTIVE, NULL, HFILL }},
+			  NULL, IP_VS_CONN_F_INACTIVE, NULL, HFILL }},
 
 		{ &hf_flags_adjust_output_seq,
 			{ "Adjust Output Sequence", "ipvs.flags.adjust_output_seq", FT_BOOLEAN, 16,
-			  TFS(&tfs_true_false), IP_VS_CONN_F_OUT_SEQ, NULL, HFILL }},
+			  NULL, IP_VS_CONN_F_OUT_SEQ, NULL, HFILL }},
 
 		{ &hf_flags_adjust_input_seq,
 			{ "Adjust Input Sequence", "ipvs.flags.adjust_input_seq", FT_BOOLEAN, 16,
-			  TFS(&tfs_true_false), IP_VS_CONN_F_IN_SEQ, NULL, HFILL }},
+			  NULL, IP_VS_CONN_F_IN_SEQ, NULL, HFILL }},
 
 		{ &hf_flags_no_client_port_set,
 			{ "No Client Port Set", "ipvs.flags.no_client_port_set", FT_BOOLEAN, 16,
-			  TFS(&tfs_true_false), IP_VS_CONN_F_NO_CPORT, NULL, HFILL }},
+			  NULL, IP_VS_CONN_F_NO_CPORT, NULL, HFILL }},
 
 		{ &hf_state,
 			{ "State", "ipvs.state", FT_UINT16, BASE_HEX,
@@ -312,33 +414,66 @@ proto_register_ipvs_syncd(void)
 			{ "Output Sequence (Previous Delta)", "ipvs.out_seq.pdelta", FT_UINT32,
 				BASE_HEX, NULL, 0, NULL, HFILL }},
 
+		/* v1 payload */
 
+		{ &hf_type,
+			{ "Type", "ipvs.type", FT_UINT8, BASE_DEC,
+			  VALS(type_strings), 0, NULL, HFILL }},
 
+		{ &hf_ver,
+			{ "Version", "ipvs.ver", FT_UINT16, BASE_DEC,
+			  NULL, 0xE000, NULL, HFILL }},
+
+		{ &hf_size_v1,
+			{ "Size", "ipvs.size.v1", FT_UINT16, BASE_DEC,
+			  NULL, 0x1FFF, NULL, HFILL }},
+
+		{ &hf_flags_v1,
+			{ "Flags", "ipvs.flags.v1", FT_UINT32, BASE_HEX,
+			  NULL, 0, NULL, HFILL }},
+
+		{ &hf_fwmark,
+			{ "FWmark", "ipvs.fwmark", FT_UINT32, BASE_HEX,
+			  NULL, 0, NULL, HFILL }},
+
+		{ &hf_timeout,
+			{ "Timeout", "ipvs.timeout", FT_UINT32, BASE_DEC,
+			  NULL, 0, NULL, HFILL }},
+
+		{ &hf_caddr6,
+			{ "Client Address", "ipvs.caddr6", FT_IPv6, BASE_NONE,
+			  NULL, 0, NULL, HFILL }},
+
+		{ &hf_vaddr6,
+			{ "Virtual Address", "ipvs.vaddr6", FT_IPv6, BASE_NONE,
+			  NULL, 0, NULL, HFILL }},
+
+		{ &hf_daddr6,
+			{ "Destination Address", "ipvs.daddr6", FT_IPv6, BASE_NONE,
+			  NULL, 0, NULL, HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ipvs_syncd,
 		&ett_conn,
 		&ett_flags,
 	};
 
-	proto_ipvs_syncd = proto_register_protocol("IP Virtual Services Sync Daemon",
-	    "IPVS", "ipvs");
+	proto_ipvs_syncd = proto_register_protocol("IP Virtual Services Sync Daemon", "IPVS", "ipvs");
 	proto_register_field_array(proto_ipvs_syncd, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	ipvs_syncd_handle = register_dissector("ipvs", dissect_ipvs_syncd, proto_ipvs_syncd);
 }
 
 void
 proto_reg_handoff_ipvs_syncd(void)
 {
-	dissector_handle_t ipvs_syncd_handle;
-
-	ipvs_syncd_handle = create_dissector_handle(dissect_ipvs_syncd, proto_ipvs_syncd);
-	dissector_add_uint("udp.port", IPVS_SYNCD_PORT, ipvs_syncd_handle);
+	dissector_add_uint_with_preference("udp.port", IPVS_SYNCD_PORT, ipvs_syncd_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

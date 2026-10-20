@@ -1,0 +1,3 @@
+./test/errors/comment1.xml:5: parser error : xmlParseComment: invalid xmlChar value 14
+ in p02:  -->
+         ^

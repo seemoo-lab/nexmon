@@ -1,0 +1,36 @@
+<!-- RelaxNG: file:/V:/libxml2/test/relaxng/simplifyChoiceNotAllowed.rng -->
+<grammar xmlns="http://relaxng.org/ns/structure/1.0"
+    datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+    <start>
+        <element name="_">
+        <element>
+            <name>entryWithoutRef</name>
+            <oneOrMore>               
+                <choice>
+                    <element>
+                        <name>form</name>
+                        <empty/>
+                    </element>
+                    <notAllowed/>
+                </choice>
+            </oneOrMore>
+        </element>
+        <element>
+            <name>entryWithRef</name>
+            <oneOrMore>
+                <choice>
+                    <element>
+                        <name>form</name>
+                        <empty/>
+                    </element>
+                    <ref name="fancyNameforNotAllowed"/>
+                </choice>
+            </oneOrMore>
+            <empty/>
+        </element>
+        </element>
+    </start>
+    <define name="fancyNameforNotAllowed">
+        <notAllowed/>
+    </define>
+</grammar>

@@ -584,8 +584,8 @@ msgstr ""
 
 #: part/kateluaindentscript.cpp:156
 msgid ""
-"document.removeText:Three parameters needed (line,col,text) (number,number,"
-"string)"
+"document.removeText:Three parameters needed (line,col,text) "
+"(number,number,string)"
 msgstr ""
 
 #: part/kateluaindentscript.cpp:253
@@ -1901,8 +1901,8 @@ msgstr ""
 
 #: part/katedialogs.cpp:912
 msgid ""
-"<p>Backing up on save will cause Kate to copy the disk file to '&lt;"
-"prefix&gt;&lt;filename&gt;&lt;suffix&gt;' before saving changes.<p>The "
+"<p>Backing up on save will cause Kate to copy the disk file to "
+"'&lt;prefix&gt;&lt;filename&gt;&lt;suffix&gt;' before saving changes.<p>The "
 "suffix defaults to <strong>~</strong> and prefix is empty by default"
 msgstr ""
 
@@ -1930,8 +1930,8 @@ msgstr ""
 
 #: part/katedialogs.cpp:927
 msgid ""
-"The editor will search the given number of folder levels upwards for ."
-"kateconfig file and load the settings line from it."
+"The editor will search the given number of folder levels upwards "
+"for .kateconfig file and load the settings line from it."
 msgstr ""
 
 #: part/katedialogs.cpp:930

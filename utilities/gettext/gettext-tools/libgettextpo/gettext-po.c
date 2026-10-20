@@ -1,6 +1,5 @@
 /* Public API for GNU gettext PO files.
-   Copyright (C) 2003-2010, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,35 +12,30 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "gettext-po.h"
 
 #include <limits.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 
 #include "message.h"
+#include "str-list.h"
 #include "xalloc.h"
 #include "read-catalog.h"
 #include "read-po.h"
 #include "write-catalog.h"
 #include "write-po.h"
-#include "error.h"
-#include "xerror.h"
-#include "po-error.h"
-#include "po-xerror.h"
-#include "format.h"
 #include "xvasprintf.h"
 #include "msgl-check.h"
+#include "glthread/once.h"
 #include "gettext.h"
 
 #define _(str) gettext(str)
@@ -53,6 +47,9 @@ struct po_file
   const char *real_filename;
   const char *logical_filename;
   const char **domains;
+  /* Heap allocations that are guaranteed to persist until the po_file_free
+     call.  */
+  string_list_ty arena;
 };
 
 struct po_message_iterator
@@ -66,6 +63,13 @@ struct po_message_iterator
 /* A po_message_t is actually a 'struct message_ty *'.  */
 
 /* A po_filepos_t is actually a 'lex_pos_ty *'.  */
+
+struct po_flag_iterator
+{
+  po_message_t message;
+  int kind; /* 0: workflow flags, 1: sticky flags */
+  size_t index;
+};
 
 
 /* Version number: (major<<16) + (minor<<8) + subminor */
@@ -84,6 +88,7 @@ po_file_create (void)
   file->real_filename = _("<unnamed>");
   file->logical_filename = file->real_filename;
   file->domains = NULL;
+  string_list_init (&file->arena);
   return file;
 }
 
@@ -109,107 +114,24 @@ po_file_read (const char *filename, po_xerror_handler_t handler)
         return NULL;
     }
 
-  /* Establish error handler around read_catalog_stream().  */
-  po_xerror =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror;
-  po_xerror2 =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror2;
-  gram_max_allowed_errors = UINT_MAX;
+  /* Establish error handler for read_catalog_stream().  */
+  unsigned int error_count = 0;
+  struct xerror_handler local_xerror_handler =
+    {
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror,
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror2,
+      &error_count
+    };
 
   file = XMALLOC (struct po_file);
   file->real_filename = filename;
   file->logical_filename = filename;
+  string_list_init (&file->arena);
   file->mdlp = read_catalog_stream (fp, file->real_filename,
-                                    file->logical_filename, &input_format_po);
-  file->domains = NULL;
-
-  /* Restore error handler.  */
-  po_xerror  = textmode_xerror;
-  po_xerror2 = textmode_xerror2;
-  gram_max_allowed_errors = 20;
-
-  if (fp != stdin)
-    fclose (fp);
-  return file;
-}
-#undef po_file_read
-
-#ifdef __cplusplus
-extern "C" po_file_t po_file_read_v2 (const char *filename, po_error_handler_t handler);
-#endif
-po_file_t
-po_file_read_v2 (const char *filename, po_error_handler_t handler)
-{
-  FILE *fp;
-  po_file_t file;
-
-  if (strcmp (filename, "-") == 0 || strcmp (filename, "/dev/stdin") == 0)
-    {
-      filename = _("<stdin>");
-      fp = stdin;
-    }
-  else
-    {
-      fp = fopen (filename, "r");
-      if (fp == NULL)
-        return NULL;
-    }
-
-  /* Establish error handler around read_catalog_stream().  */
-  po_error             = handler->error;
-  po_error_at_line     = handler->error_at_line;
-  po_multiline_warning = handler->multiline_warning;
-  po_multiline_error   = handler->multiline_error;
-  gram_max_allowed_errors = UINT_MAX;
-
-  file = XMALLOC (struct po_file);
-  file->real_filename = filename;
-  file->logical_filename = filename;
-  file->mdlp = read_catalog_stream (fp, file->real_filename,
-                                    file->logical_filename, &input_format_po);
-  file->domains = NULL;
-
-  /* Restore error handler.  */
-  po_error             = error;
-  po_error_at_line     = error_at_line;
-  po_multiline_warning = multiline_warning;
-  po_multiline_error   = multiline_error;
-  gram_max_allowed_errors = 20;
-
-  if (fp != stdin)
-    fclose (fp);
-  return file;
-}
-
-/* Older version for binary backward compatibility.  */
-#ifdef __cplusplus
-extern "C" po_file_t po_file_read (const char *filename);
-#endif
-po_file_t
-po_file_read (const char *filename)
-{
-  FILE *fp;
-  po_file_t file;
-
-  if (strcmp (filename, "-") == 0 || strcmp (filename, "/dev/stdin") == 0)
-    {
-      filename = _("<stdin>");
-      fp = stdin;
-    }
-  else
-    {
-      fp = fopen (filename, "r");
-      if (fp == NULL)
-        return NULL;
-    }
-
-  file = XMALLOC (struct po_file);
-  file->real_filename = filename;
-  file->logical_filename = filename;
-  file->mdlp = read_catalog_stream (fp, file->real_filename,
-                                    file->logical_filename, &input_format_po);
+                                    file->logical_filename, &input_format_po,
+                                    &local_xerror_handler, &file->arena);
   file->domains = NULL;
 
   if (fp != stdin)
@@ -224,44 +146,19 @@ po_file_read (const char *filename)
 po_file_t
 po_file_write (po_file_t file, const char *filename, po_xerror_handler_t handler)
 {
-  /* Establish error handler around msgdomain_list_print().  */
-  po_xerror =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror;
-  po_xerror2 =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror2;
+  /* Establish error handler for msgdomain_list_print().  */
+  unsigned int error_count = 0;
+  struct xerror_handler local_xerror_handler =
+    {
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror,
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror2,
+      &error_count
+    };
 
-  msgdomain_list_print (file->mdlp, filename, &output_format_po, true, false);
-
-  /* Restore error handler.  */
-  po_xerror  = textmode_xerror;
-  po_xerror2 = textmode_xerror2;
-
-  return file;
-}
-#undef po_file_write
-
-/* Older version for binary backward compatibility.  */
-#ifdef __cplusplus
-extern "C" po_file_t po_file_write (po_file_t file, const char *filename, po_error_handler_t handler);
-#endif
-po_file_t
-po_file_write (po_file_t file, const char *filename, po_error_handler_t handler)
-{
-  /* Establish error handler around msgdomain_list_print().  */
-  po_error             = handler->error;
-  po_error_at_line     = handler->error_at_line;
-  po_multiline_warning = handler->multiline_warning;
-  po_multiline_error   = handler->multiline_error;
-
-  msgdomain_list_print (file->mdlp, filename, &output_format_po, true, false);
-
-  /* Restore error handler.  */
-  po_error             = error;
-  po_error_at_line     = error_at_line;
-  po_multiline_warning = multiline_warning;
-  po_multiline_error   = multiline_error;
+  msgdomain_list_print (file->mdlp, filename, &output_format_po,
+                        &local_xerror_handler, true, false);
 
   return file;
 }
@@ -275,6 +172,7 @@ po_file_free (po_file_t file)
   msgdomain_list_free (file->mdlp);
   if (file->domains != NULL)
     free (file->domains);
+  string_list_destroy (&file->arena);
   free (file);
 }
 
@@ -1052,6 +950,44 @@ po_message_set_fuzzy (po_message_t message, int fuzzy)
 }
 
 
+/* Return true if the message has a given workflow flag.
+   This function is a generalization of po_message_is_fuzzy.  */
+
+int
+po_message_has_workflow_flag (po_message_t message, const char *workflow_flag)
+{
+  if (strcmp (workflow_flag, "fuzzy") == 0)
+    return po_message_is_fuzzy (message);
+  return 0;
+}
+
+
+/* Set or unset a given workflow flag on a message.
+   This function is a generalization of po_message_set_fuzzy.    */
+
+void
+po_message_set_workflow_flag (po_message_t message, const char *workflow_flag, int value)
+{
+  if (strcmp (workflow_flag, "fuzzy") == 0)
+    po_message_set_fuzzy (message, value);
+}
+
+
+/* Create an iterator for traversing the list of workflow flags of a message.
+   This includes the "fuzzy" flag.  */
+
+po_flag_iterator_t
+po_message_workflow_flags_iterator (po_message_t message)
+{
+  po_flag_iterator_t iterator = XMALLOC (struct po_flag_iterator);
+  iterator->message = message;
+  iterator->kind = 0;
+  iterator->index = 0;
+
+  return iterator;
+}
+
+
 /* Return true if the message is marked as being a format string of the given
    type (e.g. "c-format").  */
 
@@ -1067,15 +1003,18 @@ po_message_is_format (po_message_t message, const char *format_type)
       if (strlen (format_language[i]) == len - 7
           && memcmp (format_language[i], format_type, len - 7) == 0)
         /* The given format_type corresponds to (enum format_type) i.  */
+        /* See make_format_description_string in write-po.c.  */
         return (possible_format_p (mp->is_format[i]) ? 1 : 0);
   return 0;
 }
 
 
-/* Change the format string mark for a given type of a message.  */
+/* Return the format string mark for a given type (e.g. "c-format") of a
+   message.  Returns 1 if the the mark is set, 0 if the opposite mark ("no-*")
+   is set, -1 if neither the mark nor the opposite mark is set.  */
 
-void
-po_message_set_format (po_message_t message, const char *format_type, /*bool*/int value)
+int
+po_message_get_format (po_message_t message, const char *format_type)
 {
   message_ty *mp = (message_ty *) message;
   size_t len = strlen (format_type);
@@ -1086,7 +1025,136 @@ po_message_set_format (po_message_t message, const char *format_type, /*bool*/in
       if (strlen (format_language[i]) == len - 7
           && memcmp (format_language[i], format_type, len - 7) == 0)
         /* The given format_type corresponds to (enum format_type) i.  */
-        mp->is_format[i] = (value ? yes : no);
+        {
+          enum is_format is_format = mp->is_format[i];
+          /* See significant_format_p and make_format_description_string
+             in write-po.c.  */
+          return (possible_format_p (is_format) ? 1 :
+                  not_format_p (is_format) ? 0 :
+                  -1);
+        }
+  return -1;
+}
+
+
+/* Change the format string mark for a given type of a message.  */
+
+void
+po_message_set_format (po_message_t message, const char *format_type, int value)
+{
+  message_ty *mp = (message_ty *) message;
+  size_t len = strlen (format_type);
+  size_t i;
+
+  if (len >= 7 && memcmp (format_type + len - 7, "-format", 7) == 0)
+    for (i = 0; i < NFORMATS; i++)
+      if (strlen (format_language[i]) == len - 7
+          && memcmp (format_language[i], format_type, len - 7) == 0)
+        /* The given format_type corresponds to (enum format_type) i.  */
+        mp->is_format[i] = (value >= 0 ? (value ? yes : no) : undecided);
+}
+
+
+/* Return true if the message has a given sticky flag.
+   This function is a generalization of po_message_is_format and
+   po_message_get_format.  */
+
+int
+po_message_has_sticky_flag (po_message_t message, const char *sticky_flag)
+{
+  message_ty *mp = (message_ty *) message;
+  size_t len = strlen (sticky_flag);
+
+  if (len >= 7 && memcmp (sticky_flag + len - 7, "-format", 7) == 0)
+    {
+      if (len >= 3 + 7 && memcmp (sticky_flag, "no-", 3) == 0)
+        {
+          size_t i;
+          for (i = 0; i < NFORMATS; i++)
+            if (strlen (format_language[i]) == len - 3 - 7
+                && memcmp (format_language[i], sticky_flag + 3, len - 3 - 7) == 0)
+              /* The given sticky_flag corresponds to the opposite of
+                 (enum format_type) i.  */
+              return not_format_p (mp->is_format[i]);
+        }
+      else
+        {
+          size_t i;
+          for (i = 0; i < NFORMATS; i++)
+            if (strlen (format_language[i]) == len - 7
+                && memcmp (format_language[i], sticky_flag, len - 7) == 0)
+              /* The given sticky_flag corresponds to (enum format_type) i.  */
+              return possible_format_p (mp->is_format[i]);
+        }
+    }
+  else if (strcmp (sticky_flag, "no-wrap") == 0)
+    return mp->do_wrap == no;
+  return 0;
+}
+
+
+/* Set or unset a given sticky flag on a message.
+   This function is a generalization of po_message_set_format.  */
+
+void
+po_message_set_sticky_flag (po_message_t message, const char *sticky_flag, int value)
+{
+  message_ty *mp = (message_ty *) message;
+  size_t len = strlen (sticky_flag);
+
+  if (len >= 7 && memcmp (sticky_flag + len - 7, "-format", 7) == 0)
+    {
+      if (len >= 3 + 7 && memcmp (sticky_flag, "no-", 3) == 0)
+        {
+          size_t i;
+          for (i = 0; i < NFORMATS; i++)
+            if (strlen (format_language[i]) == len - 3 - 7
+                && memcmp (format_language[i], sticky_flag + 3, len - 3 - 7) == 0)
+              /* The given sticky_flag corresponds to the opposite of
+                 (enum format_type) i.  */
+              {
+                if (value)
+                  mp->is_format[i] = no;
+                else
+                  if (!possible_format_p (mp->is_format[i]))
+                    mp->is_format[i] = undecided;
+              }
+        }
+      else
+        {
+          size_t i;
+          for (i = 0; i < NFORMATS; i++)
+            if (strlen (format_language[i]) == len - 7
+                && memcmp (format_language[i], sticky_flag, len - 7) == 0)
+              /* The given sticky_flag corresponds to (enum format_type) i.  */
+              {
+                if (value)
+                  mp->is_format[i] = yes;
+                else
+                  if (!not_format_p (mp->is_format[i]))
+                    mp->is_format[i] = undecided;
+              }
+        }
+    }
+  else if (strcmp (sticky_flag, "no-wrap") == 0)
+    mp->do_wrap = (value ? no : yes);
+}
+
+
+/* Create an iterator for traversing the list of sticky flags of a message.
+   This includes the "*-format" and "no-*-format" flags, as well as the
+   "no-wrap" flag.
+   It does *not* include the "range", because that is not a flag.  */
+
+po_flag_iterator_t
+po_message_sticky_flags_iterator (po_message_t message)
+{
+  po_flag_iterator_t iterator = XMALLOC (struct po_flag_iterator);
+  iterator->message = message;
+  iterator->kind = 1;
+  iterator->index = 0;
+
+  return iterator;
 }
 
 
@@ -1155,22 +1223,30 @@ po_filepos_start_line (po_filepos_t filepos)
 }
 
 
+/* A NULL terminated array of the supported format types.  */
+static const char * const * all_formats;
+
+static void
+all_formats_init (void)
+{
+  const char **list = XNMALLOC (NFORMATS + 1, const char *);
+  size_t i;
+  for (i = 0; i < NFORMATS; i++)
+    list[i] = xasprintf ("%s-format", format_language[i]);
+  list[i] = NULL;
+  all_formats = list;
+}
+
+/* Ensure that all_formats_init is called once only.  */
+gl_once_define(static, all_formats_init_once)
+
 /* Return a NULL terminated array of the supported format types.  */
 
 const char * const *
 po_format_list (void)
 {
-  static const char * const * whole_list /* = NULL */;
-  if (whole_list == NULL)
-    {
-      const char **list = XNMALLOC (NFORMATS + 1, const char *);
-      size_t i;
-      for (i = 0; i < NFORMATS; i++)
-        list[i] = xasprintf ("%s-format", format_language[i]);
-      list[i] = NULL;
-      whole_list = list;
-    }
-  return whole_list;
+  gl_once (all_formats_init_once, all_formats_init);
+  return all_formats;
 }
 
 
@@ -1194,6 +1270,73 @@ po_format_pretty_name (const char *format_type)
 }
 
 
+/* Free an iterator.  */
+
+void
+po_flag_iterator_free (po_flag_iterator_t iterator)
+{
+  free (iterator);
+}
+
+
+/* Return the next flag, and advance the iterator.
+   Return NULL at the end of the list of flags.  */
+const char *
+po_flag_next (po_flag_iterator_t iterator)
+{
+  message_ty *mp = (message_ty *) iterator->message;
+
+  if (mp != NULL)
+    switch (iterator->kind)
+      {
+      case 0:
+        /* Return the next workflow flag.  */
+        if (iterator->index == 0)
+          {
+            iterator->index++;
+            if (mp->is_fuzzy)
+              return "fuzzy";
+          }
+        /* Here iterator->index == 1.  */
+        return NULL;
+
+      case 1:
+        /* Return the next sticky flag.  */
+        while (iterator->index < 2 * NFORMATS + 1)
+          {
+            size_t i = iterator->index;
+            iterator->index++;
+            if (i < 2 * NFORMATS)
+              {
+                if ((i % 2) == 0)
+                  {
+                    i = i / 2;
+                    if (possible_format_p (mp->is_format[i]))
+                      return format_flag[i] + 3; /* without "no-" prefix */
+                  }
+                else
+                  {
+                    i = i / 2;
+                    if (not_format_p (mp->is_format[i]))
+                      return format_flag[i] + 0; /* with "no-" prefix */
+                  }
+              }
+            else if (i == 2 * NFORMATS)
+              {
+                if (mp->do_wrap == no)
+                  return "no-wrap";
+              }
+          }
+        /* Here iterator->index == 2 * NFORMATS + 1.  */
+        return NULL;
+
+      default:
+        abort ();
+      }
+  return NULL;
+}
+
+
 /* Test whether an entire file PO file is valid, like msgfmt does it.
    If it is invalid, pass the reasons to the handler.  */
 
@@ -1203,21 +1346,21 @@ po_file_check_all (po_file_t file, po_xerror_handler_t handler)
   msgdomain_list_ty *mdlp;
   size_t k;
 
-  /* Establish error handler.  */
-  po_xerror =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror;
-  po_xerror2 =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror2;
+  /* Establish error handler for check_message_list().  */
+  unsigned int error_count = 0;
+  struct xerror_handler local_xerror_handler =
+    {
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror,
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror2,
+      &error_count
+    };
 
   mdlp = file->mdlp;
   for (k = 0; k < mdlp->nitems; k++)
-    check_message_list (mdlp->item[k]->messages, 1, 1, 1, 1, 1, 0, 0, 0);
-
-  /* Restore error handler.  */
-  po_xerror  = textmode_xerror;
-  po_xerror2 = textmode_xerror2;
+    check_message_list (mdlp->item[k]->messages, 1, 1, 1, 1, 1, 0, 0, 0,
+                        &local_xerror_handler);
 }
 
 
@@ -1231,13 +1374,16 @@ po_message_check_all (po_message_t message, po_message_iterator_t iterator,
 {
   message_ty *mp = (message_ty *) message;
 
-  /* Establish error handler.  */
-  po_xerror =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror;
-  po_xerror2 =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror2;
+  /* Establish error handler for check_message_list().  */
+  unsigned int error_count = 0;
+  struct xerror_handler local_xerror_handler =
+    {
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror,
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror2,
+      &error_count
+    };
 
   /* For plural checking, combine the message and its header into a small,
      two-element message list.  */
@@ -1274,13 +1420,9 @@ po_message_check_all (po_message_t message, po_message_iterator_t iterator,
       if (mp != header)
         message_list_append (&ml, mp);
 
-      check_message_list (&ml, 1, 1, 1, 1, 1, 0, 0, 0);
+      check_message_list (&ml, 1, 1, 1, 1, 1, 0, 0, 0, &local_xerror_handler);
     }
   }
-
-  /* Restore error handler.  */
-  po_xerror  = textmode_xerror;
-  po_xerror2 = textmode_xerror2;
 }
 
 
@@ -1292,61 +1434,17 @@ po_message_check_format (po_message_t message, po_xerror_handler_t handler)
 {
   message_ty *mp = (message_ty *) message;
 
-  /* Establish error handler.  */
-  po_xerror =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror;
-  po_xerror2 =
-    (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
-    handler->xerror2;
+  /* Establish error handler for check_message().  */
+  unsigned int error_count = 0;
+  struct xerror_handler local_xerror_handler =
+    {
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror,
+      (void (*) (int, const message_ty *, const char *, size_t, size_t, int, const char *, const message_ty *, const char *, size_t, size_t, int, const char *))
+      handler->xerror2,
+      &error_count
+    };
 
   if (!mp->obsolete)
-    check_message (mp, &mp->pos, 0, 1, NULL, 0, 0, 0, 0);
-
-  /* Restore error handler.  */
-  po_xerror  = textmode_xerror;
-  po_xerror2 = textmode_xerror2;
-}
-#undef po_message_check_format
-
-/* Older version for binary backward compatibility.  */
-
-/* An error logger based on the po_error function pointer.  */
-static void
-po_error_logger (const char *format, ...)
-     __attribute__ ((__format__ (__printf__, 1, 2)));
-static void
-po_error_logger (const char *format, ...)
-{
-  va_list args;
-  char *error_message;
-
-  va_start (args, format);
-  if (vasprintf (&error_message, format, args) < 0)
-    error (EXIT_FAILURE, 0, _("memory exhausted"));
-  va_end (args);
-  po_error (0, 0, "%s", error_message);
-  free (error_message);
-}
-
-/* Test whether the message translation is a valid format string if the message
-   is marked as being a format string.  If it is invalid, pass the reasons to
-   the handler.  */
-#ifdef __cplusplus
-extern "C" void po_message_check_format (po_message_t message, po_error_handler_t handler);
-#endif
-void
-po_message_check_format (po_message_t message, po_error_handler_t handler)
-{
-  message_ty *mp = (message_ty *) message;
-
-  /* Establish error handler for po_error_logger().  */
-  po_error = handler->error;
-
-  check_msgid_msgstr_format (mp->msgid, mp->msgid_plural,
-                             mp->msgstr, mp->msgstr_len,
-                             mp->is_format, mp->range, NULL, po_error_logger);
-
-  /* Restore error handler.  */
-  po_error = error;
+    check_message (mp, &mp->pos, 0, 1, NULL, 0, 0, 0, 0, &local_xerror_handler);
 }

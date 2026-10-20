@@ -1,36 +1,35 @@
 /* Convert string to wide string.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2008.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 size_t
-mbsrtowcs (wchar_t *dest, const char **srcp, size_t len, mbstate_t *ps)
+FUNC (DCHAR_T *dest, const char **srcp, size_t len, mbstate_t *ps)
 {
   if (ps == NULL)
-    ps = &_gl_mbsrtowcs_state;
+    ps = &INTERNAL_STATE;
   {
     const char *src = *srcp;
 
     if (dest != NULL)
       {
-        wchar_t *destptr = dest;
+        DCHAR_T *destptr = dest;
 
         for (; len > 0; destptr++, len--)
           {
             size_t src_avail;
-            size_t ret;
 
             /* An optimized variant of
                src_avail = strnlen1 (src, MB_LEN_MAX);  */
@@ -46,7 +45,7 @@ mbsrtowcs (wchar_t *dest, const char **srcp, size_t len, mbstate_t *ps)
               src_avail = 4 + strnlen1 (src + 4, MB_LEN_MAX - 4);
 
             /* Parse the next multibyte character.  */
-            ret = mbrtowc (destptr, src, src_avail, ps);
+            size_t ret = MBRTOWC (destptr, src, src_avail, ps);
 
             if (ret == (size_t)(-2))
               /* Encountered a multibyte character that extends past a '\0' byte
@@ -61,7 +60,8 @@ mbsrtowcs (wchar_t *dest, const char **srcp, size_t len, mbstate_t *ps)
                 /* Here mbsinit (ps).  */
                 break;
               }
-            src += ret;
+            if (!(USES_C32 && ret == (size_t)(-3)))
+              src += ret;
           }
 
         *srcp = src;
@@ -77,7 +77,6 @@ mbsrtowcs (wchar_t *dest, const char **srcp, size_t len, mbstate_t *ps)
         for (;; totalcount++)
           {
             size_t src_avail;
-            size_t ret;
 
             /* An optimized variant of
                src_avail = strnlen1 (src, MB_LEN_MAX);  */
@@ -93,7 +92,7 @@ mbsrtowcs (wchar_t *dest, const char **srcp, size_t len, mbstate_t *ps)
               src_avail = 4 + strnlen1 (src + 4, MB_LEN_MAX - 4);
 
             /* Parse the next multibyte character.  */
-            ret = mbrtowc (NULL, src, src_avail, &state);
+            size_t ret = MBRTOWC (NULL, src, src_avail, &state);
 
             if (ret == (size_t)(-2))
               /* Encountered a multibyte character that extends past a '\0' byte

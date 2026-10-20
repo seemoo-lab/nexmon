@@ -1,6 +1,5 @@
 /* Substitution of environment variables in shell format strings.
-   Copyright (C) 2003-2007, 2012, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,27 +12,32 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 #include <errno.h>
-#include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <locale.h>
 
+#include <error.h>
+#include "options.h"
+#include "attribute.h"
+#include "noreturn.h"
 #include "closeout.h"
-#include "error.h"
 #include "progname.h"
 #include "relocatable.h"
-#include "basename.h"
+#include "basename-lgpl.h"
 #include "xalloc.h"
+#include "string-buffer.h"
 #include "propername.h"
+#include "binary-io.h"
 #include "gettext.h"
 
 #define _(str) gettext (str)
@@ -41,21 +45,8 @@
 /* If true, substitution shall be performed on all variables.  */
 static bool all_variables;
 
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "help", no_argument, NULL, 'h' },
-  { "variables", no_argument, NULL, 'v' },
-  { "version", no_argument, NULL, 'V' },
-  { NULL, 0, NULL, 0 }
-};
-
 /* Forward declaration of local functions.  */
-static void usage (int status)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-     __attribute__ ((noreturn))
-#endif
-;
+_GL_NORETURN_FUNC static void usage (int status);
 static void print_variables (const char *string);
 static void note_variables (const char *string);
 static void subst_from_stdin (void);
@@ -63,58 +54,68 @@ static void subst_from_stdin (void);
 int
 main (int argc, char *argv[])
 {
-  /* Default values for command line options.  */
-  bool show_variables = false;
-  bool do_help = false;
-  bool do_version = false;
-
-  int opt;
-
   /* Set program name for message texts.  */
   set_program_name (argv[0]);
 
-#ifdef HAVE_SETLOCALE
   /* Set locale via LC_ALL.  */
   setlocale (LC_ALL, "");
-#endif
 
   /* Set the text message domain.  */
   bindtextdomain (PACKAGE, relocate (LOCALEDIR));
+  bindtextdomain ("gnulib", relocate (GNULIB_LOCALEDIR));
   textdomain (PACKAGE);
 
   /* Ensure that write errors on stdout are detected.  */
   atexit (close_stdout);
 
+  /* Default values for command line options.  */
+  bool show_variables = false;
+  bool do_help = false;
+  bool do_version = false;
+
   /* Parse command line options.  */
-  while ((opt = getopt_long (argc, argv, "hvV", long_options, NULL)) != EOF)
-    switch (opt)
-    {
-    case '\0':          /* Long option.  */
-      break;
-    case 'h':
-      do_help = true;
-      break;
-    case 'v':
-      show_variables = true;
-      break;
-    case 'V':
-      do_version = true;
-      break;
-    default:
-      usage (EXIT_FAILURE);
-    }
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "help",      'h', no_argument },
+    { "variables", 'v', no_argument },
+    { "version",   'V', no_argument },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  start_options (argc, argv, options, MOVE_OPTIONS_FIRST, 0);
+  {
+    int opt;
+    while ((opt = get_next_option ()) != -1)
+      switch (opt)
+        {
+        case '\0':          /* Long option with key == 0.  */
+          break;
+        case 'h':
+          do_help = true;
+          break;
+        case 'v':
+          show_variables = true;
+          break;
+        case 'V':
+          do_version = true;
+          break;
+        default:
+          usage (EXIT_FAILURE);
+        }
+  }
 
   /* Version information is requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "2003-2007");
+              "2003-2026", "https://gnu.org/licenses/gpl.html");
       printf (_("Written by %s.\n"), proper_name ("Bruno Haible"));
       exit (EXIT_SUCCESS);
     }
@@ -139,6 +140,11 @@ There is NO WARRANTY, to the extent permitted by law.\n\
         default:
           abort ();
         }
+
+      /* The result is most often used in shell `...` expressions.
+         Therefore, on native Windows, don't produce CR/LF newlines.  */
+      set_binary_mode (STDOUT_FILENO, O_BINARY);
+
       print_variables (argv[optind++]);
     }
   else
@@ -212,11 +218,16 @@ standard input are substituted.\n"));
 When --variables is used, standard input is ignored, and the output consists\n\
 of the environment variables that are referenced in SHELL-FORMAT, one per line.\n"));
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"), stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+              "https://savannah.gnu.org/projects/gettext",
+              "bug-gettext@gnu.org");
     }
 
   exit (status);
@@ -239,15 +250,12 @@ find_variables (const char *string,
   for (; *string != '\0';)
     if (*string++ == '$')
       {
-        const char *variable_start;
-        const char *variable_end;
-        bool valid;
-        char c;
-
         if (*string == '{')
           string++;
 
-        variable_start = string;
+        const char *variable_start = string;
+        char c;
+
         c = *string;
         if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_')
           {
@@ -255,8 +263,9 @@ find_variables (const char *string,
               c = *++string;
             while ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
                    || (c >= '0' && c <= '9') || c == '_');
-            variable_end = string;
+            const char *variable_end = string;
 
+            bool valid;
             if (variable_start[-1] == '{')
               {
                 if (*string == '}')
@@ -320,10 +329,8 @@ string_list_append (string_list_ty *slp, const char *s)
   /* Grow the list.  */
   if (slp->nitems >= slp->nitems_max)
     {
-      size_t nbytes;
-
       slp->nitems_max = slp->nitems_max * 2 + 4;
-      nbytes = slp->nitems_max * sizeof (slp->item[0]);
+      size_t nbytes = slp->nitems_max * sizeof (slp->item[0]);
       slp->item = (const char **) xrealloc (slp->item, nbytes);
     }
 
@@ -335,8 +342,8 @@ string_list_append (string_list_ty *slp, const char *s)
 static int
 cmp_string (const void *pstr1, const void *pstr2)
 {
-  const char *str1 = *(const char **)pstr1;
-  const char *str2 = *(const char **)pstr2;
+  const char *str1 = *(const char * const *)pstr1;
+  const char *str2 = *(const char * const *)pstr2;
 
   return strcmp (str1, str2);
 }
@@ -350,12 +357,10 @@ string_list_sort (string_list_ty *slp)
 }
 
 /* Test whether a string list contains a given string.  */
-static inline int
+MAYBE_UNUSED static inline int
 string_list_member (const string_list_ty *slp, const char *s)
 {
-  size_t j;
-
-  for (j = 0; j < slp->nitems; ++j)
+  for (size_t j = 0; j < slp->nitems; ++j)
     if (strcmp (slp->item[j], s) == 0)
       return 1;
   return 0;
@@ -365,10 +370,8 @@ string_list_member (const string_list_ty *slp, const char *s)
 static int
 sorted_string_list_member (const string_list_ty *slp, const char *s)
 {
-  size_t j1, j2;
-
-  j1 = 0;
-  j2 = slp->nitems;
+  size_t j1 = 0;
+  size_t j2 = slp->nitems;
   if (j2 > 0)
     {
       /* Binary search.  */
@@ -394,12 +397,10 @@ sorted_string_list_member (const string_list_ty *slp, const char *s)
 }
 
 /* Destroy a list of strings.  */
-static inline void
+MAYBE_UNUSED static inline void
 string_list_destroy (string_list_ty *slp)
 {
-  size_t j;
-
-  for (j = 0; j < slp->nitems; ++j)
+  for (size_t j = 0; j < slp->nitems; ++j)
     free ((char *) slp->item[j]);
   if (slp->item != NULL)
     free (slp->item);
@@ -439,8 +440,8 @@ do_getc ()
   if (c == EOF)
     {
       if (ferror (stdin))
-        error (EXIT_FAILURE, errno, _("\
-error while reading \"%s\""), _("standard input"));
+        error (EXIT_FAILURE, errno,
+               _("error while reading \"%s\""), _("standard input"));
     }
 
   return c;
@@ -457,13 +458,10 @@ do_ungetc (int c)
 static void
 subst_from_stdin ()
 {
-  static char *buffer;
-  static size_t bufmax;
-  static size_t buflen;
-  int c;
-
   for (;;)
     {
+      int c;
+
       c = do_getc ();
       if (c == EOF)
         break;
@@ -481,24 +479,18 @@ subst_from_stdin ()
             }
           if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_')
             {
-              bool valid;
-
               /* Accumulate the VARIABLE in buffer.  */
-              buflen = 0;
+              struct string_buffer buffer;
+              sb_init (&buffer);
               do
                 {
-                  if (buflen >= bufmax)
-                    {
-                      bufmax = 2 * bufmax + 10;
-                      buffer = xrealloc (buffer, bufmax);
-                    }
-                  buffer[buflen++] = c;
-
+                  sb_xappend1 (&buffer, c);
                   c = do_getc ();
                 }
               while ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
                      || (c >= '0' && c <= '9') || c == '_');
 
+              bool valid;
               if (opening_brace)
                 {
                   if (c == '}')
@@ -521,23 +513,19 @@ subst_from_stdin ()
               if (valid)
                 {
                   /* Terminate the variable in the buffer.  */
-                  if (buflen >= bufmax)
-                    {
-                      bufmax = 2 * bufmax + 10;
-                      buffer = xrealloc (buffer, bufmax);
-                    }
-                  buffer[buflen] = '\0';
+                  const char *variable = sb_xcontents_c (&buffer);
 
                   /* Test whether the variable shall be substituted.  */
                   if (!all_variables
-                      && !sorted_string_list_member (&variables_set, buffer))
+                      && !sorted_string_list_member (&variables_set, variable))
                     valid = false;
                 }
 
               if (valid)
                 {
                   /* Substitute the variable's value from the environment.  */
-                  const char *env_value = getenv (buffer);
+                  const char *variable = sb_xcontents_c (&buffer);
+                  const char *env_value = getenv (variable);
 
                   if (env_value != NULL)
                     fputs (env_value, stdout);
@@ -550,10 +538,12 @@ subst_from_stdin ()
                   putchar ('$');
                   if (opening_brace)
                     putchar ('{');
-                  fwrite (buffer, buflen, 1, stdout);
+                  sd_fwrite (stdout, sb_contents (&buffer));
                   if (closing_brace)
                     putchar ('}');
                 }
+
+              sb_free (&buffer);
             }
           else
             {

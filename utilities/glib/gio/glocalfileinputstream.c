@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -68,10 +70,6 @@ static gssize     g_local_file_input_stream_read       (GInputStream      *strea
 							gsize              count,
 							GCancellable      *cancellable,
 							GError           **error);
-static gssize     g_local_file_input_stream_skip       (GInputStream      *stream,
-							gsize              count,
-							GCancellable      *cancellable,
-							GError           **error);
 static gboolean   g_local_file_input_stream_close      (GInputStream      *stream,
 							GCancellable      *cancellable,
 							GError           **error);
@@ -104,7 +102,6 @@ g_local_file_input_stream_class_init (GLocalFileInputStreamClass *klass)
   GFileInputStreamClass *file_stream_class = G_FILE_INPUT_STREAM_CLASS (klass);
 
   stream_class->read_fn = g_local_file_input_stream_read;
-  stream_class->skip = g_local_file_input_stream_skip;
   stream_class->close_fn = g_local_file_input_stream_close;
   file_stream_class->tell = g_local_file_input_stream_tell;
   file_stream_class->can_seek = g_local_file_input_stream_can_seek;
@@ -173,62 +170,6 @@ g_local_file_input_stream_read (GInputStream  *stream,
     }
   
   return res;
-}
-
-static gssize
-g_local_file_input_stream_skip (GInputStream  *stream,
-				gsize          count,
-				GCancellable  *cancellable,
-				GError       **error)
-{
-  off_t start, end;
-  GLocalFileInputStream *file;
-
-  file = G_LOCAL_FILE_INPUT_STREAM (stream);
-  
-  if (g_cancellable_set_error_if_cancelled (cancellable, error))
-    return -1;
-  
-  start = lseek (file->priv->fd, 0, SEEK_CUR);
-  if (start == -1)
-    {
-      int errsv = errno;
-
-      g_set_error (error, G_IO_ERROR,
-		   g_io_error_from_errno (errsv),
-		   _("Error seeking in file: %s"),
-		   g_strerror (errsv));
-      return -1;
-    }
-  
-  end = lseek (file->priv->fd, 0, SEEK_END);
-  if (end == -1)
-    {
-      int errsv = errno;
-
-      g_set_error (error, G_IO_ERROR,
-		   g_io_error_from_errno (errsv),
-		   _("Error seeking in file: %s"),
-		   g_strerror (errsv));
-      return -1;
-    }
-
-  if (end - start > count)
-    {
-      end = lseek (file->priv->fd, count - (end - start), SEEK_CUR);
-      if (end == -1)
-	{
-	  int errsv = errno;
-
-	  g_set_error (error, G_IO_ERROR,
-		       g_io_error_from_errno (errsv),
-		       _("Error seeking in file: %s"),
-		       g_strerror (errsv));
-	  return -1;
-	}
-    }
-
-  return end - start;
 }
 
 static gboolean

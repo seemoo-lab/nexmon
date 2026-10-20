@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,21 +19,23 @@
 void proto_register_ipsictl(void);
 void proto_reg_handoff_ipsictl(void);
 
-#define IPSICTL_PORT            5010
+static dissector_handle_t ipsictl_handle;
+
+#define IPSICTL_PORT            5010 /* Not IANA registered */
 #define IPSICTL_PDU_MAGIC       0x0300
 
-static int proto_ipsictl = -1;
+static int proto_ipsictl;
 
-static int hf_ipsictl_pdu = -1;
-static int hf_ipsictl_magic = -1;
-static int hf_ipsictl_length = -1;
-static int hf_ipsictl_type = -1;
-static int hf_ipsictl_sequence = -1;
-static int hf_ipsictl_field1 = -1;
-static int hf_ipsictl_data = -1;
+static int hf_ipsictl_pdu;
+static int hf_ipsictl_magic;
+static int hf_ipsictl_length;
+static int hf_ipsictl_type;
+static int hf_ipsictl_sequence;
+static int hf_ipsictl_field1;
+static int hf_ipsictl_data;
 
-static gint ett_ipsictl = -1;
-static gint ett_ipsictl_pdu = -1;
+static int ett_ipsictl;
+static int ett_ipsictl_pdu;
 
 static int dissect_ipsictl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
@@ -57,14 +47,14 @@ static int dissect_ipsictl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
   int           loffset = 0;
   int           llength = 0;
   int           remaining_length;
-  guint16       magic;
-  guint16       length;
-  guint16       type=0;
-  guint16       sequence=0;
+  uint16_t      magic;
+  uint16_t      length;
+  uint16_t      type=0;
+  uint16_t      sequence=0;
   int           first_sequence=-1;
   int           last_sequence=-1;
-  guint16       field1=0;
-  guint16       pdu=0;
+  uint16_t      field1=0;
+  uint16_t      pdu=0;
   int           haspdus=0;
 
   remaining_length=tvb_reported_length_remaining(tvb, offset);
@@ -219,7 +209,7 @@ void proto_register_ipsictl(void)
         "IPSICTL data", HFILL }},
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_ipsictl,
     &ett_ipsictl_pdu
   };
@@ -228,21 +218,18 @@ void proto_register_ipsictl(void)
   proto_register_field_array(proto_ipsictl, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
+  ipsictl_handle = register_dissector("ipsictl", dissect_ipsictl, proto_ipsictl);
 }
 
 void proto_reg_handoff_ipsictl(void)
 {
 
-  dissector_handle_t ipsictl_handle = NULL;
-
-  ipsictl_handle = create_dissector_handle(dissect_ipsictl, proto_ipsictl);
-
-  dissector_add_uint("tcp.port", IPSICTL_PORT, ipsictl_handle);
+  dissector_add_uint_with_preference("tcp.port", IPSICTL_PORT, ipsictl_handle);
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

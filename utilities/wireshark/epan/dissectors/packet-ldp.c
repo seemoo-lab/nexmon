@@ -22,19 +22,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1999 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -46,6 +34,8 @@
 #include <epan/afn.h>
 #include <epan/expert.h>
 #include <epan/show_exception.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #include "packet-diffserv-mpls-common.h"
 #include "packet-ldp.h"
@@ -57,496 +47,580 @@
 void proto_register_ldp(void);
 void proto_reg_handoff_ldp(void);
 
-static int proto_ldp = -1;
+static dissector_handle_t ldp_tcp_handle, ldp_handle;
+
+static int proto_ldp;
 
 /* Delete the following if you do not use it, or add to it if you need */
-/* static int hf_ldp_req = -1; */
-/* static int hf_ldp_rsp = -1; */
-static int hf_ldp_version = -1;
-static int hf_ldp_pdu_len = -1;
-static int hf_ldp_lsr = -1;
-static int hf_ldp_ls_id = -1;
-static int hf_ldp_msg_ubit = -1;
-static int hf_ldp_msg_type = -1;
-static int hf_ldp_msg_len = -1;
-static int hf_ldp_msg_id = -1;
-static int hf_ldp_msg_vendor_id = -1;
-static int hf_ldp_msg_experiment_id = -1;
-static int hf_ldp_tlv_value = -1;
-static int hf_ldp_tlv_type = -1;
-static int hf_ldp_tlv_unknown = -1;
-static int hf_ldp_tlv_len = -1;
-static int hf_ldp_tlv_val_hold = -1;
-static int hf_ldp_tlv_val_target = -1;
-static int hf_ldp_tlv_val_request = -1;
-static int hf_ldp_tlv_val_res = -1;
-static int hf_ldp_tlv_val_gtsm_flag = -1;
-static int hf_ldp_tlv_ipv4_taddr = -1;
-static int hf_ldp_tlv_config_seqno = -1;
-static int hf_ldp_tlv_ipv6_taddr = -1;
-static int hf_ldp_tlv_fec_wc = -1;
-static int hf_ldp_tlv_fec_af = -1;
-static int hf_ldp_tlv_fec_len = -1;
-static int hf_ldp_tlv_fec_pfval = -1;
-static int hf_ldp_tlv_fec_hoval = -1;
-static int hf_ldp_tlv_addrl_addr_family = -1;
-static int hf_ldp_tlv_addrl_addr = -1;
-static int hf_ldp_tlv_hc_value = -1;
-static int hf_ldp_tlv_pv_lsrid = -1;
-static int hf_ldp_tlv_generic_label = -1;
-static int hf_ldp_tlv_atm_label_vbits = -1;
-static int hf_ldp_tlv_atm_label_vpi = -1;
-static int hf_ldp_tlv_atm_label_vci = -1;
-static int hf_ldp_tlv_fr_label_len = -1;
-static int hf_ldp_tlv_fr_label_dlci = -1;
-static int hf_ldp_tlv_ft_protect_sequence_num = -1;
-static int hf_ldp_tlv_status_ebit = -1;
-static int hf_ldp_tlv_status_fbit = -1;
-static int hf_ldp_tlv_status_data = -1;
-static int hf_ldp_tlv_status_msg_id = -1;
-static int hf_ldp_tlv_status_msg_type = -1;
-static int hf_ldp_tlv_extstatus_data = -1;
-static int hf_ldp_tlv_returned_version = -1;
-static int hf_ldp_tlv_returned_pdu_len = -1;
-static int hf_ldp_tlv_returned_lsr = -1;
-static int hf_ldp_tlv_returned_ls_id = -1;
-static int hf_ldp_tlv_returned_msg_ubit = -1;
-static int hf_ldp_tlv_returned_msg_type = -1;
-static int hf_ldp_tlv_returned_msg_len = -1;
-static int hf_ldp_tlv_returned_msg_id = -1;
-static int hf_ldp_tlv_mac = -1;
-static int hf_ldp_tlv_sess_ver = -1;
-static int hf_ldp_tlv_sess_ka = -1;
-static int hf_ldp_tlv_sess_advbit = -1;
-static int hf_ldp_tlv_sess_ldetbit = -1;
-static int hf_ldp_tlv_sess_pvlim = -1;
-static int hf_ldp_tlv_sess_mxpdu = -1;
-static int hf_ldp_tlv_sess_rxlsr = -1;
-static int hf_ldp_tlv_sess_rxls = -1;
-static int hf_ldp_tlv_sess_atm_merge = -1;
-static int hf_ldp_tlv_sess_atm_lr = -1;
-static int hf_ldp_tlv_sess_atm_dir = -1;
-static int hf_ldp_tlv_sess_atm_minvpi = -1;
-static int hf_ldp_tlv_sess_atm_maxvpi = -1;
-static int hf_ldp_tlv_sess_atm_minvci = -1;
-static int hf_ldp_tlv_sess_atm_maxvci = -1;
-static int hf_ldp_tlv_sess_fr_merge = -1;
-static int hf_ldp_tlv_sess_fr_lr = -1;
-static int hf_ldp_tlv_sess_fr_dir = -1;
-static int hf_ldp_tlv_sess_fr_len = -1;
-static int hf_ldp_tlv_sess_fr_mindlci = -1;
-static int hf_ldp_tlv_sess_fr_maxdlci = -1;
-static int hf_ldp_tlv_ft_sess_flags = -1;
-static int hf_ldp_tlv_ft_sess_flag_r = -1;
-static int hf_ldp_tlv_ft_sess_flag_res = -1;
-static int hf_ldp_tlv_ft_sess_flag_s = -1;
-static int hf_ldp_tlv_ft_sess_flag_a = -1;
-static int hf_ldp_tlv_ft_sess_flag_c = -1;
-static int hf_ldp_tlv_ft_sess_flag_l = -1;
-static int hf_ldp_tlv_ft_sess_res = -1;
-static int hf_ldp_tlv_ft_sess_reconn_to = -1;
-static int hf_ldp_tlv_ft_sess_recovery_time = -1;
-static int hf_ldp_tlv_ft_ack_sequence_num = -1;
-static int hf_ldp_tlv_lbl_req_msg_id = -1;
-static int hf_ldp_tlv_vendor_id = -1;
-static int hf_ldp_tlv_experiment_id = -1;
-static int hf_ldp_tlv_fec_vc_controlword = -1;
-static int hf_ldp_tlv_fec_vc_vctype = -1;
-static int hf_ldp_tlv_fec_vc_infolength = -1;
-static int hf_ldp_tlv_fec_vc_groupid = -1;
-static int hf_ldp_tlv_fec_vc_vcid = -1;
-static int hf_ldp_tlv_fec_vc_intparam_length = -1;
-static int hf_ldp_tlv_fec_vc_intparam_mtu = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmbps = -1;
-static int hf_ldp_tlv_fec_vc_intparam_id = -1;
-static int hf_ldp_tlv_fec_vc_intparam_maxcatmcells = -1;
-static int hf_ldp_tlv_fec_vc_intparam_desc = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepbytes = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_ais = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_une = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_rtp = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_ebm = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_mah = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_res = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_ceptype = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_t3 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_cepopt_e3 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vlanid = -1;
-static int hf_ldp_tlv_fec_vc_intparam_dlcilen = -1;
-static int hf_ldp_tlv_fec_vc_intparam_fcslen = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmopt_r = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmopt_d = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmopt_f = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmopt_res1 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmopt_pt = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmopt_res2 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmopt_freq = -1;
-static int hf_ldp_tlv_fec_vc_intparam_tdmopt_ssrc = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cctype_cw = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cctype_mplsra = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cctype_ttl1 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_icmpping = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_lspping = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_bfd1 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_bfd2 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_bfd3 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_bfd4 = -1;
-static int hf_ldp_tlv_fec_vc_intparam_flowlabel_t = -1;                    /* Flow label interface parameter RFC6391 */
-static int hf_ldp_tlv_fec_vc_intparam_flowlabel_r = -1;                    /* Flow label interface parameter RFC6391 */
-static int hf_ldp_tlv_fec_vc_intparam_flowlabel_res = -1;                  /* Flow label interface parameter RFC6391 */
-static int hf_ldp_tlv_lspid_act_flg = -1;
-static int hf_ldp_tlv_lspid_cr_lsp = -1;
-static int hf_ldp_tlv_lspid_ldpid = -1;
-static int hf_ldp_tlv_er_hop_loose = -1;
-static int hf_ldp_tlv_er_hop_prelen = -1;
-static int hf_ldp_tlv_er_hop_prefix4 = -1;
-static int hf_ldp_tlv_er_hop_prefix6 = -1;
-static int hf_ldp_tlv_er_hop_as = -1;
-static int hf_ldp_tlv_er_hop_cr_lsp = -1;
-static int hf_ldp_tlv_er_hop_ldpid = -1;
-static int hf_ldp_tlv_flags_reserv = -1;
-static int hf_ldp_tlv_flags_weight = -1;
-static int hf_ldp_tlv_flags_ebs = -1;
-static int hf_ldp_tlv_flags_cbs = -1;
-static int hf_ldp_tlv_flags_cdr = -1;
-static int hf_ldp_tlv_flags_pbs = -1;
-static int hf_ldp_tlv_flags_pdr = -1;
-static int hf_ldp_tlv_frequency = -1;
-static int hf_ldp_tlv_pdr = -1;
-static int hf_ldp_tlv_pbs = -1;
-static int hf_ldp_tlv_cdr = -1;
-static int hf_ldp_tlv_cbs = -1;
-static int hf_ldp_tlv_ebs = -1;
-static int hf_ldp_tlv_weight = -1;
-static int hf_ldp_tlv_set_prio = -1;
-static int hf_ldp_tlv_hold_prio = -1;
-static int hf_ldp_tlv_route_pinning = -1;
-static int hf_ldp_tlv_resource_class = -1;
-/* static int hf_ldp_tlv_diffserv = -1; */
-static int hf_ldp_tlv_diffserv_type = -1;
-static int hf_ldp_tlv_diffserv_mapnb = -1;
-static int hf_ldp_tlv_diffserv_map = -1;
-static int hf_ldp_tlv_diffserv_map_exp = -1;
-static int hf_ldp_tlv_diffserv_phbid = -1;
-static int hf_ldp_tlv_diffserv_phbid_dscp = -1;
-static int hf_ldp_tlv_diffserv_phbid_code = -1;
-static int hf_ldp_tlv_diffserv_phbid_bit14 = -1;
-static int hf_ldp_tlv_diffserv_phbid_bit15 = -1;
-static int hf_ldp_tlv_fec_gen_agi_type = -1;
-static int hf_ldp_tlv_fec_gen_agi_length = -1;
-static int hf_ldp_tlv_fec_gen_agi_value = -1;
-static int hf_ldp_tlv_fec_gen_saii_type = -1;
-static int hf_ldp_tlv_fec_gen_saii_length = -1;
-static int hf_ldp_tlv_fec_gen_saii_value = -1;
-static int hf_ldp_tlv_fec_gen_taii_type = -1;
-static int hf_ldp_tlv_fec_gen_taii_length = -1;
-static int hf_ldp_tlv_fec_gen_taii_value = -1;
-static int hf_ldp_tlv_fec_gen_aai_globalid = -1;
-static int hf_ldp_tlv_fec_gen_aai_prefix = -1;
-static int hf_ldp_tlv_fec_gen_aai_ac_id = -1;
-static int hf_ldp_tlv_pw_status_data = -1;
-static int hf_ldp_tlv_pw_not_forwarding = -1;
-static int hf_ldp_tlv_pw_lac_ingress_recv_fault = -1;
-static int hf_ldp_tlv_pw_lac_egress_recv_fault = -1;
-static int hf_ldp_tlv_pw_psn_pw_ingress_recv_fault = -1;
-static int hf_ldp_tlv_pw_psn_pw_egress_recv_fault = -1;
-static int hf_ldp_tlv_pw_grouping_value = -1;
-static int hf_ldp_tlv_intparam_length = -1;
-static int hf_ldp_tlv_intparam_mtu = -1;
-static int hf_ldp_tlv_intparam_tdmbps = -1;
-static int hf_ldp_tlv_intparam_id = -1;
-static int hf_ldp_tlv_intparam_maxcatmcells = -1;
-static int hf_ldp_tlv_intparam_desc = -1;
-static int hf_ldp_tlv_intparam_cepbytes = -1;
-static int hf_ldp_tlv_intparam_cepopt_ais = -1;
-static int hf_ldp_tlv_intparam_cepopt_une = -1;
-static int hf_ldp_tlv_intparam_cepopt_rtp = -1;
-static int hf_ldp_tlv_intparam_cepopt_ebm = -1;
-static int hf_ldp_tlv_intparam_cepopt_mah = -1;
-static int hf_ldp_tlv_intparam_cepopt_res = -1;
-static int hf_ldp_tlv_intparam_cepopt_ceptype = -1;
-static int hf_ldp_tlv_intparam_cepopt_t3 = -1;
-static int hf_ldp_tlv_intparam_cepopt_e3 = -1;
-static int hf_ldp_tlv_intparam_vlanid = -1;
-static int hf_ldp_tlv_intparam_dlcilen = -1;
-static int hf_ldp_tlv_intparam_fcslen = -1;
-static int hf_ldp_tlv_intparam_tdmopt_r = -1;
-static int hf_ldp_tlv_intparam_tdmopt_d = -1;
-static int hf_ldp_tlv_intparam_tdmopt_f = -1;
-static int hf_ldp_tlv_intparam_tdmopt_res1 = -1;
-static int hf_ldp_tlv_intparam_tdmopt_pt = -1;
-static int hf_ldp_tlv_intparam_tdmopt_res2 = -1;
-static int hf_ldp_tlv_intparam_tdmopt_freq = -1;
-static int hf_ldp_tlv_intparam_tdmopt_ssrc = -1;
-static int hf_ldp_tlv_intparam_vccv_cctype_cw = -1;
-static int hf_ldp_tlv_intparam_vccv_cctype_mplsra = -1;
-static int hf_ldp_tlv_intparam_vccv_cctype_ttl1 = -1;
-static int hf_ldp_tlv_intparam_vccv_cvtype_icmpping = -1;
-static int hf_ldp_tlv_intparam_vccv_cvtype_lspping = -1;
-static int hf_ldp_tlv_intparam_vccv_cvtype_bfd = -1;
-static int hf_ldp_tlv_upstr_sbit = -1;
-static int hf_ldp_tlv_upstr_lbl_req_resvbit = -1;
-static int hf_ldp_tlv_upstr_ass_lbl = -1;
-static int hf_ldp_tlv_upstr_lbl_resvbit = -1;
-static int hf_ldp_tlv_ipv4_intID_hop_addr = -1;
-static int hf_ldp_tlv_logical_intID = -1;
-static int hf_ldp_tlv_ip_multicast_srcaddr = -1;
-static int hf_ldp_tlv_ip_multicast_mltcstaddr = -1;
-static int hf_ldp_tlv_ldp_p2mp_lsptype = -1;
-static int hf_ldp_tlv_ip_mpls_context_srcaddr = -1;
-static int hf_ldp_tlv_ldp_p2mp_addrfam = -1;
-static int hf_ldp_tlv_ldp_p2mp_addrlen = -1;
-static int hf_ldp_tlv_ldp_p2mp_rtnodeaddr = -1;
-static int hf_ldp_tlv_ldp_p2mp_oplength = -1;
-static int hf_ldp_tlv_ldp_p2mp_opvalue = -1;
-static int hf_ldp_tlv_rsvp_te_p2mp_id = -1;
-static int hf_ldp_tlv_must_be_zero = -1;
-static int hf_ldp_tlv_tunnel_id = -1;
-static int hf_ldp_tlv_ext_tunnel_id = -1;
-static int hf_ldp_tlv_inv_length = -1;
-static int hf_ldp_returned_pdu_data = -1;
-static int hf_ldp_returned_message_parameters = -1;
-static int hf_ldp_data = -1;
-static int hf_ldp_unknown_data = -1;
+/* static int hf_ldp_req; */
+/* static int hf_ldp_rsp; */
+static int hf_ldp_version;
+static int hf_ldp_pdu_len;
+static int hf_ldp_lsr;
+static int hf_ldp_ls_id;
+static int hf_ldp_msg_ubit;
+static int hf_ldp_msg_type;
+static int hf_ldp_msg_len;
+static int hf_ldp_msg_id;
+static int hf_ldp_msg_vendor_id;
+static int hf_ldp_msg_experiment_id;
+static int hf_ldp_tlv_value;
+static int hf_ldp_tlv_type;
+static int hf_ldp_tlv_unknown;
+static int hf_ldp_tlv_len;
+static int hf_ldp_tlv_val_hold;
+static int hf_ldp_tlv_val_target;
+static int hf_ldp_tlv_val_request;
+static int hf_ldp_tlv_val_res;
+static int hf_ldp_tlv_val_gtsm_flag;
+static int hf_ldp_tlv_ipv4_taddr;
+static int hf_ldp_tlv_config_seqno;
+static int hf_ldp_tlv_ipv6_taddr;
+static int hf_ldp_tlv_fec_wc;
+static int hf_ldp_tlv_fec_af;
+static int hf_ldp_tlv_fec_len;
+static int hf_ldp_tlv_fec_pfval;
+static int hf_ldp_tlv_fec_hoval;
+static int hf_ldp_tlv_addrl_addr_family;
+static int hf_ldp_tlv_addrl_addr;
+static int hf_ldp_tlv_hc_value;
+static int hf_ldp_tlv_pv_lsrid;
+static int hf_ldp_tlv_generic_label;
+static int hf_ldp_tlv_atm_label_vbits;
+static int hf_ldp_tlv_atm_label_vpi;
+static int hf_ldp_tlv_atm_label_vci;
+static int hf_ldp_tlv_fr_label_len;
+static int hf_ldp_tlv_fr_label_dlci;
+static int hf_ldp_tlv_ft_protect_sequence_num;
+static int hf_ldp_tlv_status_ebit;
+static int hf_ldp_tlv_status_fbit;
+static int hf_ldp_tlv_status_data;
+static int hf_ldp_tlv_status_msg_id;
+static int hf_ldp_tlv_status_msg_type;
+static int hf_ldp_tlv_extstatus_data;
+static int hf_ldp_tlv_returned_version;
+static int hf_ldp_tlv_returned_pdu_len;
+static int hf_ldp_tlv_returned_lsr;
+static int hf_ldp_tlv_returned_ls_id;
+static int hf_ldp_tlv_returned_msg_ubit;
+static int hf_ldp_tlv_returned_msg_type;
+static int hf_ldp_tlv_returned_msg_len;
+static int hf_ldp_tlv_returned_msg_id;
+static int hf_ldp_tlv_mac;
+static int hf_ldp_tlv_sess_ver;
+static int hf_ldp_tlv_sess_ka;
+static int hf_ldp_tlv_sess_advbit;
+static int hf_ldp_tlv_sess_ldetbit;
+static int hf_ldp_tlv_sess_pvlim;
+static int hf_ldp_tlv_sess_mxpdu;
+static int hf_ldp_tlv_sess_rxlsr;
+static int hf_ldp_tlv_sess_rxls;
+static int hf_ldp_tlv_sess_atm_merge;
+static int hf_ldp_tlv_sess_atm_lr;
+static int hf_ldp_tlv_sess_atm_dir;
+static int hf_ldp_tlv_sess_atm_minvpi;
+static int hf_ldp_tlv_sess_atm_maxvpi;
+static int hf_ldp_tlv_sess_atm_minvci;
+static int hf_ldp_tlv_sess_atm_maxvci;
+static int hf_ldp_tlv_sess_fr_merge;
+static int hf_ldp_tlv_sess_fr_lr;
+static int hf_ldp_tlv_sess_fr_dir;
+static int hf_ldp_tlv_sess_fr_len;
+static int hf_ldp_tlv_sess_fr_mindlci;
+static int hf_ldp_tlv_sess_fr_maxdlci;
+static int hf_ldp_tlv_ft_sess_flags;
+static int hf_ldp_tlv_ft_sess_flag_r;
+static int hf_ldp_tlv_ft_sess_flag_res;
+static int hf_ldp_tlv_ft_sess_flag_s;
+static int hf_ldp_tlv_ft_sess_flag_a;
+static int hf_ldp_tlv_ft_sess_flag_c;
+static int hf_ldp_tlv_ft_sess_flag_l;
+static int hf_ldp_tlv_ft_sess_res;
+static int hf_ldp_tlv_ft_sess_reconn_to;
+static int hf_ldp_tlv_ft_sess_recovery_time;
+static int hf_ldp_tlv_ft_ack_sequence_num;
+static int hf_ldp_tlv_lbl_req_msg_id;
+static int hf_ldp_tlv_vendor_id;
+static int hf_ldp_tlv_experiment_id;
+static int hf_ldp_tlv_fec_vc_controlword;
+static int hf_ldp_tlv_fec_vc_vctype;
+static int hf_ldp_tlv_fec_vc_infolength;
+static int hf_ldp_tlv_fec_vc_groupid;
+static int hf_ldp_tlv_fec_vc_vcid;
+static int hf_ldp_tlv_fec_vc_intparam_length;
+static int hf_ldp_tlv_fec_vc_intparam_mtu;
+static int hf_ldp_tlv_fec_vc_intparam_tdmbps;
+static int hf_ldp_tlv_fec_vc_intparam_id;
+static int hf_ldp_tlv_fec_vc_intparam_maxcatmcells;
+static int hf_ldp_tlv_fec_vc_intparam_desc;
+static int hf_ldp_tlv_fec_vc_intparam_cepbytes;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_ais;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_une;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_rtp;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_ebm;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_mah;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_res;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_ceptype;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_t3;
+static int hf_ldp_tlv_fec_vc_intparam_cepopt_e3;
+static int hf_ldp_tlv_fec_vc_intparam_vlanid;
+static int hf_ldp_tlv_fec_vc_intparam_dlcilen;
+static int hf_ldp_tlv_fec_vc_intparam_fcslen;
+static int hf_ldp_tlv_fec_vc_intparam_tdmopt_r;
+static int hf_ldp_tlv_fec_vc_intparam_tdmopt_d;
+static int hf_ldp_tlv_fec_vc_intparam_tdmopt_f;
+static int hf_ldp_tlv_fec_vc_intparam_tdmopt_res1;
+static int hf_ldp_tlv_fec_vc_intparam_tdmopt_pt;
+static int hf_ldp_tlv_fec_vc_intparam_tdmopt_res2;
+static int hf_ldp_tlv_fec_vc_intparam_tdmopt_freq;
+static int hf_ldp_tlv_fec_vc_intparam_tdmopt_ssrc;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cctype_cw;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cctype_mplsra;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cctype_ttl1;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_icmpping;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_lspping;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_bfd1;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_bfd2;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_bfd3;
+static int hf_ldp_tlv_fec_vc_intparam_vccv_cvtype_bfd4;
+static int hf_ldp_tlv_fec_vc_intparam_flowlabel_t;                    /* Flow label interface parameter RFC6391 */
+static int hf_ldp_tlv_fec_vc_intparam_flowlabel_r;                    /* Flow label interface parameter RFC6391 */
+static int hf_ldp_tlv_fec_vc_intparam_flowlabel_res;                  /* Flow label interface parameter RFC6391 */
+static int hf_ldp_tlv_lspid_act_flg;
+static int hf_ldp_tlv_lspid_cr_lsp;
+static int hf_ldp_tlv_lspid_ldpid;
+static int hf_ldp_tlv_er_hop_loose;
+static int hf_ldp_tlv_er_hop_prelen;
+static int hf_ldp_tlv_er_hop_prefix4;
+static int hf_ldp_tlv_er_hop_prefix6;
+static int hf_ldp_tlv_er_hop_as;
+static int hf_ldp_tlv_er_hop_cr_lsp;
+static int hf_ldp_tlv_er_hop_ldpid;
+static int hf_ldp_tlv_flags_reserv;
+static int hf_ldp_tlv_flags_weight;
+static int hf_ldp_tlv_flags_ebs;
+static int hf_ldp_tlv_flags_cbs;
+static int hf_ldp_tlv_flags_cdr;
+static int hf_ldp_tlv_flags_pbs;
+static int hf_ldp_tlv_flags_pdr;
+static int hf_ldp_tlv_frequency;
+static int hf_ldp_tlv_pdr;
+static int hf_ldp_tlv_pbs;
+static int hf_ldp_tlv_cdr;
+static int hf_ldp_tlv_cbs;
+static int hf_ldp_tlv_ebs;
+static int hf_ldp_tlv_weight;
+static int hf_ldp_tlv_set_prio;
+static int hf_ldp_tlv_hold_prio;
+static int hf_ldp_tlv_route_pinning;
+static int hf_ldp_tlv_resource_class;
+/* static int hf_ldp_tlv_diffserv; */
+static int hf_ldp_tlv_diffserv_type;
+static int hf_ldp_tlv_diffserv_mapnb;
+static int hf_ldp_tlv_diffserv_map;
+static int hf_ldp_tlv_diffserv_map_exp;
+static int hf_ldp_tlv_diffserv_phbid;
+static int hf_ldp_tlv_diffserv_phbid_dscp;
+static int hf_ldp_tlv_diffserv_phbid_code;
+static int hf_ldp_tlv_diffserv_phbid_bit14;
+static int hf_ldp_tlv_diffserv_phbid_bit15;
+static int hf_ldp_tlv_fec_gen_agi_type;
+static int hf_ldp_tlv_fec_gen_agi_length;
+static int hf_ldp_tlv_fec_gen_agi_value;
+static int hf_ldp_tlv_fec_gen_saii_type;
+static int hf_ldp_tlv_fec_gen_saii_length;
+static int hf_ldp_tlv_fec_gen_saii_value;
+static int hf_ldp_tlv_fec_gen_taii_type;
+static int hf_ldp_tlv_fec_gen_taii_length;
+static int hf_ldp_tlv_fec_gen_taii_value;
+static int hf_ldp_tlv_fec_gen_aai_globalid;
+static int hf_ldp_tlv_fec_gen_aai_prefix;
+static int hf_ldp_tlv_fec_gen_aai_ac_id;
+static int hf_ldp_tlv_fec_pw_controlword;
+static int hf_ldp_tlv_fec_pw_pwtype;
+static int hf_ldp_tlv_fec_pw_infolength;
+static int hf_ldp_tlv_fec_pw_groupid;
+static int hf_ldp_tlv_fec_pw_pwid;
+static int hf_ldp_tlv_pw_status_data;
+static int hf_ldp_tlv_pw_not_forwarding;
+static int hf_ldp_tlv_pw_lac_ingress_recv_fault;
+static int hf_ldp_tlv_pw_lac_egress_recv_fault;
+static int hf_ldp_tlv_pw_psn_pw_ingress_recv_fault;
+static int hf_ldp_tlv_pw_psn_pw_egress_recv_fault;
+static int hf_ldp_tlv_pw_grouping_value;
+static int hf_ldp_tlv_intparam_length;
+static int hf_ldp_tlv_intparam_mtu;
+static int hf_ldp_tlv_intparam_tdmbps;
+static int hf_ldp_tlv_intparam_id;
+static int hf_ldp_tlv_intparam_maxcatmcells;
+static int hf_ldp_tlv_intparam_desc;
+static int hf_ldp_tlv_intparam_cepbytes;
+static int hf_ldp_tlv_intparam_cepopt_ais;
+static int hf_ldp_tlv_intparam_cepopt_une;
+static int hf_ldp_tlv_intparam_cepopt_rtp;
+static int hf_ldp_tlv_intparam_cepopt_ebm;
+static int hf_ldp_tlv_intparam_cepopt_mah;
+static int hf_ldp_tlv_intparam_cepopt_res;
+static int hf_ldp_tlv_intparam_cepopt_ceptype;
+static int hf_ldp_tlv_intparam_cepopt_t3;
+static int hf_ldp_tlv_intparam_cepopt_e3;
+static int hf_ldp_tlv_intparam_vlanid;
+static int hf_ldp_tlv_intparam_dlcilen;
+static int hf_ldp_tlv_intparam_fcslen;
+static int hf_ldp_tlv_intparam_tdmopt_r;
+static int hf_ldp_tlv_intparam_tdmopt_d;
+static int hf_ldp_tlv_intparam_tdmopt_f;
+static int hf_ldp_tlv_intparam_tdmopt_res1;
+static int hf_ldp_tlv_intparam_tdmopt_pt;
+static int hf_ldp_tlv_intparam_tdmopt_res2;
+static int hf_ldp_tlv_intparam_tdmopt_freq;
+static int hf_ldp_tlv_intparam_tdmopt_ssrc;
+static int hf_ldp_tlv_intparam_vccv_cctype_cw;
+static int hf_ldp_tlv_intparam_vccv_cctype_mplsra;
+static int hf_ldp_tlv_intparam_vccv_cctype_ttl1;
+static int hf_ldp_tlv_intparam_vccv_cvtype_icmpping;
+static int hf_ldp_tlv_intparam_vccv_cvtype_lspping;
+static int hf_ldp_tlv_intparam_vccv_cvtype_bfd;
+static int hf_ldp_tlv_upstr_sbit;
+static int hf_ldp_tlv_upstr_lbl_req_resvbit;
+static int hf_ldp_tlv_upstr_ass_lbl;
+static int hf_ldp_tlv_upstr_lbl_resvbit;
+static int hf_ldp_tlv_ipv4_intID_hop_addr;
+static int hf_ldp_tlv_logical_intID;
+static int hf_ldp_tlv_ip_multicast_srcaddr;
+static int hf_ldp_tlv_ip_multicast_mltcstaddr;
+static int hf_ldp_tlv_ldp_p2mp_lsptype;
+static int hf_ldp_tlv_ip_mpls_context_srcaddr;
+static int hf_ldp_tlv_ldp_p2mp_addrfam;
+static int hf_ldp_tlv_ldp_p2mp_addrlen;
+static int hf_ldp_tlv_ldp_p2mp_rtnodeaddr;
+static int hf_ldp_tlv_ldp_p2mp_oplength;
+static int hf_ldp_tlv_ldp_p2mp_opvalue;
+static int hf_ldp_tlv_rsvp_te_p2mp_id;
+static int hf_ldp_tlv_must_be_zero;
+static int hf_ldp_tlv_tunnel_id;
+static int hf_ldp_tlv_ext_tunnel_id;
+static int hf_ldp_tlv_inv_length;
+static int hf_ldp_returned_pdu_data;
+static int hf_ldp_returned_message_parameters;
+static int hf_ldp_data;
+static int hf_ldp_unknown_data;
 
 
-static int ett_ldp = -1;
-static int ett_ldp_header = -1;
-static int ett_ldp_ldpid = -1;
-static int ett_ldp_message = -1;
-static int ett_ldp_tlv = -1;
-static int ett_ldp_tlv_val = -1;
-static int ett_ldp_tlv_ft_flags = -1;
-static int ett_ldp_fec = -1;
-static int ett_ldp_fec_vc_interfaceparam = -1;
-static int ett_ldp_fec_vc_interfaceparam_cepopt = -1;
-static int ett_ldp_fec_vc_interfaceparam_vccvtype = -1;
-static int ett_ldp_diffserv_map = -1;
-static int ett_ldp_diffserv_map_phbid = -1;
-static int ett_ldp_gen_agi = -1;
-static int ett_ldp_gen_saii = -1;
-static int ett_ldp_gen_taii = -1;
-static int ett_ldp_gen_aai_type2 = -1;
-static int ett_ldp_sub_tlv = -1;
+static int ett_ldp;
+static int ett_ldp_header;
+static int ett_ldp_ldpid;
+static int ett_ldp_message;
+static int ett_ldp_tlv;
+static int ett_ldp_tlv_val;
+static int ett_ldp_tlv_ft_flags;
+static int ett_ldp_fec;
+static int ett_ldp_fec_vc_interfaceparam;
+static int ett_ldp_fec_vc_interfaceparam_cepopt;
+static int ett_ldp_fec_vc_interfaceparam_vccvtype;
+static int ett_ldp_diffserv_map;
+static int ett_ldp_diffserv_map_phbid;
+static int ett_ldp_gen_agi;
+static int ett_ldp_gen_saii;
+static int ett_ldp_gen_taii;
+static int ett_ldp_gen_aai_type2;
+static int ett_ldp_sub_tlv;
 
-static expert_field ei_ldp_dtsm_and_target = EI_INIT;
-static expert_field ei_ldp_gtsm_supported = EI_INIT;
-static expert_field ei_ldp_gtsm_not_supported_basic_discovery = EI_INIT;
-static expert_field ei_ldp_gtsm_not_supported = EI_INIT;
-static expert_field ei_ldp_inv_length = EI_INIT;
-static expert_field ei_ldp_tlv_fec_vc_infolength = EI_INIT;
-static expert_field ei_ldp_tlv_fec_type = EI_INIT;
-static expert_field ei_ldp_tlv_fec_len = EI_INIT;
-static expert_field ei_ldp_malformed_data = EI_INIT;
-static expert_field ei_ldp_address_family_not_implemented = EI_INIT;
-static expert_field ei_ldp_malformed_interface_parameter = EI_INIT;
-static expert_field ei_ldp_tlv_fec = EI_INIT;
+static expert_field ei_ldp_dtsm_and_target;
+static expert_field ei_ldp_gtsm_supported;
+static expert_field ei_ldp_gtsm_not_supported_basic_discovery;
+static expert_field ei_ldp_gtsm_not_supported;
+static expert_field ei_ldp_inv_length;
+static expert_field ei_ldp_tlv_fec_vc_infolength;
+static expert_field ei_ldp_tlv_fec_type;
+static expert_field ei_ldp_tlv_fec_len;
+static expert_field ei_ldp_malformed_data;
+static expert_field ei_ldp_address_family_not_implemented;
+static expert_field ei_ldp_malformed_interface_parameter;
+static expert_field ei_ldp_tlv_fec;
 
 /* desegmentation of LDP over TCP */
-static gboolean ldp_desegment = TRUE;
-
-static guint32 global_ldp_tcp_port = TCP_PORT_LDP;
-static guint32 global_ldp_udp_port = UDP_PORT_LDP;
+static bool ldp_desegment = true;
 
 /*
  * The following define all the TLV types I know about
  * http://www.iana.org/assignments/ldp-namespaces
  */
+#define TLV_SEQUENCE_NUMBER                     0x0001  /* [RFC7769] */
+#define TLV_FEC                                 0x0100  /* [RFC5036] */
+#define TLV_ADDRESS_LIST                        0x0101  /* [RFC5036] */
+#define TLV_HOP_COUNT                           0x0103  /* [RFC5036] */
+#define TLV_PATH_VECTOR                         0x0104  /* [RFC5036] */
+#define TLV_GENERIC_LABEL                       0x0200  /* [RFC5036] */
+#define TLV_ATM_LABEL                           0x0201  /* [RFC5036] */
+#define TLV_FRAME_RELAY_LABEL                   0x0202  /* [RFC5036] */
+#define TLV_FT_PROTECTION                       0x0203  /* [RFC3479] */
+#define TLV_LDP_UPSTREAM_ASSIGNED_LABEL         0x0204  /* [RFC6389] */
+#define TLV_LDP_UPSTREAM_ASSIGNED_LABEL_REQUEST 0x0205  /* [RFC6389] */
+#define TLV_ENTROPY_LABEL_CAPA                  0x0206  /* [RFC6790] */
+#define TLV_STATUS                              0x0300  /* [RFC5036] */
+#define TLV_EXTENDED_STATUS                     0x0301  /* [RFC5036] */
+#define TLV_RETURNED_PDU                        0x0302  /* [RFC5036] */
+#define TLV_RETURNED_MESSAGE                    0x0303  /* [RFC5036] */
+#define TLV_RETURNED_TLVS                       0x0304  /* [RFC5561] */
+#define TLV_COMMON_HELLO_PARAMS                 0x0400  /* [RFC5036] */
+#define TLV_IPV4_TRANSPORT_ADDRESS              0x0401  /* [RFC5036] */
+#define TLV_CONFIGURATION_SEQUENCE_NUMBER       0x0402  /* [RFC5036] */
+#define TLV_IPV6_TRANSPORT_ADDRESS              0x0403  /* [RFC5036] */
+#define TLV_MAC                                 0x0404  /* [RFC4762] */
+#define TLV_CRYPTOGRAPHIC_AUTHENTICATION        0x0405  /* [RFC7349] */
+#define TLV_MAC_FLUSH_PARAMS                    0x0406  /* [RFC7361] */
+#define TLV_PBB_B_MAC_LIST_SUB                  0x0407  /* [RFC7361] */
+#define TLV_PBB_I_SID_LIST_SUB                  0x0408  /* [RFC7361] */
+#define TLV_COMMON_SESSION_PARAMS               0x0500  /* [RFC5036] */
+#define TLV_ATM_SESSION_PARAMS                  0x0501  /* [RFC5036] */
+#define TLV_FRAME_RELAY_SESSION_PARAMS          0x0502  /* [RFC5036] */
+#define TLV_FT_SESSION                          0x0503  /* [RFC3479] */
+#define TLV_FT_ACK                              0x0504  /* [RFC3479] */
+#define TLV_FT_CORK                             0x0505  /* [RFC3479] */
+#define TLV_DYNAMIC_CAPA_ANNOUNCEMENT           0x0506  /* [RFC5561] */
+#define TLV_LDP_UPSTREAM_LABEL_ASSIGNMENT_CAPA  0x0507  /* [RFC6389] */
+#define TLV_P2MP_CAPA_PARAM                     0x0508  /* [RFC6388] */
+#define TLV_MP2MP_CAPA_PARAM                    0x0509  /* [RFC6388] */
+#define TLV_MBB_CAPA_PARAM                      0x050A  /* [RFC6388] */
+#define TLV_TYPED_WILDCARD_FEC_CAPA             0x050B  /* [RFC5918] */
+#define TLV_MULTI_TOPOLOGY_CAPA                 0x050C  /* [RFC7307] */
+#define TLV_STATE_ADVERTISEMENT_CONTROL_CAPA    0x050D  /* [RFC7473] */
+#define TLV_MRT_CAPA                            0x050E  /* [RFC8320] */
+#define TLV_TARGETED_APPLICATION_CAPA           0x050F  /* [RFC8223] */
+#define TLV_MT_MULTIPOINT_CAPA                  0x0510  /* [RFC9658] */
+#define TLV_LABEL_REQUEST_MESSAGE_ID            0x0600  /* [RFC5036] */
+#define TLV_MTU                                 0x0601  /* [RFC3988] */
+#define TLV_UNRECOGNIZED_NOTIFICATION_CAPA      0x0603  /* [RFC5919] */
+#define TLV_ICCP_CAPA                           0x0700  /* [RFC7275] */
+#define TLV_DUAL_STACK_CAPA                     0x0701  /* [RFC7552] */
+#define TLV_P2MP_PW_CAPA                        0x0703  /* [RFC8338] */
+#define TLV_EXPLICIT_ROUTE                      0x0800  /* [RFC3212] */
+#define TLV_IPV4_PREFIX_ER_HOP                  0x0801  /* [RFC3212] */
+#define TLV_IPV6_PREFIX_ER_HOP                  0x0802  /* [RFC3212] */
+#define TLV_AUTONOMOUS_SYSTEM_NUMBER_ER_HOP     0x0803  /* [RFC3212] */
+#define TLV_LSP_ID_ER_HOP                       0x0804  /* [RFC3212] */
+#define TLV_L2_PW_ADDRESS_OF_SWITCHING_POINT    0x0805  /* [RFC7392] */
+#define TLV_TRAFFIC_PARAMS                      0x0810  /* [RFC3212] */
+#define TLV_PREEMPTION                          0x0820  /* [RFC3212] */
+#define TLV_LSPID                               0x0821  /* [RFC3212] */
+#define TLV_RESOURCE_CLASS                      0x0822  /* [RFC3212] */
+#define TLV_ROUTE_PINNING                       0x0823  /* [RFC3212] */
+#define TLV_GENERALIZED_LABEL_REQUEST           0x0824  /* [RFC3472] */
+#define TLV_GENERALIZED_LABEL                   0x0825  /* [RFC3472] */
+#define TLV_UPSTREAM_LABEL                      0x0826  /* [RFC3472] */
+#define TLV_LABEL_SET                           0x0827  /* [RFC3472] */
+#define TLV_WAVEBAND_LABEL                      0x0828  /* [RFC3472] */
+#define TLV_ER_HOP                              0x0829  /* [RFC3472] */
+#define TLV_ACCEPTABLE_LABEL_SET                0x082A  /* [RFC3472] */
+#define TLV_ADMIN_STATUS                        0x082B  /* [RFC3472] */
+#define TLV_INTERFACE_ID                        0x082C  /* [RFC3472] */
+#define TLV_IPV4_INTERFACE_ID                   0x082D  /* [RFC3472] */
+#define TLV_IPV6_INTERFACE_ID                   0x082E  /* [RFC3472] */
+#define TLV_IPV4_IF_ID_STATUS                   0x082F  /* [RFC3472] */
+#define TLV_IPV6_IF_ID_STATUS                   0x0830  /* [RFC3472] */
+#define TLV_OP_SP_CALL_ID                       0x0831  /* [RFC3475] */
+#define TLV_GU_CALL_ID                          0x0832  /* [RFC3475] */
+#define TLV_CALL_CAPA                           0x0833  /* [RFC3475] */
+#define TLV_CRANKBACK                           0x0834  /* [RFC3475] */
+#define TLV_PROTECTION                          0x0835  /* [RFC3472] */
+#define TLV_LSP_TUNNEL_INTERFACE_ID             0x0836  /* [RFC3480] */
+#define TLV_UNNUMBERED_INTERFACE_ID             0x0837  /* [RFC3480] */
+#define TLV_SONET_SDH_TRAFFIC_PARAMS            0x0838  /* [RFC4606] */
+#define TLV_DIFF_SERV                           0x0901  /* [RFC3270] */
+#define TLV_HSMP_LSP_CAPA_PARAM                 0x0902  /* [RFC7140] */
+#define TLV_IPV4_SOURCE_ID                      0x0960  /* [RFC3476] */
+#define TLV_IPV6_SOURCE_ID                      0x0961  /* [RFC3476] */
+#define TLV_NSAP_SOURCE_ID                      0x0962  /* [RFC3476] */
+#define TLV_IPV4_DESTINATION_ID                 0x0963  /* [RFC3476] */
+#define TLV_IPV6_DESTINATION_ID                 0x0964  /* [RFC3476] */
+#define TLV_NSAP_DESTINATION_ID                 0x0965  /* [RFC3476] */
+#define TLV_EGRESS_LABEL                        0x0966  /* [RFC3476] */
+#define TLV_LOCAL_CONNECTION_ID                 0x0967  /* [RFC3476] */
+#define TLV_DIVERSITY                           0x0968  /* [RFC3476] */
+#define TLV_CONTRACT_ID                         0x0969  /* [RFC3476] */
+#define TLV_PW_STATUS                           0x096A  /* [RFC8077] */
+#define TLV_PW_INTERFACE_PARAMS                 0x096B  /* [RFC8077] */
+#define TLV_PW_GROUP_ID                         0x096C  /* [RFC8077] */
+#define TLV_PSEUDOWIRE_SWITCHING_POINT_PE       0x096D  /* [RFC6073] */
+#define TLV_BANDWIDTH                           0x096E  /* [RFC7267] */
+#define TLV_LDP_MP_STATUS_TLV_TYPE              0x096F  /* [RFC6388] */
+#define TLV_UNI_SERVICE_LEVEL                   0x0970  /* [RFC3476] */
+#define TLV_QUEUE_REQUEST                       0x0971  /* [RFC7032] */
+#define TLV_MP_NODE_PROTECTION_CAPA             0x0972  /* [RFC7715] */
+#define TLV_PSN_TUNNEL_BINDING                  0x0973  /* [RFC7965] */
+#define TLV_EGRESS_PROTECTION_CAPA              0x0974  /* [RFC8104] */
 
-#define TLV_FEC                       0x0100
-#define TLV_ADDRESS_LIST              0x0101
-#define TLV_HOP_COUNT                 0x0103
-#define TLV_PATH_VECTOR               0x0104
-#define TLV_GENERIC_LABEL             0x0200
-#define TLV_ATM_LABEL                 0x0201
-#define TLV_FRAME_LABEL               0x0202
-#define TLV_FT_PROTECTION             0x0203
-#define TLV_STATUS                    0x0300
-#define TLV_EXTENDED_STATUS           0x0301
-#define TLV_RETURNED_PDU              0x0302
-#define TLV_RETURNED_MESSAGE          0x0303
-#define TLV_COMMON_HELLO_PARMS        0x0400
-#define TLV_IPV4_TRANSPORT_ADDRESS    0x0401
-#define TLV_CONFIGURATION_SEQNO       0x0402
-#define TLV_IPV6_TRANSPORT_ADDRESS    0x0403
-#define TLV_MAC                       0x0404
-#define TLV_COMMON_SESSION_PARMS      0x0500
-#define TLV_ATM_SESSION_PARMS         0x0501
-#define TLV_FRAME_RELAY_SESSION_PARMS 0x0502
-#define TLV_FT_SESSION                0x0503
-#define TLV_FT_ACK                    0x0504
-#define TLV_FT_CORK                   0x0505
-#define TLV_LABEL_REQUEST_MESSAGE_ID  0x0600    /* RFC5036 */
-#define TLV_MTU                       0x0601    /* RFC3988 */
-#define TLV_ER                        0x0800
-#define TLV_ER_HOP_IPV4               0x0801
-#define TLV_ER_HOP_IPV6               0x0802
-#define TLV_ER_HOP_AS                 0x0803
-#define TLV_ER_HOP_LSPID              0x0804
-#define TLV_TRAFFIC_PARAM             0x0810
-#define TLV_PREEMPTION                0x0820
-#define TLV_LSPID                     0x0821
-#define TLV_RESOURCE_CLASS            0x0822
-#define TLV_ROUTE_PINNING             0x0823
-#define TLV_UPSTRM_LBL_ASS_CAP        0x0507
-#define TLV_UPSTRM_ASS_LBL_REQ        0x0205
-#define TLV_UPSTRM_ASS_LBL            0x0204
-#define TLV_IP_MULTICAST_TUNNEL       0x001E
-#define TLV_MPLS_CONTEXT_LBL          0x001F
-#define TLV_LDP_P2MP_LSP              0x001D
-#define TLV_RSVP_TE_P2MP_LSP          0x001C
-/*
-0x0824             Generalized Label Request TLV        [RFC3472]
-0x0825             Generalized Label TLV                [RFC3472]
-0x0826             Upstream Label TLV                   [RFC3472]
-0x0827             Label Set TLV                        [RFC3472]
-0x0828             Waveband Label TLV                   [RFC3472]
-0x0829             ER-Hop TLV                           [RFC3472]
-0x082a             Acceptable Label Set TLV             [RFC3472]
-0x082b             Admin Status TLV                     [RFC3472]
-0x082c             Interface ID TLV                     [RFC3472]
-0x082d             IPV4 Interface ID TLV                [RFC3472]
-0x082e             IPV6 Interface ID TLV                [RFC3472]
-0x082f             IPv4 IF_ID Status TLV                [RFC3472]
-0x0830             IPv6 IF_ID Status TLV                [RFC3472]
-0x0831             Op-Sp Call ID TLV                    [RFC3475]
-0x0832             GU Call ID TLV                       [RFC3475]
-0x0833             Call Capability TLV                  [RFC3475]
-0x0834             Crankback TLV                        [RFC3475]
-0x0835             Protection TLV                       [RFC3472]
-0x0836             LSP_TUNNEL_INTERFACE_ID TLV          [RFC3480]
-0x0837             Unnumbered Interface ID TLV          [RFC3480]
-0x0838             SONET/SDH Traffic Parameters TLV     [RFC4606]
-*/
-#define TLV_IPV4_INTERFACE_ID        0x082D
-#define TLV_DIFFSERV                 0x0901
+/* Not in IANA list */
+#define TLV_RSVP_TE_P2MP_LSP         0x001C
+#define TLV_LDP_P2MP_LSP             0x001D
+#define TLV_IP_MULTICAST_TUNNEL      0x001E
+#define TLV_MPLS_CONTEXT_LBL         0x001F
 #define TLV_VENDOR_PRIVATE_START     0x3E00
 #define TLV_VENDOR_PRIVATE_END       0x3EFF
 #define TLV_EXPERIMENTAL_START       0x3F00
 #define TLV_EXPERIMENTAL_END         0x3FFF
-#define TLV_PW_STATUS                0x096A
-#define TLV_PW_INTERFACE_PARAMETERS  0x096B
-#define TLV_PW_GROUPING              0x096C
 
 static const value_string tlv_type_names[] = {
-    { TLV_FEC,                       "Forwarding Equivalence Classes TLV" },
-    { TLV_ADDRESS_LIST,              "Address List TLV"},
-    { TLV_HOP_COUNT,                 "Hop Count TLV"},
-    { TLV_PATH_VECTOR,               "Path Vector TLV"},
-    { TLV_GENERIC_LABEL,             "Generic Label TLV"},
-    { TLV_ATM_LABEL,                 "ATM Label TLV"},
-    { TLV_FRAME_LABEL,               "Frame Label TLV"},
-    { TLV_FT_PROTECTION,             "FT Protection TLV"},
-    { TLV_STATUS,                    "Status TLV"},
-    { TLV_EXTENDED_STATUS,           "Extended Status TLV"},
-    { TLV_RETURNED_PDU,              "Returned PDU TLV"},
-    { TLV_RETURNED_MESSAGE,          "Returned Message TLV"},
-    { TLV_COMMON_HELLO_PARMS,        "Common Hello Parameters TLV"},
-    { TLV_IPV4_TRANSPORT_ADDRESS,    "IPv4 Transport Address TLV"},
-    { TLV_CONFIGURATION_SEQNO,       "Configuration Sequence Number TLV"},
-    { TLV_IPV6_TRANSPORT_ADDRESS,    "IPv6 Transport Address TLV"},
-    { TLV_MAC,                       "MAC TLV"},
-    { TLV_COMMON_SESSION_PARMS,      "Common Session Parameters TLV"},
-    { TLV_ATM_SESSION_PARMS,         "ATM Session Parameters TLV"},
-    { TLV_FRAME_RELAY_SESSION_PARMS, "Frame Relay Session Parameters TLV"},
-    { TLV_FT_SESSION,                "FT Session TLV"},
-    { TLV_FT_ACK,                    "FT ACK TLV"},
-    { TLV_FT_CORK,                   "FT Cork TLV"},
-    { TLV_LABEL_REQUEST_MESSAGE_ID,  "Label Request Message ID TLV"},
-    { TLV_MTU,                       "MTU TLV"},
-    { TLV_LSPID,                     "LSP ID TLV"},
-    { TLV_ER,                        "Explicit route TLV"},
-    { TLV_ER_HOP_IPV4,               "ER hop IPv4 prefix TLV"},
-    { TLV_ER_HOP_IPV6,               "ER hop IPv6 prefix TLV"},
-    { TLV_ER_HOP_AS,                 "ER hop Autonomous system number prefix TLV"},
-    { TLV_TRAFFIC_PARAM,             "Traffic parameters TLV"},
-    { TLV_PREEMPTION,                "Preemption TLV"},
-    { TLV_ER_HOP_LSPID,              "ER hop LSPID prefix TLV"},
-    { TLV_RESOURCE_CLASS,            "Resource Class (Color) TLV"},
-    { TLV_ROUTE_PINNING,             "Route Pinning TLV"},
-    { 0x0824,                        "Generalized Label Request TLV"},        /* RFC3472 */
-    { 0x0825,                        "Generalized Label TLV"},                /* RFC3472 */
-    { 0x0826,                        "Upstream Label TLV"},                   /* RFC3472 */
-    { 0x0827,                        "Label Set TLV"},                        /* RFC3472 */
-    { 0x0828,                        "Waveband Label TLV"},                   /* RFC3472 */
-    { 0x0829,                        "ER-Hop TLV"},                           /* RFC3472 */
-    { 0x082a,                        "Acceptable Label Set TLV"},             /* RFC3472 */
-    { 0x082b,                        "Admin Status TLV"},                     /* RFC3472 */
-    { 0x082c,                        "Interface ID TLV"},                     /* RFC3472 */
-    { TLV_IPV4_INTERFACE_ID,         "IPV4 Interface ID TLV"},                /* RFC3472 */
-    { 0x082e,                        "IPV6 Interface ID TLV"},                /* RFC3472 */
-    { 0x082f,                        "IPv4 IF_ID Status TLV"},                /* RFC3472 */
-    { 0x0830,                        "IPv6 IF_ID Status TLV"},                /* RFC3472 */
-    { 0x0831,                        "Op-Sp Call ID TLV"},                    /* RFC3475 */
-    { 0x0832,                        "GU Call ID TLV"},                       /* RFC3475 */
-    { 0x0833,                        "Call Capability TLV"},                  /* RFC3475 */
-    { 0x0834,                        "Crankback TLV"},                        /* RFC3475 */
-    { 0x0835,                        "Protection TLV"},                       /* RFC3472 */
-    { 0x0836,                        "LSP_TUNNEL_INTERFACE_ID TLV"},          /* RFC3480 */
-    { 0x0837,                        "Unnumbered Interface ID TLV"},          /* RFC3480 */
-    { 0x0838,                        "SONET/SDH Traffic Parameters TLV"},     /* RFC4606]*/
-    { 0x0960,                        "IPv4 Source ID TLV"},                   /*[RFC3476]*/
-    { 0x0961,                        "IPv6 Source ID TLV"},                   /*[RFC3476]*/
-    { 0x0962,                        "NSAP Source ID TLV"},                   /*[RFC3476]*/
-    { 0x0963,                        "IPv4 Destination ID TLV"},              /*[RFC3476]*/
-    { 0x0964,                        "IPv6 Destination ID TLV"},              /*[RFC3476]*/
-    { 0x0965,                        "NSAP Destination ID TLV"},              /*[RFC3476]*/
-    { 0x0966,                        "Egress Label TLV"},                     /*[RFC3476]*/
-    { 0x0967,                        "Local Connection ID TLV"},              /*[RFC3476]*/
-    { 0x0968,                        "Diversity TLV"},                        /*[RFC3476]*/
-    { 0x0969,                        "Contract ID TLV"},                      /*[RFC3476]*/
-    { TLV_PW_STATUS,                 "PW Status TLV"},                        /*[RFC4447]*/
-    { TLV_PW_INTERFACE_PARAMETERS,   "PW Interface Parameters TLV"},          /*[RFC4447]*/
-    { TLV_PW_GROUPING,               "Group ID TLV"},                         /*[RFC4447]*/
-    { 0x096E,                        "Bandwidth TLV"},                        /*[draft-ietf-pwe3-dynamic-ms-pw](TEMPORARY - Expires 2008-11-21)*/
-    { 0x0970,                        "UNI Service Level TLV"},                /*[RFC3476]*/
-    { TLV_DIFFSERV,                  "Diff-Serv TLV"},
-    { TLV_VENDOR_PRIVATE_START,      "Vendor Private TLV"},
-    { TLV_EXPERIMENTAL_START,        "Experimental TLV"},
-    { TLV_UPSTRM_LBL_ASS_CAP,        "LDP Upstream Label Assignment Capability TLV"},
-    { TLV_UPSTRM_ASS_LBL_REQ,        "Upstream-Assigned Label Request TLV"},
-    { TLV_UPSTRM_ASS_LBL,            "Upstream-Assigned Label TLV"},
-    { TLV_IP_MULTICAST_TUNNEL,       "IP Multicast Tunnel TLV"},
-    { TLV_MPLS_CONTEXT_LBL,          "MPLS Context Label TLV"},
-    { TLV_LDP_P2MP_LSP,              "LDP P2MP LSP TLV"},
-    { TLV_RSVP_TE_P2MP_LSP,          "RSVP-TE P2MP LSP TLV"},
+    { TLV_SEQUENCE_NUMBER,                     "Sequence Number TLV"                    },
+    { TLV_FEC,                                 "FEC"                                    },
+    { TLV_ADDRESS_LIST,                        "Address List"                           },
+    { TLV_HOP_COUNT,                           "Hop Count"                              },
+    { TLV_PATH_VECTOR,                         "Path Vector"                            },
+    { TLV_GENERIC_LABEL,                       "Generic Label"                          },
+    { TLV_ATM_LABEL,                           "ATM Label"                              },
+    { TLV_FRAME_RELAY_LABEL,                   "Frame Relay Label"                      },
+    { TLV_FT_PROTECTION,                       "FT Protection TLV"                      },
+    { TLV_LDP_UPSTREAM_ASSIGNED_LABEL,         "LDP Upstream-Assigned Label TLV"        },
+    { TLV_LDP_UPSTREAM_ASSIGNED_LABEL_REQUEST, "LDP Upstream-Assigned Label Request TLV" },
+    { TLV_ENTROPY_LABEL_CAPA,                  "Entropy Label Capability TLV"           },
+    { TLV_STATUS,                              "Status"                                 },
+    { TLV_EXTENDED_STATUS,                     "Extended Status"                        },
+    { TLV_RETURNED_PDU,                        "Returned PDU"                           },
+    { TLV_RETURNED_MESSAGE,                    "Returned Message"                       },
+    { TLV_RETURNED_TLVS,                       "Returned TLVs"                          },
+    { TLV_COMMON_HELLO_PARAMS,                 "Common Hello Parameters"                },
+    { TLV_IPV4_TRANSPORT_ADDRESS,              "IPv4 Transport Address"                 },
+    { TLV_CONFIGURATION_SEQUENCE_NUMBER,       "Configuration Sequence Number"          },
+    { TLV_IPV6_TRANSPORT_ADDRESS,              "IPv6 Transport Address"                 },
+    { TLV_MAC,                                 "MAC TLV"                                },
+    { TLV_CRYPTOGRAPHIC_AUTHENTICATION,        "Cryptographic Authentication TLV"       },
+    { TLV_MAC_FLUSH_PARAMS,                    "MAC Flush Parameters TLV"               },
+    { TLV_PBB_B_MAC_LIST_SUB,                  "PBB B-MAC List Sub-TLV"                 },
+    { TLV_PBB_I_SID_LIST_SUB,                  "PBB I-SID List Sub-TLV"                 },
+    { TLV_COMMON_SESSION_PARAMS,               "Common Session Parameters"              },
+    { TLV_ATM_SESSION_PARAMS,                  "ATM Session Parameters"                 },
+    { TLV_FRAME_RELAY_SESSION_PARAMS,          "Frame Relay Session Parameters"         },
+    { TLV_FT_SESSION,                          "FT Session TLV"                         },
+    { TLV_FT_ACK,                              "FT Ack TLV"                             },
+    { TLV_FT_CORK,                             "FT Cork TLV"                            },
+    { TLV_DYNAMIC_CAPA_ANNOUNCEMENT,           "Dynamic Capability Announcement"        },
+    { TLV_LDP_UPSTREAM_LABEL_ASSIGNMENT_CAPA,  "LDP Upstream Label Assignment Capability TLV" },
+    { TLV_P2MP_CAPA_PARAM,                     "P2MP Capability Parameter"              },
+    { TLV_MP2MP_CAPA_PARAM,                    "MP2MP Capability Parameter"             },
+    { TLV_MBB_CAPA_PARAM,                      "MBB Capability Parameter"               },
+    { TLV_TYPED_WILDCARD_FEC_CAPA,             "Typed Wildcard FEC Capability"          },
+    { TLV_MULTI_TOPOLOGY_CAPA,                 "Multi-Topology Capability"              },
+    { TLV_STATE_ADVERTISEMENT_CONTROL_CAPA,    "State Advertisement Control Capability" },
+    { TLV_TARGETED_APPLICATION_CAPA,           "Targeted Application Capability"        },
+    { TLV_MT_MULTIPOINT_CAPA,                  "MT Multipoint Capability"               },
+    { TLV_LABEL_REQUEST_MESSAGE_ID,            "Label Request Message ID"               },
+    { TLV_MTU,                                 "MTU TLV"                                },
+    { TLV_UNRECOGNIZED_NOTIFICATION_CAPA,      "Unrecognized Notification Capability"   },
+    { TLV_ICCP_CAPA,                           "ICCP capability TLV"                    },
+    { TLV_DUAL_STACK_CAPA,                     "Dual-Stack capability"                  },
+    { TLV_P2MP_PW_CAPA,                        "P2MP PW Capability"                     },
+    { TLV_EXPLICIT_ROUTE,                      "Explicit Route TLV"                     },
+    { TLV_IPV4_PREFIX_ER_HOP,                  "Ipv4 Prefix ER-Hop TLV"                 },
+    { TLV_IPV6_PREFIX_ER_HOP,                  "Ipv6 Prefix ER-Hop TLV"                 },
+    { TLV_AUTONOMOUS_SYSTEM_NUMBER_ER_HOP,     "Autonomous System Number ER-Hop TLV"    },
+    { TLV_LSP_ID_ER_HOP,                       "LSP-ID ER-HOP TLV"                      },
+    { TLV_L2_PW_ADDRESS_OF_SWITCHING_POINT,    "L2 PW Address of Switching Point"       },
+    { TLV_TRAFFIC_PARAMS,                      "Traffic Parameters TLV"                 },
+    { TLV_PREEMPTION,                          "Preemption TLV"                         },
+    { TLV_LSPID,                               "LSPID TLV"                              },
+    { TLV_RESOURCE_CLASS,                      "Resource Class TLV"                     },
+    { TLV_ROUTE_PINNING,                       "Route Pinning TLV"                      },
+    { TLV_GENERALIZED_LABEL_REQUEST,           "Generalized Label Request TLV"          },
+    { TLV_GENERALIZED_LABEL,                   "Generalized Label TLV"                  },
+    { TLV_UPSTREAM_LABEL,                      "Upstream Label TLV"                     },
+    { TLV_LABEL_SET,                           "Label Set TLV"                          },
+    { TLV_WAVEBAND_LABEL,                      "Waveband Label TLV"                     },
+    { TLV_ER_HOP,                              "ER-Hop TLV"                             },
+    { TLV_ACCEPTABLE_LABEL_SET,                "Acceptable Label Set TLV"               },
+    { TLV_ADMIN_STATUS,                        "Admin Status TLV"                       },
+    { TLV_INTERFACE_ID,                        "Interface ID TLV"                       },
+    { TLV_IPV4_INTERFACE_ID,                   "IPV4 Interface ID TLV"                  },
+    { TLV_IPV6_INTERFACE_ID,                   "IPV6 Interface ID TLV"                  },
+    { TLV_IPV4_IF_ID_STATUS,                   "IPv4 IF_ID Status TLV"                  },
+    { TLV_IPV6_IF_ID_STATUS,                   "IPv6 IF_ID Status TLV"                  },
+    { TLV_OP_SP_CALL_ID,                       "Op-Sp Call ID TLV"                      },
+    { TLV_GU_CALL_ID,                          "GU Call ID TLV"                         },
+    { TLV_CALL_CAPA,                           "Call Capability TLV"                    },
+    { TLV_CRANKBACK,                           "Crankback TLV"                          },
+    { TLV_PROTECTION,                          "Protection TLV"                         },
+    { TLV_LSP_TUNNEL_INTERFACE_ID,             "LSP_TUNNEL_INTERFACE_ID TLV"            },
+    { TLV_UNNUMBERED_INTERFACE_ID,             "Unnumbered Interface ID TLV"            },
+    { TLV_SONET_SDH_TRAFFIC_PARAMS,            "SONET/SDH Traffic Parameters TLV"       },
+    { TLV_DIFF_SERV,                           "Diff-Serv TLV"                          },
+    { TLV_HSMP_LSP_CAPA_PARAM,                 "HSMP LSP Capability Parameter"          },
+    { TLV_IPV4_SOURCE_ID,                      "IPv4 Source ID TLV"                     },
+    { TLV_IPV6_SOURCE_ID,                      "IPv6 Source ID TLV"                     },
+    { TLV_NSAP_SOURCE_ID,                      "NSAP Source ID TLV"                     },
+    { TLV_IPV4_DESTINATION_ID,                 "IPv4 Destination ID TLV"                },
+    { TLV_IPV6_DESTINATION_ID,                 "IPv6 Destination ID TLV"                },
+    { TLV_NSAP_DESTINATION_ID,                 "NSAP Destination ID TLV"                },
+    { TLV_EGRESS_LABEL,                        "Egress Label TLV"                       },
+    { TLV_LOCAL_CONNECTION_ID,                 "Local Connection ID TLV"                },
+    { TLV_DIVERSITY,                           "Diversity TLV"                          },
+    { TLV_CONTRACT_ID,                         "Contract ID TLV"                        },
+    { TLV_PW_STATUS,                           "PW Status TLV"                          },
+    { TLV_PW_INTERFACE_PARAMS,                 "PW Interface Parameters TLV"            },
+    { TLV_PW_GROUP_ID,                         "PW Group ID TLV"                        },
+    { TLV_PSEUDOWIRE_SWITCHING_POINT_PE,       "Pseudowire Switching Point PE TLV"      },
+    { TLV_BANDWIDTH,                           "Bandwidth TLV"                          },
+    { TLV_LDP_MP_STATUS_TLV_TYPE,              "LDP MP Status TLV Type"                 },
+    { TLV_UNI_SERVICE_LEVEL,                   "UNI Service Level TLV"                  },
+    { TLV_QUEUE_REQUEST,                       "Queue Request TLV"                      },
+    { TLV_MP_NODE_PROTECTION_CAPA,             "MP Node Protection Capability"          },
+    { TLV_PSN_TUNNEL_BINDING,                  "PSN Tunnel Binding TLV"                 },
+    { TLV_EGRESS_PROTECTION_CAPA,              "Egress Protection Capability"           },
+
+    { TLV_RSVP_TE_P2MP_LSP,                    "RSVP-TE P2MP LSP TLV"                   },
+    { TLV_LDP_P2MP_LSP,                        "LDP P2MP LSP TLV"                       },
+    { TLV_IP_MULTICAST_TUNNEL,                 "IP Multicast Tunnel TLV"                },
+
     { 0, NULL}
 };
 
 /*
- * The following define all the message types I know about
+ * https://www.iana.org/assignments/ldp-namespaces
  */
 
-#define LDP_NOTIFICATION                0x0001
-#define LDP_HELLO                       0x0100
-#define LDP_INITIALIZATION              0x0200
-#define LDP_KEEPALIVE                   0x0201
-#define LDP_ADDRESS                     0x0300
-#define LDP_ADDRESS_WITHDRAWAL          0x0301
-#define LDP_LABEL_MAPPING               0x0400
-#define LDP_LABEL_REQUEST               0x0401
-#define LDP_LABEL_WITHDRAWAL            0x0402
-#define LDP_LABEL_RELEASE               0x0403
-#define LDP_LABEL_ABORT_REQUEST         0x0404
+#define LDP_NOTIFICATION                0x0001  /* [RFC5036] */
+#define LDP_HELLO                       0x0100  /* [RFC5036] */
+#define LDP_INITIALIZATION              0x0200  /* [RFC5036] */
+#define LDP_KEEPALIVE                   0x0201  /* [RFC5036] */
+#define LDP_CAPABILITY                  0x0202  /* [RFC5561] */
+#define LDP_ADDRESS                     0x0300  /* [RFC5036] */
+#define LDP_ADDRESS_WITHDRAWAL          0x0301  /* [RFC5036] */
+#define LDP_LABEL_MAPPING               0x0400  /* [RFC5036] */
+#define LDP_LABEL_REQUEST               0x0401  /* [RFC5036] */
+#define LDP_LABEL_WITHDRAWAL            0x0402  /* [RFC5036] */
+#define LDP_LABEL_RELEASE               0x0403  /* [RFC5036] */
+#define LDP_LABEL_ABORT_REQUEST         0x0404  /* [RFC5036] */
+#define LDP_CALL_SETUP                  0x0500  /* [RFC3475] */
+#define LDP_CALL_RELEASE                0x0501  /* [RFC3475] */
+#define LDP_RG_CONNECT_MESSAGE          0x0700  /* [RFC7275] */
+#define LDP_RG_DISCONNECT_MESSAGE       0x0701  /* [RFC7275] */
+#define LDP_RG_NOTIFICATION_MESSAGE     0x0702  /* [RFC7275] */
+#define LDP_RG_APPLICATION_DATA_MESSAGE 0x0703  /* [RFC7275] */
 #define LDP_VENDOR_PRIVATE_START        0x3E00
 #define LDP_VENDOR_PRIVATE_END          0x3EFF
 #define LDP_EXPERIMENTAL_MESSAGE_START  0x3F00
 #define LDP_EXPERIMENTAL_MESSAGE_END    0x3FFF
 
 static const value_string ldp_message_types[] = {
-    {LDP_NOTIFICATION,               "Notification Message"},
-    {LDP_HELLO,                      "Hello Message"},
-    {LDP_INITIALIZATION,             "Initialization Message"},
-    {LDP_KEEPALIVE,                  "Keep Alive Message"},
-    {LDP_ADDRESS,                    "Address Message"},
-    {LDP_ADDRESS_WITHDRAWAL,         "Address Withdrawal Message"},
-    {LDP_LABEL_MAPPING,              "Label Mapping Message"},
-    {LDP_LABEL_REQUEST,              "Label Request Message"},
-    {LDP_LABEL_WITHDRAWAL,           "Label Withdrawal Message"},
-    {LDP_LABEL_RELEASE,              "Label Release Message"},
-    {LDP_LABEL_ABORT_REQUEST,        "Label Abort Request Message"},
-    {LDP_VENDOR_PRIVATE_START,       "Vendor-Private Message"},
-    {LDP_EXPERIMENTAL_MESSAGE_START, "Experimental Message"},
+    {LDP_NOTIFICATION,                 "Notification Message"},
+    {LDP_HELLO,                        "Hello Message"},
+    {LDP_INITIALIZATION,               "Initialization Message"},
+    {LDP_KEEPALIVE,                    "Keep Alive Message"},
+    {LDP_CAPABILITY,                   "Capability Message"},
+    {LDP_ADDRESS,                      "Address Message"},
+    {LDP_ADDRESS_WITHDRAWAL,           "Address Withdrawal Message"},
+    {LDP_LABEL_MAPPING,                "Label Mapping Message"},
+    {LDP_LABEL_REQUEST,                "Label Request Message"},
+    {LDP_LABEL_WITHDRAWAL,             "Label Withdrawal Message"},
+    {LDP_LABEL_RELEASE,                "Label Release Message"},
+    {LDP_LABEL_ABORT_REQUEST,          "Label Abort Request Message"},
+    {LDP_CALL_SETUP,                   "Call Setup Message"},
+    {LDP_CALL_RELEASE,                 "Call Release Message"},
+    {LDP_RG_CONNECT_MESSAGE,           "RG Connect Message"},
+    {LDP_RG_DISCONNECT_MESSAGE,        "RG Disconnect Message"},
+    {LDP_RG_NOTIFICATION_MESSAGE,      "RG Notification Message"},
+    {LDP_RG_APPLICATION_DATA_MESSAGE,  "RG Application Data Message"},
+    {LDP_VENDOR_PRIVATE_START,         "Vendor-Private Message"},
+    {LDP_EXPERIMENTAL_MESSAGE_START,   "Experimental Message"},
     {0, NULL}
 };
 
@@ -568,35 +642,55 @@ static const value_string tlv_unknown_vals[] = {
     {0, NULL}
 };
 
-#define WILDCARD_FEC    1
-#define PREFIX_FEC      2
-#define HOST_FEC        3
-#define CRLSP_FEC       4
-#define VC_FEC          0x80    /* draft-martini-l2circuit-trans-mpls */
-#define GEN_FEC         0x81
-#define P2MP_FEC        0x06
-#define MP2MP_FEC_UP    0x07
-#define MP2MP_FEC_DOWN  0x08
+#define WILDCARD_FEC                  0x01    /* [RFC5036][RFC7358] */
+#define PREFIX_FEC                    0x02    /* [RFC5036][RFC7358] */
+#define HOST_FEC                      0x03    /* "Unassigned" according to IANA */
+#define CRLSP_FEC                     0x04    /* [RFC3212][RFC7358] */
+#define TYPED_WILDCARD_FEC            0x05    /* [RFC5918][RFC7358] */
+#define P2MP_FEC                      0x06    /* [RFC6388][RFC7358] */
+#define MP2MP_FEC_UP                  0x07    /* [RFC6388][RFC7358] */
+#define MP2MP_FEC_DOWN                0x08    /* [RFC6388][RFC7358] */
+#define HSMP_UPSTREAM                 0x09    /* [RFC7140][RFC7358] */
+#define HSMP_DOWNSTREAM               0x0A    /* [RFC7140][RFC7358] */
+#define PWID_FEC_ELEMENT              0x80    /* [RFC8077][RFC7358] */
+#define GENERALIZED_PWID_FEC          0x81    /* [RFC8077][RFC7358] */
+#define P2MP_PW_UPSTREAM_FEC          0x82    /* [RFC8338][RFC7358] */
+#define PROTECTION_FEC                0x83    /* [RFC8104][RFC7358] */
+#define P2MP_PW_DOWNSTREAM_FEC        0x84    /* [RFC8338][RFC7358] */
 
 const value_string fec_types_vals[] = {
-  {WILDCARD_FEC,        "Wildcard FEC"},
-  {PREFIX_FEC,          "Prefix FEC"},
-  {HOST_FEC,            "Host Address FEC"},
-  {CRLSP_FEC,           "CR LSP FEC"},
-  {VC_FEC,              "Virtual Circuit FEC"},
-  {GEN_FEC,             "Generalized PWid FEC"},
-  {P2MP_FEC,            "P2MP FEC"},
-  {MP2MP_FEC_UP,        "MP2MP FEC upstream"},
-  {MP2MP_FEC_DOWN,      "MP2MP FEC Downstream"},
+  {WILDCARD_FEC,                      "Wildcard FEC"},
+  {PREFIX_FEC,                        "Prefix FEC"},
+  {HOST_FEC,                          "Host Address FEC"},
+  {CRLSP_FEC,                         "CR LSP FEC"},
+  {TYPED_WILDCARD_FEC,                "Typed Wildcard FEC Element"},
+  {P2MP_FEC,                          "P2MP"},
+  {MP2MP_FEC_UP,                      "MP2MP-up"},
+  {MP2MP_FEC_DOWN,                    "MP2MP-down"},
+  {HSMP_UPSTREAM,                     "HSMP-upstream"},
+  {HSMP_DOWNSTREAM,                   "HSMP-downstream"},
+  {PWID_FEC_ELEMENT,                  "PWid FEC Element"},
+  {GENERALIZED_PWID_FEC,              "Generalized PWid FEC Element"},
+  {P2MP_PW_UPSTREAM_FEC,              "P2MP PW Upstream FEC Element"},
+  {PROTECTION_FEC,                    "Protection FEC Element"},
+  {P2MP_PW_DOWNSTREAM_FEC,            "P2MP PW Downstream FEC Element"},
+
   {0, NULL}
 };
 
 
+/*
+ * MPLS Pseudowire Types
+ *
+ * RFC 4446
+ *
+ * https://www.iana.org/assignments/pwe3-parameters/pwe3-parameters.xhtml#pwe3-parameters-2
+ */
 const value_string fec_vc_types_vals[] = {
-    {0x0001, "Frame Relay DLCI"},
+    {0x0001, "Frame Relay DLCI (Martini Mode)"},
     {0x0002, "ATM AAL5 SDU VCC transport"},
     {0x0003, "ATM transparent cell transport"},
-    {0x0004, "Ethernet VLAN"},
+    {0x0004, "Ethernet Tagged Mode"},
     {0x0005, "Ethernet"},
     {0x0006, "HDLC"},
     {0x0007, "PPP"},
@@ -614,9 +708,17 @@ const value_string fec_vc_types_vals[] = {
     {0x0013, "Structure-agnostic E3 over Packet"},
     {0x0014, "Structure-agnostic T3 (DS3) over Packet"},
     {0x0015, "CESoPSN basic mode"},
-    {0x0016, "TDMoIP basic mode"},
+    {0x0016, "TDMoIP AAL1 Mode"},
     {0x0017, "CESoPSN TDM with CAS"},
-    {0x0018, "TDMoIP TDM with CAS"},
+    {0x0018, "TDMoIP AAL2 Mode"},
+    {0x0019, "Frame Relay DLCI"},
+    {0x001A, "ROHC Transport Header-compressed Packets"},
+    {0x001B, "ECRTP Transport Header-compressed Packets"},
+    {0x001C, "IPHC Transport Header-compressed Packets"},
+    {0x001D, "cRTP Transport Header-compressed Packets"},
+    {0x001E, "ATM VP Virtual Trunk"},
+    {0x001F, "FC Port Mode"},
+
     {0, NULL}
 };
 
@@ -656,10 +758,21 @@ static const true_false_string fec_vc_tdmopt_f = {
 #define FEC_VC_INTERFACEPARAM_FCSRETENT    0x0A
 #define FEC_VC_INTERFACEPARAM_TDMOPTION    0x0B
 #define FEC_VC_INTERFACEPARAM_VCCV         0x0C
+#define FEC_VC_INTERFACEPARAM_ROHCOMPLS    0x0D
+#define FEC_VC_INTERFACEPARAM_TDMOIPAAL1C  0x0E
+#define FEC_VC_INTERFACEPARAM_CEIOMPLS     0x0F
+#define FEC_VC_INTERFACEPARAM_TDMOIPAAL1   0x10
+#define FEC_VC_INTERFACEPARAM_TDMOIPAAL2   0x11
+#define FEC_VC_INTERFACEPARAM_STACK        0x16
 #define FEC_VC_INTERFACEPARAM_FLOWLABEL    0x17
+#define FEC_VC_INTERFACEPARAM_PWGENFLAGS   0x18
+#define FEC_VC_INTERFACEPARAM_VCCVEXTCV    0x19
+#define FEC_VC_INTERFACEPARAM_ETREE        0x1A
+#define FEC_VC_INTERFACEPARAM_ZTEPRIVATE   0xFD
+
 
 static const value_string fec_vc_interfaceparm[] = {
-  {FEC_VC_INTERFACEPARAM_MTU,           "MTU"},
+  {FEC_VC_INTERFACEPARAM_MTU,           "Interface MTU"},
   {FEC_VC_INTERFACEPARAM_MAXCATMCELLS,  "Max Concatenated ATM cells"},
   {FEC_VC_INTERFACEPARAM_DESCRIPTION,   "Interface Description"},
   {FEC_VC_INTERFACEPARAM_CEPBYTES,      "CEP/TDM Payload Bytes"},
@@ -671,7 +784,18 @@ static const value_string fec_vc_interfaceparm[] = {
   {FEC_VC_INTERFACEPARAM_FCSRETENT,     "FCS retention indicator"},
   {FEC_VC_INTERFACEPARAM_TDMOPTION,     "TDM options"},
   {FEC_VC_INTERFACEPARAM_VCCV,          "VCCV"},
+  {FEC_VC_INTERFACEPARAM_ROHCOMPLS,     "ROHC over MPLS configuration"},
+  {FEC_VC_INTERFACEPARAM_TDMOIPAAL1C,   "TDMoIP AAL1 cells per packet"},
+  {FEC_VC_INTERFACEPARAM_CEIOMPLS,      "CRTP/ECRTP/IPHC HC over MPLS configuration"},
+  {FEC_VC_INTERFACEPARAM_TDMOIPAAL1,    "TDMoIP AAL1 mode"},
+  {FEC_VC_INTERFACEPARAM_TDMOIPAAL2,    "TDMoIP AAL2 Options"},
+  {FEC_VC_INTERFACEPARAM_STACK,         "Stack capability"},
   {FEC_VC_INTERFACEPARAM_FLOWLABEL,     "Flow Label"},
+  {FEC_VC_INTERFACEPARAM_PWGENFLAGS,    "PW Generic Protocol Flags"},
+  {FEC_VC_INTERFACEPARAM_VCCVEXTCV,     "VCCV Extended CV Parameter"},
+  {FEC_VC_INTERFACEPARAM_ETREE,         "E-Tree"},
+  {FEC_VC_INTERFACEPARAM_ZTEPRIVATE,    "Zte optional Supplier private interface parameters"},
+
   {0, NULL},
 };
 
@@ -679,13 +803,6 @@ static const true_false_string fec_vc_cbit = {
     "Control Word Present",
     "Control Word NOT Present"
 };
-
-#if 0
-static const true_false_string fec_vc_ = {
-    "Control Word Present",
-    "Control Word NOT Present"
-};
-#endif
 
 static const value_string tlv_atm_merge_vals[] = {
     {0, "Merge not supported"},
@@ -831,58 +948,115 @@ static const true_false_string tlv_status_fbit = {
 };
 
 static const value_string tlv_status_data[] = {
-    { 0, "Success"},
-    { 1, "Bad LDP Identifier"},
-    { 2, "Bad Protocol Version"},
-    { 3, "Bad PDU Length"},
-    { 4, "Unknown Message Type"},
-    { 5, "Bad Message Length"},
-    { 6, "Unknown TLV"},
-    { 7, "Bad TLV Length"},
-    { 8, "Malformed TLV Value"},
-    { 9, "Hold Timer Expired"},
-    {10, "Shutdown"},
-    {11, "Loop Detected"},
-    {12, "Unknown FEC"},
-    {13, "No Route"},
-    {14, "No Label Resources"},
-    {15, "Label Resources / Available"},
-    {16, "Session Rejected / No Hello"},
-    {17, "Session Rejected / Parameters Advertisement Mode"},
-    {18, "Session Rejected / Parameters Max PDU Length"},
-    {19, "Session Rejected / Parameters Label Range"},
-    {20, "KeepAlive Timer Expired"},
-    {21, "Label Request Aborted"},
-    {22, "Missing Message Parameters"},
-    {23, "Unsupported Address Family"},
-    {24, "Session Rejected / Bad KeepAlive Time"},
-    {25, "Internal Error"},
-    {26, "No LDP Session"},
-    {27, "Zero FT seqnum"},
-    {28, "Unexpected TLV / Session Not FT"},
-    {29, "Unexpected TLV / Label Not FT"},
-    {30, "Missing FT Protection TLV"},
-    {31, "FT ACK sequence error"},
-    {32, "Temporary Shutdown"},
-    {33, "FT Seq Numbers Exhausted"},
-    {34, "FT Session parameters / changed"},
-    {35, "Unexpected FT Cork TLV"},
-    {0x01000001, "Unexpected Diff-Serv TLV"},
-    {0x01000002, "Unsupported PHB"},
-    {0x01000003, "Invalid EXP<->PHB Mapping"},
-    {0x01000004, "Unsupported PSC"},
-    {0x01000005, "Per-LSP context allocation failure"},
-    {0x04000001, "Bad Explicit Routing TLV Error"},
-    {0x04000002, "Bad Strict Node Error"},
-    {0x04000003, "Bad Strict Node Error"},
-    {0x04000004, "Bad Initial ER-Hop Error"},
-    {0x04000005, "Resource Unavailable"},
-    {0x04000006, "Traffic Parameters Unavailable"},
-    {0x04000007, "LSP Preempted"},
-    {0x04000008, "Modify Request Not Supported"},
-    {0x20000001, "Illegal C-Bit"},
-    {0x20000002, "Wrong C-Bit"},
-    {0x00000028,  "PW status"},
+    { 0x00000000, "Success"                                },
+    { 0x00000001, "Bad LDP Identifier"                     },
+    { 0x00000002, "Bad Protocol Version"                   },
+    { 0x00000003, "Bad PDU Length"                         },
+    { 0x00000004, "Unknown Message Type"                   },
+    { 0x00000005, "Bad Message Length"                     },
+    { 0x00000006, "Unknown TLV"                            },
+    { 0x00000007, "Bad TLV Length"                         },
+    { 0x00000008, "Malformed TLV Value"                    },
+    { 0x00000009, "Hold Timer Expired"                     },
+    { 0x0000000A, "Shutdown"                               },
+    { 0x0000000B, "Loop Detected"                          },
+    { 0x0000000C, "Unknown FEC"                            },
+    { 0x0000000D, "No Route"                               },
+    { 0x0000000E, "No Label Resources"                     },
+    { 0x0000000F, "Label Resources/Available"              },
+    { 0x00000010, "Session Rejected/No Hello"              },
+    { 0x00000011, "Session Rejected/Parameters Advertisement Mode" },
+    { 0x00000012, "Session Rejected/Parameters Max PDU Length" },
+    { 0x00000013, "Session Rejected/Parameters Label Range" },
+    { 0x00000014, "KeepAlive Timer Expired"                },
+    { 0x00000015, "Label Request Aborted"                  },
+    { 0x00000016, "Missing Message Parameters"             },
+    { 0x00000017, "Unsupported Address Family"             },
+    { 0x00000018, "Session Rejected/Bad KeepAlive Time"    },
+    { 0x00000019, "Internal Error"                         },
+    { 0x0000001A, "No LDP Session"                         },
+    { 0x0000001B, "Zero FT seqnum"                         },
+    { 0x0000001C, "Unexpected TLV / Session Not FT"        },
+    { 0x0000001D, "Unexpected TLV / Label Not FT"          },
+    { 0x0000001E, "Missing FT Protection TLV"              },
+    { 0x0000001F, "FT ACK sequence error"                  },
+    { 0x00000020, "Temporary Shutdown"                     },
+    { 0x00000021, "FT Seq Numbers Exhausted"               },
+    { 0x00000022, "FT Session parameters / changed"        },
+    { 0x00000023, "Unexpected FT Cork TLV"                 },
+    { 0x00000024, "Illegal C-Bit"                          },
+    { 0x00000025, "Wrong C-Bit"                            },
+    { 0x00000026, "Incompatible bit-rate"                  },
+    { 0x00000027, "CEP-TDM mis-configuration"              },
+    { 0x00000028, "PW Status"                              },
+    { 0x0000002A, "Generic Misconfiguration Error"         },
+    { 0x0000002B, "Label Withdraw PW Status Method Not Supported" },
+    { 0x0000002C, "IP Address of CE"                       },
+    { 0x0000002D, "Attachment Circuit bound to different remote Attachment Circuit" },
+    { 0x0000002E, "Unsupported Capability"                 },
+    { 0x0000002F, "End-of-LIB"                             },
+    { 0x00000030, "Attachment Circuit bound to different PE" },
+    { 0x00000031, "Invalid Topology ID"                    },
+    { 0x00000032, "Transport Connection Mismatch"          },
+    { 0x00000033, "Dual-Stack Noncompliance"               },
+    { 0x00000034, "MRT Capability negotiated without MT Capability" },
+    { 0x00000035, "VCCV Type Error"                        },
+    { 0x00000037, "Bandwidth resources unavailable"        },
+    { 0x00000038, "Resources Unavailable"                  },
+    { 0x00000039, "AII Unreachable"                        },
+    { 0x0000003A, "PW Loop Detected"                       },
+    { 0x0000003B, "Reject - unable to use the suggested tunnel/LSPs" },
+    { 0x0000003C, "The C-bit or S-bit unknown"             },
+    { 0x00000040, "LDP MP status"                          },
+    { 0x0000004A, "IP Address Type Mismatch"               },
+    { 0x0000004B, "Wrong IP Address Type"                  },
+    { 0x0000004C, "Session Rejected/Targeted Application Capability Mismatch" },
+    { 0x00010001, "Unknown ICCP RG"                        },
+    { 0x00010002, "ICCP Connection Count Exceeded"         },
+    { 0x00010003, "ICCP Application Connection Count Exceeded" },
+    { 0x00010004, "ICCP Application not in RG"             },
+    { 0x00010005, "Incompatible ICCP Protocol Version"     },
+    { 0x00010006, "ICCP Rejected Message"                  },
+    { 0x00010007, "ICCP Administratively Disabled"         },
+    { 0x00010010, "ICCP RG Removed"                        },
+    { 0x00010011, "ICCP Application Removed from RG"       },
+    { 0x01000001, "Unexpected Diff-Serv TLV"               },
+    { 0x01000002, "Unsupported PHB"                        },
+    { 0x01000003, "Invalid EXP<-->PHB mapping"             },
+    { 0x01000004, "Unsupported PSC"                        },
+    { 0x01000005, "Per-LSP context allocation failure"     },
+    { 0x04000001, "Bad Explicit Routing TLV Error"         },
+    { 0x04000002, "Bad Strict Node Error"                  },
+    { 0x04000003, "Bad Loose Node Error"                   },
+    { 0x04000004, "Bad Initial ER-Hop Error"               },
+    { 0x04000005, "Resource Unavailable"                   },
+    { 0x04000006, "Traffic Parameters Unavailable"         },
+    { 0x04000007, "LSP Preempted"                          },
+    { 0x04000008, "Modify Request Not Supported"           },
+    { 0x04000009, "Invalid SNP ID"                         },
+    { 0x0400000A, "Calling Party busy"                     },
+    { 0x0400000B, "Unavailable SNP ID"                     },
+    { 0x0400000C, "Invalid SNPP ID"                        },
+    { 0x0400000D, "Unavailable SNPP ID"                    },
+    { 0x0400000E, "Failed to create SNC"                   },
+    { 0x0400000F, "Failed to establish LC"                 },
+    { 0x04000010, "Invalid A End-User Name"                },
+    { 0x04000011, "Invalid Z End-User Name"                },
+    { 0x04000012, "Invalid CoS"                            },
+    { 0x04000013, "Unavailable CoS"                        },
+    { 0x04000014, "Invalid GoS"                            },
+    { 0x04000015, "Unavailable GoS"                        },
+    { 0x04000016, "Failed Security Check"                  },
+    { 0x04000017, "TimeOut"                                },
+    { 0x04000018, "Invalid Call Name"                      },
+    { 0x04000019, "Failed to Release SNC"                  },
+    { 0x0400001A, "Failed to Free LC"                      },
+    { 0x20000000, "Unknown VPN ID"                         },
+    { 0x20000001, "Illegal C-Bit"                          },
+    { 0x20000002, "Wrong C-Bit"                            },
+    { 0x20000003, "E-Tree VLAN mapping not supported"      },
+    { 0x20000004, "Leaf-to-Leaf PW released"               },
+
     {0, NULL}
 };
 
@@ -891,22 +1065,22 @@ static const true_false_string tlv_upstr_sbit_vals = {
     "LSR is withdrawing the capability to distribute and receive upstream-assigned label bindings"
 };
 
-#define PW_NOT_FORWARDING               0x1
-#define PW_LAC_INGRESS_RECV_FAULT       0x2
-#define PW_LAC_EGRESS_TRANS_FAULT       0x4
-#define PW_PSN_PW_INGRESS_RECV_FAULT    0x8
-#define PW_PSN_PW_EGRESS_TRANS_FAULT    0x10
+#define PW_NOT_FORWARDING               0x00000001
+#define PW_LAC_INGRESS_RECV_FAULT       0x00000002
+#define PW_LAC_EGRESS_TRANS_FAULT       0x00000004
+#define PW_PSN_PW_INGRESS_RECV_FAULT    0x00000008
+#define PW_PSN_PW_EGRESS_TRANS_FAULT    0x00000010
 
 static void
-dissect_subtlv_interface_parameters(tvbuff_t *tvb, guint offset, proto_tree *tree, int rem, int *interface_parameters_hf[]);
+dissect_subtlv_interface_parameters(tvbuff_t *tvb, unsigned offset, proto_tree *tree, int rem, int *interface_parameters_hf[]);
 
 static void
-dissect_genpwid_fec_aai_type2_parameter(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem);
+dissect_genpwid_fec_aai_type2_parameter(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem);
 
 /* Dissect FEC TLV */
 
 static void
-dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     static int *interface_params_header_fields[] = {
         &hf_ldp_tlv_fec_vc_intparam_length ,
@@ -952,19 +1126,20 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
 
     proto_tree *ti, *ti2, *val_tree, *fec_tree=NULL;
     proto_tree *agi_tree=NULL, *saii_tree=NULL, *taii_tree=NULL;
-    guint16     family, ix=1, ax;
-    guint16     op_length = tvb_get_bits16(tvb, ((offset+8)*8), 16, ENC_BIG_ENDIAN);
-    guint8      addr_size=0, *addr, implemented, prefix_len_octets, prefix_len, host_len, vc_len;
-    guint8      intparam_len, aai_type = 0;
+    uint16_t    family, ix=1, ax;
+    uint16_t    op_length = tvb_get_bits16(tvb, ((offset+8)*8), 16, ENC_BIG_ENDIAN);
+    uint8_t     addr_size=0, *addr, implemented, prefix_len_octets, prefix_len, host_len, vc_len;
+    uint8_t     intparam_len, aai_type = 0;
+    uint32_t    pwid_len, agi_aii_len;
     const char *str;
-    guint8 gen_fec_id_len = 0;
+    uint8_t gen_fec_id_len = 0;
     address_type addr_type;
     address      addr_str;
 
     val_tree=proto_tree_add_subtree(tree, tvb, offset, rem, ett_ldp_tlv_val, NULL, "FEC Elements");
 
     while (rem > 0){
-        switch (tvb_get_guint8(tvb, offset)) {
+        switch (tvb_get_uint8(tvb, offset)) {
         case WILDCARD_FEC:
         case CRLSP_FEC:
             fec_tree = proto_tree_add_subtree_format(val_tree, tvb, offset, 1,
@@ -980,7 +1155,7 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
                 return;
             }
             family=tvb_get_ntohs(tvb, offset+1);
-            prefix_len=tvb_get_guint8(tvb, offset+3);
+            prefix_len=tvb_get_uint8(tvb, offset+3);
             prefix_len_octets=(prefix_len+7)/8;
 
             implemented=1;
@@ -999,7 +1174,7 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
             }
 
             if ( !implemented ) {
-                guint16 noctets;
+                uint16_t noctets;
 
                 noctets= rem>4+prefix_len_octets?4+prefix_len_octets:rem;
                 proto_tree_add_expert(val_tree, pinfo, &ei_ldp_address_family_not_implemented, tvb, offset, noctets);
@@ -1035,15 +1210,15 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
                 break;
             }
 
-            addr=(guint8 *)wmem_alloc0(wmem_packet_scope(), addr_size);
+            addr=(uint8_t *)wmem_alloc0(pinfo->pool, addr_size);
 
             for(ax=0; ax+1 <= prefix_len_octets; ax++)
-                addr[ax]=tvb_get_guint8(tvb, offset+ax);
+                addr[ax]=tvb_get_uint8(tvb, offset+ax);
             if ( prefix_len % 8 )
                 addr[ax-1] = addr[ax-1]&(0xFF<<(8-prefix_len%8));
 
             set_address(&addr_str, addr_type, addr_size, addr);
-            str = address_to_str(wmem_packet_scope(), &addr_str);
+            str = address_to_str(pinfo->pool, &addr_str);
             proto_tree_add_string_format(fec_tree, hf_ldp_tlv_fec_pfval, tvb, offset, prefix_len_octets,
                                          str, "Prefix: %s", str);
 
@@ -1057,7 +1232,7 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
                 return;
             }
             family=tvb_get_ntohs(tvb, offset+1);
-            host_len=tvb_get_guint8(tvb, offset+3);
+            host_len=tvb_get_uint8(tvb, offset+3);
 
             implemented=1;
             switch(family) {
@@ -1075,7 +1250,7 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
             }
 
             if ( !implemented ) {
-                guint16 noctets;
+                uint16_t noctets;
 
                 noctets= rem>4+host_len?4+host_len:rem;
                 proto_tree_add_expert(val_tree, pinfo, &ei_ldp_address_family_not_implemented, tvb, offset, noctets);
@@ -1110,13 +1285,13 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
                 break;
             }
 
-            addr=(guint8 *)wmem_alloc0(wmem_packet_scope(), addr_size);
+            addr=(uint8_t *)wmem_alloc0(pinfo->pool, addr_size);
 
             for(ax=0; ax+1 <= host_len; ax++)
-                addr[ax]=tvb_get_guint8(tvb, offset+ax);
+                addr[ax]=tvb_get_uint8(tvb, offset+ax);
 
             set_address(&addr_str, addr_type, addr_size, addr);
-            str = address_to_str(wmem_packet_scope(), &addr_str);
+            str = address_to_str(pinfo->pool, &addr_str);
             proto_tree_add_string_format(fec_tree, hf_ldp_tlv_fec_hoval, tvb, offset, host_len,
                                          str, "Address: %s", str);
 
@@ -1124,12 +1299,12 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
             rem -= 4+host_len;
             break;
 
-        case VC_FEC:
-            if ( rem < 8 ){/*not enough bytes for a minimal VC_FEC*/
+        case TYPED_WILDCARD_FEC:
+            if ( rem < 8 ){/*not enough bytes for a minimal TYPED_WILDCARD_FEC*/
                 proto_tree_add_expert_format(val_tree, pinfo, &ei_ldp_tlv_fec, tvb, offset, rem, "Error in FEC Element %u", ix);
                 return;
             }
-            vc_len = tvb_get_guint8 (tvb, offset+3);
+            vc_len = tvb_get_uint8 (tvb, offset+3);
 
 
             fec_tree = proto_tree_add_subtree_format(val_tree, tvb, offset, 8+vc_len, ett_ldp_fec, &ti, "FEC Element %u", ix);
@@ -1154,7 +1329,7 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
             offset += 4;
 
             while ( (vc_len > 1) && (rem > 1) ) {   /* enough to include id and length */
-                intparam_len = tvb_get_guint8(tvb, offset+1);
+                intparam_len = tvb_get_uint8(tvb, offset+1);
                 if (intparam_len < 2){ /* At least Type and Len, protect against len = 0 */
                     proto_tree_add_expert(fec_tree, pinfo, &ei_ldp_malformed_interface_parameter, tvb, offset +1, 1);
                     return;
@@ -1171,14 +1346,15 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
                 offset += intparam_len;
             }
             break;
-        case GEN_FEC:
+
+        case P2MP_PW_UPSTREAM_FEC:
         {
             /* Ref: RFC 4447 */
-            if ( rem < 4 ){/*not enough bytes for a minimal VC_FEC*/
+            if ( rem < 4 ){/*not enough bytes for a minimal TYPED_WILDCARD_FEC*/
                 proto_tree_add_expert_format(val_tree, pinfo, &ei_ldp_tlv_fec, tvb, offset, rem, "Error in FEC Element %u", ix);
                 return;
             }
-            vc_len = tvb_get_guint8 (tvb, offset+3);
+            vc_len = tvb_get_uint8 (tvb, offset+3);
 
             /* Add the FEC to the tree */
             fec_tree = proto_tree_add_subtree_format(val_tree, tvb, offset, 8+vc_len, ett_ldp_fec, NULL, "FEC Element %u", ix);
@@ -1190,7 +1366,7 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
             offset += 4;
 
             if ( (vc_len > 1) && ( rem > 1 ) ) { /* there is enough room for AGI */
-                gen_fec_id_len = tvb_get_guint8 (tvb, offset+1);
+                gen_fec_id_len = tvb_get_uint8 (tvb, offset+1);
                 /* Add AGI to the tree */
                 agi_tree = proto_tree_add_subtree_format(fec_tree, tvb, offset, 2 + gen_fec_id_len, ett_ldp_gen_agi, NULL, "AGI");
                 proto_tree_add_item(agi_tree, hf_ldp_tlv_fec_gen_agi_type,tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1209,9 +1385,9 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
             }
 
             if ( (vc_len > 1) && ( rem > 1 ) ) { /* there is enough room for SAII */
-                gen_fec_id_len = tvb_get_guint8 (tvb, offset+1);
+                gen_fec_id_len = tvb_get_uint8 (tvb, offset+1);
                 /* Add SAII to the tree */
-                aai_type = tvb_get_guint8(tvb, offset);
+                aai_type = tvb_get_uint8(tvb, offset);
                 if ( aai_type == 2 && gen_fec_id_len != 12)
                 {
                     /* According to RFC 5003, for Type 2 AAI, the length should be 12 bytes */
@@ -1264,9 +1440,9 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
             }
 
             if ( (vc_len > 1) && ( rem > 1 ) ) { /* there is enough room for TAII */
-                gen_fec_id_len = tvb_get_guint8 (tvb, offset+1);
+                gen_fec_id_len = tvb_get_uint8 (tvb, offset+1);
                 /* Add TAII to the tree */
-                aai_type = tvb_get_guint8(tvb, offset);
+                aai_type = tvb_get_uint8(tvb, offset);
                 if ( aai_type == 2 && gen_fec_id_len != 12)
                 {
                     /* According to RFC 5003, for Type 2 AAI, the length should be 12 bytes */
@@ -1317,6 +1493,10 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
             break;
         }
         case P2MP_FEC:
+        case MP2MP_FEC_UP:
+        case MP2MP_FEC_DOWN:
+        case HSMP_UPSTREAM:
+        case HSMP_DOWNSTREAM:
         {
             if (rem < 4 ){/*not enough*/
                 proto_item* inv_length;
@@ -1325,7 +1505,7 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
                 return;
             }
 
-            fec_tree = proto_tree_add_subtree_format(val_tree, tvb, offset, 4+tvb_get_guint8 (tvb, offset+1),
+            fec_tree = proto_tree_add_subtree_format(val_tree, tvb, offset, 4+tvb_get_uint8 (tvb, offset+1),
                                                             ett_ldp_fec, NULL, "FEC Element %u", ix);
             proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_wc, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
@@ -1344,6 +1524,112 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
 
             break;
         }
+
+        case PWID_FEC_ELEMENT:
+        {
+            if (rem < 8 ){/*not enough*/
+                proto_item* inv_length;
+                inv_length = proto_tree_add_item(val_tree, hf_ldp_tlv_inv_length, tvb, offset, rem, ENC_BIG_ENDIAN);
+                expert_add_info(pinfo, inv_length, &ei_ldp_inv_length);
+                return;
+            }
+
+            fec_tree = proto_tree_add_subtree_format(val_tree, tvb, offset, 8+tvb_get_uint8 (tvb, offset+3),
+                                                            ett_ldp_fec, NULL, "FEC Element %u", ix);
+            proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_wc, tvb, offset, 1, ENC_BIG_ENDIAN);
+            proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_pw_controlword, tvb, offset+1, 1, ENC_BIG_ENDIAN);
+            proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_pw_pwtype, tvb, offset+1, 2, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint(fec_tree, hf_ldp_tlv_fec_pw_infolength, tvb, offset+3,1,ENC_BIG_ENDIAN, &pwid_len);
+            proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_pw_groupid,tvb, offset +4, 4, ENC_BIG_ENDIAN);
+            rem -=8;
+            offset +=8;
+
+            if ( (pwid_len > 3) && ( rem > 3 ) ) { /* there is enough room for pwid */
+                proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_pw_pwid,tvb, offset, 4, ENC_BIG_ENDIAN);
+                rem -=4;
+                offset +=4;
+
+            }
+
+            while ( (pwid_len > 1) && (rem > 1) ) {   /* enough to include id and length */
+                intparam_len = tvb_get_uint8(tvb, offset+1);
+                if (intparam_len < 2){ /* At least Type and Len, protect against len = 0 */
+                    proto_tree_add_expert(fec_tree, pinfo, &ei_ldp_malformed_interface_parameter, tvb, offset +1, 1);
+                    return;
+                }
+
+                if ( ((uint32_t)intparam_len > pwid_len) && (rem -intparam_len) <0 ) { /* error condition */
+                    proto_tree_add_expert(fec_tree, pinfo, &ei_ldp_malformed_data, tvb, offset +2, MIN(pwid_len,(uint32_t)rem));
+                    return;
+                }
+                dissect_subtlv_interface_parameters(tvb, offset, fec_tree, intparam_len, interface_params_header_fields);
+
+                rem -= intparam_len;
+                pwid_len -= intparam_len;
+                offset += intparam_len;
+            }
+
+            break;
+        }
+
+        case GENERALIZED_PWID_FEC:
+        {
+            if (rem < 4 ){/*not enough*/
+                proto_item* inv_length;
+                inv_length = proto_tree_add_item(val_tree, hf_ldp_tlv_inv_length, tvb, offset, rem, ENC_BIG_ENDIAN);
+                expert_add_info(pinfo, inv_length, &ei_ldp_inv_length);
+                return;
+            }
+
+            fec_tree = proto_tree_add_subtree_format(val_tree, tvb, offset, 4+tvb_get_uint8 (tvb, offset+3),
+                                                            ett_ldp_fec, NULL, "FEC Element %u", ix);
+            proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_wc, tvb, offset, 1, ENC_BIG_ENDIAN);
+            proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_pw_controlword, tvb, offset+1, 1, ENC_BIG_ENDIAN);
+            proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_pw_pwtype, tvb, offset+1, 2, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint(fec_tree, hf_ldp_tlv_fec_pw_infolength, tvb, offset+3,1,ENC_BIG_ENDIAN, &pwid_len);
+            rem -= 4;
+            offset += 4;
+            if ( (pwid_len > 5) && ( rem > 5 ) ) { /* there is enough room for AGI/AII data */
+                proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_gen_agi_type,tvb, offset, 1, ENC_BIG_ENDIAN);
+                rem -= 1;
+                offset += 1;
+                proto_tree_add_item_ret_uint(fec_tree, hf_ldp_tlv_fec_gen_agi_length, tvb, offset,1,ENC_BIG_ENDIAN, &agi_aii_len);
+                rem -= 1;
+                offset += 1;
+                if ( agi_aii_len > 0)
+                {
+                    proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_gen_agi_value, tvb, offset, agi_aii_len , ENC_NA );
+                    rem -= agi_aii_len;
+                    offset += agi_aii_len;
+                }
+                proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_gen_saii_type,tvb, offset, 1, ENC_BIG_ENDIAN);
+                rem -= 1;
+                offset += 1;
+                proto_tree_add_item_ret_uint(fec_tree, hf_ldp_tlv_fec_gen_saii_length, tvb, offset,1,ENC_BIG_ENDIAN, &agi_aii_len);
+                rem -= 1;
+                offset += 1;
+                if ( agi_aii_len > 0)
+                {
+                    proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_gen_saii_value, tvb, offset, agi_aii_len , ENC_NA );
+                    rem -= agi_aii_len;
+                    offset += agi_aii_len;
+                }
+                proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_gen_taii_type,tvb, offset, 1, ENC_BIG_ENDIAN);
+                rem -= 1;
+                offset += 1;
+                proto_tree_add_item_ret_uint(fec_tree, hf_ldp_tlv_fec_gen_taii_length, tvb, offset,1,ENC_BIG_ENDIAN, &agi_aii_len);
+                rem -= 1;
+                offset += 1;
+                if ( agi_aii_len > 0)
+                {
+                    proto_tree_add_item(fec_tree, hf_ldp_tlv_fec_gen_taii_value, tvb, offset, agi_aii_len , ENC_NA );
+                    rem -= agi_aii_len;
+                    offset += agi_aii_len;
+                }
+            }
+            break;
+        }
+
         default:  /* Unknown */
             /* XXX - do all FEC's have a length that's a multiple of 4? */
             /* Hmmm, don't think so. Will check. RJS. */
@@ -1359,11 +1645,11 @@ dissect_tlv_fec(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
 /* Dissect Address List TLV */
 
 static void
-dissect_tlv_address_list(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_address_list(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
-    guint16     family, ix;
-    guint8      addr_size, *addr;
+    uint16_t    family, ix;
+    uint8_t     addr_size, *addr;
     const char *str;
     address_type addr_type;
     address      addr_str;
@@ -1395,7 +1681,7 @@ dissect_tlv_address_list(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_
     offset+=2; rem-=2;
     val_tree=proto_tree_add_subtree(tree, tvb, offset, rem, ett_ldp_tlv_val, NULL, "Addresses");
 
-    addr=(guint8 *)wmem_alloc(wmem_packet_scope(), addr_size);
+    addr=(uint8_t *)wmem_alloc(pinfo->pool, addr_size);
 
     for(ix=1; rem >= addr_size; ix++, offset += addr_size,
             rem -= addr_size) {
@@ -1404,7 +1690,7 @@ dissect_tlv_address_list(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_
             break;
 
         set_address(&addr_str, addr_type, addr_size, addr);
-        str = address_to_str(wmem_packet_scope(), &addr_str);
+        str = address_to_str(pinfo->pool, &addr_str);
         proto_tree_add_string_format(val_tree,
                                      hf_ldp_tlv_addrl_addr, tvb, offset, addr_size, str,
                                      "Address %u: %s", ix, str);
@@ -1416,11 +1702,11 @@ dissect_tlv_address_list(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_
 /* Dissect Path Vector TLV */
 
 static void
-dissect_tlv_path_vector(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_path_vector(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
-    guint8      ix;
-    guint32 addr;
+    uint8_t     ix;
+    uint32_t addr;
 
     val_tree=proto_tree_add_subtree(tree, tvb, offset, rem, ett_ldp_tlv_val, NULL, "LSR IDs");
 
@@ -1429,7 +1715,7 @@ dissect_tlv_path_vector(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_t
         proto_tree_add_ipv4_format(val_tree,
                                    hf_ldp_tlv_pv_lsrid, tvb, offset, 4,
                                    addr, "LSR Id %u: %s", ix,
-                                   tvb_ip_to_str(tvb, offset));
+                                   tvb_ip_to_str(pinfo->pool, tvb, offset));
     }
     if (rem)
         proto_tree_add_expert_format(tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset, rem, "Error processing TLV: Extra data at end of path vector");
@@ -1438,7 +1724,7 @@ dissect_tlv_path_vector(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_t
 /* Dissect ATM Label TLV */
 
 static void
-dissect_tlv_atm_label(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_atm_label(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -1458,10 +1744,10 @@ dissect_tlv_atm_label(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tre
 /* Dissect FRAME RELAY Label TLV */
 
 static void
-dissect_tlv_frame_label(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_frame_label(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
-    guint8      len;
+    uint8_t     len;
 
     if (rem != 4){
         proto_tree_add_expert_format(tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset, rem,
@@ -1471,7 +1757,7 @@ dissect_tlv_frame_label(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_t
     }
     val_tree=proto_tree_add_subtree(tree, tvb, offset, rem, ett_ldp_tlv_val, NULL, "Frame Relay Label");
 
-    len=(guint8)(tvb_get_ntohs(tvb, offset)>>7) & 0x03;
+    len=(uint8_t)(tvb_get_ntohs(tvb, offset)>>7) & 0x03;
     proto_tree_add_uint_format_value(val_tree, hf_ldp_tlv_fr_label_len, tvb, offset, 2, len,
                                "%s (%u)", val_to_str_const(len, tlv_fr_len_vals, "Unknown Length"), len);
 
@@ -1482,10 +1768,10 @@ dissect_tlv_frame_label(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_t
 /* Dissect STATUS TLV */
 
 static void
-dissect_tlv_status(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_status(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
-    guint32     data;
+    uint32_t    data;
 
     if (rem != 10){
         proto_tree_add_expert_format(tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset, rem,
@@ -1510,7 +1796,7 @@ dissect_tlv_status(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *
 /* Dissect Returned PDU TLV */
 
 static void
-dissect_tlv_returned_pdu(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_returned_pdu(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -1538,10 +1824,10 @@ dissect_tlv_returned_pdu(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_
 /* Dissect Returned MESSAGE TLV */
 
 static void
-dissect_tlv_returned_message(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_returned_message(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
-    guint16     type;
+    uint16_t    type;
 
     if (rem < 4) {
         proto_tree_add_expert_format(tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset, rem,
@@ -1587,9 +1873,9 @@ dissect_tlv_returned_message(tvbuff_t *tvb, packet_info *pinfo, guint offset, pr
 
 static void
 #if 0
-dissect_tlv_common_hello_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_common_hello_parms(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 #else
-dissect_tlv_common_hello_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree)
+dissect_tlv_common_hello_parms(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree)
 #endif
 {
 #if 0
@@ -1597,7 +1883,7 @@ dissect_tlv_common_hello_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, 
 #endif
     proto_tree *val_tree;
     proto_item *gtsm_flag_item;
-    guint16 gtsm_flag_buffer;
+    uint16_t gtsm_flag_buffer;
 #if 0
     ti = proto_tree_add_item(tree, hf_ldp_tlv_value, tvb, offset, rem, ENC_NA);
     val_tree = proto_item_add_subtree(ti, ett_ldp_tlv_val);
@@ -1631,14 +1917,13 @@ dissect_tlv_common_hello_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, 
 /* Dissect MAC TLV */
 
 static void
-dissect_tlv_mac(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_mac(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree   *val_tree;
-    guint8        ix;
 
     val_tree=proto_tree_add_subtree(tree, tvb, offset, rem, ett_ldp_tlv_val, NULL, "MAC addresses");
 
-    for(ix=1; rem >= 6; ix++, offset += 6, rem -= 6) {
+    for(; rem >= 6; offset += 6, rem -= 6) {
         proto_tree_add_item(val_tree, hf_ldp_tlv_mac, tvb, offset, 6, ENC_NA);
     }
     if (rem)
@@ -1650,7 +1935,7 @@ dissect_tlv_mac(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tre
 /* Dissect the common session params */
 
 static void
-dissect_tlv_common_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_common_session_parms(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -1688,10 +1973,10 @@ dissect_tlv_common_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset
 /* Dissect the atm session params */
 
 static void
-dissect_tlv_atm_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_atm_session_parms(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree, *lbl_tree;
-    guint8      numlr, ix;
+    uint8_t     numlr, ix;
 
     if (rem < 4) {
         proto_tree_add_expert_format(tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset, rem,
@@ -1705,7 +1990,7 @@ dissect_tlv_atm_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, p
     proto_tree_add_item(val_tree, hf_ldp_tlv_sess_atm_merge,tvb, offset, 1, ENC_BIG_ENDIAN);
 
     /*get the number of label ranges*/
-    numlr=(tvb_get_guint8(tvb, offset)>>2) & 0x0F;
+    numlr=(tvb_get_uint8(tvb, offset)>>2) & 0x0F;
     proto_tree_add_uint_format(val_tree, hf_ldp_tlv_sess_atm_lr,
                                tvb, offset, 1, numlr, "Number of Label Range components: %u",
                                numlr);
@@ -1747,10 +2032,10 @@ dissect_tlv_atm_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, p
 /* Dissect the frame relay session params */
 
 static void
-dissect_tlv_frame_relay_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_frame_relay_session_parms(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree, *lbl_tree;
-    guint8      numlr, ix, len;
+    uint8_t     numlr, ix, len;
 
     if(rem < 4) {
         proto_tree_add_expert_format(tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset, rem,
@@ -1765,7 +2050,7 @@ dissect_tlv_frame_relay_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint o
                         tvb, offset, 1, ENC_BIG_ENDIAN);
 
     /*get the number of label ranges*/
-    numlr=(tvb_get_guint8(tvb, offset)>>2) & 0x0F;
+    numlr=(tvb_get_uint8(tvb, offset)>>2) & 0x0F;
     proto_tree_add_uint_format(val_tree, hf_ldp_tlv_sess_fr_lr,
                                tvb, offset, 1, numlr, "Number of Label Range components: %u",
                                numlr);
@@ -1784,7 +2069,7 @@ dissect_tlv_frame_relay_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint o
         lbl_tree=proto_tree_add_subtree_format(val_tree, tvb, offset, 8,
                                ett_ldp_tlv_val, NULL, "Frame Relay Label Range Component %u", ix);
 
-        len=(guint8)(tvb_get_ntohs(tvb, offset)>>7) & 0x03;
+        len=(uint8_t)(tvb_get_ntohs(tvb, offset)>>7) & 0x03;
         proto_tree_add_uint_format_value(lbl_tree, hf_ldp_tlv_sess_fr_len, tvb, offset, 2, len,
                                    "%s (%u)", val_to_str_const(len, tlv_fr_len_vals, "Unknown Length"), len);
 
@@ -1802,10 +2087,10 @@ dissect_tlv_frame_relay_session_parms(tvbuff_t *tvb, packet_info *pinfo, guint o
 /* Dissect the Fault Tolerant (FT) Session TLV */
 
 static void
-dissect_tlv_ft_session(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_ft_session(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *ti, *val_tree, *flags_tree;
-    guint16 flags;
+    uint16_t flags;
 
     if(rem != 12){
         /* error, length must be 12 bytes */
@@ -1844,7 +2129,7 @@ dissect_tlv_ft_session(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tr
 }
 
 static void
-dissect_tlv_lspid(tvbuff_t *tvb, packet_info *pinfo, guint offset,proto_tree *tree, int rem)
+dissect_tlv_lspid(tvbuff_t *tvb, packet_info *pinfo, unsigned offset,proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -1868,7 +2153,7 @@ dissect_tlv_lspid(tvbuff_t *tvb, packet_info *pinfo, guint offset,proto_tree *tr
 }
 
 static void
-dissect_tlv_er_hop_ipv4(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_er_hop_ipv4(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -1893,7 +2178,7 @@ dissect_tlv_er_hop_ipv4(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_t
 }
 
 static void
-dissect_tlv_er_hop_ipv6(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_er_hop_ipv6(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -1918,7 +2203,7 @@ dissect_tlv_er_hop_ipv6(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_t
 }
 
 static void
-dissect_tlv_er_hop_as(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_er_hop_as(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -1940,7 +2225,7 @@ dissect_tlv_er_hop_as(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tre
 }
 
 static void
-dissect_tlv_er_hop_lspid(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_er_hop_lspid(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -1965,10 +2250,10 @@ dissect_tlv_er_hop_lspid(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_
 }
 
 static void
-dissect_tlv_traffic(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_traffic(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
-    guint8  val_8;
+    uint8_t val_8;
     float   val_f;
     proto_item *pi;
 
@@ -2000,7 +2285,7 @@ dissect_tlv_traffic(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree 
 
         /* weight */
         pi = proto_tree_add_item(val_tree, hf_ldp_tlv_weight, tvb, offset, 1, ENC_BIG_ENDIAN);
-        val_8 = tvb_get_guint8(tvb, offset);
+        val_8 = tvb_get_uint8(tvb, offset);
         if (val_8 == 0)
             proto_item_set_text(pi, "Weight: Not applicable");
         offset ++;
@@ -2037,7 +2322,7 @@ dissect_tlv_traffic(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree 
 }
 
 static void
-dissect_tlv_route_pinning(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_route_pinning(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -2057,7 +2342,7 @@ dissect_tlv_route_pinning(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto
 
 
 static void
-dissect_tlv_resource_class(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_resource_class(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -2077,7 +2362,7 @@ dissect_tlv_resource_class(tvbuff_t *tvb, packet_info *pinfo, guint offset, prot
 
 
 static void
-dissect_tlv_preemption(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_preemption(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -2100,7 +2385,7 @@ dissect_tlv_preemption(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tr
 
 
 static void
-dissect_tlv_diffserv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_diffserv(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     static int *hfindexes[] = {
         &hf_ldp_tlv_diffserv_map,
@@ -2111,7 +2396,7 @@ dissect_tlv_diffserv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree
         &hf_ldp_tlv_diffserv_phbid_bit14,
         &hf_ldp_tlv_diffserv_phbid_bit15
     };
-    static gint *etts[] = {
+    static int *etts[] = {
         &ett_ldp_diffserv_map,
         &ett_ldp_diffserv_map_phbid
     };
@@ -2123,13 +2408,13 @@ dissect_tlv_diffserv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree
         return;
     }
     proto_tree_add_uint(tree, hf_ldp_tlv_diffserv_type, tvb, offset, 1,
-                        type = tvb_get_guint8(tvb, offset));
+                        type = tvb_get_uint8(tvb, offset));
     type = (type >> 7) + 1;
     if (type == 1) {
         /* E-LSP */
         offset += 3;
         proto_tree_add_uint(tree, hf_ldp_tlv_diffserv_mapnb, tvb, offset,
-                            1, mapnb = tvb_get_guint8(tvb, offset) & 15);
+                            1, mapnb = tvb_get_uint8(tvb, offset) & 15);
         offset += 1;
         for (count = 0; count < mapnb; count++) {
             dissect_diffserv_mpls_common(tvb, tree, type, offset, hfindexes, etts);
@@ -2144,10 +2429,11 @@ dissect_tlv_diffserv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree
 
 
 static int
-dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem);
+dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem);
 
 static void
-dissect_tlv_er(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_tlv_er(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
     int len;
@@ -2165,14 +2451,14 @@ dissect_tlv_er(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree
 
 
 static void
-dissect_tlv_pw_status(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem);
+dissect_tlv_pw_status(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem);
 
 static void
-dissect_tlv_pw_grouping(tvbuff_t *tvb, guint offset, proto_tree *tree, int rem);
+dissect_tlv_pw_grouping(tvbuff_t *tvb, unsigned offset, proto_tree *tree, int rem);
 
 /* Dissect Upstream Label Assignment Capability TLV */
 static void
-dissect_tlv_upstrm_lbl_ass_cap(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_upstrm_lbl_ass_cap(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -2190,7 +2476,7 @@ dissect_tlv_upstrm_lbl_ass_cap(tvbuff_t *tvb, packet_info *pinfo, guint offset, 
 }
 /*Dissect Upstream Assigned Label Request TLV*/
 static void
-dissect_tlv_upstrm_ass_lbl_req(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_upstrm_ass_lbl_req(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     if ( rem != 4)
     {
@@ -2206,7 +2492,7 @@ dissect_tlv_upstrm_ass_lbl_req(tvbuff_t *tvb, packet_info *pinfo, guint offset, 
 
 /*Dissect Upstream Assigned Label TLV*/
 static void
-dissect_tlv_upstrm_ass_lbl(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_upstrm_ass_lbl(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -2228,7 +2514,8 @@ dissect_tlv_upstrm_ass_lbl(tvbuff_t *tvb, packet_info *pinfo, guint offset, prot
 }
 /*Dissect IPv4 Interface ID TLV*/
 static void
-dissect_tlv_ipv4_interface_id(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_tlv_ipv4_interface_id(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree, *sub_tree;
 
@@ -2261,7 +2548,7 @@ dissect_tlv_ipv4_interface_id(tvbuff_t *tvb, packet_info *pinfo, guint offset, p
 }
 /*Dissect IP Multicast Tunnel TLV*/
 static void
-dissect_tlv_ip_multicast_tunnel(tvbuff_t *tvb, guint offset, proto_tree *tree, int rem)
+dissect_tlv_ip_multicast_tunnel(tvbuff_t *tvb, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -2272,7 +2559,8 @@ dissect_tlv_ip_multicast_tunnel(tvbuff_t *tvb, guint offset, proto_tree *tree, i
 }
 
 static void
-dissect_tlv_mpls_context_lbl(tvbuff_t *tvb,packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_tlv_mpls_context_lbl(tvbuff_t *tvb,packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *val_tree;
 
@@ -2282,21 +2570,20 @@ dissect_tlv_mpls_context_lbl(tvbuff_t *tvb,packet_info *pinfo, guint offset, pro
 }
 
 static void
-dissect_tlv_ldp_p2mp_lsp(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_tlv_ldp_p2mp_lsp(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
-    guint16 addr_length = tvb_get_bits16(tvb, ((offset+3)*8), 8, ENC_BIG_ENDIAN);
-    guint16 opcode_length = tvb_get_bits16(tvb, ((offset + 4 + addr_length)*8), 16, ENC_BIG_ENDIAN);
+    uint32_t addr_length, opcode_length;
 
-    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_lsptype, tvb,offset, 1, ENC_BIG_ENDIAN);
-    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_addrfam, tvb,offset + 1, 2, ENC_BIG_ENDIAN);
-    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_addrlen, tvb,offset + 3, 1, ENC_BIG_ENDIAN);
-    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_rtnodeaddr, tvb,offset + 4, addr_length, ENC_BIG_ENDIAN);
-    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_oplength, tvb,offset + 4 + addr_length, 2, ENC_BIG_ENDIAN);
-    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_opvalue, tvb,offset + 4 + addr_length + 2, opcode_length, ENC_NA);
+    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_lsptype, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_addrfam, tvb, offset + 1, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_ldp_tlv_ldp_p2mp_addrlen, tvb, offset + 3, 1, ENC_BIG_ENDIAN, &addr_length);
+    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_rtnodeaddr, tvb, offset + 4, addr_length, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_ldp_tlv_ldp_p2mp_oplength, tvb,offset + 4 + addr_length, 2, ENC_BIG_ENDIAN, &opcode_length);
+    proto_tree_add_item(tree, hf_ldp_tlv_ldp_p2mp_opvalue, tvb, offset + 4 + addr_length + 2, opcode_length, ENC_NA);
 }
 
 static void
-dissect_tlv_rsvp_te_p2mp_lsp(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_tlv_rsvp_te_p2mp_lsp(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 
     proto_tree_add_item(tree, hf_ldp_tlv_rsvp_te_p2mp_id, tvb,offset, 4, ENC_BIG_ENDIAN);
@@ -2308,9 +2595,10 @@ dissect_tlv_rsvp_te_p2mp_lsp(tvbuff_t *tvb, guint offset, proto_tree *tree)
 /* Dissect a TLV and return the number of bytes consumed ... */
 
 static int
-dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
-    guint16 type, typebak;
+    uint16_t type, typebak;
     int length;
 
     length=tvb_reported_length_remaining(tvb, offset);
@@ -2330,6 +2618,8 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
     rem -= 4; /*do not count header*/
     length = MIN(length, rem);  /* Don't go haywire if a problem ... */
 
+    increment_dissection_depth(pinfo);
+
     if (tree) {
         proto_tree *tlv_tree;
         /*chk for vendor-private*/
@@ -2345,7 +2635,7 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
         } else {
             typebak=0;
             tlv_tree = proto_tree_add_subtree(tree, tvb, offset, length + 4, ett_ldp_tlv, NULL,
-                                     val_to_str(type, tlv_type_names, "Unknown TLV type (0x%04X)"));
+                                     val_to_str(pinfo->pool, type, tlv_type_names, "Unknown TLV type (0x%04X)"));
         }
 
         proto_tree_add_item(tlv_tree, hf_ldp_tlv_unknown, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2395,7 +2685,7 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
                                     "Error processing Generic Label TLV: length is %d, should be 4",
                                     length);
             else {
-                guint32 label=tvb_get_ntohl(tvb, offset+4) & 0x000FFFFF;
+                uint32_t label=tvb_get_ntohl(tvb, offset+4) & 0x000FFFFF;
 
                 proto_tree_add_uint(tlv_tree, hf_ldp_tlv_generic_label,
                                            tvb, offset+4, length, label);
@@ -2406,7 +2696,7 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             dissect_tlv_atm_label(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_FRAME_LABEL:
+        case TLV_FRAME_RELAY_LABEL:
             dissect_tlv_frame_label(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
@@ -2420,12 +2710,19 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
                                     offset + 4,length, ENC_BIG_ENDIAN);
             break;
 
+        case TLV_ENTROPY_LABEL_CAPA:
+            if( length != 0 ) /* Length must be 0 bytes */
+                proto_tree_add_expert_format(tlv_tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset + 4, length,
+                                    "Error processing Entropy Label Capability TLV: length is %d, should be 0",
+                                    length);
+            break;
+
         case TLV_STATUS:
             dissect_tlv_status(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
         case TLV_EXTENDED_STATUS:
-            if( length != 4 ) /*error, need only status_code(guint32)*/
+            if( length != 4 ) /*error, need only status_code(uint32_t)*/
                 proto_tree_add_expert_format(tlv_tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset + 4, length,
                                     "Error processing Extended Status TLV: length is %d, should be 4",
                                     length);
@@ -2442,7 +2739,7 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             dissect_tlv_returned_message(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_COMMON_HELLO_PARMS:
+        case TLV_COMMON_HELLO_PARAMS:
 #if 0
             dissect_tlv_common_hello_parms(tvb, pinfo, offset + 4, tlv_tree, length);
 #else
@@ -2460,8 +2757,8 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             }
             break;
 
-        case TLV_CONFIGURATION_SEQNO:
-            if( length != 4 ) /*error, need only seq_num(guint32)*/
+        case TLV_CONFIGURATION_SEQUENCE_NUMBER:
+            if( length != 4 ) /*error, need only seq_num(uint32_t)*/
                 proto_tree_add_expert_format(tlv_tree, pinfo, &ei_ldp_tlv_fec_len, tvb, offset + 4, length,
                                     "Error processing Configuration Sequence Number TLV: length is %d, should be 4",
                                     length);
@@ -2484,15 +2781,15 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             dissect_tlv_mac(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_COMMON_SESSION_PARMS:
+        case TLV_COMMON_SESSION_PARAMS:
             dissect_tlv_common_session_parms(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_ATM_SESSION_PARMS:
+        case TLV_ATM_SESSION_PARAMS:
             dissect_tlv_atm_session_parms(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_FRAME_RELAY_SESSION_PARMS:
+        case TLV_FRAME_RELAY_SESSION_PARAMS:
             dissect_tlv_frame_relay_session_parms(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
@@ -2531,27 +2828,27 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             dissect_tlv_lspid(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_ER:
+        case TLV_ER_HOP:
             dissect_tlv_er(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_ER_HOP_IPV4:
+        case TLV_IPV4_PREFIX_ER_HOP:
             dissect_tlv_er_hop_ipv4(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_ER_HOP_IPV6:
+        case TLV_IPV6_PREFIX_ER_HOP:
             dissect_tlv_er_hop_ipv6(tvb, pinfo, offset +4, tlv_tree, length);
             break;
 
-        case TLV_ER_HOP_AS:
+        case TLV_AUTONOMOUS_SYSTEM_NUMBER_ER_HOP:
             dissect_tlv_er_hop_as(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
-        case TLV_ER_HOP_LSPID:
+        case TLV_LSP_ID_ER_HOP:
             dissect_tlv_er_hop_lspid(tvb, pinfo, offset +4, tlv_tree, length);
             break;
 
-        case TLV_TRAFFIC_PARAM:
+        case TLV_TRAFFIC_PARAMS:
             dissect_tlv_traffic(tvb, pinfo, offset +4, tlv_tree, length);
             break;
 
@@ -2567,8 +2864,12 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             dissect_tlv_route_pinning(tvb, pinfo, offset +4, tlv_tree, length);
             break;
 
-        case TLV_DIFFSERV:
+        case TLV_DIFF_SERV:
             dissect_tlv_diffserv(tvb, pinfo, offset +4, tlv_tree, length);
+            break;
+
+        case TLV_HSMP_LSP_CAPA_PARAM:
+            dissect_tlv_upstrm_lbl_ass_cap(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
 
         case TLV_VENDOR_PRIVATE_START:
@@ -2601,7 +2902,7 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             dissect_tlv_pw_status(tvb, pinfo, offset +4, tlv_tree, length);
             break;
         }
-        case TLV_PW_INTERFACE_PARAMETERS:
+        case TLV_PW_INTERFACE_PARAMS:
         {
             /* Ref: RFC 4447 */
             static int *interface_params_header_fields[] = {
@@ -2648,7 +2949,7 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             int vc_len = length;
             offset += 4;
             while ( (vc_len > 1) && (rem > 1) ) {       /* enough to include id and length */
-                int intparam_len = tvb_get_guint8(tvb, offset+1);
+                int intparam_len = tvb_get_uint8(tvb, offset+1);
                 if (intparam_len < 2){ /* At least Type and Len, protect against len = 0 */
                     proto_tree_add_expert(tlv_tree, pinfo, &ei_ldp_malformed_interface_parameter, tvb, offset +1, 1);
                     break;
@@ -2666,19 +2967,19 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
             }
             break;
         }
-        case TLV_PW_GROUPING:
+        case TLV_PW_GROUP_ID:
         {
             /* Ref: RFC 4447 */
             dissect_tlv_pw_grouping(tvb, offset +4, tlv_tree, length);
             break;
         }
-        case TLV_UPSTRM_LBL_ASS_CAP:
+        case TLV_LDP_UPSTREAM_LABEL_ASSIGNMENT_CAPA:
             dissect_tlv_upstrm_lbl_ass_cap(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
-        case TLV_UPSTRM_ASS_LBL_REQ:
+        case TLV_LDP_UPSTREAM_ASSIGNED_LABEL_REQUEST:
             dissect_tlv_upstrm_ass_lbl_req(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
-        case TLV_UPSTRM_ASS_LBL:
+        case TLV_LDP_UPSTREAM_ASSIGNED_LABEL:
             dissect_tlv_upstrm_ass_lbl(tvb, pinfo, offset + 4, tlv_tree, length);
             break;
         case TLV_IPV4_INTERFACE_ID:
@@ -2703,6 +3004,7 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
         }
     }
 
+    decrement_dissection_depth(pinfo);
     return length + 4;  /* Length of the value field + header */
 }
 
@@ -2710,10 +3012,10 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, i
 /* Dissect a Message and return the number of bytes consumed ... */
 
 static int
-dissect_msg(tvbuff_t *tvb, guint offset, packet_info *pinfo, proto_tree *tree)
+dissect_msg(tvbuff_t *tvb, unsigned offset, packet_info *pinfo, proto_tree *tree)
 {
-    guint16     type, typebak;
-    guint8      extra=0;
+    uint16_t    type, typebak;
+    uint8_t     extra=0;
     int length, rem, ao=0, co;
     proto_tree *msg_tree = NULL;
 
@@ -2761,7 +3063,7 @@ dissect_msg(tvbuff_t *tvb, guint offset, packet_info *pinfo, proto_tree *tree)
         col_append_fstr(pinfo->cinfo, COL_INFO, "Experimental Message (0x%04X) ", typebak);
         break;
     default:
-        col_append_fstr(pinfo->cinfo, COL_INFO, "%s ", val_to_str(type, ldp_message_types, "Unknown Message (0x%04X)"));
+        col_append_fstr(pinfo->cinfo, COL_INFO, "%s ", val_to_str(pinfo->pool, type, ldp_message_types, "Unknown Message (0x%04X)"));
     }
 
     if (tree) {
@@ -2775,7 +3077,7 @@ dissect_msg(tvbuff_t *tvb, guint offset, packet_info *pinfo, proto_tree *tree)
             break;
         default:
             msg_tree = proto_tree_add_subtree(tree, tvb, offset, length + 4, ett_ldp_message, NULL,
-                                     val_to_str(type, ldp_message_types, "Unknown Message type (0x%04X)"));
+                                     val_to_str(pinfo->pool, type, ldp_message_types, "Unknown Message type (0x%04X)"));
         }
 
         proto_tree_add_item(msg_tree, hf_ldp_msg_ubit, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2889,7 +3191,7 @@ dissect_ldp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 }
 
 static void
-dissect_tlv_pw_status(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_tlv_pw_status(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *ti, *val_tree;
 
@@ -2912,13 +3214,13 @@ dissect_tlv_pw_status(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tre
 }
 
 static void
-dissect_tlv_pw_grouping(tvbuff_t *tvb, guint offset, proto_tree *tree, int rem _U_)
+dissect_tlv_pw_grouping(tvbuff_t *tvb, unsigned offset, proto_tree *tree, int rem _U_)
 {
     proto_tree_add_item(tree,hf_ldp_tlv_pw_grouping_value,tvb,offset,4,ENC_BIG_ENDIAN);
 }
 
 static void
-dissect_subtlv_interface_parameters(tvbuff_t *tvb, guint offset, proto_tree *tree, int rem, int *interface_parameters_hf[])
+dissect_subtlv_interface_parameters(tvbuff_t *tvb, unsigned offset, proto_tree *tree, int rem, int *interface_parameters_hf[])
 {
 #if 0
     static int interface_parameters_hf[] = {
@@ -2967,17 +3269,17 @@ dissect_subtlv_interface_parameters(tvbuff_t *tvb, guint offset, proto_tree *tre
     proto_tree *cepopt_tree=NULL, *vccvtype_tree=NULL;
     proto_tree *vcintparam_tree = proto_tree_add_subtree(tree, tvb, offset, rem, ett_ldp_fec_vc_interfaceparam, &ti, "Interface Parameter");
 
-    guint8  intparam_len = rem;
+    uint8_t intparam_len = rem;
     proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[3],tvb,offset,1,ENC_BIG_ENDIAN);
     proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[0],tvb, offset+1, 1, ENC_BIG_ENDIAN);
 
-    switch (tvb_get_guint8(tvb, offset)) {
+    switch (tvb_get_uint8(tvb, offset)) {
     case FEC_VC_INTERFACEPARAM_MTU:
         proto_item_append_text(ti,": MTU %u", tvb_get_ntohs(tvb,offset+2));
         proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[1],tvb, offset+2, 2, ENC_BIG_ENDIAN);
         break;
     case FEC_VC_INTERFACEPARAM_TDMBPS:
-        /* draft-ietf-pwe3-control-protocol-06.txt */
+        /* RFC 4842 RFC 5287 */
         proto_item_append_text(ti,": BPS %u", tvb_get_ntohl(tvb,offset+2));
         proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[2],tvb, offset+2, 4, ENC_BIG_ENDIAN);
         break;
@@ -2994,7 +3296,7 @@ dissect_subtlv_interface_parameters(tvbuff_t *tvb, guint offset, proto_tree *tre
         proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[6],tvb, offset+2, 2, ENC_BIG_ENDIAN);
         break;
     case FEC_VC_INTERFACEPARAM_CEPOPTIONS:
-        /* draft-ietf-pwe3-sonet-05.txt */
+        /* RFC 4842 */
         proto_item_append_text(ti,": CEP Options");
         cepopt_tree = proto_tree_add_subtree(vcintparam_tree, tvb, offset + 2, 2, ett_ldp_fec_vc_interfaceparam_cepopt, NULL, "CEP Options");
         proto_tree_add_item(cepopt_tree, *interface_parameters_hf[7], tvb, offset + 2, 2, ENC_BIG_ENDIAN);
@@ -3016,16 +3318,16 @@ dissect_subtlv_interface_parameters(tvbuff_t *tvb, guint offset, proto_tree *tre
         proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[17], tvb, offset+2, 2, ENC_BIG_ENDIAN);
         break;
     case FEC_VC_INTERFACEPARAM_FRAGIND:
-        /* draft-ietf-pwe3-fragmentation-05.txt */
+        /* RFC 4623 */
         proto_item_append_text(ti,": Fragmentation");
         break;
     case FEC_VC_INTERFACEPARAM_FCSRETENT:
-        /* draft-ietf-pwe3-fcs-retention-02.txt */
+        /* RFC 4446 RFC 4720 */
         proto_item_append_text(ti,": FCS retention, FCS Length %u Bytes", tvb_get_ntohs(tvb,offset+2));
         proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[18], tvb, offset+2, 2, ENC_BIG_ENDIAN);
         break;
     case FEC_VC_INTERFACEPARAM_TDMOPTION:
-        /* draft-vainshtein-pwe3-tdm-control-protocol-extensions */
+        /* RFC 5287 */
         proto_item_append_text(ti,": TDM Options");
         proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[19], tvb, offset+2, 2, ENC_BIG_ENDIAN);
         proto_tree_add_item(vcintparam_tree,*interface_parameters_hf[20], tvb, offset+2, 2, ENC_BIG_ENDIAN);
@@ -3041,7 +3343,7 @@ dissect_subtlv_interface_parameters(tvbuff_t *tvb, guint offset, proto_tree *tre
         }
         break;
     case FEC_VC_INTERFACEPARAM_VCCV:
-        /* draft-ietf-pwe3-vccv-03.txt */
+        /* RFC 4446 RFC 5085 */
         proto_item_append_text(ti,": VCCV");
         vccvtype_tree = proto_tree_add_subtree(vcintparam_tree, tvb, offset + 2, 1, ett_ldp_fec_vc_interfaceparam_vccvtype, NULL, "CC Type");
         proto_tree_add_item(vccvtype_tree, *interface_parameters_hf[27], tvb, offset+2, 1, ENC_BIG_ENDIAN);
@@ -3067,7 +3369,7 @@ dissect_subtlv_interface_parameters(tvbuff_t *tvb, guint offset, proto_tree *tre
 }
 
 static void
-dissect_genpwid_fec_aai_type2_parameter(tvbuff_t *tvb, packet_info *pinfo, guint offset, proto_tree *tree, int rem)
+dissect_genpwid_fec_aai_type2_parameter(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, proto_tree *tree, int rem)
 {
     proto_tree *aai_param_tree = proto_tree_add_subtree(tree, tvb, offset, rem, ett_ldp_gen_aai_type2, NULL, "AAI");
     /* check if the remaining length is 12 bytes or not... */
@@ -3088,10 +3390,10 @@ dissect_genpwid_fec_aai_type2_parameter(tvbuff_t *tvb, packet_info *pinfo, guint
 static int
 dissect_ldp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    volatile gboolean   first = TRUE;
+    volatile bool       first = true;
     volatile int        offset = 0;
     int                 length_remaining;
-    guint16             plen;
+    uint16_t            plen;
     int                 length;
     tvbuff_t *volatile  next_tvb;
     while (tvb_reported_length_remaining(tvb, offset) != 0) {
@@ -3122,7 +3424,7 @@ dissect_ldp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
                  */
                 return 0;
             }
-            first = FALSE;
+            first = false;
         }
 
         /*
@@ -3143,7 +3445,7 @@ dissect_ldp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
                  */
                 pinfo->desegment_offset = offset;
                 pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
-                return -((gint32) pinfo->desegment_len);
+                return -((int32_t) pinfo->desegment_len);
             }
         }
 
@@ -3170,7 +3472,7 @@ dissect_ldp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
                  */
                 pinfo->desegment_offset = offset;
                 pinfo->desegment_len = (plen + 4) - length_remaining;
-                return -((gint32) pinfo->desegment_len);
+                return -((int32_t) pinfo->desegment_len);
             }
         }
 
@@ -3194,7 +3496,7 @@ dissect_ldp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
         length = length_remaining;
         if (length > plen + 4)
             length = plen + 4;
-        next_tvb = tvb_new_subset(tvb, offset, length, plen + 4);
+        next_tvb = tvb_new_subset_length_caplen(tvb, offset, length, plen + 4);
 
         /*
          * Dissect the LDP packet.
@@ -3361,7 +3663,7 @@ proto_register_ldp(void)
 
         { &hf_ldp_tlv_hc_value,
           { "Hop Count Value", "ldp.msg.tlv.hc.value", FT_UINT8, BASE_DEC,
-            NULL, 0x0, "Hop Count", HFILL }},
+            NULL, 0x0, NULL, HFILL }},
 
         { &hf_ldp_tlv_pv_lsrid,
           { "LSR Id", "ldp.msg.tlv.pv.lsrid", FT_IPv4, BASE_NONE,
@@ -3405,7 +3707,7 @@ proto_register_ldp(void)
 
         { &hf_ldp_tlv_sess_atm_lr,
           { "Number of ATM Label Ranges", "ldp.msg.tlv.sess.atm.lr", FT_UINT8, BASE_DEC,
-            NULL, 0x3C, "Number of Label Ranges", HFILL }},
+            NULL, 0x3C, NULL, HFILL }},
 
         { &hf_ldp_tlv_sess_atm_dir,
           { "Directionality", "ldp.msg.tlv.sess.atm.dir", FT_BOOLEAN, 8,
@@ -3433,7 +3735,7 @@ proto_register_ldp(void)
 
         { &hf_ldp_tlv_sess_fr_lr,
           { "Number of Frame Relay Label Ranges", "ldp.msg.tlv.sess.fr.lr", FT_UINT8, BASE_DEC,
-            NULL, 0x3C, "Number of Label Ranges", HFILL }},
+            NULL, 0x3C, NULL, HFILL }},
 
         { &hf_ldp_tlv_sess_fr_dir,
           { "Directionality", "ldp.msg.tlv.sess.fr.dir", FT_BOOLEAN, 8,
@@ -3441,7 +3743,7 @@ proto_register_ldp(void)
 
         { &hf_ldp_tlv_sess_fr_len,
           { "Number of DLCI bits", "ldp.msg.tlv.sess.fr.len", FT_UINT16, BASE_DEC,
-            VALS(tlv_fr_len_vals), 0x0180, "DLCI Number of bits", HFILL }},
+            VALS(tlv_fr_len_vals), 0x0180, NULL, HFILL }},
 
         { &hf_ldp_tlv_sess_fr_mindlci,
           { "Minimum DLCI", "ldp.msg.tlv.sess.fr.mindlci", FT_UINT24, BASE_DEC,
@@ -3473,7 +3775,7 @@ proto_register_ldp(void)
 
         { &hf_ldp_tlv_ft_sess_flag_c,
           { "C bit", "ldp.msg.tlv.ft_sess.flag_c", FT_BOOLEAN, 16,
-            TFS(&tlv_ft_c), 0x2, "Check-Pointint Flag", HFILL }},
+            TFS(&tlv_ft_c), 0x2, "Check-Pointing Flag", HFILL }},
 
         { &hf_ldp_tlv_ft_sess_flag_l,
           { "L bit", "ldp.msg.tlv.ft_sess.flag_l", FT_BOOLEAN, 16,
@@ -3508,7 +3810,7 @@ proto_register_ldp(void)
             NULL, 0, NULL, HFILL }},
 
         { &hf_ldp_tlv_generic_label,
-          { "Generic Label", "ldp.msg.tlv.generic.label", FT_UINT32, BASE_HEX,
+          { "Generic Label", "ldp.msg.tlv.generic.label", FT_UINT32, BASE_DEC_HEX,
             NULL, 0x000FFFFF, NULL, HFILL }},
 
         { &hf_ldp_tlv_atm_label_vbits,
@@ -3525,7 +3827,7 @@ proto_register_ldp(void)
 
         { &hf_ldp_tlv_fr_label_len,
           { "Number of DLCI bits", "ldp.msg.tlv.fr.label.len", FT_UINT16, BASE_DEC,
-            VALS(tlv_fr_len_vals), 0x0180, "DLCI Number of bits", HFILL }},
+            VALS(tlv_fr_len_vals), 0x0180, NULL, HFILL }},
 
         { &hf_ldp_tlv_fr_label_dlci,
           { "DLCI", "ldp.msg.tlv.fr.label.dlci", FT_UINT24, BASE_DEC,
@@ -3577,7 +3879,7 @@ proto_register_ldp(void)
 
         { &hf_ldp_tlv_returned_msg_ubit,
           { "Returned Message Unknown bit", "ldp.msg.tlv.returned.msg.ubit", FT_BOOLEAN, 8,
-            TFS(&ldp_message_ubit), 0x80, "Message Unknown bit", HFILL }},
+            TFS(&ldp_message_ubit), 0x80, NULL, HFILL }},
 
         { &hf_ldp_tlv_returned_msg_type,
           { "Returned Message Type", "ldp.msg.tlv.returned.msg.type", FT_UINT16, BASE_HEX,
@@ -3970,6 +4272,26 @@ proto_register_ldp(void)
           { "Prefix", "ldp.msg.tlv.fec.gen.aii.acid", FT_UINT32, BASE_DEC,
             NULL, 0x0, "Attachment Individual Identifier AC Id", HFILL}},
 
+        { &hf_ldp_tlv_fec_pw_controlword,
+          { "C-bit", "ldp.msg.tlv.fec.pw.controlword", FT_BOOLEAN, 8,
+            TFS(&fec_vc_cbit), 0x80, "Control Word Present", HFILL }},
+
+        { &hf_ldp_tlv_fec_pw_pwtype,
+          { "PW Type", "ldp.msg.tlv.fec.pw.pwtype", FT_UINT16, BASE_HEX,
+            VALS(fec_vc_types_vals), 0x7FFF, "Virtual Circuit Type", HFILL }},
+
+        { &hf_ldp_tlv_fec_pw_infolength,
+          { "PW Info Length", "ldp.msg.tlv.fec.pw.infolength", FT_UINT8, BASE_DEC,
+            NULL, 0x0, "PW FEC Info Length", HFILL }},
+
+        { &hf_ldp_tlv_fec_pw_groupid,
+          { "Group ID", "ldp.msg.tlv.fec.pw.groupid", FT_UINT32, BASE_DEC,
+            NULL, 0x0, "PW FEC Group ID", HFILL }},
+
+        { &hf_ldp_tlv_fec_pw_pwid,
+          { "PW ID", "ldp.msg.tlv.fec.pw.pwid", FT_UINT32, BASE_DEC,
+            NULL, 0x0, "PW FEC PWID", HFILL }},
+
         { &hf_ldp_tlv_pw_status_data,
           { "PW Status", "ldp.msg.tlv.pwstatus.code", FT_UINT32, BASE_HEX,
             NULL, 0, NULL, HFILL }},
@@ -4228,7 +4550,7 @@ proto_register_ldp(void)
             NULL, 0x0, NULL, HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ldp,
         &ett_ldp_header,
         &ett_ldp_ldpid,
@@ -4256,8 +4578,9 @@ proto_register_ldp(void)
         { &ei_ldp_gtsm_not_supported, { "ldp.gtsm_not_supported", PI_PROTOCOL, PI_CHAT, "GTSM is not supported by the source", EXPFILL }},
         { &ei_ldp_inv_length, { "ldp.invalid_length", PI_MALFORMED, PI_ERROR, "Length of the packet is malformed", EXPFILL }},
         { &ei_ldp_address_family_not_implemented, { "ldp.address_family_not_implemented", PI_UNDECODED, PI_WARN, "Support for Address Family not implemented", EXPFILL }},
-        { &ei_ldp_tlv_fec, { "ldp.msg.tlv.fec.error", PI_PROTOCOL, PI_ERROR, "Error in FEC Element %u", EXPFILL }},
-        { &ei_ldp_tlv_fec_len, { "ldp.msg.tlv.fec.len.invalid", PI_PROTOCOL, PI_ERROR, "Invalid prefix %u length for family %s", EXPFILL }},
+        { &ei_ldp_tlv_fec, { "ldp.msg.tlv.fec.error", PI_PROTOCOL, PI_ERROR, "Error in FEC Element", EXPFILL }},
+        /* N.B. this one is being used for lots of length-related and bytes-remaining conditions.. */
+        { &ei_ldp_tlv_fec_len, { "ldp.msg.tlv.fec.len.invalid", PI_PROTOCOL, PI_ERROR, "Length Error", EXPFILL }},
         { &ei_ldp_tlv_fec_vc_infolength, { "ldp.msg.tlv.fec.vc.infolength.invalid", PI_PROTOCOL, PI_ERROR, "VC FEC size format error", EXPFILL }},
         { &ei_ldp_malformed_interface_parameter, { "ldp.malformed_interface_parameter", PI_MALFORMED, PI_ERROR, "Malformed interface parameter", EXPFILL }},
         { &ei_ldp_malformed_data, { "ldp.malformed_data", PI_MALFORMED, PI_ERROR, "Malformed data", EXPFILL }},
@@ -4268,27 +4591,19 @@ proto_register_ldp(void)
     module_t *ldp_module;
     expert_module_t* expert_ldp;
 
-    proto_ldp = proto_register_protocol("Label Distribution Protocol",
-                                        "LDP", "ldp");
+    proto_ldp = proto_register_protocol("Label Distribution Protocol", "LDP", "ldp");
 
     proto_register_field_array(proto_ldp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
     expert_ldp = expert_register_protocol(proto_ldp);
     expert_register_field_array(expert_ldp, ei, array_length(ei));
 
+    ldp_handle = register_dissector("ldp", dissect_ldp, proto_ldp);
+    ldp_tcp_handle = register_dissector("ldp.tcp", dissect_ldp_tcp, proto_ldp);
+
     /* Register our configuration options for , particularly our port */
 
-    ldp_module = prefs_register_protocol(proto_ldp, proto_reg_handoff_ldp);
-
-    prefs_register_uint_preference(ldp_module, "tcp.port", "LDP TCP Port",
-                                   "Set the TCP port for messages (if other"
-                                   " than the default of 646)",
-                                   10, &global_ldp_tcp_port);
-
-    prefs_register_uint_preference(ldp_module, "udp.port", "LDP UDP Port",
-                                   "Set the UDP port for messages (if other"
-                                   " than the default of 646)",
-                                   10, &global_ldp_udp_port);
+    ldp_module = prefs_register_protocol(proto_ldp, NULL);
 
     prefs_register_bool_preference(ldp_module, "desegment_ldp_messages",
                                    "Reassemble LDP messages spanning multiple TCP segments",
@@ -4302,39 +4617,12 @@ proto_register_ldp(void)
 void
 proto_reg_handoff_ldp(void)
 {
-    static gboolean ldp_prefs_initialized = FALSE;
-    static dissector_handle_t ldp_tcp_handle, ldp_handle;
-    static int tcp_port;
-    static int udp_port;
-
-
-    if (!ldp_prefs_initialized) {
-
-        ldp_tcp_handle = create_dissector_handle(dissect_ldp_tcp, proto_ldp);
-        ldp_handle = create_dissector_handle(dissect_ldp, proto_ldp);
-
-        ldp_prefs_initialized = TRUE;
-
-    }
-    else {
-
-        dissector_delete_uint("tcp.port", tcp_port, ldp_tcp_handle);
-        dissector_delete_uint("udp.port", udp_port, ldp_handle);
-
-    }
-
-    /* Set our port number for future use */
-
-    tcp_port = global_ldp_tcp_port;
-    udp_port = global_ldp_udp_port;
-
-    dissector_add_uint("tcp.port", global_ldp_tcp_port, ldp_tcp_handle);
-    dissector_add_uint("udp.port", global_ldp_udp_port, ldp_handle);
-
+    dissector_add_uint_with_preference("tcp.port", TCP_PORT_LDP, ldp_tcp_handle);
+    dissector_add_uint_with_preference("udp.port", UDP_PORT_LDP, ldp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

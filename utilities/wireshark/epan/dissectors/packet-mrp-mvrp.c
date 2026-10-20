@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald[AT]wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * The MVRP Protocol specification can be found at the following:
  * http://standards.ieee.org/about/get/802/802.1.html
@@ -37,6 +25,8 @@
 
 void proto_register_mrp_mvrp(void);
 void proto_reg_handoff_mrp_mvrp(void);
+
+static dissector_handle_t mvrp_handle;
 
 /* MVRP End Mark Sequence */
 #define MVRP_END_MARK       0x0000
@@ -101,37 +91,37 @@ static const value_string three_packed_vals[] = {
 /**********************************************************/
 /* Initialize the protocol and registered fields          */
 /**********************************************************/
-static int proto_mvrp = -1;
-static int hf_mvrp_proto_id = -1;
-static int hf_mvrp_message = -1; /* Message is a group of fields */
-static int hf_mvrp_attribute_type = -1;
-static int hf_mvrp_attribute_length = -1;
-static int hf_mvrp_attribute_list = -1; /* AttributeList is a group of fields */
-static int hf_mvrp_vector_attribute = -1; /* VectorAttribute is a group of fields */
+static int proto_mvrp;
+static int hf_mvrp_proto_id;
+static int hf_mvrp_message; /* Message is a group of fields */
+static int hf_mvrp_attribute_type;
+static int hf_mvrp_attribute_length;
+static int hf_mvrp_attribute_list; /* AttributeList is a group of fields */
+static int hf_mvrp_vector_attribute; /* VectorAttribute is a group of fields */
 
 /* The following VectorHeader contains the LeaveAllEvent and NumberOfValues */
-static int hf_mvrp_vector_header = -1;
-static int hf_mvrp_leave_all_event = -1;
-static int hf_mvrp_number_of_values = -1;
-static gint ett_vector_header = -1;
-static const int *vector_header_fields[] = {
+static int hf_mvrp_vector_header;
+static int hf_mvrp_leave_all_event;
+static int hf_mvrp_number_of_values;
+static int ett_vector_header;
+static int * const vector_header_fields[] = {
     &hf_mvrp_leave_all_event,
     &hf_mvrp_number_of_values,
     NULL
 };
 
-static int hf_mvrp_first_value = -1; /* FirstValue is a group of fields */
-static int hf_mvrp_vid = -1;
-static int hf_mvrp_three_packed_event = -1;
+static int hf_mvrp_first_value; /* FirstValue is a group of fields */
+static int hf_mvrp_vid;
+static int hf_mvrp_three_packed_event;
 
-static int hf_mvrp_end_mark = -1;
+static int hf_mvrp_end_mark;
 
 /* Initialize the subtree pointers */
-static gint ett_mvrp = -1;
-static gint ett_msg = -1;
-static gint ett_attr_list = -1;
-static gint ett_vect_attr = -1;
-static gint ett_first_value = -1;
+static int ett_mvrp;
+static int ett_msg;
+static int ett_attr_list;
+static int ett_vect_attr;
+static int ett_first_value;
 
 
 
@@ -173,39 +163,39 @@ dissect_mvrp_common2(proto_tree *vect_attr_tree, tvbuff_t *tvb, int msg_offset)
  *
  * dissect one or more ThreePackedEvents
  */
-static guint
-dissect_mvrp_three_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, guint offset, guint16 number_of_values)
+static unsigned
+dissect_mvrp_three_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, unsigned offset, uint16_t number_of_values)
 {
-    guint counter;
+    unsigned counter;
 
     for ( counter = 0; counter < number_of_values; ) {
-        guint8 value;
-        guint8 three_packed_event[3];
+        uint8_t value;
+        uint8_t three_packed_event[3];
 
-        value = tvb_get_guint8(tvb, offset);
+        value = tvb_get_uint8(tvb, offset);
         three_packed_event[0] = value / 36;
         value -= 36 * three_packed_event[0];
         three_packed_event[1] = value / 6;
         value -=  6 * three_packed_event[1];
         three_packed_event[2] = value;
 
-        proto_tree_add_uint(vect_attr_tree, hf_mvrp_three_packed_event, tvb, offset, sizeof(guint8),
+        proto_tree_add_uint(vect_attr_tree, hf_mvrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                             three_packed_event[0]);
         counter++;
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_mvrp_three_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_mvrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                                 three_packed_event[1]);
             counter++;
         }
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_mvrp_three_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_mvrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                                 three_packed_event[2]);
             counter++;
         }
 
         offset++;
     }
-    return( offset );
+    return offset;
 }
 
 /* dissect_main
@@ -225,10 +215,10 @@ dissect_mvrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     col_set_str(pinfo->cinfo, COL_INFO, "Multiple VLAN Registration Protocol");
 
     if (tree) {
-        guint8 attribute_type;
-        guint8 attribute_length;
-        guint16 number_of_values;
-        guint offset = 0;
+        uint8_t attribute_type;
+        uint8_t attribute_length;
+        uint16_t number_of_values;
+        unsigned offset = 0;
         unsigned int vect_attr_len;
         unsigned int msg_offset;  /* Use when handling multiple messages.  This points to current msg being decoded. */
         unsigned int vect_offset; /* Use when handling multiple vector attributes.  This points to the current vector attribute being decoded. */
@@ -246,8 +236,8 @@ dissect_mvrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         msg_offset = 0;
         while (MVRP_ATTRIBUTE_TYPE_OFFSET + msg_offset < tvb_reported_length(tvb) && tvb_get_ntohs(tvb, MVRP_ATTRIBUTE_TYPE_OFFSET + msg_offset) != MVRP_END_MARK) {
 
-            attribute_type = tvb_get_guint8(tvb, MVRP_ATTRIBUTE_TYPE_OFFSET + msg_offset);
-            attribute_length = tvb_get_guint8(tvb, MVRP_ATTRIBUTE_LENGTH_OFFSET + msg_offset);
+            attribute_type = tvb_get_uint8(tvb, MVRP_ATTRIBUTE_TYPE_OFFSET + msg_offset);
+            attribute_length = tvb_get_uint8(tvb, MVRP_ATTRIBUTE_LENGTH_OFFSET + msg_offset);
 
             /* MVRP Message is a group of fields
              *
@@ -409,7 +399,7 @@ proto_register_mrp_mvrp(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mvrp,
         &ett_msg,
         &ett_attr_list,
@@ -425,18 +415,18 @@ proto_register_mrp_mvrp(void)
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_mvrp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    /* Register the dissector */
+    mvrp_handle = register_dissector("mrp-mvrp", dissect_mvrp, proto_mvrp);
 }
 
 void
 proto_reg_handoff_mrp_mvrp(void)
 {
-    dissector_handle_t mvrp_handle;
-
-    mvrp_handle = create_dissector_handle(dissect_mvrp, proto_mvrp);
     dissector_add_uint("ethertype", ETHERTYPE_MVRP, mvrp_handle);
 }
 /*
-* Editor modelines - http://www.wireshark.org/tools/modelines.html
+* Editor modelines - https://www.wireshark.org/tools/modelines.html
 *
 * Local variables:
 * c-basic-offset: 4

@@ -1,31 +1,30 @@
-# stdint.m4 serial 41
-dnl Copyright (C) 2001-2011 Free Software Foundation, Inc.
+# stdint.m4
+# serial 65
+dnl Copyright (C) 2001-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl From Paul Eggert and Bruno Haible.
 dnl Test whether <stdint.h> is supported or must be substituted.
 
+AC_PREREQ([2.61])
+
 AC_DEFUN_ONCE([gl_STDINT_H],
 [
   AC_PREREQ([2.59])dnl
+  AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
 
-  dnl Check for long long int and unsigned long long int.
-  AC_REQUIRE([AC_TYPE_LONG_LONG_INT])
-  if test $ac_cv_type_long_long_int = yes; then
-    HAVE_LONG_LONG_INT=1
-  else
-    HAVE_LONG_LONG_INT=0
-  fi
-  AC_SUBST([HAVE_LONG_LONG_INT])
-  AC_REQUIRE([AC_TYPE_UNSIGNED_LONG_LONG_INT])
-  if test $ac_cv_type_unsigned_long_long_int = yes; then
-    HAVE_UNSIGNED_LONG_LONG_INT=1
-  else
-    HAVE_UNSIGNED_LONG_LONG_INT=0
-  fi
-  AC_SUBST([HAVE_UNSIGNED_LONG_LONG_INT])
+  AC_REQUIRE([gl_LIMITS_H])
+  AC_REQUIRE([gt_TYPE_WINT_T])
+
+  dnl For backward compatibility. Some packages may still be testing these
+  dnl macros.
+  AC_DEFINE([HAVE_LONG_LONG_INT], [1],
+    [Define to 1 if the system has the type 'long long int'.])
+  AC_DEFINE([HAVE_UNSIGNED_LONG_LONG_INT], [1],
+    [Define to 1 if the system has the type 'unsigned long long int'.])
 
   dnl Check for <wchar.h>, in the same way as gl_WCHAR_H does.
   AC_CHECK_HEADERS_ONCE([wchar.h])
@@ -37,7 +36,7 @@ AC_DEFUN_ONCE([gl_STDINT_H],
   AC_SUBST([HAVE_WCHAR_H])
 
   dnl Check for <inttypes.h>.
-  dnl AC_INCLUDES_DEFAULT defines $ac_cv_header_inttypes_h.
+  AC_CHECK_HEADERS_ONCE([inttypes.h])
   if test $ac_cv_header_inttypes_h = yes; then
     HAVE_INTTYPES_H=1
   else
@@ -46,7 +45,7 @@ AC_DEFUN_ONCE([gl_STDINT_H],
   AC_SUBST([HAVE_INTTYPES_H])
 
   dnl Check for <sys/types.h>.
-  dnl AC_INCLUDES_DEFAULT defines $ac_cv_header_sys_types_h.
+  AC_CHECK_HEADERS_ONCE([sys/types.h])
   if test $ac_cv_header_sys_types_h = yes; then
     HAVE_SYS_TYPES_H=1
   else
@@ -69,9 +68,9 @@ AC_DEFUN_ONCE([gl_STDINT_H],
       [gl_cv_header_working_stdint_h=no
        AC_COMPILE_IFELSE([
          AC_LANG_PROGRAM([[
-#define __STDC_LIMIT_MACROS 1 /* to make it work also in C++ mode */
-#define __STDC_CONSTANT_MACROS 1 /* to make it work also in C++ mode */
 #define _GL_JUST_INCLUDE_SYSTEM_STDINT_H 1 /* work if build isn't clean */
+#define __STDC_CONSTANT_MACROS 1
+#define __STDC_LIMIT_MACROS 1
 #include <stdint.h>
 /* Dragonfly defines WCHAR_MIN, WCHAR_MAX only in <wchar.h>.  */
 #if !(defined WCHAR_MIN && defined WCHAR_MAX)
@@ -152,6 +151,18 @@ uintptr_t h = UINTPTR_MAX;
 intmax_t i = INTMAX_MAX;
 uintmax_t j = UINTMAX_MAX;
 
+/* Check that SIZE_MAX has the correct type, if possible.  */
+/* ISO C 11 mandates _Generic, but GCC versions < 4.9 lack it.  */
+#if 201112 <= __STDC_VERSION__ \
+    && (!defined __GNUC__ || 4 < __GNUC__ + (9 <= __GNUC_MINOR__) \
+        || defined __clang__)
+int k = _Generic (SIZE_MAX, size_t: 0);
+#elif (2 <= __GNUC__ || 4 <= __clang_major__ || defined __IBM__TYPEOF__ \
+       || (0x5110 <= __SUNPRO_C && !__STDC__) || 1939 <= _MSC_VER)
+extern size_t k;
+extern __typeof__ (SIZE_MAX) k;
+#endif
+
 #include <limits.h> /* for CHAR_BIT */
 #define TYPE_MINIMUM(t) \
   ((t) ((t) 0 < (t) -1 ? (t) 0 : ~ TYPE_MAXIMUM (t)))
@@ -164,7 +175,7 @@ struct s {
       PTRDIFF_MIN == TYPE_MINIMUM (ptrdiff_t)
       && PTRDIFF_MAX == TYPE_MAXIMUM (ptrdiff_t)
       ? 1 : -1;
-  /* Detect bug in FreeBSD 6.0 / ia64.  */
+  /* Detect bug in FreeBSD 6.0/ia64 and FreeBSD 13.0/arm64.  */
   int check_SIG_ATOMIC:
       SIG_ATOMIC_MIN == TYPE_MINIMUM (sig_atomic_t)
       && SIG_ATOMIC_MAX == TYPE_MAXIMUM (sig_atomic_t)
@@ -219,9 +230,9 @@ struct s {
           dnl This detects a bug on HP-UX 11.23/ia64.
           AC_RUN_IFELSE([
             AC_LANG_PROGRAM([[
-#define __STDC_LIMIT_MACROS 1 /* to make it work also in C++ mode */
-#define __STDC_CONSTANT_MACROS 1 /* to make it work also in C++ mode */
 #define _GL_JUST_INCLUDE_SYSTEM_STDINT_H 1 /* work if build isn't clean */
+#define __STDC_CONSTANT_MACROS 1
+#define __STDC_LIMIT_MACROS 1
 #include <stdint.h>
 ]
 gl_STDINT_INCLUDES
@@ -276,36 +287,88 @@ static const char *macro_values[] =
 ]])],
               [gl_cv_header_working_stdint_h=yes],
               [],
-              [dnl When cross-compiling, assume it works.
-               gl_cv_header_working_stdint_h=yes
+              [case "$host_os" in
+                                    # Guess yes on native Windows.
+                 mingw* | windows*) gl_cv_header_working_stdint_h="guessing yes" ;;
+                                    # In general, assume it works.
+                 *)                 gl_cv_header_working_stdint_h="guessing yes" ;;
+               esac
               ])
          ])
       ])
   fi
-  if test "$gl_cv_header_working_stdint_h" = yes; then
-    STDINT_H=
-  else
-    dnl Check for <sys/inttypes.h>, and for
-    dnl <sys/bitypes.h> (used in Linux libc4 >= 4.6.7 and libc5).
-    AC_CHECK_HEADERS([sys/inttypes.h sys/bitypes.h])
-    if test $ac_cv_header_sys_inttypes_h = yes; then
-      HAVE_SYS_INTTYPES_H=1
-    else
-      HAVE_SYS_INTTYPES_H=0
-    fi
-    AC_SUBST([HAVE_SYS_INTTYPES_H])
-    if test $ac_cv_header_sys_bitypes_h = yes; then
-      HAVE_SYS_BITYPES_H=1
-    else
-      HAVE_SYS_BITYPES_H=0
-    fi
-    AC_SUBST([HAVE_SYS_BITYPES_H])
 
-    gl_STDINT_TYPE_PROPERTIES
-    STDINT_H=stdint.h
-  fi
-  AC_SUBST([STDINT_H])
-  AM_CONDITIONAL([GL_GENERATE_STDINT_H], [test -n "$STDINT_H"])
+  HAVE_C99_STDINT_H=0
+  HAVE_SYS_BITYPES_H=0
+  HAVE_SYS_INTTYPES_H=0
+  GL_GENERATE_STDINT_H=true
+  case "$gl_cv_header_working_stdint_h" in
+    *yes)
+      HAVE_C99_STDINT_H=1
+      dnl Now see whether the system <stdint.h> works without
+      dnl __STDC_CONSTANT_MACROS/__STDC_LIMIT_MACROS defined.
+      dnl If not, there would be problems when stdint.h is included from C++.
+      AC_CACHE_CHECK([whether stdint.h works without ISO C predefines],
+        [gl_cv_header_stdint_without_STDC_macros],
+        [gl_cv_header_stdint_without_STDC_macros=no
+         AC_COMPILE_IFELSE([
+           AC_LANG_PROGRAM([[
+#define _GL_JUST_INCLUDE_SYSTEM_STDINT_H 1 /* work if build isn't clean */
+#include <stdint.h>
+]
+gl_STDINT_INCLUDES
+[
+intmax_t im = INTMAX_MAX;
+int32_t i32 = INT32_C (0x7fffffff);
+           ]])],
+           [gl_cv_header_stdint_without_STDC_macros=yes])
+        ])
+
+      if test $gl_cv_header_stdint_without_STDC_macros = no; then
+        AC_DEFINE([__STDC_CONSTANT_MACROS], [1],
+          [Define to 1 if the system <stdint.h> predates C++11.])
+        AC_DEFINE([__STDC_LIMIT_MACROS], [1],
+          [Define to 1 if the system <stdint.h> predates C++11.])
+      fi
+      AC_CACHE_CHECK([whether stdint.h has UINTMAX_WIDTH etc.],
+        [gl_cv_header_stdint_width],
+        [gl_cv_header_stdint_width=no
+         AC_COMPILE_IFELSE(
+           [AC_LANG_PROGRAM([[
+              /* Work if build is not clean.  */
+              #define _GL_JUST_INCLUDE_SYSTEM_STDINT_H 1
+              #ifndef __STDC_WANT_IEC_60559_BFP_EXT__
+               #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
+              #endif
+              #include <stdint.h>
+              ]gl_STDINT_INCLUDES[
+              int iw = UINTMAX_WIDTH;
+              ]])],
+           [gl_cv_header_stdint_width=yes])])
+      if test "$gl_cv_header_stdint_width" = yes; then
+        GL_GENERATE_STDINT_H=false
+      fi
+      ;;
+    *)
+      dnl Check for <sys/inttypes.h>, and for
+      dnl <sys/bitypes.h> (used in Linux libc4 >= 4.6.7 and libc5).
+      AC_CHECK_HEADERS([sys/inttypes.h sys/bitypes.h])
+      if test $ac_cv_header_sys_inttypes_h = yes; then
+        HAVE_SYS_INTTYPES_H=1
+      fi
+      if test $ac_cv_header_sys_bitypes_h = yes; then
+        HAVE_SYS_BITYPES_H=1
+      fi
+      gl_STDINT_TYPE_PROPERTIES
+      ;;
+  esac
+
+  dnl The substitute stdint.h needs the substitute limit.h's _GL_INTEGER_WIDTH.
+  gl_REPLACE_LIMITS_H
+
+  AC_SUBST([HAVE_C99_STDINT_H])
+  AC_SUBST([HAVE_SYS_BITYPES_H])
+  AC_SUBST([HAVE_SYS_INTTYPES_H])
 ])
 
 dnl gl_STDINT_BITSIZEOF(TYPES, INCLUDES)
@@ -328,9 +391,9 @@ AC_DEFUN([gl_STDINT_BITSIZEOF],
       ])
     eval result=\$gl_cv_bitsizeof_${gltype}
     if test $result = unknown; then
-      dnl Use a nonempty default, because some compilers, such as IRIX 5 cc,
-      dnl do a syntax check even on unused #if conditions and give an error
-      dnl on valid C code like this:
+      dnl Use a nonempty default, because some old compilers do a syntax check
+      dnl even on unused #if conditions and give an error on valid C code like
+      dnl this:
       dnl   #if 0
       dnl   # if  > 32
       dnl   # endif
@@ -433,13 +496,9 @@ AC_DEFUN([gl_INTEGER_TYPE_SUFFIX],
 dnl gl_STDINT_INCLUDES
 AC_DEFUN([gl_STDINT_INCLUDES],
 [[
-  /* BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be
-     included before <wchar.h>.  */
   #include <stddef.h>
   #include <signal.h>
   #if HAVE_WCHAR_H
-  # include <stdio.h>
-  # include <time.h>
   # include <wchar.h>
   #endif
 ]])
@@ -466,15 +525,12 @@ AC_DEFUN([gl_STDINT_TYPE_PROPERTIES],
   fi
   gl_INTEGER_TYPE_SUFFIX([sig_atomic_t wchar_t wint_t],
     [gl_STDINT_INCLUDES])
-])
 
-dnl Autoconf >= 2.61 has AC_COMPUTE_INT built-in.
-dnl Remove this when we can assume autoconf >= 2.61.
-m4_ifdef([AC_COMPUTE_INT], [], [
-  AC_DEFUN([AC_COMPUTE_INT], [_AC_COMPUTE_INT([$2],[$1],[$3],[$4])])
+  dnl If wint_t is smaller than 'int', it cannot satisfy the ISO C 99
+  dnl requirement that wint_t is "unchanged by default argument promotions".
+  dnl In this case gnulib's <wchar.h> and <wctype.h> override wint_t.
+  dnl Set the variable BITSIZEOF_WINT_T accordingly.
+  if test $GNULIBHEADERS_OVERRIDE_WINT_T = 1; then
+    BITSIZEOF_WINT_T=32
+  fi
 ])
-
-# Hey Emacs!
-# Local Variables:
-# indent-tabs-mode: nil
-# End:

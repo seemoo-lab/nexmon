@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2000 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,40 +16,34 @@
 #endif
 
 #include <epan/packet.h>
-#include <epan/epan.h>
 #include <epan/exceptions.h>
 #include <epan/show_exception.h>
-#include <epan/timestamp.h>
-#include <epan/prefs.h>
-#include <epan/to_str.h>
 #include <epan/tap.h>
-#include <epan/expert.h>
 #include <epan/proto_data.h>
-
-#include <wsutil/md5.h>
-#include <wsutil/str_util.h>
-
 #include <epan/color_filters.h>
+#include <wiretap/wtap.h>
+#include <wsutil/str_util.h>
+#include <wsutil/array.h>
 
 #include "file-file.h"
 
 void proto_register_file(void);
 
-static int proto_file = -1;
-static int hf_file_record_number = -1;
-static int hf_file_record_len = -1;
-static int hf_file_ftap_encap = -1;
-static int hf_file_marked = -1;
-static int hf_file_ignored = -1;
-static int hf_file_protocols = -1;
-static int hf_file_num_p_prot_data = -1;
-static int hf_file_proto_name_and_key = -1;
-static int hf_file_color_filter_name = -1;
-static int hf_file_color_filter_text = -1;
+static int proto_file;
+static int hf_file_record_number;
+static int hf_file_record_len;
+static int hf_file_ftap_encap;
+static int hf_file_marked;
+static int hf_file_ignored;
+static int hf_file_protocols;
+static int hf_file_num_p_prot_data;
+static int hf_file_proto_name_and_key;
+static int hf_file_color_filter_name;
+static int hf_file_color_filter_text;
 
-static gint ett_file = -1;
+static int ett_file;
 
-static int file_tap = -1;
+static int file_tap;
 
 dissector_table_t file_encap_dissector_table;
 
@@ -73,13 +55,13 @@ dissector_table_t file_encap_dissector_table;
 void
 register_file_record_end_routine(packet_info *pinfo, void (*func)(void))
 {
-	pinfo->frame_end_routines = g_slist_append(pinfo->frame_end_routines, (gpointer)func);
+	pinfo->frame_end_routines = g_slist_append(pinfo->frame_end_routines, (void *)func);
 }
 
 typedef void (*void_func_t)(void);
 
 static void
-call_file_record_end_routine(gpointer routine, gpointer dummy _U_)
+call_file_record_end_routine(void *routine, void *dummy _U_)
 {
 	void_func_t func = (void_func_t)routine;
 	(*func)();
@@ -90,11 +72,10 @@ static int
 dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data)
 {
 	proto_item  *volatile ti = NULL;
-	guint	     cap_len = 0, frame_len = 0;
 	proto_tree  *volatile fh_tree = NULL;
 	proto_tree  *volatile tree;
 	proto_item  *item;
-	const gchar *cap_plurality, *frame_plurality;
+	const char *cap_plurality, *frame_plurality;
 	const color_filter_t *color_filter;
 	file_data_t *file_data = (file_data_t*)data;
 
@@ -107,6 +88,8 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 	if(!proto_field_is_referenced(tree, proto_file)) {
 		tree=NULL;
 	} else {
+		unsigned	     cap_len, frame_len;
+
 		/* Put in frame header information. */
 		cap_len = tvb_captured_length(tvb);
 		frame_len = tvb_reported_length(tvb);
@@ -122,7 +105,8 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 
 		fh_tree = proto_item_add_subtree(ti, ett_file);
 
-		proto_tree_add_int(fh_tree, hf_file_ftap_encap, tvb, 0, 0, pinfo->pkt_encap);
+		if (pinfo->rec->rec_type == REC_TYPE_PACKET)
+			proto_tree_add_int(fh_tree, hf_file_ftap_encap, tvb, 0, 0, pinfo->rec->rec_header.packet_header.pkt_encap);
 
 		proto_tree_add_uint(fh_tree, hf_file_record_number, tvb, 0, 0, pinfo->num);
 
@@ -130,20 +114,20 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 					   0, 0, frame_len, "Record Length: %u byte%s (%u bits)",
 					   frame_len, frame_plurality, frame_len * 8);
 
-		ti = proto_tree_add_boolean(fh_tree, hf_file_marked, tvb, 0, 0,pinfo->fd->flags.marked);
-		PROTO_ITEM_SET_GENERATED(ti);
+		ti = proto_tree_add_boolean(fh_tree, hf_file_marked, tvb, 0, 0,pinfo->fd->marked);
+		proto_item_set_generated(ti);
 
-		ti = proto_tree_add_boolean(fh_tree, hf_file_ignored, tvb, 0, 0,pinfo->fd->flags.ignored);
-		PROTO_ITEM_SET_GENERATED(ti);
+		ti = proto_tree_add_boolean(fh_tree, hf_file_ignored, tvb, 0, 0,pinfo->fd->ignored);
+		proto_item_set_generated(ti);
 
 		if(pinfo->fd->pfd != 0){
 			proto_item *ppd_item;
-			guint num_entries = g_slist_length(pinfo->fd->pfd);
-			guint i;
+			unsigned num_entries = g_slist_length(pinfo->fd->pfd);
+			unsigned i;
 			ppd_item = proto_tree_add_uint(fh_tree, hf_file_num_p_prot_data, tvb, 0, 0, num_entries);
-			PROTO_ITEM_SET_GENERATED(ppd_item);
+			proto_item_set_generated(ppd_item);
 			for(i=0; i<num_entries; i++){
-				gchar* str = p_get_proto_name_and_key(wmem_file_scope(), pinfo, i);
+				char* str = p_get_proto_name_and_key(wmem_file_scope(), pinfo, i);
 				proto_tree_add_string_format(fh_tree, hf_file_proto_name_and_key, tvb, 0, 0, str, "%s", str);
 			}
 		}
@@ -152,16 +136,16 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 		if (show_file_off) {
 			proto_tree_add_int64_format_value(fh_tree, hf_frame_file_off, tvb,
 						    0, 0, pinfo->fd->file_off,
-						    "%" G_GINT64_MODIFIER "d (0x%" G_GINT64_MODIFIER "x)",
+						    "%" PRId64 " (0x%" PRIx64 ")",
 						    pinfo->fd->file_off, pinfo->fd->file_off);
 		}
 #endif
 	}
 
-	if (pinfo->fd->flags.ignored) {
+	if (pinfo->fd->ignored) {
 		/* Ignored package, stop handling here */
 		col_set_str(pinfo->cinfo, COL_INFO, "<Ignored>");
-		proto_tree_add_boolean_format(tree, hf_file_ignored, tvb, 0, -1, TRUE, "This record is marked as ignored");
+		proto_tree_add_boolean_format(tree, hf_file_ignored, tvb, 0, -1, true, "This record is marked as ignored");
 		return tvb_captured_length(tvb);
 	}
 
@@ -174,16 +158,17 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 		/* Note: A Windows "exceptional exception" may leave the kazlib's (Portable Exception Handling)
 		   stack in an inconsistent state thus causing a crash at some point in the
 		   handling of the exception.
-		   See: https://www.wireshark.org/lists/wireshark-dev/200704/msg00243.html
+		   See: https://lists.wireshark.org/archives/wireshark-dev/200704/msg00243.html
 		*/
 		__try {
 #endif
-			if (!dissector_try_uint(file_encap_dissector_table, pinfo->pkt_encap,
+			if (pinfo->rec->rec_type != REC_TYPE_PACKET ||
+			    !dissector_try_uint(file_encap_dissector_table, pinfo->rec->rec_header.packet_header.pkt_encap,
 						tvb, pinfo, parent_tree)) {
 
 				col_set_str(pinfo->cinfo, COL_PROTOCOL, "UNKNOWN");
 				col_add_fstr(pinfo->cinfo, COL_INFO, "FTAP_ENCAP = %d",
-					     pinfo->pkt_encap);
+					     pinfo->rec->rec_header.packet_header.pkt_encap);
 				call_data_dissector(tvb, pinfo, parent_tree);
 			}
 #ifdef _MSC_VER
@@ -206,7 +191,7 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 				/* XXX - add other hardware exception codes as required */
 			default:
 				show_exception(tvb, pinfo, parent_tree, DissectorError,
-					       g_strdup_printf("dissector caused an unknown exception: 0x%x", GetExceptionCode()));
+					       ws_strdup_printf("dissector caused an unknown exception: 0x%x", GetExceptionCode()));
 			}
 		}
 #endif
@@ -217,7 +202,7 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 	ENDTRY;
 
 	if(proto_field_is_referenced(tree, hf_file_protocols)) {
-		wmem_strbuf_t *val = wmem_strbuf_new(wmem_packet_scope(), "");
+		wmem_strbuf_t *val = wmem_strbuf_new(pinfo->pool, "");
 		wmem_list_frame_t *frame;
 		/* skip the first entry, it's always the "frame" protocol */
 		frame = wmem_list_frame_next(wmem_list_head(pinfo->layers));
@@ -231,7 +216,7 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 			frame = wmem_list_frame_next(frame);
 		}
 		ti = proto_tree_add_string(fh_tree, hf_file_protocols, tvb, 0, 0, wmem_strbuf_get_str(val));
-		PROTO_ITEM_SET_GENERATED(ti);
+		proto_item_set_generated(ti);
 	}
 
 	/*  Call postdissectors if we have any (while trying to avoid another
@@ -246,7 +231,7 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 			/* Note: A Windows "exceptional exception" may leave the kazlib's (Portable Exception Handling)
 			   stack in an inconsistent state thus causing a crash at some point in the
 			   handling of the exception.
-			   See: https://www.wireshark.org/lists/wireshark-dev/200704/msg00243.html
+			   See: https://lists.wireshark.org/archives/wireshark-dev/200704/msg00243.html
 			*/
 			__try {
 #endif
@@ -271,7 +256,7 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 					/* XXX - add other hardware exception codes as required */
 				default:
 					show_exception(tvb, pinfo, parent_tree, DissectorError,
-						       g_strdup_printf("dissector caused an unknown exception: 0x%x", GetExceptionCode()));
+						       ws_strdup_printf("dissector caused an unknown exception: 0x%x", GetExceptionCode()));
 				}
 			}
 #endif
@@ -283,10 +268,10 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 	}
 
 	/* Attempt to (re-)calculate color filters (if any). */
-	if (pinfo->fd->flags.need_colorize) {
+	if (pinfo->fd->need_colorize) {
 		color_filter = color_filters_colorize_packet(file_data->color_edt);
 		pinfo->fd->color_filter = color_filter;
-		pinfo->fd->flags.need_colorize = 0;
+		pinfo->fd->need_colorize = 0;
 	} else {
 		color_filter = pinfo->fd->color_filter;
 	}
@@ -294,10 +279,10 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 		pinfo->fd->color_filter = color_filter;
 		item = proto_tree_add_string(fh_tree, hf_file_color_filter_name, tvb,
 					     0, 0, color_filter->filter_name);
-		PROTO_ITEM_SET_GENERATED(item);
+		proto_item_set_generated(item);
 		item = proto_tree_add_string(fh_tree, hf_file_color_filter_text, tvb,
 					     0, 0, color_filter->filter_text);
-		PROTO_ITEM_SET_GENERATED(item);
+		proto_item_set_generated(item);
 	}
 
 	tap_queue_packet(file_tap, pinfo, NULL);
@@ -372,7 +357,7 @@ proto_register_file(void)
 		    NULL, HFILL }},
 	};
 
- 	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_file
 	};
 
@@ -403,7 +388,7 @@ proto_register_file(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

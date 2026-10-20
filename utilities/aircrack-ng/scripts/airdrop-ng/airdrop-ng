@@ -21,9 +21,9 @@ from airdrop import libOuiParse, libDumpParse
 from binascii import a2b_hex
 try:
     import PyLorcon2
-except ImportError, e:
-    print "Did you read the readme? You seem to be missing PyLorcon2"
-    print e
+except ImportError as e:
+    print("Did you read the readme? You seem to be missing PyLorcon2")
+    print(e)
 
 
 class messages:
@@ -50,7 +50,7 @@ class messages:
                 file.write(self.date+"-"+self.time+"\n")
                 file.write("Airdrop-ng Logfile\n")
                 file.close
-            except IOError,e:
+            except IOError as e:
                 self.logging = False
                 self.printError(["Could not open file "+self.logfile+"\n\n",
                     str(e)+"\n"])
@@ -62,9 +62,9 @@ class messages:
         TYPE = type(message).__name__
         if TYPE == 'list':
             for line in message:
-                print line
+                print(line)
         elif TYPE == 'str':
-            print message
+            print(message)
         self.log(message,TYPE)
         
     def printError(self,error):
@@ -87,7 +87,7 @@ class messages:
             return
         try:
             file = open(self.logfile,'a')
-        except IOError,e:
+        except IOError as e:
             self.logging = False
             self.printError(["Could not open file "+self.logfile+"\n",
                 str(e)+"\n"])
@@ -109,7 +109,7 @@ class parseFiles:
         """
         try:
             openFile = open(name,"r")
-        except IOError,e:
+        except IOError as e:
             message.printError("\nAirdrop-ng rule file "+name+" does not exist")
             sys.exit(-1)
         rules = openFile.xreadlines()
@@ -169,10 +169,10 @@ class parseFiles:
                     #build a list of clients
                     clientList.append(cmac)
                 elif ouiLookup.compKeyChk(postion) == True: #company oui lookup
-                    #check to see if its an company name we can lookup
+                    #check to see if it's a company name we can lookup
                     clientOuiList.extend(ouiLookup.lookup_company(postion))
                 elif ouiLookup.ouiKeyChk(postion) == True: #oui match
-                    #check to see if its an oui we can lookup
+                    #check to see if it's an oui we can lookup
                     clientOuiList = [postion] 
                 else:
                     message.printMessage([
@@ -210,7 +210,7 @@ class parseFiles:
                         )
                     bssidOuiList = [] #empty var
             elif ouiLookup.ouiKeyChk(bssidMac) == True: #oui match
-                #check to see if its an oui we can lookup
+                #check to see if it's an oui we can lookup
                     bssidOuiList = [bssidMac]
                     bssidList = self.translateOUI(bssidOuiList,'b')
                     bssidOuiList = [] #empty var
@@ -229,7 +229,7 @@ class parseFiles:
             return False 
         state = ruleRaw[0].lower()
         if len(bssidList) <= 1: 
-            #if we only have one bssid we dont want to nest the dict in a list
+            #if we only have one bssid we don't want to nest the dict in a list
                 for bssid in bssidList:
                     
                     if clientList == [] and postion.upper() != 'ANY':
@@ -252,7 +252,7 @@ class parseFiles:
                             "clients":clientList,
                             "raw":ruleRaw}
         elif len(bssidList) > 1:
-                #if more then one bssid nest each rule dict in a list
+                #if more than one bssid nest each rule dict in a list
                 ruleDict = []
                 for bssid in bssidList:
                     if clientList == [] and postion.upper() != 'ANY':
@@ -338,7 +338,7 @@ class ruleMatch:
     """
     In the process of being depreciated
     Do Rule matching
-    #NOTE in the future leave capr static and dont delete from it
+    #NOTE in the future leave capr static and don't delete from it
     """
     
     def __init__(self,rulesDB,capr,ClientApDB,debug):
@@ -346,7 +346,7 @@ class ruleMatch:
         create vars for rule matching
         """
         self.violators  = {}            #dict with bssid as a key and list 
-                                        #of clients as nested list these cleints are our targets
+                                        #of clients as nested list these clients are our targets
         self.rulesDB    = rulesDB       #rules database
         self.capr       = capr          #client to ap relationship
         self.ClientApDB = ClientApDB    #Access point dict contain all info about each Ap
@@ -362,7 +362,7 @@ class ruleMatch:
         
     def locate_key(self):
         """
-        take a client and locate its coresponding bssid
+        take a client and locate its corresponding bssid
         iterate though capr and find unknown bssid a client is 
         associated with
         """
@@ -372,8 +372,7 @@ class ruleMatch:
                 #break at first match
                 break
             else:
-                #return none in client cant
-                #be found in capr
+                #return none if client can't be found in capr
                 client_bssid = None
         return client_bssid
     
@@ -393,7 +392,7 @@ class ruleMatch:
         """
         for num in sorted(self.rulesDB.keys()):
             #make sure the rules are called in order
-            #it stops iterating at one less then we need so add +1
+            #it stops iterating at one less than we need so add +1
             if type(self.rulesDB[num]).__name__ == "list":
                 for rule in self.rulesDB[num]:
                     self.bssid    = rule["bssid"]
@@ -421,7 +420,7 @@ class ruleMatch:
         if self.bssid != "ANY":
             if self.ClientApDB[1].has_key(self.bssid):
                 self.channel = self.ClientApDB[1][self.bssid]["channel"]
-                #if this var doesnt get set it casues an error
+                #if this var doesn't get set it causes an error
             else:
                 message.printMessage([
                     "\nInvaid bssid "+self.bssid+" not found in sniffed data",
@@ -503,7 +502,7 @@ class ruleMatch:
                             #set channel
                             self.channel = self.ClientApDB[1][self.bssid]["channel"]
                         try:
-                            #locate the clients postion in capr
+                            #locate the clients position in capr
                             position = self.capr[self.bssid].index(self.Client)
                             del self.capr[self.bssid][position] #remove it from capr
                         except ValueError:
@@ -536,7 +535,7 @@ class ruleMatch:
                     #any any match rule
                     message.printMessage(["\nReached global deauth at rule "+self.rule,
                         "Rule Number "+self.num,
-                        "All clients that dont have a rule will be kicked at this point"])
+                        "All clients that don't have a rule will be kicked at this point"])
                     for key in self.capr: #looping though to allow channel lookup
                         self.bssid = key
                         self.channel = self.ClientApDB[1][self.bssid]["channel"]
@@ -557,8 +556,8 @@ class ruleMatch:
                             message.printMessage(["Rule Number "+self.num,
                             self.rule,self.fullRule,
                             "Deny "+str(self.capr[self.bssid])+" client to "+self.bssid+" bssid\n"])
-                    #may change to a break since its an any any
-                    #continue #move on to the next rule in the list later ill prob break the iteration? 
+                    #may change to a break since it's an any any
+                    #continue #move on to the next rule in the list, later I'll probably break the iteration? 
                 
                 elif self.bssid == "ANY" and self.clients != 'ANY':
                     #deny any AP and select clients
@@ -618,8 +617,8 @@ class ruleMatch:
                         #do the following checks for each client
                         self.Client = client
                         if self.Client not in self.capr[self.bssid]:
-                            #if current client doesnt belong to current ap
-                            #dont generate a packet for it
+                            #if current client doesn't belong to current ap
+                            #don't generate a packet for it
                             if self.debug == True:
                                 message.printMessage(["Rule Number "+self.num,
                                     self.rule,self.fullRule,
@@ -656,7 +655,7 @@ class packetGenerator:
     """
     def __init__(self,allow_bcast,destination_addr,source_addr,bss_id_addr,channel):
         """
-        intialize packet hex values
+        initialize packet hex values
         """
         self.packetTypes = {
                 "deauth":'\xc0\x00', #deauthentication packet header
@@ -671,7 +670,7 @@ class packetGenerator:
         self.packetReason = [
                 '\x0a\x00', #Requested capability set is too broad 
                 '\x01\x00', #unspecified 
-                '\x05\x00', #disassociated due to insufficent resources at the ap
+                '\x05\x00', #disassociated due to insufficient resources at the ap
                 '\x04\x00', #Inactivity timer expired
                 '\x08\x00', #Station has left BSS or EBSS
                 '\x02\x00'  #Prior auth is not valid
@@ -823,12 +822,12 @@ def lorconTX(pktNum=5,packet=None, channel=1 ,slept=0):
     count = 0
     try:
         cchannel = tx.get_channel()
-    except PyLorcon2.Lorcon2Exception ,e:
+    except PyLorcon2.Lorcon2Exception as e:
         message.printError(["\n Error Message from lorcon:",str(e),
             "Unable to get channel the wireless card is on"])
     try:
         tx.set_channel(channel) #set the channel to send packets on
-    except PyLorcon2.Lorcon2Exception ,e:
+    except PyLorcon2.Lorcon2Exception as e:
         message.printError(["\nError Message from lorcon:",str(e),
             "Unable to set channel card does not seem to support it",
             "Skipping packet"])
@@ -836,7 +835,7 @@ def lorconTX(pktNum=5,packet=None, channel=1 ,slept=0):
     while count != pktNum:
         try:
             tx.send_bytes(packet)
-        except PyLorcon2.Lorcon2Exception ,e:
+        except PyLorcon2.Lorcon2Exception as e:
             message.printMessage(['\nError Message from lorcon:',str(e),
             "Are you sure you are using the correct driver with the -d option?",
             "Or try ifconfig up on the card you provided and its vap."])
@@ -883,11 +882,11 @@ def help():
     function for lemonwedge intigration
     supports its show help call
     """
-    print "<"+"~"*59+">\n"      
-    print "Airdrop Module for rule based deauth"
-    print "This module requires airodump-ng to run"
-    print "Module options:\n"
-    print "\t? These need to be set"
+    print("<"+"~"*59+">\n")
+    print("Airdrop Module for rule based deauth")
+    print("This module requires airodump-ng to run")
+    print("Module options:\n")
+    print("\t? These need to be set")
 
 def firstLoad():
     """
@@ -917,13 +916,13 @@ def usage():
     """
     Prints the usage to use airgraph-ng
     """
-    print "\n"+bcolors.OKBLUE+"#"*49
-    print "#"+" "*13+bcolors.ENDC+"Welcome to AirDrop-ng"+bcolors.OKBLUE+" "*13+"#"
-    print "#"*49+bcolors.ENDC+"\n"
+    print("\n"+bcolors.OKBLUE+"#"*49)
+    print("#"+" "*13+bcolors.ENDC+"Welcome to AirDrop-ng"+bcolors.OKBLUE+" "*13+"#")
+    print("#"*49+bcolors.ENDC+"\n")
 
 def commandUsage():
-    print "\nSample command line arguments:"
-    print "\npython airdrop-ng -i mon0 -t airodump.csv -r rulefile.txt\n"   
+    print("\nSample command line arguments:")
+    print("\npython airdrop-ng -i wlan0mon -t airodump.csv -r rulefile.txt\n")
 
 def OUIupdate():
     """
@@ -952,7 +951,7 @@ if __name__ == "__main__":
     parser.add_option("-l", "--logging",dest="log",action="store_true",default=False,help="Enable Logging to a file, if file path not provided airdrop will log to default location")
     parser.add_option("-n", "--nap",dest="nap",default=0,nargs=1,help="Time to sleep between loops")
 
-    if len(sys.argv) <= 1: #check and show help if no arugments are provided at runtime
+    if len(sys.argv) <= 1: #check and show help if no arguments are provided at runtime
                 parser.print_help()
                 commandUsage()
                 sys.exit(0)
@@ -960,13 +959,13 @@ if __name__ == "__main__":
     #set the program loop value
     
     #************
-    #HUDGE CHANGE
+    #HUGE CHANGE
     #************
     
-    #basicly all of this code needs to be moved to startAirdrop()
+    #basically all of this code needs to be moved to startAirdrop()
     
     #************
-    #HUDGE CHANGE
+    #HUGE CHANGE
     #************
     
     
@@ -1004,7 +1003,7 @@ if __name__ == "__main__":
             """
             tx = PyLorcon2.Context(options.card)
             tx.open_injmon()
-        except PyLorcon2.Lorcon2Exception ,e:
+        except PyLorcon2.Lorcon2Exception as e:
             message.printMessage(["\n",
                 e,"Interface %s does not exist" %(options.card)])
             sys.exit(-1)
@@ -1025,7 +1024,7 @@ if __name__ == "__main__":
                 message.printError("Please run airodump-ng-oui-update")
                 sys.exit(-1)
 
-        except ImportError,e:
+        except ImportError as e:
             message.printMessage(["\n",e,"ouiParser error"]) 
             sys.exit(-1)
         

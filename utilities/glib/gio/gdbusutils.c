@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,15 +28,6 @@
 #include "gdbusutils.h"
 
 #include "glibintl.h"
-
-/**
- * SECTION:gdbusutils
- * @title: D-Bus Utilities
- * @short_description: Various utilities related to D-Bus
- * @include: gio/gio.h
- *
- * Various utility routines related to D-Bus.
- */
 
 static gboolean
 is_valid_bus_name_character (gint c,
@@ -120,7 +113,7 @@ is_valid_name (const gchar *start,
 gboolean
 g_dbus_is_name (const gchar *string)
 {
-  guint len;
+  size_t len;
   gboolean ret;
   const gchar *s;
 
@@ -268,6 +261,28 @@ g_dbus_is_interface_name (const gchar *string)
   return ret;
 }
 
+/**
+ * g_dbus_is_error_name:
+ * @string: The string to check.
+ *
+ * Check whether @string is a valid D-Bus error name.
+ *
+ * This function returns the same result as g_dbus_is_interface_name(),
+ * because D-Bus error names are defined to have exactly the
+ * same syntax as interface names.
+ *
+ * Returns: %TRUE if valid, %FALSE otherwise.
+ *
+ * Since: 2.70
+ */
+gboolean
+g_dbus_is_error_name (const gchar *string)
+{
+  /* Error names are the same syntax as interface names.
+   * See https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-error */
+  return g_dbus_is_interface_name (string);
+}
+
 /* ---------------------------------------------------------------------------------------------------- */
 
 /* TODO: maybe move to glib? if so, it should conform to http://en.wikipedia.org/wiki/Guid and/or
@@ -280,8 +295,14 @@ g_dbus_is_interface_name (const gchar *string)
  * Generate a D-Bus GUID that can be used with
  * e.g. g_dbus_connection_new().
  *
- * See the D-Bus specification regarding what strings are valid D-Bus
- * GUID (for example, D-Bus GUIDs are not RFC-4122 compliant).
+ * See the
+ * [D-Bus specification](https://dbus.freedesktop.org/doc/dbus-specification.html#uuids)
+ * regarding what strings are valid D-Bus GUIDs. The specification refers to
+ * these as ‘UUIDs’ whereas GLib (for historical reasons) refers to them as
+ * ‘GUIDs’. The terms are interchangeable.
+ *
+ * Note that D-Bus GUIDs do not follow
+ * [RFC 4122](https://datatracker.ietf.org/doc/html/rfc4122).
  *
  * Returns: A valid D-Bus GUID. Free with g_free().
  *
@@ -291,22 +312,22 @@ gchar *
 g_dbus_generate_guid (void)
 {
   GString *s;
-  GTimeVal now;
   guint32 r1;
   guint32 r2;
   guint32 r3;
+  gint64 now_us;
 
   s = g_string_new (NULL);
 
   r1 = g_random_int ();
   r2 = g_random_int ();
   r3 = g_random_int ();
-  g_get_current_time (&now);
+  now_us = g_get_real_time ();
 
   g_string_append_printf (s, "%08x", r1);
   g_string_append_printf (s, "%08x", r2);
   g_string_append_printf (s, "%08x", r3);
-  g_string_append_printf (s, "%08x", (guint32) now.tv_sec);
+  g_string_append_printf (s, "%08x", (guint32) (now_us / G_USEC_PER_SEC));
 
   return g_string_free (s, FALSE);
 }
@@ -317,10 +338,10 @@ g_dbus_generate_guid (void)
  *
  * Checks if @string is a D-Bus GUID.
  *
- * See the D-Bus specification regarding what strings are valid D-Bus
- * GUID (for example, D-Bus GUIDs are not RFC-4122 compliant).
+ * See the documentation for g_dbus_generate_guid() for more information about
+ * the format of a GUID.
  *
- * Returns: %TRUE if @string is a guid, %FALSE otherwise.
+ * Returns: %TRUE if @string is a GUID, %FALSE otherwise.
  *
  * Since: 2.26
  */
@@ -358,7 +379,11 @@ g_dbus_is_guid (const gchar *string)
  * Converts a #GVariant to a #GValue. If @value is floating, it is consumed.
  *
  * The rules specified in the g_dbus_gvalue_to_gvariant() function are
- * used - this function is essentially its reverse form.
+ * used - this function is essentially its reverse form. So, a #GVariant
+ * containing any basic or string array type will be converted to a #GValue
+ * containing a basic value or string array. Any other #GVariant (handle,
+ * variant, tuple, dict entry) will be converted to a #GValue containing that
+ * #GVariant.
  *
  * The conversion never fails - a valid #GValue is always returned in
  * @out_gvalue.
@@ -505,23 +530,23 @@ g_dbus_gvariant_to_gvalue (GVariant  *value,
  *
  * The conversion is using the following rules:
  *
- * - #G_TYPE_STRING: 's', 'o', 'g' or 'ay'
- * - #G_TYPE_STRV: 'as', 'ao' or 'aay'
- * - #G_TYPE_BOOLEAN: 'b'
- * - #G_TYPE_UCHAR: 'y'
- * - #G_TYPE_INT: 'i', 'n'
- * - #G_TYPE_UINT: 'u', 'q'
- * - #G_TYPE_INT64 'x'
- * - #G_TYPE_UINT64: 't'
- * - #G_TYPE_DOUBLE: 'd'
- * - #G_TYPE_VARIANT: Any #GVariantType
+ * - `G_TYPE_STRING`: 's', 'o', 'g' or 'ay'
+ * - `G_TYPE_STRV`: 'as', 'ao' or 'aay'
+ * - `G_TYPE_BOOLEAN`: 'b'
+ * - `G_TYPE_UCHAR`: 'y'
+ * - `G_TYPE_INT`: 'i', 'n'
+ * - `G_TYPE_UINT`: 'u', 'q'
+ * - `G_TYPE_INT64`: 'x'
+ * - `G_TYPE_UINT64`: 't'
+ * - `G_TYPE_DOUBLE`: 'd'
+ * - `G_TYPE_VARIANT`: Any #GVariantType
  *
- * This can fail if e.g. @gvalue is of type #G_TYPE_STRING and @type
- * is ['i'][G-VARIANT-TYPE-INT32:CAPS]. It will also fail for any #GType
- * (including e.g. #G_TYPE_OBJECT and #G_TYPE_BOXED derived-types) not
+ * This can fail if e.g. @gvalue is of type %G_TYPE_STRING and @type
+ * is 'i', i.e. %G_VARIANT_TYPE_INT32. It will also fail for any #GType
+ * (including e.g. %G_TYPE_OBJECT and %G_TYPE_BOXED derived-types) not
  * in the table above.
  *
- * Note that if @gvalue is of type #G_TYPE_VARIANT and its value is
+ * Note that if @gvalue is of type %G_TYPE_VARIANT and its value is
  * %NULL, the empty #GVariant instance (never %NULL) for @type is
  * returned (e.g. 0 for scalar types, the empty string for string types,
  * '/' for object path types, the empty array for any array type and so on).
@@ -529,9 +554,9 @@ g_dbus_gvariant_to_gvalue (GVariant  *value,
  * See the g_dbus_gvariant_to_gvalue() function for how to convert a
  * #GVariant to a #GValue.
  *
- * Returns: A #GVariant (never floating) of #GVariantType @type holding
- *     the data from @gvalue or %NULL in case of failure. Free with
- *     g_variant_unref().
+ * Returns: (transfer full): A #GVariant (never floating) of
+ *     #GVariantType @type holding the data from @gvalue or an empty #GVariant
+ *     in case of failure. Free with g_variant_unref().
  *
  * Since: 2.30
  */
@@ -681,11 +706,135 @@ g_dbus_gvalue_to_gvariant (const GValue       *gvalue,
     {
       GVariant *untrusted_empty;
       untrusted_empty = g_variant_new_from_data (type, NULL, 0, FALSE, NULL, NULL);
-      ret = g_variant_ref_sink (g_variant_get_normal_form (untrusted_empty));
+      ret = g_variant_take_ref (g_variant_get_normal_form (untrusted_empty));
       g_variant_unref (untrusted_empty);
     }
 
   g_assert (!g_variant_is_floating (ret));
 
   return ret;
+}
+
+/**
+ * g_dbus_escape_object_path_bytestring:
+ * @bytes: (array zero-terminated=1) (element-type guint8): the string of bytes to escape
+ *
+ * Escapes @bytes for use in a D-Bus object path component.
+ * @bytes is an array of zero or more nonzero bytes in an
+ * unspecified encoding, followed by a single zero byte.
+ *
+ * The escaping method consists of replacing all non-alphanumeric
+ * characters (see g_ascii_isalnum()) with their hexadecimal value
+ * preceded by an underscore (`_`). For example:
+ * `foo.bar.baz` will become `foo_2ebar_2ebaz`.
+ *
+ * This method is appropriate to use when the input is nearly
+ * a valid object path component but is not when your input
+ * is far from being a valid object path component.
+ * Other escaping algorithms are also valid to use with
+ * D-Bus object paths.
+ *
+ * This can be reversed with g_dbus_unescape_object_path().
+ *
+ * Returns: an escaped version of @bytes. Free with g_free().
+ *
+ * Since: 2.68
+ *
+ */
+gchar *
+g_dbus_escape_object_path_bytestring (const guint8 *bytes)
+{
+  GString *escaped;
+  const guint8 *p;
+
+  g_return_val_if_fail (bytes != NULL, NULL);
+
+  if (*bytes == '\0')
+    return g_strdup ("_");
+
+  escaped = g_string_new (NULL);
+  for (p = bytes; *p; p++)
+    {
+      if (g_ascii_isalnum (*p))
+        g_string_append_c (escaped, *p);
+      else
+        g_string_append_printf (escaped, "_%02x", *p);
+    }
+
+  return g_string_free (escaped, FALSE);
+}
+
+/**
+ * g_dbus_escape_object_path:
+ * @s: the string to escape
+ *
+ * This is a language binding friendly version of g_dbus_escape_object_path_bytestring().
+ *
+ * Returns: an escaped version of @s. Free with g_free().
+ *
+ * Since: 2.68
+ */
+gchar *
+g_dbus_escape_object_path (const gchar *s)
+{
+  return (gchar *) g_dbus_escape_object_path_bytestring ((const guint8 *) s);
+}
+
+/**
+ * g_dbus_unescape_object_path:
+ * @s: the string to unescape
+ *
+ * Unescapes an string that was previously escaped with
+ * g_dbus_escape_object_path(). If the string is in a format that could
+ * not have been returned by g_dbus_escape_object_path(), this function
+ * returns %NULL.
+ *
+ * Encoding alphanumeric characters which do not need to be
+ * encoded is not allowed (e.g `_63` is not valid, the string
+ * should contain `c` instead).
+ *
+ * Returns: (array zero-terminated=1) (element-type guint8) (nullable): an
+ *   unescaped version of @s, or %NULL if @s is not a string returned
+ *   from g_dbus_escape_object_path(). Free with g_free().
+ *
+ * Since: 2.68
+ */
+guint8 *
+g_dbus_unescape_object_path (const gchar *s)
+{
+  GString *unescaped;
+  const gchar *p;
+
+  g_return_val_if_fail (s != NULL, NULL);
+
+  if (g_str_equal (s, "_"))
+    return (guint8 *) g_strdup ("");
+
+  unescaped = g_string_new (NULL);
+  for (p = s; *p; p++)
+    {
+      gint hi, lo;
+
+      if (g_ascii_isalnum (*p))
+        {
+          g_string_append_c (unescaped, *p);
+        }
+      else if (*p == '_' &&
+               ((hi = g_ascii_xdigit_value (p[1])) >= 0) &&
+               ((lo = g_ascii_xdigit_value (p[2])) >= 0) &&
+               (hi || lo) &&                      /* \0 is not allowed */
+               !g_ascii_isalnum ((hi << 4) | lo)) /* alnums must not be encoded */
+        {
+          g_string_append_c (unescaped, (hi << 4) | lo);
+          p += 2;
+        }
+      else
+        {
+          /* the string was not encoded correctly */
+          g_string_free (unescaped, TRUE);
+          return NULL;
+        }
+    }
+
+  return (guint8 *) g_string_free (unescaped, FALSE);
 }

@@ -36,7 +36,7 @@
 
 
 <p style="margin-left:11%; margin-top: 1em">envsubst
-&minus; substitutes environment variables in shell format
+- substitutes environment variables in shell format
 strings</p>
 
 <h2>SYNOPSIS
@@ -58,19 +58,19 @@ values of environment variables.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Operation
 mode: <br>
-&minus;v</b>, <b>&minus;&minus;variables</b></p>
+-v</b>, <b>--variables</b></p>
 
 <p style="margin-left:22%;">output the variables occurring
 in SHELL-FORMAT</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Informative
 output: <br>
-&minus;h</b>, <b>&minus;&minus;help</b></p>
+-h</b>, <b>--help</b></p>
 
 <p style="margin-left:22%;">display this help and exit</p>
 
-<p style="margin-left:11%;"><b>&minus;V</b>,
-<b>&minus;&minus;version</b></p>
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
 
 <p style="margin-left:22%;">output version information and
 exit</p>
@@ -79,13 +79,14 @@ exit</p>
 operation mode, standard input is copied to standard output,
 with references to environment variables of the form
 $VARIABLE or ${VARIABLE} being replaced with the
-corresponding values. If a SHELL-FORMAT is given, only those
-environment variables that are referenced in SHELL-FORMAT
-are substituted; otherwise all environment variables
-references occurring in standard input are substituted.</p>
+corresponding values. If a SHELL-FORMAT is given, only
+those environment variables that are referenced in
+SHELL-FORMAT are substituted; otherwise all
+environment variables references occurring in standard input
+are substituted.</p>
 
 <p style="margin-left:11%; margin-top: 1em">When
-<b>&minus;&minus;variables</b> is used, standard input is
+<b>--variables</b> is used, standard input is
 ignored, and the output consists of the environment
 variables that are referenced in SHELL-FORMAT, one per
 line.</p>
@@ -103,8 +104,10 @@ Bruno Haible.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Report bugs to
-&lt;bug-gnu-gettext@gnu.org&gt;.</p>
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
 
 <h2>COPYRIGHT
 <a name="COPYRIGHT"></a>
@@ -112,9 +115,9 @@ Bruno Haible.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Copyright
-&copy; 2003-2007 Free Software Foundation, Inc. License
-GPLv3+: GNU GPL version 3 or later
-&lt;http://gnu.org/licenses/gpl.html&gt; <br>
+&copy; 2003-2026 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
 This is free software: you are free to change and
 redistribute it. There is NO WARRANTY, to the extent
 permitted by law.</p>

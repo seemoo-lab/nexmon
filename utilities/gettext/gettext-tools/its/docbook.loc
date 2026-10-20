@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<!--
+  Copyright (C) 2024-2026 Free Software Foundation, Inc.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  Written by Bruno Haible.
+-->
+<locatingRules>
+  <!-- DocBook 5 documents can be distinguished from DocBook 4 documents
+       either by their DOCTYPE declaration
+       <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                             "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+       vs. (optional in DocBook 5)
+       <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.2//EN"
+                             "http://www.oasis-open.org/docbook/xml/5.2/dtd/docbookx.dtd">
+       or by the namespace in which the root element is sitting:
+       no namespace in DocBook 4, http://docbook.org/ns/docbook in DocBook 5.
+  -->
+  <locatingRule name="docbook5" pattern="*.xml">
+    <documentRule ns="http://docbook.org/ns/docbook" localName="book" target="docbook5.its"/>
+    <documentRule ns="http://docbook.org/ns/docbook" localName="article" target="docbook5.its"/>
+    <!-- https://tdg.docbook.org/tdg/5.2/refentry -->
+    <documentRule ns="http://docbook.org/ns/docbook" localName="refentry" target="docbook5.its"/>
+  </locatingRule>
+  <locatingRule name="docbook4" pattern="*.xml">
+    <documentRule localName="book" target="docbook4.its"/>
+    <documentRule localName="article" target="docbook4.its"/>
+    <!-- https://tdg.docbook.org/tdg/4.5/refentry -->
+    <documentRule localName="refentry" target="docbook4.its"/>
+  </locatingRule>
+</locatingRules>

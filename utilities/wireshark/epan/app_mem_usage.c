@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #if defined(__linux__)
@@ -27,8 +15,6 @@
 #include "config.h"
 
 #include <stdio.h>
-
-#include <glib.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -48,7 +34,8 @@
 #define MAX_COMPONENTS 16
 
 #if defined(_WIN32)
-static gsize
+
+static size_t
 win32_get_total_mem_used_by_app(void)
 {
 	HANDLE pHandle;
@@ -70,14 +57,18 @@ win32_get_total_mem_used_by_app(void)
 	}
 }
 
-#define get_total_mem_used_by_app win32_get_total_mem_used_by_app
+static const ws_mem_usage_t total_usage = { "Total", win32_get_total_mem_used_by_app, NULL };
 
-#endif /* (_WIN32) */
+static const ws_mem_usage_t *memory_components[MAX_COMPONENTS] = {
+	&total_usage,
+};
 
-#if defined(__linux__)
+static unsigned memory_register_num = 1;
 
-static gboolean
-linux_get_memory(gsize *ptotal, gsize *prss)
+#elif defined(__linux__)
+
+static bool
+linux_get_memory(size_t *ptotal, size_t *prss)
 {
 	static int fd = -1;
 	static intptr_t pagesize = 0;
@@ -90,12 +81,12 @@ linux_get_memory(gsize *ptotal, gsize *prss)
 		pagesize = sysconf(_SC_PAGESIZE);
 
 	if (pagesize == -1)
-		return FALSE;
+		return false;
 
 	if (fd < 0) {
 		char path[64];
 
-		g_snprintf(path, sizeof(path), "/proc/%d/statm", getpid());
+		snprintf(path, sizeof(path), "/proc/%d/statm", getpid());
 
 		fd = ws_open(path, O_RDONLY);
 
@@ -103,29 +94,29 @@ linux_get_memory(gsize *ptotal, gsize *prss)
 	}
 
 	if (fd < 0)
-		return FALSE;
+		return false;
 
 	ret = pread(fd, buf, sizeof(buf)-1, 0);
 	if (ret <= 0)
-		return FALSE;
+		return false;
 
 	buf[ret] = '\0';
 
 	if (sscanf(buf, "%lu %lu", &total, &rss) != 2)
-		return FALSE;
+		return false;
 
 	if (ptotal)
-		*ptotal = pagesize * (gsize) total;
+		*ptotal = pagesize * (size_t) total;
 	if (prss)
-		*prss = pagesize * (gsize) rss;
+		*prss = pagesize * (size_t) rss;
 
-	return TRUE;
+	return true;
 }
 
-static gsize
+static size_t
 linux_get_total_mem_used_by_app(void)
 {
-	gsize total;
+	size_t total;
 
 	if (!linux_get_memory(&total, NULL))
 		total = 0;
@@ -133,10 +124,10 @@ linux_get_total_mem_used_by_app(void)
 	return total;
 }
 
-static gsize
+static size_t
 linux_get_rss_mem_used_by_app(void)
 {
-	gsize rss;
+	size_t rss;
 
 	if (!linux_get_memory(NULL, &rss))
 		rss = 0;
@@ -144,39 +135,32 @@ linux_get_rss_mem_used_by_app(void)
 	return rss;
 }
 
-#define get_total_mem_used_by_app linux_get_total_mem_used_by_app
-
-#define get_rss_mem_used_by_app linux_get_rss_mem_used_by_app
-
-#endif
-
-/* XXX, BSD 4.3: getrusage() -> ru_ixrss ? */
-
-#ifdef get_total_mem_used_by_app
-static const ws_mem_usage_t total_usage = { "Total", get_total_mem_used_by_app, NULL };
-#endif
-
-#ifdef get_rss_mem_used_by_app
-static const ws_mem_usage_t rss_usage = { "RSS", get_rss_mem_used_by_app, NULL };
-#endif
+static const ws_mem_usage_t total_usage = { "Total", linux_get_total_mem_used_by_app, NULL };
+static const ws_mem_usage_t rss_usage = { "RSS", linux_get_rss_mem_used_by_app, NULL };
 
 static const ws_mem_usage_t *memory_components[MAX_COMPONENTS] = {
-#ifdef get_total_mem_used_by_app
 	&total_usage,
-#endif
-#ifdef get_rss_mem_used_by_app
 	&rss_usage,
-#endif
 };
 
-static guint memory_register_num = 0
-#ifdef get_total_mem_used_by_app
-	+ 1
+static unsigned memory_register_num = 2;
+
+#else
+
+/*
+ * macOS: task_info()?
+ *
+ * *BSD: getrusage() -> ru_ixrss ?  Note that there are three
+ * current-RSS components in struct rusage, but those date
+ * back to the days when you had just text, data, and stack,
+ * and kernels might not even bother supplying them.
+ */
+
+static const ws_mem_usage_t *memory_components[MAX_COMPONENTS];
+
+static unsigned memory_register_num;
+
 #endif
-#ifdef get_rss_mem_used_by_app
-	+ 1
-#endif
-	;
 
 /* public API */
 
@@ -190,7 +174,7 @@ memory_usage_component_register(const ws_mem_usage_t *component)
 }
 
 const char *
-memory_usage_get(guint idx, gsize *value)
+memory_usage_get(unsigned idx, size_t *value)
 {
 	if (idx >= memory_register_num)
 		return NULL;
@@ -204,7 +188,7 @@ memory_usage_get(guint idx, gsize *value)
 void
 memory_usage_gc(void)
 {
-	guint i;
+	unsigned i;
 
 	for (i = 0; i < memory_register_num; i++) {
 		if (memory_components[i]->gc)
@@ -214,7 +198,7 @@ memory_usage_gc(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

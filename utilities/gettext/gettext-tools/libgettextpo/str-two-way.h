@@ -1,24 +1,24 @@
 /* Byte-wise substring search, using the Two-Way algorithm.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Written by Eric Blake <ebb9@byu.net>, 2008.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Before including this file, you need to include <config.h> and
    <string.h>, and define:
-     RESULT_TYPE             A macro that expands to the return type.
+     RETURN_TYPE             A macro that expands to the return type.
      AVAILABLE(h, h_l, j, n_l)
                              A macro that returns nonzero if there are
                              at least N_L bytes left starting at H[J].
@@ -49,9 +49,9 @@
    character shift table similar to the Boyer-Moore algorithm to
    achieve improved (potentially sub-linear) performance.
 
-   See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260,
-   http://en.wikipedia.org/wiki/Boyer-Moore_string_search_algorithm,
-   http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.6641&rep=rep1&type=pdf
+   See https://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260,
+   https://en.wikipedia.org/wiki/Boyer-Moore_string_search_algorithm,
+   https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.6641&rep=rep1&type=pdf
 */
 
 /* Point at which computing a bad-byte shift table is likely to be
@@ -108,13 +108,6 @@ static size_t
 critical_factorization (const unsigned char *needle, size_t needle_len,
                         size_t *period)
 {
-  /* Index of last byte of left half, or SIZE_MAX.  */
-  size_t max_suffix, max_suffix_rev;
-  size_t j; /* Index into NEEDLE for current candidate suffix.  */
-  size_t k; /* Offset into current period.  */
-  size_t p; /* Intermediate period.  */
-  unsigned char a, b; /* Current comparison bytes.  */
-
   /* Special case NEEDLE_LEN of 1 or 2 (all callers already filtered
      out 0-length needles.  */
   if (needle_len < 3)
@@ -133,73 +126,83 @@ critical_factorization (const unsigned char *needle, size_t needle_len,
   */
 
   /* Perform lexicographic search.  */
-  max_suffix = SIZE_MAX;
-  j = 0;
-  k = p = 1;
-  while (j + k < needle_len)
-    {
-      a = CANON_ELEMENT (needle[j + k]);
-      b = CANON_ELEMENT (needle[max_suffix + k]);
-      if (a < b)
-        {
-          /* Suffix is smaller, period is entire prefix so far.  */
-          j += k;
-          k = 1;
-          p = j - max_suffix;
-        }
-      else if (a == b)
-        {
-          /* Advance through repetition of the current period.  */
-          if (k != p)
-            ++k;
-          else
-            {
-              j += p;
-              k = 1;
-            }
-        }
-      else /* b < a */
-        {
-          /* Suffix is larger, start over from current location.  */
-          max_suffix = j++;
-          k = p = 1;
-        }
-    }
-  *period = p;
+  size_t max_suffix = /* Index of last byte of left half, or SIZE_MAX.  */
+    SIZE_MAX;
+  {
+    size_t j = 0; /* Index into NEEDLE for current candidate suffix.  */
+    size_t k = 1; /* Offset into current period.  */
+    size_t p = 1; /* Intermediate period.  */
+    while (j + k < needle_len)
+      {
+        unsigned char a = CANON_ELEMENT (needle[j + k]);
+        unsigned char b = CANON_ELEMENT (needle[max_suffix + k]);
+        if (a < b)
+          {
+            /* Suffix is smaller, period is entire prefix so far.  */
+            j += k;
+            k = 1;
+            p = j - max_suffix;
+          }
+        else if (a == b)
+          {
+            /* Advance through repetition of the current period.  */
+            if (k != p)
+              ++k;
+            else
+              {
+                j += p;
+                k = 1;
+              }
+          }
+        else /* b < a */
+          {
+            /* Suffix is larger, start over from current location.  */
+            max_suffix = j++;
+            k = p = 1;
+          }
+      }
+    *period = p;
+  }
 
   /* Perform reverse lexicographic search.  */
-  max_suffix_rev = SIZE_MAX;
-  j = 0;
-  k = p = 1;
-  while (j + k < needle_len)
-    {
-      a = CANON_ELEMENT (needle[j + k]);
-      b = CANON_ELEMENT (needle[max_suffix_rev + k]);
-      if (b < a)
-        {
-          /* Suffix is smaller, period is entire prefix so far.  */
-          j += k;
-          k = 1;
-          p = j - max_suffix_rev;
-        }
-      else if (a == b)
-        {
-          /* Advance through repetition of the current period.  */
-          if (k != p)
-            ++k;
-          else
-            {
-              j += p;
-              k = 1;
-            }
-        }
-      else /* a < b */
-        {
-          /* Suffix is larger, start over from current location.  */
-          max_suffix_rev = j++;
-          k = p = 1;
-        }
-    }
+  size_t max_suffix_rev = /* Index of last byte of left half, or SIZE_MAX.  */
+    SIZE_MAX;
+  size_t p_rev;
+  {
+    size_t j = 0; /* Index into NEEDLE for current candidate suffix.  */
+    size_t k = 1; /* Offset into current period.  */
+    size_t p = 1; /* Intermediate period.  */
+    while (j + k < needle_len)
+      {
+        unsigned char a = CANON_ELEMENT (needle[j + k]);
+        unsigned char b = CANON_ELEMENT (needle[max_suffix_rev + k]);
+        if (b < a)
+          {
+            /* Suffix is smaller, period is entire prefix so far.  */
+            j += k;
+            k = 1;
+            p = j - max_suffix_rev;
+          }
+        else if (a == b)
+          {
+            /* Advance through repetition of the current period.  */
+            if (k != p)
+              ++k;
+            else
+               {
+                j += p;
+                k = 1;
+              }
+          }
+        else /* a < b */
+          {
+            /* Suffix is larger, start over from current location.  */
+            max_suffix_rev = j++;
+            k = p = 1;
+          }
+      }
+    p_rev = p;
+  }
 
   /* Choose the shorter suffix.  Return the index of the first byte of
      the right half, rather than the last byte of the left half.
@@ -217,7 +220,7 @@ critical_factorization (const unsigned char *needle, size_t needle_len,
      factorization.  */
   if (max_suffix_rev + 1 < max_suffix + 1)
     return max_suffix + 1;
-  *period = p;
+  *period = p_rev;
   return max_suffix_rev + 1;
 }
 
@@ -231,19 +234,16 @@ critical_factorization (const unsigned char *needle, size_t needle_len,
    most 2 * HAYSTACK_LEN - NEEDLE_LEN comparisons occur in searching.
    If AVAILABLE modifies HAYSTACK_LEN (as in strstr), then at most 3 *
    HAYSTACK_LEN - NEEDLE_LEN comparisons occur in searching.  */
-static RETURN_TYPE
+static RETURN_TYPE _GL_ATTRIBUTE_PURE
 two_way_short_needle (const unsigned char *haystack, size_t haystack_len,
                       const unsigned char *needle, size_t needle_len)
 {
-  size_t i; /* Index into current byte of NEEDLE.  */
-  size_t j; /* Index into current window of HAYSTACK.  */
-  size_t period; /* The period of the right half of needle.  */
-  size_t suffix; /* The index of the right half of needle.  */
-
   /* Factor the needle into two halves, such that the left half is
      smaller than the global period, and the right half is
      periodic (with a period as large as NEEDLE_LEN - suffix).  */
-  suffix = critical_factorization (needle, needle_len, &period);
+  size_t period; /* The period of the right half of needle.  */
+  size_t suffix = /* The index of the right half of needle.  */
+    critical_factorization (needle, needle_len, &period);
 
   /* Perform the search.  Each iteration compares the right half
      first.  */
@@ -253,11 +253,12 @@ two_way_short_needle (const unsigned char *haystack, size_t haystack_len,
          only advance by the period, so use memory to avoid rescanning
          known occurrences of the period in the right half.  */
       size_t memory = 0;
-      j = 0;
+      size_t j = 0; /* Index into current window of HAYSTACK.  */
       while (AVAILABLE (haystack, haystack_len, j, needle_len))
         {
           /* Scan for matches in right half.  */
-          i = MAX (suffix, memory);
+          size_t i = /* Index into current byte of NEEDLE.  */
+            MAX (suffix, memory);
           while (i < needle_len && (CANON_ELEMENT (needle[i])
                                     == CANON_ELEMENT (haystack[i + j])))
             ++i;
@@ -287,11 +288,12 @@ two_way_short_needle (const unsigned char *haystack, size_t haystack_len,
       /* The two halves of needle are distinct; no extra memory is
          required, and any mismatch results in a maximal shift.  */
       period = MAX (suffix, needle_len - suffix) + 1;
-      j = 0;
+      size_t j = 0; /* Index into current window of HAYSTACK.  */
       while (AVAILABLE (haystack, haystack_len, j, needle_len))
         {
           /* Scan for matches in right half.  */
-          i = suffix;
+          size_t i = /* Index into current byte of NEEDLE.  */
+            suffix;
           while (i < needle_len && (CANON_ELEMENT (needle[i])
                                     == CANON_ELEMENT (haystack[i + j])))
             ++i;
@@ -325,28 +327,25 @@ two_way_short_needle (const unsigned char *haystack, size_t haystack_len,
    If AVAILABLE modifies HAYSTACK_LEN (as in strstr), then at most 3 *
    HAYSTACK_LEN - NEEDLE_LEN comparisons occur in searching, and
    sublinear performance is not possible.  */
-static RETURN_TYPE
+static RETURN_TYPE _GL_ATTRIBUTE_PURE
 two_way_long_needle (const unsigned char *haystack, size_t haystack_len,
                      const unsigned char *needle, size_t needle_len)
 {
-  size_t i; /* Index into current byte of NEEDLE.  */
-  size_t j; /* Index into current window of HAYSTACK.  */
-  size_t period; /* The period of the right half of needle.  */
-  size_t suffix; /* The index of the right half of needle.  */
-  size_t shift_table[1U << CHAR_BIT]; /* See below.  */
-
   /* Factor the needle into two halves, such that the left half is
      smaller than the global period, and the right half is
      periodic (with a period as large as NEEDLE_LEN - suffix).  */
-  suffix = critical_factorization (needle, needle_len, &period);
+  size_t period; /* The period of the right half of needle.  */
+  size_t suffix = /* The index of the right half of needle.  */
+    critical_factorization (needle, needle_len, &period);
 
   /* Populate shift_table.  For each possible byte value c,
      shift_table[c] is the distance from the last occurrence of c to
      the end of NEEDLE, or NEEDLE_LEN if c is absent from the NEEDLE.
      shift_table[NEEDLE[NEEDLE_LEN - 1]] contains the only 0.  */
-  for (i = 0; i < 1U << CHAR_BIT; i++)
+  size_t shift_table[1U << CHAR_BIT];
+  for (size_t i = 0; i < 1U << CHAR_BIT; i++)
     shift_table[i] = needle_len;
-  for (i = 0; i < needle_len; i++)
+  for (size_t i = 0; i < needle_len; i++)
     shift_table[CANON_ELEMENT (needle[i])] = needle_len - i - 1;
 
   /* Perform the search.  Each iteration compares the right half
@@ -357,13 +356,13 @@ two_way_long_needle (const unsigned char *haystack, size_t haystack_len,
          only advance by the period, so use memory to avoid rescanning
          known occurrences of the period in the right half.  */
       size_t memory = 0;
-      size_t shift;
-      j = 0;
+      size_t j = 0; /* Index into current window of HAYSTACK.  */
       while (AVAILABLE (haystack, haystack_len, j, needle_len))
         {
           /* Check the last byte first; if it does not match, then
              shift to the next possible match location.  */
-          shift = shift_table[CANON_ELEMENT (haystack[j + needle_len - 1])];
+          size_t shift =
+            shift_table[CANON_ELEMENT (haystack[j + needle_len - 1])];
           if (0 < shift)
             {
               if (memory && shift < period)
@@ -375,32 +374,34 @@ two_way_long_needle (const unsigned char *haystack, size_t haystack_len,
                 }
               memory = 0;
               j += shift;
-              continue;
-            }
-          /* Scan for matches in right half.  The last byte has
-             already been matched, by virtue of the shift table.  */
-          i = MAX (suffix, memory);
-          while (i < needle_len - 1 && (CANON_ELEMENT (needle[i])
-                                        == CANON_ELEMENT (haystack[i + j])))
-            ++i;
-          if (needle_len - 1 <= i)
-            {
-              /* Scan for matches in left half.  */
-              i = suffix - 1;
-              while (memory < i + 1 && (CANON_ELEMENT (needle[i])
-                                        == CANON_ELEMENT (haystack[i + j])))
-                --i;
-              if (i + 1 < memory + 1)
-                return (RETURN_TYPE) (haystack + j);
-              /* No match, so remember how many repetitions of period
-                 on the right half were scanned.  */
-              j += period;
-              memory = needle_len - period;
             }
           else
             {
-              j += i - suffix + 1;
-              memory = 0;
+              /* Scan for matches in right half.  The last byte has
+                 already been matched, by virtue of the shift table.  */
+              size_t i = MAX (suffix, memory);
+              while (i < needle_len - 1 && (CANON_ELEMENT (needle[i])
+                                            == CANON_ELEMENT (haystack[i + j])))
+                ++i;
+              if (needle_len - 1 <= i)
+                {
+                  /* Scan for matches in left half.  */
+                  i = suffix - 1;
+                  while (memory < i + 1 && (CANON_ELEMENT (needle[i])
+                                            == CANON_ELEMENT (haystack[i + j])))
+                    --i;
+                  if (i + 1 < memory + 1)
+                    return (RETURN_TYPE) (haystack + j);
+                  /* No match, so remember how many repetitions of period
+                     on the right half were scanned.  */
+                  j += period;
+                  memory = needle_len - period;
+                }
+              else
+                {
+                  j += i - suffix + 1;
+                  memory = 0;
+                }
             }
         }
     }
@@ -408,38 +409,40 @@ two_way_long_needle (const unsigned char *haystack, size_t haystack_len,
     {
       /* The two halves of needle are distinct; no extra memory is
          required, and any mismatch results in a maximal shift.  */
-      size_t shift;
       period = MAX (suffix, needle_len - suffix) + 1;
-      j = 0;
+      size_t j = 0; /* Index into current window of HAYSTACK.  */
       while (AVAILABLE (haystack, haystack_len, j, needle_len))
         {
           /* Check the last byte first; if it does not match, then
              shift to the next possible match location.  */
-          shift = shift_table[CANON_ELEMENT (haystack[j + needle_len - 1])];
+          size_t shift =
+            shift_table[CANON_ELEMENT (haystack[j + needle_len - 1])];
           if (0 < shift)
             {
               j += shift;
-              continue;
-            }
-          /* Scan for matches in right half.  The last byte has
-             already been matched, by virtue of the shift table.  */
-          i = suffix;
-          while (i < needle_len - 1 && (CANON_ELEMENT (needle[i])
-                                        == CANON_ELEMENT (haystack[i + j])))
-            ++i;
-          if (needle_len - 1 <= i)
-            {
-              /* Scan for matches in left half.  */
-              i = suffix - 1;
-              while (i != SIZE_MAX && (CANON_ELEMENT (needle[i])
-                                       == CANON_ELEMENT (haystack[i + j])))
-                --i;
-              if (i == SIZE_MAX)
-                return (RETURN_TYPE) (haystack + j);
-              j += period;
             }
           else
-            j += i - suffix + 1;
+            {
+              /* Scan for matches in right half.  The last byte has
+                 already been matched, by virtue of the shift table.  */
+              size_t i = suffix;
+              while (i < needle_len - 1 && (CANON_ELEMENT (needle[i])
+                                            == CANON_ELEMENT (haystack[i + j])))
+                ++i;
+              if (needle_len - 1 <= i)
+                {
+                  /* Scan for matches in left half.  */
+                  i = suffix - 1;
+                  while (i != SIZE_MAX && (CANON_ELEMENT (needle[i])
+                                           == CANON_ELEMENT (haystack[i + j])))
+                    --i;
+                  if (i == SIZE_MAX)
+                    return (RETURN_TYPE) (haystack + j);
+                  j += period;
+                }
+              else
+                j += i - suffix + 1;
+            }
         }
     }
   return NULL;

@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,33 +23,33 @@
 void proto_register_krb5rpc (void);
 void proto_reg_handoff_krb5rpc (void);
 
-static int proto_krb5rpc = -1;
+static int proto_krb5rpc;
 
-static gint ett_krb5rpc = -1;
+static int ett_krb5rpc;
 
 
 static e_guid_t uuid_krb5rpc =
   { 0x8f73de50, 0x768c, 0x11ca, {0xbf, 0xfc, 0x08, 0x00, 0x1e, 0x03, 0x94,
                                  0x31}
 };
-static guint16 ver_krb5rpc = 1;
-static int hf_krb5rpc_opnum = -1;
-static int hf_krb5rpc_sendto_kdc_rqst_keysize = -1;
-static int hf_krb5rpc_sendto_kdc_rqst_spare1 = -1;
-static int hf_krb5rpc_sendto_kdc_resp_len = -1;
-static int hf_krb5rpc_sendto_kdc_resp_max = -1;
-static int hf_krb5rpc_sendto_kdc_resp_spare1 = -1;
-static int hf_krb5rpc_sendto_kdc_resp_keysize = -1;
-/* static int hf_krb5rpc_sendto_kdc_resp_st = -1; */
-static int hf_krb5rpc_krb5 = -1;
-static gint ett_krb5rpc_krb5 = -1;
+static uint16_t ver_krb5rpc = 1;
+static int hf_krb5rpc_opnum;
+static int hf_krb5rpc_sendto_kdc_rqst_keysize;
+static int hf_krb5rpc_sendto_kdc_rqst_spare1;
+static int hf_krb5rpc_sendto_kdc_resp_len;
+static int hf_krb5rpc_sendto_kdc_resp_max;
+static int hf_krb5rpc_sendto_kdc_resp_spare1;
+static int hf_krb5rpc_sendto_kdc_resp_keysize;
+/* static int hf_krb5rpc_sendto_kdc_resp_st; */
+static int hf_krb5rpc_krb5;
+static int ett_krb5rpc_krb5;
 
 static int
 krb5rpc_dissect_sendto_kdc_rqst (tvbuff_t * tvb, int offset,
                                  packet_info * pinfo, proto_tree * tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
-  guint32 keysize, spare1, remain;
+  uint32_t keysize, spare1, remain;
   proto_item *item;
   tvbuff_t *krb5_tvb;
   proto_tree *subtree;
@@ -85,8 +73,8 @@ krb5rpc_dissect_sendto_kdc_rqst (tvbuff_t * tvb, int offset,
   subtree = proto_item_add_subtree (item, ett_krb5rpc_krb5);
 
   remain = tvb_captured_length_remaining(tvb, offset);
-  krb5_tvb = tvb_new_subset (tvb, offset, remain, remain);
-  offset = dissect_kerberos_main (krb5_tvb, pinfo, subtree, TRUE, NULL);
+  krb5_tvb = tvb_new_subset_length(tvb, offset, remain);
+  offset = dissect_kerberos_main (krb5_tvb, pinfo, subtree, true, NULL);
 
 
   return offset;
@@ -96,9 +84,9 @@ krb5rpc_dissect_sendto_kdc_rqst (tvbuff_t * tvb, int offset,
 static int
 krb5rpc_dissect_sendto_kdc_resp (tvbuff_t * tvb, int offset,
                                  packet_info * pinfo, proto_tree * tree,
-                                 dcerpc_info *di, guint8 *drep)
+                                 dcerpc_info *di, uint8_t *drep)
 {
-  guint32 resp_len, maxsize, spare1, keysize, remain;
+  uint32_t resp_len, maxsize, spare1, keysize, remain;
   proto_item *item;
   tvbuff_t *krb5_tvb;
   proto_tree *subtree;
@@ -130,16 +118,16 @@ krb5rpc_dissect_sendto_kdc_resp (tvbuff_t * tvb, int offset,
   item = proto_tree_add_item (tree, hf_krb5rpc_krb5, tvb, offset, -1, ENC_NA);
   subtree = proto_item_add_subtree (item, ett_krb5rpc_krb5);
   remain = tvb_captured_length_remaining(tvb, offset);
-  krb5_tvb = tvb_new_subset (tvb, offset, remain, remain);
+  krb5_tvb = tvb_new_subset_length(tvb, offset, remain);
 
-  offset = dissect_kerberos_main (krb5_tvb, pinfo, subtree, TRUE, NULL);
+  offset = dissect_kerberos_main (krb5_tvb, pinfo, subtree, true, NULL);
   offset += 16; /* no idea what this is, probably just extended encrypted text. */
 
   return offset;
 }
 
 
-static dcerpc_sub_dissector krb5rpc_dissectors[] = {
+static const dcerpc_sub_dissector krb5rpc_dissectors[] = {
   {0, "rsec_krb5rpc_sendto_kdc", krb5rpc_dissect_sendto_kdc_rqst,
    krb5rpc_dissect_sendto_kdc_resp},
   {0, NULL, NULL, NULL},
@@ -186,7 +174,7 @@ proto_register_krb5rpc (void)
 
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_krb5rpc,
     &ett_krb5rpc_krb5,
   };
@@ -205,7 +193,7 @@ proto_reg_handoff_krb5rpc (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

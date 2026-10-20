@@ -11,67 +11,16 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/decode_as.h>
 #include "packet-osi.h"
 #include "packet-osi-options.h"
-
-
-/* ATN traffic types (ICAO doc 9705 Edition3 SV5 5.6.2.2.6.7.3) */
-#define ATN_TT_ATSC_NO_PREFERENCE       0x01
-#define ATN_TT_ATSC_CLASS_A             0x10
-#define ATN_TT_ATSC_CLASS_B             0x11
-#define ATN_TT_ATSC_CLASS_C             0x12
-#define ATN_TT_ATSC_CLASS_D             0x13
-#define ATN_TT_ATSC_CLASS_E             0x14
-#define ATN_TT_ATSC_CLASS_F             0x15
-#define ATN_TT_ATSC_CLASS_G             0x16
-#define ATN_TT_ATSC_CLASS_H             0x17
-#define ATN_TT_AOC_NO_PREFERENCE        0x21
-#define ATN_TT_AOC_G                    0x22
-#define ATN_TT_AOC_V                    0x23
-#define ATN_TT_AOC_S                    0x24
-#define ATN_TT_AOC_H                    0x25
-#define ATN_TT_AOC_M                    0x26
-#define ATN_TT_AOC_G_V                  0x27
-#define ATN_TT_AOC_G_V_S                0x28
-#define ATN_TT_AOC_G_V_H_S              0x29
-#define ATN_TT_ADM_NO_PREFERENCE        0x30
-#define ATN_TT_SYS_MGMT_NO_PREFERENCE   0x60
-
-/* ATN security classification (ICAO doc 9705 Edition3 SV5 5.6.2.2.6.8.3) */
-#define ATN_SC_UNCLASSIFIED             0x01
-#define ATN_SC_RESTRICTED               0x02
-#define ATN_SC_CONFIDENTIAL             0x03
-#define ATN_SC_SECRET                   0x04
-#define ATN_SC_TOP_SECRET               0x05
-
-/* ATN security label records */
-#define OSI_OPT_SECURITY_ATN_SR         0xc0
-#define OSI_OPT_SECURITY_ATN_TT         0x0f
-#define OSI_OPT_SECURITY_ATN_SC         0x03
-#define OSI_OPT_SECURITY_ATN_SR_LEN     6
-#define OSI_OPT_SECURITY_ATN_TT_LEN     1
-#define OSI_OPT_SECURITY_ATN_SC_LEN     1
-#define OSI_OPT_SECURITY_ATN_SI_MAX_LEN 8
-
 
 #define OSI_OPT_SECURITY                0xc5
 #define OSI_OPT_QOS_MAINTANANCE         0xc3
@@ -117,92 +66,40 @@
 #define OSI_OPT_RFD_MASK                0xf0
 #define OSI_OPT_RFD_SUB_MASK            0x0f
 
-extern gboolean clnp_decode_atn_options; /* as defined in packet-clnp.c */
-extern int hf_clnp_atntt; /* as defined in packet-clnp.c */
-extern int hf_clnp_atnsc; /* as defined in packet-clnp.c */
-
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_osi_options_address_mask = -1;
-static int hf_osi_options_transit_delay_vs_cost = -1;
-static int hf_osi_options_rtd_general = -1;
-static int hf_osi_options_residual_error_prob_vs_transit_delay = -1;
-static int hf_osi_options_qos_sequencing_vs_transit_delay = -1;
-static int hf_osi_options_rtd_address = -1;
-static int hf_osi_options_congestion_experienced = -1;
-static int hf_osi_options_esct = -1;
-static int hf_osi_options_rtd_reassembly = -1;
-static int hf_osi_options_qos_maintenance = -1;
-static int hf_osi_options_security_type = -1;
-static int hf_osi_options_route_recording = -1;
-static int hf_osi_options_last_hop = -1;
-static int hf_osi_options_route = -1;
-static int hf_osi_options_rtd_lifetime = -1;
-static int hf_osi_options_rtd_source_routing = -1;
-static int hf_osi_options_padding = -1;
-static int hf_osi_options_rfd_error_class = -1;
-static int hf_osi_options_snpa_mask = -1;
-static int hf_osi_options_source_routing = -1;
-static int hf_osi_options_priority = -1;
-static int hf_osi_options_qos_reserved = -1;
-static int hf_osi_options_residual_error_prob_vs_cost = -1;
-static int hf_osi_options_rtd_pdu_discarded = -1;
-static int hf_osi_options_rfd_field = -1;
+static int hf_osi_options_address_mask;
+static int hf_osi_options_transit_delay_vs_cost;
+static int hf_osi_options_rtd_general;
+static int hf_osi_options_residual_error_prob_vs_transit_delay;
+static int hf_osi_options_qos_sequencing_vs_transit_delay;
+static int hf_osi_options_rtd_address;
+static int hf_osi_options_congestion_experienced;
+static int hf_osi_options_esct;
+static int hf_osi_options_rtd_reassembly;
+static int hf_osi_options_qos_maintenance;
+static int hf_osi_options_security_type;
+static int hf_osi_options_route_recording;
+static int hf_osi_options_last_hop;
+static int hf_osi_options_route;
+static int hf_osi_options_rtd_lifetime;
+static int hf_osi_options_rtd_source_routing;
+static int hf_osi_options_padding;
+static int hf_osi_options_rfd_error_class;
+static int hf_osi_options_snpa_mask;
+static int hf_osi_options_source_routing;
+static int hf_osi_options_priority;
+static int hf_osi_options_qos_reserved;
+static int hf_osi_options_residual_error_prob_vs_cost;
+static int hf_osi_options_rtd_pdu_discarded;
+static int hf_osi_options_rfd_field;
 
-static gint ott_osi_options       = -1;
-static gint ott_osi_qos           = -1;
-static gint ott_osi_route         = -1;
-static gint ott_osi_redirect      = -1;
+static int ett_osi_options;
+static int ett_osi_qos;
+static int ett_osi_route;
+static int ett_osi_redirect;
 
-static expert_field ei_osi_options_none = EI_INIT;
-static expert_field ei_osi_options_rfd_error_class = EI_INIT;
-
-static const guchar atn_security_registration_val[] = {
-  0x06, 0x04, 0x2b, 0x1b, 0x00, 0x00
-}; /* =iso(1).org(3).ICAO(27).ATN(0).TrafficType(0)*/
-
-static const value_string osi_opt_sec_atn_sr_vals[] = {
-  {OSI_OPT_SECURITY_ATN_SR, "ATN Security Label"},
-  {0,                       NULL}
-};
-
-static const value_string osi_opt_sec_atn_si_vals[] = {
-  {OSI_OPT_SECURITY_ATN_TT, "Traffic Type and Routing"},
-  {OSI_OPT_SECURITY_ATN_SC, "Security classification"},
-  {0,                       NULL}
-};
-
-static const value_string osi_opt_sec_atn_tt_vals[] = {
-  {ATN_TT_ATSC_NO_PREFERENCE,     "ATSC No preference"},
-  {ATN_TT_ATSC_CLASS_A,           "ATSC Class A"},
-  {ATN_TT_ATSC_CLASS_B,           "ATSC Class B"},
-  {ATN_TT_ATSC_CLASS_C,           "ATSC Class C"},
-  {ATN_TT_ATSC_CLASS_D,           "ATSC Class D"},
-  {ATN_TT_ATSC_CLASS_E,           "ATSC Class E"},
-  {ATN_TT_ATSC_CLASS_F,           "ATSC Class F"},
-  {ATN_TT_ATSC_CLASS_G,           "ATSC Class G"},
-  {ATN_TT_ATSC_CLASS_H,           "ATSC Class H"},
-  {ATN_TT_AOC_NO_PREFERENCE,      "AOC No preference"},
-  {ATN_TT_AOC_G,                  "AOC Gatelink only"},
-  {ATN_TT_AOC_V,                  "AOC VHF only"},
-  {ATN_TT_AOC_S,                  "AOC Satellite only"},
-  {ATN_TT_AOC_H,                  "AOC HF only"},
-  {ATN_TT_AOC_M,                  "AOC Mode S only"},
-  {ATN_TT_AOC_G_V,                "AOC Gatelink first, then VHF"},
-  {ATN_TT_AOC_G_V_S,              "AOC Gatelink first, then VHF, then Satellite"},
-  {ATN_TT_AOC_G_V_H_S,            "AOC Gatelink first, then VHF, then HF, then Satellite"},
-  {ATN_TT_ADM_NO_PREFERENCE,      "ATN Administrative No preference"},
-  {ATN_TT_SYS_MGMT_NO_PREFERENCE, "ATN Systems Management No preference"},
-  {0,                             NULL}
-};
-
-static const value_string osi_opt_sec_atn_sc_vals[] = {
-  {ATN_SC_UNCLASSIFIED, "unclassified"},
-  {ATN_SC_RESTRICTED,   "restricted"},
-  {ATN_SC_CONFIDENTIAL, "confidential"},
-  {ATN_SC_SECRET,       "secret"},
-  {ATN_SC_TOP_SECRET,   "top secret"},
-  {0,                   NULL}
-};
+static expert_field ei_osi_options_none;
+static expert_field ei_osi_options_rfd_error_class;
 
 static const value_string osi_opt_sec_vals[] = {
   {OSI_OPT_SEC_RESERVED,      "Reserved"},
@@ -275,17 +172,18 @@ static const value_string osi_opt_rfd_reassembly[] = {
   {0x00, "Reassembly interference"},
   {0,    NULL} };
 
+static dissector_table_t subdissector_decode_as_opt_security_table;
 
 static void
-dissect_option_qos(const guint8 qos, proto_tree *tree, tvbuff_t *tvb, int offset)
+dissect_option_qos(const uint8_t qos, proto_tree *tree, tvbuff_t *tvb, int offset)
 {
   proto_item *ti;
   proto_tree *osi_qos_tree;
 
   ti = proto_tree_add_item(tree, hf_osi_options_qos_maintenance, tvb, offset, 1, ENC_BIG_ENDIAN);
-  osi_qos_tree = proto_item_add_subtree(ti, ott_osi_qos);
+  osi_qos_tree = proto_item_add_subtree(ti, ett_osi_qos);
 
-  if ( ((qos & OSI_OPT_QOS_MASK) >> 6) == OSI_OPT_QOS_GLOBAL_UNIQUE) { /* Analye BIT field to get all Values */
+  if ( ((qos & OSI_OPT_QOS_MASK) >> 6) == OSI_OPT_QOS_GLOBAL_UNIQUE) { /* Analyze BIT field to get all Values */
     proto_tree_add_item(osi_qos_tree, hf_osi_options_qos_reserved, tvb, offset, 1, ENC_NA);
     proto_tree_add_item(osi_qos_tree, hf_osi_options_qos_sequencing_vs_transit_delay, tvb, offset, 1, ENC_NA);
     proto_tree_add_item(osi_qos_tree, hf_osi_options_congestion_experienced, tvb, offset, 1, ENC_NA);
@@ -296,33 +194,33 @@ dissect_option_qos(const guint8 qos, proto_tree *tree, tvbuff_t *tvb, int offset
 }
 
 static void
-dissect_option_route(guchar parm_type, int offset, guchar parm_len,
-                     tvbuff_t *tvb, proto_tree *tree )
+dissect_option_route(unsigned char parm_type, int offset, unsigned char parm_len,
+                     tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo )
 {
-  guchar      next_hop = 0;
-  guint16     this_hop = 0;
-  guchar      netl     = 0;
-  guchar      last_hop = 0;
-  guchar      cnt_hops = 0;
-  guchar      crr      = 0;
-  gchar*      str;
+  unsigned char      next_hop = 0;
+  uint16_t    this_hop = 0;
+  unsigned char      netl     = 0;
+  unsigned char      last_hop = 0;
+  unsigned char      cnt_hops = 0;
+  unsigned char      crr      = 0;
+  char*      str;
 
   proto_tree *osi_route_tree = NULL;
 
   if ( parm_type == OSI_OPT_SOURCE_ROUTING ) {
-    next_hop = tvb_get_guint8(tvb, offset + 1);
-    netl     = tvb_get_guint8(tvb, next_hop + 2);
+    next_hop = tvb_get_uint8(tvb, offset + 1);
+    netl     = tvb_get_uint8(tvb, next_hop + 2);
     this_hop = offset + 2;  /* points to first netl */
 
     proto_tree_add_uint_format_value(tree, hf_osi_options_source_routing, tvb, offset + next_hop, netl,
-                        tvb_get_guint8(tvb, offset), "%s   ( Next Hop Highlighted In Data Buffer )",
-                        (tvb_get_guint8(tvb, offset) == 0) ? "Partial Source Routing" :
+                        tvb_get_uint8(tvb, offset), "%s   ( Next Hop Highlighted In Data Buffer )",
+                        (tvb_get_uint8(tvb, offset) == 0) ? "Partial Source Routing" :
                                                              "Complete Source Routing");
   }
   else if ( parm_type == OSI_OPT_RECORD_OF_ROUTE ) {
-    crr = tvb_get_guint8(tvb, offset);
-    last_hop = tvb_get_guint8(tvb, offset + 1);
-    osi_route_tree = proto_tree_add_subtree(tree, tvb, offset, parm_len, ott_osi_route, NULL,
+    crr = tvb_get_uint8(tvb, offset);
+    last_hop = tvb_get_uint8(tvb, offset + 1);
+    osi_route_tree = proto_tree_add_subtree(tree, tvb, offset, parm_len, ett_osi_route, NULL,
                              (crr == 0) ? "Partial Route Recording" : "Complete Route Recording");
 
     /* Complete Route Recording or Partial Route Recording */
@@ -352,8 +250,8 @@ dissect_option_route(guchar parm_type, int offset, guchar parm_len,
   }
 
   while ( this_hop < offset + last_hop -2 ) { /* -2 for crr and last_hop */
-    netl = tvb_get_guint8(tvb, this_hop);
-    str = print_nsap_net(tvb, this_hop + 1, netl);
+    netl = tvb_get_uint8(tvb, this_hop);
+    str = print_nsap_net(pinfo->pool, tvb, this_hop + 1, netl);
     proto_tree_add_string_format(osi_route_tree, hf_osi_options_route, tvb, this_hop, netl + 1, str,
                         "Hop #%3u NETL: %2u, NET: %s", cnt_hops++, netl, str);
     this_hop += 1 + netl;
@@ -362,8 +260,8 @@ dissect_option_route(guchar parm_type, int offset, guchar parm_len,
 
 
 static void
-dissect_option_rfd(const guchar error, const guchar field, int offset,
-                   guchar len _U_, tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo )
+dissect_option_rfd(const unsigned char error, const unsigned char field, int offset,
+                   unsigned char len _U_, tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo )
 {
   proto_item *ti;
 
@@ -396,91 +294,6 @@ dissect_option_rfd(const guchar error, const guchar field, int offset,
   proto_tree_add_uint(tree, hf_osi_options_rfd_field, tvb, offset + field, 1, field);
 }
 
-/* dissect ATN security label used for policy based interdomain routing.*/
-/* For details see ICAO doc 9705 Edition 3 SV5 5.6.2.2.2.2 */
-static void
-dissect_option_atn_security_label(const guchar sub_type, guchar length,
-                                  tvbuff_t *tvb, guint offset,
-                                  proto_tree *tree)
-{
-  proto_tree *atn_sl_tree;
-  guchar len = 0;
-  guint8 tag_name = 0;
-  guint  security_info_end = 0;
-
-  /* check for ATN security label */
-  if ( OSI_OPT_SECURITY_ATN_SR != sub_type )
-    return;
-
-  /* check Security Registration Length */
-  len =  tvb_get_guint8(tvb, ++offset);
-  if ( OSI_OPT_SECURITY_ATN_SR_LEN != len )
-    return;
-
-  /* check Security Registration ID */
-  if ( tvb_memeql(tvb, ++offset , atn_security_registration_val, OSI_OPT_SECURITY_ATN_SR_LEN) )
-    return;
-
-  atn_sl_tree = proto_tree_add_subtree(tree, tvb, offset, length, ott_osi_qos, NULL,
-                           val_to_str(sub_type, osi_opt_sec_atn_sr_vals, "Unknown (0x%x)"));
-
-  offset += OSI_OPT_SECURITY_ATN_SR_LEN;
-
-  /* Security Information length */
-  len = tvb_get_guint8(tvb, offset);
-
-  if ( OSI_OPT_SECURITY_ATN_SI_MAX_LEN < len )
-    return;
-
-  offset++;
-
-  security_info_end = offset + len;
-  while ( offset < security_info_end ) {
-    /* check tag name length*/
-    len = tvb_get_guint8(tvb, offset); /* check tag name length*/
-    if ( len != 1 )
-      return;
-
-    offset++;
-
-    tag_name = tvb_get_guint8(tvb, offset);
-    offset++;
-
-    switch(tag_name) {
-      case OSI_OPT_SECURITY_ATN_TT:
-        /* check tag set length*/
-        len = tvb_get_guint8(tvb, offset);
-        if ( len != OSI_OPT_SECURITY_ATN_TT_LEN )
-          return;
-
-        offset++;
-        proto_tree_add_uint_format(atn_sl_tree, hf_clnp_atntt, tvb, offset, 1,
-                                   tvb_get_guint8(tvb, offset), "%s: %s",
-                                   val_to_str(OSI_OPT_SECURITY_ATN_TT, osi_opt_sec_atn_si_vals, "Unknown (0x%x)"),
-                                   val_to_str(tvb_get_guint8(tvb, offset ), osi_opt_sec_atn_tt_vals, "Unknown (0x%x)"));
-        offset += len;
-        break;
-
-      case OSI_OPT_SECURITY_ATN_SC:
-        /* check tag set length*/
-        len = tvb_get_guint8(tvb, offset);
-        if ( len != OSI_OPT_SECURITY_ATN_SC_LEN )
-          return;
-
-        offset++;
-        proto_tree_add_uint_format(atn_sl_tree, hf_clnp_atnsc, tvb, offset, 1,
-                                   tvb_get_guint8(tvb, offset), "%s: %s",
-                                   val_to_str(OSI_OPT_SECURITY_ATN_SC, osi_opt_sec_atn_si_vals, "Unknown (0x%x)"),
-                                   val_to_str(tvb_get_guint8(tvb, offset ), osi_opt_sec_atn_sc_vals, "Unknown (0x%x)"));
-        offset += len;
-        break;
-
-      default:
-        return;
-    }
-  }
-}
-
 /* ############################## Dissection Functions ###################### */
 
 /*
@@ -491,7 +304,7 @@ dissect_option_atn_security_label(const guchar sub_type, guchar length,
  *   main esis tree data and call the sub-protocols as needed.
  *
  * Input:
- *   guchar       : length of option section
+ *   unsigned char       : length of option section
  *   tvbuff_t *   : tvbuff containing packet data
  *   int          : offset into packet where we are (packet_data[offset]== start
  *                  of what we care about)
@@ -501,44 +314,63 @@ dissect_option_atn_security_label(const guchar sub_type, guchar length,
  *   void, but we will add to the proto_tree if it is not NULL.
  */
 void
-dissect_osi_options(guchar opt_len, tvbuff_t *tvb, int offset, proto_tree *tree, packet_info *pinfo)
+dissect_osi_options(unsigned char opt_len, tvbuff_t *tvb, int offset, proto_tree *tree, packet_info *pinfo)
 {
   proto_item *ti;
   proto_tree *osi_option_tree = NULL;
-  guchar      parm_len        = 0;
-  guchar      parm_type       = 0;
-  guint8      octet;
+  unsigned char      parm_len        = 0;
+  unsigned char      parm_type       = 0;
+  uint8_t     octet;
+  uint32_t    sec_type;
+  tvbuff_t   *next_tvb;
 
     osi_option_tree = proto_tree_add_subtree(tree, tvb, offset, opt_len,
-                             ott_osi_options, &ti, "### Option Section ###");
+                             ett_osi_options, &ti, "### Option Section ###");
     if ( 0 == opt_len ) {
        expert_add_info(pinfo, ti, &ei_osi_options_none);
        return;
     }
 
     while ( 0 < opt_len ) {
-      parm_type = tvb_get_guint8(tvb, offset++);
-      parm_len = tvb_get_guint8(tvb, offset++);
+      parm_type = tvb_get_uint8(tvb, offset++);
+      parm_len = tvb_get_uint8(tvb, offset++);
 
       switch ( parm_type ) {
         case OSI_OPT_QOS_MAINTANANCE:
-          octet = tvb_get_guint8(tvb, offset);
+          octet = tvb_get_uint8(tvb, offset);
           dissect_option_qos(octet, osi_option_tree, tvb, offset);
           break;
 
         case OSI_OPT_SECURITY:
-          octet = tvb_get_guint8(tvb, offset);
-          if ( clnp_decode_atn_options ) {
-            dissect_option_atn_security_label(octet,parm_len,tvb, offset,
-                                              osi_option_tree);
-          } else {
-            ti = proto_tree_add_item(osi_option_tree, hf_osi_options_security_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-            proto_item_set_len(ti, parm_len);
+          /*
+           * This is unspecified by ISO 8473, and the interpretation
+           * of the value of the security option appears to be
+           * specified by various profiles, such as GOSIP, TUBA, and
+           * ATN.
+           *
+           * Thus, we use a payload dissector, so the user can
+           * specify which dissector to use.
+           */
+          proto_tree_add_item_ret_uint(osi_option_tree, hf_osi_options_security_type, tvb, offset, 1, ENC_BIG_ENDIAN, &sec_type);
+          /* XXX */
+          switch ( sec_type ) {
+
+          case OSI_OPT_SEC_RESERVED:
+          case OSI_OPT_SEC_SRC_ADR_SPEC:
+          case OSI_OPT_SEC_DST_ADR_SPEC:
+          default:
+            break;
+
+          case OSI_OPT_SEC_GLOBAL_UNIQUE:
+              next_tvb = tvb_new_subset_length(tvb, offset + 1, parm_len - 1);
+              dissector_try_payload_with_data(subdissector_decode_as_opt_security_table,
+                                     next_tvb, pinfo, osi_option_tree, true, NULL);
+              break;
           }
           break;
 
         case OSI_OPT_PRIORITY:
-          octet = tvb_get_guint8(tvb, offset);
+          octet = tvb_get_uint8(tvb, offset);
           if ( OSI_OPT_MAX_PRIORITY >= octet ) {
             ti = proto_tree_add_item(osi_option_tree, hf_osi_options_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
           } else {
@@ -551,7 +383,7 @@ dissect_osi_options(guchar opt_len, tvbuff_t *tvb, int offset, proto_tree *tree,
         case OSI_OPT_ADDRESS_MASK:
           proto_tree_add_bytes_format_value(osi_option_tree, hf_osi_options_address_mask, tvb, offset, parm_len,
                               NULL, "%s",
-                              print_area(tvb, offset, parm_len));
+                              print_area(pinfo->pool, tvb, offset, parm_len));
           break;
 
         case OSI_OPT_SNPA_MASK:
@@ -569,12 +401,12 @@ dissect_osi_options(guchar opt_len, tvbuff_t *tvb, int offset, proto_tree *tree,
         case OSI_OPT_SOURCE_ROUTING:
         case OSI_OPT_RECORD_OF_ROUTE:
           dissect_option_route(parm_type, offset, parm_len, tvb,
-                               osi_option_tree);
+                               osi_option_tree, pinfo);
           break;
 
         case OSI_OPT_REASON_OF_DISCARD:
-          dissect_option_rfd(tvb_get_guint8(tvb, offset),
-                             tvb_get_guint8(tvb, offset + 1), offset, parm_len,
+          dissect_option_rfd(tvb_get_uint8(tvb, offset),
+                             tvb_get_uint8(tvb, offset + 1), offset, parm_len,
                              tvb, osi_option_tree, pinfo);
           break;
       }
@@ -634,11 +466,11 @@ proto_register_osi_options(void) {
       { &hf_osi_options_padding, { "Padding", "osi.options.padding", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
   };
 
-  static gint *ott[] = {
-    &ott_osi_options,
-    &ott_osi_qos,
-    &ott_osi_route,
-    &ott_osi_redirect
+  static int *ett[] = {
+    &ett_osi_options,
+    &ett_osi_qos,
+    &ett_osi_route,
+    &ett_osi_redirect
   };
 
   static ei_register_info ei[] = {
@@ -649,13 +481,16 @@ proto_register_osi_options(void) {
   expert_module_t *expert_osi_options;
 
   proto_register_field_array(proto_osi, hf, array_length(hf));
-  proto_register_subtree_array(ott, array_length(ott));
+  proto_register_subtree_array(ett, array_length(ett));
   expert_osi_options = expert_register_protocol(proto_osi);
   expert_register_field_array(expert_osi_options, ei, array_length(ei));
+
+  subdissector_decode_as_opt_security_table = register_decode_as_next_proto(proto_osi,
+        "osi.opt_security", "OSI Security Option", NULL);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2
@@ -666,4 +501,3 @@ proto_register_osi_options(void) {
  * vi: set shiftwidth=2 tabstop=8 expandtab:
  * :indentSize=2:tabSize=8:noTabs=true:
  */
-

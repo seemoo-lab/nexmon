@@ -51,15 +51,34 @@ comment! */ "this is a single " /* now comes the concatenation! */ + // after +
           }
         },
         "this is the second argument");
+    // Text blocks are extracted.
+    gettext ("""
+        a one-liner block """);
+    gettext ("""
+        ibam forte via sacra sicut meus est mos
+        nescio quid meditans nugarum totus in illis
+            
+        accurrit quidam notus mihi nomine tantum
+        arreptaque manu "quid agis, dulcissime rerum?"
+             """);
+    gettext ("""
+        \"""a text block in a text block\""" """);
+    gettext ("""
+        testing mixed ASCII and Unicode whitespace
+      \u0020 line 2
+       \u0020line 3
+        \u0020line 4
+        and trailing whitespace  
+        as well \u0020
+        also in the last line\u0020"""
+        );
   }
 }
 EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} --from-code=ISO-8859-1 -c -o xg-j-2.tmp xg-j-2.java 2>/dev/null || Exit 1
-# Don't simplify this to "grep ... < xg-j-2.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-j-2.tmp | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > xg-j-2.pot
+func_filter_POT_Creation_Date xg-j-2.tmp xg-j-2.pot
 
 cat <<\EOF > xg-j-2.ok
 # SOME DESCRIPTIVE TITLE.
@@ -162,6 +181,35 @@ msgstr ""
 
 #: xg-j-2.java:46
 msgid "this is the second argument"
+msgstr ""
+
+#. Text blocks are extracted.
+#: xg-j-2.java:48
+msgid "a one-liner block"
+msgstr ""
+
+#: xg-j-2.java:50
+msgid ""
+"ibam forte via sacra sicut meus est mos\n"
+"nescio quid meditans nugarum totus in illis\n"
+"\n"
+"accurrit quidam notus mihi nomine tantum\n"
+"arreptaque manu \"quid agis, dulcissime rerum?\"\n"
+msgstr ""
+
+#: xg-j-2.java:57
+msgid "\"\"\"a text block in a text block\"\"\""
+msgstr ""
+
+#: xg-j-2.java:59
+msgid ""
+"testing mixed ASCII and Unicode whitespace\n"
+"line 2\n"
+"line 3\n"
+" line 4\n"
+"and trailing whitespace\n"
+"as well\n"
+"also in the last line"
 msgstr ""
 EOF
 

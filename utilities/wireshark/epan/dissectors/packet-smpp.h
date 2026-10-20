@@ -15,19 +15,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  * ----------
  *
  * Dissector of an SMPP (Short Message Peer to Peer) PDU, as defined by the
@@ -38,16 +26,24 @@
 #ifndef __PACKET_SMPP_H_
 #define __PACKET_SMPP_H_
 
+#include "packet-gsm_sms.h"
+
+typedef struct _smpp_data_t {
+        bool udhi;
+        unsigned encoding;
+        gsm_sms_udh_fields_t *udh_fields;
+} smpp_data_t;
+
 /*
  * Export dissection of some parameters
  */
-void smpp_handle_dcs(proto_tree *tree, tvbuff_t *tvb, int *offset);
+void smpp_handle_dcs(proto_tree *tree, tvbuff_t *tvb, int *offset, unsigned *encoding);
 
 
 /* Tap Record */
 typedef struct _smpp_tap_rec_t {
-	guint command_id;
-	guint command_status;
+	unsigned command_id;
+	unsigned command_status;
 } smpp_tap_rec_t;
 
 #endif

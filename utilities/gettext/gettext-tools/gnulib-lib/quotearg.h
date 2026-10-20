@@ -1,11 +1,11 @@
 /* quotearg.h - quote arguments for output
 
-   Copyright (C) 1998-2002, 2004, 2006, 2008-2016 Free Software Foundation,
+   Copyright (C) 1998-2002, 2004, 2006, 2008-2026 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -14,14 +14,24 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Paul Eggert <eggert@twinsun.com> */
 
 #ifndef QUOTEARG_H_
-# define QUOTEARG_H_ 1
+#define QUOTEARG_H_ 1
 
-# include <stddef.h>
+/* This file uses _GL_ATTRIBUTE_MALLOC, _GL_ATTRIBUTE_RETURNS_NONNULL.  */
+#if !_GL_CONFIG_H_INCLUDED
+# error "Please include config.h first."
+#endif
+
+#include <stdlib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Basic quoting styles.  For each style, an example is given on the
    input strings "simple", "\0 \t\n'\"\033?""?/\\", and "a:b", using
@@ -75,7 +85,8 @@ enum quoting_style
 
     /* Quote names for the shell if they contain shell metacharacters
        or other problematic characters (ls --quoting-style=shell-escape).
-       Non printable characters are quoted using the $'...' syntax,
+       Non printable characters are quoted using the $'...' syntax
+       <https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html>,
        which originated in ksh93 and is widely supported by most shells,
        and proposed for inclusion in POSIX.
 
@@ -90,7 +101,8 @@ enum quoting_style
 
     /* Quote names for the shell even if they would normally not
        require quoting (ls --quoting-style=shell-escape).
-       Non printable characters are quoted using the $'...' syntax,
+       Non printable characters are quoted using the $'...' syntax
+       <https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html>,
        which originated in ksh93 and is widely supported by most shells,
        and proposed for inclusion in POSIX.  Behaves like
        shell_escape_quoting_style if QA_ELIDE_OUTER_QUOTES is in effect.
@@ -150,11 +162,11 @@ enum quoting_style
 
        LC_MESSAGES=C
        quotearg_buffer:
-       "`simple'", "`\\0 \\t\\n\\'\"\\033??/\\\\'", "`a:b'"
+       "'simple'", "'\\0 \\t\\n\\'\"\\033??/\\\\'", "'a:b'"
        quotearg:
-       "`simple'", "`\\0 \\t\\n\\'\"\\033??/\\\\'", "`a:b'"
+       "'simple'", "'\\0 \\t\\n\\'\"\\033??/\\\\'", "'a:b'"
        quotearg_colon:
-       "`simple'", "`\\0 \\t\\n\\'\"\\033??/\\\\'", "`a\\:b'"
+       "'simple'", "'\\0 \\t\\n\\'\"\\033??/\\\\'", "'a\\:b'"
 
        LC_MESSAGES=pt_PT.utf8
        quotearg_buffer:
@@ -248,7 +260,11 @@ enum quoting_flags
 
     /* Omit the surrounding quote characters if no escaped characters
        are encountered.  Note that if no other character needs
-       escaping, then neither does the escape character.  */
+       escaping, then neither does the escape character.
+       *Attention!*  This flag is unsupported in combination with the styles
+       shell_escape_quoting_style and shell_escape_always_quoting_style
+       (because in this situation it cannot handle strings that start
+       with a non-printable character).  */
     QA_ELIDE_OUTER_QUOTES = 0x02,
 
     /* In the c_quoting_style and c_maybe_quoting_style, split ANSI
@@ -259,9 +275,9 @@ enum quoting_flags
   };
 
 /* For now, --quoting-style=literal is the default, but this may change.  */
-# ifndef DEFAULT_QUOTING_STYLE
-#  define DEFAULT_QUOTING_STYLE literal_quoting_style
-# endif
+#ifndef DEFAULT_QUOTING_STYLE
+# define DEFAULT_QUOTING_STYLE literal_quoting_style
+#endif
 
 /* Names of quoting styles and their corresponding values.  */
 extern char const *const quoting_style_args[];
@@ -275,7 +291,9 @@ struct quoting_options;
 /* Allocate a new set of quoting options, with contents initially identical
    to O if O is not null, or to the default if O is null.
    It is the caller's responsibility to free the result.  */
-struct quoting_options *clone_quoting_options (struct quoting_options *o);
+struct quoting_options *clone_quoting_options (struct quoting_options *o)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
 
 /* Get the value of O's quoting style.  If O is null, use the default.  */
 enum quoting_style get_quoting_style (struct quoting_options const *o);
@@ -323,7 +341,7 @@ void set_custom_quoting (struct quoting_options *o,
    On output, BUFFER might contain embedded null bytes if ARGSIZE was
    not -1, the style of O does not use backslash escapes, and the
    flags of O do not request elision of null bytes.*/
-size_t quotearg_buffer (char *buffer, size_t buffersize,
+size_t quotearg_buffer (char *restrict buffer, size_t buffersize,
                         char const *arg, size_t argsize,
                         struct quoting_options const *o);
 
@@ -331,7 +349,9 @@ size_t quotearg_buffer (char *buffer, size_t buffersize,
    buffer.  It is the caller's responsibility to free the result.  The
    result will not contain embedded null bytes.  */
 char *quotearg_alloc (char const *arg, size_t argsize,
-                      struct quoting_options const *o);
+                      struct quoting_options const *o)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
 
 /* Like quotearg_alloc, except that the length of the result,
    excluding the terminating null byte, is stored into SIZE if it is
@@ -340,7 +360,9 @@ char *quotearg_alloc (char const *arg, size_t argsize,
    backslash escapes, and the flags of O do not request elision of
    null bytes.*/
 char *quotearg_alloc_mem (char const *arg, size_t argsize,
-                          size_t *size, struct quoting_options const *o);
+                          size_t *size, struct quoting_options const *o)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
 
 /* Use storage slot N to return a quoted version of the string ARG.
    Use the default quoting options.
@@ -421,5 +443,10 @@ char *quotearg_custom_mem (char const *left_quote,
 
 /* Free any dynamically allocated memory.  */
 void quotearg_free (void);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* !QUOTEARG_H_ */

@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* FF:
@@ -38,38 +26,38 @@ void proto_reg_handoff_pktgen(void);
 #define PKTGEN_MAGIC 0xbe9be955
 
 /* Initialize the protocol and registered fields */
-static int proto_pktgen = -1;
+static int proto_pktgen;
 
 /* pktgen header */
-static int hf_pktgen_magic = -1;
-static int hf_pktgen_seqnum = -1;
-static int hf_pktgen_tvsec = -1;
-static int hf_pktgen_tvusec = -1;
-static int hf_pktgen_timestamp = -1;
+static int hf_pktgen_magic;
+static int hf_pktgen_seqnum;
+static int hf_pktgen_tvsec;
+static int hf_pktgen_tvusec;
+static int hf_pktgen_timestamp;
 
 /* Initialize the subtree pointer */
-static gint ett_pktgen = -1;
+static int ett_pktgen;
 
 /* entry point */
-static gboolean dissect_pktgen(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool dissect_pktgen(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item *ti          = NULL;
     proto_item *tmp         = NULL;
     proto_tree *pktgen_tree = NULL;
-    guint32     offset      = 0;
+    uint32_t    offset      = 0;
     nstime_t    tstamp;
-    guint32     magic;
+    uint32_t    magic;
 
     /* check for min size */
     if (tvb_reported_length(tvb) < 16) {  /* Not a PKTGEN packet. */
-        return FALSE;
+        return false;
     }
 
     /* check for magic number */
     magic = tvb_get_ntohl(tvb,0);
     if (magic != PKTGEN_MAGIC) {
         /* Not a PKTGEN packet. */
-        return FALSE;
+        return false;
     }
 
 
@@ -97,12 +85,12 @@ static gboolean dissect_pktgen(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
         tstamp.secs = tvb_get_ntohl(tvb, offset);
         tmp = proto_tree_add_item(pktgen_tree, hf_pktgen_tvsec, tvb, offset, 4, ENC_BIG_ENDIAN);
-        PROTO_ITEM_SET_GENERATED(tmp);
+        proto_item_set_generated(tmp);
         offset += 4;
 
         tstamp.nsecs = tvb_get_ntohl(tvb, offset) /* microsecond on the wire so... */ * 1000;
         tmp = proto_tree_add_item(pktgen_tree, hf_pktgen_tvusec, tvb, offset, 4, ENC_BIG_ENDIAN);
-        PROTO_ITEM_SET_GENERATED(tmp);
+        proto_item_set_generated(tmp);
         offset += 4;
 
         proto_tree_add_time(pktgen_tree, hf_pktgen_timestamp, tvb, offset - 8, 8, &tstamp);
@@ -112,7 +100,7 @@ static gboolean dissect_pktgen(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
             pktgen_tree);
     }
 
-    return TRUE;
+    return true;
 }
 
 
@@ -166,7 +154,7 @@ void proto_register_pktgen(void)
 
     /* Setup protocol subtree array */
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_pktgen
     };
 
@@ -189,7 +177,7 @@ void proto_reg_handoff_pktgen(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

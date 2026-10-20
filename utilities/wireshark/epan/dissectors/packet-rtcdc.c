@@ -2,11 +2,11 @@
  * packet-rtcdc.c
  * Routines for the RTCWeb Data Channel Protocol dissection
  * as specified in
- * http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-03
+ * https://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-03
  * and specified in
- * http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-08
+ * https://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-08
  * We might want to remove the support of
- * http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-03
+ * https://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-03
  * in the future, but I'll leave it in for now.
  * Copyright 2012 - 2013, Michael Tuexen <tuexen@wireshark.org>
  *
@@ -14,19 +14,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -39,38 +27,37 @@
 void proto_register_rtcdc(void);
 void proto_reg_handoff_rtcdc(void);
 
-/* PPID used for this protocol */
-static guint32 rtcdc_ppid = WEBRTC_DCEP_PROTOCOL_ID;
+static dissector_handle_t rtcdc_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_rtcdc = -1;
-static int hf_message_type = -1;
-static int hf_channel_type = -1;
-static int hf_flags = -1;
-static int hf_flags_reserved = -1;
-static int hf_unordered_allowed = -1;
-static int hf_reliability = -1;
-static int hf_priority = -1;
-static int hf_label = -1;
-static int hf_error = -1;
-static int hf_sid = -1;
-static int hf_new_channel_type = -1;
-static int hf_new_reliability = -1;
-static int hf_new_priority = -1;
-static int hf_new_label_length = -1;
-static int hf_new_protocol_length = -1;
-static int hf_new_label = -1;
-static int hf_new_protocol = -1;
+static int proto_rtcdc;
+static int hf_message_type;
+static int hf_channel_type;
+static int hf_flags;
+static int hf_flags_reserved;
+static int hf_unordered_allowed;
+static int hf_reliability;
+static int hf_priority;
+static int hf_label;
+static int hf_error;
+static int hf_sid;
+static int hf_new_channel_type;
+static int hf_new_reliability;
+static int hf_new_priority;
+static int hf_new_label_length;
+static int hf_new_protocol_length;
+static int hf_new_label;
+static int hf_new_protocol;
 
 /* Initialize the subtree pointers */
-static gint ett_rtcdc = -1;
-static gint ett_flags = -1;
+static int ett_rtcdc;
+static int ett_flags;
 
-static expert_field ei_rtcdc_new_reliability_non_zero = EI_INIT;
-static expert_field ei_rtcdc_message_type_unknown = EI_INIT;
-static expert_field ei_rtcdc_inconsistent_label_and_parameter_length = EI_INIT;
-static expert_field ei_rtcdc_message_too_long = EI_INIT;
-static expert_field ei_rtcdc_new_channel_type = EI_INIT;
+static expert_field ei_rtcdc_new_reliability_non_zero;
+static expert_field ei_rtcdc_message_type_unknown;
+static expert_field ei_rtcdc_inconsistent_label_and_parameter_length;
+static expert_field ei_rtcdc_message_too_long;
+static expert_field ei_rtcdc_new_channel_type;
 
 #define DATA_CHANNEL_OPEN_REQUEST     0x00
 #define DATA_CHANNEL_OPEN_RESPONSE    0x01
@@ -126,7 +113,7 @@ dissect_open_request_message(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
         proto_tree_add_item(flags_tree, hf_unordered_allowed, tvb, FLAGS_OFFSET, FLAGS_LENGTH, ENC_BIG_ENDIAN);
         proto_tree_add_item(rtcdc_tree, hf_reliability, tvb, RELIABILITY_OFFSET, RELIABILITY_LENGTH, ENC_BIG_ENDIAN);
         proto_tree_add_item(rtcdc_tree, hf_priority, tvb, PRIORITY_OFFSET, PRIORITY_LENGTH, ENC_BIG_ENDIAN);
-        proto_tree_add_item(rtcdc_tree, hf_label, tvb, LABEL_OFFSET, -1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(rtcdc_tree, hf_label, tvb, LABEL_OFFSET, -1, ENC_ASCII);
     }
     return;
 }
@@ -186,7 +173,7 @@ static const value_string new_channel_type_values[] = {
 #define NEW_RELIABILITY_LENGTH     4
 #define NEW_LABEL_LENGTH_LENGTH    2
 #define NEW_PROTOCOL_LENGTH_LENGTH 2
-#define NEW_OPEN_REQUEST_HEADER_LENGTH (guint)(NEW_MESSAGE_TYPE_LENGTH + \
+#define NEW_OPEN_REQUEST_HEADER_LENGTH (unsigned)(NEW_MESSAGE_TYPE_LENGTH + \
                                                NEW_CHANNEL_TYPE_LENGTH + \
                                                NEW_PRIORITY_LENGTH +    \
                                                NEW_RELIABILITY_LENGTH + \
@@ -204,12 +191,12 @@ static const value_string new_channel_type_values[] = {
 static void
 dissect_new_open_request_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *rtcdc_tree, proto_item *rtcdc_item)
 {
-    guint8  channel_type;
-    guint32 reliability;
-    guint16 label_length;
-    guint16 protocol_length;
+    uint8_t channel_type;
+    uint32_t reliability;
+    uint16_t label_length;
+    uint16_t protocol_length;
 
-    channel_type = tvb_get_guint8(tvb, NEW_CHANNEL_TYPE_OFFSET);
+    channel_type = tvb_get_uint8(tvb, NEW_CHANNEL_TYPE_OFFSET);
     if ((channel_type & 0x7f) > 0x02) {
         expert_add_info(pinfo, rtcdc_item, &ei_rtcdc_new_channel_type);
     }
@@ -219,7 +206,7 @@ dissect_new_open_request_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     }
     label_length = tvb_get_ntohs(tvb, NEW_LABEL_LENGTH_OFFSET);
     protocol_length = tvb_get_ntohs(tvb, NEW_PROTOCOL_LENGTH_OFFSET);
-    if (NEW_OPEN_REQUEST_HEADER_LENGTH + (guint)label_length + (guint)protocol_length != tvb_reported_length(tvb)) {
+    if (NEW_OPEN_REQUEST_HEADER_LENGTH + (unsigned)label_length + (unsigned)protocol_length != tvb_reported_length(tvb)) {
         expert_add_info(pinfo, rtcdc_item, &ei_rtcdc_inconsistent_label_and_parameter_length);
     }
     if (rtcdc_tree) {
@@ -228,8 +215,8 @@ dissect_new_open_request_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
         proto_tree_add_item(rtcdc_tree, hf_new_reliability, tvb, NEW_RELIABILITY_OFFSET, NEW_RELIABILITY_LENGTH, ENC_BIG_ENDIAN);
         proto_tree_add_item(rtcdc_tree, hf_new_label_length, tvb, NEW_LABEL_LENGTH_OFFSET, NEW_LABEL_LENGTH_LENGTH, ENC_BIG_ENDIAN);
         proto_tree_add_item(rtcdc_tree, hf_new_protocol_length, tvb, NEW_PROTOCOL_LENGTH_OFFSET, NEW_PROTOCOL_LENGTH_LENGTH, ENC_BIG_ENDIAN);
-        proto_tree_add_item(rtcdc_tree, hf_new_label, tvb, NEW_LABEL_OFFSET, label_length, ENC_ASCII|ENC_NA);
-        proto_tree_add_item(rtcdc_tree, hf_new_protocol, tvb, NEW_LABEL_OFFSET + label_length, protocol_length, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(rtcdc_tree, hf_new_label, tvb, NEW_LABEL_OFFSET, label_length, ENC_ASCII);
+        proto_tree_add_item(rtcdc_tree, hf_new_protocol, tvb, NEW_LABEL_OFFSET + label_length, protocol_length, ENC_ASCII);
     }
     return;
 }
@@ -239,9 +226,9 @@ dissect_rtcdc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 {
     proto_item *rtcdc_item, *msg_item;
     proto_tree *rtcdc_tree;
-    guint8      message_type;
+    uint8_t     message_type;
 
-    message_type  = tvb_get_guint8(tvb, MESSAGE_TYPE_OFFSET);
+    message_type  = tvb_get_uint8(tvb, MESSAGE_TYPE_OFFSET);
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "RTCDC");
     col_add_fstr(pinfo->cinfo, COL_INFO, "%s ", val_to_str_const(message_type, message_type_values, "reserved"));
@@ -272,7 +259,6 @@ dissect_rtcdc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 void
 proto_register_rtcdc(void)
 {
-    module_t        *rtcdc_module;
     expert_module_t *expert_rtcdc;
 
     static hf_register_info hf[] = {
@@ -362,7 +348,7 @@ proto_register_rtcdc(void)
             NULL, HFILL }
         }
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_rtcdc,
         &ett_flags
     };
@@ -380,29 +366,19 @@ proto_register_rtcdc(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_rtcdc = expert_register_protocol(proto_rtcdc);
     expert_register_field_array(expert_rtcdc, ei, array_length(ei));
-    rtcdc_module = prefs_register_protocol(proto_rtcdc, proto_reg_handoff_rtcdc);
-    prefs_register_uint_preference(rtcdc_module, "sctp.ppi", "RTCDC SCTP PPID", "RTCDC SCTP PPID if other than the default", 10, &rtcdc_ppid);
+    /* rtcdc_module = prefs_register_protocol(proto_rtcdc, NULL); */
+
+    rtcdc_handle = register_dissector("rtcdc", dissect_rtcdc, proto_rtcdc);
 }
 
 void
 proto_reg_handoff_rtcdc(void)
 {
-    static gboolean           initialized = FALSE;
-    static dissector_handle_t rtcdc_handle;
-    static guint32            current_ppid;
-
-    if (!initialized) {
-        rtcdc_handle = create_dissector_handle(dissect_rtcdc, proto_rtcdc);
-        initialized = TRUE;
-    } else {
-        dissector_delete_uint("sctp.ppi", current_ppid, rtcdc_handle);
-    }
-    current_ppid = rtcdc_ppid;
-    dissector_add_uint("sctp.ppi", current_ppid, rtcdc_handle);
+    dissector_add_uint_with_preference("sctp.ppi", WEBRTC_DCEP_PROTOCOL_ID, rtcdc_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

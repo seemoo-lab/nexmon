@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -58,16 +46,16 @@ static const value_string ixiatrailer_ftype_timestamp[] = {
 };
 
 /* Preference settings */
-static gboolean ixiatrailer_summary_in_tree = TRUE;
+static bool ixiatrailer_summary_in_tree = true;
 
-static int proto_ixiatrailer = -1;
-static gint ett_ixiatrailer = -1;
+static int proto_ixiatrailer;
+static int ett_ixiatrailer;
 
-static int hf_ixiatrailer_packetlen = -1;
-static int hf_ixiatrailer_timestamp = -1;
-static int hf_ixiatrailer_generic = -1;
+static int hf_ixiatrailer_packetlen;
+static int hf_ixiatrailer_timestamp;
+static int hf_ixiatrailer_generic;
 
-static expert_field ei_ixiatrailer_field_length_invalid = EI_INIT;
+static expert_field ei_ixiatrailer_field_length_invalid;
 
 /* The trailer begins with a sequence of TLVs, each of which has a
    1-byte type, a 1-byte value length (not TLV length, so the TLV
@@ -84,13 +72,13 @@ static int
 dissect_ixiatrailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
   proto_tree *ti;
-  guint tvblen, trailer_length, field_length;
-  gboolean matched_without_fcs, matched_with_fcs;
+  unsigned tvblen, trailer_length, field_length;
+  bool matched_without_fcs, matched_with_fcs;
   proto_tree *ixiatrailer_tree = NULL;
-  guint offset = 0;
-  guint16 cksum, comp_cksum;
+  unsigned offset = 0;
+  uint16_t cksum, comp_cksum;
   vec_t vec;
-  guint8 field_type;
+  uint8_t field_type;
 
   /* A trailer must, at minimum, include:
 
@@ -135,7 +123,7 @@ dissect_ixiatrailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
   if (!matched_without_fcs && tvblen >= 13)
     matched_with_fcs = (tvb_get_ntohs(tvb, tvblen-(4+4)) == IXIA_PATTERN);
   else
-    matched_with_fcs = FALSE;
+    matched_with_fcs = false;
   if (!matched_without_fcs) {
     if (!matched_with_fcs) {
       /* Neither matched, so no Ixia trailer. */
@@ -149,7 +137,7 @@ dissect_ixiatrailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
   }
 
   /* Read Trailer-length field */
-  trailer_length  = tvb_get_guint8(tvb, tvblen-5);
+  trailer_length  = tvb_get_uint8(tvb, tvblen-5);
   /* Should match overall length of trailer */
   if ((tvblen-5) != trailer_length) {
     return 0;
@@ -161,7 +149,7 @@ dissect_ixiatrailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
   /* Verify the checksum; if not valid, it means that the trailer is not valid */
   SET_CKSUM_VEC_TVB(vec, tvb, offset, trailer_length + 3);
   comp_cksum = in_cksum(&vec, 1);
-  if (pntoh16(&comp_cksum) != cksum) {
+  if (pntohu16(&comp_cksum) != cksum) {
     return 0;
   }
 
@@ -178,8 +166,8 @@ dissect_ixiatrailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
 
   while (offset < trailer_length - 2)
   {
-    field_type = tvb_get_guint8(tvb, offset++);
-    field_length = tvb_get_guint8(tvb, offset++);
+    field_type = tvb_get_uint8(tvb, offset++);
+    field_length = tvb_get_uint8(tvb, offset++);
     switch (field_type) {
       case IXIATRAILER_FTYPE_ORIGINAL_PACKET_SIZE:
         if (field_length != 2){
@@ -199,7 +187,7 @@ dissect_ixiatrailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
           break;
         }
         /* Timestamp */
-        ti = proto_tree_add_item(ixiatrailer_tree, hf_ixiatrailer_timestamp, tvb, offset, field_length, ENC_TIME_TIMESPEC|ENC_BIG_ENDIAN);
+        ti = proto_tree_add_item(ixiatrailer_tree, hf_ixiatrailer_timestamp, tvb, offset, field_length, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
         proto_item_append_text(ti, "; Source: %s", val_to_str_const(field_type, ixiatrailer_ftype_timestamp, "Unknown"));
       break;
       default:
@@ -212,6 +200,12 @@ dissect_ixiatrailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
   }
   /* We are claiming all of the bytes */
   return tvblen;
+}
+
+static bool
+dissect_ixiatrailer_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    return dissect_ixiatrailer(tvb, pinfo, tree, data) > 0;
 }
 
 void
@@ -230,7 +224,7 @@ proto_register_ixiatrailer(void)
         NULL, 0x0, NULL, HFILL }},
   };
 
-  static gint *ixiatrailer_ett[] = {
+  static int *ixiatrailer_ett[] = {
     &ett_ixiatrailer
   };
 
@@ -259,11 +253,11 @@ void
 proto_reg_handoff_ixiatrailer(void)
 {
   /* Check for Ixia format in the ethernet trailer */
-  heur_dissector_add("eth.trailer", dissect_ixiatrailer, "Ixia Trailer", "ixiatrailer_eth", proto_ixiatrailer, HEURISTIC_ENABLE);
+  heur_dissector_add("eth.trailer", dissect_ixiatrailer_heur, "Ixia Trailer", "ixiatrailer_eth", proto_ixiatrailer, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

@@ -2,6 +2,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  * Authors: Tomas Bzatek <tbzatek@redhat.com>
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -78,9 +80,9 @@ test_read_lines (GDataStreamNewlineType newline_type)
     lines[i] = "some_text";
 	
   base_stream = g_memory_input_stream_new ();
-  g_assert (base_stream != NULL);
+  g_assert_nonnull (base_stream);
   stream = G_INPUT_STREAM (g_data_input_stream_new (base_stream));
-  g_assert(stream != NULL);
+  g_assert_nonnull (stream);
 	
   /*  Byte order testing */
   g_data_input_stream_set_byte_order (G_DATA_INPUT_STREAM (stream), G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN);
@@ -172,8 +174,17 @@ test_read_lines_LF_valid_utf8 (void)
       gsize length = -1;
       line = g_data_input_stream_read_line_utf8 (G_DATA_INPUT_STREAM (stream), &length, NULL, &error);
       g_assert_no_error (error);
+
       if (line == NULL)
-	break;
+        {
+          g_assert_cmpuint (length, ==, 0);
+          break;
+        }
+      else
+        {
+          g_assert_cmpuint (length, >, 0);
+        }
+
       n_lines++;
       g_free (line);
     }
@@ -205,11 +216,16 @@ test_read_lines_LF_invalid_utf8 (void)
       gsize length = -1;
       line = g_data_input_stream_read_line_utf8 (G_DATA_INPUT_STREAM (stream), &length, NULL, &error);
       if (n_lines == 0)
-	g_assert_no_error (error);
+        {
+          /* First line is valid UTF-8 */
+          g_assert_no_error (error);
+          g_assert_cmpuint (length, ==, 3);
+        }
       else
 	{
-	  g_assert (error != NULL);
+          g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
 	  g_clear_error (&error);
+          g_assert_cmpuint (length, ==, 0);
 	  g_free (line);
 	  break;
 	}
@@ -221,6 +237,8 @@ test_read_lines_LF_invalid_utf8 (void)
   g_object_unref (base_stream);
   g_object_unref (stream);
 }
+
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 
 static void
 test_read_until (void)
@@ -268,61 +286,101 @@ test_read_until (void)
   g_object_unref (stream);
 }
 
+G_GNUC_END_IGNORE_DEPRECATIONS
+
+static char *
+escape_data_string (const char *str,
+                    size_t      len)
+{
+  char *escaped = g_memdup2 (str, len + 1);
+
+  for (size_t i = 0; i < len; i++)
+    {
+      if (escaped[i] == '\0')
+        escaped[i] = '?';
+    }
+
+  return escaped;
+}
+
 static void
 test_read_upto (void)
 {
-  GInputStream *stream;
-  GInputStream *base_stream;
-  GError *error = NULL;
-  char *data;
-  int line;
-  int i;
-  guchar stop_char;
+  const struct {
+    int n_repeats;
+    const char *data_string;
+    size_t data_string_len;
+    size_t data_part_len;
+    const char *data_sep;
+    size_t data_sep_len;
+  } vectors[] = {
+    { 10, " part1 # part2 $ part3 \0 part4 \0", 32, 7, "#$\0^", 4 },
+    { 20, "{\"key\": \"value\"}\0", 17, 16, "\0", 1 },
+  };
 
 #undef REPEATS
 #undef DATA_STRING
 #undef DATA_PART_LEN
 #undef DATA_SEP
 #undef DATA_SEP_LEN
-#define REPEATS			10   /* number of rounds */
-#define DATA_STRING		" part1 # part2 $ part3 \0 part4 ^"
-#define DATA_PART_LEN		7    /* number of characters between separators */
-#define DATA_SEP		"#$\0^"
-#define DATA_SEP_LEN            4
-  const int DATA_PARTS_NUM = DATA_SEP_LEN * REPEATS;
+#define REPEATS			    vectors[n].n_repeats
+#define DATA_STRING		  vectors[n].data_string
+#define DATA_STRING_LEN vectors[n].data_string_len
+#define DATA_PART_LEN	  vectors[n].data_part_len
+#define DATA_SEP	      vectors[n].data_sep
+#define DATA_SEP_LEN    vectors[n].data_sep_len
 
-  base_stream = g_memory_input_stream_new ();
-  stream = G_INPUT_STREAM (g_data_input_stream_new (base_stream));
-
-  for (i = 0; i < REPEATS; i++)
-    g_memory_input_stream_add_data (G_MEMORY_INPUT_STREAM (base_stream), DATA_STRING, 32, NULL);
-
-  /*  Test stop characters */
-  error = NULL;
-  data = (char*)1;
-  line = 0;
-  while (data)
+  for (guint n = 0; n < G_N_ELEMENTS (vectors); n++)
     {
-      gsize length = -1;
-      data = g_data_input_stream_read_upto (G_DATA_INPUT_STREAM (stream), DATA_SEP, DATA_SEP_LEN, &length, NULL, &error);
-      if (data)
+      const int DATA_PARTS_NUM = DATA_SEP_LEN * REPEATS;
+      GInputStream *stream;
+      GInputStream *base_stream;
+      GError *error = NULL;
+      char *data;
+      int line;
+      int i;
+      guchar stop_char;
+
+      char *escaped_data = escape_data_string (DATA_STRING, DATA_STRING_LEN);
+      char *escaped_sep = escape_data_string (DATA_SEP, DATA_SEP_LEN);
+      g_test_message ("Test vector %u: %s and %s", n, escaped_data, escaped_sep);
+      g_free (escaped_data);
+      g_free (escaped_sep);
+
+      base_stream = g_memory_input_stream_new ();
+      stream = G_INPUT_STREAM (g_data_input_stream_new (base_stream));
+
+      for (i = 0; i < REPEATS; i++)
+        g_memory_input_stream_add_data (G_MEMORY_INPUT_STREAM (base_stream), DATA_STRING, DATA_STRING_LEN, NULL);
+
+      /*  Test stop characters */
+      error = NULL;
+      data = (char*)1;
+      line = 0;
+      while (data)
         {
-          g_assert_cmpint (strlen (data), ==, DATA_PART_LEN);
-          g_assert_no_error (error);
-          line++;
+          gsize length = -1;
+          data = g_data_input_stream_read_upto (G_DATA_INPUT_STREAM (stream), DATA_SEP, DATA_SEP_LEN, &length, NULL, &error);
+          if (data)
+            {
+              g_assert_cmpint (strlen (data), ==, DATA_PART_LEN);
+              g_assert_no_error (error);
+              line++;
 
-          stop_char = g_data_input_stream_read_byte (G_DATA_INPUT_STREAM (stream), NULL, &error);
-          g_assert (memchr (DATA_SEP, stop_char, DATA_SEP_LEN) != NULL);
-          g_assert_no_error (error);
+              stop_char = g_data_input_stream_read_byte (G_DATA_INPUT_STREAM (stream), NULL, &error);
+              g_assert_nonnull (memchr (DATA_SEP, stop_char, DATA_SEP_LEN));
+              g_assert_no_error (error);
+            }
+          g_free (data);
         }
-      g_free (data);
-    }
-  g_assert_no_error (error);
-  g_assert_cmpint (line, ==, DATA_PARTS_NUM);
+      g_assert_no_error (error);
+      g_assert_cmpint (line, ==, DATA_PARTS_NUM);
 
-  g_object_unref (base_stream);
-  g_object_unref (stream);
+      g_object_unref (base_stream);
+      g_object_unref (stream);
+    }
 }
+
 enum TestDataType {
   TEST_DATA_BYTE = 0,
   TEST_DATA_INT16,
@@ -333,14 +391,15 @@ enum TestDataType {
   TEST_DATA_UINT64
 };
 
+/* The order is reversed to avoid -Wduplicated-branches. */
 #define TEST_DATA_RETYPE_BUFF(a, t, v)	\
-	 (a == TEST_DATA_BYTE	? (t) *(guchar*)v : \
-	 (a == TEST_DATA_INT16	? (t) *(gint16*)v :	 \
-	 (a == TEST_DATA_UINT16	? (t) *(guint16*)v : \
-	 (a == TEST_DATA_INT32	? (t) *(gint32*)v :	 \
-	 (a == TEST_DATA_UINT32	? (t) *(guint32*)v : \
-	 (a == TEST_DATA_INT64	? (t) *(gint64*)v :	 \
-	 (t) *(guint64*)v )))))) 
+	 (a == TEST_DATA_UINT64	? (t) *(guint64*)v :	\
+	 (a == TEST_DATA_INT64	? (t) *(gint64*)v :	\
+	 (a == TEST_DATA_UINT32	? (t) *(guint32*)v :	\
+	 (a == TEST_DATA_INT32	? (t) *(gint32*)v :	\
+	 (a == TEST_DATA_UINT16	? (t) *(guint16*)v :	\
+	 (a == TEST_DATA_INT16	? (t) *(gint16*)v :	\
+	 (t) *(guchar*)v ))))))
 
 
 static void

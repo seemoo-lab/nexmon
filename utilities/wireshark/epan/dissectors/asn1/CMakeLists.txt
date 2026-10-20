@@ -4,27 +4,20 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 ADD_CUSTOM_CMAKE_INCLUDE()
 
+project(Asn1 NONE)
+
 set(ASN1_SRC_DIRS
+	lix2
 	HI2Operations
 	acp133
 	acse
+	ain
+	akp
 	ansi_map
 	ansi_tcap
 	atn-cm
@@ -32,19 +25,26 @@ set(ASN1_SRC_DIRS
 	atn-ulcs
 	c1222
 	camel
+	cbrs-oids
 	cdt
 	charging_ase
 	cmip
 	cmp
 	cms
+	cosem
 	credssp
 	crmf
 	dap
 	disp
 	dop
 	dsp
+	e1ap
+	e2ap
 	ess
+	f1ap
 	ftam
+	gdt
+	glow
 	goose
 	gprscdr
 	gsm_map
@@ -61,22 +61,33 @@ set(ASN1_SRC_DIRS
 	h501
 	hnbap
 	idmp
+	ieee1609dot2
 	ilp
 	inap
 	isdn-sup
+	its
 	kerberos
+	kpm-v2
 	lcsap
 	ldap
+	llc-v1
+	lnpdqp
 	logotypecertextn
 	lpp
 	lppa
 	lppe
 	lte-rrc
+	m2ap
 	m3ap
 	mms
 	mpeg-audio
 	mpeg-pes
+	mudurl
 	nbap
+	ngap
+	nist-csor
+	nr-rrc
+	nrppa
 	ns_cert_exts
 	novell_pkis
 	ocsp
@@ -85,12 +96,13 @@ set(ASN1_SRC_DIRS
 	p7
 	p772
 	pcap
-	pkcs1
+	pkcs10
 	pkcs12
 	pkinit
 	pkix1explicit
 	pkix1implicit
 	pkixac
+	pkixalgs
 	pkixproxy
 	pkixqualified
 	pkixtsp
@@ -99,6 +111,7 @@ set(ASN1_SRC_DIRS
 	q932-ros
 	qsig
 	ranap
+	rc-v3
 	rnsap
 	ros
 	rrc
@@ -108,6 +121,8 @@ set(ASN1_SRC_DIRS
 	s1ap
 	sabp
 	sbc-ap
+	sgp22
+	sgp32
 	smrse
 	snmp
 	spnego
@@ -116,6 +131,7 @@ set(ASN1_SRC_DIRS
 	t125
 	t38
 	tcap
+	tcg-cp-oids
 	tetra
 	ulp
 	wlancertextn
@@ -124,6 +140,8 @@ set(ASN1_SRC_DIRS
 	x509ce
 	x509if
 	x509sat
+	xnap
+	z3950
 	${CUSTOM_ASN1_SRC_DIR}
 )
 

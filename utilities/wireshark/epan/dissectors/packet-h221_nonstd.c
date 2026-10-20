@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,19 +15,21 @@
 void proto_register_nonstd(void);
 void proto_reg_handoff_nonstd(void);
 
-/* Define the nonstd proto */
-static int proto_nonstd = -1;
+static dissector_handle_t ms_nonstd_handle;
 
-static int hf_h221_nonstd_netmeeting_codec = -1;
-static int hf_h221_nonstd_netmeeting_non_standard = -1;
+/* Define the nonstd proto */
+static int proto_nonstd;
+
+static int hf_h221_nonstd_netmeeting_codec;
+static int hf_h221_nonstd_netmeeting_non_standard;
 
 /*
  * Define the trees for nonstd
  * We need one for nonstd itself and one for the nonstd paramters
  */
-static int ett_nonstd = -1;
+static int ett_nonstd;
 
-const value_string ms_codec_vals[] = {
+static const value_string ms_codec_vals[] = {
     {  0x0111, "L&H CELP 4.8k" },
     {  0x0200, "MS-ADPCM" },
     {  0x0211, "L&H CELP 8k" },
@@ -56,9 +46,9 @@ dissect_ms_nonstd(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void*
 {
     proto_item *it;
     proto_tree *tr;
-    guint32 offset=0;
-    gint tvb_len;
-    guint16 codec_extra;
+    uint32_t offset=0;
+    int tvb_len;
+    uint16_t codec_extra;
 
     it=proto_tree_add_protocol_format(tree, proto_nonstd, tvb, 0, tvb_reported_length(tvb), "Microsoft NonStd");
     tr=proto_item_add_subtree(it, ett_nonstd);
@@ -115,7 +105,7 @@ proto_register_nonstd(void)
         },
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_nonstd,
     };
 
@@ -123,24 +113,20 @@ proto_register_nonstd(void)
 
     proto_register_subtree_array(ett, array_length(ett));
     proto_register_field_array(proto_nonstd, hf, array_length(hf));
+
+    ms_nonstd_handle = register_dissector("h221nonstd", dissect_ms_nonstd, proto_nonstd);
 }
 
 /* The registration hand-off routine */
 void
 proto_reg_handoff_nonstd(void)
 {
-    static dissector_handle_t ms_nonstd_handle;
-
-
-    ms_nonstd_handle = create_dissector_handle(dissect_ms_nonstd, proto_nonstd);
-
     dissector_add_uint("h245.nsp.h221",0xb500534c, ms_nonstd_handle);
     dissector_add_uint("h225.nsp.h221",0xb500534c, ms_nonstd_handle);
-
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

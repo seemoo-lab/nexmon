@@ -1,44 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- 
+  SPDX-License-Identifier: CC0-1.0
+  SPDX-FileCopyrightText: Rory O'Kane at Wikimedia Commons 
+                          <https://commons.wikimedia.org/wiki/File:Sorted_binary_tree_breadth-first_traversal.svg>
+  SPDX-FileCopyrightText: 2024 Frank Dana
+-->
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 width="266px" height="212px" viewBox="0 0 266 212" enable-background="new 0 0 266 212" xml:space="preserve">
 <g>
 	<g>
-		<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" x1="27.23" y1="23.192" x2="29.23" y2="23.192"/>
+		<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" x1="27.23" y1="23.192" x2="29.23" y2="23.192"/>
 		
-			<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="3.9562,3.9562" x1="33.187" y1="23.192" x2="236.932" y2="23.192"/>
-		<polyline fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" points="238.91,23.192 240.91,23.192 
+			<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="3.9562,3.9562" x1="33.187" y1="23.192" x2="236.932" y2="23.192"/>
+		<polyline fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" points="238.91,23.192 240.91,23.192 
 			238.97,23.677 		"/>
 		
-			<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="3.9907,3.9907" x1="235.099" y1="24.646" x2="27.971" y2="76.427"/>
-		<polyline fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" points="26.035,76.912 24.095,77.396 
+			<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="3.9907,3.9907" x1="235.099" y1="24.646" x2="27.971" y2="76.427"/>
+		<polyline fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" points="26.035,76.912 24.095,77.396 
 			26.095,77.396 		"/>
 		
-			<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="4.0154,4.0154" x1="30.11" y1="77.396" x2="236.902" y2="77.396"/>
-		<polyline fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" points="238.91,77.396 240.91,77.396 
+			<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="4.0154,4.0154" x1="30.11" y1="77.396" x2="236.902" y2="77.396"/>
+		<polyline fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" points="238.91,77.396 240.91,77.396 
 			238.97,77.881 		"/>
 		
-			<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="3.9907,3.9907" x1="235.099" y1="78.85" x2="27.971" y2="130.631"/>
-		<polyline fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" points="26.035,131.114 24.095,131.6 
+			<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="3.9907,3.9907" x1="235.099" y1="78.85" x2="27.971" y2="130.631"/>
+		<polyline fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" points="26.035,131.114 24.095,131.6 
 			26.095,131.6 		"/>
 		
-			<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="4.0154,4.0154" x1="30.11" y1="131.6" x2="236.902" y2="131.6"/>
-		<polyline fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" points="238.91,131.6 240.91,131.6 
+			<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="4.0154,4.0154" x1="30.11" y1="131.6" x2="236.902" y2="131.6"/>
+		<polyline fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" points="238.91,131.6 240.91,131.6 
 			238.97,132.085 		"/>
 		
-			<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="3.9907,3.9907" x1="235.099" y1="133.053" x2="27.971" y2="184.835"/>
-		<polyline fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" points="26.035,185.318 24.095,185.804 
+			<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="3.9907,3.9907" x1="235.099" y1="133.053" x2="27.971" y2="184.835"/>
+		<polyline fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" points="26.035,185.318 24.095,185.804 
 			26.095,185.804 		"/>
 		
-			<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="4.0086,4.0086" x1="30.104" y1="185.804" x2="228.53" y2="185.804"/>
+			<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="4.0086,4.0086" x1="30.104" y1="185.804" x2="228.53" y2="185.804"/>
 		
-			<line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" x1="230.534" y1="185.804" x2="232.534" y2="185.804"/>
+			<line fill="none" stroke="#1c76e4" stroke-width="2" stroke-miterlimit="10" x1="230.534" y1="185.804" x2="232.534" y2="185.804"/>
 		<g>
-			<rect x="24.095" y="19.892" width="6.602" height="6.602"/>
+			<rect fill="#1c76e4" x="24.095" y="19.892" width="6.602" height="6.602"/>
 		</g>
 		<g>
-			<path d="M238.569,185.804c-2.84,1.054-6.363,2.852-8.548,4.756l1.721-4.756l-1.721-4.755
+			<path fill="#1c76e4" d="M238.569,185.804c-2.84,1.054-6.363,2.852-8.548,4.756l1.721-4.756l-1.721-4.755
 				C232.206,182.953,235.729,184.751,238.569,185.804z"/>
 		</g>
 	</g>

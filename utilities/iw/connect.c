@@ -9,13 +9,15 @@
 #include "nl80211.h"
 #include "iw.h"
 
-static int iw_conn(struct nl80211_state *state, struct nl_cb *cb,
+static int iw_conn(struct nl80211_state *state,
 		   struct nl_msg *msg, int argc, char **argv,
 		   enum id_input id)
 {
 	char *end;
 	unsigned char bssid[6];
+	bool need_key = false;
 	int freq;
+	int ret;
 
 	if (argc < 1)
 		return 1;
@@ -47,19 +49,63 @@ static int iw_conn(struct nl80211_state *state, struct nl_cb *cb,
 	if (!argc)
 		return 0;
 
-	if (strcmp(*argv, "key") != 0 && strcmp(*argv, "keys") != 0)
+	if (strcmp(*argv, "auth") == 0) {
+		argv++;
+		argc--;
+
+		if (!argc)
+			return 1;
+
+		if (strcmp(argv[0], "open") == 0) {
+			NLA_PUT_U32(msg, NL80211_ATTR_AUTH_TYPE,
+			    NL80211_AUTHTYPE_OPEN_SYSTEM);
+		} else if (strcmp(argv[0], "shared") == 0) {
+			NLA_PUT_U32(msg, NL80211_ATTR_AUTH_TYPE,
+			    NL80211_AUTHTYPE_SHARED_KEY);
+			need_key = true;
+		} else {
+			return 1;
+		}
+
+		argv++;
+		argc--;
+	}
+
+	if (need_key && !argc)
 		return 1;
+
+	if (argc && strcmp(*argv, "key") != 0 && strcmp(*argv, "keys") != 0)
+		return 1;
+
+	if (!argc)
+		return 0;
 
 	argv++;
 	argc--;
 
-	return parse_keys(msg, argv, argc);
+	ret = parse_keys(msg, &argv, &argc);
+	if (ret)
+		return ret;
+
+	if (!argc)
+		return 0;
+
+	if (!strcmp(*argv, "mfp:req"))
+		NLA_PUT_U32(msg, NL80211_ATTR_USE_MFP, NL80211_MFP_REQUIRED);
+	else if (!strcmp(*argv, "mfp:opt"))
+		NLA_PUT_U32(msg, NL80211_ATTR_USE_MFP, NL80211_MFP_OPTIONAL);
+	else if (!strcmp(*argv, "mfp:no"))
+		NLA_PUT_U32(msg, NL80211_ATTR_USE_MFP, NL80211_MFP_NO);
+	else
+		return -EINVAL;
+
+	return 0;
+
  nla_put_failure:
 	return -ENOSPC;
 }
 
 static int disconnect(struct nl80211_state *state,
-		      struct nl_cb *cb,
 		      struct nl_msg *msg,
 		      int argc, char **argv,
 		      enum id_input id)
@@ -70,7 +116,7 @@ TOPLEVEL(disconnect, NULL,
 	NL80211_CMD_DISCONNECT, 0, CIB_NETDEV, disconnect,
 	"Disconnect from the current network.");
 
-static int iw_connect(struct nl80211_state *state, struct nl_cb *cb,
+static int iw_connect(struct nl80211_state *state,
 		      struct nl_msg *msg, int argc, char **argv,
 		      enum id_input id)
 {
@@ -137,16 +183,19 @@ static int iw_connect(struct nl80211_state *state, struct nl_cb *cb,
 	 * Alas, the kernel doesn't do that (yet).
 	 */
 
-	__do_listen_events(state, ARRAY_SIZE(cmds), cmds, &printargs);
+	__do_listen_events(state,
+			   ARRAY_SIZE(cmds), cmds,
+			   ARRAY_SIZE(cmds), cmds,
+			   &printargs);
 	return 0;
 }
-TOPLEVEL(connect, "[-w] <SSID> [<freq in MHz>] [<bssid>] [key 0:abcde d:1:6162636465]",
+TOPLEVEL(connect, "[-w] <SSID> [<freq in MHz>] [<bssid>] [auth open|shared] [key 0:abcde d:1:6162636465] [mfp:req/opt/no]",
 	0, 0, CIB_NETDEV, iw_connect,
 	"Join the network with the given SSID (and frequency, BSSID).\n"
 	"With -w, wait for the connect to finish or fail.");
 HIDDEN(connect, establish, "", NL80211_CMD_CONNECT, 0, CIB_NETDEV, iw_conn);
 
-static int iw_auth(struct nl80211_state *state, struct nl_cb *cb,
+static int iw_auth(struct nl80211_state *state,
 		   struct nl_msg *msg, int argc, char **argv,
 		   enum id_input id)
 {
@@ -208,7 +257,7 @@ static int iw_auth(struct nl80211_state *state, struct nl_cb *cb,
 	argv++;
 	argc--;
 
-	return parse_keys(msg, argv, argc);
+	return parse_keys(msg, &argv, &argc);
  nla_put_failure:
 	return -ENOSPC;
 }

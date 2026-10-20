@@ -6,19 +6,7 @@
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,21 +18,23 @@
 void proto_register_symantec(void);
 void proto_reg_handoff_symantec(void);
 
+static dissector_handle_t symantec_handle;
+
 static dissector_table_t ethertype_dissector_table;
 
 /* protocols and header fields */
-static int proto_symantec = -1;
-static int hf_symantec_if = -1;
-static int hf_symantec_etype = -1;
+static int proto_symantec;
+static int hf_symantec_if;
+static int hf_symantec_etype;
 
-static gint ett_symantec = -1;
+static int ett_symantec;
 
 static int
 dissect_symantec(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
    proto_item *ti;
    proto_tree *symantec_tree;
-   guint16 etypev2, etypev3;
+   uint16_t etypev2, etypev3;
    tvbuff_t *next_tvb;
 
    /*
@@ -127,12 +117,14 @@ proto_register_symantec(void)
          { "Type",    "symantec.type", FT_UINT16, BASE_HEX, VALS(etype_vals), 0x0,
             NULL, HFILL }},
    };
-   static gint *ett[] = {
+   static int *ett[] = {
       &ett_symantec,
    };
 
    proto_symantec = proto_register_protocol("Symantec Enterprise Firewall",
          "Symantec", "symantec");
+   symantec_handle = register_dissector("symantec", dissect_symantec,
+         proto_symantec);
    proto_register_field_array(proto_symantec, hf, array_length(hf));
    proto_register_subtree_array(ett, array_length(ett));
 }
@@ -140,17 +132,12 @@ proto_register_symantec(void)
 void
 proto_reg_handoff_symantec(void)
 {
-   dissector_handle_t symantec_handle;
-
    ethertype_dissector_table = find_dissector_table("ethertype");
-
-   symantec_handle = create_dissector_handle(dissect_symantec,
-         proto_symantec);
    dissector_add_uint("wtap_encap", WTAP_ENCAP_SYMANTEC, symantec_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

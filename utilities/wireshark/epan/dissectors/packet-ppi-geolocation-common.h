@@ -6,23 +6,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PPI_GEOLOCATION_COMMON_H
 #define __PPI_GEOLOCATION_COMMON_H
+
+#include <inttypes.h>
 
 /*
  * Declarations from shared PPI-GEOLOCATION functions.
@@ -53,17 +43,17 @@
 /*
  * Floating point numbers are stored on disk in a handful of fixed-point formats (fixedX_Y)
  * designed to preserve the appropriate amount of precision vs range. These functions convert
- * the fixedX_Y fixed point values into 'native' gdoubles for displaying.
+ * the fixedX_Y fixed point values into 'native' doubles for displaying.
  * Documentation on these formats can be found in the PPI-GEOLOCATION specification
  */
-gdouble ppi_fixed3_7_to_gdouble(guint32 in);
-gdouble ppi_fixed3_6_to_gdouble(guint32 in);
-gdouble ppi_fixed6_4_to_gdouble(guint32 in);
+double ppi_fixed3_7_to_double(uint32_t in);
+double ppi_fixed3_6_to_double(uint32_t in);
+double ppi_fixed6_4_to_double(uint32_t in);
 /*
  * Some values are encoded as 32-bit unsigned nano-second counters.
  * Usually we want to display these values as doubles.
  */
-gdouble ppi_ns_counter_to_gdouble(guint32 in);
+double ppi_ns_counter_to_double(uint32_t in);
 
 
 typedef enum {

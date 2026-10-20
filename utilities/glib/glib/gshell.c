@@ -4,20 +4,20 @@
  *  g_execvpe implementation based on GNU libc execvp:
  *   Copyright 1991, 92, 95, 96, 97, 98, 99 Free Software Foundation, Inc.
  *
- * GLib is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  *
- * GLib is distributed in the hope that it will be useful,
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GLib; see the file COPYING.LIB.  If not, write
- * to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -34,25 +34,13 @@
 #include "gthread.h"
 
 /**
- * SECTION:shell
- * @title: Shell-related Utilities
- * @short_description: shell-like commandline handling
- *
- * GLib provides the functions g_shell_quote() and g_shell_unquote()
- * to handle shell-like quoting in strings. The function g_shell_parse_argv()
- * parses a string similar to the way a POSIX shell (/bin/sh) would.
- *
- * Note that string handling in shells has many obscure and historical
- * corner-cases which these functions do not necessarily reproduce. They
- * are good enough in practice, though.
- */
-
-/**
  * G_SHELL_ERROR:
  *
- * Error domain for shell functions. Errors in this domain will be from
- * the #GShellError enumeration. See #GError for information on error
- * domains.
+ * Error domain for shell functions.
+ *
+ * Errors in this domain will be from the #GShellError enumeration.
+ *
+ * See #GError for information on error domains.
  **/
 
 /**
@@ -93,7 +81,7 @@ unquote_string_inplace (gchar* str, gchar** end, GError** err)
       g_set_error_literal (err,
                            G_SHELL_ERROR,
                            G_SHELL_ERROR_BAD_QUOTING,
-                           _("Quoted text doesn't begin with a quotation mark"));
+                           _("Quoted text doesn’t begin with a quotation mark"));
       *end = str;
       return FALSE;
     }
@@ -190,16 +178,23 @@ unquote_string_inplace (gchar* str, gchar** end, GError** err)
 
 /**
  * g_shell_quote:
- * @unquoted_string: a literal string
+ * @unquoted_string: (type filename): a literal string
  * 
  * Quotes a string so that the shell (/bin/sh) will interpret the
- * quoted string to mean @unquoted_string. If you pass a filename to
- * the shell, for example, you should first quote it with this
- * function.  The return value must be freed with g_free(). The
- * quoting style used is undefined (single or double quotes may be
+ * quoted string to mean @unquoted_string.
+ *
+ * If you pass a filename or other untrusted input to [func@GLib.shell_parse_argv],
+ * you should first quote it with this function. This is sufficient to ensure
+ * untrusted input cannot ‘break out’ of the quotes. Beware: this only works
+ * because [func@GLib.shell_parse_argv] is not a real Unix shell. Quoting untrusted
+ * input is not an adequate security mechanism when using a real shell.
+ *
+ * The return value must be freed with g_free().
+ *
+ * The quoting style used is undefined (single or double quotes may be
  * used).
  * 
- * Returns: quoted string
+ * Returns: (type filename) (transfer full): quoted string
  **/
 gchar*
 g_shell_quote (const gchar *unquoted_string)
@@ -223,7 +218,7 @@ g_shell_quote (const gchar *unquoted_string)
    */
   while (*p)
     {
-      /* Replace literal ' with a close ', a \', and a open ' */
+      /* Replace literal ' with a close ', a \', and an open ' */
       if (*p == '\'')
         g_string_append (dest, "'\\''");
       else
@@ -240,32 +235,38 @@ g_shell_quote (const gchar *unquoted_string)
 
 /**
  * g_shell_unquote:
- * @quoted_string: shell-quoted string
+ * @quoted_string: (type filename): shell-quoted string
  * @error: error return location or NULL
  * 
- * Unquotes a string as the shell (/bin/sh) would. Only handles
- * quotes; if a string contains file globs, arithmetic operators,
- * variables, backticks, redirections, or other special-to-the-shell
- * features, the result will be different from the result a real shell
- * would produce (the variables, backticks, etc. will be passed
- * through literally instead of being expanded). This function is
- * guaranteed to succeed if applied to the result of
+ * Unquotes a string as the shell (/bin/sh) would.
+ *
+ * This function only handles quotes; if a string contains file globs,
+ * arithmetic operators, variables, backticks, redirections, or other
+ * special-to-the-shell features, the result will be different from the
+ * result a real shell would produce (the variables, backticks, etc.
+ * will be passed through literally instead of being expanded).
+ *
+ * This function is guaranteed to succeed if applied to the result of
  * g_shell_quote(). If it fails, it returns %NULL and sets the
- * error. The @quoted_string need not actually contain quoted or
- * escaped text; g_shell_unquote() simply goes through the string and
- * unquotes/unescapes anything that the shell would. Both single and
- * double quotes are handled, as are escapes including escaped
- * newlines. The return value must be freed with g_free(). Possible
- * errors are in the #G_SHELL_ERROR domain.
+ * error.
+ *
+ * The @quoted_string need not actually contain quoted or escaped text;
+ * g_shell_unquote() simply goes through the string and unquotes/unescapes
+ * anything that the shell would. Both single and double quotes are
+ * handled, as are escapes including escaped newlines.
+ *
+ * The return value must be freed with g_free().
+ *
+ * Possible errors are in the %G_SHELL_ERROR domain.
  * 
  * Shell quoting rules are a bit strange. Single quotes preserve the
  * literal string exactly. escape sequences are not allowed; not even
- * \' - if you want a ' in the quoted text, you have to do something
- * like 'foo'\''bar'.  Double quotes allow $, `, ", \, and newline to
- * be escaped with backslash. Otherwise double quotes preserve things
- * literally.
+ * `\'` - if you want a `'` in the quoted text, you have to do something
+ * like `'foo'\''bar'`. Double quotes allow `$`, ```, `"`, `\`, and
+ * newline to be escaped with backslash. Otherwise double quotes
+ * preserve things literally.
  *
- * Returns: an unquoted string
+ * Returns: (type filename): an unquoted string
  **/
 gchar*
 g_shell_unquote (const gchar *quoted_string,
@@ -525,7 +526,7 @@ tokenize_command_line (const gchar *command_line,
               ensure_token (&current_token);
               g_string_append_c (current_token, *p);
 
-              /* FALL THRU */
+              G_GNUC_FALLTHROUGH;
             case '\\':
               current_quote = *p;
               break;
@@ -579,15 +580,20 @@ tokenize_command_line (const gchar *command_line,
         g_set_error (error,
                      G_SHELL_ERROR,
                      G_SHELL_ERROR_BAD_QUOTING,
-                     _("Text ended just after a '\\' character."
-                       " (The text was '%s')"),
+                     _("Text ended just after a “\\” character."
+                       " (The text was “%s”)"),
                      command_line);
+      else if (current_quote == '#')
+        g_set_error (error,
+                     G_SHELL_ERROR,
+                     G_SHELL_ERROR_EMPTY_STRING,
+                     _("Text was empty (or contained only whitespace)"));
       else
         g_set_error (error,
                      G_SHELL_ERROR,
                      G_SHELL_ERROR_BAD_QUOTING,
                      _("Text ended before matching quote was found for %c."
-                       " (The text was '%s')"),
+                       " (The text was “%s”)"),
                      current_quote, command_line);
       
       goto error;
@@ -618,21 +624,33 @@ tokenize_command_line (const gchar *command_line,
 
 /**
  * g_shell_parse_argv:
- * @command_line: command line to parse
+ * @command_line: (type filename): command line to parse
  * @argcp: (out) (optional): return location for number of args
- * @argvp: (out) (optional) (array length=argcp zero-terminated=1): return
- *   location for array of args
+ * @argvp: (out) (optional) (array length=argcp zero-terminated=1) (element-type filename):
+ *   return location for array of args
  * @error: (optional): return location for error
  * 
  * Parses a command line into an argument vector, in much the same way
  * the shell would, but without many of the expansions the shell would
  * perform (variable expansion, globs, operators, filename expansion,
- * etc. are not supported). The results are defined to be the same as
- * those you would get from a UNIX98 /bin/sh, as long as the input
- * contains none of the unsupported shell expansions. If the input
- * does contain such expansions, they are passed through
- * literally. Possible errors are those from the #G_SHELL_ERROR
- * domain. Free the returned vector with g_strfreev().
+ * etc. are not supported).
+ *
+ * The results are defined to be the same as those you would get from
+ * a UNIX98 `/bin/sh`, as long as the input contains none of the
+ * unsupported shell expansions. If the input does contain such expansions,
+ * they are passed through literally.
+ *
+ * Possible errors are those from the %G_SHELL_ERROR domain.
+ *
+ * In particular, if @command_line is an empty string (or a string containing
+ * only whitespace), %G_SHELL_ERROR_EMPTY_STRING will be returned. It’s
+ * guaranteed that @argvp will be a non-empty array if this function returns
+ * successfully.
+ *
+ * When constructing @command_line, quote any filenames or potentially
+ * untrusted input using [func@GLib.shell_quote].
+ *
+ * Free the returned vector with g_strfreev().
  * 
  * Returns: %TRUE on success, %FALSE if error set
  **/
@@ -688,7 +706,10 @@ g_shell_parse_argv (const gchar *command_line,
     }
   
   g_slist_free_full (tokens, g_free);
-  
+
+  g_assert (argc > 0);
+  g_assert (argv != NULL && argv[0] != NULL);
+
   if (argcp)
     *argcp = argc;
 

@@ -7,5 +7,8 @@ clean:
 	rm -Rf libs
 	rm -Rf local
 
+install:
+	@echo "nothing to install ..."
+
 FORCE:
 	

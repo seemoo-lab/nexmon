@@ -80,6 +80,15 @@ public class MyApplication extends Application {
 
     public static final String WLAN_INTERFACE = "wlan0";
 
+    /**
+     * Signature-level permission that gates the app's internal control
+     * broadcasts. Runtime receivers register with this as their
+     * broadcastPermission so only same-signature (i.e. this app) senders can
+     * reach them; declared in AndroidManifest.xml.
+     */
+    public static final String PERMISSION_INTERNAL_BROADCAST =
+            "de.tu_darmstadt.seemoo.nexmon.permission.INTERNAL_BROADCAST";
+
     private static Context context;
 
     private static ActivityManager activityManager;

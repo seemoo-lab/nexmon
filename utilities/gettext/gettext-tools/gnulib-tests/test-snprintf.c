@@ -1,9 +1,9 @@
 /* Test of snprintf() function.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
@@ -28,16 +28,15 @@ SIGNATURE_CHECK (snprintf, int, (char *, size_t, char const *, ...));
 #include "macros.h"
 
 int
-main (int argc, char *argv[])
+main ()
 {
   char buf[8];
-  int size;
   int retval;
 
   retval = snprintf (NULL, 0, "%d", 12345);
   ASSERT (retval == 5);
 
-  for (size = 0; size <= 8; size++)
+  for (int size = 0; size <= 8; size++)
     {
       memcpy (buf, "DEADBEEF", 8);
       retval = snprintf (buf, size, "%d", 12345);
@@ -68,5 +67,5 @@ main (int argc, char *argv[])
     ASSERT (retval == strlen (result));
   }
 
-  return 0;
+  return test_exit_status;
 }

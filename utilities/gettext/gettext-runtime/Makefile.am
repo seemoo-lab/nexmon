@@ -1,6 +1,5 @@
 ## Makefile for the gettext-runtime directory of GNU gettext
-## Copyright (C) 1995-2006, 2010, 2012, 2015-2016 Free Software Foundation,
-## Inc.
+## Copyright (C) 1995-2025 Free Software Foundation, Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -13,14 +12,12 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## Process this file with automake to produce Makefile.in.
 
-AUTOMAKE_OPTIONS = 1.5 gnu no-dependencies
+AUTOMAKE_OPTIONS = 1.5 gnu
 ACLOCAL_AMFLAGS = -I m4 -I ../m4 -I gnulib-m4
-
-MAKEINFO = env LANG= LC_MESSAGES= LC_ALL= LANGUAGE= @MAKEINFO@
 
 # The list of subdirectories depends on whether --disable-libasprintf was
 # specified.
@@ -29,7 +26,7 @@ SUBDIR_libasprintf = libasprintf
 else
 SUBDIR_libasprintf =
 endif
-SUBDIRS = doc intl intl-java intl-csharp gnulib-lib $(SUBDIR_libasprintf) src po man m4 tests
+SUBDIRS = doc intl intl-java intl-csharp intl-d intl-modula2 gnulib-lib $(SUBDIR_libasprintf) src po man m4 tests install-tests
 
 EXTRA_DIST = BUGS
 
@@ -40,22 +37,33 @@ gettextsrcdir = $(datadir)/gettext
 gettextsrc_DATA = ABOUT-NLS
 
 
-all-local: ABOUT-NLS
-
-ABOUT-NLS: $(srcdir)/doc/nls.texi $(srcdir)/doc/matrix.texi
-	rm -f $(srcdir)/ABOUT-NLS \
-	  && $(MAKEINFO) --plaintext --no-validate -I $(srcdir)/doc \
-	     $(srcdir)/doc/nls.texi \
-	     | sed -e "s/\`\([^']*\)'/‘\1’/g" > $(srcdir)/ABOUT-NLS
-
-
 # Allow users to use "gnulib-tool --update".
 EXTRA_DIST += gnulib-m4/gnulib-cache.m4
 
 
-# Woe32 support.
+# Windows support.
 
-EXTRA_DIST += README.woe32
+EXTRA_DIST += INSTALL.windows
+
+
+# Support for "make dist" without prior "make".
+
+# Ensure that the manual pages are up-to-date when "make dist" runs.
+# Hidden from automake, but really activated. Works around an automake bug.
+#distdir: distdir1
+.PHONY: distdir1
+distdir1: man/gettext.1 man/ngettext.1 man/printf_gettext.1 man/printf_ngettext.1 man/envsubst.1
+man/gettext.1 man/ngettext.1 man/printf_gettext.1 man/printf_ngettext.1 man/envsubst.1: gen-man1
+.PHONY: gen-man1
+gen-man1: src/gettext.c man/gettext.x \
+          src/ngettext.c man/ngettext.x \
+          src/printf_gettext.c man/printf_gettext.x \
+          src/printf_ngettext.c man/printf_ngettext.x \
+          src/envsubst.c man/envsubst.x
+	cd gnulib-lib && $(MAKE) $(AM_MAKEFLAGS)
+	cd src && $(MAKE) $(AM_MAKEFLAGS) gettext$(EXEEXT) ngettext$(EXEEXT) printf_gettext$(EXEEXT) printf_ngettext$(EXEEXT) envsubst$(EXEEXT)
+	cd man && $(MAKE) $(AM_MAKEFLAGS) gettext.1 ngettext.1 printf_gettext.1 printf_ngettext.1 envsubst.1
+
 
 maintainer-update-po: $(top_builddir)/config.status
 	$(SHELL) ./config.status --recheck

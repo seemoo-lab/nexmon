@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This dissector supports the command and response apdu structure
@@ -34,78 +22,86 @@
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/decode_as.h>
+
 void proto_register_iso7816(void);
 void proto_reg_handoff_iso7816(void);
 
-static int proto_iso7816 = -1;
-static int proto_iso7816_atr = -1;
+static int proto_iso7816;
+static int proto_iso7816_atr;
 
+static dissector_handle_t iso7816_handle;
 static dissector_handle_t iso7816_atr_handle;
 
-static wmem_tree_t *transactions = NULL;
+static wmem_tree_t *transactions;
 
-static int ett_iso7816 = -1;
-static int ett_iso7816_class = -1;
-static int ett_iso7816_param = -1;
-static int ett_iso7816_p1 = -1;
-static int ett_iso7816_p2 = -1;
-static int ett_iso7816_atr = -1;
-static int ett_iso7816_atr_ta = -1;
-static int ett_iso7816_atr_td = -1;
+static dissector_table_t iso7816_apdu_pld_table;
 
-static int hf_iso7816_atr_init_char = -1;
-static int hf_iso7816_atr_t0 = -1;
-static int hf_iso7816_atr_ta = -1;
+static int ett_iso7816;
+static int ett_iso7816_class;
+static int ett_iso7816_param;
+static int ett_iso7816_p1;
+static int ett_iso7816_p2;
+static int ett_iso7816_atr;
+static int ett_iso7816_atr_ta;
+static int ett_iso7816_atr_td;
+
+static int hf_iso7816_atr_init_char;
+static int hf_iso7816_atr_t0;
+static int hf_iso7816_atr_ta;
 /* these two fields hold the converted values Fi and Di,
    not the binary representations FI and DI */
-static int hf_iso7816_atr_ta1_fi = -1;
-static int hf_iso7816_atr_ta1_di = -1;
-static int hf_iso7816_atr_tb = -1;
-static int hf_iso7816_atr_tc = -1;
-static int hf_iso7816_atr_td = -1;
-static int hf_iso7816_atr_next_ta_present = -1;
-static int hf_iso7816_atr_next_tb_present = -1;
-static int hf_iso7816_atr_next_tc_present = -1;
-static int hf_iso7816_atr_next_td_present = -1;
-static int hf_iso7816_atr_k = -1;
-static int hf_iso7816_atr_t = -1;
-static int hf_iso7816_atr_hist_bytes = -1;
-static int hf_iso7816_atr_tck = -1;
+static int hf_iso7816_atr_ta1_fi;
+static int hf_iso7816_atr_ta1_di;
+static int hf_iso7816_atr_tb;
+static int hf_iso7816_atr_tc;
+static int hf_iso7816_atr_td;
+static int hf_iso7816_atr_next_ta_present;
+static int hf_iso7816_atr_next_tb_present;
+static int hf_iso7816_atr_next_tc_present;
+static int hf_iso7816_atr_next_td_present;
+static int hf_iso7816_atr_k;
+static int hf_iso7816_atr_t;
+static int hf_iso7816_atr_hist_bytes;
+static int hf_iso7816_atr_tck;
 
-static int hf_iso7816_resp_in = -1;
-static int hf_iso7816_resp_to = -1;
-static int hf_iso7816_cla = -1;
-static int hf_iso7816_cla_sm = -1;
-static int hf_iso7816_cla_channel = -1;
-static int hf_iso7816_ins = -1;
-static int hf_iso7816_p1 = -1;
-static int hf_iso7816_p2 = -1;
-static int hf_iso7816_lc = -1;
-static int hf_iso7816_le = -1;
-static int hf_iso7816_body = -1;
-static int hf_iso7816_sw1 = -1;
-static int hf_iso7816_sw2 = -1;
-static int hf_iso7816_sel_file_ctrl = -1;
-static int hf_iso7816_sel_file_fci_req = -1;
-static int hf_iso7816_sel_file_occ = -1;
-static int hf_iso7816_get_resp = -1;
-static int hf_iso7816_offset_first_byte = -1;
-static int hf_iso7816_rfu = -1;
-static int hf_iso7816_application_data = -1;
+static int hf_iso7816_resp_in;
+static int hf_iso7816_resp_to;
+static int hf_iso7816_cla;
+static int hf_iso7816_cla_sm;
+static int hf_iso7816_cla_channel;
+static int hf_iso7816_ins;
+static int hf_iso7816_p1;
+static int hf_iso7816_p2;
+static int hf_iso7816_lc;
+static int hf_iso7816_le;
+static int hf_iso7816_body;
+static int hf_iso7816_sw1;
+static int hf_iso7816_sw2;
+static int hf_iso7816_sel_file_ctrl;
+static int hf_iso7816_sel_file_fci_req;
+static int hf_iso7816_sel_file_occ;
+static int hf_iso7816_read_rec_ef;
+static int hf_iso7816_read_rec_usage;
+static int hf_iso7816_get_resp;
+static int hf_iso7816_offset_first_byte;
+static int hf_iso7816_rfu;
+static int hf_iso7816_application_data;
 
-static expert_field ie_iso7816_atr_tck_not1 = EI_INIT;
+static expert_field ei_iso7816_atr_tck_not1;
 
 #define ADDR_INTF "Interface"
 #define ADDR_CARD "Card"
 
 typedef struct _iso7816_transaction_t {
-    guint32  cmd_frame;
-    guint32  resp_frame;
-    guint8   cmd_ins;  /* instruction byte in the command apdu */
+    uint32_t cmd_frame;
+    uint32_t resp_frame;
+    uint8_t  cmd_ins;  /* instruction byte in the command apdu */
     /* no need to add the channel number,
        the response contains no channel number to compare this to
        and the spec explicitly prohibits interleaving of command-response
        pairs, regardless of logical channels */
+    dissector_handle_t handle;
 } iso7816_transaction_t;
 
 static const value_string iso7816_atr_init_char[] = {
@@ -151,7 +147,7 @@ static const value_string iso7816_ins[] = {
     { INS_GET_CHALLENGE,  "Get challenge" },
     { INS_SELECT_FILE,    "Select file" },
     { INS_READ_BIN,       "Read binary" },
-    { INS_READ_REC,       "Read records" },
+    { INS_READ_REC,       "Read record" },
     { INS_GET_RESP,       "Get response" },
     { INS_ENVELOPE,       "Envelope" },
     { INS_GET_DATA,       "Get data" },
@@ -197,6 +193,16 @@ static const value_string iso7816_sel_file_occ[] = {
 static value_string_ext ext_iso7816_sel_file_occ =
     VALUE_STRING_EXT_INIT(iso7816_sel_file_occ);
 
+#define READ_REC_USAGE_SINGLE 0x04
+#define READ_REC_USAGE_START  0x05
+static const value_string iso7816_read_rec_usage[] = {
+    { READ_REC_USAGE_SINGLE, "Read record P1" },
+    { READ_REC_USAGE_START,  "Read all records from P1 up to the last" },
+    { 0, NULL }
+};
+static value_string_ext ext_iso7816_read_rec_usage =
+    VALUE_STRING_EXT_INIT(iso7816_read_rec_usage);
+
 static const range_string iso7816_sw1[] = {
   { 0x61, 0x61, "Normal processing" },
   { 0x62, 0x63, "Warning processing" },
@@ -209,16 +215,26 @@ static const range_string iso7816_sw1[] = {
 static const range_string iso7816_class_rvals[] = {
     {0x00, 0x0F, "structure and coding according to ISO/IEC 7816" },
     {0x10, 0x7F, "reserved for future use" },
-    {0x80, 0x8F, "structure and coding according to ISO/IEC 7816" },
+    {0x80, 0x9F, "structure according to ISO/IEC 7816, coding is proprietary" },
     {0xA0, 0xAF, "structure and coding according to ISO/IEC 7816 unless specified otherwise by the application context" },
-    {0xB0, 0xCF, "structure and coding according to ISO/IEC 7816" },
+    {0xB0, 0xCF, "structure according to ISO/IEC 7816" },
     {0xD0, 0xFE, "proprietary structure and coding" },
     {0xFF, 0xFF, "reserved for Protocol Type Selection" },
     {0, 0,   NULL}
 };
 
+static const value_string unique_or_unused[] = {
+    { 0, "or unused" },
+    { 0, NULL }
+};
+
+static const value_string unique_max_num_available_bytes[] = {
+    { 0, "maximum number of available bytes" },
+    { 0, NULL }
+};
+
 static inline
-guint16 FI_to_Fi(guint8 FI)
+uint16_t FI_to_Fi(uint8_t FI)
 {
     if (FI<=1)
         return 372;
@@ -239,7 +255,7 @@ guint16 FI_to_Fi(guint8 FI)
 }
 
 static inline
-guint8 DI_to_Di(guint8 DI)
+uint8_t DI_to_Di(uint8_t DI)
 {
     if (DI>=1 && DI<=6)
         return 1 << (DI-1);
@@ -253,23 +269,23 @@ guint8 DI_to_Di(guint8 DI)
 
 /* dissect TA(ta_index) */
 static void
-dissect_iso7816_atr_ta(tvbuff_t *tvb, gint offset, guint ta_index,
+dissect_iso7816_atr_ta(tvbuff_t *tvb, int offset, unsigned ta_index,
         packet_info *pinfo _U_, proto_tree *tree)
 {
-    guint8      ta, FI, DI;
-    guint16     Fi;
-    guint8      Di;
+    uint8_t     ta, FI, DI;
+    uint16_t    Fi;
+    uint8_t     Di;
     proto_item *ta_it;
     proto_tree *ta_tree;
 
-    ta = tvb_get_guint8(tvb, offset);
+    ta = tvb_get_uint8(tvb, offset);
     ta_it = proto_tree_add_uint_format(tree, hf_iso7816_atr_ta,
             tvb, offset, 1, ta,
             "Interface character TA(%d): 0x%02x", ta_index, ta);
     ta_tree = proto_item_add_subtree(ta_it, ett_iso7816_atr_ta);
 
     if (ta_index==1) {
-        FI = (tvb_get_guint8(tvb, offset) & 0xF0) >> 4;
+        FI = (tvb_get_uint8(tvb, offset) & 0xF0) >> 4;
         Fi = FI_to_Fi(FI);
         if (Fi>0) {
             proto_tree_add_uint_format(ta_tree, hf_iso7816_atr_ta1_fi,
@@ -278,7 +294,7 @@ dissect_iso7816_atr_ta(tvbuff_t *tvb, gint offset, guint ta_index,
                     Fi, FI);
         }
 
-        DI = tvb_get_guint8(tvb, offset) & 0x0F;
+        DI = tvb_get_uint8(tvb, offset) & 0x0F;
         Di = DI_to_Di(DI);
         if (Di>0) {
             proto_tree_add_uint_format(ta_tree, hf_iso7816_atr_ta1_di,
@@ -292,19 +308,19 @@ dissect_iso7816_atr_ta(tvbuff_t *tvb, gint offset, guint ta_index,
 static int
 dissect_iso7816_atr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    gint        offset=0;
-    guint8      init_char;
-    guint       i=0;  /* loop index for TA(i)...TD(i) */
+    int         offset=0;
+    uint8_t     init_char;
+    unsigned    i=0;  /* loop index for TA(i)...TD(i) */
     proto_item *proto_it;
     proto_tree *proto_tr;
-    guint8      tb, tc, td, k=0;
-    gint        tck_len;
+    uint8_t     tb, tc, td, k=0;
+    int         tck_len;
 
     /* we need at least the initial char TS and the format char T0 */
     if (tvb_captured_length(tvb) < 2)
         return 0; /* no ATR sequence */
 
-    init_char = tvb_get_guint8(tvb, offset);
+    init_char = tvb_get_uint8(tvb, offset);
     if (init_char!=0x3B && init_char!=0x3F)
         return 0;
 
@@ -312,7 +328,7 @@ dissect_iso7816_atr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
                 tvb, 0, -1, "ISO 7816 ATR");
     proto_tr = proto_item_add_subtree(proto_it, ett_iso7816_atr);
 
-    col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "ATR");
+    col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "ATR");
 
     /* ISO 7816-4, section 4 indicates that concatenations are big endian */
     proto_tree_add_item(proto_tr, hf_iso7816_atr_init_char,
@@ -325,7 +341,7 @@ dissect_iso7816_atr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 
         /* for i==0, this is the T0 byte, otherwise it's the TD(i) byte
            in each loop, we dissect T0/TD(i) and TA(i+1), TB(i+1), TC(i+1) */
-        td = tvb_get_guint8(tvb, offset);
+        td = tvb_get_uint8(tvb, offset);
         if (i==0) {
             td_it = proto_tree_add_item(proto_tr, hf_iso7816_atr_t0,
                     tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -374,14 +390,14 @@ dissect_iso7816_atr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             offset++;
         }
         if (td&0x20) {
-            tb = tvb_get_guint8(tvb, offset);
+            tb = tvb_get_uint8(tvb, offset);
             proto_tree_add_uint_format(proto_tr, hf_iso7816_atr_tb,
                     tvb, offset, 1, tb,
                     "Interface character TB(%d): 0x%02x", i+1, tb);
             offset++;
         }
         if (td&0x40) {
-            tc = tvb_get_guint8(tvb, offset);
+            tc = tvb_get_uint8(tvb, offset);
             proto_tree_add_uint_format(proto_tr, hf_iso7816_atr_tc,
                     tvb, offset, 1, tc,
                     "Interface character TC(%d): 0x%02x", i+1, tc);
@@ -405,7 +421,7 @@ dissect_iso7816_atr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         offset++;
     }
     else if (tck_len>1) {
-        proto_tree_add_expert(proto_tr, pinfo, &ie_iso7816_atr_tck_not1,
+        proto_tree_add_expert(proto_tr, pinfo, &ei_iso7816_atr_tck_not1,
                 tvb, offset, tck_len);
     }
 
@@ -413,73 +429,88 @@ dissect_iso7816_atr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     return offset;
 }
 
-/* return 1 if the class byte says that the APDU is in ISO7816 format
-    or -1 if the APDU is in proprietary format */
-static gint
-dissect_iso7816_class(tvbuff_t *tvb, gint offset,
+/* Dissect the class byte. Return 1 if the APDU's structure and coding
+   adhere to ISO 7816. In this case, we can dissect the rest of the
+   APDU. Otherwise, return -1. We may then pass the APDU to other
+   dissectors. */
+static int
+dissect_iso7816_class(tvbuff_t *tvb, int offset,
         packet_info *pinfo _U_, proto_tree *tree)
 {
-    gint        ret_fct = 1;
     proto_item *class_item;
     proto_tree *class_tree;
-    guint8      dev_class;
-    guint8      channel;
-    proto_item *ch_item;
+    uint8_t     dev_class;
 
     class_item = proto_tree_add_item(tree, hf_iso7816_cla,
             tvb, offset, 1, ENC_BIG_ENDIAN);
     class_tree = proto_item_add_subtree(class_item, ett_iso7816_class);
 
-    dev_class = tvb_get_guint8(tvb, offset);
+    dev_class = tvb_get_uint8(tvb, offset);
 
     if (dev_class>=0x10 && dev_class<=0x7F) {
-    }
-    else if (dev_class>=0xD0 && dev_class<=0xFE) {
-        ret_fct = -1;
-    }
-    else if (dev_class==0xFF) {
-    }
-    else {
-        if (dev_class<=0x0F || (dev_class>=0x80 && dev_class<=0xAF)) {
-            proto_tree_add_item(class_tree, hf_iso7816_cla_sm,
-                    tvb, offset, 1, ENC_BIG_ENDIAN);
-
-            channel = dev_class & 0x03;
-            ch_item = proto_tree_add_item(class_tree, hf_iso7816_cla_channel,
-                    tvb, offset, 1, ENC_BIG_ENDIAN);
-            if (channel==0)
-                proto_item_append_text(ch_item, " (or unused)");
-        }
+        /* these values are RFU. */
+        return -1;
     }
 
-    return ret_fct;
+    if (dev_class>=0xD0 && dev_class<=0xFE) {
+        /* proprietary structure and coding */
+        return -1;
+    }
+
+    if (dev_class==0xFF) {
+        /* reserved for Protocol Type Selection */
+        return -1;
+    }
+
+    /* If we made it this far, the structrue of the APDU is compliant
+       with ISO 7816. */
+
+    proto_tree_add_item(class_tree, hf_iso7816_cla_sm,
+            tvb, offset, 1, ENC_BIG_ENDIAN);
+
+    proto_tree_add_item(class_tree, hf_iso7816_cla_channel,
+            tvb, offset, 1, ENC_BIG_ENDIAN);
+
+    if (dev_class>=0x80 && dev_class<=0x9F) {
+        /* structure according to ISO 7816, coding is proprietary */
+        return -1;
+    }
+
+    if (dev_class>=0xB0 && dev_class<=0xCF) {
+        /* structure according to ISO 7816 */
+        return -1;
+    }
+
+    /* both structure and coding according to ISO 7816 */
+    return 1;
 }
 
 /* dissect the parameters p1 and p2
    return number of dissected bytes or -1 for error */
-static gint
-dissect_iso7816_params(guint8 ins, tvbuff_t *tvb, gint offset,
+static int
+dissect_iso7816_params(uint8_t ins, tvbuff_t *tvb, int offset,
                  packet_info *pinfo _U_, proto_tree *tree)
 {
-    gint        offset_start, p1_offset, p2_offset;
+    int         offset_start, p1_offset, p2_offset;
     proto_tree *params_tree;
-    guint8      p1, p2;
+    uint8_t     p1, p2;
     proto_item *p1_it = NULL, *p2_it = NULL;
     proto_tree *p1_tree = NULL, *p2_tree = NULL;
     proto_item *p1_p2_it = NULL;
-    guint16     P1P2;
+    uint16_t    P1P2;
+    uint32_t    ef, read_rec_usage;
 
     offset_start = offset;
 
     params_tree = proto_tree_add_subtree(tree, tvb, offset_start, 2,
                                 ett_iso7816_param, NULL, "Parameters");
 
-    p1 = tvb_get_guint8(tvb,offset);
+    p1 = tvb_get_uint8(tvb,offset);
     p1_it = proto_tree_add_item(params_tree, hf_iso7816_p1, tvb,
             offset, 1, ENC_BIG_ENDIAN);
     p1_offset = offset;
     offset++;
-    p2 = tvb_get_guint8(tvb,offset);
+    p2 = tvb_get_uint8(tvb,offset);
     p2_it = proto_tree_add_item(params_tree, hf_iso7816_p2,
             tvb, offset, 1, ENC_BIG_ENDIAN);
     p2_offset = offset;
@@ -518,6 +549,20 @@ dissect_iso7816_params(guint8 ins, tvbuff_t *tvb, gint offset,
                         "offset %d", P1P2);
             }
             break;
+        case INS_READ_REC:
+            proto_item_append_text(p1_it, " (record number)");
+            proto_item_append_text(p2_it, " (reference control)");
+            p2_tree = proto_item_add_subtree(p2_it, ett_iso7816_p2);
+            proto_tree_add_item_ret_uint(p2_tree, hf_iso7816_read_rec_ef,
+                    tvb, p2_offset, 1, ENC_BIG_ENDIAN, &ef);
+            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "EF %d", ef);
+            proto_tree_add_item_ret_uint(p2_tree, hf_iso7816_read_rec_usage,
+                    tvb, p2_offset, 1, ENC_BIG_ENDIAN, &read_rec_usage);
+            if (read_rec_usage == READ_REC_USAGE_SINGLE) {
+                col_append_sep_fstr(
+                        pinfo->cinfo, COL_INFO, NULL, "record %d", p1);
+            }
+            break;
         case INS_GET_RESP:
             p1_p2_it = proto_tree_add_uint_format(params_tree, hf_iso7816_get_resp,
                     tvb, offset_start, offset-offset_start, P1P2,
@@ -537,38 +582,31 @@ dissect_iso7816_params(guint8 ins, tvbuff_t *tvb, gint offset,
             break;
     }
 
-    PROTO_ITEM_SET_GENERATED(p1_p2_it);
+    proto_item_set_generated(p1_p2_it);
 
     return 2;
 }
 
-static gint
+static int
 dissect_iso7816_le(
-        tvbuff_t *tvb, gint offset, packet_info *pinfo _U_, proto_tree *tree)
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree)
 {
-    guint8      le;
-    proto_item *le_item;
-
-    le = tvb_get_guint8(tvb, offset);
-    le_item = proto_tree_add_item(
-            tree, hf_iso7816_le, tvb, offset, 1, ENC_BIG_ENDIAN);
-    if (le==0)
-        proto_item_append_text(le_item, " (maximum number of available bytes)");
+    proto_tree_add_item(tree, hf_iso7816_le, tvb, offset, 1, ENC_BIG_ENDIAN);
 
     return 1;
 }
 
 
-static gint
+static int
 dissect_iso7816_cmd_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
     iso7816_transaction_t *iso7816_trans = NULL;
     proto_item            *trans_ti = NULL;
-    gint                   ret;
-    gint                   offset = 0;
-    guint8                 ins;
-    gint                   body_len;
-    guint8                 lc;
+    int                    ret;
+    int                    offset = 0;
+    uint8_t                ins;
+    int                    body_len;
+    uint8_t                lc;
 
 
     if (PINFO_FD_VISITED(pinfo)) {
@@ -579,7 +617,7 @@ dissect_iso7816_cmd_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             trans_ti = proto_tree_add_uint_format(tree, hf_iso7816_resp_in,
                            NULL, 0, 0, iso7816_trans->resp_frame,
                            "Response in frame %d", iso7816_trans->resp_frame);
-            PROTO_ITEM_SET_GENERATED(trans_ti);
+            proto_item_set_generated(trans_ti);
         }
     }
     else {
@@ -588,6 +626,7 @@ dissect_iso7816_cmd_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             iso7816_trans->cmd_frame = pinfo->num;
             iso7816_trans->resp_frame = 0;
             iso7816_trans->cmd_ins = INS_INVALID;
+            iso7816_trans->handle = NULL;
 
             wmem_tree_insert32(transactions,
                     iso7816_trans->cmd_frame, (void *)iso7816_trans);
@@ -595,19 +634,30 @@ dissect_iso7816_cmd_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     }
 
     ret = dissect_iso7816_class(tvb, offset, pinfo, tree);
-    if (ret==-1) {
+    if (ret == -1) {
         /* the class byte says that the remaining APDU is not
             in ISO7816 format */
-        col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "%s",
-                "Command APDU using proprietary format");
 
-        return 1; /* we only dissected the class byte */
+        if (iso7816_trans) {
+            iso7816_trans->handle =
+                dissector_get_payload_handle(iso7816_apdu_pld_table);
+            if (iso7816_trans->handle != NULL) {
+                ret = call_dissector(iso7816_trans->handle, tvb, pinfo, tree);
+                if (ret == 0) {
+                    col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
+                            "Command APDU using proprietary format");
+                    return 1; /* we only dissected the class byte */
+                }
+            }
+        }
+
+        return ret;
     }
     offset += ret;
 
-    ins = tvb_get_guint8(tvb, offset);
+    ins = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_iso7816_ins, tvb, offset, 1, ENC_BIG_ENDIAN);
-    col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "%s",
+    col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
             val_to_str_ext_const(ins, &iso7816_ins_ext, "Unknown instruction"));
     offset++;
     /* if we just created a new transaction, we can now fill in the cmd id */
@@ -627,7 +677,7 @@ dissect_iso7816_cmd_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         offset += dissect_iso7816_le(tvb, offset, pinfo, tree);
     }
     else if (body_len>1) {
-        lc = tvb_get_guint8(tvb, offset);
+        lc = tvb_get_uint8(tvb, offset);
         proto_tree_add_item(
                 tree, hf_iso7816_lc, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset++;
@@ -643,16 +693,16 @@ dissect_iso7816_cmd_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     return offset;
 }
 
-static gint
+static int
 dissect_iso7816_resp_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
     iso7816_transaction_t *iso7816_trans;
     proto_item            *trans_ti = NULL;
-    const gchar           *cmd_ins_str;
-    gint                   offset = 0;
-    gint                   body_len;
+    const char            *cmd_ins_str;
+    int                    offset = 0;
+    int                    body_len;
 
-    col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Response APDU");
+    col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Response APDU");
 
     if (transactions) {
         /* receive the largest key that is less than or equal to our frame
@@ -673,11 +723,14 @@ dissect_iso7816_resp_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                         NULL, 0, 0, iso7816_trans->cmd_frame,
                         "Response to frame %d (%s)",
                         iso7816_trans->cmd_frame, cmd_ins_str);
-                PROTO_ITEM_SET_GENERATED(trans_ti);
+                proto_item_set_generated(trans_ti);
 
                 col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ",
                         "(to %s)", cmd_ins_str);
             }
+
+            if (iso7816_trans->handle != NULL)
+                call_dissector(iso7816_trans->handle, tvb, pinfo, tree);
         }
     }
 
@@ -705,10 +758,10 @@ dissect_iso7816_resp_apdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 static int
 dissect_iso7816(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    gint        offset = 0;
+    int         offset = 0;
     proto_item *tree_ti;
     proto_tree *iso7816_tree;
-    gboolean    is_atr = FALSE;
+    bool        is_atr = false;
 
     if (pinfo->p2p_dir!=P2P_DIR_SENT && pinfo->p2p_dir!=P2P_DIR_RECV)
         return 0;
@@ -740,7 +793,7 @@ dissect_iso7816(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
             offset = call_dissector_only(iso7816_atr_handle,
                     tvb, pinfo, iso7816_tree, NULL);
             if (offset > 0)
-                is_atr = TRUE;
+                is_atr = true;
         }
         if (!is_atr) {
             proto_item_append_text(tree_ti, " Response APDU");
@@ -789,19 +842,19 @@ proto_register_iso7816(void)
         },
         { &hf_iso7816_atr_next_ta_present,
             { "TA(i+1) present", "iso7816.atr.next_ta_present",
-                FT_BOOLEAN, BASE_HEX, NULL, 0x10, NULL, HFILL }
+                FT_BOOLEAN, 8, NULL, 0x10, NULL, HFILL }
         },
         { &hf_iso7816_atr_next_tb_present,
             { "TB(i+1) present", "iso7816.atr.next_tb_present",
-                FT_BOOLEAN, BASE_HEX, NULL, 0x20, NULL, HFILL }
+                FT_BOOLEAN, 8, NULL, 0x20, NULL, HFILL }
         },
         { &hf_iso7816_atr_next_tc_present,
             { "TC(i+1) present", "iso7816.atr.next_tc_present",
-                FT_BOOLEAN, BASE_HEX, NULL, 0x40, NULL, HFILL }
+                FT_BOOLEAN, 8, NULL, 0x40, NULL, HFILL }
         },
         { &hf_iso7816_atr_next_td_present,
             { "TD(i+1) present", "iso7816.atr.next_td_present",
-                FT_BOOLEAN, BASE_HEX, NULL, 0x80, NULL, HFILL }
+                FT_BOOLEAN, 8, NULL, 0x80, NULL, HFILL }
         },
         { &hf_iso7816_atr_k,
             { "Number K of historical bytes", "iso7816.atr.k",
@@ -821,12 +874,12 @@ proto_register_iso7816(void)
         },
         { &hf_iso7816_resp_in,
             { "Response In", "iso7816.resp_in",
-                FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+                FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
                 "The response to this command is in this frame", HFILL }
         },
         { &hf_iso7816_resp_to,
             { "Response To", "iso7816.resp_to",
-                FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+                FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
                 "This is the response to the command in this frame", HFILL }
         },
         { &hf_iso7816_cla,
@@ -839,7 +892,7 @@ proto_register_iso7816(void)
         },
         { &hf_iso7816_cla_channel,
             { "Logical channel number", "iso7816.apdu.cla.channel",
-                FT_UINT8, BASE_HEX, NULL, 0x03, NULL , HFILL }
+                FT_UINT8, BASE_HEX|BASE_SPECIAL_VALS, VALS(unique_or_unused), 0x03, NULL , HFILL }
         },
         { &hf_iso7816_ins,
             { "Instruction", "iso7816.apdu.ins",
@@ -859,7 +912,7 @@ proto_register_iso7816(void)
         },
         { &hf_iso7816_le,
             { "Expected response length Le", "iso7816.apdu.le",
-                FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }
+                FT_UINT8, BASE_HEX|BASE_SPECIAL_VALS, VALS(unique_max_num_available_bytes), 0, NULL, HFILL }
         },
         { &hf_iso7816_body,
             { "APDU Body", "iso7816.apdu.body",
@@ -888,6 +941,15 @@ proto_register_iso7816(void)
                 FT_UINT8, BASE_HEX | BASE_EXT_STRING,
                 &ext_iso7816_sel_file_occ, 0x03, NULL, HFILL }
         },
+        { &hf_iso7816_read_rec_ef,
+            { "Short EF identifier", "iso7816.apdu.read_rec.ef",
+                FT_UINT8, BASE_HEX, NULL, 0xF8, NULL, HFILL }
+        },
+        { &hf_iso7816_read_rec_usage,
+            { "Usage", "iso7816.apdu.read_rec.usage",
+                FT_UINT8, BASE_HEX | BASE_EXT_STRING,
+                &ext_iso7816_read_rec_usage, 0x07, NULL, HFILL }
+        },
         { &hf_iso7816_offset_first_byte,
             { "Offset of the first byte to read", "iso7816.offset_first_byte",
                 FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }
@@ -905,7 +967,7 @@ proto_register_iso7816(void)
                 FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL }
         },
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_iso7816,
         &ett_iso7816_class,
         &ett_iso7816_param,
@@ -917,35 +979,40 @@ proto_register_iso7816(void)
     };
 
     static ei_register_info ei[] = {
-        { &ie_iso7816_atr_tck_not1, { "iso7816.atr.tck.not1", PI_PROTOCOL, PI_WARN, "TCK byte must either be absent or exactly one byte", EXPFILL }}
+        { &ei_iso7816_atr_tck_not1, { "iso7816.atr.tck.not1", PI_PROTOCOL, PI_WARN, "TCK byte must either be absent or exactly one byte", EXPFILL }}
     };
 
     expert_module_t* expert_iso7816;
 
-    proto_iso7816 = proto_register_protocol(
-            "ISO/IEC 7816", "ISO 7816", "iso7816");
+    proto_iso7816 = proto_register_protocol("ISO/IEC 7816", "ISO 7816", "iso7816");
     proto_register_field_array(proto_iso7816, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
     expert_iso7816 = expert_register_protocol(proto_iso7816);
     expert_register_field_array(expert_iso7816, ei, array_length(ei));
 
-    register_dissector("iso7816", dissect_iso7816, proto_iso7816);
+    iso7816_handle = register_dissector("iso7816", dissect_iso7816, proto_iso7816);
 
     transactions = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
 
-    proto_iso7816_atr = proto_register_protocol(
-            "ISO/IEC 7816-3", "ISO 7816-3", "iso7816.atr");
-    register_dissector("iso7816.atr", dissect_iso7816_atr, proto_iso7816_atr);
+    proto_iso7816_atr = proto_register_protocol_in_name_only("ISO/IEC 7816-3", "ISO 7816-3", "iso7816.atr", proto_iso7816, FT_PROTOCOL);
+    iso7816_atr_handle = register_dissector("iso7816.atr", dissect_iso7816_atr, proto_iso7816_atr);
+
+    iso7816_apdu_pld_table =
+        register_decode_as_next_proto(proto_iso7816,
+                "iso7816.apdu_payload",
+                "ISO7816 proprietary APDU dissector", NULL);
 }
 
-void
-proto_reg_handoff_iso7816(void)
+
+void proto_reg_handoff_iso7816(void)
 {
-    iso7816_atr_handle = find_dissector("iso7816.atr");
+    dissector_add_for_decode_as("usbccid.subdissector", iso7816_handle);
+    dissector_add_for_decode_as("iso14443.subdissector", iso7816_handle);
 }
+
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

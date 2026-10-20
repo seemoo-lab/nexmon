@@ -6,55 +6,42 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
  * Based on "Banana Protocol Specifications"
- * http://twistedmatrix.com/projects/core/documentation/specifications/banana.html
+ * https://twisted.org/documents/16.1.1/core/specifications/banana.html
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include <epan/expert.h>
 
 void proto_register_banana(void);
 void proto_reg_handoff_banana(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_banana = -1;
-static int hf_banana_list = -1;
-static int hf_banana_int = -1;
-static int hf_banana_string = -1;
-static int hf_banana_neg_int = -1;
-static int hf_banana_float = -1;
-static int hf_banana_lg_int = -1;
-static int hf_banana_lg_neg_int = -1;
-static int hf_banana_pb = -1;
+static int proto_banana;
+static int hf_banana_list;
+static int hf_banana_int;
+static int hf_banana_string;
+static int hf_banana_neg_int;
+static int hf_banana_float;
+static int hf_banana_lg_int;
+static int hf_banana_lg_neg_int;
+static int hf_banana_pb;
 
 /* Initialize the subtree pointers */
-static gint ett_banana = -1;
-static gint ett_list = -1;
+static int ett_banana;
+static int ett_list;
 
-static expert_field ei_banana_unknown_type = EI_INIT;
-static expert_field ei_banana_too_many_value_bytes = EI_INIT;
-static expert_field ei_banana_length_too_long = EI_INIT;
-static expert_field ei_banana_value_too_large = EI_INIT;
-static expert_field ei_banana_pb_error = EI_INIT;
+static expert_field ei_banana_unknown_type;
+static expert_field ei_banana_too_many_value_bytes;
+static expert_field ei_banana_length_too_long;
+static expert_field ei_banana_value_too_large;
+static expert_field ei_banana_pb_error;
 
 static dissector_handle_t banana_handle;
 
@@ -120,25 +107,23 @@ static const value_string pb_vals[] = {
 #define MAX_ELEMENT_INT_LEN 4
 #define MAX_ELEMENT_VAL_LEN 8
 
-static range_t *global_banana_tcp_range = NULL;
-static range_t *banana_tcp_range = NULL;
-
 /* Dissect the packets */
 
 static int
+// NOLINTNEXTLINE(misc-no-recursion)
 dissect_banana_element(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset) {
     proto_item *ti;
     proto_tree *list_tree;
-    guint8 byte = 0;
-    gint64 val = 0;
-    gint val_len = 0;
+    uint8_t byte = 0;
+    int64_t val = 0;
+    int val_len = 0;
     int start_offset = offset;
     int old_offset;
     int i;
 
     /* Accumulate our value/length 'til we hit a valid type */
     while (tvb_reported_length_remaining(tvb, offset) > 0) {
-        byte = tvb_get_guint8(tvb, offset);
+        byte = tvb_get_uint8(tvb, offset);
         offset++;
 
         if (byte & 0x80) {
@@ -160,13 +145,15 @@ dissect_banana_element(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int 
     switch (byte) {
         case BE_LIST:
             if (val > MAX_ELEMENT_VAL) {
-                expert_add_info_format(pinfo, NULL, &ei_banana_length_too_long, "List length %" G_GINT64_MODIFIER "d longer than we can handle", val);
+                expert_add_info_format(pinfo, NULL, &ei_banana_length_too_long, "List length %" PRId64 " longer than we can handle", val);
             }
-            ti = proto_tree_add_uint_format_value(tree, hf_banana_list, tvb, start_offset, offset - start_offset - 1, (guint32) val, "(%d items)", (gint) val);
+            ti = proto_tree_add_uint_format_value(tree, hf_banana_list, tvb, start_offset, offset - start_offset - 1, (uint32_t) val, "(%d items)", (int) val);
             list_tree = proto_item_add_subtree(ti, ett_list);
             for (i = 0; i < val; i++) {
                 old_offset = offset;
+                increment_dissection_depth(pinfo);
                 offset += dissect_banana_element(tvb, pinfo, list_tree, offset);
+                decrement_dissection_depth(pinfo);
                 if (offset <= old_offset) {
                     return offset - start_offset;
                 }
@@ -174,22 +161,22 @@ dissect_banana_element(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int 
             break;
         case BE_INT:
             if (val > MAX_ELEMENT_VAL) {
-                expert_add_info_format(pinfo, NULL, &ei_banana_value_too_large, "Integer value %" G_GINT64_MODIFIER "d too large", val);
+                expert_add_info_format(pinfo, NULL, &ei_banana_value_too_large, "Integer value %" PRId64 " too large", val);
             }
-            proto_tree_add_uint(tree, hf_banana_int, tvb, start_offset, offset - start_offset, (guint32) val);
+            proto_tree_add_uint(tree, hf_banana_int, tvb, start_offset, offset - start_offset, (uint32_t) val);
             break;
         case BE_STRING:
             if (val > MAX_ELEMENT_VAL) {
-                expert_add_info_format(pinfo, NULL, &ei_banana_length_too_long, "String length %" G_GINT64_MODIFIER "d longer than we can handle", val);
+                expert_add_info_format(pinfo, NULL, &ei_banana_length_too_long, "String length %" PRId64 " longer than we can handle", val);
             }
-            proto_tree_add_item(tree, hf_banana_string, tvb, offset, (guint32) val, ENC_ASCII|ENC_NA);
-            offset += (gint) val;
+            proto_tree_add_item(tree, hf_banana_string, tvb, offset, (uint32_t) val, ENC_ASCII);
+            offset += (int) val;
             break;
         case BE_NEG_INT:
             if (val > MAX_ELEMENT_VAL) {
-                expert_add_info_format(pinfo, NULL, &ei_banana_value_too_large, "Integer value -%" G_GINT64_MODIFIER "d too large", val);
+                expert_add_info_format(pinfo, NULL, &ei_banana_value_too_large, "Integer value -%" PRId64 " too large", val);
             }
-            proto_tree_add_int(tree, hf_banana_neg_int, tvb, start_offset, offset - start_offset, (gint32) val * -1);
+            proto_tree_add_int(tree, hf_banana_neg_int, tvb, start_offset, offset - start_offset, (int32_t) val * -1);
             break;
         case BE_FLOAT:
             proto_tree_add_item(tree, hf_banana_float, tvb, offset, 8, ENC_BIG_ENDIAN);
@@ -213,15 +200,14 @@ dissect_banana_element(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int 
             break;
         default:
             return 0;
-            break;
     }
     return offset - start_offset;
 }
 
 static int
 dissect_banana(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
-    guint8 byte = 0;
-    gint offset = 0, old_offset;
+    uint8_t byte = 0;
+    int offset = 0, old_offset;
     proto_item *ti;
     proto_tree *banana_tree;
 
@@ -233,13 +219,13 @@ dissect_banana(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Banana");
 
     while (tvb_reported_length_remaining(tvb, offset) > 0 && offset < MAX_ELEMENT_VAL_LEN) {
-        byte = tvb_get_guint8(tvb, offset);
+        byte = tvb_get_uint8(tvb, offset);
         if (is_element(byte))
             break;
         offset++;
     }
     col_add_fstr(pinfo->cinfo, COL_INFO, "First element: %s",
-        val_to_str(byte, type_vals, "Unknown type: %u"));
+        val_to_str(pinfo->pool, byte, type_vals, "Unknown type: %u"));
 
     /* Create display subtree for the protocol */
     ti = proto_tree_add_item(tree, proto_banana, tvb, 0, -1, ENC_NA);
@@ -254,14 +240,6 @@ dissect_banana(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
 
     /* Return the amount of data this dissector was able to dissect */
     return tvb_reported_length(tvb);
-}
-
-static void
-banana_prefs(void) {
-    dissector_delete_uint_range("tcp.port", banana_tcp_range, banana_handle);
-    g_free(banana_tcp_range);
-    banana_tcp_range = range_copy(global_banana_tcp_range);
-    dissector_add_uint_range("tcp.port", banana_tcp_range, banana_handle);
 }
 
 /* Register the protocol with Wireshark */
@@ -312,11 +290,10 @@ proto_register_banana(void)
         }
     };
 
-    module_t *banana_module;
     expert_module_t* expert_banana;
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_banana,
         &ett_list
     };
@@ -338,20 +315,17 @@ proto_register_banana(void)
     expert_banana = expert_register_protocol(proto_banana);
     expert_register_field_array(expert_banana, ei, array_length(ei));
 
-    /* Initialize dissector preferences */
-    banana_module = prefs_register_protocol(proto_banana, banana_prefs);
-    banana_tcp_range = range_empty();
-    prefs_register_range_preference(banana_module, "tcp.port", "TCP Ports", "Banana TCP Port range", &global_banana_tcp_range, 65535);
+    banana_handle = register_dissector("banana", dissect_banana, proto_banana);
 }
 
 void
 proto_reg_handoff_banana(void)
 {
-    banana_handle = create_dissector_handle(dissect_banana, proto_banana);
+    dissector_add_uint_range_with_preference("tcp.port", "", banana_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

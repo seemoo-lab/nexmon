@@ -37,7 +37,7 @@ TEXTDOMAINDIR=. LANGUAGE=mf-p-1 \
 ${GETTEXT} --env LC_ALL=en gen 'SYS_(C)
 ' | LC_ALL=C tr -d '\r' > mf-p-test1.out
 
-cat <<EOF > gtmf-p-test1.ok
+cat <<\EOF > gtmf-p-test1.ok
 MSGFMT(3) portable message object file compiler
 Copyright (C) 1995 Free Software Foundation
 Report bugs to <bug-gnu-utils@gnu.org>

@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Copyright (C) 2003, 2005-2007, 2011, 2015-2016 Free Software Foundation, Inc.
+# Copyright (C) 2003-2026 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -13,8 +13,9 @@
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
+# Written by Bruno Haible.
 
 # Find a way to echo strings without interpreting backslash.
 if test "X`(echo '\t') 2>/dev/null`" = 'X\t'; then
@@ -61,11 +62,11 @@ if test -z "${ZSH_VERSION+set}"; then
       func_version ()
       {
         echo "$progname (GNU $package) $version"
-        echo "Copyright (C) 2003-2007 Free Software Foundation, Inc.
-License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>
+        echo "Copyright (C) 2003-2026 Free Software Foundation, Inc.
+License GPLv2+: GNU GPL version 2 or later <https://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law."
-        echo "Written by" "Bruno Haible"
+        printf 'Written by %s.\n' "Bruno Haible"
       }
       if test $# = 1; then
         case "$1" in
@@ -93,6 +94,20 @@ eval_gettext () {
 # shell variables in the result.
 eval_ngettext () {
   ngettext "$1" "$2" "$3" | (export PATH `envsubst --variables "$1 $2"`; envsubst "$1 $2")
+}
+
+# eval_pgettext MSGCTXT MSGID
+# looks up the translation of MSGID in the context MSGCTXT and substitutes
+# shell variables in the result.
+eval_pgettext () {
+  gettext --context="$1" "$2" | (export PATH `envsubst --variables "$2"`; envsubst "$2")
+}
+
+# eval_npgettext MSGCTXT MSGID MSGID-PLURAL COUNT
+# looks up the translation of MSGID / MSGID-PLURAL for COUNT in the context
+# MSGCTXT and substitutes shell variables in the result.
+eval_npgettext () {
+  ngettext --context="$1" "$2" "$3" "$4" | (export PATH `envsubst --variables "$2 $3"`; envsubst "$2 $3")
 }
 
 # Note: This use of envsubst is much safer than using the shell built-in 'eval'

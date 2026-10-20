@@ -1,0 +1,20 @@
+/ > /d:doc
+/d:doc/a[1]
+/d:doc/b
+/d:doc/a[2]
+/d:doc/c
+/d:doc/a[3]
+/d:doc/a[4]
+/d:doc/a[4]/e:e[1]
+/d:doc/a[4]/e:e[2]
+/d:doc/a[4]/b
+/d:doc/a[4]/e:e[3]
+/d:doc/a[4]/e:e[4]
+/d:doc/a[4]/e:e[5]
+/d:doc/a[4]/e:e[5]/*[1]
+/d:doc/a[4]/e:e[5]/*[2]
+/d:doc/a[4]/e:e[5]/*[3]
+/d:doc/a[4]/e:e[6]
+/d:doc/a[5]
+/ > /d:doc/a[4]/e:e[5]/*[3]/@e:attr
+/ > 

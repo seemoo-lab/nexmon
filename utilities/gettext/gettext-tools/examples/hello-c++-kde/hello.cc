@@ -1,5 +1,5 @@
 // Example for use of GNU gettext.
-// Copyright (C) 2003, 2015-2016 Free Software Foundation, Inc.
+// Copyright (C) 2003, 2019 Free Software Foundation, Inc.
 // This file is published under the GNU General Public License.
 
 // Source code of the C++ program.
@@ -47,10 +47,10 @@ main (int argc, char *argv[])
                         VERSION,
                         I18N_NOOP ("Hello world example"),
                         KAboutData::License_GPL,
-                        "(C) 2003 Free Software Foundation",
+                        "(C) 2003, 2019 Free Software Foundation",
                         NULL,
                         NULL,
-                        "bug-gnu-gettext@gnu.org");
+                        "bug-gettext@gnu.org");
   KCmdLineArgs::init (argc, argv, &aboutData);
   KCmdLineArgs::addCmdLineOptions (options);
   KApplication application;

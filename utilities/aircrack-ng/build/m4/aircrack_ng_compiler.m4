@@ -1,0 +1,206 @@
+dnl Aircrack-ng
+dnl
+dnl Copyright (C) 2017 Joseph Benden <joe@benden.us>
+dnl
+dnl Autotool support was written by: Joseph Benden <joe@benden.us>
+dnl
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; either version 2 of the License, or
+dnl (at your option) any later version.
+dnl
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program; if not, write to the Free Software
+dnl Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+dnl
+dnl In addition, as a special exception, the copyright holders give
+dnl permission to link the code of portions of this program with the
+dnl OpenSSL library under certain conditions as described in each
+dnl individual source file, and distribute linked combinations
+dnl including the two.
+dnl
+dnl You must obey the GNU General Public License in all respects
+dnl for all of the code used other than OpenSSL.
+dnl
+dnl If you modify file(s) with this exception, you may extend this
+dnl exception to your dnl version of the file(s), but you are not obligated
+dnl to do so.
+dnl
+dnl If you dnl do not wish to do so, delete this exception statement from your
+dnl version.
+dnl
+dnl If you delete this exception statement from all source files in the
+dnl program, then also delete it here.
+
+AC_DEFUN([AIRCRACK_NG_COMPILER], [
+AX_REQUIRE_DEFINED([AX_COMPILER_VENDOR])
+AX_REQUIRE_DEFINED([AX_COMPILER_VERSION])
+AX_REQUIRE_DEFINED([AX_COMPARE_VERSION])
+AX_REQUIRE_DEFINED([AX_CHECK_COMPILE_FLAG])
+AX_REQUIRE_DEFINED([AX_CFLAGS_WARN_ALL])
+AX_REQUIRE_DEFINED([AX_CXXFLAGS_WARN_ALL])
+AX_REQUIRE_DEFINED([AX_APPEND_FLAG])
+
+AX_COMPILER_VENDOR
+AX_COMPILER_VERSION
+
+saved_cflags="$CFLAGS"
+CFLAGS=""
+AX_CFLAGS_WARN_ALL
+AX_APPEND_FLAG($CFLAGS, [opt_cflags])
+CFLAGS="$saved_cflags"
+
+saved_cxxflags="$CXXFLAGS"
+CXXFLAGS=""
+AX_CXXFLAGS_WARN_ALL
+AX_APPEND_FLAG($CXXFLAGS, [opt_cxxflags])
+CXXFLAGS="$saved_cxxflags"
+
+case "$ax_cv_c_compiler_vendor" in
+    clang)
+        AX_APPEND_FLAG(-Wno-unused-command-line-argument, [opt_cppflags])
+        AX_APPEND_FLAG(-Wno-unused-command-line-argument, [opt_cflags])
+        AX_APPEND_FLAG(-Wno-unused-command-line-argument, [opt_cxxflags])
+        AX_APPEND_FLAG(-Wno-unused-command-line-argument, [opt_ldflags])
+        ;;
+esac
+
+AC_ARG_WITH(lto,
+    [AS_HELP_STRING([--with-lto],
+        [enable link-time optimizations])])
+
+AS_IF([test "x$with_lto" = "xyes"], [
+    AX_CHECK_COMPILE_FLAG([-flto], [
+        AX_APPEND_FLAG(-flto, [opt_[]_AC_LANG_ABBREV[]flags])
+        AX_APPEND_FLAG(-flto, [opt_ldflags])
+    ])
+])
+
+AC_ARG_WITH(opt,
+    [AS_HELP_STRING([--without-opt],
+        [disable -O3 optimizations])])
+
+AS_IF([test "x$enable_code_coverage" = "xno"], [
+    case $with_opt in
+        yes | "")
+            AX_CHECK_COMPILE_FLAG([-O3], [
+                AX_APPEND_FLAG(-O3, [opt_[]_AC_LANG_ABBREV[]flags])
+            ])
+        ;;
+    esac
+])
+
+AC_LANG_CASE([C], [
+    saved_cflags="$CFLAGS"
+    AX_CHECK_COMPILE_FLAG([-std=gnu99], [
+        AX_APPEND_FLAG(-std=gnu99, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-fcommon], [
+        AX_APPEND_FLAG(-fcommon, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+	case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        gnu|clang)
+            AX_CHECK_COMPILE_FLAG([-Wstrict-overflow=2], [
+                AX_APPEND_FLAG(-Wstrict-overflow=2, [opt_[]_AC_LANG_ABBREV[]flags])
+            ])
+            ;;
+    esac
+
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        intel)
+			dnl warning 2218 is: result of call is not used
+            AX_APPEND_FLAG(-diag-disable 2218, [opt_[]_AC_LANG_ABBREV[]flags])
+            ;;
+    esac
+])
+
+AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [
+	AX_APPEND_FLAG(-fvisibility=hidden, [opt_[]_AC_LANG_ABBREV[]flags])
+])
+
+case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+    gnu|clang|intel)
+        AX_COMPARE_VERSION([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_version], [ge], [4.1], [gcc_over41=yes], [gcc_over41=x])
+        AX_COMPARE_VERSION([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_version], [ge], [4.5], [gcc_over45=yes], [gcc_over45=x])
+        AX_COMPARE_VERSION([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_version], [ge], [4.9], [gcc_over49=yes], [gcc_over49=x])
+    ;;
+esac
+
+AS_IF([test "x$enable_maintainer_mode" = "xyes"], [
+    AS_IF([test "x$gcc_over49" = "xyes"], [
+        AX_CHECK_COMPILE_FLAG([-pedantic], [
+            AX_APPEND_FLAG(-pedantic, [opt_[]_AC_LANG_ABBREV[]flags])
+
+            case "$ax_cv_c_compiler_vendor" in
+                clang)
+                    AX_CHECK_COMPILE_FLAG([-Wno-newline-eof], [
+                        AX_APPEND_FLAG(-Wno-newline-eof, [opt_[]_AC_LANG_ABBREV[]flags])
+                    ])
+                    AX_CHECK_COMPILE_FLAG([-Wno-language-extension-token], [
+                        AX_APPEND_FLAG(-Wno-language-extension-token, [opt_[]_AC_LANG_ABBREV[]flags])
+                    ])
+                    AX_CHECK_COMPILE_FLAG([-Wno-gnu-statement-expression], [
+                        AX_APPEND_FLAG(-Wno-gnu-statement-expression, [opt_[]_AC_LANG_ABBREV[]flags])
+                    ])
+                    ;;
+            esac
+        ])
+	])
+
+    AX_CHECK_COMPILE_FLAG([-Wextra], [
+        AX_APPEND_FLAG(-Wextra, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        intel)
+            AX_APPEND_FLAG(-diag-disable remark, [opt_[]_AC_LANG_ABBREV[]flags])
+            ;;
+        *)
+            AX_CHECK_COMPILE_FLAG([-Werror], [
+                AX_APPEND_FLAG(-Werror, [opt_[]_AC_LANG_ABBREV[]flags])
+            ])
+		    ;;
+	esac
+
+    AC_LANG_CASE([C], [
+        case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+            gnu|clang|intel)
+                AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
+                ;;
+        esac
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [
+        AX_APPEND_FLAG(-Wpointer-arith, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        gnu|clang)
+            dnl BSD systems complain about CMocka using ,##__VA_ARGS__
+            dnl Suppress this warning
+            AX_CHECK_COMPILE_FLAG([-Werror -Wno-gnu-zero-variadic-macro-arguments], [
+                AX_APPEND_FLAG(-Wno-gnu-zero-variadic-macro-arguments, [opt_[]_AC_LANG_ABBREV[]flags])
+            ])
+        ;;
+    esac
+])
+])
+
+AC_DEFUN([AIRCRACK_NG_COMPILER_C], [
+AC_LANG_PUSH([C])
+AIRCRACK_NG_COMPILER
+AC_LANG_POP([C])
+])
+
+AC_DEFUN([AIRCRACK_NG_COMPILER_CXX], [
+AC_LANG_PUSH([C++])
+AIRCRACK_NG_COMPILER
+AC_LANG_POP([C++])
+])

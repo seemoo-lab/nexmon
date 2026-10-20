@@ -1,4 +1,4 @@
-/* addr_resolv.h
+/** @file
  * Definitions for network object lookup
  *
  * Laurent Deniel <laurent.deniel@free.fr>
@@ -7,22 +7,10 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /* The buffers returned by these functions are all allocated with a
- * packet lifetime and does not have have to be freed.
+ * packet lifetime and does not have to be freed.
  * However, take into account that when the packet dissection
  * completes, these buffers will be automatically reclaimed/freed.
  * If you need the buffer to remain for a longer scope than packet lifetime
@@ -34,7 +22,7 @@
 
 #include <epan/address.h>
 #include <epan/tvbuff.h>
-#include <epan/ipv6.h>
+#include <wsutil/inet_cidr.h>
 #include <epan/to_str.h>
 #include <wiretap/wtap.h>
 #include "ws_symbol_export.h"
@@ -44,28 +32,37 @@ extern "C" {
 #endif /* __cplusplus */
 
 #ifndef MAXNAMELEN
-#define MAXNAMELEN  	64	/* max name length (hostname and port name) */
+#define MAXNAMELEN  	64	/* max name length (most names: DNS labels, services, eth) */
 #endif
 
 #ifndef MAXVLANNAMELEN
 #define MAXVLANNAMELEN  	128	/* max vlan name length */
 #endif
 
+#ifndef MAXDNSNAMELEN
+#define MAXDNSNAMELEN	256	/* max total length of a domain name in the DNS */
+#endif
+
+#define BASE_ENTERPRISES     BASE_CUSTOM
+#define STRINGS_ENTERPRISES  CF_FUNC(enterprises_base_custom)
+
 /**
  * @brief Flags to control name resolution.
  */
 typedef struct _e_addr_resolve {
-  gboolean mac_name;                          /**< Whether to resolve Ethernet MAC to manufacturer names */
-  gboolean network_name;                      /**< Whether to resolve IPv4, IPv6, and IPX addresses into host names */
-  gboolean transport_name;                    /**< Whether to resolve TCP/UDP/DCCP/SCTP ports into service names */
-  gboolean dns_pkt_addr_resolution;           /**< Whether to resolve addresses using captured DNS packets */
-  gboolean use_external_net_name_resolver;    /**< Whether to system's configured DNS server to resolve names */
-  gboolean load_hosts_file_from_profile_only; /**< Whether to only load the hosts in the current profile, not hosts files */
-  gboolean vlan_name;                         /**< Whether to resolve VLAN IDs to names */
+  bool mac_name;                          /**< Whether to resolve Ethernet MAC to manufacturer names */
+  bool network_name;                      /**< Whether to resolve IPv4, IPv6, and IPX addresses into host names */
+  bool transport_name;                    /**< Whether to resolve TCP/UDP/DCCP/SCTP ports into service names */
+  bool dns_pkt_addr_resolution;           /**< Whether to resolve addresses using captured DNS packets */
+  bool handshake_sni_addr_resolution;     /**< Whether to resolve addresses using SNI information found in captured handshake packets */
+  bool use_external_net_name_resolver;    /**< Whether to system's configured DNS server to resolve names */
+  bool vlan_name;                         /**< Whether to resolve VLAN IDs to names */
+  bool ss7pc_name;                        /**< Whether to resolve SS7 Point Codes to names */
+  bool maxmind_geoip;                     /**< Whether to lookup geolocation information with mmdbresolve */
 } e_addr_resolve;
 
 #define ADDR_RESOLV_MACADDR(at) \
-    (((at)->type == AT_ETHER))
+    (((at)->type == AT_ETHER) || ((at)->type == AT_EUI64))
 
 #define ADDR_RESOLV_NETADDR(at) \
     (((at)->type == AT_IPv4) || ((at)->type == AT_IPv6) || ((at)->type == AT_IPX))
@@ -73,27 +70,36 @@ typedef struct _e_addr_resolve {
 struct hashether;
 typedef struct hashether hashether_t;
 
+struct hasheui64;
+typedef struct hasheui64 hasheui64_t;
+
+struct hashwka;
+typedef struct hashwka hashwka_t;
+
 struct hashmanuf;
 typedef struct hashmanuf hashmanuf_t;
 
-typedef struct serv_port {
-  gchar            *udp_name;
-  gchar            *tcp_name;
-  gchar            *sctp_name;
-  gchar            *dccp_name;
-  gchar            *numeric;
-} serv_port_t;
+typedef struct _serv_port_key {
+    uint16_t          port;
+    port_type         type;
+} serv_port_key_t;
+
+/* Used for manually edited DNS resolved names */
+typedef struct _resolved_name {
+    char             name[MAXDNSNAMELEN];
+} resolved_name_t;
 
 /*
- * Flags for various IPv4/IPv6 hash table entries.
+ * Flags for various resolved name hash table entries.
  */
-#define DUMMY_ADDRESS_ENTRY      (1U<<0)  /* XXX - what does this bit *really* mean? */
-#define TRIED_RESOLVE_ADDRESS    (1U<<1)  /* XXX - what does this bit *really* mean? */
+#define TRIED_RESOLVE_ADDRESS    (1U<<0)  /* name resolution is being/has been tried */
+#define NAME_RESOLVED            (1U<<1)  /* the name field contains a host name, not a printable address */
 #define RESOLVED_ADDRESS_USED    (1U<<2)  /* a get_hostname* call returned the host name */
-#define NAME_RESOLVED            (1U<<3)  /* the name field contains a host name, not a printable address */
+#define STATIC_HOSTNAME          (1U<<3)  /* do not update entries from hosts file with DNS responses */
+#define NAME_RESOLVED_PREFIX     (1U<<4)  /* name was generated from a prefix (e.g., OUI) instead of the entire address */
 
-#define DUMMY_AND_RESOLVE_FLGS   (DUMMY_ADDRESS_ENTRY | TRIED_RESOLVE_ADDRESS)
-#define USED_AND_RESOLVED_MASK   (DUMMY_ADDRESS_ENTRY | RESOLVED_ADDRESS_USED)
+#define TRIED_OR_RESOLVED_MASK   (TRIED_RESOLVE_ADDRESS | NAME_RESOLVED)
+#define USED_AND_RESOLVED_MASK   (NAME_RESOLVED | RESOLVED_ADDRESS_USED)
 
 /*
  * Flag controlling what names to resolve.
@@ -102,62 +108,89 @@ WS_DLL_PUBLIC e_addr_resolve gbl_resolv_flags;
 
 /* global variables */
 
-extern gchar *g_ethers_path;
-extern gchar *g_ipxnets_path;
-extern gchar *g_pethers_path;
-extern gchar *g_pipxnets_path;
+extern char *g_ethers_path;
+extern char *g_ipxnets_path;
+extern char *g_pethers_path;
+extern char *g_pipxnets_path;
 
 /* Functions in addr_resolv.c */
+
+/*
+ * returns an ipv4 object built from its address
+ */
+WS_DLL_PUBLIC hashipv4_t * new_ipv4(const unsigned addr);
+
+/*
+ * returns a 'dummy ip4' object built from an address
+ */
+WS_DLL_PUBLIC bool fill_dummy_ip4(const unsigned addr, hashipv4_t* volatile tp);
 
 /*
  * udp_port_to_display() returns the port name corresponding to that UDP port,
  * or the port number as a string if not found.
  */
-WS_DLL_PUBLIC gchar *udp_port_to_display(wmem_allocator_t *allocator, guint port);
+WS_DLL_PUBLIC char *udp_port_to_display(wmem_allocator_t *allocator, unsigned port);
 
 /*
  * tcp_port_to_display() returns the port name corresponding to that TCP port,
  * or the port number as a string if not found.
  */
-WS_DLL_PUBLIC gchar *tcp_port_to_display(wmem_allocator_t *allocator, guint port);
+WS_DLL_PUBLIC char *tcp_port_to_display(wmem_allocator_t *allocator, unsigned port);
 
 /*
  * dccp_port_to_display() returns the port name corresponding to that DCCP port,
  * or the port number as a string if not found.
  */
-extern gchar *dccp_port_to_display(wmem_allocator_t *allocator, guint port);
+extern char *dccp_port_to_display(wmem_allocator_t *allocator, unsigned port);
 
 /*
  * sctp_port_to_display() returns the port name corresponding to that SCTP port,
  * or the port number as a string if not found.
  */
-WS_DLL_PUBLIC gchar *sctp_port_to_display(wmem_allocator_t *allocator, guint port);
+WS_DLL_PUBLIC char *sctp_port_to_display(wmem_allocator_t *allocator, unsigned port);
 
 /*
  * serv_name_lookup() returns the well known service name string, or numeric
  * representation if one doesn't exist.
  */
-WS_DLL_PUBLIC const gchar *serv_name_lookup(port_type proto, guint port);
+WS_DLL_PUBLIC const char *serv_name_lookup(port_type proto, unsigned port);
+
+/*
+ * enterprises_lookup() returns the private enterprise code string, or 'unknown_str'
+ * if one doesn't exist, or "<Unknown>" if that is NULL.
+ */
+WS_DLL_PUBLIC const char *enterprises_lookup(uint32_t value, const char *unknown_str);
+
+/*
+ * try_enterprises_lookup() returns the private enterprise code string, or NULL if not found.
+ */
+WS_DLL_PUBLIC const char *try_enterprises_lookup(uint32_t value);
+
+/*
+ * enterprises_base_custom() prints the "name (decimal)" string to 'buf'.
+ * (Used with BASE_CUSTOM field display).
+ */
+WS_DLL_PUBLIC void enterprises_base_custom(char *buf, uint32_t value);
 
 /*
  * try_serv_name_lookup() returns the well known service name string, or NULL if
  * one doesn't exist.
  */
-WS_DLL_PUBLIC const gchar *try_serv_name_lookup(port_type proto, guint port);
+WS_DLL_PUBLIC const char *try_serv_name_lookup(port_type proto, unsigned port);
 
 /*
  * port_with_resolution_to_str() prints the "<resolved> (<numerical>)" port
  * string.
  */
-WS_DLL_PUBLIC gchar *port_with_resolution_to_str(wmem_allocator_t *scope,
-                                        port_type proto, guint port);
+WS_DLL_PUBLIC char *port_with_resolution_to_str(wmem_allocator_t *scope,
+                                        port_type proto, unsigned port);
 
 /*
  * port_with_resolution_to_str_buf() prints the "<resolved> (<numerical>)" port
- * string to 'buf'. Return value is the same as g_snprintf().
+ * string to 'buf'. Return value is the same as snprintf().
  */
-WS_DLL_PUBLIC int port_with_resolution_to_str_buf(gchar *buf, gulong buf_size,
-                                        port_type proto, guint port);
+WS_DLL_PUBLIC int port_with_resolution_to_str_buf(char *buf, unsigned long buf_size,
+                                        port_type proto, unsigned port);
 
 /*
  * Asynchronous host name lookup initialization, processing, and cleanup
@@ -166,108 +199,164 @@ WS_DLL_PUBLIC int port_with_resolution_to_str_buf(gchar *buf, gulong buf_size,
 /* Setup name resolution preferences */
 struct pref_module;
 extern void addr_resolve_pref_init(struct pref_module *nameres);
+extern void addr_resolve_pref_apply(void);
 
 /*
- * disable_name_resolution() sets all relevant gbl_resolv_flags to FALSE.
+ * disable_name_resolution() sets all relevant gbl_resolv_flags to false.
  */
 WS_DLL_PUBLIC void disable_name_resolution(void);
 
 /** If we're using c-ares process outstanding host name lookups.
  *  This is called from a GLIB timeout in Wireshark and before processing
- *  each packet in TShark.
+ *  each packet in the first pass of two-pass TShark.
  *
  * @return True if any new objects have been resolved since the previous
  * call. This can be used to trigger a display update, e.g. in Wireshark.
  */
-WS_DLL_PUBLIC gboolean host_name_lookup_process(void);
+WS_DLL_PUBLIC bool host_name_lookup_process(void);
 
-/* get_hostname returns the host name or "%d.%d.%d.%d" if not found */
-WS_DLL_PUBLIC const gchar *get_hostname(const guint addr);
+/* get_hostname returns the host name or "%d.%d.%d.%d" if not found.
+ * The string does not have to be freed; it will be freed when the
+ * address hashtables are emptied (e.g., when preferences change or
+ * redissection.) However, this increases persistent memory usage
+ * even when host name lookups are off.
+ *
+ * This might get deprecated in the future for get_hostname_wmem.
+ */
+WS_DLL_PUBLIC const char *get_hostname(const unsigned addr);
 
-/* get_hostname6 returns the host name, or numeric addr if not found */
-WS_DLL_PUBLIC const gchar *get_hostname6(const struct e_in6_addr *ad);
+/* get_hostname_wmem returns the host name or "%d.%d.%d.%d" if not found
+ * The returned string is allocated according to the wmem scope allocator. */
+WS_DLL_PUBLIC char *get_hostname_wmem(wmem_allocator_t *allocator, const unsigned addr);
+
+/* get_hostname6 returns the host name, or numeric addr if not found.
+ * The string does not have to be freed; it will be freed when the
+ * address hashtables are emptied (e.g., when preferences change or
+ * upon redissection.) However, this increases persistent memory usage
+ * even when host name lookups are off.
+ *
+ * This might get deprecated in the future for get_hostname6_wmem.
+ */
+WS_DLL_PUBLIC const char *get_hostname6(const ws_in6_addr *ad);
+
+/* get_hostname6 returns the host name, or numeric addr if not found.
+ * The returned string is allocated according to the wmem scope allocator. */
+WS_DLL_PUBLIC char *get_hostname6_wmem(wmem_allocator_t *allocator, const ws_in6_addr *ad);
 
 /* get_ether_name returns the logical name if found in ethers files else
    "<vendor>_%02x:%02x:%02x" if the vendor code is known else
    "%02x:%02x:%02x:%02x:%02x:%02x" */
-WS_DLL_PUBLIC const gchar *get_ether_name(const guint8 *addr);
+WS_DLL_PUBLIC const char *get_ether_name(const uint8_t *addr);
+
+/* get_hostname_ss7pc returns the logical name if found in ss7pcs file else
+   '\0' on the first call or the unresolved Point Code in the subsequent calls */
+const char *get_hostname_ss7pc(const uint8_t ni, const uint32_t pc);
+
+/* fill_unresolved_ss7pc initializes the unresolved Point Code Address string in the hashtable */
+void fill_unresolved_ss7pc(const char * pc_addr, const uint8_t ni, const uint32_t pc);
+
 
 /* Same as get_ether_name with tvb support */
-WS_DLL_PUBLIC const gchar *tvb_get_ether_name(tvbuff_t *tvb, gint offset);
+WS_DLL_PUBLIC const char *tvb_get_ether_name(tvbuff_t *tvb, int offset);
 
-/* get_ether_name returns the logical name if found in ethers files else NULL */
-const gchar *get_ether_name_if_known(const guint8 *addr);
+/* get_ether_name_if_known returns the logical name if an exact match is
+ * found (in ethers files or from ARP) else NULL.
+ * @note: It returns NULL for addresses if only a prefix can be resolved
+ * into a manufacturer name.
+ */
+const char *get_ether_name_if_known(const uint8_t *addr);
 
 /*
  * Given a sequence of 3 octets containing an OID, get_manuf_name()
- * returns the vendor name, or "%02x:%02x:%02x" if not known.
+ * returns an abbreviated form of the vendor name, or "%02x:%02x:%02x"
+ * if not known. (The short form of the name is roughly similar in length
+ * to the hexstring, so that they may be used in similar places.)
+ * @note: This only looks up entries in the 24-bit OUI table (and the
+ * CID table), not the MA-M and MA-S tables. The hex byte string is
+ * returned for sequences registered to the IEEE Registration Authority
+ * for the purposes of being subdivided into MA-M and MA-S.
  */
-extern const gchar *get_manuf_name(const guint8 *addr);
+extern const char *get_manuf_name(const uint8_t *addr, size_t size);
 
 /*
- * Given a sequence of 3 octets containing an OID, get_manuf_name_if_known()
- * returns the vendor name, or NULL if not known.
+ * Given a sequence of 3 or more octets containing an OUI,
+ * get_manuf_name_if_known() returns the vendor name, or NULL if not known.
+ * @note Unlike get_manuf_name() above, this returns the full vendor name.
+ * @note If size is 6 or larger, vendor names will be looked up in the MA-M
+ * and MA-S tables as well (but note that the length of the sequence is
+ * not returned.) If size is less than 6, only the 24 bit tables are searched,
+ * and NULL is returned for sequences registered to the IEEE Registration
+ * Authority for purposes of being subdivided into MA-M and MA-S.
  */
-WS_DLL_PUBLIC const gchar *get_manuf_name_if_known(const guint8 *addr);
+WS_DLL_PUBLIC const char *get_manuf_name_if_known(const uint8_t *addr, size_t size);
 
 /*
- * Given an integer containing a 24-bit OID, uint_get_manuf_name()
- * returns the vendor name, or "%02x:%02x:%02x" if not known.
+ * Given an integer containing a 24-bit OUI (or CID),
+ * uint_get_manuf_name_if_known() returns the vendor name, or NULL if not known.
+ * @note NULL is returned for sequences registered to the IEEE Registration
+ * Authority for purposes of being subdivided into MA-M and MA-S.
  */
-extern const gchar *uint_get_manuf_name(const guint oid);
-
-/*
- * Given an integer containing a 24-bit OID, uint_get_manuf_name_if_known()
- * returns the vendor name, or NULL if not known.
- */
-extern const gchar *uint_get_manuf_name_if_known(const guint oid);
+extern const char *uint_get_manuf_name_if_known(const uint32_t oid);
 
 /*
  * Given a tvbuff and an offset in that tvbuff for a 3-octet OID,
- * tvb_get_manuf_name() returns the vendor name, or "%02x:%02x:%02x"
+ * tvb_get_manuf_name() returns an abbreviated vendor name, or "%02x:%02x:%02x"
  * if not known.
+ * @note: This only looks up entries in the 24-bit OUI table (and the
+ * CID table), not the MA-M and MA-S tables. The hex byte string is
+ * returned for sequences registered to the IEEE Registration Authority
+ * for the purposes of being subdivided into MA-M and MA-S.
  */
-WS_DLL_PUBLIC const gchar *tvb_get_manuf_name(tvbuff_t *tvb, gint offset);
+WS_DLL_PUBLIC const char *tvb_get_manuf_name(tvbuff_t *tvb, int offset);
 
 /*
  * Given a tvbuff and an offset in that tvbuff for a 3-octet OID,
- * tvb_get_manuf_name_if_known() returns the vendor name, or NULL
+ * tvb_get_manuf_name_if_known() returns the full vendor name, or NULL
  * if not known.
+ * @note NULL is returned for sequences registered to the IEEE Registration
+ * Authority for purposes of being subdivided into MA-M and MA-S.
  */
-WS_DLL_PUBLIC const gchar *tvb_get_manuf_name_if_known(tvbuff_t *tvb, gint offset);
+WS_DLL_PUBLIC const char *tvb_get_manuf_name_if_known(tvbuff_t *tvb, int offset);
 
-/* eui64_to_display returns "<vendor>_%02x:%02x:%02x:%02x:%02x:%02x" if the vendor code is known
-   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x" */
-extern gchar *eui64_to_display(wmem_allocator_t *allocator, const guint64 addr);
+/* get_eui64_name returns the logical name if found in ethers files else
+ * "<vendor>_%02x:%02x:%02x:%02x:%02x:%02x" if the vendor code is known
+ * (or as appropriate for MA-M and MA-S), and if not,
+ * "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x"
+*/
+extern const char *get_eui64_name(const uint8_t *addr);
+
+/* eui64_to_display returns "<vendor>_%02x:%02x:%02x:%02x:%02x:%02x" if the
+ * vendor code is known (or as appropriate for MA-M and MA-S), and if not,
+ * "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x". Gives the same results
+ * as address_to_display, but for when the EUI-64 address is a host endian
+ * uint64_t instead of bytes / an AT_EUI64 address.
+*/
+extern char *eui64_to_display(wmem_allocator_t *allocator, const uint64_t addr);
 
 /* get_ipxnet_name returns the logical name if found in an ipxnets file,
  * or a string formatted with "%X" if not */
-extern gchar *get_ipxnet_name(wmem_allocator_t *allocator, const guint32 addr);
+extern char *get_ipxnet_name(wmem_allocator_t *allocator, const uint32_t addr);
 
 /* get_vlan_name returns the logical name if found in a vlans file,
  * or the VLAN ID itself as a string if not found*/
-extern gchar *get_vlan_name(wmem_allocator_t *allocator, const guint16 id);
+extern char *get_vlan_name(wmem_allocator_t *allocator, const uint16_t id);
 
-WS_DLL_PUBLIC guint get_hash_ether_status(hashether_t* ether);
+WS_DLL_PUBLIC unsigned get_hash_ether_status(hashether_t* ether);
+WS_DLL_PUBLIC bool get_hash_ether_used(hashether_t* ether);
 WS_DLL_PUBLIC char* get_hash_ether_hexaddr(hashether_t* ether);
 WS_DLL_PUBLIC char* get_hash_ether_resolved_name(hashether_t* ether);
 
+WS_DLL_PUBLIC bool get_hash_manuf_used(hashmanuf_t* manuf);
 WS_DLL_PUBLIC char* get_hash_manuf_resolved_name(hashmanuf_t* manuf);
 
-
-/* returns the ethernet address corresponding to name or NULL if not known */
-extern guint8 *get_ether_addr(const gchar *name);
-
-/* returns the ipx network corresponding to name. If name is unknown,
- * 0 is returned and 'known' is set to FALSE. On success, 'known'
- * is set to TRUE. */
-guint32 get_ipxnet_addr(const gchar *name, gboolean *known);
+WS_DLL_PUBLIC bool get_hash_wka_used(hashwka_t* wka);
+WS_DLL_PUBLIC char* get_hash_wka_resolved_name(hashwka_t* wka);
 
 /* adds a hostname/IPv4 in the hash table */
-WS_DLL_PUBLIC void add_ipv4_name(const guint addr, const gchar *name);
+WS_DLL_PUBLIC void add_ipv4_name(const unsigned addr, const char *name, const bool static_entry);
 
 /* adds a hostname/IPv6 in the hash table */
-WS_DLL_PUBLIC void add_ipv6_name(const struct e_in6_addr *addr, const gchar *name);
+WS_DLL_PUBLIC void add_ipv6_name(const ws_in6_addr *addr, const char *name, const bool static_entry);
 
 /** Add an additional "hosts" file for IPv4 and IPv6 name resolution.
  *
@@ -276,12 +365,15 @@ WS_DLL_PUBLIC void add_ipv6_name(const struct e_in6_addr *addr, const gchar *nam
  *
  * @param hosts_file Absolute path to the hosts file.
  *
- * @return TRUE if the hosts file can be read.
+ * @return true if the hosts file can be read.
  */
-WS_DLL_PUBLIC gboolean add_hosts_file (const char *hosts_file);
+WS_DLL_PUBLIC bool add_hosts_file (const char *hosts_file);
 
 /* adds a hostname in the hash table */
-WS_DLL_PUBLIC gboolean add_ip_name_from_string (const char *addr, const char *name);
+WS_DLL_PUBLIC bool add_ip_name_from_string (const char *addr, const char *name);
+
+/* Get the user defined name, for a given address */
+WS_DLL_PUBLIC resolved_name_t* get_edited_resolved_name(const char* addr);
 
 
 /** Get lists of host name to address mappings we know about.
@@ -293,35 +385,35 @@ WS_DLL_PUBLIC gboolean add_ip_name_from_string (const char *addr, const char *na
 WS_DLL_PUBLIC addrinfo_lists_t *get_addrinfo_list(void);
 
 /* add ethernet address / name corresponding to IP address  */
-extern void add_ether_byip(const guint ip, const guint8 *eth);
+extern void add_ether_byip(const unsigned ip, const uint8_t *eth);
 
 /** Translates a string representing a hostname or dotted-decimal IPv4 address
  *  into a numeric IPv4 address value in network byte order. If compiled with
  *  c-ares, the request will wait a maximum of 250ms for the request to finish.
- *  Otherwise the wait time will be system-dependent, ususally much longer.
- *  Immediately returns FALSE for hostnames if network name resolution is
+ *  Otherwise the wait time will be system-dependent, usually much longer.
+ *  Immediately returns false for hostnames if network name resolution is
  *  disabled.
  *
  * @param[in] host The hostname.
  * @param[out] addrp The numeric IPv4 address in network byte order.
- * @return TRUE on success, FALSE on failure, timeout.
+ * @return true on success, false on failure, timeout.
  */
 WS_DLL_PUBLIC
-gboolean get_host_ipaddr(const char *host, guint32 *addrp);
+bool get_host_ipaddr(const char *host, uint32_t *addrp);
 
 /** Translates a string representing a hostname or colon-hex IPv6 address
  *  into a numeric IPv6 address value in network byte order. If compiled with
  *  c-ares, the request will wait a maximum of 250ms for the request to finish.
  *  Otherwise the wait time will be system-dependent, usually much longer.
- *  Immediately returns FALSE for hostnames if network name resolution is
+ *  Immediately returns false for hostnames if network name resolution is
  *  disabled.
  *
  * @param[in] host The hostname.
  * @param[out] addrp The numeric IPv6 address in network byte order.
- * @return TRUE on success, FALSE on failure or timeout.
+ * @return true on success, false on failure or timeout.
  */
 WS_DLL_PUBLIC
-gboolean get_host_ipaddr6(const char *host, struct e_in6_addr *addrp);
+bool get_host_ipaddr6(const char *host, ws_in6_addr *addrp);
 
 WS_DLL_PUBLIC
 wmem_map_t *get_manuf_hashtable(void);
@@ -348,21 +440,23 @@ WS_DLL_PUBLIC
 wmem_map_t *get_ipv6_hash_table(void);
 
 /*
+ * XXX - if we ever have per-session host name etc. information, we
+ * should probably have the "resolve synchronously or asynchronously"
+ * flag be per-session, set with an epan API.
+ */
+WS_DLL_PUBLIC
+void set_resolution_synchrony(bool synchronous);
+
+/*
  * private functions (should only be called by epan directly)
  */
 
 WS_DLL_LOCAL
 void name_resolver_init(void);
 
-/* (Re)Initialize hostname resolution subsystem */
+/* Reinitialize hostname resolution subsystem */
 WS_DLL_LOCAL
-void host_name_lookup_init(void);
-
-/* Clean up only hostname resolutions (so they don't "leak" from one
- * file to the next).
- */
-WS_DLL_LOCAL
-void host_name_lookup_cleanup(void);
+void host_name_lookup_reset(void);
 
 WS_DLL_LOCAL
 void addr_resolv_init(void);
@@ -371,13 +465,19 @@ WS_DLL_LOCAL
 void addr_resolv_cleanup(void);
 
 WS_DLL_PUBLIC
-void manually_resolve_cleanup(void);
+bool str_to_ip(const char *str, void *dst);
 
 WS_DLL_PUBLIC
-gboolean str_to_ip(const char *str, void *dst);
+bool str_to_ip6(const char *str, void *dst);
 
-WS_DLL_PUBLIC
-gboolean str_to_ip6(const char *str, void *dst);
+WS_DLL_LOCAL
+bool str_to_eth(const char *str, char *eth_bytes);
+
+WS_DLL_LOCAL
+unsigned ipv6_oat_hash(const void *key);
+
+WS_DLL_LOCAL
+gboolean ipv6_equal(const void *v1, const void *v2);
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,23 @@
+Description:
+
+Files:
+
+Depends-on:
+
+configure.ac:
+dnl Make sure LOCALENAME_ENHANCE_LOCALE_FUNCS gets initialized to 0 before,
+dnl not after, it has been set to 1 by gt_INTL_THREAD_LOCALE_NAME.
+AC_REQUIRE([gl_LOCALE_H_DEFAULTS])
+AC_REQUIRE([gt_INTL_THREAD_LOCALE_NAME])
+
+Makefile.am:
+# Enable more warning options in this directory.
+AM_CFLAGS += @WARN_CFLAGS@
+
+Include:
+
+License:
+LGPLv2+
+
+Maintainer:
+Bruno Haible

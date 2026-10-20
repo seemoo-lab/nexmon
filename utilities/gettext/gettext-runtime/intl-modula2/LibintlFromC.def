@@ -1,0 +1,58 @@
+(* Low-level Modula-2 binding to the GNU libintl library.
+   Copyright (C) 2025-2026 Free Software Foundation, Inc.
+
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
+
+   This file is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  *)
+
+(* Written by Bruno Haible.  *)
+
+DEFINITION MODULE FOR "C" LibintlFromC;
+
+FROM SYSTEM IMPORT ADDRESS,
+                   CSIZE_T (* should map to 'unsigned long' *);
+
+EXPORT UNQUALIFIED setlocale,
+                   gettext, dgettext, dcgettext, ngettext, dngettext, dcngettext,
+                   textdomain, bindtextdomain, bind_textdomain_codeset;
+
+(* const char *setlocale (int category, const char *locale); *)
+PROCEDURE setlocale (category: INTEGER; locale: ADDRESS) : ADDRESS;
+
+(* const char *gettext (const char *msgid); *)
+PROCEDURE gettext (msgid: ADDRESS) : ADDRESS;
+
+(* const char *dgettext (const char *domainname, const char *msgid); *)
+PROCEDURE dgettext (domainname: ADDRESS; msgid: ADDRESS) : ADDRESS;
+
+(* const char *dcgettext (const char *domainname, const char *msgid, int category); *)
+PROCEDURE dcgettext (domainname: ADDRESS; msgid: ADDRESS; category: INTEGER) : ADDRESS;
+
+(* const char *ngettext (const char *msgid, const char *msgid_plural, unsigned long n); *)
+PROCEDURE ngettext (msgid: ADDRESS; msgid_plural: ADDRESS; n: CSIZE_T) : ADDRESS;
+
+(* const char *dngettext (const char *domainname, const char *msgid, const char *msgid_plural, unsigned long n); *)
+PROCEDURE dngettext (domainname: ADDRESS; msgid: ADDRESS; msgid_plural: ADDRESS; n: CSIZE_T) : ADDRESS;
+
+(* const char *dcngettext (const char *domainname, const char *msgid, const char *msgid_plural, unsigned long n, int category); *)
+PROCEDURE dcngettext (domainname: ADDRESS; msgid: ADDRESS; msgid_plural: ADDRESS; n: CSIZE_T; category: INTEGER) : ADDRESS;
+
+(* const char *textdomain (const char *domainname); *)
+PROCEDURE textdomain (domainname: ADDRESS) : ADDRESS;
+
+(* const char *bindtextdomain (const char *domainname, const char *dirname); *)
+PROCEDURE bindtextdomain (domainname: ADDRESS; dirname: ADDRESS) : ADDRESS;
+
+(* const char *bind_textdomain_codeset (const char *domainname, const char *codeset); *)
+PROCEDURE bind_textdomain_codeset (domainname: ADDRESS; codeset: ADDRESS) : ADDRESS;
+
+END LibintlFromC.

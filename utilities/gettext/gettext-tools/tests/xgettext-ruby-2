@@ -1,0 +1,50 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Ruby support: --add-comments option, string concatenation,
+# strings with embedded expressions.
+
+(rxgettext --version) >/dev/null 2>/dev/null \
+  || { echo "Skipping test: rxgettext not found"; Exit 77; }
+
+cat <<\EOF > xg-ru-2.rb
+# a
+s = # b
+# c
+_( "hello " + # d
+   "world" # e
+ );
+# Strings with embedded expressions, a.k.a. interpolated strings.
+t = "";
+_("embedded_1_#{foo}_bar");
+_("embedded_2_#{_("embedded_2_sub1")}_bar_#{_("embedded_2_sub2")}_baz");
+_("embedded_3");
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --add-comments --omit-header --no-location --keyword=_ \
+  -d xg-ru-2.tmp xg-ru-2.rb || Exit 1
+LC_ALL=C tr -d '\r' < xg-ru-2.tmp.po > xg-ru-2.po || Exit 1
+
+cat <<\EOF > xg-ru-2.ok
+#. a
+#. b
+#. c
+msgid "hello world"
+msgstr ""
+
+msgid "embedded_2_sub1"
+msgstr ""
+
+msgid "embedded_2_sub2"
+msgstr ""
+
+msgid "embedded_3"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-ru-2.ok xg-ru-2.po
+result=$?
+
+exit $result

@@ -1,0 +1,254 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaVal" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaVal</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1a9fc28d1eff98254f6b7dbec91e67ce8d" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcd" kindref="member">xmlSchemaValType</ref></type>
+        <definition>xmlSchemaValType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlSchemaVal::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="109" column="22" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="109" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1a40e8f327055c22147b0b4b791ab41b32" prot="public" static="no" mutable="no">
+        <type>struct _xmlSchemaVal *</type>
+        <definition>struct _xmlSchemaVal* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlSchemaVal::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="110" column="24" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="110" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1acbbeac8c3728f87c708a6dc74325963e" prot="public" static="no" mutable="no">
+        <type>xmlSchemaValDecimal</type>
+        <definition>xmlSchemaValDecimal decimal</definition>
+        <argsstring></argsstring>
+        <name>decimal</name>
+        <qualifiedname>_xmlSchemaVal::decimal</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="112" column="25" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="112" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1a6aa45651a05519d25b9f0c23300b2f51" prot="public" static="no" mutable="no">
+        <type>xmlSchemaValDate</type>
+        <definition>xmlSchemaValDate date</definition>
+        <argsstring></argsstring>
+        <name>date</name>
+        <qualifiedname>_xmlSchemaVal::date</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="113" column="33" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="113" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1a44858f7c343909178b611d82f9d4428a" prot="public" static="no" mutable="no">
+        <type>xmlSchemaValDuration</type>
+        <definition>xmlSchemaValDuration dur</definition>
+        <argsstring></argsstring>
+        <name>dur</name>
+        <qualifiedname>_xmlSchemaVal::dur</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="114" column="33" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="114" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1a417710996282e5fb405115cfcc9f4b15" prot="public" static="no" mutable="no">
+        <type>xmlSchemaValQName</type>
+        <definition>xmlSchemaValQName qname</definition>
+        <argsstring></argsstring>
+        <name>qname</name>
+        <qualifiedname>_xmlSchemaVal::qname</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="115" column="18" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="115" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1aad8236b164dbddae425e0ecfe78d4330" prot="public" static="no" mutable="no">
+        <type>xmlSchemaValHex</type>
+        <definition>xmlSchemaValHex hex</definition>
+        <argsstring></argsstring>
+        <name>hex</name>
+        <qualifiedname>_xmlSchemaVal::hex</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="116" column="16" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="116" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1a0a473926ef5f261946d09bd616a35687" prot="public" static="no" mutable="no">
+        <type>xmlSchemaValBase64</type>
+        <definition>xmlSchemaValBase64 base64</definition>
+        <argsstring></argsstring>
+        <name>base64</name>
+        <qualifiedname>_xmlSchemaVal::base64</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="117" column="19" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="117" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1af900396d7b72ff2a7002e8befe8cf8f1" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float f</definition>
+        <argsstring></argsstring>
+        <name>f</name>
+        <qualifiedname>_xmlSchemaVal::f</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="118" column="6" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="118" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1a873684cefeb665f3d5e6b495de57fc0d" prot="public" static="no" mutable="no">
+        <type>double</type>
+        <definition>double d</definition>
+        <argsstring></argsstring>
+        <name>d</name>
+        <qualifiedname>_xmlSchemaVal::d</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="119" column="7" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="119" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1a148e3876077787926724625411d6e7a9" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int b</definition>
+        <argsstring></argsstring>
+        <name>b</name>
+        <qualifiedname>_xmlSchemaVal::b</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="120" column="4" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="120" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1ac63702296edcf9bf955f021cc570661e" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* str</definition>
+        <argsstring></argsstring>
+        <name>str</name>
+        <qualifiedname>_xmlSchemaVal::str</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="121" column="24" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="121" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaVal_1afc73d20d683d88c3b3b2c132f534a8d4" prot="public" static="no" mutable="no">
+        <type>union _xmlSchemaVal</type>
+        <definition>union _xmlSchemaVal value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>_xmlSchemaVal::value</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="122" column="11"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlSchemaVal</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>decimal</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>date</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>dur</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>qname</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>hex</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>base64</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlSchemaValBase64</label>
+      </node>
+      <node id="3">
+        <label>_xmlSchemaValDate</label>
+      </node>
+      <node id="2">
+        <label>_xmlSchemaValDecimal</label>
+      </node>
+      <node id="4">
+        <label>_xmlSchemaValDuration</label>
+      </node>
+      <node id="6">
+        <label>_xmlSchemaValHex</label>
+      </node>
+      <node id="5">
+        <label>_xmlSchemaValQName</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="108" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="108" bodyend="123"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaVal_1a148e3876077787926724625411d6e7a9" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>b</name></member>
+      <member refid="struct__xmlSchemaVal_1a0a473926ef5f261946d09bd616a35687" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>base64</name></member>
+      <member refid="struct__xmlSchemaVal_1a873684cefeb665f3d5e6b495de57fc0d" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>d</name></member>
+      <member refid="struct__xmlSchemaVal_1a6aa45651a05519d25b9f0c23300b2f51" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>date</name></member>
+      <member refid="struct__xmlSchemaVal_1acbbeac8c3728f87c708a6dc74325963e" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>decimal</name></member>
+      <member refid="struct__xmlSchemaVal_1a44858f7c343909178b611d82f9d4428a" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>dur</name></member>
+      <member refid="struct__xmlSchemaVal_1af900396d7b72ff2a7002e8befe8cf8f1" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>f</name></member>
+      <member refid="struct__xmlSchemaVal_1aad8236b164dbddae425e0ecfe78d4330" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>hex</name></member>
+      <member refid="struct__xmlSchemaVal_1a40e8f327055c22147b0b4b791ab41b32" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>next</name></member>
+      <member refid="struct__xmlSchemaVal_1a417710996282e5fb405115cfcc9f4b15" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>qname</name></member>
+      <member refid="struct__xmlSchemaVal_1ac63702296edcf9bf955f021cc570661e" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>str</name></member>
+      <member refid="struct__xmlSchemaVal_1a9fc28d1eff98254f6b7dbec91e67ce8d" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>type</name></member>
+      <member refid="struct__xmlSchemaVal_1afc73d20d683d88c3b3b2c132f534a8d4" prot="public" virt="non-virtual"><scope>_xmlSchemaVal</scope><name>value</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

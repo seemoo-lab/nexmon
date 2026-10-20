@@ -1,0 +1,33 @@
+# for all subdirectories
+TAGS
+tags
+.libs
+.deps
+*.o
+*.lo
+*.la
+*.pc
+.*.swp
+.sw?
+*.gcno
+*.gcda
+*.gcov
+*.sourcefiles
+*.stp
+*.exe
+*.def
+*.test
+*.log
+*.trs
+
+/glib-lcov.info
+/glib-lcov/
+
+# Meson
+/meson-build/
+/subprojects/*/
+/subprojects/.wraplock
+!/subprojects/packagefiles
+
+# Generated Meson cross-compilation files for CI
+vs2019-arm64.txt

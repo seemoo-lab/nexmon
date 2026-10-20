@@ -1,27 +1,15 @@
 /* packet-ses.h
-*
-* Routine to dissect ISO 8327-1 OSI Session Protocol packets
-*
-* Yuriy Sidelnikov <YSidelnikov@hotmail.com>
-*
-* Wireshark - Network traffic analyzer
-* By Gerald Combs <gerald@wireshark.org>
-* Copyright 1998 Gerald Combs
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ *
+ * Routine to dissect ISO 8327-1 OSI Session Protocol packets
+ *
+ * Yuriy Sidelnikov <YSidelnikov@hotmail.com>
+ *
+ * Wireshark - Network traffic analyzer
+ * By Gerald Combs <gerald@wireshark.org>
+ * Copyright 1998 Gerald Combs
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
 #ifndef PACKET_SES_H
 #define PACKET_SES_H
@@ -133,8 +121,8 @@ reason code
 #define SPM_reason_not_specified        128+5
 #define SPM_implementation_restriction  128+6
 
-#define         NON_TOKENS_SPDU                 FALSE
-#define         TOKENS_SPDU                     TRUE
+#define         NON_TOKENS_SPDU                 false
+#define         TOKENS_SPDU                     true
 
 #define         TWO_BYTE_LEN                    0xff
 
@@ -198,11 +186,11 @@ reason code
 /* data for presentation selector      */
 struct SESSION_DATA_STRUCTURE
 {
-	guint8   spdu_type;
-	guint8   abort_type;
-	guint8   pres_ctx_id;
-	guint32  ros_op;
-	gboolean rtse_reassemble;
+	uint8_t  spdu_type;
+	uint8_t  abort_type;
+	uint8_t  pres_ctx_id;
+	uint32_t ros_op;
+	bool rtse_reassemble;
 };
 
 extern value_string_ext ses_vals_ext;
@@ -210,7 +198,7 @@ extern value_string_ext ses_vals_ext;
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

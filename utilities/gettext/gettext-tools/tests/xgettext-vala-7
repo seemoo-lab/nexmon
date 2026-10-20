@@ -1,0 +1,26 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Vala support: diagnostics for invalid format strings.
+
+: ${XGETTEXT=xgettext}
+
+cat <<\EOF > xg-vala-7.vala
+_("Invalid C format %z").printf();
+EOF
+
+LANGUAGE= LC_ALL=C ${XGETTEXT} --omit-header --no-location -o xg-vala-7.tmp xg-vala-7.vala 2>xg-vala-7.err || Exit 1
+cat xg-vala-7.err
+grep 'warning: Although being used in a format string position, the msgid is not a valid C format string.' xg-vala-7.err >/dev/null || Exit 1
+func_filter_POT_Creation_Date xg-vala-7.tmp xg-vala-7.po
+
+cat <<\EOF > xg-vala-7.ok
+msgid "Invalid C format %z"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-vala-7.ok xg-vala-7.po
+result=$?
+
+exit $result

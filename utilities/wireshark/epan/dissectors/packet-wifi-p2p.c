@@ -4,19 +4,7 @@
  *
  * Copyright 2009-2010 Atheros Communications
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,7 @@
 #include "packet-ieee80211.h"
 
 void proto_register_p2p(void);
+void proto_reg_handoff_p2p(void);
 
 enum {
   P2P_ATTR_STATUS = 0,
@@ -113,6 +102,7 @@ static const value_string p2p_attr_types[] = {
 #define P2P_GROUP_CAPAB_CROSS_CONNECTION 0x10
 #define P2P_GROUP_CAPAB_PERSISTENT_RECONNECT 0x20
 #define P2P_GROUP_CAPAB_GROUP_FORMATION 0x40
+#define P2P_GROUP_CAPAB_IP_ADDRESS_ALLOCATION 0x80
 
 #define WPS_CONF_METH_USBA 0x0001
 #define WPS_CONF_METH_ETHERNET 0x0002
@@ -253,181 +243,188 @@ static const value_string p2p_oob_group_owner_negotiation_channel_role_indicatio
   { 0, NULL }
 };
 
-static int proto_p2p = -1;
+static int proto_p2p;
 
-static gint ett_p2p_tlv = -1;
-static gint ett_p2p_service_tlv = -1;
-static gint ett_p2p_advertised_service = -1;
-static gint ett_p2p_client_descr = -1;
+static int ett_p2p_tlv;
+static int ett_p2p_service_tlv;
+static int ett_p2p_advertised_service;
+static int ett_p2p_client_descr;
 
-static int hf_p2p_attr_type = -1;
-static int hf_p2p_attr_len = -1;
+static int hf_p2p_attr_type;
+static int hf_p2p_attr_len;
 
-/* static int hf_p2p_attr_capab = -1; */
-static int hf_p2p_attr_capab_device = -1;
-static int hf_p2p_attr_capab_device_service_discovery = -1;
-static int hf_p2p_attr_capab_device_client_discoverability = -1;
-static int hf_p2p_attr_capab_device_concurrent_operation = -1;
-static int hf_p2p_attr_capab_device_infrastructure_managed = -1;
-static int hf_p2p_attr_capab_device_limit = -1;
-static int hf_p2p_attr_capab_invitation_procedure = -1;
-static int hf_p2p_attr_capab_group = -1;
-static int hf_p2p_attr_capab_group_owner = -1;
-static int hf_p2p_attr_capab_group_persistent = -1;
-static int hf_p2p_attr_capab_group_limit = -1;
-static int hf_p2p_attr_capab_group_intra_bss_distribution = -1;
-static int hf_p2p_attr_capab_group_cross_connection = -1;
-static int hf_p2p_attr_capab_group_persistent_reconnect = -1;
-static int hf_p2p_attr_capab_group_group_formation = -1;
+/* static int hf_p2p_attr_capab; */
+static int hf_p2p_attr_capab_device;
+static int hf_p2p_attr_capab_device_service_discovery;
+static int hf_p2p_attr_capab_device_client_discoverability;
+static int hf_p2p_attr_capab_device_concurrent_operation;
+static int hf_p2p_attr_capab_device_infrastructure_managed;
+static int hf_p2p_attr_capab_device_limit;
+static int hf_p2p_attr_capab_invitation_procedure;
+static int hf_p2p_attr_capab_group;
+static int hf_p2p_attr_capab_group_owner;
+static int hf_p2p_attr_capab_group_persistent;
+static int hf_p2p_attr_capab_group_limit;
+static int hf_p2p_attr_capab_group_intra_bss_distribution;
+static int hf_p2p_attr_capab_group_cross_connection;
+static int hf_p2p_attr_capab_group_persistent_reconnect;
+static int hf_p2p_attr_capab_group_group_formation;
+static int hf_p2p_attr_capab_group_ip_address_allocation;
 
-static int hf_p2p_attr_device_id = -1;
+static int hf_p2p_attr_device_id;
 
-static int hf_p2p_attr_status = -1;
+static int hf_p2p_attr_status;
 
-static int hf_p2p_attr_go_intent = -1;
-static int hf_p2p_attr_go_intent_tie_breaker = -1;
+static int hf_p2p_attr_go_intent;
+static int hf_p2p_attr_go_intent_tie_breaker;
 
-/* static int hf_p2p_attr_listen_channel = -1; */
-static int hf_p2p_attr_listen_channel_country = -1;
-static int hf_p2p_attr_listen_channel_oper_class = -1;
-static int hf_p2p_attr_listen_channel_number = -1;
+/* static int hf_p2p_attr_listen_channel; */
+static int hf_p2p_attr_listen_channel_country;
+static int hf_p2p_attr_listen_channel_oper_class;
+static int hf_p2p_attr_listen_channel_number;
 
-/* static int hf_p2p_attr_operating_channel = -1; */
-static int hf_p2p_attr_operating_channel_country = -1;
-static int hf_p2p_attr_operating_channel_oper_class = -1;
-static int hf_p2p_attr_operating_channel_number = -1;
+/* static int hf_p2p_attr_operating_channel; */
+static int hf_p2p_attr_operating_channel_country;
+static int hf_p2p_attr_operating_channel_oper_class;
+static int hf_p2p_attr_operating_channel_number;
 
-/* static int hf_p2p_attr_channel_list = -1; */
-static int hf_p2p_attr_channel_list_country = -1;
-static int hf_p2p_attr_channel_list_oper_class = -1;
-static int hf_p2p_attr_channel_list_num_chan = -1;
-static int hf_p2p_attr_channel_list_chan = -1;
+/* static int hf_p2p_attr_channel_list; */
+static int hf_p2p_attr_channel_list_country;
+static int hf_p2p_attr_channel_list_oper_class;
+static int hf_p2p_attr_channel_list_num_chan;
+static int hf_p2p_attr_channel_list_chan;
 
-/* static int hf_p2p_attr_dev_info = -1; */
-static int hf_p2p_attr_dev_info_p2p_dev_addr = -1;
-static int hf_p2p_attr_dev_info_pri_dev_type = -1;
-static int hf_p2p_attr_dev_info_pri_dev_type_category = -1;
-static int hf_p2p_attr_dev_info_pri_dev_type_oui = -1;
-static int hf_p2p_attr_dev_info_pri_dev_type_subcategory = -1;
-static int hf_p2p_attr_dev_info_num_sec = -1;
-static int hf_p2p_attr_dev_info_sec_dev_type = -1;
-static int hf_p2p_attr_dev_info_dev_name_type = -1;
-static int hf_p2p_attr_dev_info_dev_name_len = -1;
-static int hf_p2p_attr_dev_info_dev_name = -1;
-static int hf_p2p_attr_dev_info_config_methods = -1;
-static int hf_p2p_attr_dev_info_config_methods_usba = -1;
-static int hf_p2p_attr_dev_info_config_methods_ethernet = -1;
-static int hf_p2p_attr_dev_info_config_methods_label = -1;
-static int hf_p2p_attr_dev_info_config_methods_display = -1;
-static int hf_p2p_attr_dev_info_config_methods_ext_nfc_token = -1;
-static int hf_p2p_attr_dev_info_config_methods_int_nfc_token = -1;
-static int hf_p2p_attr_dev_info_config_methods_nfc_interface = -1;
-static int hf_p2p_attr_dev_info_config_methods_pushbutton = -1;
-static int hf_p2p_attr_dev_info_config_methods_keypad = -1;
-static int hf_p2p_attr_config_timeout_go = -1;
-static int hf_p2p_attr_config_timeout_client = -1;
-static int hf_p2p_attr_intended_interface_addr = -1;
-static int hf_p2p_attr_extended_listen_timing_period = -1;
-static int hf_p2p_attr_extended_listen_timing_interval = -1;
-static int hf_p2p_attr_p2p_group_id_dev_addr = -1;
-static int hf_p2p_attr_p2p_group_id_ssid = -1;
-static int hf_p2p_attr_p2p_group_bssid = -1;
+/* static int hf_p2p_attr_dev_info; */
+static int hf_p2p_attr_dev_info_p2p_dev_addr;
+static int hf_p2p_attr_dev_info_pri_dev_type;
+static int hf_p2p_attr_dev_info_pri_dev_type_category;
+static int hf_p2p_attr_dev_info_pri_dev_type_oui;
+static int hf_p2p_attr_dev_info_pri_dev_type_subcategory;
+static int hf_p2p_attr_dev_info_num_sec;
+static int hf_p2p_attr_dev_info_sec_dev_type;
+static int hf_p2p_attr_dev_info_dev_name_type;
+static int hf_p2p_attr_dev_info_dev_name_len;
+static int hf_p2p_attr_dev_info_dev_name;
+static int hf_p2p_attr_dev_info_config_methods;
+static int hf_p2p_attr_dev_info_config_methods_usba;
+static int hf_p2p_attr_dev_info_config_methods_ethernet;
+static int hf_p2p_attr_dev_info_config_methods_label;
+static int hf_p2p_attr_dev_info_config_methods_display;
+static int hf_p2p_attr_dev_info_config_methods_ext_nfc_token;
+static int hf_p2p_attr_dev_info_config_methods_int_nfc_token;
+static int hf_p2p_attr_dev_info_config_methods_nfc_interface;
+static int hf_p2p_attr_dev_info_config_methods_pushbutton;
+static int hf_p2p_attr_dev_info_config_methods_keypad;
+static int hf_p2p_attr_config_timeout_go;
+static int hf_p2p_attr_config_timeout_client;
+static int hf_p2p_attr_intended_interface_addr;
+static int hf_p2p_attr_extended_listen_timing_period;
+static int hf_p2p_attr_extended_listen_timing_interval;
+static int hf_p2p_attr_p2p_group_id_dev_addr;
+static int hf_p2p_attr_p2p_group_id_ssid;
+static int hf_p2p_attr_p2p_group_bssid;
 
-static int hf_p2p_attr_noa_index = -1;
-static int hf_p2p_attr_noa_params = -1;
-static int hf_p2p_attr_noa_params_opp_ps = -1;
-static int hf_p2p_attr_noa_params_ctwindow = -1;
-static int hf_p2p_attr_noa_count_type = -1;
-static int hf_p2p_attr_noa_duration = -1;
-static int hf_p2p_attr_noa_interval = -1;
-static int hf_p2p_attr_noa_start_time = -1;
+static int hf_p2p_attr_noa_index;
+static int hf_p2p_attr_noa_params;
+static int hf_p2p_attr_noa_params_opp_ps;
+static int hf_p2p_attr_noa_params_ctwindow;
+static int hf_p2p_attr_noa_count_type;
+static int hf_p2p_attr_noa_duration;
+static int hf_p2p_attr_noa_interval;
+static int hf_p2p_attr_noa_start_time;
 
-/* static int hf_p2p_attr_gi = -1; */
-static int hf_p2p_attr_gi_length = -1;
-static int hf_p2p_attr_gi_p2p_dev_addr = -1;
-static int hf_p2p_attr_gi_p2p_iface_addr = -1;
-static int hf_p2p_attr_gi_dev_capab = -1;
-static int hf_p2p_attr_gi_dev_capab_service_discovery = -1;
-static int hf_p2p_attr_gi_dev_capab_client_discoverability = -1;
-static int hf_p2p_attr_gi_dev_capab_concurrent_operation = -1;
-static int hf_p2p_attr_gi_dev_capab_infrastructure_managed = -1;
-static int hf_p2p_attr_gi_dev_capab_limit = -1;
-/* static int hf_p2p_attr_gi_dev_capab_invitation_procedure = -1; */
-static int hf_p2p_attr_gi_config_methods = -1;
-/* static int hf_p2p_attr_gi_config_methods_usba = -1; */
-/* static int hf_p2p_attr_gi_config_methods_ethernet = -1; */
-/* static int hf_p2p_attr_gi_config_methods_label = -1; */
-/* static int hf_p2p_attr_gi_config_methods_display = -1; */
-/* static int hf_p2p_attr_gi_config_methods_ext_nfc_token = -1; */
-/* static int hf_p2p_attr_gi_config_methods_int_nfc_token = -1; */
-/* static int hf_p2p_attr_gi_config_methods_nfc_interface = -1; */
-/* static int hf_p2p_attr_gi_config_methods_pushbutton = -1; */
-/* static int hf_p2p_attr_gi_config_methods_keypad = -1; */
-static int hf_p2p_attr_gi_pri_dev_type = -1;
-static int hf_p2p_attr_gi_pri_dev_type_category = -1;
-static int hf_p2p_attr_gi_pri_dev_type_oui = -1;
-static int hf_p2p_attr_gi_pri_dev_type_subcategory = -1;
-static int hf_p2p_attr_gi_num_sec_dev_types = -1;
-static int hf_p2p_attr_gi_sec_dev_type = -1;
-static int hf_p2p_attr_gi_dev_name_type = -1;
-static int hf_p2p_attr_gi_dev_name_len = -1;
-static int hf_p2p_attr_gi_dev_name = -1;
+/* static int hf_p2p_attr_gi; */
+static int hf_p2p_attr_gi_length;
+static int hf_p2p_attr_gi_p2p_dev_addr;
+static int hf_p2p_attr_gi_p2p_iface_addr;
+static int hf_p2p_attr_gi_dev_capab;
+static int hf_p2p_attr_gi_dev_capab_service_discovery;
+static int hf_p2p_attr_gi_dev_capab_client_discoverability;
+static int hf_p2p_attr_gi_dev_capab_concurrent_operation;
+static int hf_p2p_attr_gi_dev_capab_infrastructure_managed;
+static int hf_p2p_attr_gi_dev_capab_limit;
+/* static int hf_p2p_attr_gi_dev_capab_invitation_procedure; */
+static int hf_p2p_attr_gi_config_methods;
+/* static int hf_p2p_attr_gi_config_methods_usba; */
+/* static int hf_p2p_attr_gi_config_methods_ethernet; */
+/* static int hf_p2p_attr_gi_config_methods_label; */
+/* static int hf_p2p_attr_gi_config_methods_display; */
+/* static int hf_p2p_attr_gi_config_methods_ext_nfc_token; */
+/* static int hf_p2p_attr_gi_config_methods_int_nfc_token; */
+/* static int hf_p2p_attr_gi_config_methods_nfc_interface; */
+/* static int hf_p2p_attr_gi_config_methods_pushbutton; */
+/* static int hf_p2p_attr_gi_config_methods_keypad; */
+static int hf_p2p_attr_gi_pri_dev_type;
+static int hf_p2p_attr_gi_pri_dev_type_category;
+static int hf_p2p_attr_gi_pri_dev_type_oui;
+static int hf_p2p_attr_gi_pri_dev_type_subcategory;
+static int hf_p2p_attr_gi_num_sec_dev_types;
+static int hf_p2p_attr_gi_sec_dev_type;
+static int hf_p2p_attr_gi_dev_name_type;
+static int hf_p2p_attr_gi_dev_name_len;
+static int hf_p2p_attr_gi_dev_name;
 
-static int hf_p2p_attr_invitation_flags = -1;
-static int hf_p2p_attr_invitation_flags_type = -1;
+static int hf_p2p_attr_invitation_flags;
+static int hf_p2p_attr_invitation_flags_type;
 
-static int hf_p2p_attr_manageability_bitmap = -1;
-static int hf_p2p_attr_manageability_bitmap_mgmt = -1;
-static int hf_p2p_attr_manageability_bitmap_cross_connect = -1;
-static int hf_p2p_attr_manageability_bitmap_coex_opt = -1;
+static int hf_p2p_attr_manageability_bitmap;
+static int hf_p2p_attr_manageability_bitmap_mgmt;
+static int hf_p2p_attr_manageability_bitmap_cross_connect;
+static int hf_p2p_attr_manageability_bitmap_coex_opt;
 
-static int hf_p2p_attr_minor_reason_code = -1;
+static int hf_p2p_attr_minor_reason_code;
 
-static int hf_p2p_attr_oob_group_owner_negotiation_channel_country = -1;
-static int hf_p2p_attr_oob_group_owner_negotiation_channel_oper_class = -1;
-static int hf_p2p_attr_oob_group_owner_negotiation_channel_number = -1;
-static int hf_p2p_attr_oob_group_owner_negotiation_channel_role_indication = -1;
+static int hf_p2p_attr_oob_group_owner_negotiation_channel_country;
+static int hf_p2p_attr_oob_group_owner_negotiation_channel_oper_class;
+static int hf_p2p_attr_oob_group_owner_negotiation_channel_number;
+static int hf_p2p_attr_oob_group_owner_negotiation_channel_role_indication;
 
-static int hf_p2p_attr_service_hash = -1;
+static int hf_p2p_attr_service_hash;
 
-static int hf_p2p_attr_session_information = -1;
+static int hf_p2p_attr_session_information;
 
-static int hf_p2p_attr_connection_capability = -1;
+static int hf_p2p_attr_connection_capability;
 
-static int hf_p2p_attr_advertisement_id = -1;
-static int hf_p2p_attr_advertisement_id_service_mac_address = -1;
+static int hf_p2p_attr_advertisement_id;
+static int hf_p2p_attr_advertisement_id_service_mac_address;
 
-static int hf_p2p_attr_advertised_service_advertisement_id = -1;
-static int hf_p2p_attr_advertised_service_config_methods = -1;
-static int hf_p2p_attr_advertised_service_service_name_length = -1;
-static int hf_p2p_attr_advertised_service_service_name = -1;
+static int hf_p2p_attr_advertised_service_advertisement_id;
+static int hf_p2p_attr_advertised_service_config_methods;
+static int hf_p2p_attr_advertised_service_service_name_length;
+static int hf_p2p_attr_advertised_service_service_name;
 
-static int hf_p2p_attr_session_id = -1;
-static int hf_p2p_attr_session_id_session_mac_address = -1;
+static int hf_p2p_attr_session_id;
+static int hf_p2p_attr_session_id_session_mac_address;
 
-static int hf_p2p_attr_feature_capability = -1;
+static int hf_p2p_attr_feature_capability;
 
-static int hf_p2p_attr_persistent_group_p2p_device_address = -1;
-static int hf_p2p_attr_persistent_group_ssid = -1;
+static int hf_p2p_attr_persistent_group_p2p_device_address;
+static int hf_p2p_attr_persistent_group_ssid;
 
 
-static int hf_p2p_anqp_service_update_indicator = -1;
-static int hf_p2p_anqp_length = -1;
-static int hf_p2p_anqp_service_protocol_type = -1;
-static int hf_p2p_anqp_service_transaction_id = -1;
-static int hf_p2p_anqp_query_data = -1;
-static int hf_p2p_anqp_status_code = -1;
-static int hf_p2p_anqp_response_data = -1;
+static int hf_p2p_anqp_service_update_indicator;
+static int hf_p2p_anqp_length;
+static int hf_p2p_anqp_service_protocol_type;
+static int hf_p2p_anqp_service_transaction_id;
+static int hf_p2p_anqp_query_data;
+static int hf_p2p_anqp_status_code;
+static int hf_p2p_anqp_response_data;
 
-static int hf_p2p_action_subtype = -1;
-static int hf_p2p_action_dialog_token = -1;
-static int hf_p2p_public_action_subtype = -1;
-static int hf_p2p_public_action_dialog_token = -1;
+static int hf_p2p_action_subtype;
+static int hf_p2p_action_dialog_token;
+static int hf_p2p_public_action_subtype;
+static int hf_p2p_public_action_dialog_token;
 
-static expert_field ei_wifi_p2p_attr_dev_info_dev_name_type = EI_INIT;
-static expert_field ei_wifi_p2p_attr_len = EI_INIT;
-static expert_field ei_wifi_p2p_anqp_length = EI_INIT;
-static expert_field ei_wifi_p2p_anqp_unexpected_padding = EI_INIT;
+static expert_field ei_wifi_p2p_attr_dev_info_dev_name_type;
+static expert_field ei_wifi_p2p_attr_len;
+static expert_field ei_wifi_p2p_anqp_length;
+static expert_field ei_wifi_p2p_anqp_unexpected_padding;
+
+static dissector_handle_t wifi_p2p_act_handle;
+static dissector_handle_t wifi_p2p_anqp_handle;
+static dissector_handle_t wifi_p2p_ie_handle;
+static dissector_handle_t wifi_p2p_pubact_handle;
+static dissector_handle_t wifi_display_ie_handle;
 
 static void dissect_wifi_p2p_capability(proto_item *tlv_root,
                                         proto_item *tlv_item,
@@ -470,18 +467,20 @@ static void dissect_wifi_p2p_capability(proto_item *tlv_root,
                       tvb, offset + 4, 1, ENC_BIG_ENDIAN);
   proto_tree_add_item(tlv_root, hf_p2p_attr_capab_group_group_formation,
                       tvb, offset + 4, 1, ENC_BIG_ENDIAN);
+  proto_tree_add_item(tlv_root, hf_p2p_attr_capab_group_ip_address_allocation,
+                      tvb, offset + 4, 1, ENC_BIG_ENDIAN);
 
   proto_item_append_text(tlv_item, ": Device 0x%x  Group 0x%x",
-                         tvb_get_guint8(tvb, offset + 3),
-                         tvb_get_guint8(tvb, offset + 4));
+                         tvb_get_uint8(tvb, offset + 3),
+                         tvb_get_uint8(tvb, offset + 4));
 }
 
-static void dissect_device_id(proto_item *tlv_root, proto_item *tlv_item,
+static void dissect_device_id(proto_item *tlv_root, packet_info* pinfo, proto_item *tlv_item,
                               tvbuff_t *tvb, int offset)
 {
   proto_tree_add_item(tlv_root, hf_p2p_attr_device_id, tvb,
                       offset + 3, 6, ENC_NA);
-  proto_item_append_text(tlv_item, ": %s", tvb_ether_to_str(tvb, offset+3));
+  proto_item_append_text(tlv_item, ": %s", tvb_ether_to_str(pinfo->pool, tvb, offset+3));
 }
 
 static void dissect_group_owner_intent(proto_item *tlv_root,
@@ -493,18 +492,19 @@ static void dissect_group_owner_intent(proto_item *tlv_root,
   proto_tree_add_item(tlv_root, hf_p2p_attr_go_intent_tie_breaker, tvb,
                       offset + 3, 1, ENC_BIG_ENDIAN);
   proto_item_append_text(tlv_item, ": Intent %u  Tie breaker %u",
-                         tvb_get_guint8(tvb, offset + 3) >> 1,
-                         tvb_get_guint8(tvb, offset + 3) & 0x01);
+                         tvb_get_uint8(tvb, offset + 3) >> 1,
+                         tvb_get_uint8(tvb, offset + 3) & 0x01);
 }
 
 static void dissect_status(proto_item *tlv_root, proto_item *tlv_item,
-                           tvbuff_t *tvb, int offset)
+                           tvbuff_t *tvb, packet_info* pinfo, int offset)
 {
-  proto_tree_add_item(tlv_root, hf_p2p_attr_status, tvb,
-                      offset + 3, 1, ENC_BIG_ENDIAN);
+  uint32_t status;
+  proto_tree_add_item_ret_uint(tlv_root, hf_p2p_attr_status, tvb,
+                      offset + 3, 1, ENC_BIG_ENDIAN, &status);
   proto_item_append_text(tlv_item, ": %u (%s)",
-                         tvb_get_guint8(tvb, offset + 3),
-                         val_to_str(tvb_get_guint8(tvb, offset + 3),
+                         status,
+                         val_to_str(pinfo->pool, status,
                                     p2p_status_codes,
                                     "Unknown Status Code (%u)"));
 }
@@ -513,15 +513,15 @@ static void dissect_listen_channel(proto_item *tlv_root, proto_item *tlv_item,
                                    tvbuff_t *tvb, int offset)
 {
   proto_tree_add_item(tlv_root, hf_p2p_attr_listen_channel_country, tvb,
-                      offset + 3, 3, ENC_ASCII|ENC_NA);
+                      offset + 3, 3, ENC_ASCII);
   proto_tree_add_item(tlv_root, hf_p2p_attr_listen_channel_oper_class, tvb,
                       offset + 6, 1, ENC_BIG_ENDIAN);
   proto_tree_add_item(tlv_root, hf_p2p_attr_listen_channel_number, tvb,
                       offset + 7, 1, ENC_BIG_ENDIAN);
   proto_item_append_text(tlv_item, ": Operating Class %u  "
                          "Channel Number %u",
-                         tvb_get_guint8(tvb, offset + 6),
-                         tvb_get_guint8(tvb, offset + 7));
+                         tvb_get_uint8(tvb, offset + 6),
+                         tvb_get_uint8(tvb, offset + 7));
 }
 
 static void dissect_operating_channel(proto_item *tlv_root,
@@ -529,25 +529,25 @@ static void dissect_operating_channel(proto_item *tlv_root,
                                       tvbuff_t *tvb, int offset)
 {
   proto_tree_add_item(tlv_root, hf_p2p_attr_operating_channel_country, tvb,
-                      offset + 3, 3, ENC_ASCII|ENC_NA);
+                      offset + 3, 3, ENC_ASCII);
   proto_tree_add_item(tlv_root, hf_p2p_attr_operating_channel_oper_class, tvb,
                       offset + 6, 1, ENC_BIG_ENDIAN);
   proto_tree_add_item(tlv_root, hf_p2p_attr_operating_channel_number, tvb,
                       offset + 7, 1, ENC_BIG_ENDIAN);
   proto_item_append_text(tlv_item, ": Operating Class %u  "
                          "Channel Number %u",
-                         tvb_get_guint8(tvb, offset + 6),
-                         tvb_get_guint8(tvb, offset + 7));
+                         tvb_get_uint8(tvb, offset + 6),
+                         tvb_get_uint8(tvb, offset + 7));
 }
 
 static void dissect_channel_list(proto_item *tlv_root, tvbuff_t *tvb,
-                                 int offset, guint16 slen)
+                                 int offset, uint16_t slen)
 {
   int s_offset = offset + 3;
-  guint8 num_chan;
+  uint8_t num_chan;
 
   proto_tree_add_item(tlv_root, hf_p2p_attr_channel_list_country, tvb,
-                      s_offset, 3, ENC_ASCII|ENC_NA);
+                      s_offset, 3, ENC_ASCII);
   s_offset += 3;
 
   while (offset + 3 + slen > s_offset) {
@@ -557,7 +557,7 @@ static void dissect_channel_list(proto_item *tlv_root, tvbuff_t *tvb,
 
     proto_tree_add_item(tlv_root, hf_p2p_attr_channel_list_num_chan, tvb,
                         s_offset, 1, ENC_BIG_ENDIAN);
-    num_chan = tvb_get_guint8(tvb, s_offset);
+    num_chan = tvb_get_uint8(tvb, s_offset);
     s_offset++;
 
     proto_tree_add_item(tlv_root, hf_p2p_attr_channel_list_chan, tvb,
@@ -568,11 +568,11 @@ static void dissect_channel_list(proto_item *tlv_root, tvbuff_t *tvb,
 
 static void dissect_wifi_p2p_device_info(packet_info *pinfo,
                                          proto_item *tlv_root, tvbuff_t *tvb,
-                                         int offset, guint16 slen)
+                                         int offset, uint16_t slen)
 {
   int s_offset, nlen;
-  guint8 num_sec;
-  guint16 attr_type, attr_len;
+  uint8_t num_sec;
+  uint16_t attr_type, attr_len;
   proto_item *item;
 
   s_offset = offset + 3;
@@ -623,7 +623,7 @@ static void dissect_wifi_p2p_device_info(packet_info *pinfo,
                       tvb, s_offset + 6, 2, ENC_BIG_ENDIAN);
   s_offset += 8;
 
-  num_sec = tvb_get_guint8(tvb, s_offset);
+  num_sec = tvb_get_uint8(tvb, s_offset);
   proto_tree_add_item(tlv_root, hf_p2p_attr_dev_info_num_sec, tvb,
                       s_offset, 1, ENC_BIG_ENDIAN);
   s_offset++;
@@ -655,7 +655,7 @@ static void dissect_wifi_p2p_device_info(packet_info *pinfo,
     item = proto_tree_add_item(tlv_root, hf_p2p_attr_dev_info_dev_name,
                                tvb, s_offset,
                                nlen > attr_len ? attr_len : nlen,
-                               ENC_ASCII|ENC_NA);
+                               ENC_ASCII);
   if (nlen != attr_len) {
     expert_add_info_format(pinfo, item, &ei_wifi_p2p_attr_len, "Invalid Device Name attribute");
   }
@@ -670,24 +670,24 @@ static void dissect_configuration_timeout(proto_item *tlv_root,
   proto_tree_add_item(tlv_root, hf_p2p_attr_config_timeout_client, tvb,
                       offset + 4, 1, ENC_BIG_ENDIAN);
   proto_item_append_text(tlv_item, ": GO %u msec, client %u msec",
-                         tvb_get_guint8(tvb, offset + 3) * 10,
-                         tvb_get_guint8(tvb, offset + 4) * 10);
+                         tvb_get_uint8(tvb, offset + 3) * 10,
+                         tvb_get_uint8(tvb, offset + 4) * 10);
 }
 
-static void dissect_intended_interface_addr(proto_item *tlv_root,
+static void dissect_intended_interface_addr(proto_item *tlv_root, packet_info* pinfo,
                                             proto_item *tlv_item,
                                             tvbuff_t *tvb, int offset)
 {
   proto_tree_add_item(tlv_root, hf_p2p_attr_intended_interface_addr, tvb,
                       offset + 3, 6, ENC_NA);
-  proto_item_append_text(tlv_item, ": %s", tvb_ether_to_str(tvb, offset + 3));
+  proto_item_append_text(tlv_item, ": %s", tvb_ether_to_str(pinfo->pool, tvb, offset + 3));
 }
 
 static void dissect_extended_listen_timing(proto_item *tlv_root,
                                            proto_item *tlv_item,
                                            tvbuff_t *tvb, int offset)
 {
-  guint16 period, interval;
+  uint16_t period, interval;
   period = tvb_get_letohs(tvb, offset + 3);
   interval = tvb_get_letohs(tvb, offset + 5);
   proto_tree_add_uint(tlv_root, hf_p2p_attr_extended_listen_timing_period, tvb,
@@ -698,25 +698,25 @@ static void dissect_extended_listen_timing(proto_item *tlv_root,
                          "Availability Interval %u msec", period, interval);
 }
 
-static void dissect_wifi_p2p_group_id(proto_item *tlv_root,
+static void dissect_wifi_p2p_group_id(proto_item *tlv_root, packet_info* pinfo,
                                       proto_item *tlv_item, tvbuff_t *tvb,
-                                      int offset, guint16 slen)
+                                      int offset, uint16_t slen)
 {
   int s_offset;
 
   s_offset = offset + 3;
   proto_tree_add_item(tlv_root, hf_p2p_attr_p2p_group_id_dev_addr, tvb,
                       s_offset, 6, ENC_NA);
-  proto_item_append_text(tlv_item, ": %s", tvb_ether_to_str(tvb, offset + 3));
+  proto_item_append_text(tlv_item, ": %s", tvb_ether_to_str(pinfo->pool, tvb, offset + 3));
   s_offset += 6;
   proto_tree_add_item(tlv_root, hf_p2p_attr_p2p_group_id_ssid, tvb,
-                      s_offset, offset + 3 + slen - s_offset, ENC_ASCII|ENC_NA);
+                      s_offset, offset + 3 + slen - s_offset, ENC_ASCII);
 }
 
 static void dissect_wifi_p2p_group_bssid(packet_info *pinfo,
                                          proto_item *tlv_root,
                                          proto_item *tlv_item, tvbuff_t *tvb,
-                                         int offset, guint16 slen)
+                                         int offset, uint16_t slen)
 {
   int s_offset;
 
@@ -728,12 +728,12 @@ static void dissect_wifi_p2p_group_bssid(packet_info *pinfo,
   s_offset = offset + 3;
   proto_tree_add_item(tlv_root, hf_p2p_attr_p2p_group_bssid, tvb,
                       s_offset, 6, ENC_NA);
-  proto_item_append_text(tlv_item, ": %s", tvb_ether_to_str(tvb, offset + 3));
+  proto_item_append_text(tlv_item, ": %s", tvb_ether_to_str(pinfo->pool, tvb, offset + 3));
 }
 
 static void dissect_notice_of_absence(packet_info *pinfo, proto_item *tlv_root,
                                       proto_item *tlv_item,
-                                      tvbuff_t *tvb, int offset, guint16 slen)
+                                      tvbuff_t *tvb, int offset, uint16_t slen)
 {
   int s_offset = offset + 3;
 
@@ -772,11 +772,11 @@ static void dissect_wifi_p2p_group_info(packet_info *pinfo,
                                         proto_item *tlv_root,
                                         proto_item *tlv_item,
                                         tvbuff_t *tvb, int offset,
-                                        guint16 slen)
+                                        uint16_t slen)
 {
   int s_offset = offset + 3;
   int next_offset, ci_len, num_sec, left, nlen;
-  guint16 attr_type, attr_len;
+  uint16_t attr_type, attr_len;
   proto_item *item;
   proto_tree *tree;
 
@@ -786,7 +786,7 @@ static void dissect_wifi_p2p_group_info(packet_info *pinfo,
       break;
     }
 
-    ci_len = tvb_get_guint8(tvb, s_offset);
+    ci_len = tvb_get_uint8(tvb, s_offset);
     tree = proto_tree_add_subtree(tlv_root, tvb, s_offset, 1 + ci_len,
                                ett_p2p_client_descr, NULL, "P2P Client Info Descriptor");
 
@@ -801,7 +801,7 @@ static void dissect_wifi_p2p_group_info(packet_info *pinfo,
 
     proto_tree_add_item(tree, hf_p2p_attr_gi_p2p_dev_addr, tvb, s_offset,
                         6, ENC_NA);
-    proto_item_append_text(tree, ": %s", tvb_ether_to_str(tvb, s_offset));
+    proto_item_append_text(tree, ": %s", tvb_ether_to_str(pinfo->pool, tvb, s_offset));
     s_offset += 6;
 
     proto_tree_add_item(tree, hf_p2p_attr_gi_p2p_iface_addr, tvb, s_offset,
@@ -844,7 +844,7 @@ static void dissect_wifi_p2p_group_info(packet_info *pinfo,
 
     item = proto_tree_add_item(tree, hf_p2p_attr_gi_num_sec_dev_types, tvb,
                                s_offset, 1, ENC_BIG_ENDIAN);
-    num_sec = tvb_get_guint8(tvb, s_offset);
+    num_sec = tvb_get_uint8(tvb, s_offset);
     s_offset++;
     left = offset + 3 + slen - s_offset;
     if (left < 8 * num_sec) {
@@ -878,7 +878,7 @@ static void dissect_wifi_p2p_group_info(packet_info *pinfo,
       item = proto_tree_add_item(tree, hf_p2p_attr_gi_dev_name,
                                  tvb, s_offset,
                                  nlen > attr_len ? attr_len : nlen,
-                                 ENC_ASCII|ENC_NA);
+                                 ENC_ASCII);
     if (nlen != attr_len) {
       expert_add_info_format(pinfo, item, &ei_wifi_p2p_attr_len, "Invalid Device Name attribute");
     }
@@ -896,7 +896,7 @@ static void dissect_invitation_flags(proto_item *tlv_root,
   proto_tree_add_item(tlv_root, hf_p2p_attr_invitation_flags_type, tvb,
                       offset + 3, 1, ENC_BIG_ENDIAN);
   proto_item_append_text(tlv_item, ": Invitation Flags 0x%x",
-                         tvb_get_guint8(tvb, offset + 3));
+                         tvb_get_uint8(tvb, offset + 3));
 }
 
 static void dissect_manageability(proto_item *tlv_root,
@@ -912,18 +912,19 @@ static void dissect_manageability(proto_item *tlv_root,
   proto_tree_add_item(tlv_root, hf_p2p_attr_manageability_bitmap_coex_opt, tvb,
                       offset + 3, 1, ENC_BIG_ENDIAN);
   proto_item_append_text(tlv_item, ": Bitmap field 0x%x",
-                         tvb_get_guint8(tvb, offset + 3));
+                         tvb_get_uint8(tvb, offset + 3));
 }
 
 static void dissect_minor_reason_code(proto_item *tlv_root,
                                       proto_item *tlv_item,
-                                      tvbuff_t *tvb, int offset)
+                                      tvbuff_t *tvb, packet_info* pinfo, int offset)
 {
-  proto_tree_add_item(tlv_root, hf_p2p_attr_minor_reason_code, tvb,
-                      offset + 3, 1, ENC_BIG_ENDIAN);
+  uint32_t code;
+  proto_tree_add_item_ret_uint(tlv_root, hf_p2p_attr_minor_reason_code, tvb,
+                      offset + 3, 1, ENC_BIG_ENDIAN, &code);
   proto_item_append_text(tlv_item, ": %u (%s)",
-                         tvb_get_guint8(tvb, offset + 3),
-                         val_to_str(tvb_get_guint8(tvb, offset + 3),
+                         code,
+                         val_to_str(pinfo->pool, code,
                                     p2p_minor_reason_codes,
                                     "Unknown Minor Reason Code (%u)"));
 }
@@ -933,7 +934,7 @@ static void dissect_oob_group_owner_negotiation_channel(proto_item *tlv_root,
                                                         tvbuff_t *tvb, int offset)
 {
   proto_tree_add_item(tlv_root, hf_p2p_attr_oob_group_owner_negotiation_channel_country, tvb,
-                      offset + 3, 3, ENC_ASCII|ENC_NA);
+                      offset + 3, 3, ENC_ASCII);
   proto_tree_add_item(tlv_root, hf_p2p_attr_oob_group_owner_negotiation_channel_oper_class, tvb,
                       offset + 6, 1, ENC_BIG_ENDIAN);
   proto_tree_add_item(tlv_root, hf_p2p_attr_oob_group_owner_negotiation_channel_number, tvb,
@@ -942,8 +943,8 @@ static void dissect_oob_group_owner_negotiation_channel(proto_item *tlv_root,
                       offset + 7, 1, ENC_BIG_ENDIAN);
   proto_item_append_text(tlv_item, ": Operating Class %u  "
                          "Channel Number %u",
-                         tvb_get_guint8(tvb, offset + 6),
-                         tvb_get_guint8(tvb, offset + 7));
+                         tvb_get_uint8(tvb, offset + 6),
+                         tvb_get_uint8(tvb, offset + 7));
 }
 
 static void dissect_service_hash(proto_item *tlv_root,
@@ -965,7 +966,7 @@ static void dissect_session_information(proto_item *tlv_root,
                                         tvbuff_t *tvb, int offset, int slen)
 {
   proto_tree_add_item(tlv_root, hf_p2p_attr_session_information, tvb,
-                      offset+3, slen, ENC_ASCII|ENC_NA);
+                      offset+3, slen, ENC_ASCII);
 
 }
 
@@ -984,7 +985,7 @@ static void dissect_advertisement_id(proto_item *tlv_root,
                                      tvbuff_t *tvb, int offset)
 {
   proto_tree_add_item(tlv_root, hf_p2p_attr_advertisement_id, tvb,
-                      offset+3, 4, ENC_NA);
+                      offset+3, 4, ENC_BIG_ENDIAN);
 
   proto_tree_add_item(tlv_root, hf_p2p_attr_advertisement_id_service_mac_address, tvb,
                       offset+7, 6, ENC_NA);
@@ -1012,11 +1013,11 @@ static void dissect_advertised_service(proto_item *tlv_root,
     s_offset += 2;
     proto_tree_add_item(subtree, hf_p2p_attr_advertised_service_service_name_length, tvb,
                         s_offset, 2, ENC_BIG_ENDIAN);
-    len_service_name = tvb_get_guint8(tvb, s_offset);
+    len_service_name = tvb_get_uint8(tvb, s_offset);
     s_offset += 1;
 
     proto_tree_add_item(subtree, hf_p2p_attr_advertised_service_service_name, tvb,
-                        s_offset, len_service_name, ENC_ASCII|ENC_NA);
+                        s_offset, len_service_name, ENC_ASCII);
     s_offset += len_service_name;
 
   }
@@ -1028,7 +1029,7 @@ static void dissect_session_id(proto_item *tlv_root,
                                tvbuff_t *tvb, int offset)
 {
   proto_tree_add_item(tlv_root, hf_p2p_attr_session_id, tvb,
-                      offset+3, 4, ENC_NA);
+                      offset+3, 4, ENC_BIG_ENDIAN);
 
   proto_tree_add_item(tlv_root, hf_p2p_attr_session_id_session_mac_address, tvb,
                       offset+7, 6, ENC_NA);
@@ -1053,16 +1054,17 @@ static void dissect_persistent_group(proto_item *tlv_root,
                       offset+3, 6, ENC_NA);
 
   proto_tree_add_item(tlv_root, hf_p2p_attr_persistent_group_ssid, tvb,
-                      offset+3+6, slen+6, ENC_ASCII|ENC_NA);
+                      offset+3+6, slen+6, ENC_ASCII);
 
 }
 
-
-void dissect_wifi_p2p_ie(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
-                         int offset, gint size)
+static int
+dissect_wifi_p2p_ie(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  guint16 slen = 0;
-  guint8 stype = 0;
+  uint16_t slen = 0;
+  uint8_t stype = 0;
+  int offset = 0;
+  int size = tvb_reported_length(tvb);
   proto_item *tlv_root, *tlv_item;
 
   while (size > 0) {
@@ -1071,29 +1073,28 @@ void dissect_wifi_p2p_ie(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
       break;
     }
 
-    stype = tvb_get_guint8(tvb, offset);
+    stype = tvb_get_uint8(tvb, offset);
     slen = tvb_get_letohs(tvb, offset + 1);
 
     tlv_root = proto_tree_add_subtree(tree, tvb, offset, 3 + slen, ett_p2p_tlv, &tlv_item,
-                                   val_to_str(stype, p2p_attr_types,
+                                   val_to_str(pinfo->pool, stype, p2p_attr_types,
                                               "Unknown attribute type (%u)"));
 
     proto_tree_add_item(tlv_root, hf_p2p_attr_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-    proto_tree_add_uint(tlv_root, hf_p2p_attr_len, tvb, offset + 1, 2,
-                        slen);
+    proto_tree_add_uint(tlv_root, hf_p2p_attr_len, tvb, offset + 1, 2, slen);
 
     switch(stype) {
     case P2P_ATTR_P2P_CAPABILITY:
       dissect_wifi_p2p_capability(tlv_root, tlv_item, tvb, offset);
       break;
     case P2P_ATTR_P2P_DEVICE_ID:
-      dissect_device_id(tlv_root, tlv_item, tvb, offset);
+      dissect_device_id(tlv_root, pinfo, tlv_item, tvb, offset);
       break;
     case P2P_ATTR_GROUP_OWNER_INTENT:
       dissect_group_owner_intent(tlv_root, tlv_item, tvb, offset);
       break;
     case P2P_ATTR_STATUS:
-      dissect_status(tlv_root, tlv_item, tvb, offset);
+      dissect_status(tlv_root, tlv_item, tvb, pinfo, offset);
       break;
     case P2P_ATTR_LISTEN_CHANNEL:
       dissect_listen_channel(tlv_root, tlv_item, tvb, offset);
@@ -1111,13 +1112,13 @@ void dissect_wifi_p2p_ie(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
       dissect_configuration_timeout(tlv_root, tlv_item, tvb, offset);
       break;
     case P2P_ATTR_INTENDED_P2P_INTERFACE_ADDRESS:
-      dissect_intended_interface_addr(tlv_root, tlv_item, tvb, offset);
+      dissect_intended_interface_addr(tlv_root, pinfo, tlv_item, tvb, offset);
       break;
     case P2P_ATTR_EXTENDED_LISTEN_TIMING:
       dissect_extended_listen_timing(tlv_root, tlv_item, tvb, offset);
       break;
     case P2P_ATTR_P2P_GROUP_ID:
-      dissect_wifi_p2p_group_id(tlv_root, tlv_item, tvb, offset, slen);
+      dissect_wifi_p2p_group_id(tlv_root, pinfo, tlv_item, tvb, offset, slen);
       break;
     case P2P_ATTR_P2P_GROUP_BSSID:
       dissect_wifi_p2p_group_bssid(pinfo, tlv_root, tlv_item, tvb, offset, slen);
@@ -1136,7 +1137,7 @@ void dissect_wifi_p2p_ie(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
       dissect_manageability(tlv_root, tlv_item, tvb, offset);
       break;
     case P2P_ATTR_MINOR_REASON_CODE:
-      dissect_minor_reason_code(tlv_root, tlv_item, tvb, offset);
+      dissect_minor_reason_code(tlv_root, tlv_item, tvb, pinfo, offset);
       break;
     case P2P_ATTR_OOB_GROUP_OWNER_NEGOTIATION_CHANNEL:
       dissect_oob_group_owner_negotiation_channel(tlv_root, tlv_item, tvb, offset);
@@ -1170,17 +1171,20 @@ void dissect_wifi_p2p_ie(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
     offset += 3 + slen;
     size -= 3 + slen;
   }
+
+  return tvb_captured_length(tvb);
 }
 
-int dissect_wifi_p2p_public_action(packet_info *pinfo, proto_tree *tree,
-                                   tvbuff_t *tvb, int offset)
+static int
+dissect_wifi_p2p_public_action(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  guint8 subtype;
+  int offset = 0;
+  uint8_t subtype;
   proto_tree_add_item(tree, hf_p2p_public_action_subtype, tvb, offset, 1,
                       ENC_BIG_ENDIAN);
-  subtype = tvb_get_guint8(tvb, offset);
+  subtype = tvb_get_uint8(tvb, offset);
   col_append_fstr(pinfo->cinfo, COL_INFO, ", P2P - %s",
-                  val_to_str(subtype, p2p_public_action_subtypes,
+                  val_to_str(pinfo->pool, subtype, p2p_public_action_subtypes,
                              "Unknown (%u)"));
   offset++;
   proto_tree_add_item(tree, hf_p2p_public_action_dialog_token, tvb, offset, 1,
@@ -1190,55 +1194,64 @@ int dissect_wifi_p2p_public_action(packet_info *pinfo, proto_tree *tree,
   return offset;
 }
 
-int dissect_wifi_p2p_action(proto_tree *tree, tvbuff_t *tvb, int offset)
+static int
+dissect_wifi_p2p_action(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
+  int offset = 0;
+
   proto_tree_add_item(tree, hf_p2p_action_subtype, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset++;
   proto_tree_add_item(tree, hf_p2p_action_dialog_token, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset++;
+
   /* Followed by variable length IEs dissected by packet-ieee80211.c */
   return offset;
 }
 
-void dissect_wifi_p2p_anqp(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
-                           int offset, gboolean request)
+static int
+dissect_wifi_p2p_anqp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 {
+  int offset = 0;
   proto_item *item;
+  anqp_info_dissector_data_t* anqp_data = (anqp_info_dissector_data_t*)data;
+  tvbuff_t *next_tvb;
+
+  DISSECTOR_ASSERT(anqp_data);
 
   item = proto_tree_add_item(tree, hf_p2p_anqp_service_update_indicator, tvb,
                              offset, 2, ENC_LITTLE_ENDIAN);
   offset += 2;
 
-  while (tvb_reported_length_remaining(tvb, offset) >= (request ? 4 : 5)) {
-    guint16 len;
+  while (tvb_reported_length_remaining(tvb, offset) >= (anqp_data->request ? 4 : 5)) {
+    uint16_t len;
     proto_tree *tlv;
-    guint8 type, id, sd_proto;
+    uint8_t type, id, sd_proto;
 
     len = tvb_get_letohs(tvb, offset);
     if (len < 2) {
       expert_add_info_format(pinfo, item, &ei_wifi_p2p_anqp_length, "Too short Service TLV field");
-      return;
+      return offset;
     }
     if (len > tvb_reported_length_remaining(tvb, offset + 2)) {
       expert_add_info_format(pinfo, item, &ei_wifi_p2p_anqp_length, "Too short frame for Service TLV field");
-      return;
+      return offset;
     }
 
-    type = tvb_get_guint8(tvb, offset + 2);
-    id = tvb_get_guint8(tvb, offset + 3);
+    type = tvb_get_uint8(tvb, offset + 2);
+    id = tvb_get_uint8(tvb, offset + 3);
     tlv = proto_tree_add_subtree_format(tree, tvb, offset, 2 + len,
                                ett_p2p_service_tlv, &item, "Service TLV (Transaction ID: %u  Type: %s)",
-                               id, val_to_str(type, p2p_service_protocol_types,
+                               id, val_to_str(pinfo->pool, type, p2p_service_protocol_types,
                                               "Unknown (%u)"));
 
     proto_tree_add_item(tlv, hf_p2p_anqp_length, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     offset += 2;
-    sd_proto = tvb_get_guint8(tvb, offset);
+    sd_proto = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tlv, hf_p2p_anqp_service_protocol_type, tvb,
                         offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tlv, hf_p2p_anqp_service_transaction_id, tvb,
                         offset + 1, 1, ENC_BIG_ENDIAN);
-    if (request) {
+    if (anqp_data->request) {
       proto_tree_add_item(tlv, hf_p2p_anqp_query_data, tvb,
                           offset + 2, len - 2, ENC_NA);
     } else {
@@ -1246,8 +1259,10 @@ void dissect_wifi_p2p_anqp(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
                           offset + 2, 1, ENC_BIG_ENDIAN);
       proto_tree_add_item(tlv, hf_p2p_anqp_response_data, tvb,
                           offset + 3, len - 3, ENC_NA);
-      if (sd_proto == 4)
-        dissect_wifi_display_ie(pinfo, tlv, tvb, offset + 3, len - 3);
+      if (sd_proto == 4) {
+        next_tvb = tvb_new_subset_length(tvb, offset + 3, len - 3);
+        call_dissector(wifi_display_ie_handle, next_tvb, pinfo, tlv);
+      }
     }
     offset += len;
   }
@@ -1255,6 +1270,8 @@ void dissect_wifi_p2p_anqp(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
   if (tvb_reported_length_remaining(tvb, offset) > 0) {
     expert_add_info(pinfo, item, &ei_wifi_p2p_anqp_unexpected_padding);
   }
+
+  return tvb_captured_length(tvb);
 }
 
 void
@@ -1348,6 +1365,11 @@ proto_register_p2p(void)
       { "Group Formation",
         "wifi_p2p.p2p_capability.group_capability.group_formation",
         FT_UINT8, BASE_HEX, NULL, P2P_GROUP_CAPAB_GROUP_FORMATION, NULL, HFILL
+      }},
+    { &hf_p2p_attr_capab_group_ip_address_allocation,
+      { "IP Address Allocation",
+        "wifi_p2p.p2p_capability.group_capability.ip_address_allocation",
+        FT_UINT8, BASE_HEX, NULL, P2P_GROUP_CAPAB_IP_ADDRESS_ALLOCATION, NULL, HFILL
       }},
 
     { &hf_p2p_attr_device_id,
@@ -1722,7 +1744,7 @@ proto_register_p2p(void)
       { "Advertisement ID", "wifi_p2p.advertised_service.advertisement_id",
         FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }},
     { &hf_p2p_attr_advertised_service_config_methods,
-      { "Service Config Methods", "wifi_p2p.avertised_service.config_methods",
+      { "Service Config Methods", "wifi_p2p.advertised_service.config_methods",
         FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }},
     { &hf_p2p_attr_advertised_service_service_name_length,
       { "Service Name Length", "wifi_p2p.advertised_service.service_name_length",
@@ -1789,7 +1811,7 @@ proto_register_p2p(void)
         "wifi_p2p.public_action.dialog_token",
         FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }}
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_p2p_tlv,
     &ett_p2p_service_tlv,
     &ett_p2p_advertised_service,
@@ -1811,6 +1833,22 @@ proto_register_p2p(void)
 
   expert_p2p = expert_register_protocol(proto_p2p);
   expert_register_field_array(expert_p2p, ei, array_length(ei));
+
+  wifi_p2p_act_handle = register_dissector("wifi_p2p.action", dissect_wifi_p2p_action, proto_p2p);
+  wifi_p2p_anqp_handle = register_dissector("wifi_p2p.anqp", dissect_wifi_p2p_anqp, proto_p2p);
+  wifi_p2p_ie_handle = register_dissector("wifi_p2p.ie", dissect_wifi_p2p_ie, proto_p2p);
+  wifi_p2p_pubact_handle = register_dissector("wifi_p2p.public_action", dissect_wifi_p2p_public_action, proto_p2p);
+}
+
+void
+proto_reg_handoff_p2p(void)
+{
+  dissector_add_uint("wlan.action.wifi_alliance.subtype", WFA_SUBTYPE_P2P, wifi_p2p_act_handle);
+  dissector_add_uint("wlan.anqp.wifi_alliance.subtype", WFA_SUBTYPE_P2P, wifi_p2p_anqp_handle);
+  dissector_add_uint("wlan.ie.wifi_alliance.subtype", WFA_SUBTYPE_P2P, wifi_p2p_ie_handle);
+  dissector_add_uint("wlan.pa.wifi_alliance.subtype", WFA_SUBTYPE_P2P, wifi_p2p_pubact_handle);
+
+  wifi_display_ie_handle = find_dissector_add_dependency("wifi_display_ie", proto_p2p);
 }
 
 /*

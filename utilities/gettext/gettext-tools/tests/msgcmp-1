@@ -3,13 +3,13 @@
 
 # Test a succeeding comparison.
 
-cat <<EOF > mc-test1.in1
+cat <<\EOF > mc-test1.in1
 msgid "one" msgstr "first"
 msgid "two" msgstr "second"
 msgid "three" msgstr "third"
 EOF
 
-cat <<EOF > mc-test1.in2
+cat <<\EOF > mc-test1.in2
 msgid "three" msgstr ""
 msgid "one" msgstr ""
 msgid "two" msgstr ""

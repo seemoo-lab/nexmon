@@ -1,9 +1,38 @@
-/*
- * schematron.c : implementation of the Schematron schema validity checking
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
  *
- * See Copyright for the status of this software.
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
  * Daniel Veillard <daniel@veillard.com>
+ */
+
+/*
+ * schematron.c : implementation of the Schematron schema validity checking
  */
 
 /*
@@ -133,7 +162,7 @@ struct _xmlSchematron {
     int flags;			/* specific to this schematron */
 
     void *_private;		/* unused by the library */
-    xmlDictPtr dict;		/* the dictionnary used internally */
+    xmlDictPtr dict;		/* the dictionary used internally */
 
     const xmlChar *title;	/* the title if any */
 
@@ -186,7 +215,7 @@ struct _xmlSchematronParserCtxt {
     const char *buffer;
     int size;
 
-    xmlDictPtr dict;            /* dictionnary for interned string names */
+    xmlDictPtr dict;            /* dictionary for interned string names */
 
     int nberrors;
     int err;
@@ -245,7 +274,7 @@ xmlSchematronPErrMemory(xmlSchematronParserCtxtPtr ctxt,
  *
  * Handle a parser error
  */
-static void
+static void LIBXML_ATTR_FORMAT(4,0)
 xmlSchematronPErr(xmlSchematronParserCtxtPtr ctxt, xmlNodePtr node, int error,
               const char *msg, const xmlChar * str1, const xmlChar * str2)
 {

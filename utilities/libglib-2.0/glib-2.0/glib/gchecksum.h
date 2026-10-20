@@ -2,18 +2,20 @@
  *
  * Copyright (C) 2007  Emmanuele Bassi  <ebassi@gnome.org>
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
+ * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __G_CHECKSUM_H__
@@ -33,7 +35,8 @@ G_BEGIN_DECLS
  * @G_CHECKSUM_MD5: Use the MD5 hashing algorithm
  * @G_CHECKSUM_SHA1: Use the SHA-1 hashing algorithm
  * @G_CHECKSUM_SHA256: Use the SHA-256 hashing algorithm
- * @G_CHECKSUM_SHA512: Use the SHA-512 hashing algorithm
+ * @G_CHECKSUM_SHA384: Use the SHA-384 hashing algorithm (Since: 2.51)
+ * @G_CHECKSUM_SHA512: Use the SHA-512 hashing algorithm (Since: 2.36)
  *
  * The hashing algorithm to be used by #GChecksum when performing the
  * digest of some data.
@@ -47,18 +50,10 @@ typedef enum {
   G_CHECKSUM_MD5,
   G_CHECKSUM_SHA1,
   G_CHECKSUM_SHA256,
-  G_CHECKSUM_SHA512
+  G_CHECKSUM_SHA512,
+  G_CHECKSUM_SHA384
 } GChecksumType;
 
-/**
- * GChecksum:
- *
- * An opaque structure representing a checksumming operation.
- * To create a new GChecksum, use g_checksum_new(). To free
- * a GChecksum, use g_checksum_free().
- *
- * Since: 2.16
- */
 typedef struct _GChecksum       GChecksum;
 
 GLIB_AVAILABLE_IN_ALL

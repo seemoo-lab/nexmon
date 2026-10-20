@@ -14,6 +14,8 @@
 
 
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <signal.h>
 
 #include <unistd.h>
 
@@ -96,10 +98,24 @@ main(int argc, char **argv)
 
 	argp_parse(&argp, argc, argv, 0, 0, 0);
 
+	if(pcap_file_name == NULL) {
+		fprintf(stderr, "ERR: no interface given (use -i)\n");
+		exit(EXIT_FAILURE);
+	}
+
     pthread_create(&p1, NULL, check_parent, (void *)NULL);
 
 
 	handle = pcap_open_live(pcap_file_name, BUFSIZ, 1, 1000, errbuf);
+	if(handle == NULL) {
+		fprintf(stderr, "ERR: pcap_open_live(%s): %s\n", pcap_file_name, errbuf);
+		exit(EXIT_FAILURE);
+	}
+
+	/* Trust model: this endpoint injects whatever UDP payload arrives onto the
+	 * radio without authentication. It binds to 127.0.0.1 only, so the attack
+	 * surface is limited to local processes/users on this host, not the
+	 * network. Do not bind this to a routable address. */
 	struct sockaddr_in sin = {
 		.sin_family = AF_INET,
 		.sin_port = htons(5556),
@@ -108,19 +124,31 @@ main(int argc, char **argv)
 	};
 
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	bind(sock, (struct sockaddr *)&sin, sizeof(sin));
-	
+	if(sock < 0) {
+		perror("ERR: socket");
+		exit(EXIT_FAILURE);
+	}
+	if(bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+		perror("ERR: bind");
+		exit(EXIT_FAILURE);
+	}
+
 	while(1) {
-		recv_len = recvfrom(sock, packet, 1500, 0, (struct sockaddr *) &si_app, &si_app_len);
-		printf("Successful recevied %d bytes\n", recv_len);
+		recv_len = recvfrom(sock, packet, sizeof(packet), 0, (struct sockaddr *) &si_app, &si_app_len);
+		/* a negative length must never reach pcap_inject(): its length
+		 * argument is size_t, so -1 would become SIZE_MAX and read far past
+		 * the 1500-byte packet buffer */
+		if(recv_len < 0) {
+			perror("ERR: recvfrom");
+			continue;
+		}
+		printf("Successfully received %d bytes\n", recv_len);
 
-
-		
-		ret = pcap_inject(handle, &packet, recv_len);
+		ret = pcap_inject(handle, packet, recv_len);
 		if(ret != -1)
-			printf("Successful injected %d bytes\n", ret);
+			printf("Successfully injected %d bytes\n", ret);
 		else
-			printf("pcap_inject error");
+			printf("pcap_inject error: %s\n", pcap_geterr(handle));
 
 	}
 

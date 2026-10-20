@@ -18,7 +18,7 @@ fi
 test -d mf-2 || mkdir mf-2
 test -d mf-2/LC_MESSAGES || mkdir mf-2/LC_MESSAGES
 
-cat <<EOF > mf-2-module1.po
+cat <<\EOF > mf-2-module1.po
 #default domain "messages.mo"
 msgid	"SYS_(C)\n"
 msgstr "MSGFMT(3) portable message object file compiler\n"
@@ -36,7 +36,7 @@ msgid	"error 3"
 msgstr	"error 3 translation"
 EOF
 
-cat <<EOF > mf-2-module2.po
+cat <<\EOF > mf-2-module2.po
 # ---
 #default domain "messages.mo"
 msgid	"mesg 4"

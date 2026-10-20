@@ -4,35 +4,21 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-
-#include <glib.h>
 
 #include "cfile.h"
 
 #include <epan/packet.h>
 #include <epan/tap.h>
 
-#include "wireshark_application.h"
+#include "main_application.h"
 #include "wireshark_dialog.h"
-#include "qt_ui_utils.h"
+#include <ui/qt/utils/qt_ui_utils.h>
 #include "ui/recent.h"
-#include "ui/ui_util.h"
+#include "ui/ws_ui_util.h"
 
 #include <QMessageBox>
 
@@ -48,48 +34,30 @@ WiresharkDialog::WiresharkDialog(QWidget &parent, CaptureFile &capture_file) :
     retap_depth_(0),
     dialog_closed_(false)
 {
-    setWindowIcon(wsApp->normalIcon());
-    setWindowTitleFromSubtitle();
+    setWindowIcon(mainApp->normalIcon());
+    setWindowSubtitle(QString());
 
-    connect(&cap_file_, SIGNAL(captureFileRetapStarted()), this, SLOT(beginRetapPackets()));
-    connect(&cap_file_, SIGNAL(captureFileRetapFinished()), this, SLOT(endRetapPackets()));
-    connect(&cap_file_, SIGNAL(captureFileClosing()), this, SLOT(captureFileClosing()));
-    connect(&cap_file_, SIGNAL(captureFileClosed()), this, SLOT(captureFileClosed()));
+    connect(&cap_file_, &CaptureFile::captureEvent, this, &WiresharkDialog::captureEvent);
 }
 
 void WiresharkDialog::accept()
 {
     QDialog::accept();
-
-    // Cancel any taps in progress?
-    // cap_file_.setCaptureStopFlag();
-    removeTapListeners();
-    dialog_closed_ = true;
-    tryDeleteLater();
+    dialogCleanup(true);
 }
 
 // XXX Should we do this in WiresharkDialog?
 void WiresharkDialog::reject()
 {
     QDialog::reject();
-
-    // Cancel any taps in progress?
-    // cap_file_.setCaptureStopFlag();
-    removeTapListeners();
-    dialog_closed_ = true;
-    tryDeleteLater();
+    dialogCleanup(true);
 }
-
 
 void WiresharkDialog::setWindowSubtitle(const QString &subtitle)
 {
     subtitle_ = subtitle;
-    setWindowTitleFromSubtitle();
-}
 
-void WiresharkDialog::setWindowTitleFromSubtitle()
-{
-    QString title = wsApp->windowTitleString(QStringList() << subtitle_ << cap_file_.fileTitle());
+    QString title = mainApp->windowTitleString(QStringList() << subtitle_ << cap_file_.fileTitle());
     QDialog::setWindowTitle(title);
 }
 
@@ -97,27 +65,39 @@ void WiresharkDialog::setWindowTitleFromSubtitle()
 // we were deep in the bowels of a routine that retaps packets. Track our
 // tapping state using retap_depth_ and our closed state using dialog_closed_.
 //
-// The Delta Object Rules (http://delta.affinix.com/dor/) page on nested
-// event loops effectively says "don't do that." However, we don't really
-// have a choice if we want to have a usable application that retaps packets.
+// The Delta Object Rules page on nested event loops:
+//
+//    https://jblog.andbit.net/2007/04/28/delta-object-rules/
+//
+// effectively says "don't do that." However, we don't really have a choice
+// if we want to have a usable application that retaps packets.
 
-void WiresharkDialog::tryDeleteLater()
+void WiresharkDialog::dialogCleanup(bool closeDialog)
 {
+    if (closeDialog)
+    {
+        // Cancel any taps in progress?
+        // cap_file_.setCaptureStopFlag();
+        removeTapListeners();
+        dialog_closed_ = true;
+    }
+
     if (retap_depth_ < 1 && dialog_closed_) {
-        disconnect();
+        // Is this disconnection necessary?
+        disconnect(&cap_file_, &CaptureFile::captureEvent, this, &WiresharkDialog::captureEvent);
         deleteLater();
     }
 }
 
 void WiresharkDialog::updateWidgets()
 {
-    setWindowTitleFromSubtitle();
+    setWindowSubtitle(subtitle_);
 }
 
-bool WiresharkDialog::registerTapListener(const char *tap_name, void *tap_data, const char *filter, guint flags, void(*tap_reset)(void *), gboolean(*tap_packet)(void *, struct _packet_info *, struct epan_dissect *, const void *), void(*tap_draw)(void *))
+bool WiresharkDialog::registerTapListener(const char *tap_name, void *tap_data, const char *filter, unsigned flags, tap_reset_cb tap_reset, tap_packet_cb tap_packet, tap_draw_cb tap_draw)
 {
     GString *error_string = register_tap_listener(tap_name, tap_data, filter, flags,
-                                                  tap_reset, tap_packet, tap_draw);
+                                                  tap_reset, tap_packet, tap_draw, NULL);
     if (error_string) {
         QMessageBox::warning(this, tr("Failed to attach to tap \"%1\"").arg(tap_name),
                              error_string->str);
@@ -129,10 +109,52 @@ bool WiresharkDialog::registerTapListener(const char *tap_name, void *tap_data, 
     return true;
 }
 
+void WiresharkDialog::captureEvent(CaptureEvent e)
+{
+    switch (e.captureContext())
+    {
+    case CaptureEvent::Retap:
+        switch (e.eventType())
+        {
+        case CaptureEvent::Started:
+            beginRetapPackets();
+            break;
+        case CaptureEvent::Finished:
+            endRetapPackets();
+            break;
+        default:
+            break;
+        }
+        break;
+    case CaptureEvent::File:
+        switch (e.eventType())
+        {
+        case CaptureEvent::Closing:
+            captureFileClosing();
+            break;
+        case CaptureEvent::Closed:
+            file_closed_ = true;
+            captureFileClosed();
+            break;
+        default:
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+
+}
+
+void WiresharkDialog::beginRetapPackets()
+{
+    retap_depth_++;
+}
+
 void WiresharkDialog::endRetapPackets()
 {
     retap_depth_--;
-    tryDeleteLater();
+    dialogCleanup();
 }
 
 void WiresharkDialog::removeTapListeners()
@@ -144,32 +166,11 @@ void WiresharkDialog::removeTapListeners()
 
 void WiresharkDialog::captureFileClosing()
 {
-    if (file_closed_)
-        return;
-
     removeTapListeners();
     updateWidgets();
 }
 
 void WiresharkDialog::captureFileClosed()
 {
-    if (file_closed_)
-        return;
-
-    removeTapListeners();
     updateWidgets();
-    file_closed_ = true;
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

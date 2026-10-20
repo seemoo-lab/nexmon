@@ -1,5 +1,5 @@
 /* Load needed message catalogs.
-   Copyright (C) 1995-2016 Free Software Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -12,7 +12,9 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Ulrich Drepper and Bruno Haible.  */
 
 /* Tell glibc's <string.h> to provide a prototype for mempcpy().
    This must come before <config.h> because <config.h> may include
@@ -32,34 +34,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef __GNUC__
-# undef  alloca
-# define alloca __builtin_alloca
-# define HAVE_ALLOCA 1
-#else
-# ifdef _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# else
-#  if defined HAVE_ALLOCA_H || defined _LIBC
-#   include <alloca.h>
-#  else
-#   ifdef _AIX
- #pragma alloca
-#   else
-#    ifndef alloca
-char *alloca ();
-#    endif
-#   endif
-#  endif
-# endif
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 
 #if defined HAVE_UNISTD_H || defined _LIBC
 # include <unistd.h>
+#elif defined _WIN32 && !defined __CYGWIN__
+# include <io.h>
 #endif
 
 #ifdef _LIBC
@@ -95,367 +76,279 @@ char *alloca ();
 
 /* Handle multi-threaded applications.  */
 #ifdef _LIBC
-# include <bits/libc-lock.h>
+# include <libc-lock.h>
 #else
-# include "lock.h"
-#endif
-
-#ifdef _LIBC
-# define PRI_MACROS_BROKEN 0
+# include "glthread/lock.h"
 #endif
 
 /* Provide fallback values for macros that ought to be defined in <inttypes.h>.
    Note that our fallback values need not be literal strings, because we don't
    use them with preprocessor string concatenation.  */
-#if !defined PRId8 || PRI_MACROS_BROKEN
-# undef PRId8
+#if !defined PRId8
 # define PRId8 "d"
 #endif
-#if !defined PRIi8 || PRI_MACROS_BROKEN
-# undef PRIi8
+#if !defined PRIi8
 # define PRIi8 "i"
 #endif
-#if !defined PRIo8 || PRI_MACROS_BROKEN
-# undef PRIo8
+#if !defined PRIo8
 # define PRIo8 "o"
 #endif
-#if !defined PRIu8 || PRI_MACROS_BROKEN
-# undef PRIu8
+#if !defined PRIu8
 # define PRIu8 "u"
 #endif
-#if !defined PRIx8 || PRI_MACROS_BROKEN
-# undef PRIx8
+#if !defined PRIx8
 # define PRIx8 "x"
 #endif
-#if !defined PRIX8 || PRI_MACROS_BROKEN
-# undef PRIX8
+#if !defined PRIX8
 # define PRIX8 "X"
 #endif
-#if !defined PRId16 || PRI_MACROS_BROKEN
-# undef PRId16
+#if !defined PRId16
 # define PRId16 "d"
 #endif
-#if !defined PRIi16 || PRI_MACROS_BROKEN
-# undef PRIi16
+#if !defined PRIi16
 # define PRIi16 "i"
 #endif
-#if !defined PRIo16 || PRI_MACROS_BROKEN
-# undef PRIo16
+#if !defined PRIo16
 # define PRIo16 "o"
 #endif
-#if !defined PRIu16 || PRI_MACROS_BROKEN
-# undef PRIu16
+#if !defined PRIu16
 # define PRIu16 "u"
 #endif
-#if !defined PRIx16 || PRI_MACROS_BROKEN
-# undef PRIx16
+#if !defined PRIx16
 # define PRIx16 "x"
 #endif
-#if !defined PRIX16 || PRI_MACROS_BROKEN
-# undef PRIX16
+#if !defined PRIX16
 # define PRIX16 "X"
 #endif
-#if !defined PRId32 || PRI_MACROS_BROKEN
-# undef PRId32
+#if !defined PRId32
 # define PRId32 "d"
 #endif
-#if !defined PRIi32 || PRI_MACROS_BROKEN
-# undef PRIi32
+#if !defined PRIi32
 # define PRIi32 "i"
 #endif
-#if !defined PRIo32 || PRI_MACROS_BROKEN
-# undef PRIo32
+#if !defined PRIo32
 # define PRIo32 "o"
 #endif
-#if !defined PRIu32 || PRI_MACROS_BROKEN
-# undef PRIu32
+#if !defined PRIu32
 # define PRIu32 "u"
 #endif
-#if !defined PRIx32 || PRI_MACROS_BROKEN
-# undef PRIx32
+#if !defined PRIx32
 # define PRIx32 "x"
 #endif
-#if !defined PRIX32 || PRI_MACROS_BROKEN
-# undef PRIX32
+#if !defined PRIX32
 # define PRIX32 "X"
 #endif
-#if !defined PRId64 || PRI_MACROS_BROKEN
-# undef PRId64
+#if !defined PRId64
 # define PRId64 (sizeof (long) == 8 ? "ld" : "lld")
 #endif
-#if !defined PRIi64 || PRI_MACROS_BROKEN
-# undef PRIi64
+#if !defined PRIi64
 # define PRIi64 (sizeof (long) == 8 ? "li" : "lli")
 #endif
-#if !defined PRIo64 || PRI_MACROS_BROKEN
-# undef PRIo64
+#if !defined PRIo64
 # define PRIo64 (sizeof (long) == 8 ? "lo" : "llo")
 #endif
-#if !defined PRIu64 || PRI_MACROS_BROKEN
-# undef PRIu64
+#if !defined PRIu64
 # define PRIu64 (sizeof (long) == 8 ? "lu" : "llu")
 #endif
-#if !defined PRIx64 || PRI_MACROS_BROKEN
-# undef PRIx64
+#if !defined PRIx64
 # define PRIx64 (sizeof (long) == 8 ? "lx" : "llx")
 #endif
-#if !defined PRIX64 || PRI_MACROS_BROKEN
-# undef PRIX64
+#if !defined PRIX64
 # define PRIX64 (sizeof (long) == 8 ? "lX" : "llX")
 #endif
-#if !defined PRIdLEAST8 || PRI_MACROS_BROKEN
-# undef PRIdLEAST8
+#if !defined PRIdLEAST8
 # define PRIdLEAST8 "d"
 #endif
-#if !defined PRIiLEAST8 || PRI_MACROS_BROKEN
-# undef PRIiLEAST8
+#if !defined PRIiLEAST8
 # define PRIiLEAST8 "i"
 #endif
-#if !defined PRIoLEAST8 || PRI_MACROS_BROKEN
-# undef PRIoLEAST8
+#if !defined PRIoLEAST8
 # define PRIoLEAST8 "o"
 #endif
-#if !defined PRIuLEAST8 || PRI_MACROS_BROKEN
-# undef PRIuLEAST8
+#if !defined PRIuLEAST8
 # define PRIuLEAST8 "u"
 #endif
-#if !defined PRIxLEAST8 || PRI_MACROS_BROKEN
-# undef PRIxLEAST8
+#if !defined PRIxLEAST8
 # define PRIxLEAST8 "x"
 #endif
-#if !defined PRIXLEAST8 || PRI_MACROS_BROKEN
-# undef PRIXLEAST8
+#if !defined PRIXLEAST8
 # define PRIXLEAST8 "X"
 #endif
-#if !defined PRIdLEAST16 || PRI_MACROS_BROKEN
-# undef PRIdLEAST16
+#if !defined PRIdLEAST16
 # define PRIdLEAST16 "d"
 #endif
-#if !defined PRIiLEAST16 || PRI_MACROS_BROKEN
-# undef PRIiLEAST16
+#if !defined PRIiLEAST16
 # define PRIiLEAST16 "i"
 #endif
-#if !defined PRIoLEAST16 || PRI_MACROS_BROKEN
-# undef PRIoLEAST16
+#if !defined PRIoLEAST16
 # define PRIoLEAST16 "o"
 #endif
-#if !defined PRIuLEAST16 || PRI_MACROS_BROKEN
-# undef PRIuLEAST16
+#if !defined PRIuLEAST16
 # define PRIuLEAST16 "u"
 #endif
-#if !defined PRIxLEAST16 || PRI_MACROS_BROKEN
-# undef PRIxLEAST16
+#if !defined PRIxLEAST16
 # define PRIxLEAST16 "x"
 #endif
-#if !defined PRIXLEAST16 || PRI_MACROS_BROKEN
-# undef PRIXLEAST16
+#if !defined PRIXLEAST16
 # define PRIXLEAST16 "X"
 #endif
-#if !defined PRIdLEAST32 || PRI_MACROS_BROKEN
-# undef PRIdLEAST32
+#if !defined PRIdLEAST32
 # define PRIdLEAST32 "d"
 #endif
-#if !defined PRIiLEAST32 || PRI_MACROS_BROKEN
-# undef PRIiLEAST32
+#if !defined PRIiLEAST32
 # define PRIiLEAST32 "i"
 #endif
-#if !defined PRIoLEAST32 || PRI_MACROS_BROKEN
-# undef PRIoLEAST32
+#if !defined PRIoLEAST32
 # define PRIoLEAST32 "o"
 #endif
-#if !defined PRIuLEAST32 || PRI_MACROS_BROKEN
-# undef PRIuLEAST32
+#if !defined PRIuLEAST32
 # define PRIuLEAST32 "u"
 #endif
-#if !defined PRIxLEAST32 || PRI_MACROS_BROKEN
-# undef PRIxLEAST32
+#if !defined PRIxLEAST32
 # define PRIxLEAST32 "x"
 #endif
-#if !defined PRIXLEAST32 || PRI_MACROS_BROKEN
-# undef PRIXLEAST32
+#if !defined PRIXLEAST32
 # define PRIXLEAST32 "X"
 #endif
-#if !defined PRIdLEAST64 || PRI_MACROS_BROKEN
-# undef PRIdLEAST64
+#if !defined PRIdLEAST64
 # define PRIdLEAST64 PRId64
 #endif
-#if !defined PRIiLEAST64 || PRI_MACROS_BROKEN
-# undef PRIiLEAST64
+#if !defined PRIiLEAST64
 # define PRIiLEAST64 PRIi64
 #endif
-#if !defined PRIoLEAST64 || PRI_MACROS_BROKEN
-# undef PRIoLEAST64
+#if !defined PRIoLEAST64
 # define PRIoLEAST64 PRIo64
 #endif
-#if !defined PRIuLEAST64 || PRI_MACROS_BROKEN
-# undef PRIuLEAST64
+#if !defined PRIuLEAST64
 # define PRIuLEAST64 PRIu64
 #endif
-#if !defined PRIxLEAST64 || PRI_MACROS_BROKEN
-# undef PRIxLEAST64
+#if !defined PRIxLEAST64
 # define PRIxLEAST64 PRIx64
 #endif
-#if !defined PRIXLEAST64 || PRI_MACROS_BROKEN
-# undef PRIXLEAST64
+#if !defined PRIXLEAST64
 # define PRIXLEAST64 PRIX64
 #endif
-#if !defined PRIdFAST8 || PRI_MACROS_BROKEN
-# undef PRIdFAST8
+#if !defined PRIdFAST8
 # define PRIdFAST8 "d"
 #endif
-#if !defined PRIiFAST8 || PRI_MACROS_BROKEN
-# undef PRIiFAST8
+#if !defined PRIiFAST8
 # define PRIiFAST8 "i"
 #endif
-#if !defined PRIoFAST8 || PRI_MACROS_BROKEN
-# undef PRIoFAST8
+#if !defined PRIoFAST8
 # define PRIoFAST8 "o"
 #endif
-#if !defined PRIuFAST8 || PRI_MACROS_BROKEN
-# undef PRIuFAST8
+#if !defined PRIuFAST8
 # define PRIuFAST8 "u"
 #endif
-#if !defined PRIxFAST8 || PRI_MACROS_BROKEN
-# undef PRIxFAST8
+#if !defined PRIxFAST8
 # define PRIxFAST8 "x"
 #endif
-#if !defined PRIXFAST8 || PRI_MACROS_BROKEN
-# undef PRIXFAST8
+#if !defined PRIXFAST8
 # define PRIXFAST8 "X"
 #endif
-#if !defined PRIdFAST16 || PRI_MACROS_BROKEN
-# undef PRIdFAST16
+#if !defined PRIdFAST16
 # define PRIdFAST16 "d"
 #endif
-#if !defined PRIiFAST16 || PRI_MACROS_BROKEN
-# undef PRIiFAST16
+#if !defined PRIiFAST16
 # define PRIiFAST16 "i"
 #endif
-#if !defined PRIoFAST16 || PRI_MACROS_BROKEN
-# undef PRIoFAST16
+#if !defined PRIoFAST16
 # define PRIoFAST16 "o"
 #endif
-#if !defined PRIuFAST16 || PRI_MACROS_BROKEN
-# undef PRIuFAST16
+#if !defined PRIuFAST16
 # define PRIuFAST16 "u"
 #endif
-#if !defined PRIxFAST16 || PRI_MACROS_BROKEN
-# undef PRIxFAST16
+#if !defined PRIxFAST16
 # define PRIxFAST16 "x"
 #endif
-#if !defined PRIXFAST16 || PRI_MACROS_BROKEN
-# undef PRIXFAST16
+#if !defined PRIXFAST16
 # define PRIXFAST16 "X"
 #endif
-#if !defined PRIdFAST32 || PRI_MACROS_BROKEN
-# undef PRIdFAST32
+#if !defined PRIdFAST32
 # define PRIdFAST32 "d"
 #endif
-#if !defined PRIiFAST32 || PRI_MACROS_BROKEN
-# undef PRIiFAST32
+#if !defined PRIiFAST32
 # define PRIiFAST32 "i"
 #endif
-#if !defined PRIoFAST32 || PRI_MACROS_BROKEN
-# undef PRIoFAST32
+#if !defined PRIoFAST32
 # define PRIoFAST32 "o"
 #endif
-#if !defined PRIuFAST32 || PRI_MACROS_BROKEN
-# undef PRIuFAST32
+#if !defined PRIuFAST32
 # define PRIuFAST32 "u"
 #endif
-#if !defined PRIxFAST32 || PRI_MACROS_BROKEN
-# undef PRIxFAST32
+#if !defined PRIxFAST32
 # define PRIxFAST32 "x"
 #endif
-#if !defined PRIXFAST32 || PRI_MACROS_BROKEN
-# undef PRIXFAST32
+#if !defined PRIXFAST32
 # define PRIXFAST32 "X"
 #endif
-#if !defined PRIdFAST64 || PRI_MACROS_BROKEN
-# undef PRIdFAST64
+#if !defined PRIdFAST64
 # define PRIdFAST64 PRId64
 #endif
-#if !defined PRIiFAST64 || PRI_MACROS_BROKEN
-# undef PRIiFAST64
+#if !defined PRIiFAST64
 # define PRIiFAST64 PRIi64
 #endif
-#if !defined PRIoFAST64 || PRI_MACROS_BROKEN
-# undef PRIoFAST64
+#if !defined PRIoFAST64
 # define PRIoFAST64 PRIo64
 #endif
-#if !defined PRIuFAST64 || PRI_MACROS_BROKEN
-# undef PRIuFAST64
+#if !defined PRIuFAST64
 # define PRIuFAST64 PRIu64
 #endif
-#if !defined PRIxFAST64 || PRI_MACROS_BROKEN
-# undef PRIxFAST64
+#if !defined PRIxFAST64
 # define PRIxFAST64 PRIx64
 #endif
-#if !defined PRIXFAST64 || PRI_MACROS_BROKEN
-# undef PRIXFAST64
+#if !defined PRIXFAST64
 # define PRIXFAST64 PRIX64
 #endif
-#if !defined PRIdMAX || PRI_MACROS_BROKEN
-# undef PRIdMAX
+#if !defined PRIdMAX
 # define PRIdMAX (sizeof (uintmax_t) == sizeof (long) ? "ld" : "lld")
 #endif
-#if !defined PRIiMAX || PRI_MACROS_BROKEN
-# undef PRIiMAX
+#if !defined PRIiMAX
 # define PRIiMAX (sizeof (uintmax_t) == sizeof (long) ? "li" : "lli")
 #endif
-#if !defined PRIoMAX || PRI_MACROS_BROKEN
-# undef PRIoMAX
+#if !defined PRIoMAX
 # define PRIoMAX (sizeof (uintmax_t) == sizeof (long) ? "lo" : "llo")
 #endif
-#if !defined PRIuMAX || PRI_MACROS_BROKEN
-# undef PRIuMAX
+#if !defined PRIuMAX
 # define PRIuMAX (sizeof (uintmax_t) == sizeof (long) ? "lu" : "llu")
 #endif
-#if !defined PRIxMAX || PRI_MACROS_BROKEN
-# undef PRIxMAX
+#if !defined PRIxMAX
 # define PRIxMAX (sizeof (uintmax_t) == sizeof (long) ? "lx" : "llx")
 #endif
-#if !defined PRIXMAX || PRI_MACROS_BROKEN
-# undef PRIXMAX
+#if !defined PRIXMAX
 # define PRIXMAX (sizeof (uintmax_t) == sizeof (long) ? "lX" : "llX")
 #endif
-#if !defined PRIdPTR || PRI_MACROS_BROKEN
-# undef PRIdPTR
+#if !defined PRIdPTR
 # define PRIdPTR \
   (sizeof (void *) == sizeof (long) ? "ld" : \
    sizeof (void *) == sizeof (int) ? "d" : \
    "lld")
 #endif
-#if !defined PRIiPTR || PRI_MACROS_BROKEN
-# undef PRIiPTR
+#if !defined PRIiPTR
 # define PRIiPTR \
   (sizeof (void *) == sizeof (long) ? "li" : \
    sizeof (void *) == sizeof (int) ? "i" : \
    "lli")
 #endif
-#if !defined PRIoPTR || PRI_MACROS_BROKEN
-# undef PRIoPTR
+#if !defined PRIoPTR
 # define PRIoPTR \
   (sizeof (void *) == sizeof (long) ? "lo" : \
    sizeof (void *) == sizeof (int) ? "o" : \
    "llo")
 #endif
-#if !defined PRIuPTR || PRI_MACROS_BROKEN
-# undef PRIuPTR
+#if !defined PRIuPTR
 # define PRIuPTR \
   (sizeof (void *) == sizeof (long) ? "lu" : \
    sizeof (void *) == sizeof (int) ? "u" : \
    "llu")
 #endif
-#if !defined PRIxPTR || PRI_MACROS_BROKEN
-# undef PRIxPTR
+#if !defined PRIxPTR
 # define PRIxPTR \
   (sizeof (void *) == sizeof (long) ? "lx" : \
    sizeof (void *) == sizeof (int) ? "x" : \
    "llx")
 #endif
-#if !defined PRIXPTR || PRI_MACROS_BROKEN
-# undef PRIXPTR
+#if !defined PRIXPTR
 # define PRIXPTR \
   (sizeof (void *) == sizeof (long) ? "lX" : \
    sizeof (void *) == sizeof (int) ? "X" : \
@@ -468,21 +361,17 @@ char *alloca ();
 /* Rename the non ISO C functions.  This is required by the standard
    because some ISO C functions will require linking with this object
    file and the name space must not be polluted.  */
-# define open(name, flags)	open_not_cancel_2 (name, flags)
-# define close(fd)		close_not_cancel_no_status (fd)
-# define read(fd, buf, n)	read_not_cancel (fd, buf, n)
+# define open(name, flags)	__open_nocancel (name, flags)
+# define close(fd)		__close_nocancel_nostatus (fd)
+# define read(fd, buf, n)	__read_nocancel (fd, buf, n)
 # define mmap(addr, len, prot, flags, fd, offset) \
   __mmap (addr, len, prot, flags, fd, offset)
 # define munmap(addr, len)	__munmap (addr, len)
-#endif
-
-/* For those losing systems which don't have `alloca' we have to add
-   some additional code emulating it.  */
-#ifdef HAVE_ALLOCA
-# define freea(p) /* nothing */
-#else
-# define alloca(n) malloc (n)
-# define freea(p) free (p)
+#elif defined _WIN32 && !defined __CYGWIN__
+/* On native Windows, don't require linking with '-loldnames'.  */
+# define open _open
+# define read _read
+# define close _close
 #endif
 
 /* For systems that distinguish between text and binary I/O.
@@ -506,7 +395,15 @@ char *alloca ();
 /* We need a sign, whether a new catalog was loaded, which can be associated
    with all translations.  This is important if the translations are
    cached by one of GCC's features.  */
+#if defined __APPLE__ && defined __MACH__
+/* On macOS 10.13 with Apple clang-902.0.39.1 and cctools-895, when linking
+   statically, we need an explicit zero-initialization, in order to avoid a
+   link-time error that __nl_msg_cat_cntr is an undefined symbol.  It could
+   be a compiler bug or a ranlib bug.  */
+int _nl_msg_cat_cntr = 0;
+#else
 int _nl_msg_cat_cntr;
+#endif
 
 
 /* Expand a system dependent string segment.  Return NULL if unsupported.  */
@@ -778,17 +675,19 @@ get_sysdep_segment_value (const char *name)
   return NULL;
 }
 
+/* Lock that protects the various 'struct loaded_l10nfile' objects.  */
+__libc_lock_define_initialized_recursive (static, lock);
+
 /* Load the message catalogs specified by FILENAME.  If it is no valid
    message catalog do nothing.  */
 void
-internal_function
 _nl_load_domain (struct loaded_l10nfile *domain_file,
 		 struct binding *domainbinding)
 {
   int fd = -1;
   size_t size;
 #ifdef _LIBC
-  struct stat64 st;
+  struct __stat64_t64 st;
 #else
   struct stat st;
 #endif
@@ -798,7 +697,6 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
   int revision;
   const char *nullentry;
   size_t nullentrylen;
-  __libc_lock_define_initialized_recursive (static, lock);
 
   __libc_lock_lock_recursive (lock);
   if (domain_file->decided != 0)
@@ -826,18 +724,29 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
      might be NULL.  This can happen when according to the given
      specification the locale file name is different for XPG and CEN
      syntax.  */
-  if (domain_file->filename == NULL)
-    goto out;
-
-  /* Try to open the addressed file.  */
-  fd = open (domain_file->filename, O_RDONLY | O_BINARY);
-  if (fd == -1)
+  if (domain_file->filename != NULL)
+    {
+      /* Try to open the addressed file.  */
+      fd = open (domain_file->filename, O_RDONLY | O_BINARY);
+      if (fd == -1)
+        goto out;
+    }
+#if defined _WIN32 && !defined __CYGWIN__
+  else if (domain_file->wfilename != NULL)
+    {
+      /* Try to open the addressed file.  */
+      fd = _wopen (domain_file->wfilename, O_RDONLY | O_BINARY);
+      if (fd == -1)
+        goto out;
+    }
+#endif
+  else
     goto out;
 
   /* We must know about the size of the file.  */
   if (
 #ifdef _LIBC
-      __builtin_expect (fstat64 (fd, &st) != 0, 0)
+      __glibc_unlikely (__fstat64_time64 (fd, &st) != 0)
 #else
       __builtin_expect (fstat (fd, &st) != 0, 0)
 #endif
@@ -914,7 +823,15 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 
   domain = (struct loaded_domain *) malloc (sizeof (struct loaded_domain));
   if (domain == NULL)
-    goto out;
+    {
+#ifdef HAVE_MMAP
+      if (use_mmap)
+	munmap ((caddr_t) data, size);
+      else
+#endif
+	free (data);
+      goto out;
+    }
   domain_file->data = domain;
 
   domain->data = (char *) data;
@@ -984,8 +901,9 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 		  ((char *) data
 		   + W (domain->must_swap, data->sysdep_segments_offset));
 		sysdep_segment_values =
-		  (const char **)
-		  alloca (n_sysdep_segments * sizeof (const char *));
+		  calloc (n_sysdep_segments, sizeof (const char *));
+		if (sysdep_segment_values == NULL)
+		  goto invalid;
 		for (i = 0; i < n_sysdep_segments; i++)
 		  {
 		    const char *name =
@@ -996,7 +914,7 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 
 		    if (!(namelen > 0 && name[namelen - 1] == '\0'))
 		      {
-			freea (sysdep_segment_values);
+			free (sysdep_segment_values);
 			goto invalid;
 		      }
 
@@ -1031,23 +949,30 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 				? orig_sysdep_tab[i]
 				: trans_sysdep_tab[i]));
 			size_t need = 0;
+			const char *static_segments =
+			  (char *) data
+			  + W (domain->must_swap, sysdep_string->offset);
 			const struct segment_pair *p = sysdep_string->segments;
 
 			if (W (domain->must_swap, p->sysdepref) != SEGMENTS_END)
-			  for (p = sysdep_string->segments;; p++)
+			  for (;; p++)
 			    {
+			      nls_uint32 segsize;
 			      nls_uint32 sysdepref;
 
-			      need += W (domain->must_swap, p->segsize);
+			      segsize = W (domain->must_swap, p->segsize);
+			      need += segsize;
 
 			      sysdepref = W (domain->must_swap, p->sysdepref);
 			      if (sysdepref == SEGMENTS_END)
 				break;
 
+			      static_segments += segsize;
+
 			      if (sysdepref >= n_sysdep_segments)
 				{
 				  /* Invalid.  */
-				  freea (sysdep_segment_values);
+				  free (sysdep_segment_values);
 				  goto invalid;
 				}
 
@@ -1055,11 +980,24 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 				{
 				  /* This particular string pair is invalid.  */
 				  valid = 0;
-				  break;
 				}
 
 			      need += strlen (sysdep_segment_values[sysdepref]);
 			    }
+
+			/* The last static segment must end in a NUL.  */
+			{
+			  nls_uint32 segsize =
+			    W (domain->must_swap, p->segsize);
+
+			  if (!(segsize > 0
+				&& static_segments[segsize - 1] == '\0'))
+			    {
+			      /* Invalid.  */
+			      free (sysdep_segment_values);
+			      goto invalid;
+			    }
+			}
 
 			needs[j] = need;
 			if (!valid)
@@ -1082,7 +1020,10 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 		    /* Allocate additional memory.  */
 		    mem = (char *) malloc (memneed);
 		    if (mem == NULL)
-		      goto invalid;
+		      {
+			free (sysdep_segment_values);
+			goto invalid;
+		      }
 
 		    domain->malloced = mem;
 		    inmem_orig_sysdep_tab = (struct sysdep_string_desc *) mem;
@@ -1114,7 +1055,7 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 
 			    if (W (domain->must_swap, p->sysdepref)
 				!= SEGMENTS_END)
-			      for (p = sysdep_string->segments;; p++)
+			      for (;; p++)
 				{
 				  nls_uint32 sysdepref;
 
@@ -1175,7 +1116,7 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 				  {
 				    inmem_tab_entry->pointer = mem;
 
-				    for (p = sysdep_string->segments;; p++)
+				    for (;; p++)
 				      {
 					nls_uint32 segsize =
 					  W (domain->must_swap, p->segsize);
@@ -1251,7 +1192,7 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 		    domain->trans_sysdep_tab = NULL;
 		  }
 
-		freea (sysdep_segment_values);
+		free (sysdep_segment_values);
 	      }
 	    else
 	      {
@@ -1289,16 +1230,13 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 #endif
 
   /* Get the header entry and look for a plural specification.  */
-#ifdef IN_LIBGLOCALE
-  nullentry =
-    _nl_find_msg (domain_file, domainbinding, NULL, "", &nullentrylen);
-#else
   nullentry = _nl_find_msg (domain_file, domainbinding, "", 0, &nullentrylen);
-#endif
   if (__builtin_expect (nullentry == (char *) -1, 0))
     {
 #ifdef _LIBC
       __libc_rwlock_fini (domain->conversions_lock);
+#else
+      gl_rwlock_destroy (domain->conversions_lock);
 #endif
       goto invalid;
     }
@@ -1317,7 +1255,6 @@ _nl_load_domain (struct loaded_l10nfile *domain_file,
 
 #ifdef _LIBC
 void
-internal_function __libc_freeres_fn_section
 _nl_unload_domain (struct loaded_domain *domain)
 {
   size_t i;

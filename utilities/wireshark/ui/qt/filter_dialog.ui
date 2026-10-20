@@ -15,69 +15,50 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTreeWidget" name="filterTreeWidget">
-     <property name="selectionMode">
-      <enum>QAbstractItemView::ExtendedSelection</enum>
+    <widget class="QTreeView" name="filterTreeView">
+     <property name="dragDropMode">
+      <enum>QAbstractItemView::DragDrop</enum>
      </property>
-     <property name="textElideMode">
-      <enum>Qt::ElideMiddle</enum>
+     <property name="sortingEnabled">
+      <bool>true</bool>
      </property>
-     <property name="indentation">
-      <number>0</number>
-     </property>
-     <property name="rootIsDecorated">
-      <bool>false</bool>
-     </property>
-     <column>
-      <property name="text">
-       <string>Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Filter</string>
-      </property>
-     </column>
+     <attribute name="headerShowSortIndicator" stdset="0">
+      <bool>true</bool>
+     </attribute>
     </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,1">
      <item>
-      <widget class="QToolButton" name="newToolButton">
+      <widget class="StockIconToolButton" name="newToolButton">
        <property name="toolTip">
         <string>Create a new filter.</string>
        </property>
        <property name="text">
         <string/>
        </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/plus-8.png</normaloff>:/stock/plus-8.png</iconset>
-       </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="deleteToolButton">
+      <widget class="StockIconToolButton" name="deleteToolButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Remove this filter.</string>
        </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/minus-8.png</normaloff>:/stock/minus-8.png</iconset>
-       </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="copyToolButton">
+      <widget class="StockIconToolButton" name="copyToolButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Copy this filter.</string>
        </property>
        <property name="text">
         <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/copy-8.png</normaloff>:/stock/copy-8.png</iconset>
        </property>
       </widget>
      </item>
@@ -131,12 +112,15 @@
   <customwidget>
    <class>ElidedLabel</class>
    <extends>QLabel</extends>
-   <header>elided_label.h</header>
+   <header>widgets/elided_label.h</header>
+  </customwidget>
+  <customwidget>
+   <class>StockIconToolButton</class>
+   <extends>QToolButton</extends>
+   <header>widgets/stock_icon_tool_button.h</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../../image/toolbar.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>buttonBox</sender>

@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlIconvCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>xmlIconvCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlIconvCtxt_1a3981f676e0e98c125071dedf503b2bd7" prot="public" static="no" mutable="no">
+        <type>iconv_t</type>
+        <definition>iconv_t cd</definition>
+        <argsstring></argsstring>
+        <name>cd</name>
+        <qualifiedname>xmlIconvCtxt::cd</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="1216" column="13" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1216" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/encoding.c" line="1215" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="1215" bodyend="1217"/>
+    <listofallmembers>
+      <member refid="structxmlIconvCtxt_1a3981f676e0e98c125071dedf503b2bd7" prot="public" virt="non-virtual"><scope>xmlIconvCtxt</scope><name>cd</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -81,6 +81,17 @@ ForwardedContentToken/_item/body-part-choice/message-or-content-body-part	forwar
 
 ForwardedContentToken/_item/body-part-choice	T_body_part_token_choice
 
+#.FIELD_ATTR
+G3FacsimileBodyPart/data				ABBREV=g3facsimile.data
+VideotexBodyPart/data					ABBREV=videotex.data
+ExtendedBodyPart/data					ABBREV=extended.data
+TeletexBodyPart/data					ABBREV=teletex.data
+IA5TextBodyPart/data					ABBREV=ia5text.data
+MessageBodyPart/data					ABBREV=message.data
+EncryptedBodyPart/data					ABBREV=encrypted.data
+Account-Attribute/actual-values			ABBREV=account.actual-values
+User-Identity-Attribute/actual-values	ABBREV=identity.actual-values
+
 #.REGISTER
 AbsenceAdvice				B "2.6.1.19.0"  "id-on-absence-advice"
 ChangeOfAddressAdvice		B "2.6.1.19.1"  "id-on-change-of-address-advice"
@@ -221,7 +232,7 @@ IpnSecurityResponse			B	"2.6.1.18.1"	"id-sec-security-common-fields"
 
   %(DEFAULT_BODY)s
 
-  name = oid_resolved_from_string(wmem_packet_scope(), actx->external.direct_reference);
+  name = oid_resolved_from_string(actx->pinfo->pool, actx->external.direct_reference);
   proto_item_append_text(tree, " (%%s)", name ? name : actx->external.direct_reference);
 
 #.FN_BODY IPMSExtension/value
@@ -250,17 +261,30 @@ IpnSecurityResponse			B	"2.6.1.18.1"	"id-sec-security-common-fields"
   %(DEFAULT_BODY)s
 
   if(subject)
-   col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", tvb_format_text(subject, 0, tvb_reported_length(subject)));
+   col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", tvb_get_string_enc(actx->pinfo->pool, subject, 0,
+                                                                             tvb_reported_length(subject), ENC_T61));
+
+#.TYPE_ATTR
+SubjectField DISPLAY = BASE_NONE
+
+#.TYPE_ATTR
+TeletexData/_item DISPLAY = BASE_NONE
+
+#.TYPE_ATTR
+FreeFormName DISPLAY = BASE_NONE
+
+#.TYPE_ATTR
+VideotexData DISPLAY = BASE_NONE
 
 #.FN_PARS CharacterSetRegistration
   VAL_PTR=&crs
 
 #.FN_BODY CharacterSetRegistration
-  guint32 crs;
+  uint32_t crs;
   %(DEFAULT_BODY)s
 
   if(actx->created_item)
-    proto_item_append_text(actx->created_item, " (%%s)", val_to_str(crs, charsetreg_vals, "unknown"));
+    proto_item_append_text(actx->created_item, " (%%s)", val_to_str_const(crs, charsetreg_vals, "unknown"));
 
 #.FN_BODY Interchange-Data-Element
 /* XXX Not implemented yet */

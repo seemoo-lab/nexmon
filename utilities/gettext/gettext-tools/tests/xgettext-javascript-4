@@ -12,9 +12,7 @@ EOF
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} --add-comments --no-location -o xg-js-4.tmp xg-js-4.js 2>xg-js-4.err
 test $? = 0 || { cat xg-js-4.err; Exit 1; }
-# Don't simplify this to "grep ... < xg-js-4.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-js-4.tmp | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > xg-js-4.pot
+func_filter_POT_Creation_Date xg-js-4.tmp xg-js-4.pot
 
 cat <<\EOF > xg-js-4.ok
 # SOME DESCRIPTIVE TITLE.

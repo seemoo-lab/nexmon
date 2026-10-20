@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -60,28 +48,30 @@ RWHOD(8)                 UNIX System Manager's Manual                 RWHOD(8)
 void proto_register_who(void);
 void proto_reg_handoff_who(void);
 
-static int proto_who = -1;
-static int hf_who_vers = -1;
-static int hf_who_type = -1;
-static int hf_who_sendtime = -1;
-static int hf_who_recvtime = -1;
-static int hf_who_hostname = -1;
-static int hf_who_loadav_5 = -1;
-static int hf_who_loadav_10 = -1;
-static int hf_who_loadav_15 = -1;
-static int hf_who_boottime = -1;
-static int hf_who_whoent = -1;
-static int hf_who_tty = -1;
-static int hf_who_uid = -1;
-static int hf_who_timeon = -1;
-static int hf_who_idle = -1;
+static dissector_handle_t who_handle;
 
-static gint ett_who = -1;
-static gint ett_whoent = -1;
+static int proto_who;
+static int hf_who_vers;
+static int hf_who_type;
+static int hf_who_sendtime;
+static int hf_who_recvtime;
+static int hf_who_hostname;
+static int hf_who_loadav_5;
+static int hf_who_loadav_10;
+static int hf_who_loadav_15;
+static int hf_who_boottime;
+static int hf_who_whoent;
+static int hf_who_tty;
+static int hf_who_uid;
+static int hf_who_timeon;
+static int hf_who_idle;
+
+static int ett_who;
+static int ett_whoent;
 
 #define UDP_PORT_WHO    513
 
-static void dissect_whoent(tvbuff_t *tvb, int offset, proto_tree *tree);
+static void dissect_whoent(packet_info *pinfo, tvbuff_t *tvb, int offset, proto_tree *tree);
 
 static int
 dissect_who(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
@@ -89,15 +79,12 @@ dissect_who(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	int		offset = 0;
 	proto_tree	*who_tree;
 	proto_item	*who_ti;
-	guint8		*server_name;
+	uint8_t		*server_name;
 	double		loadav_5 = 0.0, loadav_10 = 0.0, loadav_15 = 0.0;
-	nstime_t	ts;
 
 	/* Summary information */
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "WHO");
 	col_clear(pinfo->cinfo, COL_INFO);
-
-	ts.nsecs = 0;
 
 	who_ti = proto_tree_add_item(tree, proto_who, tvb, offset, -1, ENC_NA);
 	who_tree = proto_item_add_subtree(who_ti, ett_who);
@@ -112,20 +99,18 @@ dissect_who(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	offset += 2;
 
 	if (tree) {
-		ts.secs = tvb_get_ntohl(tvb, offset);
-		proto_tree_add_time(who_tree, hf_who_sendtime, tvb, offset, 4,
-		    &ts);
+		proto_tree_add_item(who_tree, hf_who_sendtime, tvb, offset, 4,
+		    ENC_TIME_SECS|ENC_BIG_ENDIAN);
 	}
 	offset += 4;
 
 	if (tree) {
-		ts.secs = tvb_get_ntohl(tvb, offset);
-		proto_tree_add_time(who_tree, hf_who_recvtime, tvb, offset, 4,
-		    &ts);
+		proto_tree_add_item(who_tree, hf_who_recvtime, tvb, offset, 4,
+		    ENC_TIME_SECS|ENC_BIG_ENDIAN);
 	}
 	offset += 4;
 
-	server_name = tvb_get_stringzpad(wmem_packet_scope(), tvb, offset, 32, ENC_ASCII|ENC_NA);
+	server_name = tvb_get_stringzpad(pinfo->pool, tvb, offset, 32, ENC_ASCII|ENC_NA);
 	proto_tree_add_string(who_tree, hf_who_hostname, tvb, offset, 32, server_name);
 	offset += 32;
 
@@ -149,12 +134,11 @@ dissect_who(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 				server_name, loadav_5, loadav_10, loadav_15);
 
 	if (tree) {
-		ts.secs = tvb_get_ntohl(tvb, offset);
-		proto_tree_add_time(who_tree, hf_who_boottime, tvb, offset, 4,
-		    &ts);
+		proto_tree_add_item(who_tree, hf_who_boottime, tvb, offset, 4,
+		    ENC_TIME_SECS|ENC_BIG_ENDIAN);
 		offset += 4;
 
-		dissect_whoent(tvb, offset, who_tree);
+		dissect_whoent(pinfo, tvb, offset, who_tree);
 	}
 
 	return tvb_captured_length(tvb);
@@ -166,18 +150,15 @@ dissect_who(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 #define MAX_NUM_WHOENTS	(1024 / SIZE_OF_WHOENT)
 
 static void
-dissect_whoent(tvbuff_t *tvb, int offset, proto_tree *tree)
+dissect_whoent(packet_info *pinfo, tvbuff_t *tvb, int offset, proto_tree *tree)
 {
 	proto_tree	*whoent_tree = NULL;
 	proto_item	*whoent_ti = NULL;
 	int		line_offset = offset;
-	guint8		*out_line;
-	guint8		*out_name;
-	nstime_t	ts;
+	uint8_t		*out_line;
+	uint8_t		*out_name;
 	int		whoent_num = 0;
-	guint32		idle_secs; /* say that out loud... */
-
-	ts.nsecs = 0;
+	uint32_t		idle_secs; /* say that out loud... */
 
 	while (tvb_reported_length_remaining(tvb, line_offset) > 0
 	    && whoent_num < MAX_NUM_WHOENTS) {
@@ -185,25 +166,24 @@ dissect_whoent(tvbuff_t *tvb, int offset, proto_tree *tree)
 		    line_offset, SIZE_OF_WHOENT, ENC_NA);
 		whoent_tree = proto_item_add_subtree(whoent_ti, ett_whoent);
 
-		out_line = tvb_get_stringzpad(wmem_packet_scope(), tvb, line_offset, 8, ENC_ASCII|ENC_NA);
+		out_line = tvb_get_stringzpad(pinfo->pool, tvb, line_offset, 8, ENC_ASCII|ENC_NA);
 		proto_tree_add_string(whoent_tree, hf_who_tty, tvb, line_offset,
 		    8, out_line);
 		line_offset += 8;
 
-		out_name = tvb_get_stringzpad(wmem_packet_scope(), tvb, line_offset, 8, ENC_ASCII|ENC_NA);
+		out_name = tvb_get_stringzpad(pinfo->pool, tvb, line_offset, 8, ENC_ASCII|ENC_NA);
 		proto_tree_add_string(whoent_tree, hf_who_uid, tvb, line_offset,
 		    8, out_name);
 		line_offset += 8;
 
-		ts.secs = tvb_get_ntohl(tvb, line_offset);
-		proto_tree_add_time(whoent_tree, hf_who_timeon, tvb,
-		    line_offset, 4, &ts);
+		proto_tree_add_item(whoent_tree, hf_who_timeon, tvb,
+		    line_offset, 4, ENC_TIME_SECS|ENC_BIG_ENDIAN);
 		line_offset += 4;
 
 		idle_secs = tvb_get_ntohl(tvb, line_offset);
 		proto_tree_add_uint_format(whoent_tree, hf_who_idle, tvb,
 		    line_offset, 4, idle_secs, "Idle: %s",
-		    signed_time_secs_to_str(wmem_packet_scope(), idle_secs));
+		    signed_time_secs_to_str(pinfo->pool, idle_secs));
 		line_offset += 4;
 
 		whoent_num++;
@@ -271,12 +251,13 @@ proto_register_who(void)
 			NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_who,
 		&ett_whoent,
 	};
 
 	proto_who = proto_register_protocol("Who", "WHO", "who");
+	who_handle = register_dissector("who", dissect_who, proto_who);
 	proto_register_field_array(proto_who, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 }
@@ -284,14 +265,11 @@ proto_register_who(void)
 void
 proto_reg_handoff_who(void)
 {
-	dissector_handle_t who_handle;
-
-	who_handle = create_dissector_handle(dissect_who, proto_who);
-	dissector_add_uint("udp.port", UDP_PORT_WHO, who_handle);
+	dissector_add_uint_with_preference("udp.port", UDP_PORT_WHO, who_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,175 +1,107 @@
 # Translation of `gettext-runtime' messages to Japanese.
-# Copyright (C) 1999, 2002, 2003, 2006, 2007, 2010, 2013, 2015 Free Software Foundation, Inc.
+# Copyright (C) 1999, 2002, 2003, 2006, 2007, 2010, 2013, 2015, 2019, 2020, 2025 Free Software Foundation, Inc.
 # This file is distributed under the same license as the gettext package.
-# Masahito Yamaga <ma@yama-ga.com>, 2015.
+# Masahito Yamaga <ma@yama-ga.com>, 2025.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: GNU gettext-runtime 0.19.4.73\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
-"PO-Revision-Date: 2015-06-24 12:18+0900\n"
+"Project-Id-Version: GNU gettext-runtime 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2025-06-28 23:48+0200\n"
+"PO-Revision-Date: 2025-07-05 12:40+0900\n"
 "Last-Translator: Masahito Yamaga <ma@yama-ga.com>\n"
 "Language-Team: Japanese <translation-team-ja@lists.sourceforge.net>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=EUC-JP\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: gnulib-lib/closeout.c:66
-msgid "write error"
-msgstr "½ñ¤­¹ş¤ß¥¨¥é¡¼"
-
-#: gnulib-lib/error.c:191
-msgid "Unknown system error"
-msgstr "Ì¤ÃÎ¤Î¥·¥¹¥Æ¥à¥¨¥é¡¼"
-
-#: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
-#, c-format
-msgid "%s: option '%s' is ambiguous; possibilities:"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '%s' ¤¬Û£Ëæ. »ØÄê²ÄÇ½¤Ê¤â¤Î:"
-
-#: gnulib-lib/getopt.c:619
-#, c-format
-msgid "%s: option '%s' is ambiguous\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '%s' ¤ÏÛ£Ëæ¤Ç¤¹\n"
-
-#: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
-#, c-format
-msgid "%s: option '--%s' doesn't allow an argument\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '--%s' ¤Ë°ú¿ô¤Ï¤¢¤ê¤Ş¤»¤ó\n"
-
-#: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
-#, c-format
-msgid "%s: option '%c%s' doesn't allow an argument\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '%c%s' ¤Ë°ú¿ô¤Ï¤¢¤ê¤Ş¤»¤ó\n"
-
-#: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
-#, c-format
-msgid "%s: option '--%s' requires an argument\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '--%s' ¤Ë¤Ï°ú¿ô¤¬É¬Í×¤Ç¤¹\n"
-
-#: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
-#, c-format
-msgid "%s: unrecognized option '--%s'\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '--%s' ¤ÏÉÔ²Ä\n"
-
-#: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
-#, c-format
-msgid "%s: unrecognized option '%c%s'\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '%c%s' ¤ÏÉÔ²Ä\n"
-
-#: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
-#, c-format
-msgid "%s: invalid option -- '%c'\n"
-msgstr "%s: Ìµ¸ú¤Ê¥ª¥×¥·¥ç¥ó -- '%c'\n"
-
-#: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
-#: gnulib-lib/getopt.c:1136
-#, c-format
-msgid "%s: option requires an argument -- '%c'\n"
-msgstr "%s: °ú¿ô¤¬É¬Í×¤Ê¥ª¥×¥·¥ç¥ó -- '%c'\n"
-
-#: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
-#, c-format
-msgid "%s: option '-W %s' is ambiguous\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '-W %s' ¤ÏÛ£Ëæ¤Ç¤¹\n"
-
-#: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
-#, c-format
-msgid "%s: option '-W %s' doesn't allow an argument\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '-W %s' ¤Ë°ú¿ô¤Ï¤¢¤ê¤Ş¤»¤ó\n"
-
-#: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
-#, c-format
-msgid "%s: option '-W %s' requires an argument\n"
-msgstr "%s: ¥ª¥×¥·¥ç¥ó '-W %s' ¤Ë¤Ï°ú¿ô¤¬É¬Í×¤Ç¤¹\n"
-
-#: gnulib-lib/xmalloc.c:38
-#, c-format
-msgid "memory exhausted"
-msgstr "¥á¥â¥ê¤ò»È¤¤²Ì¤¿¤·¤Ş¤·¤¿"
-
-#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:123
+#: src/envsubst.c:112 src/gettext.c:138 src/ngettext.c:128
+#: src/printf_gettext.c:111 src/printf_ngettext.c:116
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <%s>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <%s>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 "\n"
-"[»²¹ÍÌõ]\n"
-"¥é¥¤¥»¥ó¥¹ GPLv3+: GNU GPL ¥Ğ¡¼¥¸¥ç¥ó 3 ¤Ş¤¿¤Ï¤½¤ì°Ê¹ß <http://gnu.org/licenses/gpl.html>\n"
-"¤³¤ì¤Ï¥Õ¥ê¡¼¡¦¥½¥Õ¥È¥¦¥§¥¢¤Ç¤¹. ²şÊÑ¤ÈºÆÇÛÉÛ¤Ï¼«Í³¤Ç¤¹.\n"
-"Ë¡¤Çµö¤µ¤ì¤¿ÈÏ°ÏÆâ¤ÇÌµÊİ¾Ú¤Ç¤¹.\n"
+"[å‚è€ƒè¨³]\n"
+"ãƒ©ã‚¤ã‚»ãƒ³ã‚¹ GPLv3+: GNU GPL ãƒãƒ¼ã‚¸ãƒ§ãƒ³ 3 ã¾ãŸã¯ãã‚Œä»¥é™ <https://gnu.org/licenses/gpl.html>\n"
+"ã“ã‚Œã¯ãƒ•ãƒªãƒ¼ãƒ»ã‚½ãƒ•ãƒˆã‚¦ã‚§ã‚¢ã§ã™. æ”¹å¤‰ã¨å†é…å¸ƒã¯è‡ªç”±ã§ã™.\n"
+"æ³•ã§è¨±ã•ã‚ŒãŸç¯„å›²å†…ã§ç„¡ä¿è¨¼ã§ã™.\n"
 
-#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:129
+#: src/envsubst.c:118 src/gettext.c:144 src/ngettext.c:134
+#: src/printf_gettext.c:117 src/printf_ngettext.c:122
 #, c-format
 msgid "Written by %s.\n"
-msgstr "ºî¼Ô %s.\n"
+msgstr "ä½œè€… %s.\n"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/envsubst.c:118
+#: src/envsubst.c:118 src/printf_gettext.c:117 src/printf_ngettext.c:122
 msgid "Bruno Haible"
 msgstr "Bruno Haible"
 
-#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:141
+#: src/envsubst.c:127 src/gettext.c:162 src/ngettext.c:146
 #, c-format
 msgid "too many arguments"
-msgstr "°ú¿ô¤¬Â¿¤¹¤®¤Ş¤¹"
+msgstr "å¼•æ•°ãŒå¤šã™ãã¾ã™"
 
-#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:153
+#: src/envsubst.c:138 src/gettext.c:172 src/ngettext.c:158
+#: src/printf_ngettext.c:133
 #, c-format
 msgid "missing arguments"
-msgstr "°ú¿ô¤¬¤¢¤ê¤Ş¤»¤ó"
+msgstr "å¼•æ•°ãŒã‚ã‚Šã¾ã›ã‚“"
 
-#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:207
+#: src/envsubst.c:176 src/gettext.c:249 src/ngettext.c:216
+#: src/printf_gettext.c:165 src/printf_ngettext.c:197
 #, c-format
 msgid "Try '%s --help' for more information.\n"
-msgstr "¤è¤êÂ¿¤¯¤Î¾ğÊó¤òÆÀ¤ë¤¿¤á¤Ë¤Ï '%s --help' ¤ÈÆşÎÏ¤·¤Æ¤¯¤À¤µ¤¤.\n"
-
-#: src/envsubst.c:176
-#, c-format, no-wrap
-msgid "Usage: %s [OPTION] [SHELL-FORMAT]\n"
-msgstr "»ÈÍÑË¡: %s [¥ª¥×¥·¥ç¥ó] [¥·¥§¥ë·Á¼°]\n"
+msgstr "ã‚ˆã‚Šå¤šãã®æƒ…å ±ã‚’å¾—ã‚‹ãŸã‚ã«ã¯ '%s --help' ã¨å…¥åŠ›ã—ã¦ãã ã•ã„.\n"
 
 #: src/envsubst.c:181
 #, c-format, no-wrap
-msgid "Substitutes the values of environment variables.\n"
-msgstr "´Ä¶­ÊÑ¿ô¤ÎÃÍ¤òÂåÆş.\n"
+msgid "Usage: %s [OPTION] [SHELL-FORMAT]\n"
+msgstr "ä½¿ç”¨æ³•: %s [ã‚ªãƒ—ã‚·ãƒ§ãƒ³] [ã‚·ã‚§ãƒ«å½¢å¼]\n"
 
-#: src/envsubst.c:185
+#: src/envsubst.c:186
+#, c-format, no-wrap
+msgid "Substitutes the values of environment variables.\n"
+msgstr "ç’°å¢ƒå¤‰æ•°ã®å€¤ã‚’ä»£å…¥.\n"
+
+#: src/envsubst.c:190
 #, c-format, no-wrap
 msgid "Operation mode:\n"
-msgstr "¥ª¥Ú¥ì¡¼¥·¥ç¥ó¥â¡¼¥É:\n"
+msgstr "ã‚ªãƒšãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ãƒ¢ãƒ¼ãƒ‰:\n"
 
-#: src/envsubst.c:188
+#: src/envsubst.c:193
 #, c-format, no-wrap
 msgid "  -v, --variables             output the variables occurring in SHELL-FORMAT\n"
-msgstr "  -v, --variables             ¥·¥§¥ë·Á¼°¤Ë¸½¤ì¤ëÊÑ¿ô¤ò½ĞÎÏ\n"
+msgstr "  -v, --variables             ã‚·ã‚§ãƒ«å½¢å¼ã«ç¾ã‚Œã‚‹å¤‰æ•°ã‚’å‡ºåŠ›\n"
 
-#: src/envsubst.c:192
+#: src/envsubst.c:197 src/gettext.c:280 src/ngettext.c:248
+#: src/printf_gettext.c:188 src/printf_ngettext.c:224
 #, c-format, no-wrap
 msgid "Informative output:\n"
-msgstr "Í­±×¤Ê½ĞÎÏ:\n"
+msgstr "æœ‰ç›Šãªå‡ºåŠ›:\n"
 
-#: src/envsubst.c:195
+#: src/envsubst.c:200
 #, c-format, no-wrap
 msgid "  -h, --help                  display this help and exit\n"
-msgstr "  -h, --help                  ¤³¤Î¥Ø¥ë¥×¤òÉ½¼¨¤·¤Æ½ªÎ»\n"
+msgstr "  -h, --help                  ã“ã®ãƒ˜ãƒ«ãƒ—ã‚’è¡¨ç¤ºã—ã¦çµ‚äº†\n"
 
-#: src/envsubst.c:198
+#: src/envsubst.c:203
 #, c-format, no-wrap
 msgid "  -V, --version               output version information and exit\n"
-msgstr "  -V, --version               ¥Ğ¡¼¥¸¥ç¥ó¾ğÊó¤ò½ĞÎÏ¤·¤Æ½ªÎ»\n"
+msgstr "  -V, --version               ãƒãƒ¼ã‚¸ãƒ§ãƒ³æƒ…å ±ã‚’å‡ºåŠ›ã—ã¦çµ‚äº†\n"
 
-#: src/envsubst.c:202
+#: src/envsubst.c:207
 #, c-format, no-wrap
 msgid ""
 "In normal operation mode, standard input is copied to standard output,\n"
@@ -179,78 +111,116 @@ msgid ""
 "substituted; otherwise all environment variables references occurring in\n"
 "standard input are substituted.\n"
 msgstr ""
-"ÄÌ¾ï¤Î¥ª¥Ú¥ì¡¼¥·¥ç¥ó¥â¡¼¥É¤Ç¤Ï, É¸½àÆşÎÏ¤¬É¸½à½ĞÎÏ¤Ë¥³¥Ô¡¼¤µ¤ì, $VARIABLE\n"
-"¤Ş¤¿¤Ï ${VARIABLE} ·Á¼°¤Î´Ä¶­ÊÑ¿ô¤ò»²¾È¤·, ¤½¤ì¤¾¤ì¤ÎÃÍ¤ËÃÖ´¹¤µ¤ì¤Ş¤¹.\n"
-"¥·¥§¥ë·Á¼°¤¬»ØÄê¤µ¤ì¤ë¤È, ¥·¥§¥ë·Á¼°¤Ç»²¾È¤µ¤ì¤ë, ¤½¤Î¤è¤¦¤Ê´Ä¶­ÊÑ¿ô¤À¤±¤¬\n"
-"ÂåÆş¤µ¤ì¤Ş¤¹¤¬, ¤½¤¦¤Ç¤Ê¤¤¾ì¹ç¤ÏÉ¸½àÆşÎÏ¤Ë¸½¤ì¤ëÁ´¤Æ¤Î´Ä¶­ÊÑ¿ô¤¬ÂåÆş¤µ¤ì¤Ş¤¹.\n"
+"é€šå¸¸ã®ã‚ªãƒšãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ãƒ¢ãƒ¼ãƒ‰ã§ã¯, æ¨™æº–å…¥åŠ›ãŒæ¨™æº–å‡ºåŠ›ã«ã‚³ãƒ”ãƒ¼ã•ã‚Œ, $VARIABLE\n"
+"ã¾ãŸã¯ ${VARIABLE} å½¢å¼ã®ç’°å¢ƒå¤‰æ•°ã‚’å‚ç…§ã—, ãã‚Œãã‚Œã®å€¤ã«ç½®æ›ã•ã‚Œã¾ã™.\n"
+"ã‚·ã‚§ãƒ«å½¢å¼ãŒæŒ‡å®šã•ã‚Œã‚‹ã¨, ã‚·ã‚§ãƒ«å½¢å¼ã§å‚ç…§ã•ã‚Œã‚‹, ãã®ã‚ˆã†ãªç’°å¢ƒå¤‰æ•°ã ã‘ãŒ\n"
+"ä»£å…¥ã•ã‚Œã¾ã™ãŒ, ãã†ã§ãªã„å ´åˆã¯æ¨™æº–å…¥åŠ›ã«ç¾ã‚Œã‚‹å…¨ã¦ã®ç’°å¢ƒå¤‰æ•°ãŒä»£å…¥ã•ã‚Œã¾ã™.\n"
 
-#: src/envsubst.c:211
+#: src/envsubst.c:216
 #, c-format, no-wrap
 msgid ""
 "When --variables is used, standard input is ignored, and the output consists\n"
 "of the environment variables that are referenced in SHELL-FORMAT, one per line.\n"
 msgstr ""
-"--variables ¤¬»È¤ï¤ì¤ë¤È, É¸½àÆşÎÏ¤ÏÌµ»ë¤µ¤ì, ½ĞÎÏ¤Ï 1¹Ô¤º¤Ä¥·¥§¥ë·Á¼°¤Ç\n"
-"»²¾È¤µ¤ì¤ë´Ä¶­ÊÑ¿ô¤«¤é¹½À®¤µ¤ì¤Ş¤¹.\n"
+"--variables ãŒä½¿ã‚ã‚Œã‚‹ã¨, æ¨™æº–å…¥åŠ›ã¯ç„¡è¦–ã•ã‚Œ, å‡ºåŠ›ã¯ 1è¡Œãšã¤ã‚·ã‚§ãƒ«å½¢å¼ã§\n"
+"å‚ç…§ã•ã‚Œã‚‹ç’°å¢ƒå¤‰æ•°ã‹ã‚‰æ§‹æˆã•ã‚Œã¾ã™.\n"
 
-#. TRANSLATORS: The placeholder indicates the bug-reporting address
-#. for this package.  Please add _another line_ saying
+#. TRANSLATORS: The first placeholder is the web address of the Savannah
+#. project of this package.  The second placeholder is the bug-reporting
+#. email address for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:245
-msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
-msgstr "¥Ğ¥°¥ì¥İ¡¼¥È¤Ï <bug-gnu-gettext@gnu.org> ¤Ş¤Ç.\n"
+#: src/envsubst.c:225 src/gettext.c:304 src/ngettext.c:269
+#: src/printf_gettext.c:277 src/printf_ngettext.c:313
+#, c-format
+msgid ""
+"Report bugs in the bug tracker at <%s>\n"
+"or by email to <%s>.\n"
+msgstr ""
+"ãƒã‚°ãƒ¬ãƒãƒ¼ãƒˆã¯ <%s> ã®ãƒã‚°ãƒˆãƒ©ãƒƒã‚«ãƒ¼ã«\n"
+"ã¾ãŸã¯ <%s> å®›ã«é›»å­ãƒ¡ãƒ¼ãƒ«ã§.\n"
 
-#: src/envsubst.c:442
+#: src/envsubst.c:453
 #, c-format
 msgid "error while reading \"%s\""
-msgstr "\"%s\" ÆÉ¤ß¹ş¤ßÃæ¤Î¥¨¥é¡¼"
+msgstr "\"%s\" èª­ã¿è¾¼ã¿ä¸­ã®ã‚¨ãƒ©ãƒ¼"
 
-#: src/envsubst.c:443
+#: src/envsubst.c:453
 msgid "standard input"
-msgstr "É¸½àÆşÎÏ"
+msgstr "æ¨™æº–å…¥åŠ›"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/gettext.c:140 src/ngettext.c:129
+#: src/gettext.c:144 src/ngettext.c:134
 msgid "Ulrich Drepper"
 msgstr "Ulrich Drepper"
 
-#: src/gettext.c:244
+#: src/gettext.c:254
 #, c-format, no-wrap
 msgid ""
 "Usage: %s [OPTION] [[TEXTDOMAIN] MSGID]\n"
 "or:    %s [OPTION] -s [MSGID]...\n"
 msgstr ""
-"»ÈÍÑË¡: %s [¥ª¥×¥·¥ç¥ó] [[TEXTDOMAIN] MSGID]\n"
-"¤Ş¤¿¤Ï: %s [¥ª¥×¥·¥ç¥ó] -s [MSGID]...\n"
+"ä½¿ç”¨æ³•: %s [ã‚ªãƒ—ã‚·ãƒ§ãƒ³] [[TEXTDOMAIN] MSGID]\n"
+"ã¾ãŸã¯: %s [ã‚ªãƒ—ã‚·ãƒ§ãƒ³] -s [MSGID]...\n"
 
-#: src/gettext.c:250
+#: src/gettext.c:260
 #, c-format, no-wrap
 msgid "Display native language translation of a textual message.\n"
-msgstr "¸¶Ê¸¤Î¥á¥Ã¥»¡¼¥¸¤Î¼«¹ñ¸ìËİÌõ¤òÉ½¼¨.\n"
+msgstr "åŸæ–‡ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®è‡ªå›½èªç¿»è¨³ã‚’è¡¨ç¤º.\n"
 
-#: src/gettext.c:254
+#: src/gettext.c:263 src/ngettext.c:230 src/printf_gettext.c:179
+#: src/printf_ngettext.c:211
+#, c-format
+msgid "Options and arguments:\n"
+msgstr "ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã¨å¼•æ•°:\n"
+
+#: src/gettext.c:266
 #, c-format, no-wrap
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
+msgstr "  -d, --domain=TEXTDOMAIN   TEXTDOMAIN ã‹ã‚‰ç¿»è¨³ã•ã‚ŒãŸãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’èª­ã¿å‡ºã™\n"
+
+#: src/gettext.c:268 src/ngettext.c:235
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for MSGID\n"
+msgstr "  -c  --context=CONTEXT     MSGID ã«å¯¾ã™ã‚‹ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã‚’æŒ‡å®š\n"
+
+#: src/gettext.c:270 src/ngettext.c:237
+#, c-format
+msgid "  -e                        enable expansion of some escape sequences\n"
+msgstr "  -e                        ã„ãã¤ã‹ã®ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã®å±•é–‹ã‚’å¯èƒ½ã«\n"
+
+#: src/gettext.c:272
+#, c-format
+msgid "  -n                        suppress trailing newline\n"
+msgstr "  -n                        æœ«å°¾ã®æ”¹è¡Œã‚’æŠ‘åˆ¶\n"
+
+#: src/gettext.c:274 src/ngettext.c:239
+#, c-format
+msgid "  -E                        (ignored for compatibility)\n"
+msgstr "  -E                        (äº’æ›æ€§ã®ãŸã‚ã«ç„¡è¦–)\n"
+
+#: src/gettext.c:276
+#, c-format
 msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -n                        suppress trailing newline\n"
-"  -V, --version             display version information and exit\n"
 "  [TEXTDOMAIN] MSGID        retrieve translated message corresponding\n"
 "                            to MSGID from TEXTDOMAIN\n"
 msgstr ""
-"  -d, --domain=TEXTDOMAIN   TEXTDOMAIN ¤«¤éËİÌõ¤µ¤ì¤¿¥á¥Ã¥»¡¼¥¸¤ò¼è¤ê½Ğ¤¹\n"
-"  -e                        ¥¨¥¹¥±¡¼¥×¥·¡¼¥±¥ó¥¹¤òÅ¸³«¤¹¤ë\n"
-"  -E                        (¸ß´¹À­¤Î¤¿¤á¤ËÌµ»ë¤µ¤ì¤ë)\n"
-"  -h, --help                ¤³¤Î¥Ø¥ë¥×¤òÉ½¼¨¤·¤Æ½ªÎ»\n"
-"  -n                        ËöÈø¤Î²ş¹Ô¤ò½ĞÎÏ¤·¤Ê¤¤\n"
-"  -V, --version             ¥Ğ¡¼¥¸¥ç¥ó¾ğÊó¤òÉ½¼¨¤·¤Æ½ªÎ»\n"
-"  [TEXTDOMAIN] MSGID        MSGID ¤Ë±ş¤¸¤¿ËİÌõ¥á¥Ã¥»¡¼¥¸¤ò TEXTDOMAIN ¤«¤é\n"
-"                            ¼è¤ê½Ğ¤¹\n"
+"  [TEXTDOMAIN] MSGID        TEXTDOMAIN ã‹ã‚‰ MSGID ã«ä¸€è‡´ã™ã‚‹ç¿»è¨³ã•ã‚ŒãŸ\n"
+"                            ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’èª­ã¿å‡ºã™\n"
 
-#: src/gettext.c:265
+#: src/gettext.c:282 src/ngettext.c:250 src/printf_gettext.c:190
+#: src/printf_ngettext.c:226
+#, c-format
+msgid "  -h, --help                display this help and exit\n"
+msgstr "  -h, --help                ã“ã®ãƒ˜ãƒ«ãƒ—ã‚’è¡¨ç¤ºã—ã¦çµ‚äº†\n"
+
+#: src/gettext.c:284 src/ngettext.c:252 src/printf_gettext.c:192
+#: src/printf_ngettext.c:228
+#, c-format
+msgid "  -V, --version             display version information and exit\n"
+msgstr "  -V, --version             ãƒãƒ¼ã‚¸ãƒ§ãƒ³æƒ…å ±ã‚’è¡¨ç¤ºã—ã¦çµ‚äº†\n"
+
+#: src/gettext.c:288
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -262,49 +232,48 @@ msgid ""
 "found in the selected catalog are translated.\n"
 "Standard search directory: %s\n"
 msgstr ""
-"¤â¤· TEXTDOMAIN ¥Ñ¥é¥á¡¼¥¿¤¬»ØÄê¤µ¤ì¤Ê¤±¤ì¤Ğ, ´Ä¶­ÊÑ¿ô TEXTDOMAIN ¤«¤é\n"
-"¥É¥á¥¤¥ó¤¬·è¤Ş¤ê¤Ş¤¹. ¤â¤·É¸½à¤Î¥Ç¥£¥ì¥¯¥È¥ê¤Ë¥á¥Ã¥»¡¼¥¸¥«¥¿¥í¥°¤¬\n"
-"¸«¤Ä¤«¤é¤Ê¤±¤ì¤Ğ, ´Ä¶­ÊÑ¿ô TEXTDOMAINDIR ¤Ç»ØÄê¤µ¤ì¤¿¾ì½ê¤«¤éÃµ¤·¤Ş¤¹.\n"
-"-s ¥ª¥×¥·¥ç¥ó¤ò¤Ä¤±¤Æ»È¤¦¤È¥×¥í¥°¥é¥à¤Ï 'echo' ¥³¥Ş¥ó¥É¤Î¤è¤¦¤ËÆ°ºî¤·¤Ş¤¹.\n"
-"¤·¤«¤·¤½¤Î°ú¿ô¤òÃ±¤Ë¤½¤Î¤Ş¤ŞÉ¸½à½ĞÎÏ¤Ë¥³¥Ô¡¼¤¹¤ë¤ï¤±¤Ç¤Ï¤¢¤ê¤Ş¤»¤ó.\n"
-"ÁªÂò¤µ¤ì¤¿¥«¥¿¥í¥°Ãæ¤Ë»ØÄê¤µ¤ì¤¿¥á¥Ã¥»¡¼¥¸¤¬¤¢¤ì¤Ğ, ¤½¤Î¥á¥Ã¥»¡¼¥¸¤ÎÂå¤ï¤ê¤Ë\n"
-"ËİÌõ¤µ¤ì¤¿¤â¤Î¤òÉ½¼¨¤·¤Ş¤¹.\n"
-"É¸½à¤Î¸¡º÷¥Ç¥£¥ì¥¯¥È¥ê: %s\n"
+"ã‚‚ã— TEXTDOMAIN ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒæŒ‡å®šã•ã‚Œãªã‘ã‚Œã°, ç’°å¢ƒå¤‰æ•° TEXTDOMAIN ã‹ã‚‰\n"
+"ãƒ‰ãƒ¡ã‚¤ãƒ³ãŒæ±ºã¾ã‚Šã¾ã™. ã‚‚ã—æ¨™æº–ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚«ã‚¿ãƒ­ã‚°ãŒ\n"
+"è¦‹ã¤ã‹ã‚‰ãªã‘ã‚Œã°, ç’°å¢ƒå¤‰æ•° TEXTDOMAINDIR ã§æŒ‡å®šã•ã‚ŒãŸå ´æ‰€ã‹ã‚‰æ¢ã—ã¾ã™.\n"
+"-s ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ã¤ã‘ã¦ä½¿ã†ã¨ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã¯ 'echo' ã‚³ãƒãƒ³ãƒ‰ã®ã‚ˆã†ã«å‹•ä½œã—ã¾ã™.\n"
+"ã—ã‹ã—ãã®å¼•æ•°ã‚’å˜ã«ãã®ã¾ã¾æ¨™æº–å‡ºåŠ›ã«ã‚³ãƒ”ãƒ¼ã™ã‚‹ã‚ã‘ã§ã¯ã‚ã‚Šã¾ã›ã‚“.\n"
+"é¸æŠã•ã‚ŒãŸã‚«ã‚¿ãƒ­ã‚°ä¸­ã«æŒ‡å®šã•ã‚ŒãŸãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒã‚ã‚Œã°, ãã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®ä»£ã‚ã‚Šã«\n"
+"ç¿»è¨³ã•ã‚ŒãŸã‚‚ã®ã‚’è¡¨ç¤ºã—ã¾ã™.\n"
+"æ¨™æº–ã®æ¤œç´¢ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª: %s\n"
 
-#: src/ngettext.c:212
+#: src/ngettext.c:221
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n"
-msgstr "»ÈÍÑË¡: %s [¥ª¥×¥·¥ç¥ó] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n"
+msgstr "ä½¿ç”¨æ³•: %s [ã‚ªãƒ—ã‚·ãƒ§ãƒ³] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n"
 
-#: src/ngettext.c:217
+#: src/ngettext.c:226
 #, c-format, no-wrap
 msgid ""
 "Display native language translation of a textual message whose grammatical\n"
 "form depends on a number.\n"
-msgstr "Ê¸Ë¡¾å, ·Á¼°¤¬¿ô¤Ë¤è¤Ã¤Æ°Û¤Ê¤Ã¤Æ¤¤¤ë¸¶Ê¸¥á¥Ã¥»¡¼¥¸¤Î¼«¹ñ¸ìËİÌõ¤òÉ½¼¨.\n"
-
-#: src/ngettext.c:222
-#, c-format, no-wrap
-msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -V, --version             display version information and exit\n"
-"  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
-"  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
-"  COUNT                     choose singular/plural form based on this value\n"
-msgstr ""
-"  -d, --domain=TEXTDOMAIN   TEXTDOMAIN ¤«¤éËİÌõ¤µ¤ì¤¿¥á¥Ã¥»¡¼¥¸¤ò¼è¤ê½Ğ¤¹\n"
-"  -e                        ¥¨¥¹¥±¡¼¥×¥·¡¼¥±¥ó¥¹¤òÅ¸³«¤¹¤ë\n"
-"  -E                        (¸ß´¹À­¤Î¤¿¤á¤ËÌµ»ë¤µ¤ì¤ë)\n"
-"  -h, --help                ¤³¤Î¥Ø¥ë¥×¤òÉ½¼¨¤·¤Æ½ªÎ»\n"
-"  -V, --version             ¥Ğ¡¼¥¸¥ç¥ó¾ğÊó¤òÉ½¼¨¤·¤Æ½ªÎ»\n"
-"  [TEXTDOMAIN]              ËİÌõ¥á¥Ã¥»¡¼¥¸¤ò TEXTDOMAIN ¤«¤é¼è¤ê½Ğ¤¹\n"
-"  MSGID MSGID-PLURAL        MSGID (Ã±¿ô·Á) / MSGID-PLURAL (Ê£¿ô·Á) ¤òËİÌõ\n"
-"  COUNT                     ¤³¤ÎÃÍ¤ò´ğËÜ¤Ë¤·¤ÆÃ±¿ô/Ê£¿ô·Á¤òÁªÂò\n"
+msgstr "æ–‡æ³•ä¸Š, å½¢å¼ãŒæ•°ã«ã‚ˆã£ã¦ç•°ãªã£ã¦ã„ã‚‹åŸæ–‡ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®è‡ªå›½èªç¿»è¨³ã‚’è¡¨ç¤º.\n"
 
 #: src/ngettext.c:233
+#, c-format, no-wrap
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
+msgstr "  -d, --domain=TEXTDOMAIN   TEXTDOMAIN ã‹ã‚‰ç¿»è¨³ã•ã‚ŒãŸãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’èª­ã¿å‡ºã™\n"
+
+#: src/ngettext.c:241
+#, c-format
+msgid "  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
+msgstr "  [TEXTDOMAIN]              TEXTDOMAIN ã‹ã‚‰ç¿»è¨³ã•ã‚ŒãŸãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’èª­ã¿å‡ºã™\n"
+
+#: src/ngettext.c:243
+#, c-format
+msgid "  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
+msgstr "  MSGID MSGID-PLURAL        MSGID (å˜æ•°å½¢) / MSGID-PLURAL (è¤‡æ•°å½¢) ã‚’ç¿»è¨³\n"
+
+#: src/ngettext.c:245 src/printf_ngettext.c:219
+#, c-format
+msgid "  COUNT                     choose singular/plural form based on this value\n"
+msgstr "  COUNT                     ã“ã®å€¤ã‚’ã‚‚ã¨ã«ã—ãŸå˜æ•°å½¢ã‹è¤‡æ•°å½¢ã‹ã‚’é¸æŠ\n"
+
+#: src/ngettext.c:256
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -313,7 +282,267 @@ msgid ""
 "variable TEXTDOMAINDIR.\n"
 "Standard search directory: %s\n"
 msgstr ""
-"¤â¤· TEXTDOMAIN ¥Ñ¥é¥á¡¼¥¿¤¬»ØÄê¤µ¤ì¤Ê¤±¤ì¤Ğ, ´Ä¶­ÊÑ¿ô TEXTDOMAIN ¤«¤é\n"
-"¥É¥á¥¤¥ó¤¬·è¤Ş¤ê¤Ş¤¹. ¤â¤·É¸½à¤Î¥Ç¥£¥ì¥¯¥È¥ê¤Ë¥á¥Ã¥»¡¼¥¸¥«¥¿¥í¥°¤¬\n"
-"¸«¤Ä¤«¤é¤Ê¤±¤ì¤Ğ, ´Ä¶­ÊÑ¿ô TEXTDOMAINDIR ¤Ç»ØÄê¤µ¤ì¤¿¾ì½ê¤«¤éÃµ¤·¤Ş¤¹.\n"
-"É¸½à¤Î¸¡º÷¥Ç¥£¥ì¥¯¥È¥ê: %s\n"
+"ã‚‚ã— TEXTDOMAIN ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒæŒ‡å®šã•ã‚Œãªã‘ã‚Œã°, ç’°å¢ƒå¤‰æ•° TEXTDOMAIN ã‹ã‚‰\n"
+"ãƒ‰ãƒ¡ã‚¤ãƒ³ãŒæ±ºã¾ã‚Šã¾ã™. ã‚‚ã—æ¨™æº–ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚«ã‚¿ãƒ­ã‚°ãŒ\n"
+"è¦‹ã¤ã‹ã‚‰ãªã‘ã‚Œã°, ç’°å¢ƒå¤‰æ•° TEXTDOMAINDIR ã§æŒ‡å®šã•ã‚ŒãŸå ´æ‰€ã‹ã‚‰æ¢ã—ã¾ã™.\n"
+"æ¨™æº–ã®æ¤œç´¢ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª: %s\n"
+
+#: src/printf-command.c:154
+#, c-format
+msgid "In the directive number %zu, the argument number 0 is not a positive integer."
+msgstr "å‘½ä»¤ç•ªå· %zu ã§ã¯, å¼•æ•°ç•ªå· 0 ãŒæ­£ã®æ•´æ•°ã§ã¯ã‚ã‚Šã¾ã›ã‚“."
+
+#: src/printf-command.c:237
+#, c-format
+msgid "The string ends in the middle of a directive."
+msgstr "æ–‡å­—åˆ—ãŒå‘½ä»¤ã®é€”ä¸­ã§çµ‚äº†ã—ã¦ã„ã¾ã™."
+
+#: src/printf-command.c:242
+#, c-format
+msgid "In the directive number %zu, the character '%c' is not a valid conversion specifier."
+msgstr "å‘½ä»¤ç•ªå· %zu ã§ã¯, æ–‡å­— '%c' ã¯æœ‰åŠ¹ãªå¤‰æ›æŒ‡å®šå­ã§ã¯ã‚ã‚Šã¾ã›ã‚“."
+
+#: src/printf-command.c:246
+#, c-format
+msgid "The character that terminates the directive number %zu is not a valid conversion specifier."
+msgstr "å‘½ä»¤ç•ªå· %zu ã‚’çµ‚äº†ã™ã‚‹æ–‡å­—ãŒæœ‰åŠ¹ãªå¤‰æ›æŒ‡å®šå­ã§ã¯ã‚ã‚Šã¾ã›ã‚“."
+
+#: src/printf-command.c:255 src/printf-command.c:259
+#, c-format
+msgid "In the directive number %zu, the flag '%c' is invalid for the conversion '%c'."
+msgstr "å‘½ä»¤ç•ªå· %zu ã§ã¯, ãƒ•ãƒ©ã‚° '%c' ã¯å¤‰æ› '%c' ã«å¯¾ã—ã¦ç„¡åŠ¹ã§ã™."
+
+#: src/printf-command.c:278 src/printf-command.c:292
+#, c-format
+msgid "The string refers to arguments both through absolute argument numbers and through unnumbered argument specifications."
+msgstr "æ–‡å­—åˆ—ãŒçµ¶å¯¾å¼•æ•°ç•ªå·ã¨ç•ªå·ãªã—å¼•æ•°æŒ‡å®šã®ä¸¡æ–¹ã‚’ä½¿ã£ã¦å¼•æ•°ã‚’å‚ç…§ã—ã¦ã„ã¾ã™."
+
+#: src/printf-command.c:394
+#, c-format
+msgid "The string ends in the middle of an escape sequence."
+msgstr "æ–‡å­—åˆ—ãŒã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã®é€”ä¸­ã§çµ‚äº†ã—ã¦ã„ã¾ã™."
+
+#: src/printf-command.c:402
+#, c-format
+msgid "The escape sequence '%c%c' is unsupported (not in POSIX)."
+msgstr "ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ '%c%c' ã¯æœªå®Ÿè£… (POSIX ã«ãªã„)."
+
+#: src/printf-command.c:403
+#, c-format
+msgid "The escape sequence '%c%c' is invalid."
+msgstr "ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ '%c%c' ã¯ç„¡åŠ¹."
+
+#: src/printf-command.c:407
+#, c-format
+msgid "This escape sequence is invalid."
+msgstr "ã“ã®ã‚¨ã‚¹ã‚±ãƒ¼ãƒ— ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã¯ç„¡åŠ¹."
+
+#: src/printf-command.c:455 src/printf-command.c:501 src/printf-command.c:568
+#: src/printf-command.c:638 src/printf-command.c:691
+#, c-format
+msgid "write error"
+msgstr "æ›¸ãè¾¼ã¿ã‚¨ãƒ©ãƒ¼"
+
+#: src/printf-command.c:529 src/printf-command.c:556 src/printf-command.c:597
+#: src/printf-command.c:626 src/printf-command.c:679
+#, c-format
+msgid "%s: expected a numeric value"
+msgstr "%s: æ•°å€¤ãŒå¿…è¦"
+
+#: src/printf-command.c:550 src/printf-command.c:620 src/printf-command.c:673
+#, c-format
+msgid "%s: value not completely converted"
+msgstr "%s: å€¤ã®å¤‰æ›ãŒä¸å®Œå…¨"
+
+#: src/printf-command.c:717
+#, c-format
+msgid "The translated format string consumes %zu arguments, whereas the original format string consumes only %zu arguments."
+msgstr "ç¿»è¨³ã•ã‚ŒãŸå½¢å¼æ–‡å­—åˆ—ã¯ %zu å€‹ã®å¼•æ•°ã‚’ä½¿ã„ã¾ã™ãŒ, å…ƒã®å½¢å¼æ–‡å­—åˆ—ãŒä½¿ã†ã®ã¯ %zu å€‹ã®å¼•æ•°ã®ã¿ã§ã™."
+
+#: src/printf-command.c:728
+#, c-format
+msgid "warning: ignoring excess arguments, starting with %s"
+msgstr "è­¦å‘Š: éå‰°ãªå¼•æ•°ã‚’ç„¡è¦–ã—ã¦ %s ã‹ã‚‰é–‹å§‹"
+
+#: src/printf_gettext.c:128
+#, c-format
+msgid "missing format string"
+msgstr "å½¢å¼æ–‡å­—åˆ—ãŒã‚ã‚Šã¾ã›ã‚“"
+
+#: src/printf_gettext.c:170
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION] FORMAT [ARGUMENT]...\n"
+msgstr "ä½¿ç”¨æ³•: %s [ã‚ªãƒ—ã‚·ãƒ§ãƒ³] FORMAT [ARGUMENT]\n"
+
+#: src/printf_gettext.c:175
+#, c-format, no-wrap
+msgid ""
+"Produces formatted output, applying the native language translation of FORMAT\n"
+"to the ARGUMENTs.\n"
+msgstr "ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã•ã‚ŒãŸå‡ºåŠ›ã‚’ç”Ÿæˆã—ã¦ ARGUMENT ã« FORMAT ã®ãƒã‚¤ãƒ†ã‚£ãƒ–è¨€èªç¿»è¨³ã‚’é©ç”¨.\n"
+
+#: src/printf_gettext.c:181 src/printf_ngettext.c:213
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for FORMAT\n"
+msgstr "  -c  --context=CONTEXT     FORMAT ã«å¯¾ã™ã‚‹ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã‚’æŒ‡å®š\n"
+
+#: src/printf_gettext.c:183
+#, c-format
+msgid "  FORMAT                    format string\n"
+msgstr "  FORMAT                    å½¢å¼æ–‡å­—åˆ—\n"
+
+#: src/printf_gettext.c:185 src/printf_ngettext.c:221
+#, c-format
+msgid "  ARGUMENT                  string or numeric argument\n"
+msgstr "  ARGUMENT                  æ–‡å­—åˆ—ã¾ãŸã¯æ•°å€¤ã®å¼•æ•°\n"
+
+#: src/printf_gettext.c:196
+#, c-format, no-wrap
+msgid ""
+"The format string consists of\n"
+"  - plain text,\n"
+"  - directives, that start with '%c',\n"
+"  - escape sequences, that start with a backslash.\n"
+msgstr ""
+"å½¢å¼æ–‡å­—åˆ—ã¯æ¬¡ã®è¦ç´ ã‹ã‚‰æ§‹æˆ:\n"
+"  - ãƒ—ãƒ¬ãƒ¼ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ\n"
+"  - '%c' ã§å§‹ã¾ã‚‹å‘½ä»¤\n"
+"  - ãƒãƒƒã‚¯ã‚¹ãƒ©ãƒƒã‚·ãƒ¥ã§å§‹ã¾ã‚‹ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹\n"
+
+#: src/printf_gettext.c:204 src/printf_ngettext.c:240
+#, c-format, no-wrap
+msgid ""
+"A directive that consumes an argument\n"
+"  - starts with '%s' or '%s' where %s is a positive integer,\n"
+"  - is optionally followed by any of the characters '%c', '%c', '%c', '%c', '%c',\n"
+"    each of which acts as a flag,\n"
+"  - is optionally followed by a width specification (a nonnegative integer),\n"
+"  - is optionally followed by '%c' and a precision specification (an optional\n"
+"    nonnegative integer),\n"
+"  - is finished by a specifier\n"
+"      - '%c', that prints a character,\n"
+"      - '%c', that prints a string,\n"
+"      - '%c', '%c', that print an integer,\n"
+"      - '%c', '%c', '%c', '%c', that print an unsigned (nonnegative) integer,\n"
+"      - '%c', '%c', that print a floating-point number in scientific notation,\n"
+"      - '%c', '%c', that print a floating-point number without an exponent,\n"
+"      - '%c', '%c', that print a floating-point number in general notation,\n"
+"      - '%c', '%c', that print a floating-point number in hexadecimal notation.\n"
+"Additionally there is the directive '%s', that prints a single '%c'.\n"
+msgstr ""
+"å¼•æ•°ã‚’ä½¿ã†å‘½ä»¤ã¯ä»¥ä¸‹ã®é€šã‚Š:\n"
+"  - '%s' ã¾ãŸã¯ '%s' ã§å§‹ã¾ã‚‹ (%s ã¯æ­£ã®æ•´æ•°)\n"
+"  - '%c', '%c', '%c', '%c', '%c' ã®ã„ãšã‚Œã‹ã®æ–‡å­—ãŒã‚ªãƒ—ã‚·ãƒ§ãƒ³ã§ç¶šã\n"
+"    (ãã‚Œãã‚Œãƒ•ãƒ©ã‚°ã¨ã—ã¦æ©Ÿèƒ½)\n"
+"  - å¹…æŒ‡å®š (éè² ã®æ•´æ•°) ãŒã‚ªãƒ—ã‚·ãƒ§ãƒ³ã§ç¶šã\n"
+"  - '%c' ã¨ç²¾åº¦æŒ‡å®š (ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã®éè² ã®æ•´æ•°) ãŒã‚ªãƒ—ã‚·ãƒ§ãƒ³ã§ç¶šã\n"
+"  - ä»¥ä¸‹ã®æŒ‡å®šå­ã§çµ‚ã‚ã‚‹\n"
+"      - '%c': æ–‡å­—ã‚’å‡ºåŠ›\n"
+"      - '%c': æ–‡å­—åˆ—ã‚’å‡ºåŠ›\n"
+"      - '%c', '%c': æ•´æ•°ã‚’å‡ºåŠ›\n"
+"      - '%c', '%c', '%c', '%c': ç¬¦å·ãªã— (éè² ) æ•´æ•°ã‚’å‡ºåŠ›\n"
+"      - '%c', '%c': ç§‘å­¦çš„è¨˜æ•°æ³•ã§æµ®å‹•å°æ•°ç‚¹æ•°ã‚’å‡ºåŠ›\n"
+"      - '%c', '%c': æŒ‡æ•°ãªã—æµ®å‹•å°æ•°ç‚¹æ•°ã‚’å‡ºåŠ›\n"
+"      - '%c', '%c': ä¸€èˆ¬çš„ãªè¡¨è¨˜æ³•ã§æµ®å‹•å°æ•°ç‚¹æ•°ã‚’å‡ºåŠ›\n"
+"      - '%c', '%c': 16é€²è¡¨è¨˜ã§æµ®å‹•å°æ•°ç‚¹æ•°ã‚’å‡ºåŠ›\n"
+"ã•ã‚‰ã« '%s' å‘½ä»¤ã¯å˜ä¸€ã® '%c' ã‚’å‡ºåŠ›ã™ã‚‹.\n"
+
+#: src/printf_gettext.c:233 src/printf_ngettext.c:269
+#, c-format, no-wrap
+msgid ""
+"If a directive specifies the argument by its number ('%s' notation),\n"
+"all directives that consume an argument must do so.\n"
+msgstr ""
+"å‘½ä»¤ãŒå¼•æ•°ã‚’æ•°å­— ('%s' è¡¨è¨˜) ã§æŒ‡å®šã™ã‚‹å ´åˆ,\n"
+"å¼•æ•°ã‚’ä½¿ã†ã™ã¹ã¦ã®å‘½ä»¤ã‚‚åŒæ§˜ã«æŒ‡å®šã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™.\n"
+
+#. TRANSLATORS: Most of the placeholders expand to 2 characters.
+#. The last placeholder expands to 4 characters.
+#: src/printf_gettext.c:240 src/printf_ngettext.c:276
+#, c-format
+msgid ""
+"The escape sequences are:\n"
+"\n"
+"  %s      backslash\n"
+"  %s      alert (BEL)\n"
+"  %s      backspace (BS)\n"
+"  %s      form feed (FF)\n"
+"  %s      new line (LF)\n"
+"  %s      carriage return (CR)\n"
+"  %s      horizontal tab (HT)\n"
+"  %s      vertical tab (VT)\n"
+"  %s    octal number with 1 to 3 octal digits\n"
+msgstr ""
+"ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã¯ä»¥ä¸‹ã®é€šã‚Š:\n"
+"\n"
+"  %s      ãƒãƒƒã‚¯ã‚¹ãƒ©ãƒƒã‚·ãƒ¥\n"
+"  %s      ã‚¢ãƒ©ãƒ¼ãƒˆ (BEL)\n"
+"  %s      ãƒãƒƒã‚¯ã‚¹ãƒšãƒ¼ã‚¹ (BS)\n"
+"  %s      æ”¹ãƒšãƒ¼ã‚¸ (FF)\n"
+"  %s      æ”¹è¡Œ (LF)\n"
+"  %s      ã‚­ãƒ£ãƒªãƒƒã‚¸ãƒªã‚¿ãƒ¼ãƒ³ (CR)\n"
+"  %s      æ°´å¹³ã‚¿ãƒ– (HT)\n"
+"  %s      å‚ç›´ã‚¿ãƒ– (VT)\n"
+"  %s    1ã‹ã‚‰3æ¡ã®8é€²æ•°\n"
+
+#: src/printf_gettext.c:255 src/printf_ngettext.c:291
+#, c-format
+msgid "Environment variables:\n"
+msgstr "ç’°å¢ƒå¤‰æ•°:\n"
+
+#: src/printf_gettext.c:259 src/printf_ngettext.c:295
+#, c-format, no-wrap
+msgid ""
+"The translation of the format string is looked up in the translation domain\n"
+"given by the environment variable %s.\n"
+msgstr "å½¢å¼æ–‡å­—åˆ—ã®ç¿»è¨³ã¯ç’°å¢ƒå¤‰æ•° %s ã§æŒ‡å®šã•ã‚ŒãŸç¿»è¨³ãƒ‰ãƒ¡ã‚¤ãƒ³ã§æ¤œç´¢ã•ã‚Œã¾ã™.\n"
+
+#: src/printf_gettext.c:264 src/printf_ngettext.c:300
+#, c-format, no-wrap
+msgid ""
+"It is looked up in the catalogs directory given by the environment variable\n"
+"%s or, if not present, in the default catalogs directory.\n"
+"This binary is configured to use the default catalogs directory:\n"
+"%s\n"
+msgstr ""
+"ç’°å¢ƒå¤‰æ•° %s ã§æŒ‡å®šã•ã‚ŒãŸã‚«ã‚¿ãƒ­ã‚°ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª, ã¾ãŸæŒ‡å®šã•ã‚Œãªã„å ´åˆã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®\n"
+"ã‚«ã‚¿ãƒ­ã‚°ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‹ã‚‰æ¤œç´¢ã•ã‚Œã¾ã™.\n"
+"ã“ã®ãƒã‚¤ãƒŠãƒªãŒãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ä½¿ç”¨ã™ã‚‹ã‚«ã‚¿ãƒ­ã‚°ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª:\n"
+"%s\n"
+
+#: src/printf_ngettext.c:202
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION] FORMAT FORMAT-PLURAL COUNT [ARGUMENT]...\n"
+msgstr "ä½¿ç”¨æ³•: %s [ã‚ªãƒ—ã‚·ãƒ§ãƒ³] FORMAT FORMAT-PLURAL COUNT [ARGUMENT]...\n"
+
+#: src/printf_ngettext.c:207
+#, c-format, no-wrap
+msgid ""
+"Produces formatted output, applying the native language translation of FORMAT\n"
+"and FORMAT-PLURAL, depending on COUNT, to the ARGUMENTs.\n"
+msgstr ""
+"COUNT ã«å¿œã˜ã¦ FORMAT ãŠã‚ˆã³ FORMAT-PLURAL ã®ãƒã‚¤ãƒ†ã‚£ãƒ–è¨€èªç¿»è¨³ã‚’\n"
+"ARGUMENT ã«é©ç”¨ã—ã¦ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã•ã‚ŒãŸå‡ºåŠ›ã‚’ç”Ÿæˆ.\n"
+
+#: src/printf_ngettext.c:215
+#, c-format
+msgid "  FORMAT                    English singular form of format string\n"
+msgstr "  FORMAT                    å½¢å¼æ–‡å­—åˆ—ã®è‹±èªã®å˜æ•°å½¢\n"
+
+#: src/printf_ngettext.c:217
+#, c-format
+msgid "  FORMAT-PLURAL             English plural form of format string\n"
+msgstr "  FORMAT-PLURAL             å½¢å¼æ–‡å­—åˆ—ã®è‹±èªã®è¤‡æ•°å½¢\n"
+
+#: src/printf_ngettext.c:232
+#, c-format, no-wrap
+msgid ""
+"Each format string consists of\n"
+"  - plain text,\n"
+"  - directives, that start with '%c',\n"
+"  - escape sequences, that start with a backslash.\n"
+msgstr ""
+"å„å½¢å¼æ–‡å­—åˆ—ã¯ä»¥ä¸‹ã®è¦ç´ ã§æ§‹æˆ:\n"
+"  - ãƒ—ãƒ¬ãƒ¼ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ\n"
+"  - '%c' ã§å§‹ã¾ã‚‹å‘½ä»¤\n"
+"  - ãƒãƒƒã‚¯ã‚¹ãƒ©ãƒƒã‚·ãƒ¥ã§å§‹ã¾ã‚‹ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹\n"

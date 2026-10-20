@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -40,11 +28,12 @@
 #include <epan/conversation.h>
 #include <epan/conversation_table.h>
 #include <epan/proto_data.h>
+#include <epan/unit_strings.h>
 
 void proto_register_ipx(void);
 void proto_reg_handoff_ipx(void);
 
-static int ipx_tap = -1;
+static int ipx_tap;
 
 /* The information in this module (IPX, SPX, NCP) comes from:
 	NetWare LAN Analysis, Second Edition
@@ -57,86 +46,92 @@ static int ipx_tap = -1;
 
 */
 
-static int proto_ipx = -1;
-static int hf_ipx_checksum = -1;
-static int hf_ipx_len = -1;
-static int hf_ipx_src = -1;
-static int hf_ipx_dst = -1;
-static int hf_ipx_addr = -1;
-static int hf_ipx_hops = -1;
-static int hf_ipx_packet_type = -1;
-static int hf_ipx_dnet = -1;
-static int hf_ipx_dnode = -1;
-static int hf_ipx_dsocket = -1;
-static int hf_ipx_snet = -1;
-static int hf_ipx_snode = -1;
-static int hf_ipx_ssocket = -1;
-static int hf_ipx_net = -1;
-static int hf_ipx_node = -1;
-static int hf_ipx_socket = -1;
+static int proto_ipx;
+static int hf_ipx_checksum;
+static int hf_ipx_len;
+static int hf_ipx_src;
+static int hf_ipx_dst;
+static int hf_ipx_addr;
+static int hf_ipx_hops;
+static int hf_ipx_packet_type;
+static int hf_ipx_dnet;
+static int hf_ipx_dnode;
+static int hf_ipx_dsocket;
+static int hf_ipx_snet;
+static int hf_ipx_snode;
+static int hf_ipx_ssocket;
+static int hf_ipx_net;
+static int hf_ipx_node;
+static int hf_ipx_socket;
 
-static gint ett_ipx = -1;
+static int ett_ipx;
 
 static dissector_table_t ipx_type_dissector_table;
 static dissector_table_t ipx_socket_dissector_table;
 static dissector_table_t spx_socket_dissector_table;
+static dissector_handle_t ipx_handle;
+static dissector_handle_t ipxsap_handle;
+static dissector_handle_t spx_handle;
+static dissector_handle_t ipxrip_handle;
+static dissector_handle_t serialization_handle;
+static dissector_handle_t ipxmsg_handle;
 
-static int proto_spx = -1;
-static int hf_spx_connection_control = -1;
-static int hf_spx_connection_control_sys = -1;
-static int hf_spx_connection_control_send_ack = -1;
-static int hf_spx_connection_control_attn = -1;
-static int hf_spx_connection_control_eom = -1;
-static int hf_spx_connection_control_v2 = -1;
-static int hf_spx_connection_control_neg_size = -1;
-static int hf_spx_connection_control_reserved = -1;
-static int hf_spx_connection_control_ext_header = -1;
-static int hf_spx_datastream_type = -1;
-static int hf_spx_src_id = -1;
-static int hf_spx_dst_id = -1;
-static int hf_spx_seq_nr = -1;
-static int hf_spx_ack_nr = -1;
-static int hf_spx_all_nr = -1;
-static int hf_spx_neg_size = -1;
-static int hf_spx_rexmt_frame = -1;
-static int hf_spx_rexmt_data = -1;
+static int proto_spx;
+static int hf_spx_connection_control;
+static int hf_spx_connection_control_sys;
+static int hf_spx_connection_control_send_ack;
+static int hf_spx_connection_control_attn;
+static int hf_spx_connection_control_eom;
+static int hf_spx_connection_control_v2;
+static int hf_spx_connection_control_neg_size;
+static int hf_spx_connection_control_reserved;
+static int hf_spx_connection_control_ext_header;
+static int hf_spx_datastream_type;
+static int hf_spx_src_id;
+static int hf_spx_dst_id;
+static int hf_spx_seq_nr;
+static int hf_spx_ack_nr;
+static int hf_spx_all_nr;
+static int hf_spx_neg_size;
+static int hf_spx_rexmt_frame;
+static int hf_spx_rexmt_data;
 
-static gint ett_spx = -1;
-static gint ett_spx_connctrl = -1;
+static int ett_spx;
+static int ett_spx_connctrl;
 
-static int proto_ipxrip = -1;
-static int hf_ipxrip_request = -1;
-static int hf_ipxrip_response = -1;
-static int hf_ipxrip_packet_type = -1;
-static int hf_ipxrip_route_vector = -1;
-static int hf_ipxrip_hops = -1;
-static int hf_ipxrip_ticks = -1;
+static int proto_ipxrip;
+static int hf_ipxrip_request;
+static int hf_ipxrip_response;
+static int hf_ipxrip_packet_type;
+static int hf_ipxrip_route_vector;
+static int hf_ipxrip_hops;
+static int hf_ipxrip_ticks;
 
-static gint ett_ipxrip = -1;
+static int ett_ipxrip;
 
-static int proto_serialization = -1;
-static int hf_serial_number = -1;
-static gint ett_serialization = -1;
+static int proto_serialization;
+static int hf_serial_number;
+static int ett_serialization;
 
-static int proto_sap = -1;
-static int hf_sap_request = -1;
-static int hf_sap_response = -1;
-/* Generated from convert_proto_tree_add_text.pl */
-static int hf_sap_intermediate_networks = -1;
-static int hf_sap_server_type = -1;
-static int hf_sap_packet_type = -1;
-static int hf_sap_node = -1;
-static int hf_sap_network = -1;
-static int hf_sap_server_name = -1;
-static int hf_sap_socket = -1;
+static int proto_sap;
+static int hf_sap_request;
+static int hf_sap_response;
+static int hf_sap_packet_type;
+static int hf_sap_server;
+static int hf_sap_server_type;
+static int hf_sap_server_name;
+static int hf_sap_server_network;
+static int hf_sap_server_node;
+static int hf_sap_server_socket;
+static int hf_sap_server_intermediate_networks;
 
-static gint ett_ipxsap = -1;
-static gint ett_ipxsap_server = -1;
+static int ett_ipxsap;
+static int ett_ipxsap_server;
 
-static gint ett_ipxmsg = -1;
-static int proto_ipxmsg = -1;
-static int hf_msg_conn = -1;
-static int hf_msg_sigchar = -1;
+static int ett_ipxmsg;
+static int proto_ipxmsg;
+static int hf_msg_conn;
+static int hf_msg_sigchar;
 
 #define UDP_PORT_IPX    213		/* RFC 1234 */
 
@@ -158,40 +153,44 @@ static const char* ipx_conv_get_filter_type(conv_item_t* conv, conv_filter_type_
 
 static ct_dissector_info_t ipx_ct_dissector_info = {&ipx_conv_get_filter_type};
 
-static int
-ipx_conversation_packet(void *pct, packet_info *pinfo, epan_dissect_t *edt _U_, const void *vip)
+static tap_packet_status
+ipx_conversation_packet(void *pct, packet_info *pinfo, epan_dissect_t *edt _U_, const void *vip, tap_flags_t flags)
 {
 	conv_hash_t *hash = (conv_hash_t*) pct;
+    hash->flags = flags;
+
 	const ipxhdr_t *ipxh=(const ipxhdr_t *)vip;
 
-	add_conversation_table_data(hash, &ipxh->ipx_src, &ipxh->ipx_dst, 0, 0, 1, pinfo->fd->pkt_len, &pinfo->rel_ts, &pinfo->abs_ts, &ipx_ct_dissector_info, PT_NONE);
+	add_conversation_table_data(hash, &ipxh->ipx_src, &ipxh->ipx_dst, 0, 0, 1, pinfo->fd->pkt_len, &pinfo->rel_ts, &pinfo->abs_ts, &ipx_ct_dissector_info, CONVERSATION_NONE);
 
-	return 1;
+	return TAP_PACKET_REDRAW;
 }
 
-static const char* ipx_host_get_filter_type(hostlist_talker_t* host, conv_filter_type_e filter)
+static const char* ipx_endpoint_get_filter_type(endpoint_item_t* endpoint, conv_filter_type_e filter)
 {
-	if ((filter == CONV_FT_ANY_ADDRESS) && (host->myaddress.type == AT_IPX))
+	if ((filter == CONV_FT_ANY_ADDRESS) && (endpoint->myaddress.type == AT_IPX))
 		return "ipx.addr";
 
 	return CONV_FILTER_INVALID;
 }
 
-static hostlist_dissector_info_t ipx_host_dissector_info = {&ipx_host_get_filter_type};
+static et_dissector_info_t ipx_endpoint_dissector_info = {&ipx_endpoint_get_filter_type};
 
-static int
-ipx_hostlist_packet(void *pit, packet_info *pinfo, epan_dissect_t *edt _U_, const void *vip)
+static tap_packet_status
+ipx_endpoint_packet(void *pit, packet_info *pinfo, epan_dissect_t *edt _U_, const void *vip, tap_flags_t flags)
 {
 	conv_hash_t *hash = (conv_hash_t*) pit;
+    hash->flags = flags;
+
 	const ipxhdr_t *ipxh=(const ipxhdr_t *)vip;
 
 	/* Take two "add" passes per packet, adding for each direction, ensures that all
 	packets are counted properly (even if address is sending to itself)
-	XXX - this could probably be done more efficiently inside hostlist_table */
-	add_hostlist_table_data(hash, &ipxh->ipx_src, 0, TRUE, 1, pinfo->fd->pkt_len, &ipx_host_dissector_info, PT_NONE);
-	add_hostlist_table_data(hash, &ipxh->ipx_dst, 0, FALSE, 1, pinfo->fd->pkt_len, &ipx_host_dissector_info, PT_NONE);
+	XXX - this could probably be done more efficiently inside endpoint_table */
+	add_endpoint_table_data(hash, &ipxh->ipx_src, 0, true, 1, pinfo->fd->pkt_len, &ipx_endpoint_dissector_info, ENDPOINT_NONE);
+	add_endpoint_table_data(hash, &ipxh->ipx_dst, 0, false, 1, pinfo->fd->pkt_len, &ipx_endpoint_dissector_info, ENDPOINT_NONE);
 
-	return 1;
+	return TAP_PACKET_REDRAW;
 }
 
 /* ================================================================= */
@@ -273,11 +272,11 @@ static const value_string ipxmsg_sigchar_vals[] = {
 	{ 0, NULL }
 };
 
-gboolean
-capture_ipx(const guchar *pd _U_, int offset _U_, int len _U_, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
+static bool
+capture_ipx(const unsigned char *pd _U_, int offset _U_, int len _U_, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
 {
 	capture_dissector_increment_count(cpinfo, proto_ipx);
-	return TRUE;
+	return true;
 }
 
 static int
@@ -288,10 +287,10 @@ dissect_ipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	proto_tree	*ipx_tree = NULL;
 	proto_item	*ti = NULL, *hidden_item;
 
-	guint8		ipx_hops;
+	uint8_t		ipx_hops;
 	char 		*str;
-	guint16		first_socket, second_socket;
-	guint32		ipx_snet, ipx_dnet;
+	uint16_t		first_socket, second_socket;
+	uint32_t		ipx_snet, ipx_dnet;
 	static ipxhdr_t ipxh_arr[4];
 	static int ipx_current=0;
 	ipxhdr_t *ipxh;
@@ -309,7 +308,7 @@ dissect_ipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	/* Calculate here for use in pinfo and in tree */
 	ipxh->ipx_dsocket = tvb_get_ntohs(tvb, 16);
 	ipxh->ipx_ssocket = tvb_get_ntohs(tvb, 28);
-	ipxh->ipx_type    = tvb_get_guint8(tvb, 5);
+	ipxh->ipx_type    = tvb_get_uint8(tvb, 5);
 	ipxh->ipx_length  = tvb_get_ntohs(tvb, 2);
 
 	pinfo->ptype = PT_IPX;
@@ -326,7 +325,7 @@ dissect_ipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     copy_address_shallow(&pinfo->dst, &pinfo->net_dst);
     copy_address_shallow(&ipxh->ipx_dst, &pinfo->net_dst);
 
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(ipxh->ipx_dsocket, &ipx_socket_vals_ext, "Unknown (0x%04x)"));
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(pinfo->pool, ipxh->ipx_dsocket, &ipx_socket_vals_ext, "Unknown (0x%04x)"));
 
 	if (tree) {
 
@@ -334,21 +333,20 @@ dissect_ipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		ipx_tree = proto_item_add_subtree(ti, ett_ipx);
 	}
 
-	str=address_to_str(wmem_packet_scope(), &pinfo->net_src);
+	str=address_to_str(pinfo->pool, &pinfo->net_src);
 	hidden_item = proto_tree_add_string(ipx_tree, hf_ipx_src, tvb, 0, 0, str);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 	hidden_item = proto_tree_add_string(ipx_tree, hf_ipx_addr, tvb, 0, 0, str);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
-	str=address_to_str(wmem_packet_scope(), &pinfo->net_dst);
+	proto_item_set_hidden(hidden_item);
+	str=address_to_str(pinfo->pool, &pinfo->net_dst);
 	hidden_item = proto_tree_add_string(ipx_tree, hf_ipx_dst, tvb, 0, 0, str);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 	hidden_item = proto_tree_add_string(ipx_tree, hf_ipx_addr, tvb, 0, 0, str);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 
 	proto_tree_add_checksum(ipx_tree, tvb, 0, hf_ipx_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
-	proto_tree_add_uint_format_value(ipx_tree, hf_ipx_len, tvb, 2, 2, ipxh->ipx_length,
-		"%d bytes", ipxh->ipx_length);
-	ipx_hops = tvb_get_guint8(tvb, 4);
+	proto_tree_add_uint(ipx_tree, hf_ipx_len, tvb, 2, 2, ipxh->ipx_length);
+	ipx_hops = tvb_get_uint8(tvb, 4);
 	proto_tree_add_uint_format(ipx_tree, hf_ipx_hops, tvb, 4, 1, ipx_hops,
 		"Transport Control: %d hops", ipx_hops);
 	proto_tree_add_uint(ipx_tree, hf_ipx_packet_type, tvb, 5, 1, ipxh->ipx_type);
@@ -359,15 +357,15 @@ dissect_ipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		ipx_dnet);
 	hidden_item = proto_tree_add_ipxnet(ipx_tree, hf_ipx_net, tvb, 6, 4,
 		ipx_dnet);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 	proto_tree_add_item(ipx_tree, hf_ipx_dnode, tvb, 10, 6, ENC_NA);
 	hidden_item = proto_tree_add_item(ipx_tree, hf_ipx_node, tvb, 10, 6, ENC_NA);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 	proto_tree_add_uint(ipx_tree, hf_ipx_dsocket, tvb, 16, 2,
 		ipxh->ipx_dsocket);
 	hidden_item = proto_tree_add_uint(ipx_tree, hf_ipx_socket, tvb, 16, 2,
 		ipxh->ipx_dsocket);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 
 	/* Source */
 	ipx_snet = tvb_get_ntohl(tvb, 18);
@@ -375,15 +373,15 @@ dissect_ipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		ipx_snet);
 	hidden_item = proto_tree_add_ipxnet(ipx_tree, hf_ipx_net, tvb, 18, 4,
 		ipx_snet);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 	proto_tree_add_item(ipx_tree, hf_ipx_snode, tvb, 22, 6, ENC_NA);
 	hidden_item = proto_tree_add_item(ipx_tree, hf_ipx_node, tvb, 22, 6, ENC_NA);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 	proto_tree_add_uint(ipx_tree, hf_ipx_ssocket, tvb, 28, 2,
 		ipxh->ipx_ssocket);
 	hidden_item = proto_tree_add_uint(ipx_tree, hf_ipx_socket, tvb, 28, 2,
 		ipxh->ipx_ssocket);
-	PROTO_ITEM_SET_HIDDEN(hidden_item);
+	proto_item_set_hidden(hidden_item);
 
 	/* Make the next tvbuff */
 	next_tvb = tvb_new_subset_remaining(tvb, IPX_HEADER_LEN);
@@ -426,20 +424,20 @@ dissect_ipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	tap_queue_packet(ipx_tap, pinfo, ipxh);
 
 	if (second_socket != IPX_SOCKET_NWLINK_SMB_NAMEQUERY) {
-		if (dissector_try_uint_new(ipx_socket_dissector_table, first_socket,
-			next_tvb, pinfo, tree, FALSE, ipxh))
+		if (dissector_try_uint_with_data(ipx_socket_dissector_table, first_socket,
+			next_tvb, pinfo, tree, false, ipxh))
 			return tvb_captured_length(tvb);
 	}
-	if (dissector_try_uint_new(ipx_socket_dissector_table, second_socket,
-		next_tvb, pinfo, tree, FALSE, ipxh))
+	if (dissector_try_uint_with_data(ipx_socket_dissector_table, second_socket,
+		next_tvb, pinfo, tree, false, ipxh))
 		return tvb_captured_length(tvb);
 
 	/*
 	 * Neither of them are known; try the packet type, which will
 	 * at least let us, for example, dissect SPX packets as SPX.
 	 */
-	if (dissector_try_uint_new(ipx_type_dissector_table, ipxh->ipx_type, next_tvb,
-		pinfo, tree, FALSE, ipxh))
+	if (dissector_try_uint_with_data(ipx_type_dissector_table, ipxh->ipx_type, next_tvb,
+		pinfo, tree, false, ipxh))
 		return tvb_captured_length(tvb);
 
 	call_data_dissector(next_tvb, pinfo, tree);
@@ -451,14 +449,14 @@ dissect_ipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
 typedef struct {
 	conversation_t	*conversation;
-	guint32         spx_src;
-	guint16         spx_seq;
+	uint32_t        spx_src;
+	uint16_t        spx_seq;
 } spx_hash_key;
 
 typedef struct {
-	guint16             spx_ack;
-	guint16             spx_all;
-	guint32             num;
+	uint16_t            spx_ack;
+	uint16_t            spx_all;
+	uint32_t            num;
 } spx_hash_value;
 
 /*
@@ -466,14 +464,14 @@ typedef struct {
  * frame number of the original transmission.
  */
 typedef struct {
-	guint32             num;
+	uint32_t            num;
 } spx_rexmit_info;
 
-static GHashTable *spx_hash = NULL;
+static wmem_map_t *spx_hash;
 
 /* Hash Functions */
-static gint
-spx_equal(gconstpointer v, gconstpointer v2)
+static int
+spx_equal(const void *v, const void *v2)
 {
 	const spx_hash_key	*val1 = (const spx_hash_key*)v;
 	const spx_hash_key	*val2 = (const spx_hash_key*)v2;
@@ -486,39 +484,15 @@ spx_equal(gconstpointer v, gconstpointer v2)
 	return 0;
 }
 
-static guint
-spx_hash_func(gconstpointer v)
+static unsigned
+spx_hash_func(const void *v)
 {
 	const spx_hash_key	*spx_key = (const spx_hash_key*)v;
 	return GPOINTER_TO_UINT(spx_key->conversation) + spx_key->spx_src;
 }
 
-/* Initializes the hash table each time a new
- * file is loaded or re-loaded in wireshark */
-static void
-spx_init_protocol(void)
-{
-	/* no need for register_cleanup_routine that destroys spx_hash,
-	 * spx_postseq_cleanup should clear this. */
-	spx_hash = g_hash_table_new(spx_hash_func, spx_equal);
-}
-
-/* After the sequential run, we don't need the spx hash table, or
- * the keys and values, anymore; the lookups have already been done
- * and the relevant info saved as SPX private data with the frame
- * if the frame was a retransmission. */
-static void
-spx_postseq_cleanup(void)
-{
-	if (spx_hash) {
-		/* Destroy the hash, but don't clean up request_condition data. */
-		g_hash_table_destroy(spx_hash);
-		spx_hash = NULL;
-	}
-}
-
 static spx_hash_value*
-spx_hash_insert(conversation_t *conversation, guint32 spx_src, guint16 spx_seq)
+spx_hash_insert(conversation_t *conversation, uint32_t spx_src, uint16_t spx_seq)
 {
 	spx_hash_key		*key;
 	spx_hash_value		*value;
@@ -531,14 +505,14 @@ spx_hash_insert(conversation_t *conversation, guint32 spx_src, guint16 spx_seq)
 
 	value = wmem_new0(wmem_file_scope(), spx_hash_value);
 
-	g_hash_table_insert(spx_hash, key, value);
+	wmem_map_insert(spx_hash, key, value);
 
 	return value;
 }
 
 /* Returns the spx_hash_value*, or NULL if not found. */
 static spx_hash_value*
-spx_hash_lookup(conversation_t *conversation, guint32 spx_src, guint32 spx_seq)
+spx_hash_lookup(conversation_t *conversation, uint32_t spx_src, uint32_t spx_seq)
 {
 	spx_hash_key		key;
 
@@ -546,7 +520,7 @@ spx_hash_lookup(conversation_t *conversation, guint32 spx_src, guint32 spx_seq)
 	key.spx_src = spx_src;
 	key.spx_seq = spx_seq;
 
-	return (spx_hash_value *)g_hash_table_lookup(spx_hash, &key);
+	return (spx_hash_value *)wmem_map_lookup(spx_hash, &key);
 }
 
 /* ================================================================= */
@@ -574,7 +548,7 @@ static const value_string conn_vals[] = {
 };
 
 static const char*
-spx_datastream(guint8 type)
+spx_datastream(uint8_t type)
 {
 	switch (type) {
 		case 0xfe:
@@ -595,14 +569,14 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	proto_tree	*spx_tree;
 	proto_item	*ti;
 	tvbuff_t	*next_tvb;
-	guint8		conn_ctrl;
-	guint8		hdr_len = SPX_HEADER_LEN;
-	guint8		datastream_type;
+	uint8_t		conn_ctrl;
+	uint8_t		hdr_len = SPX_HEADER_LEN;
+	uint8_t		datastream_type;
 	const char	*datastream_type_string;
-	guint16         spx_seq;
+	uint16_t        spx_seq;
 	const char	*spx_msg_string;
-	guint16		low_socket, high_socket;
-	guint32		src;
+	uint16_t		low_socket, high_socket;
+	uint32_t		src;
 	conversation_t	*conversation;
 	spx_hash_value	*pkt_value;
 	spx_rexmit_info	*spx_rexmit_info_p;
@@ -611,7 +585,7 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "SPX");
 	col_set_str(pinfo->cinfo, COL_INFO, "SPX");
 
-	conn_ctrl = tvb_get_guint8(tvb, 0);
+	conn_ctrl = tvb_get_uint8(tvb, 0);
 	if ((conn_ctrl & SPX_VII_PACKET) && tvb_get_ntohs(tvb, 4) != 0xffff) {
 		/* SPX2 packets have an extra two-byte field, unless they have
 		 * a dest-ID of 0xffff... */
@@ -624,7 +598,7 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	spx_msg_string = val_to_str_const((conn_ctrl & 0xf0), conn_vals, "Unknown" );
 	col_append_fstr(pinfo->cinfo, COL_INFO, " %s", spx_msg_string);
 	if (tree) {
-		const int * spx_flags[] = {
+		static int * const spx_flags[] = {
 			&hf_spx_connection_control_sys,
 			&hf_spx_connection_control_send_ack,
 			&hf_spx_connection_control_attn,
@@ -632,7 +606,7 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 			NULL
 		};
 
-		const int * spx_vii_flags[] = {
+		static int * const spx_vii_flags[] = {
 			&hf_spx_connection_control_sys,
 			&hf_spx_connection_control_send_ack,
 			&hf_spx_connection_control_attn,
@@ -653,7 +627,7 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		}
 	}
 
-	datastream_type = tvb_get_guint8(tvb, 1);
+	datastream_type = tvb_get_uint8(tvb, 1);
 	datastream_type_string = spx_datastream(datastream_type);
 	if (datastream_type_string != NULL) {
 		col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)",
@@ -704,7 +678,7 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	 * SPX session using that source port; can that happen?  If so,
 	 * we should probably use the direction, as well as the conversation,
 	 * as part of the hash key; if we do that, we can probably just
-	 * use PT_IPX as the port type, and possibly get rid of PT_NCP.
+	 * use CONVERSATION_IPX as the port type, and possibly get rid of CONVERSATION_NCP.
 	 *
 	 * According to
 	 *
@@ -727,9 +701,9 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		/*
 		 * Not a system packet - check for retransmissions.
 		 */
-		if (!pinfo->fd->flags.visited) {
+		if (!pinfo->fd->visited) {
 			conversation = find_conversation(pinfo->num, &pinfo->src,
-			    &pinfo->dst, PT_NCP, pinfo->srcport,
+			    &pinfo->dst, CONVERSATION_NCP, pinfo->srcport,
 			    pinfo->srcport, 0);
 			if (conversation == NULL) {
 				/*
@@ -737,7 +711,7 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 				 * a new one.
 				 */
 				conversation = conversation_new(pinfo->num, &pinfo->src,
-				    &pinfo->dst, PT_NCP, pinfo->srcport,
+				    &pinfo->dst, CONVERSATION_NCP, pinfo->srcport,
 				    pinfo->srcport, 0);
 			}
 
@@ -848,13 +822,13 @@ dissect_spx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		spx_infox.datastream_type = datastream_type;
 
 		next_tvb = tvb_new_subset_remaining(tvb, hdr_len);
-		if (dissector_try_uint_new(spx_socket_dissector_table, low_socket,
-		    next_tvb, pinfo, tree, FALSE, &spx_infox))
+		if (dissector_try_uint_with_data(spx_socket_dissector_table, low_socket,
+		    next_tvb, pinfo, tree, false, &spx_infox))
 		{
 			return tvb_captured_length(tvb);
 		}
-		if (dissector_try_uint_new(spx_socket_dissector_table, high_socket,
-		    next_tvb, pinfo, tree, FALSE, &spx_infox))
+		if (dissector_try_uint_with_data(spx_socket_dissector_table, high_socket,
+		    next_tvb, pinfo, tree, false, &spx_infox))
 		{
 			return tvb_captured_length(tvb);
 		}
@@ -871,17 +845,17 @@ dissect_ipxmsg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 {
 	proto_tree	*msg_tree;
 	proto_item	*ti;
-	guint8		conn_number, sig_char;
+	uint8_t		conn_number, sig_char;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IPX MSG");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	conn_number = tvb_get_guint8(tvb, 0);
-	sig_char = tvb_get_guint8(tvb, 1);
+	conn_number = tvb_get_uint8(tvb, 0);
+	sig_char = tvb_get_uint8(tvb, 1);
 
 	col_add_fstr(pinfo->cinfo, COL_INFO,
 			"%s, Connection %d",
-			val_to_str_const(sig_char, ipxmsg_sigchar_vals, "Unknown Signature Char"), conn_number);
+			val_to_str_const(sig_char, ipxmsg_sigchar_vals, "Unknown Signature Character"), conn_number);
 
 	if (tree) {
 		ti = proto_tree_add_item(tree, proto_ipxmsg, tvb, 0, -1, ENC_NA);
@@ -908,9 +882,9 @@ dissect_ipxrip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 {
 	proto_tree	*rip_tree;
 	proto_item	*ti, *hidden_item;
-	guint16		operation, ticks;
-	int		cursor;
-	int		available_length;
+	uint16_t		operation, ticks;
+	unsigned		cursor;
+	unsigned		available_length;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IPX RIP");
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -932,13 +906,13 @@ dissect_ipxrip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 			hidden_item = proto_tree_add_boolean(rip_tree,
 						     hf_ipxrip_request,
 						     tvb, 0, 2, 1);
-			PROTO_ITEM_SET_HIDDEN(hidden_item);
+			proto_item_set_hidden(hidden_item);
 			break;
 		case IPX_RIP_RESPONSE:
 			hidden_item = proto_tree_add_boolean(rip_tree,
 						     hf_ipxrip_response,
 						     tvb, 0, 2, 1);
-			PROTO_ITEM_SET_HIDDEN(hidden_item);
+			proto_item_set_hidden(hidden_item);
 			break;
 		}
 
@@ -953,7 +927,7 @@ dissect_ipxrip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 			}
 			else {
 				proto_tree_add_uint_format_value(rip_tree, hf_ipxrip_ticks, tvb, cursor+6, 2, ticks,
-                    "%d ms", ticks * 1000 / 18);
+					"%d ms", ticks * 1000 / 18);
 			}
 		}
 	}
@@ -979,7 +953,7 @@ dissect_serialization(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 	}
 
 	col_add_fstr(pinfo->cinfo, COL_INFO, "Serial number %s",
-		    tvb_bytes_to_str(wmem_packet_scope(), tvb, 0, 6));
+		    tvb_bytes_to_str(pinfo->pool, tvb, 0, 6));
 
 	proto_tree_add_item(ser_tree, hf_serial_number, tvb, 0, 6, ENC_NA);
 	return tvb_captured_length(tvb);
@@ -1236,7 +1210,7 @@ dissect_ipxsap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 {
 	proto_tree	*sap_tree, *s_tree;
 	proto_item	*ti, *hidden_item;
-	int		cursor;
+	unsigned		cursor;
 	struct sap_query query;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IPX SAP");
@@ -1260,31 +1234,34 @@ dissect_ipxsap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 			hidden_item = proto_tree_add_boolean(sap_tree,
 						     hf_sap_response,
 						     tvb, 0, 2, 1);
-			PROTO_ITEM_SET_HIDDEN(hidden_item);
+			proto_item_set_hidden(hidden_item);
 			break;
 		case IPX_SAP_GENERAL_RESPONSE:
 		case IPX_SAP_NEAREST_RESPONSE:
 			hidden_item = proto_tree_add_boolean(sap_tree,
 						     hf_sap_request,
 						     tvb, 0, 2, 1);
-			PROTO_ITEM_SET_HIDDEN(hidden_item);
+			proto_item_set_hidden(hidden_item);
 			break;
 		}
 
 		if (query.query_type == IPX_SAP_GENERAL_RESPONSE ||
 				query.query_type == IPX_SAP_NEAREST_RESPONSE) { /* responses */
 
-			int available_length = tvb_reported_length(tvb);
-			for (cursor =  2; (cursor + 64) <= available_length; cursor += 64) {
+			unsigned available_length = tvb_reported_length(tvb);
+			for (cursor =  2; cursor < available_length; cursor += 64) {
+				const uint8_t *server_name;
 
-				ti = proto_tree_add_item(sap_tree, hf_sap_server_name, tvb, cursor+2, 48, ENC_ASCII|ENC_NA);
+				ti = proto_tree_add_item(sap_tree, hf_sap_server, tvb, cursor, 64, ENC_NA);
 				s_tree = proto_item_add_subtree(ti, ett_ipxsap_server);
 
 				proto_tree_add_item(s_tree, hf_sap_server_type, tvb, cursor, 2, ENC_BIG_ENDIAN);
-				proto_tree_add_item(s_tree, hf_sap_network, tvb, cursor+50, 4, ENC_NA);
-				proto_tree_add_item(s_tree, hf_sap_node, tvb, cursor+54, 6, ENC_NA);
-				proto_tree_add_item(s_tree, hf_sap_socket, tvb, cursor+60, 2, ENC_BIG_ENDIAN);
-				proto_tree_add_item(s_tree, hf_sap_intermediate_networks, tvb, cursor+62, 2, ENC_BIG_ENDIAN);
+				proto_tree_add_item_ret_string(s_tree, hf_sap_server_name, tvb, cursor+2, 48, ENC_ASCII|ENC_NA, pinfo->pool, &server_name);
+				proto_item_append_text(ti, ": %s", server_name);
+				proto_tree_add_item(s_tree, hf_sap_server_network, tvb, cursor+50, 4, ENC_NA);
+				proto_tree_add_item(s_tree, hf_sap_server_node, tvb, cursor+54, 6, ENC_NA);
+				proto_tree_add_item(s_tree, hf_sap_server_socket, tvb, cursor+60, 2, ENC_BIG_ENDIAN);
+				proto_tree_add_item(s_tree, hf_sap_server_intermediate_networks, tvb, cursor+62, 2, ENC_BIG_ENDIAN);
 			}
 		}
 		else {  /* queries */
@@ -1314,7 +1291,7 @@ proto_register_ipx(void)
 		  "Source or Destination IPX Address  \"network.node\"", HFILL }},
 
 		{ &hf_ipx_len,
-		{ "Length",		"ipx.len", FT_UINT16, BASE_DEC, NULL, 0x0,
+		{ "Length",		"ipx.len", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0,
 			NULL, HFILL }},
 
 		{ &hf_ipx_hops,
@@ -1369,7 +1346,7 @@ proto_register_ipx(void)
 	static hf_register_info hf_spx[] = {
 		{ &hf_spx_connection_control,
 		{ "Connection Control",	"spx.ctl",
-		  FT_UINT8,	BASE_HEX,	VALS(conn_vals),	0xF0,
+		  FT_UINT8,	BASE_HEX,	VALS(conn_vals),	0x0,
 		  NULL, HFILL }},
 
 		{ &hf_spx_connection_control_sys,
@@ -1462,12 +1439,12 @@ proto_register_ipx(void)
 		{ &hf_ipxrip_request,
 		{ "Request",			"ipxrip.request",
 		  FT_BOOLEAN,	BASE_NONE,	NULL,	0x0,
-		  "TRUE if IPX RIP request", HFILL }},
+		  "true if IPX RIP request", HFILL }},
 
 		{ &hf_ipxrip_response,
 		{ "Response",			"ipxrip.response",
 		  FT_BOOLEAN,	BASE_NONE,	NULL,	0x0,
-		  "TRUE if IPX RIP response", HFILL }},
+		  "true if IPX RIP response", HFILL }},
 
 		{ &hf_ipxrip_packet_type,
 		{ "RIP packet type",			"ipxrip.packet_type",
@@ -1494,22 +1471,52 @@ proto_register_ipx(void)
 		{ &hf_sap_request,
 		{ "Request",			"ipxsap.request",
 		  FT_BOOLEAN,	BASE_NONE,	NULL,	0x0,
-		  "TRUE if SAP request", HFILL }},
+		  "true if SAP request", HFILL }},
 
 		{ &hf_sap_response,
 		{ "Response",			"ipxsap.response",
 		  FT_BOOLEAN,	BASE_NONE,	NULL,	0x0,
-		  "TRUE if SAP response", HFILL }},
+		  "true if SAP response", HFILL }},
 
-		/* Generated from convert_proto_tree_add_text.pl */
-		{ &hf_sap_packet_type, { "SAP packet type", "ipxsap.packet_type", FT_UINT16, BASE_DEC, VALS(ipxsap_packet_vals), 0x0, NULL, HFILL }},
-		{ &hf_sap_server_name, { "Server Name", "ipxsap.server_name", FT_STRINGZ, BASE_NONE, NULL, 0x0, NULL, HFILL }},
-		{ &hf_sap_server_type, { "Server Type", "ipxsap.server_type", FT_UINT16, BASE_HEX|BASE_EXT_STRING, &novell_server_vals_ext, 0x0, NULL, HFILL }},
-		{ &hf_sap_network, { "Network", "ipxsap.network", FT_IPXNET, BASE_NONE, NULL, 0x0, NULL, HFILL }},
-		{ &hf_sap_node, { "Node", "ipxsap.node", FT_ETHER, BASE_NONE, NULL, 0x0, NULL, HFILL }},
-		{ &hf_sap_socket, { "Socket", "ipxsap.socket", FT_UINT16, BASE_HEX|BASE_EXT_STRING, &ipx_socket_vals_ext, 0x0, NULL, HFILL }},
-		{ &hf_sap_intermediate_networks, { "Intermediate Networks", "ipxsap.intermediate_networks", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+		{ &hf_sap_packet_type,
+		{ "SAP packet type",		"ipxsap.packet_type",
+		  FT_UINT16,	BASE_DEC,	VALS(ipxsap_packet_vals), 0x0,
+		  NULL, HFILL }},
 
+		{ &hf_sap_server,
+		{ "Server",			"ipxsap.server",
+		  FT_NONE,	BASE_NONE,	NULL,	0x0,
+		  NULL, HFILL }},
+
+		{ &hf_sap_server_type,
+		{ "Server Type",		"ipxsap.server.type",
+		  FT_UINT16,	BASE_HEX|BASE_EXT_STRING, &novell_server_vals_ext, 0x0,
+		  NULL, HFILL }},
+
+		{ &hf_sap_server_name,
+		{ "Server Name",		"ipxsap.server.name",
+		  FT_STRINGZTRUNC,	BASE_NONE,	NULL,	0x0,
+		  NULL, HFILL }},
+
+		{ &hf_sap_server_network,
+		{ "Network",			"ipxsap.server.network",
+		  FT_IPXNET,	BASE_NONE,	NULL,	0x0,
+		  NULL, HFILL }},
+
+		{ &hf_sap_server_node,
+		{ "Node",			"ipxsap.server.node",
+		  FT_ETHER,	BASE_NONE,	NULL,	0x0,
+		  NULL, HFILL }},
+
+		{ &hf_sap_server_socket,
+		{ "Socket",			"ipxsap.server.socket",
+		  FT_UINT16,	BASE_HEX|BASE_EXT_STRING, &ipx_socket_vals_ext, 0x0,
+		  NULL, HFILL }},
+
+		{ &hf_sap_server_intermediate_networks,
+		{ "Intermediate Networks",	"ipxsap.server.intermediate_networks",
+		  FT_UINT16,	BASE_DEC,	NULL,	0x0,
+		  NULL, HFILL }},
 	};
 
 	static hf_register_info hf_ipxmsg[] = {
@@ -1519,8 +1526,8 @@ proto_register_ipx(void)
 		  NULL, HFILL }},
 
 		{ &hf_msg_sigchar,
-		{ "Signature Char",			"ipxmsg.sigchar",
-		  FT_UINT8,	BASE_DEC,	VALS(ipxmsg_sigchar_vals),	0x0,
+		{ "Signature Character",		"ipxmsg.sigchar",
+		  FT_CHAR,	BASE_HEX,	VALS(ipxmsg_sigchar_vals),	0x0,
 		  NULL, HFILL }}
 	};
 
@@ -1531,7 +1538,7 @@ proto_register_ipx(void)
 		  NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ipx,
 		&ett_spx,
 		&ett_spx_connctrl,
@@ -1545,28 +1552,32 @@ proto_register_ipx(void)
 	proto_ipx = proto_register_protocol("Internetwork Packet eXchange",
 	    "IPX", "ipx");
 	proto_register_field_array(proto_ipx, hf_ipx, array_length(hf_ipx));
-
-	register_dissector("ipx", dissect_ipx, proto_ipx);
+	ipx_handle = register_dissector("ipx", dissect_ipx, proto_ipx);
 
 	proto_spx = proto_register_protocol("Sequenced Packet eXchange",
 	    "SPX", "spx");
 	proto_register_field_array(proto_spx, hf_spx, array_length(hf_spx));
+	spx_handle = register_dissector("spx", dissect_spx, proto_spx);
 
 	proto_ipxrip = proto_register_protocol("IPX Routing Information Protocol",
 	    "IPX RIP", "ipxrip");
 	proto_register_field_array(proto_ipxrip, hf_ipxrip, array_length(hf_ipxrip));
+	ipxrip_handle = register_dissector("ipxrip", dissect_ipxrip, proto_ipxrip);
 
 	proto_serialization = proto_register_protocol("NetWare Serialization Protocol",
 	    "NW_SERIAL", "nw_serial");
 	proto_register_field_array(proto_serialization, hf_serial, array_length(hf_serial));
+	serialization_handle = register_dissector("nw_serial", dissect_serialization,
+	    proto_serialization);
 
 	proto_ipxmsg = proto_register_protocol("IPX Message", "IPX MSG",
 	    "ipxmsg");
 	proto_register_field_array(proto_ipxmsg, hf_ipxmsg, array_length(hf_ipxmsg));
+	ipxmsg_handle = register_dissector("ipxmsg", dissect_ipxmsg, proto_ipxmsg);
 
 	proto_sap = proto_register_protocol("Service Advertisement Protocol",
 	    "IPX SAP", "ipxsap");
-	register_dissector("ipxsap", dissect_ipxsap, proto_sap);
+	ipxsap_handle = register_dissector("ipxsap", dissect_ipxsap, proto_sap);
 
 	proto_register_field_array(proto_sap, hf_sap, array_length(hf_sap));
 
@@ -1579,22 +1590,20 @@ proto_register_ipx(void)
 	spx_socket_dissector_table = register_dissector_table("spx.socket",
 	    "SPX socket", proto_spx, FT_UINT16, BASE_HEX);
 
-	register_init_routine(&spx_init_protocol);
-	register_postseq_cleanup_routine(&spx_postseq_cleanup);
+	spx_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), spx_hash_func, spx_equal);
 	ipx_tap=register_tap("ipx");
 
-	register_conversation_table(proto_ipx, TRUE, ipx_conversation_packet, ipx_hostlist_packet);
+	register_conversation_table(proto_ipx, true, ipx_conversation_packet, ipx_endpoint_packet);
+
+	register_capture_dissector("ipx", capture_ipx, proto_ipx);
 }
 
 void
 proto_reg_handoff_ipx(void)
 {
-	dissector_handle_t ipx_handle, spx_handle;
-	dissector_handle_t ipxsap_handle, ipxrip_handle;
-	dissector_handle_t serialization_handle, ipxmsg_handle;
+	capture_dissector_handle_t ipx_cap_handle;
 
-	ipx_handle = find_dissector("ipx");
-	dissector_add_uint("udp.port", UDP_PORT_IPX, ipx_handle);
+	dissector_add_uint_with_preference("udp.port", UDP_PORT_IPX, ipx_handle);
 	dissector_add_uint("ethertype", ETHERTYPE_IPX, ipx_handle);
 	dissector_add_uint("chdlc.protocol", ETHERTYPE_IPX, ipx_handle);
 	dissector_add_uint("ppp.protocol", PPP_IPX, ipx_handle);
@@ -1606,33 +1615,28 @@ proto_reg_handoff_ipx(void)
 	dissector_add_uint("arcnet.protocol_id", ARCNET_PROTO_IPX, ipx_handle);
 	dissector_add_uint("arcnet.protocol_id", ARCNET_PROTO_NOVELL_EC, ipx_handle);
 
-	spx_handle = create_dissector_handle(dissect_spx, proto_spx);
 	dissector_add_uint("ipx.packet_type", IPX_PACKET_TYPE_SPX, spx_handle);
 
-	ipxsap_handle = find_dissector("ipxsap");
 	dissector_add_uint("ipx.socket", IPX_SOCKET_SAP, ipxsap_handle);
 
-	ipxrip_handle = create_dissector_handle(dissect_ipxrip, proto_ipxrip);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_IPXRIP, ipxrip_handle);
 
-	serialization_handle = create_dissector_handle(dissect_serialization,
-	    proto_serialization);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_SERIALIZATION,
 	    serialization_handle);
 
-	ipxmsg_handle = create_dissector_handle(dissect_ipxmsg, proto_ipxmsg);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_IPX_MESSAGE, ipxmsg_handle);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_IPX_MESSAGE1, ipxmsg_handle);
 
-	register_capture_dissector("ethertype", ETHERTYPE_IPX, capture_ipx, proto_ipx);
-	register_capture_dissector("ppp_hdlc", PPP_IPX, capture_ipx, proto_ipx);
-	register_capture_dissector("sll.ltype", LINUX_SLL_P_802_3, capture_ipx, proto_ipx);
-	register_capture_dissector("llc.dsap", SAP_NETWARE1, capture_ipx, proto_ipx);
-	register_capture_dissector("llc.dsap", SAP_NETWARE2, capture_ipx, proto_ipx);
+	ipx_cap_handle = find_capture_dissector("ipx");
+	capture_dissector_add_uint("ethertype", ETHERTYPE_IPX, ipx_cap_handle);
+	capture_dissector_add_uint("ppp_hdlc", PPP_IPX, ipx_cap_handle);
+	capture_dissector_add_uint("sll.ltype", LINUX_SLL_P_802_3, ipx_cap_handle);
+	capture_dissector_add_uint("llc.dsap", SAP_NETWARE1, ipx_cap_handle);
+	capture_dissector_add_uint("llc.dsap", SAP_NETWARE2, ipx_cap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

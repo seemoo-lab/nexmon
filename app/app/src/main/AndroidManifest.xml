@@ -13,6 +13,16 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Get permission for reliable local dispatching on non-Google Play devices. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Signature-level permission used to gate the app's internal control
+         broadcasts (start/stop attacks, monitor-mode transitions, service
+         state). Only apps signed with the same key can hold it, so another
+         installed app can neither inject these broadcasts nor receive them. -->
+    <permission
+        android:name="de.tu_darmstadt.seemoo.nexmon.permission.INTERNAL_BROADCAST"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="de.tu_darmstadt.seemoo.nexmon.permission.INTERNAL_BROADCAST" />
+
     <application
         android:name="de.tu_darmstadt.seemoo.nexmon.MyApplication"
         android:allowBackup="true"
@@ -62,10 +72,15 @@
         <service android:name="de.tu_darmstadt.seemoo.nexmon.net.RawSocketReceiveService"/>
         <service android:name="de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService"/>
 
+        <!-- Not exported: this receiver overwrites the global attack
+             rate-limit map from int extras, so it must not be reachable by
+             other apps. Same-app broadcasts still reach a non-exported
+             receiver. -->
         <receiver
             android:name="de.tu_darmstadt.seemoo.nexmon.stations.AttackInstanceReceiver"
             android:enabled="true"
-            android:exported="true">
+            android:exported="false"
+            android:permission="de.tu_darmstadt.seemoo.nexmon.permission.INTERNAL_BROADCAST">
             <intent-filter>
                 <action android:name="de.tu_darmstadt.seemoo.nexmon.ATTACK_INSTANCES" />
             </intent-filter>

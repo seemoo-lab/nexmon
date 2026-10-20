@@ -78,7 +78,10 @@ LOCAL_SRC_FILES := \
 LOCAL_MODULE := socat
 
 LOCAL_CFLAGS += -DVERSION=\"$(GIT_VERSION)\"
-LOCAL_CFLAGS += -DANDROID -Wno-multichar -D_GNU_SOURCE -Wall -Wno-parentheses -pthread -DHAVE_CONFIG_H -DANDROID -DNO_XMALLOC -mandroid
+LOCAL_CFLAGS += -DANDROID -Wno-multichar -D_GNU_SOURCE -Wall -Wno-parentheses -pthread -DHAVE_CONFIG_H -DANDROID -DNO_XMALLOC
+# modern clang (NDK 26+) defaults to -fno-common; socat's procan.c/filan.c both
+# carry tentative defs of allow_severity/deny_severity (libwrap globals).
+LOCAL_CFLAGS += -fcommon
 LOCAL_CFLAGS += -DRAND_F_SSLEAY_RAND_BYTES=100 -DRAND_R_PRNG_NOT_SEEDED=100
 
 LOCAL_STATIC_LIBRARIES += libssl libcrypto
@@ -92,13 +95,13 @@ include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libssl
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/armeabi/libssl.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/$(TARGET_ARCH_ABI)/libssl.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcrypto
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/armeabi/libcrypto.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/$(TARGET_ARCH_ABI)/libcrypto.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
 include $(PREBUILT_STATIC_LIBRARY)

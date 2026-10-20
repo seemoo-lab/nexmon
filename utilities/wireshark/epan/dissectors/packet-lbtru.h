@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_LBTRU_H_INCLUDED
@@ -28,18 +16,18 @@
 typedef struct
 {
     address source_address;
-    guint16 source_port;
-    guint32 session_id;
-    guint64 channel;
-    guint32 next_client_id;
+    uint16_t source_port;
+    uint32_t session_id;
+    uint64_t channel;
+    uint32_t next_client_id;
     wmem_list_t * client_list;
 } lbtru_transport_t;
 
 typedef struct
 {
     address receiver_address;
-    guint16 receiver_port;
-    guint32 id;
+    uint16_t receiver_port;
+    uint32_t id;
     lbtru_transport_t * transport;
     wmem_tree_t * frame;
     lbm_transport_frame_t * last_frame;
@@ -52,17 +40,17 @@ typedef struct
     lbm_transport_frame_t * last_rst_frame;
     wmem_tree_t * data_sqn;
     wmem_tree_t * sm_sqn;
-    guint32 data_high_sqn;
-    guint32 sm_high_sqn;
+    uint32_t data_high_sqn;
+    uint32_t sm_high_sqn;
 } lbtru_client_transport_t;
 
-lbtru_transport_t * lbtru_transport_add(const address * source_address, guint16 source_port, guint32 session_id, guint32 frame);
-char * lbtru_transport_source_string(const address * source_address, guint16 source_port, guint32 session_id);
+lbtru_transport_t * lbtru_transport_add(const address * source_address, uint16_t source_port, uint32_t session_id, uint32_t frame);
+char * lbtru_transport_source_string(const address * source_address, uint16_t source_port, uint32_t session_id);
 
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

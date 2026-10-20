@@ -1,0 +1,80 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of AppData support: use of a specific namespace.
+
+cat <<\EOF > xg-gs-3-empty.appdata.xml
+<?xml version="1.0"?>
+<component type="desktop"/>
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -o xg-gs-3.pot xg-gs-3-empty.appdata.xml 2>/dev/null
+test $? = 0 || {
+  echo "Skipping test: xgettext was built without AppData support"
+  Exit 77
+}
+
+cat <<\EOF > xg-gs-3.appdata.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop" xmlns="https://specifications.freedesktop.org/metainfo/1.0">
+  <id>org.gnome.Characters.desktop</id>
+  <name>GNOME Characters</name>
+  <summary>Character map application</summary>
+  <licence>CC0</licence>
+  <description>
+    <p>
+      Characters is a simple utility application to find and insert
+      unusual characters.  It allows you to quickly find the character
+      you are looking for by searching for keywords.
+    </p>
+  </description>
+  <url type="homepage">https://wiki.gnome.org/Design/Apps/CharacterMap</url>
+  <updatecontact>dueno_at_src.gnome.org</updatecontact>
+</component>
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --add-comments -o xg-gs-3.tmp xg-gs-3.appdata.xml || Exit 1
+func_filter_POT_Creation_Date xg-gs-3.tmp xg-gs-3.pot
+
+cat <<\EOF > xg-gs-3.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: xg-gs-3.appdata.xml:4
+msgid "GNOME Characters"
+msgstr ""
+
+#: xg-gs-3.appdata.xml:5
+msgid "Character map application"
+msgstr ""
+
+#: xg-gs-3.appdata.xml:8
+msgid ""
+"Characters is a simple utility application to find and insert unusual "
+"characters. It allows you to quickly find the character you are looking for "
+"by searching for keywords."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gs-3.ok xg-gs-3.pot
+result=$?
+
+exit $result

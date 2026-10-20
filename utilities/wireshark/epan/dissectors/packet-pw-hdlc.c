@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * History:
  * ---------------------------------
@@ -42,20 +30,22 @@ void proto_reg_handoff_pw_hdlc(void);
 
 static dissector_handle_t ppp_handle;
 static dissector_handle_t fr_handle;
+static dissector_handle_t pw_hdlc_nocw_fr_handle;
+static dissector_handle_t pw_ppp_handle;
 
-static gint proto_pw_hdlc_nocw_fr = -1;
-static gint proto_pw_hdlc_nocw_hdlc_ppp = -1;
+static int proto_pw_hdlc_nocw_fr;
+static int proto_pw_hdlc_nocw_hdlc_ppp;
 
-static gint ett_pw_hdlc = -1;
+static int ett_pw_hdlc;
 
-/* static int hf_pw_hdlc = -1; */
-static int hf_pw_hdlc_address_field = -1;
-static int hf_pw_hdlc_address = -1;
-static int hf_pw_hdlc_cr_bit = -1;
-static int hf_pw_hdlc_control_field = -1;
-static int hf_pw_hdlc_pf_bit = -1;
-static int hf_pw_hdlc_modifier = -1;
-static int hf_pw_hdlc_frame = -1;
+/* static int hf_pw_hdlc; */
+static int hf_pw_hdlc_address_field;
+static int hf_pw_hdlc_address;
+static int hf_pw_hdlc_cr_bit;
+static int hf_pw_hdlc_control_field;
+static int hf_pw_hdlc_pf_bit;
+static int hf_pw_hdlc_modifier;
+static int hf_pw_hdlc_frame;
 
 static const value_string pw_hdlc_modifier_vals[] = {
 	{0x00, "UI - Unnumbered information" },
@@ -95,11 +85,11 @@ static int dissect_pw_hdlc_nocw_hdlc_ppp( tvbuff_t * tvb, packet_info * pinfo, p
 		proto_item  *item;
 		proto_item  *item_address;
 		proto_item  *item_control;
-		guint8      addr;
-		guint8      control;
+		uint8_t     addr;
+		uint8_t     control;
 
-		addr	= tvb_get_guint8(tvb, 0);
-		control	= tvb_get_guint8(tvb, 1);
+		addr	= tvb_get_uint8(tvb, 0);
+		control	= tvb_get_uint8(tvb, 1);
 
 		item = proto_tree_add_item( tree, proto_pw_hdlc_nocw_hdlc_ppp, tvb, 0, 2, ENC_NA );
 
@@ -205,7 +195,7 @@ void proto_register_pw_hdlc(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_pw_hdlc
 	};
 
@@ -218,24 +208,24 @@ void proto_register_pw_hdlc(void)
 
 	proto_register_field_array(proto_pw_hdlc_nocw_fr, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	pw_hdlc_nocw_fr_handle = register_dissector("pw_hdlc_nocw_fr", dissect_pw_hdlc_nocw_fr, proto_pw_hdlc_nocw_fr );
+	pw_ppp_handle = register_dissector("pw_hdlc_nocw_hdlc_ppp", dissect_pw_hdlc_nocw_hdlc_ppp, proto_pw_hdlc_nocw_hdlc_ppp );
 }
 
 void proto_reg_handoff_pw_hdlc(void)
 {
-	dissector_handle_t pw_fr_handle, pw_ppp_handle;
-
-	pw_fr_handle = create_dissector_handle( dissect_pw_hdlc_nocw_fr, proto_pw_hdlc_nocw_fr );
-	dissector_add_for_decode_as( "mpls.label", pw_fr_handle );
-
-	pw_ppp_handle = create_dissector_handle( dissect_pw_hdlc_nocw_hdlc_ppp, proto_pw_hdlc_nocw_hdlc_ppp );
+	dissector_add_for_decode_as( "mpls.label", pw_hdlc_nocw_fr_handle );
 	dissector_add_for_decode_as( "mpls.label", pw_ppp_handle );
+	dissector_add_for_decode_as( "mpls.pfn", pw_hdlc_nocw_fr_handle );
+	dissector_add_for_decode_as( "mpls.pfn", pw_ppp_handle );
 
 	ppp_handle = find_dissector_add_dependency( "ppp", proto_pw_hdlc_nocw_hdlc_ppp );
 	fr_handle = find_dissector_add_dependency( "fr", proto_pw_hdlc_nocw_fr );
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

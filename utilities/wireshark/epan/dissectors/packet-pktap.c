@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2007 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -55,66 +43,77 @@ void proto_reg_handoff_pktap(void);
 #define PKT_REC_PACKET	1	/* a packet follows the header */
 
 /* Protocol */
-static int proto_pktap = -1;
+static int proto_pktap;
 
-static int hf_pktap_hdrlen = -1;
-static int hf_pktap_rectype = -1;
-static int hf_pktap_dlt = -1;
-static int hf_pktap_ifname = -1;
-static int hf_pktap_flags = -1;
-static int hf_pktap_pfamily = -1;
-static int hf_pktap_llhdrlen = -1;
-static int hf_pktap_lltrlrlen = -1;
-static int hf_pktap_pid = -1;
-static int hf_pktap_cmdname = -1;
-static int hf_pktap_svc_class = -1;
-static int hf_pktap_iftype = -1;
-static int hf_pktap_ifunit = -1;
-static int hf_pktap_epid = -1;
-static int hf_pktap_ecmdname = -1;
+static int hf_pktap_hdrlen;
+static int hf_pktap_rectype;
+static int hf_pktap_dlt;
+static int hf_pktap_ifname;
+static int hf_pktap_flags;
+static int hf_pktap_pfamily;
+static int hf_pktap_llhdrlen;
+static int hf_pktap_lltrlrlen;
+static int hf_pktap_pid;
+static int hf_pktap_cmdname;
+static int hf_pktap_svc_class;
+static int hf_pktap_iftype;
+static int hf_pktap_ifunit;
+static int hf_pktap_epid;
+static int hf_pktap_ecmdname;
 
-static gint ett_pktap = -1;
+static int ett_pktap;
 
-static expert_field ei_pktap_hdrlen_too_short = EI_INIT;
+static expert_field ei_pktap_hdrlen_too_short;
 
 static dissector_handle_t pktap_handle;
+static capture_dissector_handle_t eth_cap_handle;
 
 /*
- * XXX - these are little-endian in the captures I've seen, but Apple
- * no longer make any big-endian machines (Macs use x86, iOS machines
- * use ARM and run it little-endian), so that might be by definition
- * or they might be host-endian.
+ * XXX - these are only little-endian because they've been created on
+ * little-endian machines; the code in bsd/net/pktap.c in XNU writes
+ * the structure out in host byte order.
  *
- * If a big-endian PKTAP file ever shows up, and it comes from a
- * big-endian machine, presumably these are host-endian, and we need
- * to just fetch the fields in host byte order here but byte-swap them
- * to host byte order in libwiretap.
+ * We haven't been treating it as host-endian in libpcap and libwiretap,
+ * i.e. we haven't been byte-swapping its members when reading it on
+ * a machine whose byte order differs from the byte order of the machine
+ * on which the file is being read.
+ *
+ * Furthermore, the header is extensible, so we don't necessarily know
+ * what fields to swap.
+ *
+ * Fortunately, the length of the PKTAP header is a 32-bit field and is
+ * *presumably* never going to be 65536 or greater, so if any of the upper
+ * 16 bits appear to be set, it means we're looking at it in the wrong
+ * byte order, and it's never going to be zero, so those bits *will* be
+ * set if it's >= 65536, so we can determine its byte order.
+ *
+ * We should do that here.
  */
 
-static gboolean
-capture_pktap(const guchar *pd, int offset _U_, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
+static bool
+capture_pktap(const unsigned char *pd, int offset _U_, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
 {
-	guint32  hdrlen, rectype, dlt;
+	uint32_t hdrlen, rectype, dlt;
 
-	hdrlen = pletoh32(pd);
+	hdrlen = pletohu32(pd);
 	if (hdrlen < MIN_PKTAP_HDR_LEN || !BYTES_ARE_IN_FRAME(0, len, hdrlen))
-		return FALSE;
+		return false;
 
-	rectype = pletoh32(pd+4);
+	rectype = pletohu32(pd+4);
 	if (rectype != PKT_REC_PACKET)
-		return FALSE;
+		return false;
 
-	dlt = pletoh32(pd+4);
+	dlt = pletohu32(pd+4);
 
 	/* XXX - We should probably combine this with capture_info.c:capture_info_packet() */
 	switch (dlt) {
 
 	case 1: /* DLT_EN10MB */
-		return capture_eth(pd, hdrlen, len, cpinfo, pseudo_header);
+		return call_capture_dissector(eth_cap_handle, pd, hdrlen, len, cpinfo, pseudo_header);
 
 	}
 
-	return FALSE;
+	return false;
 }
 
 static int
@@ -124,7 +123,7 @@ dissect_pktap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	proto_item *ti = NULL;
 	tvbuff_t *next_tvb;
 	int offset = 0;
-	guint32 pkt_len, rectype, dlt;
+	uint32_t pkt_len, rectype, dlt;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "PKTAP");
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -154,7 +153,7 @@ dissect_pktap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	dlt = tvb_get_letohl(tvb, offset);
 	offset += 4;
 	proto_tree_add_item(pktap_tree, hf_pktap_ifname, tvb, offset, 24,
-	    ENC_ASCII|ENC_NA);
+	    ENC_ASCII);
 	offset += 24;
 	proto_tree_add_item(pktap_tree, hf_pktap_flags, tvb, offset, 4,
 	    ENC_LITTLE_ENDIAN);
@@ -172,7 +171,7 @@ dissect_pktap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	    ENC_LITTLE_ENDIAN);
 	offset += 4;
 	proto_tree_add_item(pktap_tree, hf_pktap_cmdname, tvb, offset, 20,
-	    ENC_UTF_8|ENC_NA);
+	    ENC_UTF_8);
 	offset += 20;
 	proto_tree_add_item(pktap_tree, hf_pktap_svc_class, tvb, offset, 4,
 	    ENC_LITTLE_ENDIAN);
@@ -187,7 +186,7 @@ dissect_pktap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	    ENC_LITTLE_ENDIAN);
 	offset += 4;
 	proto_tree_add_item(pktap_tree, hf_pktap_ecmdname, tvb, offset, 20,
-	    ENC_UTF_8|ENC_NA);
+	    ENC_UTF_8);
 	/*offset += 20;*/
 
 	if (rectype == PKT_REC_PACKET) {
@@ -249,7 +248,7 @@ proto_register_pktap(void)
 	      FT_STRINGZ, BASE_NONE, NULL, 0x0, NULL, HFILL } },
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_pktap,
 	};
 
@@ -274,6 +273,8 @@ proto_register_pktap(void)
 void
 proto_reg_handoff_pktap(void)
 {
+	capture_dissector_handle_t pktap_cap_handle;
+
 	dissector_add_uint("wtap_encap", WTAP_ENCAP_PKTAP, pktap_handle);
 
 	pcap_pktdata_handle = find_dissector_add_dependency("pcap_pktdata", proto_pktap);
@@ -282,12 +283,15 @@ proto_reg_handoff_pktap(void)
 		uses DLT_USER2 for PKTAP; if you are using DLT_USER2 for your
 		own purposes, feel free to call your own capture_ routine for
 		WTAP_ENCAP_USER2. */
-	register_capture_dissector("wtap_encap", WTAP_ENCAP_PKTAP, capture_pktap, proto_pktap);
-	register_capture_dissector("wtap_encap", WTAP_ENCAP_USER2, capture_pktap, proto_pktap);
+	pktap_cap_handle = create_capture_dissector_handle(capture_pktap, proto_pktap);
+	capture_dissector_add_uint("wtap_encap", WTAP_ENCAP_PKTAP, pktap_cap_handle);
+	capture_dissector_add_uint("wtap_encap", WTAP_ENCAP_USER2, pktap_cap_handle);
+
+	eth_cap_handle = find_capture_dissector("eth");
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

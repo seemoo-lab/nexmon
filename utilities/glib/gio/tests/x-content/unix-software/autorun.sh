@@ -1,3 +1,3 @@
 #! /bin/sh
 
-do something here
+# do something here

@@ -9,19 +9,7 @@
  *
  * Copied from packet-quake.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,16 +23,18 @@
 void proto_register_tsp(void);
 void proto_reg_handoff_tsp(void);
 
-static int proto_tsp = -1;
-static int hf_tsp_type = -1;
-static int hf_tsp_vers = -1;
-static int hf_tsp_seq = -1;
-static int hf_tsp_hopcnt = -1;
-static int hf_tsp_time_sec = -1;
-static int hf_tsp_time_usec = -1;
-static int hf_tsp_name = -1;
+static dissector_handle_t tsp_handle;
 
-static gint ett_tsp = -1;
+static int proto_tsp;
+static int hf_tsp_type;
+static int hf_tsp_vers;
+static int hf_tsp_seq;
+static int hf_tsp_hopcnt;
+static int hf_tsp_time_sec;
+static int hf_tsp_time_usec;
+static int hf_tsp_name;
+
+static int ett_tsp;
 
 /* timed port from /etc/services */
 #define UDP_PORT_TIMED	525
@@ -111,14 +101,14 @@ dissect_tsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	proto_tree	*tsp_tree;
 	proto_item	*tsp_item;
 
-	guint8		tsp_type;
+	uint8_t		tsp_type;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "TSP");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	tsp_type = tvb_get_guint8(tvb, 0);
+	tsp_type = tvb_get_uint8(tvb, 0);
 	col_add_str(pinfo->cinfo, COL_INFO,
-		    val_to_str(tsp_type, names_tsp_type, "Unknown message type (%u)"));
+		    val_to_str(pinfo->pool, tsp_type, names_tsp_type, "Unknown message type (%u)"));
 
 	tsp_item = proto_tree_add_item(tree, proto_tsp,
 				tvb, 0, -1, ENC_NA);
@@ -156,7 +146,7 @@ dissect_tsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
 	if (tsp_tree) {
 		proto_tree_add_item(tsp_tree, hf_tsp_name, tvb, 12,
-			-1, ENC_ASCII|ENC_NA);
+			-1, ENC_ASCII);
 	}
 	return tvb_captured_length(tvb);
 }
@@ -165,10 +155,7 @@ dissect_tsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 void
 proto_reg_handoff_tsp(void)
 {
-	dissector_handle_t	tsp_handle;
-
-	tsp_handle = create_dissector_handle(dissect_tsp, proto_tsp);
-	dissector_add_uint("udp.port", UDP_PORT_TIMED, tsp_handle);
+	dissector_add_uint_with_preference("udp.port", UDP_PORT_TIMED, tsp_handle);
 }
 
 
@@ -205,7 +192,7 @@ proto_register_tsp(void)
 		    FT_STRINGZ, BASE_NONE, NULL, 0x0,
 		    "Sender Machine Name", HFILL }}
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_tsp
 	};
 
@@ -213,10 +200,11 @@ proto_register_tsp(void)
 					    "TSP", "tsp");
 	proto_register_field_array(proto_tsp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+	tsp_handle = register_dissector("tsp", dissect_tsp, proto_tsp);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

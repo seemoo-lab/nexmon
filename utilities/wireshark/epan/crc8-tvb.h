@@ -1,4 +1,4 @@
-/* crc8.h
+/** @file
  *
  * Checks the checksum (FCS) of the 3G TS 27.010 Multiplexing protocol.
  * The algorithm to check the FCS is described in "3G TS 27.010 V2.0.0 (1999-06)"
@@ -16,19 +16,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -39,13 +27,13 @@
  * \param len Number of bytes in the message.
  * \param offset Offset in the message.
  * \param received_fcs The received FCS.
- * \return     Returns TRUE if the checksum is correct, FALSE if it is not correct
+ * \return     Returns true if the checksum is correct, false if it is not correct
  *****************************************************************************/
 
 #ifndef __CRC8_TVB_H__
 #define __CRC8_TVB_H__
 
-extern gboolean check_fcs(tvbuff_t *p, guint8 len, guint8 offset, guint8 received_fcs);
-extern guint8 get_crc8_ieee8023_epon(tvbuff_t *p, guint8 len, guint8 offset);
+extern bool check_fcs(tvbuff_t *p, uint8_t len, uint8_t offset, uint8_t received_fcs);
+extern uint8_t get_crc8_ieee8023_epon(tvbuff_t *p, uint8_t len, uint8_t offset);
 
 #endif /* __CRC8_TVB_H__ */

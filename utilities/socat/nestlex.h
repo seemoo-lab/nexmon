@@ -1,5 +1,5 @@
 /* source: nestlex.h */
-/* Copyright Gerhard Rieger 2006-2007 */
+/* Copyright Gerhard Rieger */
 /* Published under the GNU General Public License V.2, see file COPYING */
 
 #ifndef __nestlex_h_included

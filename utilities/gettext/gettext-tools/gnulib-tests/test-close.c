@@ -1,9 +1,9 @@
 /* Test closing a file or socket.
-   Copyright (C) 2011-2016 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -22,6 +22,7 @@
 SIGNATURE_CHECK (close, int, (int));
 
 #include <errno.h>
+#include <fcntl.h>
 
 #include "macros.h"
 
@@ -40,6 +41,13 @@ main (void)
     ASSERT (close (99) == -1);
     ASSERT (errno == EBADF);
   }
+#ifdef AT_FDCWD
+  {
+    errno = 0;
+    ASSERT (close (AT_FDCWD) == -1);
+    ASSERT (errno == EBADF);
+  }
+#endif
 
-  return 0;
+  return test_exit_status;
 }

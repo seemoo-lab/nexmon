@@ -1,0 +1,17 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Perl support: long comments.
+
+cat <<\EOF > xg-pl-11.pl
+#!/usr/bin/perl
+# This is a comment line that is longer than 1024 bytes, which is the size of the stack-allocated space in a 'struct string_buffer'. For shorter comment lines, a different code path is used than for longer comment lines. In the commit that started to use 'struct string_buffer', namely commit 63709a20897369ca8d2cebf8a7d1f9f51ae9e359, there was a mistake. The effect was a bug with two visible effects: 1) When executed with valgrind, this unit test produced "Invalid read of size 1" errors. 2) Building the po4a package as a Nix package on Alpine Linux produced a crash of xgettext (because Nix adds a very long list of -I options to the first line of many perl scripts). For the other xgettext backends, there is no problem. I checked this by running "make check" with valgrind enabled (through the CHECKER variable in the Makefile) after temporarily changing the stack-allocated size from 1024 bytes to 10 bytes. _______________________________________________________________________________________________________________
+
+=cut
+
+package Locale::Po4a::Dia;
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --add-comments --omit-header --no-location --keyword=_ \
+  -d xg-pl-11.tmp xg-pl-11.pl || Exit 1

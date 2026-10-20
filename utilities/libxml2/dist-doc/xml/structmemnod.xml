@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structmemnod" kind="struct" language="C++" prot="public">
+    <compoundname>memnod</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmemnod_1a98af55da4a3873710c27b650e9a3f71b" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int mh_tag</definition>
+        <argsstring></argsstring>
+        <name>mh_tag</name>
+        <qualifiedname>memnod::mh_tag</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="41" column="20" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmemnod_1a2bb94a9870ad2675e90b9e09eeb40fee" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t mh_size</definition>
+        <argsstring></argsstring>
+        <name>mh_size</name>
+        <qualifiedname>memnod::mh_size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="42" column="20" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="42" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlmemory.c" line="40" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="40" bodyend="43"/>
+    <listofallmembers>
+      <member refid="structmemnod_1a2bb94a9870ad2675e90b9e09eeb40fee" prot="public" virt="non-virtual"><scope>memnod</scope><name>mh_size</name></member>
+      <member refid="structmemnod_1a98af55da4a3873710c27b650e9a3f71b" prot="public" virt="non-virtual"><scope>memnod</scope><name>mh_tag</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -3,10 +3,12 @@
  * Copyright (C) 2010 Red Hat, Inc.
  * Copyright © 2015 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,7 +34,7 @@ G_BEGIN_DECLS
  * G_TLS_BACKEND_EXTENSION_POINT_NAME:
  *
  * Extension point for TLS functionality via #GTlsBackend.
- * See [Extending GIO][extending-gio].
+ * See [Extending GIO](overview.html#extending-gio).
  */
 #define G_TLS_BACKEND_EXTENSION_POINT_NAME "gio-tls-backend"
 
@@ -77,32 +79,35 @@ struct _GTlsBackendInterface
   GType          ( *get_dtls_server_connection_type) (void);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType          g_tls_backend_get_type                   (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType          g_tls_backend_get_type                   (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GTlsBackend *  g_tls_backend_get_default                (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GTlsDatabase * g_tls_backend_get_default_database       (GTlsBackend *backend);
+GIO_AVAILABLE_IN_2_60
+void           g_tls_backend_set_default_database       (GTlsBackend  *backend,
+                                                         GTlsDatabase *database);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean       g_tls_backend_supports_tls               (GTlsBackend *backend);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean       g_tls_backend_supports_dtls              (GTlsBackend *backend);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GType          g_tls_backend_get_certificate_type       (GTlsBackend *backend);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GType          g_tls_backend_get_client_connection_type (GTlsBackend *backend);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GType          g_tls_backend_get_server_connection_type (GTlsBackend *backend);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GType          g_tls_backend_get_file_database_type     (GTlsBackend *backend);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GType          g_tls_backend_get_dtls_client_connection_type (GTlsBackend *backend);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GType          g_tls_backend_get_dtls_server_connection_type (GTlsBackend *backend);
 
 G_END_DECLS

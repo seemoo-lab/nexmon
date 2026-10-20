@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,32 +29,20 @@
 
 #include "glibintl.h"
 
-/**
- * SECTION:gdbusintrospection
- * @title: D-Bus Introspection Data
- * @short_description: Node and interface description data structures
- * @include: gio/gio.h
- *
- * Various data structures and convenience routines to parse and
- * generate D-Bus introspection XML. Introspection information is
- * used when registering objects with g_dbus_connection_register_object().
- *
- * The format of D-Bus introspection XML is specified in the
- * [D-Bus specification](http://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format)
- */
-
 /* ---------------------------------------------------------------------------------------------------- */
 
 #define _MY_DEFINE_BOXED_TYPE(TypeName, type_name) \
   G_DEFINE_BOXED_TYPE (TypeName, type_name, type_name##_ref, type_name##_unref)
 
-_MY_DEFINE_BOXED_TYPE (GDBusNodeInfo,       g_dbus_node_info);
-_MY_DEFINE_BOXED_TYPE (GDBusInterfaceInfo,  g_dbus_interface_info);
-_MY_DEFINE_BOXED_TYPE (GDBusMethodInfo,     g_dbus_method_info);
-_MY_DEFINE_BOXED_TYPE (GDBusSignalInfo,     g_dbus_signal_info);
-_MY_DEFINE_BOXED_TYPE (GDBusPropertyInfo,   g_dbus_property_info);
-_MY_DEFINE_BOXED_TYPE (GDBusArgInfo,        g_dbus_arg_info);
-_MY_DEFINE_BOXED_TYPE (GDBusAnnotationInfo, g_dbus_annotation_info);
+_MY_DEFINE_BOXED_TYPE (GDBusNodeInfo,       g_dbus_node_info)
+_MY_DEFINE_BOXED_TYPE (GDBusInterfaceInfo,  g_dbus_interface_info)
+_MY_DEFINE_BOXED_TYPE (GDBusMethodInfo,     g_dbus_method_info)
+_MY_DEFINE_BOXED_TYPE (GDBusSignalInfo,     g_dbus_signal_info)
+_MY_DEFINE_BOXED_TYPE (GDBusPropertyInfo,   g_dbus_property_info)
+_MY_DEFINE_BOXED_TYPE (GDBusArgInfo,        g_dbus_arg_info)
+_MY_DEFINE_BOXED_TYPE (GDBusAnnotationInfo, g_dbus_annotation_info)
+
+#undef _MY_DEFINE_BOXED_TYPE
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -96,14 +86,14 @@ typedef struct
  * If @info is statically allocated does nothing. Otherwise increases
  * the reference count.
  *
- * Returns: The same @info.
+ * Returns: (not nullable): The same @info.
  *
  * Since: 2.26
  */
 GDBusNodeInfo *
 g_dbus_node_info_ref (GDBusNodeInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return info;
   g_atomic_int_inc (&info->ref_count);
   return info;
@@ -116,14 +106,14 @@ g_dbus_node_info_ref (GDBusNodeInfo *info)
  * If @info is statically allocated does nothing. Otherwise increases
  * the reference count.
  *
- * Returns: The same @info.
+ * Returns: (not nullable): The same @info.
  *
  * Since: 2.26
  */
 GDBusInterfaceInfo *
 g_dbus_interface_info_ref (GDBusInterfaceInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return info;
   g_atomic_int_inc (&info->ref_count);
   return info;
@@ -136,14 +126,14 @@ g_dbus_interface_info_ref (GDBusInterfaceInfo *info)
  * If @info is statically allocated does nothing. Otherwise increases
  * the reference count.
  *
- * Returns: The same @info.
+ * Returns: (not nullable): The same @info.
  *
  * Since: 2.26
  */
 GDBusMethodInfo *
 g_dbus_method_info_ref (GDBusMethodInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return info;
   g_atomic_int_inc (&info->ref_count);
   return info;
@@ -156,14 +146,14 @@ g_dbus_method_info_ref (GDBusMethodInfo *info)
  * If @info is statically allocated does nothing. Otherwise increases
  * the reference count.
  *
- * Returns: The same @info.
+ * Returns: (not nullable): The same @info.
  *
  * Since: 2.26
  */
 GDBusSignalInfo *
 g_dbus_signal_info_ref (GDBusSignalInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return info;
   g_atomic_int_inc (&info->ref_count);
   return info;
@@ -176,14 +166,14 @@ g_dbus_signal_info_ref (GDBusSignalInfo *info)
  * If @info is statically allocated does nothing. Otherwise increases
  * the reference count.
  *
- * Returns: The same @info.
+ * Returns: (not nullable): The same @info.
  *
  * Since: 2.26
  */
 GDBusPropertyInfo *
 g_dbus_property_info_ref (GDBusPropertyInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return info;
   g_atomic_int_inc (&info->ref_count);
   return info;
@@ -196,14 +186,14 @@ g_dbus_property_info_ref (GDBusPropertyInfo *info)
  * If @info is statically allocated does nothing. Otherwise increases
  * the reference count.
  *
- * Returns: The same @info.
+ * Returns: (not nullable): The same @info.
  *
  * Since: 2.26
  */
 GDBusArgInfo *
 g_dbus_arg_info_ref (GDBusArgInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return info;
   g_atomic_int_inc (&info->ref_count);
   return info;
@@ -216,14 +206,14 @@ g_dbus_arg_info_ref (GDBusArgInfo *info)
  * If @info is statically allocated does nothing. Otherwise increases
  * the reference count.
  *
- * Returns: The same @info.
+ * Returns: (not nullable): The same @info.
  *
  * Since: 2.26
  */
 GDBusAnnotationInfo *
 g_dbus_annotation_info_ref (GDBusAnnotationInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return info;
   g_atomic_int_inc (&info->ref_count);
   return info;
@@ -256,7 +246,7 @@ free_null_terminated_array (gpointer array, GDestroyNotify unref_func)
 void
 g_dbus_annotation_info_unref (GDBusAnnotationInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return;
   if (g_atomic_int_dec_and_test (&info->ref_count))
     {
@@ -280,7 +270,7 @@ g_dbus_annotation_info_unref (GDBusAnnotationInfo *info)
 void
 g_dbus_arg_info_unref (GDBusArgInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return;
   if (g_atomic_int_dec_and_test (&info->ref_count))
     {
@@ -304,7 +294,7 @@ g_dbus_arg_info_unref (GDBusArgInfo *info)
 void
 g_dbus_method_info_unref (GDBusMethodInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return;
   if (g_atomic_int_dec_and_test (&info->ref_count))
     {
@@ -329,7 +319,7 @@ g_dbus_method_info_unref (GDBusMethodInfo *info)
 void
 g_dbus_signal_info_unref (GDBusSignalInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return;
   if (g_atomic_int_dec_and_test (&info->ref_count))
     {
@@ -353,7 +343,7 @@ g_dbus_signal_info_unref (GDBusSignalInfo *info)
 void
 g_dbus_property_info_unref (GDBusPropertyInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return;
   if (g_atomic_int_dec_and_test (&info->ref_count))
     {
@@ -377,7 +367,7 @@ g_dbus_property_info_unref (GDBusPropertyInfo *info)
 void
 g_dbus_interface_info_unref (GDBusInterfaceInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return;
   if (g_atomic_int_dec_and_test (&info->ref_count))
     {
@@ -403,7 +393,7 @@ g_dbus_interface_info_unref (GDBusInterfaceInfo *info)
 void
 g_dbus_node_info_unref (GDBusNodeInfo *info)
 {
-  if (info->ref_count == -1)
+  if (g_atomic_int_get (&info->ref_count) == -1)
     return;
   if (g_atomic_int_dec_and_test (&info->ref_count))
     {
@@ -774,7 +764,7 @@ g_dbus_property_info_generate_xml (GDBusPropertyInfo *info,
  * g_dbus_interface_info_generate_xml:
  * @info: A #GDBusNodeInfo
  * @indent: Indentation level.
- * @string_builder: (out): A #GString to to append XML data to.
+ * @string_builder: A #GString to to append XML data to.
  *
  * Appends an XML representation of @info (and its children) to @string_builder.
  *
@@ -823,7 +813,7 @@ g_dbus_interface_info_generate_xml (GDBusInterfaceInfo *info,
  * g_dbus_node_info_generate_xml:
  * @info: A #GDBusNodeInfo.
  * @indent: Indentation level.
- * @string_builder: (out): A #GString to to append XML data to.
+ * @string_builder: A #GString to to append XML data to.
  *
  * Appends an XML representation of @info (and its children) to @string_builder.
  *
@@ -1106,6 +1096,7 @@ parse_data_get_annotation (ParseData *data,
 {
   if (create_new)
     g_ptr_array_add (data->annotations, g_new0 (GDBusAnnotationInfo, 1));
+  g_assert (data->annotations->len > 0);
   return data->annotations->pdata[data->annotations->len - 1];
 }
 
@@ -1115,6 +1106,7 @@ parse_data_get_arg (ParseData *data,
 {
   if (create_new)
     g_ptr_array_add (data->args, g_new0 (GDBusArgInfo, 1));
+  g_assert (data->args->len > 0);
   return data->args->pdata[data->args->len - 1];
 }
 
@@ -1124,6 +1116,7 @@ parse_data_get_out_arg (ParseData *data,
 {
   if (create_new)
     g_ptr_array_add (data->out_args, g_new0 (GDBusArgInfo, 1));
+  g_assert (data->out_args->len > 0);
   return data->out_args->pdata[data->out_args->len - 1];
 }
 
@@ -1133,6 +1126,7 @@ parse_data_get_method (ParseData *data,
 {
   if (create_new)
     g_ptr_array_add (data->methods, g_new0 (GDBusMethodInfo, 1));
+  g_assert (data->methods->len > 0);
   return data->methods->pdata[data->methods->len - 1];
 }
 
@@ -1142,6 +1136,7 @@ parse_data_get_signal (ParseData *data,
 {
   if (create_new)
     g_ptr_array_add (data->signals, g_new0 (GDBusSignalInfo, 1));
+  g_assert (data->signals->len > 0);
   return data->signals->pdata[data->signals->len - 1];
 }
 
@@ -1151,6 +1146,7 @@ parse_data_get_property (ParseData *data,
 {
   if (create_new)
     g_ptr_array_add (data->properties, g_new0 (GDBusPropertyInfo, 1));
+  g_assert (data->properties->len > 0);
   return data->properties->pdata[data->properties->len - 1];
 }
 
@@ -1160,6 +1156,7 @@ parse_data_get_interface (ParseData *data,
 {
   if (create_new)
     g_ptr_array_add (data->interfaces, g_new0 (GDBusInterfaceInfo, 1));
+  g_assert (data->interfaces->len > 0);
   return data->interfaces->pdata[data->interfaces->len - 1];
 }
 
@@ -1169,6 +1166,7 @@ parse_data_get_node (ParseData *data,
 {
   if (create_new)
     g_ptr_array_add (data->nodes, g_new0 (GDBusNodeInfo, 1));
+  g_assert (data->nodes->len > 0);
   return data->nodes->pdata[data->nodes->len - 1];
 }
 
@@ -1268,7 +1266,7 @@ parser_start_element (GMarkupParseContext  *context,
   /* ---------------------------------------------------------------------------------------------------- */
   if (strcmp (element_name, "node") == 0)
     {
-      if (!(g_slist_length (stack) >= 1 || strcmp (stack->next->data, "node") != 0))
+      if (stack->next != NULL && strcmp (stack->next->data, "node") != 0)
         {
           g_set_error_literal (error,
                                G_MARKUP_ERROR,
@@ -1609,7 +1607,7 @@ parser_end_element (GMarkupParseContext  *context,
       nodes = parse_data_steal_nodes (data, &num_nodes);
       interfaces = parse_data_steal_interfaces (data, &num_interfaces);
 
-      /* destroy the nodes, interfaces for scope we're exiting and and pop the nodes, interfaces from the
+      /* destroy the nodes, interfaces for scope we're exiting and pop the nodes, interfaces from the
        * scope we're reentering
        */
       parse_data_free_interfaces (data);
@@ -1703,7 +1701,7 @@ parser_end_element (GMarkupParseContext  *context,
 
       embedded_annotations = steal_annotations (data);
 
-      /* destroy the annotations for scope we're exiting and and pop the annotations from the scope we're reentering */
+      /* destroy the annotations for scope we're exiting and pop the annotations from the scope we're reentering */
       parse_data_free_annotations (data);
       data->annotations = (GPtrArray *) data->annotations_stack->data;
       data->annotations_stack = g_slist_remove (data->annotations_stack, data->annotations_stack->data);
@@ -1723,7 +1721,7 @@ parser_end_element (GMarkupParseContext  *context,
 
   if (!have_popped_annotations)
     {
-      /* destroy the annotations for scope we're exiting and and pop the annotations from the scope we're reentering */
+      /* destroy the annotations for scope we're exiting and pop the annotations from the scope we're reentering */
       parse_data_free_annotations (data);
       data->annotations = (GPtrArray *) data->annotations_stack->data;
       data->annotations_stack = g_slist_remove (data->annotations_stack, data->annotations_stack->data);
@@ -1757,10 +1755,10 @@ parser_error (GMarkupParseContext *context,
  * Parses @xml_data and returns a #GDBusNodeInfo representing the data.
  *
  * The introspection XML must contain exactly one top-level
- * <node> element.
+ * `<node>` element.
  *
  * Note that this routine is using a
- * [GMarkup][glib-Simple-XML-Subset-Parser.description]-based
+ * [GMarkup](../glib/markup.html)-based
  * parser that only accepts a subset of valid XML documents.
  *
  * Returns: A #GDBusNodeInfo structure or %NULL if @error is set. Free
@@ -1838,14 +1836,14 @@ g_dbus_node_info_new_for_xml (const gchar  *xml_data,
 
 /**
  * g_dbus_annotation_info_lookup:
- * @annotations: (array zero-terminated=1) (allow-none): A %NULL-terminated array of annotations or %NULL.
+ * @annotations: (array zero-terminated=1) (nullable): A %NULL-terminated array of annotations or %NULL.
  * @name: The name of the annotation to look up.
  *
  * Looks up the value of an annotation.
  *
  * The cost of this function is O(n) in number of annotations.
  *
- * Returns: The value or %NULL if not found. Do not free, it is owned by @annotations.
+ * Returns: (nullable): The value or %NULL if not found. Do not free, it is owned by @annotations.
  *
  * Since: 2.26
  */
@@ -1913,7 +1911,7 @@ static GHashTable *info_cache = NULL;
  * The cost of this function is O(n) in number of methods unless
  * g_dbus_interface_info_cache_build() has been used on @info.
  *
- * Returns: (transfer none): A #GDBusMethodInfo or %NULL if not found. Do not free, it is owned by @info.
+ * Returns: (nullable) (transfer none): A #GDBusMethodInfo or %NULL if not found. Do not free, it is owned by @info.
  *
  * Since: 2.26
  */
@@ -1967,7 +1965,7 @@ g_dbus_interface_info_lookup_method (GDBusInterfaceInfo *info,
  * The cost of this function is O(n) in number of signals unless
  * g_dbus_interface_info_cache_build() has been used on @info.
  *
- * Returns: (transfer none): A #GDBusSignalInfo or %NULL if not found. Do not free, it is owned by @info.
+ * Returns: (nullable) (transfer none): A #GDBusSignalInfo or %NULL if not found. Do not free, it is owned by @info.
  *
  * Since: 2.26
  */
@@ -2021,7 +2019,7 @@ g_dbus_interface_info_lookup_signal (GDBusInterfaceInfo *info,
  * The cost of this function is O(n) in number of properties unless
  * g_dbus_interface_info_cache_build() has been used on @info.
  *
- * Returns: (transfer none): A #GDBusPropertyInfo or %NULL if not found. Do not free, it is owned by @info.
+ * Returns: (nullable) (transfer none): A #GDBusPropertyInfo or %NULL if not found. Do not free, it is owned by @info.
  *
  * Since: 2.26
  */
@@ -2163,7 +2161,7 @@ g_dbus_interface_info_cache_release (GDBusInterfaceInfo *info)
  *
  * The cost of this function is O(n) in number of interfaces.
  *
- * Returns: (transfer none): A #GDBusInterfaceInfo or %NULL if not found. Do not free, it is owned by @info.
+ * Returns: (nullable) (transfer none): A #GDBusInterfaceInfo or %NULL if not found. Do not free, it is owned by @info.
  *
  * Since: 2.26
  */

@@ -11,19 +11,7 @@
  *
  * Copied from packet-quake.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,112 +19,115 @@
 
 #include <epan/packet.h>
 #include <epan/conversation.h>
-#include <epan/prefs.h>
 #include <epan/to_str.h>
 #include <epan/aftypes.h>
 #include <epan/ipproto.h>
+#include <epan/tfs.h>
+
+#include <wsutil/ws_padding_to.h>
 
 void proto_register_dtpt(void);
 
-static int proto_dtpt = -1;
+static int proto_dtpt;
 
-static int hf_dtpt_version = -1;
-static int hf_dtpt_message_type = -1;
-static int hf_dtpt_flags = -1;
-static int hf_dtpt_flags_deep = -1;
-static int hf_dtpt_flags_containers = -1;
-static int hf_dtpt_flags_nocontainers = -1;
-static int hf_dtpt_flags_nearest = -1;
-static int hf_dtpt_flags_return_name = -1;
-static int hf_dtpt_flags_return_type = -1;
-static int hf_dtpt_flags_return_version = -1;
-static int hf_dtpt_flags_return_comment = -1;
-static int hf_dtpt_flags_return_addr = -1;
-static int hf_dtpt_flags_return_blob = -1;
-static int hf_dtpt_flags_return_aliases = -1;
-static int hf_dtpt_flags_return_query_string = -1;
-static int hf_dtpt_flags_flushcache = -1;
-static int hf_dtpt_flags_flushprevious = -1;
-static int hf_dtpt_flags_res_service = -1;
-static int hf_dtpt_payload_size = -1;
-static int hf_dtpt_handle = -1;
-static int hf_dtpt_error = -1;
-static int hf_dtpt_buffer_size = -1;
-static int hf_dtpt_data_size = -1;
-static int hf_dtpt_queryset_rawsize = -1;
-static int hf_dtpt_queryset_size = -1;
-static int hf_dtpt_queryset_service_instance_name_pointer = -1;
-static int hf_dtpt_queryset_service_class_id_pointer = -1;
-static int hf_dtpt_queryset_version = -1;
-static int hf_dtpt_queryset_comment_pointer = -1;
-static int hf_dtpt_queryset_namespace = -1;
-static int hf_dtpt_queryset_provider_id_pointer = -1;
-static int hf_dtpt_queryset_context_pointer = -1;
-static int hf_dtpt_queryset_protocols_number = -1;
-static int hf_dtpt_queryset_protocols_pointer = -1;
-static int hf_dtpt_queryset_query_string_pointer = -1;
-static int hf_dtpt_queryset_cs_addrs_number = -1;
-static int hf_dtpt_queryset_cs_addrs_pointer = -1;
-static int hf_dtpt_queryset_output_flags = -1;
-static int hf_dtpt_queryset_blob_pointer = -1;
-static int hf_dtpt_wstring_length = -1;
-static int hf_dtpt_wstring_data = -1;
-static int hf_dtpt_guid_length = -1;
-static int hf_dtpt_guid_data = -1;
-static int hf_dtpt_service_instance_name = -1;
-static int hf_dtpt_service_class_id = -1;
-static int hf_dtpt_comment = -1;
-static int hf_dtpt_ns_provider_id = -1;
-static int hf_dtpt_context = -1;
-static int hf_dtpt_protocols_number = -1;
-static int hf_dtpt_protocols_length = -1;
-static int hf_dtpt_protocol_family = -1;
-static int hf_dtpt_protocol_protocol = -1;
-static int hf_dtpt_query_string = -1;
-static int hf_dtpt_cs_addrs_number = -1;
-static int hf_dtpt_cs_addrs_length1 = -1;
-static int hf_dtpt_cs_addr_socket_type = -1;
-static int hf_dtpt_cs_addr_protocol = -1;
-static int hf_dtpt_cs_addr_local_pointer = -1;
-static int hf_dtpt_cs_addr_local_length = -1;
-static int hf_dtpt_cs_addr_local = -1;
-static int hf_dtpt_cs_addr_remote_pointer = -1;
-static int hf_dtpt_cs_addr_remote_length = -1;
-static int hf_dtpt_cs_addr_remote = -1;
-static int hf_dtpt_sockaddr_length = -1;
-static int hf_dtpt_sockaddr_family = -1;
-static int hf_dtpt_sockaddr_port = -1;
-static int hf_dtpt_sockaddr_address = -1;
-static int hf_dtpt_blob_rawsize = -1;
-static int hf_dtpt_blob_size = -1;
-static int hf_dtpt_blob_data_pointer = -1;
-static int hf_dtpt_blob_data_length = -1;
-static int hf_dtpt_blob_data = -1;
-static int hf_dtpt_connect_addr = -1;
-static int hf_dtpt_padding = -1;
+static int hf_dtpt_version;
+static int hf_dtpt_message_type;
+static int hf_dtpt_flags;
+static int hf_dtpt_flags_deep;
+static int hf_dtpt_flags_containers;
+static int hf_dtpt_flags_nocontainers;
+static int hf_dtpt_flags_nearest;
+static int hf_dtpt_flags_return_name;
+static int hf_dtpt_flags_return_type;
+static int hf_dtpt_flags_return_version;
+static int hf_dtpt_flags_return_comment;
+static int hf_dtpt_flags_return_addr;
+static int hf_dtpt_flags_return_blob;
+static int hf_dtpt_flags_return_aliases;
+static int hf_dtpt_flags_return_query_string;
+static int hf_dtpt_flags_flushcache;
+static int hf_dtpt_flags_flushprevious;
+static int hf_dtpt_flags_res_service;
+static int hf_dtpt_payload_size;
+static int hf_dtpt_handle;
+static int hf_dtpt_error;
+static int hf_dtpt_buffer_size;
+static int hf_dtpt_data_size;
+static int hf_dtpt_queryset_rawsize;
+static int hf_dtpt_queryset_size;
+static int hf_dtpt_queryset_service_instance_name_pointer;
+static int hf_dtpt_queryset_service_class_id_pointer;
+static int hf_dtpt_queryset_version;
+static int hf_dtpt_queryset_comment_pointer;
+static int hf_dtpt_queryset_namespace;
+static int hf_dtpt_queryset_provider_id_pointer;
+static int hf_dtpt_queryset_context_pointer;
+static int hf_dtpt_queryset_protocols_number;
+static int hf_dtpt_queryset_protocols_pointer;
+static int hf_dtpt_queryset_query_string_pointer;
+static int hf_dtpt_queryset_cs_addrs_number;
+static int hf_dtpt_queryset_cs_addrs_pointer;
+static int hf_dtpt_queryset_output_flags;
+static int hf_dtpt_queryset_blob_pointer;
+static int hf_dtpt_wstring_length;
+static int hf_dtpt_wstring_data;
+static int hf_dtpt_guid_length;
+static int hf_dtpt_guid_data;
+static int hf_dtpt_service_instance_name;
+static int hf_dtpt_service_class_id;
+static int hf_dtpt_comment;
+static int hf_dtpt_ns_provider_id;
+static int hf_dtpt_context;
+static int hf_dtpt_protocols_number;
+static int hf_dtpt_protocols_length;
+static int hf_dtpt_protocol_family;
+static int hf_dtpt_protocol_protocol;
+static int hf_dtpt_query_string;
+static int hf_dtpt_cs_addrs_number;
+static int hf_dtpt_cs_addrs_length1;
+static int hf_dtpt_cs_addr_socket_type;
+static int hf_dtpt_cs_addr_protocol;
+static int hf_dtpt_cs_addr_local_pointer;
+static int hf_dtpt_cs_addr_local_length;
+static int hf_dtpt_cs_addr_local;
+static int hf_dtpt_cs_addr_remote_pointer;
+static int hf_dtpt_cs_addr_remote_length;
+static int hf_dtpt_cs_addr_remote;
+static int hf_dtpt_sockaddr_length;
+static int hf_dtpt_sockaddr_family;
+static int hf_dtpt_sockaddr_port;
+static int hf_dtpt_sockaddr_address;
+static int hf_dtpt_blob_rawsize;
+static int hf_dtpt_blob_size;
+static int hf_dtpt_blob_data_pointer;
+static int hf_dtpt_blob_data_length;
+static int hf_dtpt_blob_data;
+static int hf_dtpt_connect_addr;
+static int hf_dtpt_padding;
 
-static gint ett_dtpt = -1;
-static gint ett_dtpt_flags = -1;
-static gint ett_dtpt_queryset = -1;
-static gint ett_dtpt_wstring = -1;
-static gint ett_dtpt_guid = -1;
-static gint ett_dtpt_protocols = -1;
-static gint ett_dtpt_protocol = -1;
-static gint ett_dtpt_cs_addrs = -1;
-static gint ett_dtpt_cs_addr1 = -1;
-static gint ett_dtpt_cs_addr2 = -1;
-static gint ett_dtpt_sockaddr = -1;
-static gint ett_dtpt_blobraw = -1;
-static gint ett_dtpt_blob = -1;
+static int ett_dtpt;
+static int ett_dtpt_flags;
+static int ett_dtpt_queryset;
+static int ett_dtpt_wstring;
+static int ett_dtpt_guid;
+static int ett_dtpt_protocols;
+static int ett_dtpt_protocol;
+static int ett_dtpt_cs_addrs;
+static int ett_dtpt_cs_addr1;
+static int ett_dtpt_cs_addr2;
+static int ett_dtpt_sockaddr;
+static int ett_dtpt_blobraw;
+static int ett_dtpt_blob;
 
 
 
+static dissector_handle_t	dtpt_handle;
 static dissector_handle_t	dtpt_conversation_handle;
 /** static dissector_handle_t	dtpt_data_handle;  **/
 
 
 /* Server port */
-static unsigned int gbl_dtptServerPort=5721;
+#define TCP_SERVER_PORT     5721
 
 static const value_string names_message_type[] = {
 #define LookupBeginRequest 9
@@ -190,28 +181,32 @@ static const value_string names_socket_type[] = {
 	{	0, NULL	}
 };
 
+#define DTPT_PROTO_IP		0
+#define DTPT_PROTO_TCP		IP_PROTO_TCP
+#define DTPT_PROTO_UDP		IP_PROTO_UDP
+
 static const value_string names_protocol[] = {
-	{	IP_PROTO_IP,	"IPPROTO_IP"	},
-	{	IP_PROTO_TCP,	"IPPROTO_TCP"	},
-	{	IP_PROTO_UDP,	"IPPROTP_UDP"	},
+	{	DTPT_PROTO_IP,	"IPPROTO_IP"	},
+	{	DTPT_PROTO_TCP,	"IPPROTO_TCP"	},
+	{	DTPT_PROTO_UDP,	"IPPROTP_UDP"	},
 	{	0, NULL	}
 };
 
-#define LUP_DEEP                0x0001
-#define LUP_CONTAINERS          0x0002
-#define LUP_NOCONTAINERS        0x0004
-#define LUP_NEAREST             0x0008
-#define LUP_RETURN_NAME         0x0010
-#define LUP_RETURN_TYPE         0x0020
-#define LUP_RETURN_VERSION      0x0040
-#define LUP_RETURN_COMMENT      0x0080
-#define LUP_RETURN_ADDR         0x0100
-#define LUP_RETURN_BLOB         0x0200
-#define LUP_RETURN_ALIASES      0x0400
-#define LUP_RETURN_QUERY_STRING 0x0800
-#define LUP_FLUSHCACHE          0x1000
-#define LUP_FLUSHPREVIOUS       0x2000
-#define LUP_RES_SERVICE         0x8000
+#define LUP_DEEP                0x00000001
+#define LUP_CONTAINERS          0x00000002
+#define LUP_NOCONTAINERS        0x00000004
+#define LUP_NEAREST             0x00000008
+#define LUP_RETURN_NAME         0x00000010
+#define LUP_RETURN_TYPE         0x00000020
+#define LUP_RETURN_VERSION      0x00000040
+#define LUP_RETURN_COMMENT      0x00000080
+#define LUP_RETURN_ADDR         0x00000100
+#define LUP_RETURN_BLOB         0x00000200
+#define LUP_RETURN_ALIASES      0x00000400
+#define LUP_RETURN_QUERY_STRING 0x00000800
+#define LUP_FLUSHCACHE          0x00001000
+#define LUP_FLUSHPREVIOUS       0x00002000
+#define LUP_RES_SERVICE         0x00008000
 
 #define SOCKADDR_WITH_LEN	1
 #define SOCKADDR_CONNECT	2
@@ -223,20 +218,18 @@ dissect_dtpt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
 
 static int
-dissect_dtpt_wstring(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex)
+dissect_dtpt_wstring(tvbuff_t *tvb, unsigned offset, proto_tree *tree, packet_info *pinfo, int hfindex)
 {
-	guint32	wstring_length;
-	guint32	wstring_size;
+	uint32_t	wstring_length;
+	uint32_t	wstring_size;
 	char	*wstring_data = NULL;
-	guint32	wstring_padding = 0;
+	uint32_t	wstring_padding = 0;
 
 	wstring_length = tvb_get_letohl(tvb, offset);
-	wstring_data = tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, wstring_length, ENC_UTF_16|ENC_LITTLE_ENDIAN);
+	wstring_data = tvb_get_string_enc(pinfo->pool, tvb, offset+4, wstring_length, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 	wstring_size = wstring_length;
-	if (wstring_size%4) {
-		wstring_padding = (4-wstring_size%4);
-		wstring_size += wstring_padding;
-	}
+	wstring_padding = WS_PADDING_TO_4(wstring_size);
+	wstring_size += wstring_padding;
 	if (tree) {
 		proto_item	*dtpt_wstring_item;
 		proto_tree	*dtpt_wstring_tree;
@@ -259,16 +252,16 @@ dissect_dtpt_wstring(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex)
 }
 
 static int
-dissect_dtpt_guid(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex)
+dissect_dtpt_guid(tvbuff_t *tvb, unsigned offset, proto_tree *tree, packet_info *pinfo, int hfindex)
 {
-	guint32	guid_length;
+	uint32_t	guid_length;
 
 	guid_length = tvb_get_letohl(tvb, offset);
 	if (tree) {
 		e_guid_t	guid;
 		proto_item	*dtpt_guid_item = NULL;
 		proto_tree	*dtpt_guid_tree = NULL;
-		const gchar	*guid_name = NULL;
+		const char	*guid_name = NULL;
 
 		if (guid_length) {
 			tvb_get_guid(tvb, offset+4, &guid, ENC_LITTLE_ENDIAN);
@@ -278,10 +271,10 @@ dissect_dtpt_guid(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex)
 		}
 		dtpt_guid_item = proto_tree_add_guid(tree, hfindex, tvb, offset, 4 + guid_length, &guid);
 		if (dtpt_guid_item) {
-			guid_name = guids_get_guid_name(&guid);
+			guid_name = guids_get_guid_name(&guid, pinfo->pool);
 			if (guid_name != NULL)
 				proto_item_set_text(dtpt_guid_item, "%s: %s (%s)",
-				proto_registrar_get_name(hfindex), guid_name, guid_to_str(wmem_packet_scope(), &guid));
+				proto_registrar_get_name(hfindex), guid_name, guid_to_str(pinfo->pool, &guid));
 			dtpt_guid_tree = proto_item_add_subtree(dtpt_guid_item, ett_dtpt_guid);
 		}
 		if (dtpt_guid_tree) {
@@ -295,7 +288,7 @@ dissect_dtpt_guid(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex)
 				if (guid_name != NULL && dtpt_guid_data_item != NULL) {
 					proto_item_set_text(dtpt_guid_data_item, "%s: %s (%s)",
 					proto_registrar_get_name(hf_dtpt_guid_data),
-					guid_name, guid_to_str(wmem_packet_scope(), &guid));
+					guid_name, guid_to_str(pinfo->pool, &guid));
 				}
 			}
 		}
@@ -307,13 +300,13 @@ dissect_dtpt_guid(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex)
 }
 
 static int
-dissect_dtpt_sockaddr(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex, int sockaddr_type)
+dissect_dtpt_sockaddr(tvbuff_t *tvb, unsigned offset, proto_tree *tree, packet_info *pinfo, int hfindex, int sockaddr_type)
 {
-	guint32	sockaddr_length = 0;
+	uint32_t	sockaddr_length = 0;
 	proto_item	*sockaddr_item = NULL;
 	proto_tree	*sockaddr_tree = NULL;
-	guint32		sockaddr_len1 = 0;
-	guint32		sockaddr_len2 = 0;
+	uint32_t		sockaddr_len1 = 0;
+	uint32_t		sockaddr_len2 = 0;
 
 	switch (sockaddr_type) {
 		case SOCKADDR_WITH_LEN:
@@ -343,14 +336,14 @@ dissect_dtpt_sockaddr(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex
 	if (sockaddr_tree) {
 		switch (sockaddr_type) {
 			case SOCKADDR_WITH_LEN: {
-				guint16 family;
+				uint16_t family;
 
 				family = tvb_get_letohs(tvb, offset);
 				proto_tree_add_uint(sockaddr_tree, hf_dtpt_sockaddr_family,
 						tvb, offset, 2, family);
 				switch (family) {
 					case WINSOCK_AF_INET: {
-						guint16 port;
+						uint16_t port;
 
 						port = tvb_get_ntohs(tvb,offset+2);
 						proto_tree_add_uint(sockaddr_tree, hf_dtpt_sockaddr_port,
@@ -358,21 +351,21 @@ dissect_dtpt_sockaddr(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex
 						proto_tree_add_item(sockaddr_tree, hf_dtpt_sockaddr_address,
 											tvb, offset+4,4,ENC_BIG_ENDIAN);
 						proto_tree_add_item(sockaddr_tree, hf_dtpt_padding, tvb, offset+8, 8, ENC_NA);
-						proto_item_append_text(sockaddr_item, ": %s:%d", tvb_ip_to_str(tvb,offset+4), port);
+						proto_item_append_text(sockaddr_item, ": %s:%d", tvb_ip_to_str(pinfo->pool, tvb,offset+4), port);
 					}
 					break;
 				}
 			}
 			break;
 			case SOCKADDR_CONNECT: {
-				guint32	family;
+				uint32_t	family;
 
 				family = tvb_get_letohl(tvb, offset+0);
 				proto_tree_add_uint(sockaddr_tree, hf_dtpt_sockaddr_family,
 						tvb, offset+0, 4, family);
 				switch (family) {
 					case WINSOCK_AF_INET: {
-						guint16 port;
+						uint16_t port;
 
 						proto_tree_add_item(sockaddr_tree, hf_dtpt_padding, tvb, offset+4, 4, ENC_NA);
 						port = tvb_get_ntohs(tvb,offset+8);
@@ -381,7 +374,7 @@ dissect_dtpt_sockaddr(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex
 						proto_tree_add_item(sockaddr_tree, hf_dtpt_sockaddr_address,
 							tvb, offset+10,4,ENC_BIG_ENDIAN);
 						proto_tree_add_item(sockaddr_tree, hf_dtpt_padding, tvb, offset+14, 16, ENC_NA);
-						proto_item_append_text(sockaddr_item, ": %s:%d", tvb_ip_to_str(tvb,offset+10), port);
+						proto_item_append_text(sockaddr_item, ": %s:%d", tvb_ip_to_str(pinfo->pool, tvb,offset+10), port);
 					}
 					break;
 				}
@@ -397,7 +390,7 @@ dissect_dtpt_sockaddr(tvbuff_t *tvb, guint offset, proto_tree *tree, int hfindex
 static int
 dissect_dtpt_conversation(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-	guint		offset = 0;
+	unsigned		offset = 0;
 
 	/* First try to decode it as "normal" DTPT packets. */
 	offset = dissect_dtpt(tvb, pinfo, tree, NULL);
@@ -422,19 +415,19 @@ dissect_dtpt_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	proto_item	*dtpt_item;
 	proto_tree	*dtpt_tree;
 	proto_tree	*dtpt_queryset_tree;
-	guint		offset = 0;
-	guint32		queryset_rawsize;
-	guint32		queryset_size;
-	guint32		num_protocols;
-	guint32		protocols_length = 0;
-	guint32		addrs_start;
-	guint32		num_addrs;
-	guint32		addrs_length1 = 0;
+	unsigned		offset = 0;
+	uint32_t		queryset_rawsize;
+	uint32_t		queryset_size;
+	uint32_t		num_protocols;
+	uint32_t		protocols_length = 0;
+	uint32_t		addrs_start;
+	uint32_t		num_addrs;
+	uint32_t		addrs_length1 = 0;
 	proto_item	*dtpt_addrs_item = NULL;
 	proto_tree	*dtpt_addrs_tree = NULL;
-	guint32		blob_rawsize = 0;
-	guint32		blob_size = 0;
-	guint32		blob_data_length = 0;
+	uint32_t		blob_rawsize = 0;
+	uint32_t		blob_size = 0;
+	uint32_t		blob_data_length;
 
 	queryset_rawsize = tvb_get_letohl(tvb, offset + 0);
 	if (queryset_rawsize != 60) return 0;
@@ -454,55 +447,53 @@ dissect_dtpt_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		dtpt_queryset_tree = proto_tree_add_subtree(dtpt_tree, tvb, 4, 60,
 			ett_dtpt_queryset, NULL, "QuerySet raw");
 
-		if (dtpt_queryset_tree) {
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_size,
-				tvb, offset+4+0,  4, queryset_size);
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_service_instance_name_pointer,
-				tvb, offset+4+4,  4, tvb_get_letohl(tvb, offset+4+ 4));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_service_class_id_pointer,
-				tvb, offset+4+8,  4, tvb_get_letohl(tvb, offset+4+ 8));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_version,
-				tvb, offset+4+12, 4, tvb_get_letohl(tvb, offset+4+12));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_comment_pointer,
-				tvb, offset+4+16, 4, tvb_get_letohl(tvb, offset+4+16));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_namespace,
-				tvb, offset+4+20, 4, tvb_get_letohl(tvb, offset+4+20));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_provider_id_pointer,
-				tvb, offset+4+24, 4, tvb_get_letohl(tvb, offset+4+24));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_context_pointer,
-				tvb, offset+4+28, 4, tvb_get_letohl(tvb, offset+4+28));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_protocols_number,
-				tvb, offset+4+32, 4, tvb_get_letohl(tvb, offset+4+32));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_protocols_pointer,
-				tvb, offset+4+36, 4, tvb_get_letohl(tvb, offset+4+36));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_query_string_pointer,
-				tvb, offset+4+40, 4, tvb_get_letohl(tvb, offset+4+40));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_cs_addrs_number,
-				tvb, offset+4+44, 4, tvb_get_letohl(tvb, offset+4+44));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_cs_addrs_pointer,
-				tvb, offset+4+48, 4, tvb_get_letohl(tvb, offset+4+48));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_output_flags,
-				tvb, offset+4+52, 4, tvb_get_letohl(tvb, offset+4+52));
-			proto_tree_add_uint(dtpt_queryset_tree, hf_dtpt_queryset_blob_pointer,
-				tvb, offset+4+56, 4, tvb_get_letohl(tvb, offset+4+56));
-		}
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_size,
+			tvb, offset+4+0,  4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_service_instance_name_pointer,
+			tvb, offset+4+4,  4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_service_class_id_pointer,
+			tvb, offset+4+8,  4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_version,
+			tvb, offset+4+12, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_comment_pointer,
+			tvb, offset+4+16, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_namespace,
+			tvb, offset+4+20, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_provider_id_pointer,
+			tvb, offset+4+24, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_context_pointer,
+			tvb, offset+4+28, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_protocols_number,
+			tvb, offset+4+32, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_protocols_pointer,
+			tvb, offset+4+36, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_query_string_pointer,
+			tvb, offset+4+40, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_cs_addrs_number,
+			tvb, offset+4+44, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_cs_addrs_pointer,
+			tvb, offset+4+48, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_output_flags,
+			tvb, offset+4+52, 4, ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(dtpt_queryset_tree, hf_dtpt_queryset_blob_pointer,
+			tvb, offset+4+56, 4, ENC_LITTLE_ENDIAN);
 	}
 
 	offset += 4;
 	offset += 60;
 
-	offset = dissect_dtpt_wstring(tvb, offset, dtpt_tree, hf_dtpt_service_instance_name);
-	offset = dissect_dtpt_guid   (tvb, offset, dtpt_tree, hf_dtpt_service_class_id     );
-	offset = dissect_dtpt_wstring(tvb, offset, dtpt_tree, hf_dtpt_comment              );
-	offset = dissect_dtpt_guid   (tvb, offset, dtpt_tree, hf_dtpt_ns_provider_id       );
-	offset = dissect_dtpt_wstring(tvb, offset, dtpt_tree, hf_dtpt_context              );
+	offset = dissect_dtpt_wstring(tvb, offset, dtpt_tree, pinfo, hf_dtpt_service_instance_name);
+	offset = dissect_dtpt_guid   (tvb, offset, dtpt_tree, pinfo, hf_dtpt_service_class_id     );
+	offset = dissect_dtpt_wstring(tvb, offset, dtpt_tree, pinfo, hf_dtpt_comment              );
+	offset = dissect_dtpt_guid   (tvb, offset, dtpt_tree, pinfo, hf_dtpt_ns_provider_id       );
+	offset = dissect_dtpt_wstring(tvb, offset, dtpt_tree, pinfo, hf_dtpt_context              );
 	num_protocols = tvb_get_letohl(tvb, offset);
 	if (num_protocols>0) {
 		protocols_length = tvb_get_letohl(tvb, offset+4);
 	}
 	if (dtpt_tree) {
 		proto_tree	*dtpt_protocols_tree = NULL;
-		guint32		i;
+		uint32_t		i;
 
 		dtpt_protocols_tree = proto_tree_add_subtree_format(dtpt_tree,
 				tvb, offset, 4+(num_protocols>0?4:0)+num_protocols*8,
@@ -520,17 +511,15 @@ dissect_dtpt_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 				dtpt_protocol_tree = proto_tree_add_subtree_format(dtpt_protocols_tree,
 						tvb, offset+4+4+i*8, 8, ett_dtpt_protocol, NULL, "Protocol[%d]", i+1);
 
-				if (dtpt_protocol_tree) {
-					proto_tree_add_uint(dtpt_protocol_tree, hf_dtpt_protocol_family,
-					tvb, offset+4+4+i*8, 4, tvb_get_letohl(tvb, offset+4+4+i*8));
-					proto_tree_add_uint(dtpt_protocol_tree, hf_dtpt_protocol_protocol,
-					tvb, offset+4+4+i*8+4, 4, tvb_get_letohl(tvb, offset+4+4+i*8+4));
-				}
+				proto_tree_add_item(dtpt_protocol_tree, hf_dtpt_protocol_family,
+					tvb, offset+4+4+i*8, 4, ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(dtpt_protocol_tree, hf_dtpt_protocol_protocol,
+					tvb, offset+4+4+i*8+4, 4, ENC_LITTLE_ENDIAN);
 			}
 		}
 	}
 	offset += 4 + (num_protocols>0?4:0) + num_protocols*8;
-	offset = dissect_dtpt_wstring(tvb, offset, dtpt_tree, hf_dtpt_query_string);
+	offset = dissect_dtpt_wstring(tvb, offset, dtpt_tree, pinfo, hf_dtpt_query_string);
 
 	addrs_start = offset;
 	num_addrs = tvb_get_letohl(tvb, offset);
@@ -551,8 +540,8 @@ dissect_dtpt_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	offset += 4 + (num_addrs>0?4:0);
 
 	if (num_addrs>0) {
-		guint32	i;
-		guint32	offset2;
+		uint32_t	i;
+		uint32_t	offset2;
 
 		offset2 = offset + 24*num_addrs;
 
@@ -560,26 +549,24 @@ dissect_dtpt_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			proto_tree	*dtpt_addr1_tree = NULL;
 			proto_item	*dtpt_addr2_item = NULL;
 			proto_tree	*dtpt_addr2_tree = NULL;
-			guint32		offset2_start;
+			uint32_t		offset2_start;
 
 			if (dtpt_addrs_tree) {
 				dtpt_addr1_tree = proto_tree_add_subtree_format(dtpt_addrs_tree,
 					tvb, offset, 24, ett_dtpt_cs_addr1, NULL, "Address[%u] Part 1", i+1);
 
-				if (dtpt_addr1_tree) {
-					proto_tree_add_uint(dtpt_addr1_tree, hf_dtpt_cs_addr_local_pointer,
-						tvb, offset+ 0, 4, tvb_get_letohl(tvb, offset+ 0));
-					proto_tree_add_uint(dtpt_addr1_tree, hf_dtpt_cs_addr_local_length,
-						tvb, offset+ 4, 4, tvb_get_letohl(tvb, offset+ 4));
-					proto_tree_add_uint(dtpt_addr1_tree, hf_dtpt_cs_addr_remote_pointer,
-						tvb, offset+ 8, 4, tvb_get_letohl(tvb, offset+ 8));
-					proto_tree_add_uint(dtpt_addr1_tree, hf_dtpt_cs_addr_remote_length,
-						tvb, offset+12, 4, tvb_get_letohl(tvb, offset+12));
-					proto_tree_add_uint(dtpt_addr1_tree, hf_dtpt_cs_addr_socket_type,
-						tvb, offset+16, 4, tvb_get_letohl(tvb, offset+16));
-					proto_tree_add_uint(dtpt_addr1_tree, hf_dtpt_cs_addr_protocol,
-						tvb, offset+20, 4, tvb_get_letohl(tvb, offset+20));
-				}
+				proto_tree_add_item(dtpt_addr1_tree, hf_dtpt_cs_addr_local_pointer,
+					tvb, offset+ 0, 4, ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(dtpt_addr1_tree, hf_dtpt_cs_addr_local_length,
+					tvb, offset+ 4, 4, ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(dtpt_addr1_tree, hf_dtpt_cs_addr_remote_pointer,
+					tvb, offset+ 8, 4, ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(dtpt_addr1_tree, hf_dtpt_cs_addr_remote_length,
+					tvb, offset+12, 4, ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(dtpt_addr1_tree, hf_dtpt_cs_addr_socket_type,
+					tvb, offset+16, 4, ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(dtpt_addr1_tree, hf_dtpt_cs_addr_protocol,
+					tvb, offset+20, 4, ENC_LITTLE_ENDIAN);
 
 				dtpt_addr2_tree = proto_tree_add_subtree_format(dtpt_addrs_tree,
 					tvb, offset2, -1, ett_dtpt_cs_addr2, &dtpt_addr2_item, "Address[%u] Part 2", i+1);
@@ -587,8 +574,8 @@ dissect_dtpt_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
 			offset2_start = offset2;
 
-			offset2 = dissect_dtpt_sockaddr(tvb, offset2, dtpt_addr2_tree, hf_dtpt_cs_addr_local, SOCKADDR_WITH_LEN);
-			offset2 = dissect_dtpt_sockaddr(tvb, offset2, dtpt_addr2_tree, hf_dtpt_cs_addr_remote, SOCKADDR_WITH_LEN);
+			offset2 = dissect_dtpt_sockaddr(tvb, offset2, dtpt_addr2_tree, pinfo, hf_dtpt_cs_addr_local, SOCKADDR_WITH_LEN);
+			offset2 = dissect_dtpt_sockaddr(tvb, offset2, dtpt_addr2_tree, pinfo, hf_dtpt_cs_addr_remote, SOCKADDR_WITH_LEN);
 
 			proto_item_set_len(dtpt_addr2_item,
 					offset2 - offset2_start);
@@ -616,8 +603,8 @@ dissect_dtpt_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			if (dtpt_blobraw_tree) {
 				proto_tree_add_uint(dtpt_blobraw_tree, hf_dtpt_blob_size,
 					tvb, offset+4+0, 4, blob_size);
-				proto_tree_add_uint(dtpt_blobraw_tree, hf_dtpt_blob_data_pointer,
-					tvb, offset+4+4, 4, tvb_get_letohl(tvb,offset+4+4));
+				proto_tree_add_item(dtpt_blobraw_tree, hf_dtpt_blob_data_pointer,
+					tvb, offset+4+4, 4, ENC_LITTLE_ENDIAN);
 			}
 		}
 	}
@@ -655,13 +642,13 @@ dissect_dtpt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 {
 	proto_tree	*dtpt_tree;
 	proto_item	*dtpt_item;
-	guint8		version;
-	guint8		message_type;
-	guint32		payload_size;
+	uint8_t		version;
+	uint8_t		message_type;
+	uint32_t		payload_size;
 
-	version = tvb_get_guint8(tvb, 0);
+	version = tvb_get_uint8(tvb, 0);
 	if (version != 1) return 0;
-	message_type = tvb_get_guint8(tvb, 1);
+	message_type = tvb_get_uint8(tvb, 1);
 	switch (message_type) {
 		case LookupBeginRequest:
 		case LookupBeginResponse:
@@ -680,7 +667,7 @@ dissect_dtpt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 	}
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "DTPT");
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(message_type, names_message_type, "Unknown (%d)"));
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, message_type, names_message_type, "Unknown (%d)"));
 
 	if (message_type == LookupBeginRequest) {
 		conversation_t *c;
@@ -699,7 +686,7 @@ dissect_dtpt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
 		switch (message_type) {
 			case LookupBeginRequest: {
-				static const int * flags[] = {
+				static int * const flags[] = {
 					&hf_dtpt_flags_res_service,
 					&hf_dtpt_flags_flushprevious,
 					&hf_dtpt_flags_flushcache,
@@ -752,19 +739,19 @@ dissect_dtpt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 			}
 			break;
 			case ConnectRequest: {
-				dissect_dtpt_sockaddr(tvb, 2, dtpt_tree, hf_dtpt_connect_addr, SOCKADDR_CONNECT);
+				dissect_dtpt_sockaddr(tvb, 2, dtpt_tree, pinfo, hf_dtpt_connect_addr, SOCKADDR_CONNECT);
 				proto_tree_add_item(dtpt_tree, hf_dtpt_error,
 					tvb, 32, 4, ENC_LITTLE_ENDIAN);
 			}
 			break;
 			case ConnectResponseOK: {
-				dissect_dtpt_sockaddr(tvb, 2, dtpt_tree, hf_dtpt_connect_addr, SOCKADDR_CONNECT);
+				dissect_dtpt_sockaddr(tvb, 2, dtpt_tree, pinfo, hf_dtpt_connect_addr, SOCKADDR_CONNECT);
 				proto_tree_add_item(dtpt_tree, hf_dtpt_error,
 					tvb, 32, 4, ENC_LITTLE_ENDIAN);
 			}
 			break;
 			case ConnectResponseERR: {
-				dissect_dtpt_sockaddr(tvb, 2, dtpt_tree, hf_dtpt_connect_addr, SOCKADDR_CONNECT);
+				dissect_dtpt_sockaddr(tvb, 2, dtpt_tree, pinfo, hf_dtpt_connect_addr, SOCKADDR_CONNECT);
 				proto_tree_add_item(dtpt_tree, hf_dtpt_error,
 					tvb, 32, 4, ENC_LITTLE_ENDIAN);
 			}
@@ -1151,7 +1138,7 @@ proto_register_dtpt(void)
 		    FT_BYTES, BASE_NONE, NULL, 0x0,
 		    NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dtpt,
 		&ett_dtpt_flags,
 		&ett_dtpt_queryset,
@@ -1166,7 +1153,6 @@ proto_register_dtpt(void)
 		&ett_dtpt_blobraw,
 		&ett_dtpt_blob,
 	};
-	module_t *dtpt_module;
 	e_guid_t guid_svcid_inet_hostaddrbyname       = {0x0002A803, 0x0000, 0x0000, {0xC0,0,0,0,0,0,0,0x46}};
 	e_guid_t guid_svcid_inet_hostaddrbyinetstring = {0x0002A801, 0x0000, 0x0000, {0xC0,0,0,0,0,0,0,0x46}};
 	guids_add_guid(&guid_svcid_inet_hostaddrbyname,       "SVCID_INET_HOSTADDRBYNAME");
@@ -1177,41 +1163,20 @@ proto_register_dtpt(void)
 	proto_register_field_array(proto_dtpt, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-	/* Register a configuration option for port */
-	dtpt_module = prefs_register_protocol(proto_dtpt,
-					      proto_reg_handoff_dtpt);
-	prefs_register_uint_preference(dtpt_module, "tcp.port",
-				       "DTPT Server TCP Port",
-				       "Set the TDP port for the DTPT Server",
-				       10, &gbl_dtptServerPort);
+	dtpt_handle = register_dissector("dtpt", dissect_dtpt, proto_dtpt);
+	dtpt_conversation_handle = register_dissector("dtpt_conversation", dissect_dtpt_conversation, proto_dtpt);
+/**	dtpt_data_handle = register_dissector("dtpt_data", dissect_dtpt_data, proto_dtpt); **/
 }
 
 
 void
 proto_reg_handoff_dtpt(void)
 {
-	static dissector_handle_t	dtpt_handle;
-	static gboolean Initialized=FALSE;
-	static int ServerPort;
-
-	if (!Initialized) {
-		dtpt_handle = create_dissector_handle(dissect_dtpt, proto_dtpt);
-		dtpt_conversation_handle = create_dissector_handle(dissect_dtpt_conversation, proto_dtpt);
-/**		dtpt_data_handle = create_dissector_handle(dissect_dtpt_data, proto_dtpt); **/
-
-		Initialized=TRUE;
-	} else {
-		dissector_delete_uint("tcp.port", ServerPort, dtpt_handle);
-	}
-
-	/* set port for future deletes */
-	ServerPort=gbl_dtptServerPort;
-
-	dissector_add_uint("tcp.port", gbl_dtptServerPort, dtpt_handle);
+	dissector_add_uint_with_preference("tcp.port", TCP_SERVER_PORT, dtpt_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

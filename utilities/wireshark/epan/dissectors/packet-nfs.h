@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_NFS_H__
@@ -139,7 +127,11 @@
 #define NFS4_OP_SEEK                        69
 #define NFS4_OP_WRITE_SAME                  70
 #define NFS4_OP_CLONE                       71
-#define NFS4_LAST_OP                        71
+#define NFS4_OP_GETXATTR                    72
+#define NFS4_OP_SETXATTR                    73
+#define NFS4_OP_LISTXATTRS                  74
+#define NFS4_OP_REMOVEXATTR                 75
+#define NFS4_LAST_OP                        75
 #define NFS4_OP_ILLEGAL                  10044
 
 /*
@@ -177,12 +169,15 @@
 #define EXCLUSIVE4_1 3
 
 /* for access mask */
-#define NFS_ACCESS_MASK_READ        0x01
-#define NFS_ACCESS_MASK_LOOKUP      0x02
-#define NFS_ACCESS_MASK_MODIFY      0x04
-#define NFS_ACCESS_MASK_EXTEND      0x08
-#define NFS_ACCESS_MASK_DELETE      0x10
-#define NFS_ACCESS_MASK_EXECUTE     0x20
+#define NFS_ACCESS_MASK_READ        0x001
+#define NFS_ACCESS_MASK_LOOKUP      0x002
+#define NFS_ACCESS_MASK_MODIFY      0x004
+#define NFS_ACCESS_MASK_EXTEND      0x008
+#define NFS_ACCESS_MASK_DELETE      0x010
+#define NFS_ACCESS_MASK_EXECUTE     0x020
+#define NFS_ACCESS_MASK_XATTR_READ  0x040
+#define NFS_ACCESS_MASK_XATTR_WRITE 0x080
+#define NFS_ACCESS_MASK_XATTR_LIST  0x100
 
 /* pNFS layout types */
 #define LAYOUT4_NO_LAYOUT_TYPE            0
@@ -192,6 +187,15 @@
 #define LAYOUT4_FLEX_FILES                4
 #define LAYOUT4_SCSI                      5
 
+#define NFL4_UFLG_MASK                   0x0000003F
+#define NFL4_UFLG_DENSE                  0x00000001
+#define NFL4_UFLG_COMMIT_THRU_MDS        0x00000002
+#define NFL4_UFLG_STRIPE_UNIT_SIZE_MASK  0xFFFFFFC0
+
+/* GET_DIR_DELEGATION non-fatal status */
+#define GDD4_OK		0
+#define GDD4_UNAVAIL	1
+
 /* NFSv4.2 */
 
 /* netloc types */
@@ -199,20 +203,20 @@
 #define NL4_URL     2
 #define NL4_NETADDR 3
 
-extern gboolean nfs_file_name_snooping;
+extern bool nfs_file_name_snooping;
 extern void nfs_name_snoop_add_name(int xid, tvbuff_t *tvb, int name_offset, int name_len,
 	                                int parent_offset, int parent_len, const char *name);
-extern gboolean nfs_fhandle_reqrep_matching;
+extern bool nfs_fhandle_reqrep_matching;
 extern int dissect_fhandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
-                           const char *name, guint32 *hash, rpc_call_info_value *civ);
+                           const char *name, uint32_t *hash, rpc_call_info_value *civ);
 extern void dissect_fhandle_hidden(packet_info *pinfo, proto_tree *tree, int frame);
 extern int dissect_nfs3_fh(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
-                           const char *name, guint32 *hash, rpc_call_info_value *civ);
+                           const char *name, uint32_t *hash, rpc_call_info_value *civ);
 extern int dissect_nfs3_post_op_attr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
 	                                 const char* name);
 extern int dissect_nfs2_fattr(tvbuff_t *tvb, int offset, proto_tree *tree, const char* name);
 extern proto_tree* display_access_items(tvbuff_t* tvb, int offset, packet_info* pinfo,
-	                                    proto_tree* tree, guint32 amask, char mtype, int version,
+	                                    proto_tree* tree, uint32_t amask, char mtype, int version,
 										wmem_strbuf_t* optext, const char* label);
 extern int dissect_access_reply(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree* tree,
                                 int version, wmem_strbuf_t *optext, rpc_call_info_value *civ);

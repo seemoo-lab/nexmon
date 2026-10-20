@@ -1,0 +1,47 @@
+// Example for use of GNU gettext.
+// This file is in the public domain.
+
+// Source code of a Go program showing the use of a multi-locale API.
+
+
+package main
+
+import (
+	// Documentation: https://pkg.go.dev/fmt
+	"fmt"
+	// Documentation: https://pkg.go.dev/github.com/snapcore/go-gettext
+	"github.com/snapcore/go-gettext"
+	// Documentation: https://pkg.go.dev/os
+	"os"
+)
+
+// Alternatives:
+// - gettext.getUserLanguages()
+// - https://pkg.go.dev/github.com/Xuanwo/go-locale
+// - https://pkg.go.dev/github.com/jeandeaual/go-locale
+func getUserLanguage() string {
+	// Look at the POSIX environment variables.
+	for _, variable := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
+		if value := os.Getenv(variable); value != "" {
+			return value
+		}
+	}
+	// The "C" locale is essentially the same as the en-US locale.
+	return "en-US"
+}
+
+func main () {
+	// Specify locale.
+	locale := getUserLanguage()
+
+	// Specify domain, localedir.
+	domain := &gettext.TextDomain{
+		Name: "hello-go",
+		LocaleDir: "@localedir@",
+	}
+	gettext := domain.Locale(locale)
+
+	fmt.Println(gettext.Gettext("Hello, world!"))
+	fmt.Println(fmt.Sprintf(gettext.Gettext("This program is running as process number %d."),
+	                        os.Getpid()))
+}

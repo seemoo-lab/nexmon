@@ -4,57 +4,99 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-
+#define WS_LOG_DOMAIN LOG_DOMAIN_WSUTIL
 #include "inet_addr.h"
 
-#include "inet_addr-int.h"
+#include <errno.h>
+#include <string.h>
 
-static inline gboolean
-_inet_pton(int af, const gchar *src, gpointer dst)
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+
+#include <sys/types.h>
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>		/* needed to define AF_ values on UNIX */
+#endif
+
+#ifdef _WIN32
+#include <ws2tcpip.h>	/* indirectly defines AF_ values on Windows */
+#define _NTOP_SRC_CAST_ (PVOID)
+#else
+#define _NTOP_SRC_CAST_
+#endif
+
+#include "str_util.h"
+
+/*
+ * We assume and require an inet_pton/inet_ntop that supports AF_INET
+ * and AF_INET6.
+ */
+
+static inline bool
+inet_pton_internal(int af, const char *src, void *dst, size_t dst_size,
+                    const char *af_str)
 {
-    gint ret;
-
-    ret = inet_pton(af, src, dst);
-    g_assert(ret >= 0);
+    int ret = inet_pton(af, src, dst);
+    if (ret < 0) {
+        int err = errno;
+        ws_log(WS_LOG_DOMAIN, LOG_LEVEL_CRITICAL, "inet_pton: %s (%d): %s", af_str, af, g_strerror(err));
+        memset(dst, 0, dst_size);
+        errno = err;
+        return false;
+    }
+    /* ret == 0 invalid src representation, ret == 1 success. */
     return ret == 1;
 }
 
-const gchar *
-ws_inet_ntop4(gconstpointer src, gchar *dst, guint dst_size)
+static inline const char *
+inet_ntop_internal(int af, const void *src, char *dst, size_t dst_size,
+                    const char *af_str)
 {
-    return inet_ntop(AF_INET, src, dst, dst_size);
+    /* Add a cast to ignore 64-to-32 bit narrowing warnings with some
+     * compilers (POSIX uses socklen_t instead of size_t). */
+    const char *ret = inet_ntop(af, _NTOP_SRC_CAST_ src, dst, (unsigned int)dst_size);
+    if (ret == NULL) {
+        int err = errno;
+        char errbuf[16];
+        ws_log(WS_LOG_DOMAIN, LOG_LEVEL_CRITICAL, "inet_ntop: %s (%d): %s", af_str, af, g_strerror(err));
+        /* set result to something that can't be confused with a valid conversion */
+        (void)g_strlcpy(dst, ws_strerrorname_r(err, errbuf, sizeof(errbuf)), dst_size);
+        errno = err;
+        return dst;
+    }
+    return dst;
 }
 
-gboolean
-ws_inet_pton4(const gchar *src, guint32 *dst)
+const char *
+ws_inet_ntop4(const void *src, char *dst, size_t dst_size)
 {
-    return _inet_pton(AF_INET, src, dst);
+    return inet_ntop_internal(AF_INET, src, dst, dst_size, "AF_INET");
 }
 
-const gchar *
-ws_inet_ntop6(gconstpointer src, gchar *dst, guint dst_size)
+bool
+ws_inet_pton4(const char *src, ws_in4_addr *dst)
 {
-    return inet_ntop(AF_INET6, src, dst, dst_size);
+    return inet_pton_internal(AF_INET, src, dst, sizeof(*dst), "AF_INET");
 }
 
-gboolean
-ws_inet_pton6(const gchar *src, struct e_in6_addr *dst)
+const char *
+ws_inet_ntop6(const void *src, char *dst, size_t dst_size)
 {
-    return _inet_pton(AF_INET6, src, dst);
+    return inet_ntop_internal(AF_INET6, src, dst, dst_size, "AF_INET6");
+}
+
+bool
+ws_inet_pton6(const char *src, ws_in6_addr *dst)
+{
+    return inet_pton_internal(AF_INET6, src, dst, sizeof(*dst), "AF_INET6");
 }

@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_AFP_H
@@ -104,20 +92,19 @@ extern value_string_ext afp_server_addr_type_vals_ext;
 #define AFPSTATUS_LEN        (AFPSTATUS_PRELEN + AFPSTATUS_POSTLEN)
 
 /*
- * Private data passed from DSI,DDP dissectors to AFP dissector.
- *                       DSI              DDP
- * aspinfo.reply     	dsi.flags       atp.function == 0x80
- *         release                      atp.function == 0xc0
- *         command          command     asp.function
- *         seq              requestid   atp.tid
- *         code             code
+ * Private data passed from DSI dissector, and the ATP and ASP dissectors,
+ * to subdissectors, including the AFP dissector.
+ *                              DSI             ATP/ASP
+ * atp_asp_dsi_info.reply       dsi.flags       atp.function == 0x80
+ * atp_asp_dsi_info.release                     atp.function == 0xc0
+ * atp_asp_dsi_info.tid         dsi.requestid   atp.tid
+ * atp_asp_dsi_info.code        dsi.code
  */
-struct aspinfo {
-	guint8	reply;			/* 0 query  1 reply */
-	guint8  release;
-	guint16	command;		/* 2  6 write */
-	guint16	seq;			/* sequence number */
-	gint32  code;			/* error code/ offset NU */
+struct atp_asp_dsi_info {
+	uint8_t	reply;			/* 0 query  1 reply */
+	uint8_t release;
+	uint16_t	tid;			/* request/transaction ID */
+	int32_t code;			/* error code/ offset NU */
 };
 
 /*
@@ -130,10 +117,10 @@ WS_DLL_PUBLIC value_string_ext CommandCode_vals_ext;
  * tap for responses.
  */
 typedef struct {
-	guint8	command;
-	guint32 frame_req, frame_res;
+	uint8_t	command;
+	uint32_t frame_req, frame_res;
 	nstime_t req_time;
-	guint32 spotlight_req_command; /* Need this in the reply */
+	uint32_t spotlight_req_command; /* Need this in the reply */
 } afp_request_val;
 
 #endif

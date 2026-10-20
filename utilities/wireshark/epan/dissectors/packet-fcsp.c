@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -56,42 +44,42 @@ void proto_register_fcsp(void);
 #define FC_AUTH_DHCHAP_PARAM_DHgIDLIST 0x2
 
 /* Initialize the protocol and registered fields */
-static int proto_fcsp = -1;
-static int hf_auth_proto_ver = -1;
-static int hf_auth_msg_code = -1;
-static int hf_auth_flags = -1;
-static int hf_auth_len = -1;
-static int hf_auth_tid = -1;
-static int hf_auth_initiator_wwn = -1;
-static int hf_auth_initiator_name = -1;
-static int hf_auth_usable_proto = -1;
-static int hf_auth_rjt_code = -1;
-static int hf_auth_rjt_codedet = -1;
-static int hf_auth_responder_wwn = -1;
-static int hf_auth_responder_name = -1;
-/* static int hf_auth_dhchap_groupid = -1; */
-/* static int hf_auth_dhchap_hashid = -1; */
-static int hf_auth_dhchap_chal_len = -1;
-static int hf_auth_dhchap_val_len = -1;
-static int hf_auth_dhchap_rsp_len  = -1;
-static int hf_auth_initiator_name_type = -1;
-static int hf_auth_initiator_name_len = -1;
-static int hf_auth_responder_name_len = -1;
-static int hf_auth_responder_name_type = -1;
-static int hf_auth_proto_type = -1;
-static int hf_auth_proto_param_len = -1;
-static int hf_auth_dhchap_param_tag = -1;
-static int hf_auth_dhchap_param_len = -1;
-static int hf_auth_dhchap_hash_type = -1;
-static int hf_auth_dhchap_group_type = -1;
-static int hf_auth_dhchap_dhvalue = -1;
-static int hf_auth_dhchap_chal_value = -1;
-static int hf_auth_dhchap_rsp_value = -1;
+static int proto_fcsp;
+static int hf_auth_proto_ver;
+static int hf_auth_msg_code;
+static int hf_auth_flags;
+static int hf_auth_len;
+static int hf_auth_tid;
+static int hf_auth_initiator_wwn;
+static int hf_auth_initiator_name;
+static int hf_auth_usable_proto;
+static int hf_auth_rjt_code;
+static int hf_auth_rjt_codedet;
+static int hf_auth_responder_wwn;
+static int hf_auth_responder_name;
+/* static int hf_auth_dhchap_groupid; */
+/* static int hf_auth_dhchap_hashid; */
+static int hf_auth_dhchap_chal_len;
+static int hf_auth_dhchap_val_len;
+static int hf_auth_dhchap_rsp_len;
+static int hf_auth_initiator_name_type;
+static int hf_auth_initiator_name_len;
+static int hf_auth_responder_name_len;
+static int hf_auth_responder_name_type;
+static int hf_auth_proto_type;
+static int hf_auth_proto_param_len;
+static int hf_auth_dhchap_param_tag;
+static int hf_auth_dhchap_param_len;
+static int hf_auth_dhchap_hash_type;
+static int hf_auth_dhchap_group_type;
+static int hf_auth_dhchap_dhvalue;
+static int hf_auth_dhchap_chal_value;
+static int hf_auth_dhchap_rsp_value;
 
 /* Initialize the subtree pointers */
-static gint ett_fcsp = -1;
+static int ett_fcsp;
 
-static expert_field ei_auth_fcap_undecoded = EI_INIT;
+static expert_field ei_auth_fcap_undecoded;
 
 static const value_string fcauth_msgcode_vals[] = {
     {FC_AUTH_MSG_AUTH_REJECT,    "AUTH_Reject"},
@@ -164,10 +152,10 @@ static const value_string fcauth_dhchap_dhgid_vals[] = {
 */
 
 static void dissect_fcsp_dhchap_auth_param(tvbuff_t *tvb, proto_tree *tree,
-                                     int offset, gint32 total_len)
+                                     int offset, int32_t total_len)
 {
-    guint16 auth_param_tag;
-    guint16 param_len, i;
+    uint16_t auth_param_tag;
+    uint16_t param_len, i;
 
     if (tree) {
         total_len -= 4;
@@ -203,7 +191,7 @@ static void dissect_fcsp_dhchap_auth_param(tvbuff_t *tvb, proto_tree *tree,
             default:
                 /* If we don't recognize the auth_param_tag and the param_len
                  * is 0 then just return to prevent an infinite loop. See
-                 * https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=8359
+                 * https://gitlab.com/wireshark/wireshark/-/issues/8359
                  */
                 if (param_len == 0) {
                     return;
@@ -219,8 +207,8 @@ static void dissect_fcsp_dhchap_auth_param(tvbuff_t *tvb, proto_tree *tree,
 static void dissect_fcsp_dhchap_challenge(tvbuff_t *tvb, proto_tree *tree)
 {
     int     offset = 12;
-    guint16 name_type;
-    guint16 param_len, name_len;
+    uint16_t name_type;
+    uint16_t param_len, name_len;
 
     if (tree) {
         proto_tree_add_item(tree, hf_auth_responder_name_type, tvb, offset,
@@ -266,7 +254,7 @@ static void dissect_fcsp_dhchap_challenge(tvbuff_t *tvb, proto_tree *tree)
 static void dissect_fcsp_dhchap_reply(tvbuff_t *tvb, proto_tree *tree)
 {
     int     offset = 12;
-    guint32 param_len;
+    uint32_t param_len;
 
     if (tree) {
         proto_tree_add_item(tree, hf_auth_dhchap_rsp_len, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -294,7 +282,7 @@ static void dissect_fcsp_dhchap_reply(tvbuff_t *tvb, proto_tree *tree)
 static void dissect_fcsp_dhchap_success(tvbuff_t *tvb, proto_tree *tree)
 {
     int     offset = 12;
-    guint32 param_len;
+    uint32_t param_len;
 
     if (tree) {
         proto_tree_add_item(tree, hf_auth_dhchap_rsp_len, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -309,8 +297,8 @@ static void dissect_fcsp_dhchap_success(tvbuff_t *tvb, proto_tree *tree)
 static void dissect_fcsp_auth_negotiate(tvbuff_t *tvb, proto_tree *tree)
 {
     int     offset = 12;
-    guint16 name_type, name_len, proto_type, param_len;
-    guint32 num_protos, i;
+    uint16_t name_type, name_len, proto_type, param_len;
+    uint32_t num_protos, i;
 
     if (tree) {
         proto_tree_add_item(tree, hf_auth_initiator_name_type, tvb, offset,
@@ -376,15 +364,15 @@ static void dissect_fcsp_auth_rjt(tvbuff_t *tvb, proto_tree *tree)
 static int dissect_fcsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     proto_item *ti        = NULL;
-    guint8      opcode;
+    uint8_t     opcode;
     int         offset    = 0;
     proto_tree *fcsp_tree = NULL;
 
     /* Make entry in the Info column on summary display */
-    opcode = tvb_get_guint8(tvb, 2);
+    opcode = tvb_get_uint8(tvb, 2);
 
     col_add_str(pinfo->cinfo, COL_INFO,
-                     val_to_str(opcode, fcauth_msgcode_vals, "0x%x"));
+                     val_to_str(pinfo->pool, opcode, fcauth_msgcode_vals, "0x%x"));
 
     if (tree) {
         ti = proto_tree_add_protocol_format(tree, proto_fcsp, tvb, 0,
@@ -594,7 +582,7 @@ proto_register_fcsp(void)
 
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_fcsp,
     };
 
@@ -616,7 +604,7 @@ proto_register_fcsp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

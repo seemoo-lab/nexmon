@@ -2,7 +2,7 @@ README.wslua
 
 This is a HOWTO for adding support for new Lua hooks/functions/abilities in
 Wireshark.   If you see any errors or have any improvements, submit patches -
-free software is a community effort....
+free software is a community effort…
 
 This is NOT a guide for how to write Lua plugins - that's documented already
 on the Wireshark webpages.
@@ -29,39 +29,23 @@ Wireshark uses C-macros liberally, both for the usual reasons as well as for
 the binding generator and documentation generator scripts.  The macros are
 described within this document.
 
-The API documentation is auto-generated from a Perl script called 'make-
-wsluarm.pl', which searches C-files for the known macros and generates
-appropriate HTML documentation from them.  This includes using the C-comments
-after the macros for the API document info.
+The API documentation is auto-generated from a Python script called 'make-
+wsluarm.py', which searches C-files for the known macros and generates
+appropriate AsciiDoc documentation from them.  This includes using the C
+comments after the macros for the API document info.
 
-Likewise, another Perl script called 'make-reg.pl' generates the C-files
+Likewise, another script called 'make-reg.py' generates the C-files
 'register_wslua.c' and 'declare_wslua.h', based on the C-macros it searches
-for in existing source files.  The code this Perl script auto-generates is
+for in existing source files.  The code this script auto-generates is
 what actually registers some classes/functions into Lua - you don't have to
 write your own registration functions to get your new functions/classes into
 Lua tables. (you can do so, but it's not advisable)
 
-Both of the perl scripts above are given the C-source files to search through
+Both of the scripts above are given the C-source files to search through
 by the make process, generated from the lists in epan/wslua/CMakeLists.txt.
 Naturally if you add new source files, you need to add them to the list in
-epan/wslua/CMakeLists.txt and epan/wslua/Makefile.am. You also have to add
-the module name into docbook/user-guide.xml and docbook/wsluarm.xml, and the
-source files into docbook/CMakeLists.txt and docbook/Makefile.am, to get
-it to be generated in the user guide.
-
-Another Perl script is used as well, called 'make-init-lua.pl', which
-generates the init.lua script.  A large part of it deals with exposing #define
-values into the Lua global table, or sub-tables.  Unfortunately not all of
-them are put in sub-tables, which means the global Lua table is quite polluted
-now.  If you add new ones in here, please think of putting them in a subtable,
-as they are for wtap, ftypes, and base.  For example, there are several put in
-as 'PI_' prefixed names, such as 'PI_SEVERITY_MASK = 15728640'.  The fact they
-all have a common 'PI_' prefix should be an indicator they can be put in a
-table named PI, or PacketInfo.  Just because C-code doesn't have namespaces,
-doesn't mean Lua can't. This has now been fixed, and the PI_* names are now in
-two separate subtables of a table named 'expert', as 'expert.group' and
-'expert.severity' subtables. Follow that model in 'make-init-lua.pl'.
-
+epan/wslua/CMakeLists.txt. You also have to add the source files into
+doc/CMakeLists.txt, to get it to be generated in the user guide.
 
 Due to those documentation and registration scripts, you MUST follow some very
 specific conventions in the functions you write to expose C-side code to Lua,
@@ -73,7 +57,7 @@ Class/object names must be UpperCamelCase, no numbers/underscores.
 Function and method names must be lower_underscore_case, no numbers.
 Constants/enums must be ALLCAPS, and can have numbers.
 
-The above rules are more than merely conventions - the Perl scripts which
+The above rules are more than merely conventions - the scripts which
 auto-generate stuff use regex patterns that require the naming syntax to be
 followed.
 
@@ -82,7 +66,7 @@ followed.
 Documenting things for the API docs:
 
 As explained previously, the API documentation is auto-generated from a
-Perl script called 'make-wsluarm.pl', which searches C-files for the known
+Python script called 'make-wsluarm.py', which searches C-files for the known
 macros and generates appropriate HTML documentation from them. This includes
 using the C-comments after the macros for the API document info. The comments
 are extremely important, because the API documentation is what most Lua script
@@ -93,10 +77,10 @@ Please make sure to at least use the '@since' version notification markup
 in your comments, to let users know when the new class/function/etc. you
 created became available.
 
-Because documentation is so important, the make-wsluarm.pl script supports
+Because documentation is so important, the make-wsluarm.py script supports
 specific markup syntax in comments, and converts them to XML and ultimately
 into the various documentation formats. The markup syntax is documented in
-the top comments in make-wsluarm.pl, but are repeated here as well:
+the top comments in make-wsluarm.py, but are repeated here as well:
   - two (or more) line breaks in comments result in separate paragraphs
   - all '&' are converted into their entity names, except inside urls
   - all '<', and '>' are converted into their entity names everywhere
@@ -150,19 +134,21 @@ explicitly using strings and function names, you should use the WSLUA_METHODS
 macro name for the array, and use WSLUA_CLASS_FNREG macro for each entry.
 The WSLUA_META table follows the same behavior, with the WSLUA_CLASS_MTREG
 macro for each entry. Make sure your C-function names use two underscores
-instead of one.
+instead of one (for instance, ClassName__tostring).
 
 Once you've created the appropriate array tables, define a registration
 function named 'ClassName_register', where 'ClassName'is your class name, the
-same one used in WSLUA_CLASS_DEFINE.  The make-reg.pl Perl script will search
+same one used in WSLUA_CLASS_DEFINE.  The make-reg.py script will search
 your file for WSLUA_CLASS_DEFINE, and it generates a register_wslua.c which
 will call your ClassName_register function during Wireshark initialization.
-Inside your ClassName_register function, use either the WSLUA_REGISTER_CLASS
-or the WSLUA_REGISTER_META macros with the class name as the argument.  That
-will automatically register the methods/meta tables into Lua.  Use
-WSLUA_REGISTER_CLASS if your class has methods and optionally metamethods, or
-use WSLUA_REGISTER_META if it only has metamethods - do *not* use both.  Note
-that your class does not need to have a WSLUA_METHODS nor WSLUA_META table.
+Define a wslua_class structure which describes the class and register this in
+your ClassName_register function using one of:
+ - wslua_register_classinstance_meta to create a metatable which allows
+   instances of a class to have methods and attributes. C code can create such
+   instances by setting the metatable on userdata, the class itself is not
+   directly visible in the Lua scope.
+ - wslua_register_class to additionally expose a class with static functions
+   that is also directly visible in the Lua global scope.
 Also, you should read the 'Memory management model' section later in this
 document.
 
@@ -189,18 +175,37 @@ probably isn't.  There is even a third model in use: pre-loading the member
 fields of the class table with the values, instead of waiting for the Lua
 script to access a particular one to retrieve it; for example the Listener tap
 extractors table is pre-populated (see files 'wslua_listener.c' and 'taps'
-which through the make-taps.pl perl script creates 'taps_wslua.c'). The
+which through the make-taps.py Python3 script creates 'taps_wslua.c'). The
 downside of that approach is the performance impact, filling fields the Lua
 script may never access.  Lastly, the Field, FieldInfo, and Tvb's ByteArray
 type each provide a __call metamethod as an accessor - I strongly suggest you
 do NOT do that, as it's not a common model and will confuse people since it
 doesn't follow the model of the other classes in Wireshark.
 
-The way attribute accessing is handled is a bit too complicated to discuss
-here, but is documented in wslua_internals.c above the wslua_reg_attributes
-function definition. All you need to know is how to write the C-code to
-register attributes, and the code to provide getter/setters for them. To
-create them, you create an array table similar to the WSLUA_METHODS and
+Attributes are handled internally like this:
+
+    -- invoked on myObj.myAttribute
+    function myObj.__metatable:__index(key)
+        if "getter for key exists" then
+            return getter(self)
+        elseif "method for key exists" then
+            -- ensures that myObj.myMethod() works
+            return method
+        else
+            error("no such property error message")
+        end
+    end
+    -- invoked on myObj.myAttribute = 1
+    function myObj.__metatable:__newindex(key, value)
+        if "setter for key exists" then
+            return setter(self, value)
+        else
+            error("no such property error message")
+        end
+    end
+
+To add getters/setters in C, initialize the "attrs" member of the wslua_class
+structure. This should contain an array table similar to the WSLUA_METHODS and
 WSLUA_META tables, except using the macro name WSLUA_ATTRIBUTES. Inside this
 array, each entry should use one of the following macros: WSLUA_ATTRIBUTE_ROREG,
 WSLUA_ATTRIBUTE_WOREG, or WSLUA_ATTRIBUTE_RWREG. Those provide the hooks for
@@ -212,11 +217,6 @@ such as getting numbers, strings, etc. The macros are in wslua.h. For example,
 the WSLUA_ATTRIBUTE_NAMED_BOOLEAN_GETTER(Foo,bar,choo) macro creates a getter
 function to get the boolean value of the Class Foo's choo member variable, as
 the Lua attribute named 'bar'.
-
-To register the attributes, your Class registration function must call the
-WSLUA_REGISTER_ATTRIBUTES(ClassName) macro, after it calls either the
-WSLUA_REGISTER_META(ClassName) macro or the WSLUA_REGISTER_CLASS(ClassName)
-one.
 
 Callback function registration:
 
@@ -243,22 +243,21 @@ The Listener object is one of the more complicated ones.  When the Lua script
 creates a Listener (using Listener.new()), the code creates and returns a tap
 object.  The type of tap is based on the passed-in argument to Listener.new(),
 and it creates a Lua table of the tap member variables.  That happens in
-taps_wslua.c, which is an auto-generated file from make-taps.pl.  That Perl
-script reads from a file called 'taps', which identifies every struct name
-(and associated enum name) that should be exposed as a tap type.  The Perl
+taps_wslua.c, which is an auto-generated file from make-taps.py.  That Python3
+script reads from a file called 'taps.ini', which identifies every struct name
+(and associated enum name) that should be exposed as a tap type.  The Python3
 script then generates the taps_wslua.c to push those whenever the Listener
 calls for a tap; and it also generates a taps.tx file documenting them all.
 So to add a new type, add the info to the taps file (or uncomment an existing
 one), and make sure every member of the tap struct you're exposing is of a
-type that make-taps.pl has in its Perl %types and %comments associative
-arrays.
+type that make-taps.py has in its Python "types" and "comments" dictionaries.
 
 Note on Lua versions:
 
-Wireshark supports both Lua 5.1 and 5.2, which are defined as LUA_VERSION_NUM
-values 501 and 502 respectively.  When exposing things into Lua, make sure to
+Wireshark supports both Lua 5.3 and 5.4, which are defined as LUA_VERSION_NUM
+values 503 and 504 respectively.  When exposing things into Lua, make sure to
 use ifdef wrappers for things which changed between the versions of Lua.  See
-this for details: http://www.lua.org/manual/5.2/manual.html#8.3
+this for details: http://www.lua.org/manual/5.3/manual.html#8.3
 
 ==============================================================================
 
@@ -278,22 +277,21 @@ table named 'Gui' (in fact there isn't).  It's just for documentation.
 If you look at the documentation, you'll see there is 'ProgDlg', 'TextWindow',
 etc. in that 'GUI support' section.  That's because both ProgDlg and
 TextWindow are defined in that same wslua_gui.c file using the
-'WSLUA_CLASS_DEFINE' macro. (see description of that later)  make-wsluarm.pl
+'WSLUA_CLASS_DEFINE' macro. (see description of that later) make-wsluarm.py
 created those in the same documentation section because they're in the same c
 file as that WSLUA_MODULE comment.  You'll also note the documentation
 includes a sub-section for 'Non Method Functions', which it auto-generated
 from anything with a 'WSLUA_FUNCTION' macro (as opposed to class member
 functions, which use the 'WSLUA_METHOD' and 'WSLUA_CONSTRUCTOR' macros). Also,
-to make new wslua files generate documentation, it is not sufficient to just
-add this macro to a new file and add the file to the CMakeLists.txt; you also
-have to add the module name into docbook/user-guide.xml, and docbook/wsluarm.xml.
+to make new wslua files generate documentation, add this macro to a new file
+and add the file to the doc/CMakeLists.txt.
 
 
 WSLUA_CONTINUE_MODULE - like WSLUA_MODULE, except used at the top of a .c file
 to continue defining classes/functions/etc. within a previously declared module
 in a previous file (i.e., one that used WSLUA_MODULE). The module name must match
 the original one, and the .c file must be listed after the original one in the
-CMakeLists.txt/Makefile.am lists in the docbook directory.
+CMakeLists.txt lists in the doc directory.
 
 
 WSLUA_ATTRIBUTE - this is another documentation-only "macro", only used within
@@ -350,7 +348,7 @@ Example:
 WSLUA_CONSTRUCTOR - this is used to define a function of a class that is a
 static function rather than a per-object method; i.e., from a Lua perspective
 the function is called as 'myObj.func()' instead of 'myObj:func()'.  From a
-C-code perspective the code generated by make-reg.pl does not treat this
+C-code perspective the code generated by make-reg.py does not treat this
 differently than a WSLUA_METHOD, the only real difference being that the code
 you write within the function won't be checking the object instance as the
 first passed-in argument on the Lua-API stack.  But from a documentation
@@ -365,7 +363,7 @@ Example:
     WSLUA_CONSTRUCTOR Dissector_get (lua_State *L) {
         /* Obtains a dissector reference by name */
     #define WSLUA_ARG_Dissector_get_NAME 1 /* The name of the dissector */
-        const gchar* name = luaL_checkstring(L,WSLUA_ARG_Dissector_get_NAME);
+        const char* name = luaL_checkstring(L,WSLUA_ARG_Dissector_get_NAME);
         Dissector d;
 
         if (!name)
@@ -410,13 +408,13 @@ Example:
     WSLUA_METAMETHOD NSTime__eq(lua_State* L) { /* Compares two NSTimes */
         NSTime time1 = checkNSTime(L,1);
         NSTime time2 = checkNSTime(L,2);
-        gboolean result = FALSE;
+        bool result = false;
 
         if (!time1 || !time2)
           WSLUA_ERROR(FieldInfo__eq,"Data source must be the same for both fields");
 
         if (nstime_cmp(time1, time2) == 0)
-            result = TRUE;
+            result = true;
 
         lua_pushboolean(L,result);
 
@@ -428,7 +426,7 @@ WSLUA_ARG_ - the prefix used in a #define statement, for a required
 function/method argument (ie, one without a default value).  It is defined to
 an integer representing the index slot number of the Lua stack it will be at,
 when calling the appropriate lua_check/lua_opt routine to get it from the
-stack.  The make_wsluarm.pl Perl script will generate API documentation with
+stack.  The make_wsluarm.py Python script will generate API documentation with
 this argument name for the function/method, removing the 'WSLUA_ARG_' prefix.
 The name following the 'WSLUA_ARG_' prefix must be the same name as the
 function it's an argument for, followed by an underscore and then an ALLCAPS
@@ -444,7 +442,7 @@ WSLUA_OPTARG_ - the prefix used in a #define statement, for an optional
 function/method argument (ie, one with a default value).  It is defined to an
 integer representing the index slot number of the Lua stack it will be at,
 when calling the appropriate lua_check/lua_opt routine to get it from the
-stack.  The make_wsluarm.pl Perl script will generate API documentation with
+stack.  The make_wsluarm.py Python script will generate API documentation with
 this argument name for the function/method, removing the 'WSLUA_OPTARG_'
 prefix.  The rules for the name of the argument after the prefix are the same
 as for 'WSLUA_ARG_' above.

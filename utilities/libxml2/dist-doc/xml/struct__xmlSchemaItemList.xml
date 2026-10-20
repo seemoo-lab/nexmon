@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaItemList" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaItemList</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaItemList_1a94977134c19c2c536550e6b13d69218d" prot="public" static="no" mutable="no">
+        <type>void **</type>
+        <definition>void** items</definition>
+        <argsstring></argsstring>
+        <name>items</name>
+        <qualifiedname>_xmlSchemaItemList::items</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="362" column="10" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="362" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaItemList_1aa052904998dc8414cbdd94bed46c7e47" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbItems</definition>
+        <argsstring></argsstring>
+        <name>nbItems</name>
+        <qualifiedname>_xmlSchemaItemList::nbItems</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="363" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="363" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaItemList_1ae08576033f730aac22e1107cdc114f2c" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int sizeItems</definition>
+        <argsstring></argsstring>
+        <name>sizeItems</name>
+        <qualifiedname>_xmlSchemaItemList::sizeItems</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="364" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="364" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlschemas.c" line="361" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="361" bodyend="365"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaItemList_1a94977134c19c2c536550e6b13d69218d" prot="public" virt="non-virtual"><scope>_xmlSchemaItemList</scope><name>items</name></member>
+      <member refid="struct__xmlSchemaItemList_1aa052904998dc8414cbdd94bed46c7e47" prot="public" virt="non-virtual"><scope>_xmlSchemaItemList</scope><name>nbItems</name></member>
+      <member refid="struct__xmlSchemaItemList_1ae08576033f730aac22e1107cdc114f2c" prot="public" virt="non-virtual"><scope>_xmlSchemaItemList</scope><name>sizeItems</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

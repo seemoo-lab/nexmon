@@ -115,11 +115,11 @@
                     android:textColor="@android:color/tab_indicator_text" />
 
                 <CheckBox
-                    android:id="@+id/chkMdk3"
+                    android:id="@+id/chkMdk4"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="top"
-                    android:text="mdk3: proof-of-concept tool to exploit common IEEE 802.11 protocol weaknesses."
+                    android:text="mdk4: proof-of-concept tool to exploit common IEEE 802.11 protocol weaknesses."
                     android:textColor="@android:color/tab_indicator_text" />
 
                 <CheckBox

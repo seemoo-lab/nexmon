@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,7 +16,6 @@
 #include "packet-pw-common.h"
 
 void proto_register_pw_padding(void);
-void proto_reg_handoff_pw_padding(void);
 
 static const char string_ok[] = "Ok";
 
@@ -57,7 +44,7 @@ pwc_vals_cw_frag[] = {
 };
 
 
-void pwc_item_append_cw(proto_item* item, const guint32 cw, const gboolean append_text)
+void pwc_item_append_cw(proto_item* item, const uint32_t cw, const bool append_text)
 {
 	if (item != NULL)
 	{
@@ -65,7 +52,7 @@ void pwc_item_append_cw(proto_item* item, const guint32 cw, const gboolean appen
 		{
 			proto_item_append_text(item, ", CW");
 		}
-		proto_item_append_text(item, ": 0x%.8" G_GINT32_MODIFIER "x", cw);
+		proto_item_append_text(item, ": 0x%.8" PRIx32, cw);
 	}
 	return;
 }
@@ -84,24 +71,24 @@ void pwc_item_append_text_n_items(proto_item* item, const int n, const char * co
 }
 
 
-static gint proto_pw_padding = -1;
-static gint ett = -1;
-static int hf_padding_len = -1;
+static int proto_pw_padding;
+static int ett_pw_common;
+static int hf_padding_len;
 
 static
 int dissect_pw_padding(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data _U_)
 {
-	gint size;
+	int size;
 	proto_item* item;
 	proto_tree* tree_p;
 	size = tvb_reported_length_remaining(tvb, 0);
 	item = proto_tree_add_item(tree, proto_pw_padding, tvb, 0, -1, ENC_NA);
 	pwc_item_append_text_n_items(item,size,"byte");
-	tree_p = proto_item_add_subtree(item, ett);
+	tree_p = proto_item_add_subtree(item, ett_pw_common);
 
 	call_data_dissector(tvb, pinfo, tree_p);
 	item = proto_tree_add_int(tree_p, hf_padding_len, tvb, 0, 0, size);
-	PROTO_ITEM_SET_HIDDEN(item); /*allow filtering*/
+	proto_item_set_hidden(item); /*allow filtering*/
 
 	return tvb_captured_length(tvb);
 }
@@ -113,8 +100,8 @@ void proto_register_pw_padding(void)
 					,FT_INT32	,BASE_DEC	,NULL		,0
 					,NULL						,HFILL }}
 	};
-	static gint *ett_array[] = {
-		&ett
+	static int *ett_array[] = {
+		&ett_pw_common
 	};
 	proto_pw_padding = proto_register_protocol("Pseudowire Padding","PW Padding","pw.padding");
 	proto_register_field_array(proto_pw_padding, hfpadding, array_length(hfpadding));
@@ -124,7 +111,7 @@ void proto_register_pw_padding(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

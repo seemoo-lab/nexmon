@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -41,34 +29,33 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 
-static int proto_dtcp_ip = -1;
-
-static guint pref_tcp_port = 0;
+static int proto_dtcp_ip;
 
 void proto_register_dtcp_ip(void);
 void proto_reg_handoff_dtcp_ip(void);
 
-static gint ett_dtcp_ip = -1;
-static gint ett_dtcp_ip_ctrl = -1;
-static gint ett_dtcp_ip_ake_procedure = -1;
+static dissector_handle_t dtcp_ip_handle;
 
-static int hf_dtcp_ip_type = -1;
-static int hf_dtcp_ip_length = -1;
-static int hf_dtcp_ip_ctype = -1;
-static int hf_dtcp_ip_category = -1;
-static int hf_dtcp_ip_ake_id = -1;
-static int hf_dtcp_ip_subfct = -1;
-static int hf_dtcp_ip_ake_procedure = -1;
-static int hf_dtcp_ip_ake_proc_full = -1;
-static int hf_dtcp_ip_ake_proc_ex_full = -1;
-static int hf_dtcp_ip_ake_xchg_key = -1;
-static int hf_dtcp_ip_subfct_dep = -1;
-static int hf_dtcp_ip_ake_label = -1;
-static int hf_dtcp_ip_number = -1;
-static int hf_dtcp_ip_status = -1;
-static int hf_dtcp_ip_ake_info = -1;
+static int ett_dtcp_ip;
+static int ett_dtcp_ip_ctrl;
+static int ett_dtcp_ip_ake_procedure;
+
+static int hf_dtcp_ip_type;
+static int hf_dtcp_ip_length;
+static int hf_dtcp_ip_ctype;
+static int hf_dtcp_ip_category;
+static int hf_dtcp_ip_ake_id;
+static int hf_dtcp_ip_subfct;
+static int hf_dtcp_ip_ake_procedure;
+static int hf_dtcp_ip_ake_proc_full;
+static int hf_dtcp_ip_ake_proc_ex_full;
+static int hf_dtcp_ip_ake_xchg_key;
+static int hf_dtcp_ip_subfct_dep;
+static int hf_dtcp_ip_ake_label;
+static int hf_dtcp_ip_number;
+static int hf_dtcp_ip_status;
+static int hf_dtcp_ip_ake_info;
 
 #define CTRL_LEN 8 /* control block is 8 bytes long */
 
@@ -81,7 +68,7 @@ static const value_string subfct[] = {
     { 0, NULL }
 };
 
-static const int *ake_procedure_fields[] = { /* must be int, not gint */
+static int * const ake_procedure_fields[] = {
     &hf_dtcp_ip_ake_proc_full,
     &hf_dtcp_ip_ake_proc_ex_full,
     NULL
@@ -106,44 +93,44 @@ static const value_string ctrl_status[] = {
 
 
 /* check if the packet is actually DTCP-IP */
-static gboolean
+static bool
 dtcp_ip_check_packet(tvbuff_t *tvb)
 {
-    guint  offset = 0;
-    guint8   type;
-    guint16  length;
+    unsigned  offset = 0;
+    uint8_t  type;
+    uint16_t length;
 
     /* a minimum DTCP-IP AKE packet has Type (1 byte),
        Length (2 bytes) and Control (8 bytes) */
     if (tvb_reported_length(tvb) < 1+2+CTRL_LEN)
-        return FALSE;
+        return false;
 
-    type = tvb_get_guint8(tvb, offset);
+    type = tvb_get_uint8(tvb, offset);
     /* all DTCP-IP AKE packets have type 1 */
     if (type != 1)
-        return FALSE;
+        return false;
     offset++;
 
     /* length field is length of the control block +
        length of ake_info */
     length = tvb_get_ntohs(tvb, offset);
     if (length < CTRL_LEN)
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 static int
 dissect_dtcp_ip(tvbuff_t *tvb, packet_info *pinfo,
         proto_tree *tree, void *data _U_)
 {
-    guint        offset = 0;
-    guint16      length;
+    unsigned     offset = 0;
+    uint16_t     length;
     proto_item  *pi;
     proto_tree  *dtcp_ip_tree, *dtcp_ip_ctrl_tree;
-    guint8       subfct_val;
-    const gchar *subfct_str;
-    gint         ake_info_len;
+    uint8_t      subfct_val;
+    const char *subfct_str;
+    int          ake_info_len;
 
 
     if (!dtcp_ip_check_packet(tvb))
@@ -182,7 +169,7 @@ dissect_dtcp_ip(tvbuff_t *tvb, packet_info *pinfo,
             tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
-    subfct_val = tvb_get_guint8(tvb, offset);
+    subfct_val = tvb_get_uint8(tvb, offset);
     subfct_str = val_to_str_const(subfct_val, subfct, "unknown");
     col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL,
             "%s (0x%x)", subfct_str, subfct_val);
@@ -217,7 +204,7 @@ dissect_dtcp_ip(tvbuff_t *tvb, packet_info *pinfo,
     if (ake_info_len > 0) {
         proto_tree_add_item(dtcp_ip_tree, hf_dtcp_ip_ake_info,
                 tvb, offset, ake_info_len, ENC_NA);
-        offset += (guint)ake_info_len;
+        offset += (unsigned)ake_info_len;
     }
 
     return offset;
@@ -279,48 +266,28 @@ proto_register_dtcp_ip(void)
                 NULL, 0, NULL, HFILL } }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_dtcp_ip,
         &ett_dtcp_ip_ctrl,
         &ett_dtcp_ip_ake_procedure
     };
 
-    module_t *dtcp_ip_module;
-
-    proto_dtcp_ip = proto_register_protocol(
-            "Digital Transmission Content Protection over IP",
-            "DTCP-IP", "dtcp-ip");
+    proto_dtcp_ip = proto_register_protocol("Digital Transmission Content Protection over IP", "DTCP-IP", "dtcp-ip");
 
     proto_register_field_array(proto_dtcp_ip, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    dtcp_ip_module = prefs_register_protocol(
-            proto_dtcp_ip, proto_reg_handoff_dtcp_ip);
-    prefs_register_uint_preference(dtcp_ip_module, "tcp.port",
-            "TCP port", "TCP port number for DTCP-IP", 10, &pref_tcp_port);
+    dtcp_ip_handle = register_dissector("dtcp-ip", dissect_dtcp_ip, proto_dtcp_ip);
 }
 
 void
 proto_reg_handoff_dtcp_ip(void)
 {
-    static gboolean initialized = FALSE;
-    static dissector_handle_t dtcp_ip_handle = NULL;
-    static guint current_tcp_port = 0;
-
-    if (!initialized) {
-        dtcp_ip_handle =
-            create_dissector_handle(dissect_dtcp_ip, proto_dtcp_ip);
-        initialized = TRUE;
-    }
-    else
-        dissector_delete_uint("tcp.port", current_tcp_port, dtcp_ip_handle);
-
-    current_tcp_port = pref_tcp_port;
-    dissector_add_uint("tcp.port", current_tcp_port, dtcp_ip_handle);
+    dissector_add_for_decode_as_with_preference("tcp.port", dtcp_ip_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

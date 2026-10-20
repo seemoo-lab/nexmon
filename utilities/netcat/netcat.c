@@ -320,8 +320,14 @@ main(int argc, char *argv[])
 		} else {
 			strlcpy(unix_dg_tmp_socket_buf, "/tmp/nc.XXXXXXXXXX",
 				UNIX_DG_TMP_SOCKET_SIZE);
-			if (mktemp(unix_dg_tmp_socket_buf) == NULL)
-				err(1, "mktemp");
+			{
+				int tmpfd = mkstemp(unix_dg_tmp_socket_buf);
+				if (tmpfd < 0)
+					err(1, "mkstemp");
+				close(tmpfd);
+				if (unlink(unix_dg_tmp_socket_buf) < 0)
+					err(1, "unlink");
+			}
 			unix_dg_tmp_socket = unix_dg_tmp_socket_buf;
 		}
 	}
@@ -416,7 +422,8 @@ main(int argc, char *argv[])
 			if (family != AF_UNIX)
 				close(s);
 			else if (uflag) {
-				if (connect(s, NULL, 0) < 0)
+				struct sockaddr disconnect_addr = { .sa_family = AF_UNSPEC };
+				if (connect(s, &disconnect_addr, sizeof(disconnect_addr)) < 0)
 					err(1, "connect");
 			}
 

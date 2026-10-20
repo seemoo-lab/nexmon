@@ -49,7 +49,7 @@ struct _AccountsUserClass
   void (*changed) (AccountsUser *user);
 };
 
-GType        accounts_user_get_type            (void) G_GNUC_CONST;
+GType        accounts_user_get_type            (void);
 
 const gchar *accounts_user_get_user_name       (AccountsUser        *user);
 const gchar *accounts_user_get_real_name       (AccountsUser        *user);
@@ -108,16 +108,7 @@ enum
 
 static guint signals[LAST_SIGNAL] = {0};
 
-G_DEFINE_TYPE (AccountsUser, accounts_user, G_TYPE_DBUS_PROXY);
-
-static void
-accounts_user_finalize (GObject *object)
-{
-  G_GNUC_UNUSED AccountsUser *user = ACCOUNTS_USER (object);
-
-  if (G_OBJECT_CLASS (accounts_user_parent_class)->finalize != NULL)
-    G_OBJECT_CLASS (accounts_user_parent_class)->finalize (object);
-}
+G_DEFINE_TYPE (AccountsUser, accounts_user, G_TYPE_DBUS_PROXY)
 
 static void
 accounts_user_init (AccountsUser *user)
@@ -234,7 +225,6 @@ accounts_user_class_init (AccountsUserClass *klass)
 
   gobject_class = G_OBJECT_CLASS (klass);
   gobject_class->get_property = accounts_user_get_property;
-  gobject_class->finalize = accounts_user_finalize;
 
   proxy_class = G_DBUS_PROXY_CLASS (klass);
   proxy_class->g_signal             = accounts_user_g_signal;
@@ -350,9 +340,111 @@ accounts_user_frobnicate_finish (AccountsUser        *user,
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
+/* Example usage of the AccountsUser type */
+/* ---------------------------------------------------------------------------------------------------- */
+
+static void
+print_user (AccountsUser *user)
+{
+  g_print ("  user-name       = `%s'\n", accounts_user_get_user_name (user));
+  g_print ("  real-name       = `%s'\n", accounts_user_get_real_name (user));
+  g_print ("  automatic-login = %s\n", accounts_user_get_automatic_login (user) ? "true" : "false");
+}
+
+static void
+on_changed (AccountsUser *user,
+            gpointer      user_data)
+{
+  g_print ("+++ Received the AccountsUser::changed signal\n");
+  print_user (user);
+}
+
+static void
+on_notify (GObject    *object,
+           GParamSpec *pspec,
+           gpointer    user_data)
+{
+  AccountsUser *user = ACCOUNTS_USER (object);
+  g_print ("+++ Received the GObject::notify signal for property `%s'\n",
+           pspec->name);
+  print_user (user);
+}
+
+static void
+on_accounts_proxy_available (GObject      *object,
+                             GAsyncResult *result,
+                             gpointer      user_data)
+{
+  GError *error = NULL;
+  GObject *user_object;
+  AccountsUser *user;
+
+  user_object = g_async_initable_new_finish (G_ASYNC_INITABLE (object),
+                                             result,
+                                             &error);
+  if (!user_object)
+    {
+      g_error ("Failed to create proxy: %s", error->message);
+      g_clear_error (&error);
+      return;
+    }
+  user = ACCOUNTS_USER (user_object);
+
+  g_print ("+++ Acquired proxy for user\n");
+  print_user (user);
+
+  g_signal_connect (user,
+                    "notify",
+                    G_CALLBACK (on_notify),
+                    NULL);
+  g_signal_connect (user,
+                    "changed",
+                    G_CALLBACK (on_changed),
+                    NULL);
+}
+
+static void
+on_accounts_appeared (GDBusConnection *connection,
+                      const gchar     *name,
+                      const gchar     *name_owner,
+                      gpointer         user_data)
+{
+  g_async_initable_new_async (ACCOUNTS_TYPE_USER, 0, NULL,
+                              on_accounts_proxy_available,
+                              "g-flags", 0,
+                              "g-interface-info", NULL,
+                              "g-unique-bus-name", name_owner,
+                              "g-connection", connection,
+                              "g-object-path", "/org/freedesktop/Accounts/User500",
+                              "g-interface-name", "org.freedesktop.Accounts.User");
+}
+
+static void
+on_accounts_vanished (GDBusConnection *connection,
+                      const gchar     *name,
+                      gpointer         user_data)
+{
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
 
 gint
 main (gint argc, gchar *argv[])
 {
+  guint watcher_id;
+  GMainLoop *loop;
+
+  watcher_id = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
+                                 "org.freedesktop.Accounts",
+                                 G_BUS_NAME_WATCHER_FLAGS_AUTO_START,
+                                 on_accounts_appeared,
+                                 on_accounts_vanished,
+                                 NULL, NULL);
+
+  loop = g_main_loop_new (NULL, FALSE);
+  g_main_loop_run (loop);
+  g_main_loop_unref (loop);
+  g_bus_unwatch_name (watcher_id);
+
   return 0;
 }

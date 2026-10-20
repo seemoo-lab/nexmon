@@ -1,7 +1,7 @@
 #! /bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test checking of Python format strings.
+# Test checking of Lua format strings.
 
 cat <<\EOF > f-lu-2.data
 # Valid: %% doesn't count

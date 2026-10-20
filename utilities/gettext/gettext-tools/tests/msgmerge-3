@@ -3,7 +3,7 @@
 
 # Test handling of obsolete/untranslated messages.
 
-cat <<EOF > mm-test3.in1
+cat <<\EOF > mm-test3.in1
 #
 # def.po
 #
@@ -32,7 +32,7 @@ msgstr "translation"
 # trailing comments should be removed
 EOF
 
-cat <<EOF > mm-test3.in2
+cat <<\EOF > mm-test3.in2
 #
 # ref.po
 #

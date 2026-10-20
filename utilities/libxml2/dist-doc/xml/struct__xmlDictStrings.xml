@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlDictStrings" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlDictStrings</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlDictStrings_1a2d2e77261c1436f80d1c867fabeb81fa" prot="public" static="no" mutable="no">
+        <type>xmlDictStringsPtr</type>
+        <definition>xmlDictStringsPtr next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlDictStrings::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="49" column="23" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDictStrings_1a4e0813d31a7b0d0cee1f1e4c130521cd" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* free</definition>
+        <argsstring></argsstring>
+        <name>free</name>
+        <qualifiedname>_xmlDictStrings::free</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="50" column="13" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDictStrings_1ad581a40720edb58a7a178a23b22d3b50" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* end</definition>
+        <argsstring></argsstring>
+        <name>end</name>
+        <qualifiedname>_xmlDictStrings::end</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="51" column="13" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="51" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDictStrings_1a854352f53b148adc24983a58a1866d66" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <qualifiedname>_xmlDictStrings::size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="52" column="12" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="52" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDictStrings_1a752ab0736af93a512bada93449a5e1cc" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t nbStrings</definition>
+        <argsstring></argsstring>
+        <name>nbStrings</name>
+        <qualifiedname>_xmlDictStrings::nbStrings</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="53" column="12" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="53" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDictStrings_1a56ee20ae4a064de7fae7ce554ba88887" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref></type>
+        <definition>xmlChar array[1]</definition>
+        <argsstring>[1]</argsstring>
+        <name>array</name>
+        <qualifiedname>_xmlDictStrings::array</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="54" column="13" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="54" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlDictStrings</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/dict.c" line="48" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="48" bodyend="55"/>
+    <listofallmembers>
+      <member refid="struct__xmlDictStrings_1a56ee20ae4a064de7fae7ce554ba88887" prot="public" virt="non-virtual"><scope>_xmlDictStrings</scope><name>array</name></member>
+      <member refid="struct__xmlDictStrings_1ad581a40720edb58a7a178a23b22d3b50" prot="public" virt="non-virtual"><scope>_xmlDictStrings</scope><name>end</name></member>
+      <member refid="struct__xmlDictStrings_1a4e0813d31a7b0d0cee1f1e4c130521cd" prot="public" virt="non-virtual"><scope>_xmlDictStrings</scope><name>free</name></member>
+      <member refid="struct__xmlDictStrings_1a752ab0736af93a512bada93449a5e1cc" prot="public" virt="non-virtual"><scope>_xmlDictStrings</scope><name>nbStrings</name></member>
+      <member refid="struct__xmlDictStrings_1a2d2e77261c1436f80d1c867fabeb81fa" prot="public" virt="non-virtual"><scope>_xmlDictStrings</scope><name>next</name></member>
+      <member refid="struct__xmlDictStrings_1a854352f53b148adc24983a58a1866d66" prot="public" virt="non-virtual"><scope>_xmlDictStrings</scope><name>size</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

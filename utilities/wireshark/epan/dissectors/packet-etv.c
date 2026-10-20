@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,29 +19,32 @@
 void proto_register_etv(void);
 void proto_reg_handoff_etv(void);
 
-static int proto_etv_dii = -1;
-static int proto_etv_ddb = -1;
+static dissector_handle_t etv_dii_handle;
+static dissector_handle_t etv_ddb_handle;
+
+static int proto_etv_dii;
+static int proto_etv_ddb;
 
 static dissector_handle_t dsmcc_handle;
 
-static int hf_etv_dii_filter_info = -1;
-static int hf_etv_dii_reserved = -1;
+static int hf_etv_dii_filter_info;
+static int hf_etv_dii_reserved;
 
-static expert_field ei_etv_dii_invalid_section_syntax_indicator = EI_INIT;
-static expert_field ei_etv_dii_invalid_section_length = EI_INIT;
-static expert_field ei_etv_dii_invalid_reserved_bits = EI_INIT;
-static expert_field ei_etv_dii_filter_info = EI_INIT;
+static expert_field ei_etv_dii_invalid_section_syntax_indicator;
+static expert_field ei_etv_dii_invalid_section_length;
+static expert_field ei_etv_dii_invalid_reserved_bits;
+static expert_field ei_etv_dii_filter_info;
 
-static int hf_etv_ddb_filter_info = -1;
-static int hf_etv_ddb_reserved = -1;
+static int hf_etv_ddb_filter_info;
+static int hf_etv_ddb_reserved;
 
-static expert_field ei_etv_ddb_invalid_section_syntax_indicator = EI_INIT;
-static expert_field ei_etv_ddb_invalid_section_length = EI_INIT;
-static expert_field ei_etv_ddb_invalid_reserved_bits = EI_INIT;
-static expert_field ei_etv_ddb_filter_info = EI_INIT;
+static expert_field ei_etv_ddb_invalid_section_syntax_indicator;
+static expert_field ei_etv_ddb_invalid_section_length;
+static expert_field ei_etv_ddb_invalid_reserved_bits;
+static expert_field ei_etv_ddb_filter_info;
 
-static gint ett_etv = -1;
-static gint ett_etv_payload = -1;
+static int ett_etv;
+static int ett_etv_payload;
 
 static void
 dissect_etv_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int proto,
@@ -62,16 +53,16 @@ dissect_etv_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int prot
 	expert_field* ei_section_length, expert_field* ei_filter_info)
 {
 	tvbuff_t   *sub_tvb;
-	guint       offset = 0;
+	unsigned    offset = 0;
 	proto_item *ti;
 	proto_item *pi;
 	proto_tree *etv_tree;
 	proto_item *items[PACKET_MPEG_SECT_PI__SIZE];
-	gboolean    ssi;
-	guint       reserved;
-	guint8      reserved2;
-	guint16     filter_info;
-	guint       sect_len;
+	bool        ssi;
+	unsigned    reserved;
+	uint8_t     reserved2;
+	uint16_t    filter_info;
+	unsigned    sect_len;
 
 	ti = proto_tree_add_item(tree, proto, tvb, offset, -1, ENC_NA);
 	etv_tree = proto_item_add_subtree(ti, ett_etv);
@@ -79,11 +70,11 @@ dissect_etv_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int prot
 	offset += packet_mpeg_sect_header_extra(tvb, offset, etv_tree, &sect_len,
 						&reserved, &ssi, items);
 
-	if (FALSE != ssi) {
+	if (false != ssi) {
 		proto_item *msg_error;
 		msg_error = items[PACKET_MPEG_SECT_PI__SSI];
 
-		PROTO_ITEM_SET_GENERATED(msg_error);
+		proto_item_set_generated(msg_error);
 		expert_add_info(pinfo, msg_error, ei_section_syntax_indicator);
 	}
 
@@ -91,7 +82,7 @@ dissect_etv_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int prot
 		proto_item *msg_error;
 		msg_error = items[PACKET_MPEG_SECT_PI__RESERVED];
 
-		PROTO_ITEM_SET_GENERATED(msg_error);
+		proto_item_set_generated(msg_error);
 		expert_add_info(pinfo, msg_error, ei_reserved);
 	}
 
@@ -101,7 +92,7 @@ dissect_etv_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int prot
 		proto_item *msg_error;
 		msg_error = items[PACKET_MPEG_SECT_PI__LENGTH];
 
-		PROTO_ITEM_SET_GENERATED(msg_error);
+		proto_item_set_generated(msg_error);
 		expert_add_info(pinfo, msg_error, ei_section_length);
 	}
 
@@ -120,7 +111,7 @@ dissect_etv_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int prot
 	}
 	offset += 2;
 
-	reserved2 = tvb_get_guint8(tvb, offset);
+	reserved2 = tvb_get_uint8(tvb, offset);
 	pi = proto_tree_add_item(etv_tree, hf_reserved, tvb, offset, 1, ENC_BIG_ENDIAN);
 	if (0 != reserved2) {
 		expert_add_info_format(pinfo, pi, ei_reserved,
@@ -191,7 +182,7 @@ proto_register_etv(void)
 		} }
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_etv,
 		&ett_etv_payload
 	};
@@ -223,17 +214,15 @@ proto_register_etv(void)
 	expert_register_field_array(expert_etv_dii, ei_dii, array_length(ei_dii));
 	expert_etv_ddb = expert_register_protocol(proto_etv_ddb);
 	expert_register_field_array(expert_etv_ddb, ei_ddb, array_length(ei_ddb));
+
+	etv_dii_handle = register_dissector("etv-dii", dissect_etv_dii, proto_etv_dii);
+	etv_ddb_handle = register_dissector("etv-ddb", dissect_etv_ddb, proto_etv_ddb);
 }
 
 
 void
 proto_reg_handoff_etv(void)
 {
-	dissector_handle_t etv_dii_handle;
-	dissector_handle_t etv_ddb_handle;
-
-	etv_dii_handle = create_dissector_handle(dissect_etv_dii, proto_etv_dii);
-	etv_ddb_handle = create_dissector_handle(dissect_etv_ddb, proto_etv_ddb);
 	dissector_add_uint("mpeg_sect.tid", ETV_TID_DII_SECTION, etv_dii_handle);
 	dissector_add_uint("mpeg_sect.tid", ETV_TID_DDB_SECTION, etv_ddb_handle);
 	dsmcc_handle = find_dissector_add_dependency("mp2t-dsmcc", proto_etv_dii);
@@ -241,7 +230,7 @@ proto_reg_handoff_etv(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

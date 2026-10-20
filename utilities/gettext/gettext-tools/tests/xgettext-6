@@ -37,7 +37,11 @@ EOF
 cat <<\EOF > xg-test6.java
 MessageFormat.format(gettext("java-format positive1"),
                      gettext("java-format negative1"));
-System.err.println(gettext("java-format negative2"));
+String.format(gettext("java-printf-format positive1"),
+              gettext("java-printf-format negative1"));
+System.err.printf(gettext("java-printf-format positive2"),
+                  gettext("java-printf-format negative2"));
+System.err.println(gettext("both java-format, java-printf-format negative3"));
 EOF
 
 cat <<\EOF > xg-test6.awk
@@ -149,7 +153,21 @@ msgstr ""
 msgid "java-format negative1"
 msgstr ""
 
-msgid "java-format negative2"
+#, java-printf-format
+msgid "java-printf-format positive1"
+msgstr ""
+
+msgid "java-printf-format negative1"
+msgstr ""
+
+#, java-printf-format
+msgid "java-printf-format positive2"
+msgstr ""
+
+msgid "java-printf-format negative2"
+msgstr ""
+
+msgid "both java-format, java-printf-format negative3"
 msgstr ""
 
 #, awk-format

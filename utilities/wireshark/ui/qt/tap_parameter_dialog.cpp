@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -40,22 +28,27 @@
 
 #include "epan/stat_tap_ui.h"
 
-#include "ui/last_open_dir.h"
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include "ui/packet_range.h"
+#include "ui/win32/file_dlg_win32.h"
+#endif // Q_OS_WIN
+
+#include "ui/util.h"
 #include <wsutil/utf8_entities.h>
 
 #include "wsutil/file_util.h"
 
 #include "progress_frame.h"
-#include "wireshark_application.h"
+#include <ui/qt/utils/qt_ui_utils.h>
+#include "main_application.h"
+
+#include <ui/qt/widgets/wireshark_file_dialog.h>
 
 #include <QClipboard>
 #include <QContextMenuEvent>
 #include <QMessageBox>
-#include <QFileDialog>
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-// Qt::escape
-#include <QTextDocument>
-#endif
+#include <QTreeWidgetItemIterator>
 
 // The GTK+ counterpart uses tap_param_dlg, which we don't use. If we
 // need tap parameters we should probably create a TapParameterDialog
@@ -88,10 +81,10 @@ TapParameterDialog::TapParameterDialog(QWidget &parent, CaptureFile &cf, int hel
 
     QPushButton *button;
     button = ui->buttonBox->addButton(tr("Copy"), QDialogButtonBox::ActionRole);
-    connect(button, SIGNAL(clicked()), this, SLOT(on_actionCopyToClipboard_triggered()));
+    connect(button, &QPushButton::clicked, this, &TapParameterDialog::on_actionCopyToClipboard_triggered);
 
-    button = ui->buttonBox->addButton(tr("Save as" UTF8_HORIZONTAL_ELLIPSIS), QDialogButtonBox::ActionRole);
-    connect(button, SIGNAL(clicked()), this, SLOT(on_actionSaveAs_triggered()));
+    button = ui->buttonBox->addButton(tr("Save as…"), QDialogButtonBox::ActionRole);
+    connect(button, &QPushButton::clicked, this, &TapParameterDialog::on_actionSaveAs_triggered);
 
     connect(ui->displayFilterLineEdit, SIGNAL(textChanged(QString)),
             this, SLOT(updateWidgets()));
@@ -106,6 +99,7 @@ TapParameterDialog::TapParameterDialog(QWidget &parent, CaptureFile &cf, int hel
         QString filter = ui->displayFilterLineEdit->text();
         emit updateFilter(filter);
     }
+    updateWidgets();
     show_timer_ = new QTimer(this);
     setRetapOnShow(true);
 }
@@ -132,10 +126,10 @@ void TapParameterDialog::registerDialog(const QString title, const char *cfg_abb
     QString cfg_str = cfg_abbr;
     cfg_str_to_creator_[cfg_str] = creator;
 
-    QAction *tpd_action = new QAction(title, NULL);
+    QAction *tpd_action = new QAction(title, mainApp);
     tpd_action->setObjectName(action_name_);
     tpd_action->setData(cfg_str);
-    wsApp->addDynamicMenuGroupItem(group, tpd_action);
+    mainApp->addDynamicMenuGroupItem(group, tpd_action);
 }
 
 TapParameterDialog *TapParameterDialog::showTapParameterStatistics(QWidget &parent, CaptureFile &cf, const QString cfg_str, const QString arg, void *)
@@ -210,20 +204,27 @@ void TapParameterDialog::filterActionTriggered()
     emit filterAction(filter_expr, fa->action(), fa->actionType());
 }
 
+void TapParameterDialog::collapseAllActionTriggered() {
+    ui->statsTreeWidget->collapseAll();
+}
+void TapParameterDialog::expandAllActionTriggered() {
+    ui->statsTreeWidget->expandAll();
+}
+
 QString TapParameterDialog::itemDataToPlain(QVariant var, int width)
 {
     QString plain_str;
     int align_mul = 1;
 
-    switch (var.type()) {
-    case QVariant::String:
+    switch (var.userType()) {
+    case QMetaType::QString:
         align_mul = -1;
         // Fall through
-    case QVariant::Int:
-    case QVariant::UInt:
+    case QMetaType::Int:
+    case QMetaType::UInt:
         plain_str = var.toString();
         break;
-    case QVariant::Double:
+    case QMetaType::Double:
         plain_str = QString::number(var.toDouble(), 'f', 6);
         break;
     default:
@@ -231,7 +232,7 @@ QString TapParameterDialog::itemDataToPlain(QVariant var, int width)
     }
 
     if (plain_str.length() < width) {
-        plain_str = QString("%1").arg(plain_str, width * align_mul);
+        plain_str = QStringLiteral("%1").arg(plain_str, width * align_mul);
     }
     return plain_str;
 }
@@ -254,19 +255,19 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
     switch (format) {
     case ST_FORMAT_PLAIN:
     {
+        // Iterating over trees.
         QTreeWidgetItemIterator width_it(it);
         QString plain_header;
         while (*width_it) {
-            QList<QVariant> tid = treeItemData((*width_it));
-            int col = 0;
-            foreach (QVariant var, tid) {
+            // Iterating over items within this tree.
+            for (int col=0; col < ui->statsTreeWidget->columnCount(); col++) {
                 if (col_widths.size() <= col) {
-                    col_widths.append(ui->statsTreeWidget->headerItem()->text(col).length());
+                    col_widths.append(static_cast<int>(ui->statsTreeWidget->headerItem()->text(col).length()));
                 }
-                if (var.type() == QVariant::String) {
-                    col_widths[col] = qMax(col_widths[col], itemDataToPlain(var).length());
+                QVariant var = ui->statsTreeWidget->headerItem()->data(col, Qt::DisplayRole);
+                if (var.userType() == QMetaType::QString) {
+                    col_widths[col] = qMax(col_widths[col], static_cast<int>(itemDataToPlain(var).length()));
                 }
-                col++;
             }
             ++width_it;
         }
@@ -279,14 +280,14 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
         QByteArray top_separator;
         top_separator.fill('=', plain_header.length());
         top_separator.append('\n');
-        QString file_header = QString("%1 - %2:\n").arg(windowSubtitle(), cap_file_.fileName());
+        QString file_header = QStringLiteral("%1 - %2:\n").arg(windowSubtitle(), cap_file_.fileDisplayName());
         footer.fill('-', plain_header.length());
         footer.append('\n');
         plain_header.append('\n');
 
         ba.append(top_separator);
-        ba.append(file_header);
-        ba.append(plain_header);
+        ba.append(file_header.toUtf8());
+        ba.append(plain_header.toUtf8());
         ba.append(footer);
         break;
     }
@@ -295,7 +296,7 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
         QString csv_header;
         QStringList ch_parts;
         for (int col = 0; col < ui->statsTreeWidget->columnCount(); col++) {
-            ch_parts << QString("\"%1\"").arg(ui->statsTreeWidget->headerItem()->text(col));
+            ch_parts << QStringLiteral("\"%1\"").arg(ui->statsTreeWidget->headerItem()->text(col));
         }
         csv_header = ch_parts.join(",");
         csv_header.append('\n');
@@ -306,23 +307,13 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
     {
         // XXX What's a useful format? This mostly conforms to DocBook.
         ba.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        QString title;
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-        title = Qt::escape(windowSubtitle());
-#else
-        title = QString(windowSubtitle()).toHtmlEscaped();
-#endif
-        QString xml_header = QString("<table>\n<title>%1</title>\n").arg(title);
+        QString title = html_escape(windowSubtitle());
+        QString xml_header = QStringLiteral("<table>\n<title>%1</title>\n").arg(title);
         ba.append(xml_header.toUtf8());
         ba.append("<thead>\n<row>\n");
         for (int col = 0; col < ui->statsTreeWidget->columnCount(); col++) {
-            title = ui->statsTreeWidget->headerItem()->text(col);
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-            title = Qt::escape(title);
-#else
-            title = title.toHtmlEscaped();
-#endif
-            title = QString("  <entry>%1</entry>\n").arg(title);
+            title = html_escape(ui->statsTreeWidget->headerItem()->text(col));
+            title = QStringLiteral("  <entry>%1</entry>\n").arg(title);
             ba.append(title.toUtf8());
         }
         ba.append("</row>\n</thead>\n");
@@ -334,7 +325,7 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
     {
         QString yaml_header;
         ba.append("---\n");
-        yaml_header = QString("Description: \"%1\"\nFile: \"%2\"\nItems:\n").arg(windowSubtitle()).arg(cap_file_.fileName());
+        yaml_header = QStringLiteral("Description: \"%1\"\nFile: \"%2\"\nItems:\n").arg(windowSubtitle()).arg(cap_file_.fileDisplayName());
         ba.append(yaml_header.toUtf8());
         break;
     }
@@ -372,8 +363,8 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
         }
         case ST_FORMAT_CSV:
             foreach (QVariant var, tid) {
-                if (var.type() == QVariant::String) {
-                    parts << QString("\"%1\"").arg(var.toString());
+                if (var.userType() == QMetaType::QString) {
+                    parts << QStringLiteral("\"%1\"").arg(var.toString());
                 } else {
                     parts << var.toString();
                 }
@@ -385,13 +376,8 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
         {
             line = "<row>\n";
             foreach (QVariant var, tid) {
-                QString entry;
-    #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-                entry = Qt::escape(var.toString());
-    #else
-                entry = var.toString().toHtmlEscaped();
-    #endif
-                line.append(QString("  <entry>%1</entry>\n").arg(entry));
+                QString entry = html_escape(var.toString());
+                line.append(QStringLiteral("  <entry>%1</entry>\n").arg(entry));
             }
             line.append("</row>\n");
             break;
@@ -402,12 +388,12 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
             QString indent = "-";
             foreach (QVariant var, tid) {
                 QString entry;
-                if (var.type() == QVariant::String) {
-                    entry = QString("\"%1\"").arg(var.toString());
+                if (var.userType() == QMetaType::QString) {
+                    entry = QStringLiteral("\"%1\"").arg(var.toString());
                 } else {
                     entry = var.toString();
                 }
-                line.append(QString("  %1 %2: %3\n").arg(indent).arg(ui->statsTreeWidget->headerItem()->text(col), entry));
+                line.append(QStringLiteral("  %1 %2: %3\n").arg(indent).arg(ui->statsTreeWidget->headerItem()->text(col), entry));
                 indent = " ";
                 col++;
             }
@@ -428,7 +414,15 @@ QByteArray TapParameterDialog::getTreeAsString(st_format_type format)
 
 void TapParameterDialog::drawTreeItems()
 {
-    if (ui->statsTreeWidget->model()->rowCount() < expand_all_threshold_) {
+    // ui->statsTreeWidget->model()->rowCount() only counts the number
+    // of children of the root element, not all the nodes
+    int nodeCount = 0;
+    for (QTreeWidgetItemIterator iter(ui->statsTreeWidget); *iter; ++iter) {
+        if (++nodeCount >= expand_all_threshold_) {
+            break;
+        }
+    }
+    if (nodeCount < expand_all_threshold_) {
         ui->statsTreeWidget->expandAll();
     }
 
@@ -445,7 +439,7 @@ void TapParameterDialog::contextMenuEvent(QContextMenuEvent *event)
         fa->setEnabled(enable);
     }
 
-    ctx_menu_.exec(event->globalPos());
+    ctx_menu_.popup(event->globalPos());
 }
 
 void TapParameterDialog::addFilterActions()
@@ -495,12 +489,25 @@ void TapParameterDialog::addFilterActions()
     ctx_menu_.insertSeparator(insert_action);
 }
 
+void TapParameterDialog::addTreeCollapseAllActions()
+{
+    ctx_menu_.addSeparator();
+
+    QAction *collapse = new QAction(tr("Collapse All"), this);
+    ctx_menu_.addAction(collapse);
+    connect(collapse, SIGNAL(triggered()), this, SLOT(collapseAllActionTriggered()));
+
+    QAction *expand = new QAction(tr("Expand All"), this);
+    ctx_menu_.addAction(expand);
+    connect(expand, SIGNAL(triggered()), this, SLOT(expandAllActionTriggered()));
+}
+
 void TapParameterDialog::updateWidgets()
 {
     bool edit_enable = true;
     bool apply_enable = true;
 
-    if (file_closed_) {
+    if (file_closed_ || !cap_file_.isValid()) {
         edit_enable = false;
         apply_enable = false;
     } else if (!ui->displayFilterLineEdit->checkFilter()) {
@@ -515,9 +522,9 @@ void TapParameterDialog::updateWidgets()
 
 void TapParameterDialog::on_applyFilterButton_clicked()
 {
-    beginRetapPackets();
-    if (!ui->displayFilterLineEdit->checkFilter())
+    if (!ui->displayFilterLineEdit->checkFilter()) {
         return;
+    }
 
     QString filter = ui->displayFilterLineEdit->text();
     emit updateFilter(filter);
@@ -532,12 +539,11 @@ void TapParameterDialog::on_applyFilterButton_clicked()
     fillTree();
     ui->applyFilterButton->setEnabled(af_enabled);
     ui->displayFilterLineEdit->setEnabled(df_enabled);
-    endRetapPackets();
 }
 
 void TapParameterDialog::on_actionCopyToClipboard_triggered()
 {
-    wsApp->clipboard()->setText(getTreeAsString(ST_FORMAT_PLAIN));
+    mainApp->clipboard()->setText(getTreeAsString(ST_FORMAT_PLAIN));
 }
 
 void TapParameterDialog::on_actionSaveAs_triggered()
@@ -549,15 +555,22 @@ void TapParameterDialog::on_actionSaveAs_triggered()
     bool success = false;
     int last_errno;
 
-    QFileDialog SaveAsDialog(this, wsApp->windowTitleString(tr("Save Statistics As" UTF8_HORIZONTAL_ELLIPSIS)),
-                                                            get_last_open_dir());
+#ifdef Q_OS_WIN
+    HANDLE da_ctx = set_thread_per_monitor_v2_awareness();
+#endif
+    WiresharkFileDialog SaveAsDialog(this, mainApp->windowTitleString(tr("Save Statistics As…")),
+                                                            get_open_dialog_initial_dir());
     SaveAsDialog.setNameFilter(tr("Plain text file (*.txt);;"
                                     "Comma separated values (*.csv);;"
                                     "XML document (*.xml);;"
                                     "YAML document (*.yaml)"));
     SaveAsDialog.selectNameFilter(tr("Plain text file (*.txt)"));
     SaveAsDialog.setAcceptMode(QFileDialog::AcceptSave);
-    if (!SaveAsDialog.exec()) {
+    int result = SaveAsDialog.exec();
+#ifdef Q_OS_WIN
+    revert_thread_per_monitor_v2_awareness(da_ctx);
+#endif
+    if (!result) {
         return;
     }
     selectedFilter= SaveAsDialog.selectedNameFilter();
@@ -579,7 +592,7 @@ void TapParameterDialog::on_actionSaveAs_triggered()
     }
 
     // Get selected filename and add extension of necessary
-    QString file_name = SaveAsDialog.selectedFiles()[0];
+    QString file_name = SaveAsDialog.selectedNativePath();
     if (!file_name.endsWith(file_ext, Qt::CaseInsensitive)) {
         file_name.append(file_ext);
     }
@@ -605,19 +618,6 @@ void TapParameterDialog::on_actionSaveAs_triggered()
 void TapParameterDialog::on_buttonBox_helpRequested()
 {
     if (help_topic_ > 0) {
-        wsApp->helpTopicAction((topic_action_e) help_topic_);
+        mainApp->helpTopicAction((topic_action_e) help_topic_);
     }
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

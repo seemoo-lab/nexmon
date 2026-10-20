@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/msg.c		Netlink Messages Interface
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2006 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -20,23 +14,28 @@
 extern "C" {
 #endif
 
+struct nlmsghdr;
+
 #define NL_DONTPAD	0
 
 /**
  * @ingroup msg
  * @brief
- * Will cause the netlink pid to be set to the pid assigned to
- * the netlink handle (socket) just before sending the message off.
- * @note Requires the use of nl_send_auto_complete()!
+ * Will cause the netlink port to be set to the port assigned to
+ * the netlink icoket ust before sending the message off.
+ *
+ * @note Requires the use of nl_send_auto()!
  */
-#define NL_AUTO_PID	0
+#define NL_AUTO_PORT	0
+#define NL_AUTO_PID	NL_AUTO_PORT
 
 /**
  * @ingroup msg
  * @brief
  * May be used to refer to a sequence number which should be
  * automatically set just before sending the message off.
- * @note Requires the use of nl_send_auto_complete()!
+ *
+ * @note Requires the use of nl_send_auto()!
  */
 #define NL_AUTO_SEQ	0
 
@@ -44,15 +43,13 @@ struct nl_msg;
 struct nl_tree;
 struct ucred;
 
-/* size calculations */
-extern int		  nlmsg_msg_size(int);
-extern int		  nlmsg_total_size(int);
-extern int		  nlmsg_padlen(int);
+extern int			nlmsg_size(int);
+extern int			nlmsg_total_size(int);
+extern int			nlmsg_padlen(int);
 
-/* payload access */
-extern void *		  nlmsg_data(const struct nlmsghdr *);
-extern int		  nlmsg_len(const struct nlmsghdr *);
-extern void *		  nlmsg_tail(const struct nlmsghdr *);
+extern void *			nlmsg_data(const struct nlmsghdr *);
+extern int			nlmsg_datalen(const struct nlmsghdr *);
+extern void *			nlmsg_tail(const struct nlmsghdr *);
 
 /* attribute access */
 extern struct nlattr *	  nlmsg_attrdata(const struct nlmsghdr *, int);
@@ -63,10 +60,10 @@ extern int		  nlmsg_valid_hdr(const struct nlmsghdr *, int);
 extern int		  nlmsg_ok(const struct nlmsghdr *, int);
 extern struct nlmsghdr *  nlmsg_next(struct nlmsghdr *, int *);
 extern int		  nlmsg_parse(struct nlmsghdr *, int, struct nlattr **,
-				      int, struct nla_policy *);
+				      int, const struct nla_policy *);
 extern struct nlattr *	  nlmsg_find_attr(struct nlmsghdr *, int, int);
 extern int		  nlmsg_validate(struct nlmsghdr *, int, int,
-					 struct nla_policy *);
+					 const struct nla_policy *);
 
 extern struct nl_msg *	  nlmsg_alloc(void);
 extern struct nl_msg *	  nlmsg_alloc_size(size_t);
@@ -128,12 +125,14 @@ extern void		nl_msg_dump(struct nl_msg *, FILE *);
  * @arg pos	loop counter, set to current message
  * @arg head	head of message stream
  * @arg len	length of message stream
- * @arg rem	initialized to len, holds bytes currently remaining in stream
  */
+#define nlmsg_for_each(pos, head, len) \
+	for (int rem = len, pos = head; \
+		nlmsg_ok(pos, rem); \
+		pos = nlmsg_next(pos, &rem))
+
 #define nlmsg_for_each_msg(pos, head, len, rem) \
-	for (pos = head, rem = len; \
-	     nlmsg_ok(pos, rem); \
-	     pos = nlmsg_next(pos, &(rem)))
+		nlmsg_for_each(pos, head, len)
 
 /** @} */
 

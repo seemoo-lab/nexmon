@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_FCSB3_H_
@@ -63,10 +51,10 @@
 #define FC_SBCCS_DIB_LRC_HDR_SIZE    16
 
 /* Decodes the DIB Type from the IU header and returns type */
-static inline guint get_fc_sbccs_iu_type (tvbuff_t *tvb, guint offset)
+static inline unsigned get_fc_sbccs_iu_type (tvbuff_t *tvb, unsigned offset)
 {
     /* This is in the IUI field of the IU header */
-    return (tvb_get_guint8 (tvb, offset+FC_SBCCS_SB3_HDR_SIZE) & 0x7);
+    return (tvb_get_uint8 (tvb, offset+FC_SBCCS_SB3_HDR_SIZE) & 0x7);
 }
 
 #endif

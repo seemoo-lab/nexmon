@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /* Supports:
  * ISO 10747 Inter Domain Routing Protocol October 18, 1993
@@ -40,89 +28,89 @@
 
 void proto_register_idrp(void);
 
-static int proto_idrp = -1;
-static gint ett_idrp = -1;
-static gint ett_idrp_sub = -1;
+static int proto_idrp;
+static int ett_idrp;
+static int ett_idrp_sub;
 
 /* static header */
-static int hf_idrp_li = -1;
-static int hf_idrp_type = -1;
-static int hf_idrp_sequence = -1;
-static int hf_idrp_ack = -1;
-static int hf_idrp_credit_offered = -1;
-static int hf_idrp_credit_avail = -1;
-static int hf_idrp_validation_pattern = -1;
+static int hf_idrp_li;
+static int hf_idrp_type;
+static int hf_idrp_sequence;
+static int hf_idrp_ack;
+static int hf_idrp_credit_offered;
+static int hf_idrp_credit_avail;
+static int hf_idrp_validation_pattern;
 /* OPEN BISPDU */
-static int hf_idrp_open_version = -1;
-static int hf_idrp_open_hold_time = -1;
-static int hf_idrp_open_max_pdu_size = -1;
-static int hf_idrp_open_src_rdi = -1;
-static int hf_idrp_open_rib_attr_locally_defined_qos_nsap = -1;
-static int hf_idrp_open_rib_attr_locally_defined_qos_value = -1;
-static int hf_idrp_open_rib_attr_locally_defined_qos_metric = -1;
-static int hf_idrp_open_rib_attr_security_reg_id = -1;
-static int hf_idrp_open_rib_attr_security_info = -1;
-static int hf_idrp_open_number_of_confederations = -1;
-static int hf_idrp_open_confederation = -1;
-static int hf_idrp_open_authentication_code = -1;
-static int hf_idrp_open_authentication_data = -1;
+static int hf_idrp_open_version;
+static int hf_idrp_open_hold_time;
+static int hf_idrp_open_max_pdu_size;
+static int hf_idrp_open_src_rdi;
+static int hf_idrp_open_rib_attr_locally_defined_qos_nsap;
+static int hf_idrp_open_rib_attr_locally_defined_qos_value;
+static int hf_idrp_open_rib_attr_locally_defined_qos_metric;
+static int hf_idrp_open_rib_attr_security_reg_id;
+static int hf_idrp_open_rib_attr_security_info;
+static int hf_idrp_open_number_of_confederations;
+static int hf_idrp_open_confederation;
+static int hf_idrp_open_authentication_code;
+static int hf_idrp_open_authentication_data;
 /* UPDATE BISPDU */
-static int hf_idrp_update_number_of_unfeasible_routes = -1;
-static int hf_idrp_update_withdrawn_route = -1;
-static int hf_idrp_update_path_attr_flag = -1;
-static int hf_idrp_update_path_attr_type = -1;
-static int hf_idrp_update_path_attr_length = -1;
-static int hf_idrp_update_path_attr_route_separator_id = -1;
-static int hf_idrp_update_path_attr_route_separator_localpref = -1;
-static int hf_idrp_update_path_attr_ext_info = -1;
-static int hf_idrp_update_path_attr_rd_path_type = -1;
-static int hf_idrp_update_path_attr_rd_path_segment_length = -1;
-static int hf_idrp_update_path_attr_rd_path_rdi = -1;
-static int hf_idrp_update_path_attr_next_hop_idrp_server = -1;
-static int hf_idrp_update_path_attr_next_hop_proto_type = -1;
-static int hf_idrp_update_path_attr_next_hop_proto = -1;
-static int hf_idrp_update_path_attr_next_hop_rdi = -1;
-static int hf_idrp_update_path_attr_next_hop_nb_snpa = -1;
-static int hf_idrp_update_path_attr_next_hop_snpa = -1;
-static int hf_idrp_update_path_attr_dist_list_incl_nb_rdi = -1;
-static int hf_idrp_update_path_attr_dist_list_incl_rdi = -1;
-static int hf_idrp_update_path_attr_dist_list_excl_nb_rdi = -1;
-static int hf_idrp_update_path_attr_dist_list_excl_rdi = -1;
-static int hf_idrp_update_path_attr_multi_exit_disc = -1;
-static int hf_idrp_update_path_attr_transit_delay = -1;
-static int hf_idrp_update_path_attr_residual_error = -1;
-static int hf_idrp_update_path_attr_expense = -1;
-static int hf_idrp_update_path_attr_locally_defined_qos_nsap = -1;
-static int hf_idrp_update_path_attr_locally_defined_qos_value = -1;
-static int hf_idrp_update_path_attr_locally_defined_qos_metric = -1;
-static int hf_idrp_update_path_attr_hierarchicaldecoding = -1;
-static int hf_idrp_update_path_attr_rd_hop_count = -1;
-static int hf_idrp_update_path_attr_security_reg_id = -1;
-static int hf_idrp_update_path_attr_security_info = -1;
-static int hf_idrp_update_path_attr_capacity = -1;
-static int hf_idrp_update_path_attr_priority = -1;
-static int hf_idrp_update_nlri_proto_type = -1;
-static int hf_idrp_update_nlri_proto_id = -1;
-static int hf_idrp_update_nlri_addr_length = -1;
-static int hf_idrp_update_nlri_addr_info_nb_bits = -1;
-static int hf_idrp_update_nlri_addr_info = -1;
+static int hf_idrp_update_number_of_unfeasible_routes;
+static int hf_idrp_update_withdrawn_route;
+static int hf_idrp_update_path_attr_flag;
+static int hf_idrp_update_path_attr_type;
+static int hf_idrp_update_path_attr_length;
+static int hf_idrp_update_path_attr_route_separator_id;
+static int hf_idrp_update_path_attr_route_separator_localpref;
+static int hf_idrp_update_path_attr_ext_info;
+static int hf_idrp_update_path_attr_rd_path_type;
+static int hf_idrp_update_path_attr_rd_path_segment_length;
+static int hf_idrp_update_path_attr_rd_path_rdi;
+static int hf_idrp_update_path_attr_next_hop_idrp_server;
+static int hf_idrp_update_path_attr_next_hop_proto_type;
+static int hf_idrp_update_path_attr_next_hop_proto;
+static int hf_idrp_update_path_attr_next_hop_rdi;
+static int hf_idrp_update_path_attr_next_hop_nb_snpa;
+static int hf_idrp_update_path_attr_next_hop_snpa;
+static int hf_idrp_update_path_attr_dist_list_incl_nb_rdi;
+static int hf_idrp_update_path_attr_dist_list_incl_rdi;
+static int hf_idrp_update_path_attr_dist_list_excl_nb_rdi;
+static int hf_idrp_update_path_attr_dist_list_excl_rdi;
+static int hf_idrp_update_path_attr_multi_exit_disc;
+static int hf_idrp_update_path_attr_transit_delay;
+static int hf_idrp_update_path_attr_residual_error;
+static int hf_idrp_update_path_attr_expense;
+static int hf_idrp_update_path_attr_locally_defined_qos_nsap;
+static int hf_idrp_update_path_attr_locally_defined_qos_value;
+static int hf_idrp_update_path_attr_locally_defined_qos_metric;
+static int hf_idrp_update_path_attr_hierarchicaldecoding;
+static int hf_idrp_update_path_attr_rd_hop_count;
+static int hf_idrp_update_path_attr_security_reg_id;
+static int hf_idrp_update_path_attr_security_info;
+static int hf_idrp_update_path_attr_capacity;
+static int hf_idrp_update_path_attr_priority;
+static int hf_idrp_update_nlri_proto_type;
+static int hf_idrp_update_nlri_proto_id;
+static int hf_idrp_update_nlri_addr_length;
+static int hf_idrp_update_nlri_addr_info_nb_bits;
+static int hf_idrp_update_nlri_addr_info;
 /* ERROR BISPDU */
-static int hf_idrp_error_code = -1;
-static int hf_idrp_error_open_subcode = -1;
-static int hf_idrp_error_update_subcode = -1;
-static int hf_idrp_error_hold_timer_subcode = -1;
-static int hf_idrp_error_fsm_subcode = -1;
-static int hf_idrp_error_rib_refresh_subcode = -1;
-static int hf_idrp_error_data = -1;
+static int hf_idrp_error_code;
+static int hf_idrp_error_open_subcode;
+static int hf_idrp_error_update_subcode;
+static int hf_idrp_error_hold_timer_subcode;
+static int hf_idrp_error_fsm_subcode;
+static int hf_idrp_error_rib_refresh_subcode;
+static int hf_idrp_error_data;
 /* RIB-REFRESH BISPDU */
-static int hf_idrp_rib_refresh_opcode = -1;
-static int hf_idrp_rib_refresh_rib_attr_locally_defined_qos_nsap = -1;
-static int hf_idrp_rib_refresh_rib_attr_locally_defined_qos_value = -1;
-static int hf_idrp_rib_refresh_rib_attr_locally_defined_qos_metric = -1;
-static int hf_idrp_rib_refresh_rib_attr_security_reg_id = -1;
-static int hf_idrp_rib_refresh_rib_attr_security_info = -1;
+static int hf_idrp_rib_refresh_opcode;
+static int hf_idrp_rib_refresh_rib_attr_locally_defined_qos_nsap;
+static int hf_idrp_rib_refresh_rib_attr_locally_defined_qos_value;
+static int hf_idrp_rib_refresh_rib_attr_locally_defined_qos_metric;
+static int hf_idrp_rib_refresh_rib_attr_security_reg_id;
+static int hf_idrp_rib_refresh_rib_attr_security_info;
 
-static expert_field ei_idrp_no_path_attributes = EI_INIT;
+static expert_field ei_idrp_no_path_attributes;
 
 /* flags */
 #define IDRP_UPDATE_PATH_FLAG_OPTIONAL                    0x80
@@ -364,14 +352,14 @@ static const value_string idrp_rib_refresh_opcodes[] = {
 
 static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
 {
-    guint8 rdi_len;
-    guint8 number_of_non_empty_rib_attributes;
-    guint8 number_of_distinguishing_attributes;
-    guint8 rib_attribute_type;
-    guint8 number_of_rdcs;
-    guint8 length_indicator_guint8;
-    gint   i;
-    gint   j;
+    uint8_t rdi_len;
+    uint8_t number_of_non_empty_rib_attributes;
+    uint8_t number_of_distinguishing_attributes;
+    uint8_t rib_attribute_type;
+    uint8_t number_of_rdcs;
+    uint8_t length_indicator_uint8;
+    int    i;
+    int    j;
 
     /* 1 octet idrp version */
     proto_tree_add_item(tree, hf_idrp_open_version, tvb, offset,1, ENC_BIG_ENDIAN);
@@ -386,7 +374,7 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
     offset += 2;
 
     /* Source RDI Length Indicator (1 octet) */
-    rdi_len = tvb_get_guint8(tvb, offset);
+    rdi_len = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     /* Source RDI */
@@ -394,20 +382,20 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
     offset += rdi_len;
 
     /* Number of Non-empty RIB-Atts */
-    number_of_non_empty_rib_attributes = tvb_get_guint8(tvb, offset);
+    number_of_non_empty_rib_attributes = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     /* process Nth non-empty RIB-Atts */
     for (i = number_of_non_empty_rib_attributes; i > 0; i--) {
         /* 1 octet number of distinguishing attributes that are contained in
            the Nth RIB-Att. */
-        number_of_distinguishing_attributes = tvb_get_guint8(tvb, offset);
+        number_of_distinguishing_attributes = tvb_get_uint8(tvb, offset);
         offset += 1;
 
         /* process Nth RIB-Att */
         for (j = number_of_distinguishing_attributes; j > 0; j--) {
             /* 1 octet Type of RIB-Att */
-            rib_attribute_type = tvb_get_guint8(tvb, offset);
+            rib_attribute_type = tvb_get_uint8(tvb, offset);
             offset += 1;
 
             switch (rib_attribute_type) {
@@ -427,7 +415,7 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
                     break;
                 case IDRP_PATH_ATTR_TYPE_LOCALLY_DEFINED_QOS:
                     /* 1 octet Nsap prefix length */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* process Nsap prefix */
                     proto_tree_add_item(
@@ -435,12 +423,12 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
                             hf_idrp_open_rib_attr_locally_defined_qos_nsap,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     /* 1 octet Qos length */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* process Qos */
                     proto_tree_add_item(
@@ -448,13 +436,13 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
                             hf_idrp_open_rib_attr_locally_defined_qos_value,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     /* 1 octet Metric length */
                     /* note: metric  always absent in OPEN BISPDU */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* process Metric */
                     proto_tree_add_item(
@@ -462,16 +450,16 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
                             hf_idrp_open_rib_attr_locally_defined_qos_metric,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
                     break;
                 case IDRP_PATH_ATTR_TYPE_SECURITY:
                     /* length of Security Registration ID and Security Information */
                     offset += 2;
 
                     /* length of Security Registration ID */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* value of Security Registration ID */
                     proto_tree_add_item(
@@ -479,13 +467,13 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
                             hf_idrp_open_rib_attr_security_reg_id,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     /* length of Security Information */
                     /* note: always absent for OPEN BISPDU*/
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* value of Security Information */
                     proto_tree_add_item(
@@ -493,9 +481,9 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
                             hf_idrp_open_rib_attr_security_info,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     break;
                 default:
@@ -506,7 +494,7 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
 
     /* Confed-ID's */
     /* Number of RDCs */
-    number_of_rdcs = tvb_get_guint8(tvb, offset);
+    number_of_rdcs = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_idrp_open_number_of_confederations, tvb,
             offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -514,13 +502,13 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
     /* process Nth Confederation RDI */
     for (i = number_of_rdcs; i > 0; i--) {
         /* 1 octet of RDI length */
-        length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+        length_indicator_uint8 = tvb_get_uint8(tvb, offset);
         offset += 1;
 
         /* process Nth RDI */
         proto_tree_add_item(tree, hf_idrp_open_confederation, tvb,
-                offset, length_indicator_guint8, ENC_NA);
-        offset += length_indicator_guint8;
+                offset, length_indicator_uint8, ENC_NA);
+        offset += length_indicator_uint8;
     }
 
     /* Authentication Code */
@@ -538,20 +526,20 @@ static int dissect_BISPDU_OPEN(tvbuff_t * tvb, int offset, proto_tree * tree)
 
 static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
 {
-    guint16 nb_unfeasible_routes;
-    guint16 path_attrs_len;
+    uint16_t nb_unfeasible_routes;
+    uint16_t path_attrs_len;
     int     path_attrs_start_offset;
-    guint8  path_attr_type;
-    guint16 path_attr_len;
+    uint8_t path_attr_type;
+    uint16_t path_attr_len;
     int     start_offset;
-    guint16 rdi_len;
-    guint8  proto_len;
-    guint16 net_len;
+    uint16_t rdi_len;
+    uint8_t proto_len;
+    uint16_t net_len;
     int     path_segment_rdi_offset;
-    guint16 length_indicator_guint16;
-    guint8  length_indicator_guint8;
-    guint8  nb_of_snpa;
-    guint8  dist_list_count;
+    uint16_t length_indicator_uint16;
+    uint8_t length_indicator_uint8;
+    uint8_t nb_of_snpa;
+    uint8_t dist_list_count;
     int     i;
 
     /* 2 octet withdrawn ("Unfeasible") Route Count */
@@ -579,7 +567,7 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                 offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         /* Path attribute type */
-        path_attr_type = tvb_get_guint8(tvb, offset);
+        path_attr_type = tvb_get_uint8(tvb, offset);
         proto_tree_add_item(tree, hf_idrp_update_path_attr_type, tvb,
                 offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
@@ -629,7 +617,7 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                     offset += 1;
 
                     /* 2 octets of path segment length */
-                    length_indicator_guint16 = tvb_get_ntohs(tvb, offset);
+                    length_indicator_uint16 = tvb_get_ntohs(tvb, offset);
                     proto_tree_add_item(tree,
                             hf_idrp_update_path_attr_rd_path_segment_length,
                             tvb,
@@ -640,18 +628,18 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
 
                     /* one path segment may contain one or more RDI */
                     path_segment_rdi_offset = offset;
-                    while (offset < (path_segment_rdi_offset + length_indicator_guint16)) {
+                    while (offset < (path_segment_rdi_offset + length_indicator_uint16)) {
                         /* 1 octet rdi length */
-                        length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                        length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                         offset += 1;
                         /* print N times path RDI */
                         proto_tree_add_item(tree,
                                 hf_idrp_update_path_attr_rd_path_rdi,
                                 tvb,
                                 offset,
-                                length_indicator_guint8,
+                                length_indicator_uint8,
                                 ENC_NA);
-                        offset += length_indicator_guint8;
+                        offset += length_indicator_uint8;
                     }
                 }
                 break;
@@ -677,31 +665,31 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                             ENC_BIG_ENDIAN);
                     offset += 1;
                     /* 1 octet Proto len */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* N octets Proto: in case of ISO 8473 one octet with the value 0x81 */
                     proto_tree_add_item(tree,
                             hf_idrp_update_path_attr_next_hop_proto,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_ASCII | ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     /* length of NET of Next HOP */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* NET of Next HOP */
                     proto_tree_add_item(tree,
                             hf_idrp_update_path_attr_next_hop_rdi,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset +=  length_indicator_guint8;
+                    offset +=  length_indicator_uint8;
 
                     /* number of SNPA */
-                    nb_of_snpa = tvb_get_guint8(tvb, offset);
+                    nb_of_snpa = tvb_get_uint8(tvb, offset);
                     proto_tree_add_item(tree,
                             hf_idrp_update_path_attr_next_hop_nb_snpa,
                             tvb,
@@ -712,23 +700,23 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                     /* process Nth SNPA */
                     for (i = nb_of_snpa; i > 0; i--) {
                         /* SNPS length in multiples of 4 bit */
-                        length_indicator_guint8 =
+                        length_indicator_uint8 =
                             /* length = half the length in semi-octets rounded up */
-                            (tvb_get_guint8(tvb, offset) + 1) / 2;
+                            (tvb_get_uint8(tvb, offset) + 1) / 2;
                         offset += 1;
                         proto_tree_add_item(tree,
                                 hf_idrp_update_path_attr_next_hop_snpa,
                                 tvb,
                                 offset,
-                                length_indicator_guint8 ,
+                                length_indicator_uint8 ,
                                 ENC_NA);
-                        offset += length_indicator_guint8;
+                        offset += length_indicator_uint8;
                     }
                 } /* while: process Nth next hop */
                 break;
             case IDRP_PATH_ATTR_TYPE_DIST_LIST_EXCL:
                 /* 1 octet number of RDI's/Confed's in DIST list */
-                dist_list_count = tvb_get_guint8(tvb, offset);
+                dist_list_count = tvb_get_uint8(tvb, offset);
                 proto_tree_add_item(tree,
                         hf_idrp_update_path_attr_dist_list_excl_nb_rdi,
                         tvb,
@@ -740,21 +728,21 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                 /* process RDI's/Confederations's in DIST list */
                 for (i = dist_list_count; i > 0; i--) {
                     /* 1 octet RDI/Confed length indicator */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* variable size RDI/Conderation */
                     proto_tree_add_item(tree,
                             hf_idrp_update_path_attr_dist_list_excl_rdi ,
                             tvb,
                             offset,
-                            length_indicator_guint8 ,
+                            length_indicator_uint8 ,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
                 }
                 break;
             case IDRP_PATH_ATTR_TYPE_DIST_LIST_INCL:
                 /* 1 octet number of RDI's/Confed's in DIST list */
-                dist_list_count = tvb_get_guint8(tvb, offset);
+                dist_list_count = tvb_get_uint8(tvb, offset);
                 proto_tree_add_item(tree,
                         hf_idrp_update_path_attr_dist_list_incl_nb_rdi,
                         tvb,
@@ -766,16 +754,16 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                 /* process RDI's/Confederations's in DIST list */
                 for (i = dist_list_count; i > 0; i--) {
                     /* 1 octet RDI/Confed length indicator */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* variable size RDI/Conderation */
                     proto_tree_add_item(tree,
                             hf_idrp_update_path_attr_dist_list_incl_rdi ,
                             tvb,
                             offset,
-                            length_indicator_guint8 ,
+                            length_indicator_uint8 ,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
                 }
                 break;
             case IDRP_PATH_ATTR_TYPE_MULTI_EXIT_DISC:
@@ -820,38 +808,38 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                 break;
             case IDRP_PATH_ATTR_TYPE_LOCALLY_DEFINED_QOS:
                 /* 1 octet Nsap prefix length */
-                length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                 offset += 1;
                 /* process Nsap prefix */
                 proto_tree_add_item(tree,
                         hf_idrp_update_path_attr_locally_defined_qos_nsap ,
                         tvb,
                         offset,
-                        length_indicator_guint8 ,
+                        length_indicator_uint8 ,
                         ENC_NA);
-                offset += length_indicator_guint8;
+                offset += length_indicator_uint8;
                 /* 1 octet Qoslength */
-                length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                 offset += 1;
                 /* process Qos */
                 proto_tree_add_item(tree,
                         hf_idrp_update_path_attr_locally_defined_qos_value,
                         tvb,
                         offset,
-                        length_indicator_guint8 ,
+                        length_indicator_uint8 ,
                         ENC_NA);
-                offset += length_indicator_guint8;
+                offset += length_indicator_uint8;
                 /* 1 octet Metric length */
-                length_indicator_guint8  = tvb_get_guint8(tvb, offset);
+                length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                 offset += 1;
                 /* process Metric */
                 proto_tree_add_item(tree,
                         hf_idrp_update_path_attr_locally_defined_qos_metric,
                         tvb,
                         offset,
-                        length_indicator_guint8 ,
+                        length_indicator_uint8 ,
                         ENC_NA);
-                offset += length_indicator_guint8;
+                offset += length_indicator_uint8;
                 break;
             case IDRP_PATH_ATTR_TYPE_HIERARCHICALRECORDING:
                 /* 1 octet flag hierarchical recording */
@@ -874,7 +862,7 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                 break;
             case IDRP_PATH_ATTR_TYPE_SECURITY:
                 /* length of Security Registration ID */
-                length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                 offset += 1;
 
                 /* value of Security Registration ID */
@@ -882,21 +870,21 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
                         hf_idrp_update_path_attr_security_reg_id,
                         tvb,
                         offset,
-                        length_indicator_guint8 ,
+                        length_indicator_uint8 ,
                         ENC_NA);
-                offset += length_indicator_guint8;
+                offset += length_indicator_uint8;
 
                 /* length of Security Information */
-                length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                 offset += 1;
                 /* value of Security Information */
                 proto_tree_add_item(tree,
                         hf_idrp_update_path_attr_security_info,
                         tvb,
                         offset,
-                        length_indicator_guint8,
+                        length_indicator_uint8,
                         ENC_NA);
-                offset += length_indicator_guint8;
+                offset += length_indicator_uint8;
                 break;
             case IDRP_PATH_ATTR_TYPE_CAPACITY:
                 proto_tree_add_item(tree,
@@ -927,7 +915,7 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
     offset += 1;
 
     /* 1 octet Proto len */
-    proto_len = tvb_get_guint8(tvb, offset);
+    proto_len = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     /* N octets Proto identity: in case of ISO 8473 one octet with the value 0x81 */
@@ -945,7 +933,7 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
     start_offset = offset;
     while (offset < (start_offset + net_len)) {
         /* 1 octet address length in bits */
-        rdi_len = tvb_get_guint8(tvb, offset) / 8;
+        rdi_len = tvb_get_uint8(tvb, offset) / 8;
         proto_tree_add_item(tree, hf_idrp_update_nlri_addr_info_nb_bits, tvb,
                 offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
@@ -959,11 +947,11 @@ static int dissect_BISPDU_UPDATE(tvbuff_t * tvb, int offset, proto_tree * tree)
 
 static int dissect_BISPDU_ERROR(tvbuff_t * tvb, int offset, proto_tree * tree)
 {
-    guint8 error_code = 0;
-    gint   data_length;
+    uint8_t error_code = 0;
+    int    data_length;
 
     /* Error Code (1 octet) */
-    error_code = tvb_get_guint8(tvb, offset);
+    error_code = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_idrp_error_code, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
 
@@ -1010,10 +998,10 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
 {
     proto_tree *sub_tree;
     proto_item *sub_item;
-    guint8      number_of_non_empty_rib_attributes;
-    guint8      number_of_distinguishing_attributes;
-    guint8      rib_attribute_type;
-    guint8      length_indicator_guint8;
+    uint8_t     number_of_non_empty_rib_attributes;
+    uint8_t     number_of_distinguishing_attributes;
+    uint8_t     rib_attribute_type;
+    uint8_t     length_indicator_uint8;
     int         i;
     int         j;
 
@@ -1026,7 +1014,7 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
     sub_tree = proto_tree_add_subtree(tree, tvb, offset, 0, ett_idrp_sub, &sub_item, "Path Attributes");
 
     /* Number of Non-empty RIB-Atts */
-    number_of_non_empty_rib_attributes = tvb_get_guint8(tvb, offset);
+    number_of_non_empty_rib_attributes = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     if (!number_of_non_empty_rib_attributes)
@@ -1037,13 +1025,13 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
 
         /* 1 octet number of distinguishing attributes that are contained in
            the Nth RIB-Att. */
-        number_of_distinguishing_attributes = tvb_get_guint8(tvb, offset);
+        number_of_distinguishing_attributes = tvb_get_uint8(tvb, offset);
         offset += 1;
 
         /* process Nth RIB-Att */
         for (j = number_of_distinguishing_attributes; j > 0; j--) {
             /* 1 octet Type of RIB-Att */
-            rib_attribute_type = tvb_get_guint8(tvb, offset);
+            rib_attribute_type = tvb_get_uint8(tvb, offset);
             offset += 1;
 
             switch (rib_attribute_type) {
@@ -1063,7 +1051,7 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
                     break;
                 case IDRP_PATH_ATTR_TYPE_LOCALLY_DEFINED_QOS:
                     /* 1 octet Nsap prefix length */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* process Nsap prefix */
                     proto_tree_add_item(
@@ -1071,12 +1059,12 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
                             hf_idrp_rib_refresh_rib_attr_locally_defined_qos_nsap,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     /* 1 octet Qos length */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* process Qos */
                     proto_tree_add_item(
@@ -1084,13 +1072,13 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
                             hf_idrp_rib_refresh_rib_attr_locally_defined_qos_value,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     /* 1 octet Metric length */
                     /* note: metric  always absent in OPEN BISPDU */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* process Metric */
                     proto_tree_add_item(
@@ -1098,16 +1086,16 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
                             hf_idrp_rib_refresh_rib_attr_locally_defined_qos_metric,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
                     break;
                 case IDRP_PATH_ATTR_TYPE_SECURITY:
                     /* length of Security Registration ID and Security Information */
                     offset += 2;
 
                     /* length of Security Registration ID */
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* value of Security Registration ID */
                     proto_tree_add_item(
@@ -1115,13 +1103,13 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
                             hf_idrp_rib_refresh_rib_attr_security_reg_id,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     /* length of Security Information */
                     /* note: always absent for OPEN BISPDU*/
-                    length_indicator_guint8 = tvb_get_guint8(tvb, offset);
+                    length_indicator_uint8 = tvb_get_uint8(tvb, offset);
                     offset += 1;
                     /* value of Security Information */
                     proto_tree_add_item(
@@ -1129,9 +1117,9 @@ static int dissect_BISPDU_RIB_REFRESH(tvbuff_t * tvb, packet_info *pinfo, int of
                             hf_idrp_rib_refresh_rib_attr_security_info,
                             tvb,
                             offset,
-                            length_indicator_guint8,
+                            length_indicator_uint8,
                             ENC_NA);
-                    offset += length_indicator_guint8;
+                    offset += length_indicator_uint8;
 
                     break;
                 default:
@@ -1147,11 +1135,11 @@ dissect_idrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 {
     proto_item *ti;
     proto_tree *idrp_tree;
-    guint8      pdu_type;
-    gint        offset = 0;
+    uint8_t     pdu_type;
+    int         offset = 0;
 
 
-    if (tvb_get_guint8(tvb, offset) != NLPID_ISO10747_IDRP)
+    if (tvb_get_uint8(tvb, offset) != NLPID_ISO10747_IDRP)
         return 0;  /* no idrp packet */
     offset += 1;
 
@@ -1167,7 +1155,7 @@ dissect_idrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     offset += 2;
 
     /* 1 octet BISPDU Type */
-    pdu_type = tvb_get_guint8(tvb, offset);
+    pdu_type = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(idrp_tree, hf_idrp_type,
             tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -1223,8 +1211,8 @@ dissect_idrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
             break;
     }
 
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%s",
-            val_to_str(pdu_type, idrp_pdu_types, "Unknown (%u)"));
+    col_append_str(pinfo->cinfo, COL_INFO,
+            val_to_str(pinfo->pool, pdu_type, idrp_pdu_types, "Unknown (%u)"));
 
     return offset;
 }
@@ -1238,10 +1226,10 @@ void proto_register_idrp(void)
                 "BISPDU Length Indicator, length of this PDU", HFILL}},
         {&hf_idrp_type,
             {"BISPDU Type", "idrp.type", FT_UINT8, BASE_DEC,
-                VALS(idrp_pdu_types), 0xff, NULL, HFILL}},
+                VALS(idrp_pdu_types), 0x0, NULL, HFILL}},
         {&hf_idrp_sequence,
             {"Sequence Number", "idrp.seq", FT_UINT32, BASE_DEC, NULL, 0x0,
-                "Sequence number, Sequence number of current BISPDU ", HFILL}},
+                "Sequence number, Sequence number of current BISPDU", HFILL}},
         {&hf_idrp_ack,
             {"Acknowledgment number", "idrp.ack", FT_UINT32, BASE_DEC, NULL, 0x0,
                 "Acknowledgment number, Sequence number of the PDU that the sender last received correctly and in sequence number order",
@@ -1281,27 +1269,27 @@ void proto_register_idrp(void)
         {&hf_idrp_open_rib_attr_locally_defined_qos_nsap,
             {"Rib Attribute Value Locally Defined Qos NSAP",
                 "idrp.open.rib-attr.locally-defined-qos.nsap", FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Qos NSAP" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_open_rib_attr_locally_defined_qos_value,
             {"Rib Attribute Value Locally Defined Qos",
                 "idrp.open.rib-attr.locally-defined-qos.qos", FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Qos Value" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_open_rib_attr_locally_defined_qos_metric,
             {"Rib Attribute Value Locally Defined Qos Metric",
                 "idrp.open.rib-attr.locally-defined-qos.metric", FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Metric" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_open_rib_attr_security_reg_id,
             {"Rib Attribute Value Security Registration ID",
                 "idrp.open.rib-attr.security.reg-id", FT_BYTES, BASE_NONE,
-                NULL, 0, "Identifies the Security Authority" ,
+                NULL, 0, "Identifies the Security Authority",
                 HFILL}},
         {&hf_idrp_open_rib_attr_security_info,
             {"Rib Attribute Value Security Registration ID",
                 "idrp.open.rib-attr.security.info", FT_BYTES, BASE_NONE,
-                NULL, 0, "Additional security related information" ,
+                NULL, 0, "Additional security related information",
                 HFILL}},
         {&hf_idrp_open_number_of_confederations,
             {"Number of Routing Confederations",
@@ -1324,7 +1312,7 @@ void proto_register_idrp(void)
         {&hf_idrp_open_authentication_data,
             {"Authentication Data", "idrp.open.authentication-data", FT_BYTES,
                 BASE_NONE,
-                NULL, 0, "Datat used for optional authentication of a peer BIS", HFILL}},
+                NULL, 0, "Data used for optional authentication of a peer BIS", HFILL}},
         {&hf_idrp_update_number_of_unfeasible_routes,
             {"Number of Unfeasible Routes",
                 "idrp.update.number-of-unfeasible-routes", FT_UINT16, BASE_DEC,
@@ -1361,7 +1349,7 @@ void proto_register_idrp(void)
                 HFILL}},
         {&hf_idrp_update_path_attr_ext_info,
             {"Path Attribute Value External Info",
-                "idrp.update.path-attr.ext-info",  FT_BOOLEAN, 8,
+                "idrp.update.path-attr.ext-info",  FT_BOOLEAN, BASE_NONE,
                 NULL, 0,"Flag indicates if routes have been discovered by means of IDRP",
                 HFILL}},
         {&hf_idrp_update_path_attr_rd_path_type,
@@ -1377,12 +1365,12 @@ void proto_register_idrp(void)
         {&hf_idrp_update_path_attr_rd_path_rdi,
             {"Path Attribute Value RD Path Segment RDI",
                 "idrp.update.path-attr.rd-path.segment-rdi",  FT_BYTES, BASE_NONE,
-                NULL, 0,"RD Path Segment Routing Identifier or Confederation" ,
+                NULL, 0,"RD Path Segment Routing Identifier or Confederation",
                 HFILL}},
         {&hf_idrp_update_path_attr_next_hop_idrp_server,
             {"Path Attribute Value Next Hop Idrp Server",
                 "idrp.update.path-attr.next-hop.idrp-server", FT_UINT8, BASE_DEC,
-                NULL, 0, "Permit a BIS to advertise a different or local BISs NET" ,
+                NULL, 0, "Permit a BIS to advertise a different or local BISs NET",
                 HFILL}},
         {&hf_idrp_update_path_attr_next_hop_proto_type,
             {"Path Attribute Value Next Hop Segment Protocol Type",
@@ -1397,102 +1385,102 @@ void proto_register_idrp(void)
         {&hf_idrp_update_path_attr_next_hop_rdi,
             {"Path Attribute Value Next Hop RDI",
                 "idrp.update.path-attr.next-hop.rdi", FT_BYTES, BASE_NONE,
-                NULL, 0, "NET to advertise as next hop segment" ,
+                NULL, 0, "NET to advertise as next hop segment",
                 HFILL}},
         {&hf_idrp_update_path_attr_next_hop_nb_snpa,
             {"Path Attribute Value Next Hop Number of SNPA",
                 "idrp.update.path-attr.next-hop.number-snpa", FT_UINT8, BASE_DEC,
-                NULL, 0, "Number of SNPA's on next hop segment" ,
+                NULL, 0, "Number of SNPA's on next hop segment",
                 HFILL}},
         {&hf_idrp_update_path_attr_next_hop_snpa,
             {"Path Attribute Value Next Hop SNPA",
                 "idrp.update.path-attr.next-hop.snpa", FT_BYTES, BASE_NONE,
-                NULL, 0, "SNPA on next hop segment" ,
+                NULL, 0, "SNPA on next hop segment",
                 HFILL}},
         {&hf_idrp_update_path_attr_dist_list_incl_nb_rdi,
             {"Path Attribute Value Dist List Incl Number of RDIs",
                 "idrp.update.path-attr.dist-list-incl.number-rdi", FT_UINT8, BASE_DEC,
-                NULL, 0, "Number of RDIs which NLRI information may be distributed" ,
+                NULL, 0, "Number of RDIs which NLRI information may be distributed",
                 HFILL}},
         {&hf_idrp_update_path_attr_dist_list_incl_rdi,
             {"Path Attribute Value Dist List Incl RDI",
                 "idrp.update.path-attr.dist-list-incl.rdi", FT_BYTES, BASE_NONE,
-                NULL, 0, "RDI which NLRI information may be distributed" ,
+                NULL, 0, "RDI which NLRI information may be distributed",
                 HFILL}},
         {&hf_idrp_update_path_attr_dist_list_excl_nb_rdi,
             {"Path Attribute Value Dist List Excl Number of RDIs",
                 "idrp.update.path-attr.dist-list-excl.number-rdi", FT_UINT8, BASE_DEC,
-                NULL, 0, "Number of RDIs which NLRI information may not be distributed" ,
+                NULL, 0, "Number of RDIs which NLRI information may not be distributed",
                 HFILL}},
         {&hf_idrp_update_path_attr_dist_list_excl_rdi,
             {"Path Attribute Value Dist List Excl RDI",
                 "idrp.update.path-attr.dist-list-excl.rdi", FT_BYTES, BASE_NONE,
-                NULL, 0, "RDI which NLRI information may be distributed" ,
+                NULL, 0, "RDI which NLRI information may be distributed",
                 HFILL}},
         {&hf_idrp_update_path_attr_multi_exit_disc,
             {"Path Attribute Value Multi Exit Disc",
                 "idrp.update.path-attr.multi-exit-disc", FT_UINT8, BASE_DEC,
-                NULL, 0, "Number of exit points to an adjacent domain" ,
+                NULL, 0, "Number of exit points to an adjacent domain",
                 HFILL}},
         {&hf_idrp_update_path_attr_transit_delay,
             {"Path Attribute Value Transit Delay",
                 "idrp.update.path-attr.transit-delay", FT_UINT16, BASE_DEC,
-                NULL, 0, "Transit Delay" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_update_path_attr_residual_error,
             {"Path Attribute Value Residual Error",
                 "idrp.update.path-attr.residual-error", FT_UINT32, BASE_DEC,
-                NULL, 0, "Residual error probability to destination" ,
+                NULL, 0, "Residual error probability to destination",
                 HFILL}},
         {&hf_idrp_update_path_attr_expense,
             {"Path Attribute Value Expense",
                 "idrp.update.path-attr.expense", FT_UINT16, BASE_DEC,
-                NULL, 0, "Expense to destination" ,
+                NULL, 0, "Expense to destination",
                 HFILL}},
         {&hf_idrp_update_path_attr_locally_defined_qos_nsap,
             {"Path Attribute Value Locally Defined Qos NSAP",
                 "idrp.update.path-attr.locally-defined-qos.nsap", FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Qos NSAP" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_update_path_attr_locally_defined_qos_value,
             {"Path Attribute Value Locally Defined Qos",
                 "idrp.update.path-attr.locally-defined-qos.qos", FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Qos Value" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_update_path_attr_locally_defined_qos_metric,
             {"Path Attribute Value Locally Defined Qos Metric",
                 "idrp.update.path-attr.locally-defined-qos.metric", FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Metric" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_update_path_attr_hierarchicaldecoding,
             {"Path Attribute Value Hierarchical Decoding",
                 "idrp.update.path-attr.hierarchical-decoding", FT_UINT8, BASE_HEX,
-                NULL, 0, "Controls the transitivity of NPDUs through the confederation" ,
+                NULL, 0, "Controls the transitivity of NPDUs through the confederation",
                 HFILL}},
         {&hf_idrp_update_path_attr_rd_hop_count,
             {"Path Attribute Value RD Hop Count",
                 "idrp.update.path-attr.rd-hop-count", FT_UINT8, BASE_DEC,
-                NULL, 0, "Maximum Hop Count for this Routing Information to travel" ,
+                NULL, 0, "Maximum Hop Count for this Routing Information to travel",
                 HFILL}},
         {&hf_idrp_update_path_attr_security_reg_id,
             {"Path Attribute Value Security Registration ID",
                 "idrp.update.path-attr.security.reg-id", FT_BYTES, BASE_NONE,
-                NULL, 0, "Identifies the Security Authority" ,
+                NULL, 0, "Identifies the Security Authority",
                 HFILL}},
         {&hf_idrp_update_path_attr_security_info,
             {"Path Attribute Value Security Registration ID",
                 "idrp.update.path-attr.security.info", FT_BYTES, BASE_NONE,
-                NULL, 0, "Additional security related information" ,
+                NULL, 0, "Additional security related information",
                 HFILL}},
         {&hf_idrp_update_path_attr_capacity,
             {"Path Attribute Value Capacity",
                 "idrp.update.path-attr.capacity", FT_UINT8, BASE_DEC,
-                NULL, 0, "Capacity of the RD_PATH for handling traffic" ,
+                NULL, 0, "Capacity of the RD_PATH for handling traffic",
                 HFILL}},
         {&hf_idrp_update_path_attr_priority,
             {"Path Attribute Value Capacity",
                 "idrp.update.path-attr.capacity", FT_UINT8, BASE_DEC,
-                NULL, 0, "Capacity of the RD_PATH for handling traffic" ,
+                NULL, 0, "Capacity of the RD_PATH for handling traffic",
                 HFILL}},
         {&hf_idrp_update_nlri_proto_type,
             {"NLRI Protocol Type", "idrp.update.nlri.proto-type", FT_UINT8,
@@ -1506,12 +1494,12 @@ void proto_register_idrp(void)
                 HFILL}},
         {&hf_idrp_update_nlri_addr_length,
             {"NLRI Address Length",
-                "idrp.update.nlri.addr-length.", FT_UINT16, BASE_DEC,
+                "idrp.update.nlri.addr-length", FT_UINT16, BASE_DEC,
                 NULL, 0, NULL ,
                 HFILL}},
         {&hf_idrp_update_nlri_addr_info_nb_bits,
             {"NLRI Address Info Bits",
-                "idrp.update.nlri.addr-info-bits.", FT_UINT8, BASE_DEC,
+                "idrp.update.nlri.addr-info-bits", FT_UINT8, BASE_DEC,
                 NULL, 0, NULL ,
                 HFILL}},
         {&hf_idrp_update_nlri_addr_info,
@@ -1541,7 +1529,7 @@ void proto_register_idrp(void)
         {&hf_idrp_error_rib_refresh_subcode,
             {"Error Subcode (Rib-Refresh Message)", "idrp.error.subcode",
                 FT_UINT8, BASE_DEC, VALS(idrp_error_rib_refresh_subcodes),
-                0xff, NULL, HFILL}},
+                0x0, NULL, HFILL}},
         {&hf_idrp_error_data,
             {"Error Data", "idrp.error.data", FT_BYTES, BASE_NONE, NULL, 0,
                 "Diagnosis data that depends upon the error code and error subcode",
@@ -1549,39 +1537,39 @@ void proto_register_idrp(void)
         {&hf_idrp_rib_refresh_opcode,
             {"Rib Refresh opcode", "idrp.rib-refresh.opcode", FT_UINT8, BASE_DEC,
                 VALS(idrp_error_rib_refresh_subcodes),
-                0xff, NULL, HFILL}},
+                0x0, NULL, HFILL}},
         {&hf_idrp_rib_refresh_rib_attr_locally_defined_qos_nsap,
             {"Rib Attribute Value Locally Defined Qos NSAP",
                 "idrp.rib-refresh.rib-attr.locally-defined-qos.nsap",
                 FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Qos NSAP" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_rib_refresh_rib_attr_locally_defined_qos_value,
             {"Rib Attribute Value Locally Defined Qos",
                 "idrp.rib-refresh.rib-attr.locally-defined-qos.qos",
                 FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Qos Value" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_rib_refresh_rib_attr_locally_defined_qos_metric,
             {"Rib Attribute Value Locally Defined Qos Metric",
                 "idrp.rib-refresh.rib-attr.locally-defined-qos.metric",
                 FT_BYTES, BASE_NONE,
-                NULL, 0, "Locally Defined Metric" ,
+                NULL, 0, NULL,
                 HFILL}},
         {&hf_idrp_rib_refresh_rib_attr_security_reg_id,
             {"Rib Attribute Value Security Registration ID",
                 "idrp.rib-refresh.rib-attr.security.reg-id", FT_BYTES, BASE_NONE,
-                NULL, 0, "Identifies the Security Authority" ,
+                NULL, 0, "Identifies the Security Authority",
                 HFILL}},
         {&hf_idrp_rib_refresh_rib_attr_security_info,
             {"Rib Attribute Value Security Registration ID",
                 "idrp.rib-refresh.rib-attr.security.info", FT_BYTES, BASE_NONE,
-                NULL, 0, "Additional security related information" ,
+                NULL, 0, "Additional security related information",
                 HFILL}},
     };
 
     /* List of subtrees */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_idrp,
         &ett_idrp_sub
     };
@@ -1602,7 +1590,7 @@ void proto_register_idrp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

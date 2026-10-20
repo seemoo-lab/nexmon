@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,19 +21,19 @@
 void proto_register_rs_prop_plcy (void);
 void proto_reg_handoff_rs_prop_plcy (void);
 
-static int proto_rs_prop_plcy = -1;
-static int hf_rs_prop_plcy_opnum = -1;
+static int proto_rs_prop_plcy;
+static int hf_rs_prop_plcy_opnum;
 
 
-static gint ett_rs_prop_plcy = -1;
+static int ett_rs_prop_plcy;
 static e_guid_t uuid_rs_prop_plcy =
   { 0xe6ac5cb8, 0xde3e, 0x11ca, {0x93, 0x76, 0x08, 0x00, 0x1e, 0x03, 0x94,
                                  0xc7} };
 
-static guint16 ver_rs_prop_plcy = 1;
+static uint16_t ver_rs_prop_plcy = 1;
 
 
-static dcerpc_sub_dissector rs_prop_plcy_dissectors[] = {
+static const dcerpc_sub_dissector rs_prop_plcy_dissectors[] = {
   {0, "rs_prop_properties_set_info",     NULL, NULL},
   {1, "rs_prop_plcy_set_info",           NULL, NULL},
   {2, "rs_prop_auth_plcy_set_info",      NULL, NULL},
@@ -62,7 +50,7 @@ proto_register_rs_prop_plcy (void)
       NULL, HFILL}},
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_rs_prop_plcy,
   };
   proto_rs_prop_plcy =
@@ -83,7 +71,7 @@ proto_reg_handoff_rs_prop_plcy (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

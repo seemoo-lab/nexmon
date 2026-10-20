@@ -1,19 +1,19 @@
 /* Decomposed printf argument list.
-   Copyright (C) 1999, 2002-2003, 2005-2007, 2009-2016 Free Software
+   Copyright (C) 1999, 2002-2003, 2005-2007, 2009-2026 Free Software
    Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* This file can be parametrized with the following macros:
      ENABLE_UNISTDIO    Set to 1 to enable the unistdio extensions.
@@ -28,6 +28,12 @@
 #ifndef PRINTF_FETCHARGS
 # include "printf-args.h"
 #endif
+
+/* Get INT_WIDTH.  */
+#include <limits.h>
+
+/* Get abort().  */
+#include <stdlib.h>
 
 #ifdef STATIC
 STATIC
@@ -65,14 +71,108 @@ PRINTF_FETCHARGS (va_list args, arguments *a)
       case TYPE_ULONGINT:
         ap->a.a_ulongint = va_arg (args, unsigned long int);
         break;
-#if HAVE_LONG_LONG_INT
       case TYPE_LONGLONGINT:
         ap->a.a_longlongint = va_arg (args, long long int);
         break;
       case TYPE_ULONGLONGINT:
         ap->a.a_ulonglongint = va_arg (args, unsigned long long int);
         break;
-#endif
+      case TYPE_INT8_T:
+        #if INT8_WIDTH < INT_WIDTH
+        ap->a.a_int8_t = va_arg (args, /* int8_t */ int);
+        #else
+        ap->a.a_int8_t = va_arg (args, int8_t);
+        #endif
+        break;
+      case TYPE_UINT8_T:
+        #if UINT8_WIDTH < INT_WIDTH
+        ap->a.a_uint8_t = va_arg (args, /* uint8_t */ int);
+        #else
+        ap->a.a_uint8_t = va_arg (args, uint8_t);
+        #endif
+        break;
+      case TYPE_INT16_T:
+        #if INT16_WIDTH < INT_WIDTH
+        ap->a.a_int16_t = va_arg (args, /* int16_t */ int);
+        #else
+        ap->a.a_int16_t = va_arg (args, int16_t);
+        #endif
+        break;
+      case TYPE_UINT16_T:
+        #if UINT16_WIDTH < INT_WIDTH
+        ap->a.a_uint16_t = va_arg (args, /* uint16_t */ int);
+        #else
+        ap->a.a_uint16_t = va_arg (args, uint16_t);
+        #endif
+        break;
+      case TYPE_INT32_T:
+        #if INT32_WIDTH < INT_WIDTH
+        ap->a.a_int32_t = va_arg (args, /* int32_t */ int);
+        #else
+        ap->a.a_int32_t = va_arg (args, int32_t);
+        #endif
+        break;
+      case TYPE_UINT32_T:
+        #if UINT32_WIDTH < INT_WIDTH
+        ap->a.a_uint32_t = va_arg (args, /* uint32_t */ int);
+        #else
+        ap->a.a_uint32_t = va_arg (args, uint32_t);
+        #endif
+        break;
+      case TYPE_INT64_T:
+        ap->a.a_int64_t = va_arg (args, int64_t);
+        break;
+      case TYPE_UINT64_T:
+        ap->a.a_uint64_t = va_arg (args, uint64_t);
+        break;
+      case TYPE_INT_FAST8_T:
+        #if INT_FAST8_WIDTH < INT_WIDTH
+        ap->a.a_int_fast8_t = va_arg (args, /* int_fast8_t */ int);
+        #else
+        ap->a.a_int_fast8_t = va_arg (args, int_fast8_t);
+        #endif
+        break;
+      case TYPE_UINT_FAST8_T:
+        #if UINT_FAST8_WIDTH < INT_WIDTH
+        ap->a.a_uint_fast8_t = va_arg (args, /* uint_fast8_t */ int);
+        #else
+        ap->a.a_uint_fast8_t = va_arg (args, uint_fast8_t);
+        #endif
+        break;
+      case TYPE_INT_FAST16_T:
+        #if INT_FAST16_WIDTH < INT_WIDTH
+        ap->a.a_int_fast16_t = va_arg (args, /* int_fast16_t */ int);
+        #else
+        ap->a.a_int_fast16_t = va_arg (args, int_fast16_t);
+        #endif
+        break;
+      case TYPE_UINT_FAST16_T:
+        #if UINT_FAST16_WIDTH < INT_WIDTH
+        ap->a.a_uint_fast16_t = va_arg (args, /* uint_fast16_t */ int);
+        #else
+        ap->a.a_uint_fast16_t = va_arg (args, uint_fast16_t);
+        #endif
+        break;
+      case TYPE_INT_FAST32_T:
+        #if INT_FAST32_WIDTH < INT_WIDTH
+        ap->a.a_int_fast32_t = va_arg (args, /* int_fast32_t */ int);
+        #else
+        ap->a.a_int_fast32_t = va_arg (args, int_fast32_t);
+        #endif
+        break;
+      case TYPE_UINT_FAST32_T:
+        #if UINT_FAST32_WIDTH < INT_WIDTH
+        ap->a.a_uint_fast32_t = va_arg (args, /* uint_fast32_t */ int);
+        #else
+        ap->a.a_uint_fast32_t = va_arg (args, uint_fast32_t);
+        #endif
+        break;
+      case TYPE_INT_FAST64_T:
+        ap->a.a_int_fast64_t = va_arg (args, int_fast64_t);
+        break;
+      case TYPE_UINT_FAST64_T:
+        ap->a.a_uint_fast64_t = va_arg (args, uint_fast64_t);
+        break;
       case TYPE_DOUBLE:
         ap->a.a_double = va_arg (args, double);
         break;
@@ -101,7 +201,6 @@ PRINTF_FETCHARGS (va_list args, arguments *a)
         if (ap->a.a_string == NULL)
           ap->a.a_string = "(NULL)";
         break;
-#if HAVE_WCHAR_T
       case TYPE_WIDE_STRING:
         ap->a.a_wide_string = va_arg (args, const wchar_t *);
         /* A null pointer is an invalid argument for "%ls", but in practice
@@ -119,7 +218,6 @@ PRINTF_FETCHARGS (va_list args, arguments *a)
             ap->a.a_wide_string = wide_null_string;
           }
         break;
-#endif
       case TYPE_POINTER:
         ap->a.a_pointer = va_arg (args, void *);
         break;
@@ -135,11 +233,33 @@ PRINTF_FETCHARGS (va_list args, arguments *a)
       case TYPE_COUNT_LONGINT_POINTER:
         ap->a.a_count_longint_pointer = va_arg (args, long int *);
         break;
-#if HAVE_LONG_LONG_INT
       case TYPE_COUNT_LONGLONGINT_POINTER:
         ap->a.a_count_longlongint_pointer = va_arg (args, long long int *);
         break;
-#endif
+      case TYPE_COUNT_INT8_T_POINTER:
+        ap->a.a_count_int8_t_pointer = va_arg (args, int8_t *);
+        break;
+      case TYPE_COUNT_INT16_T_POINTER:
+        ap->a.a_count_int16_t_pointer = va_arg (args, int16_t *);
+        break;
+      case TYPE_COUNT_INT32_T_POINTER:
+        ap->a.a_count_int32_t_pointer = va_arg (args, int32_t *);
+        break;
+      case TYPE_COUNT_INT64_T_POINTER:
+        ap->a.a_count_int64_t_pointer = va_arg (args, int64_t *);
+        break;
+      case TYPE_COUNT_INT_FAST8_T_POINTER:
+        ap->a.a_count_int_fast8_t_pointer = va_arg (args, int_fast8_t *);
+        break;
+      case TYPE_COUNT_INT_FAST16_T_POINTER:
+        ap->a.a_count_int_fast16_t_pointer = va_arg (args, int_fast16_t *);
+        break;
+      case TYPE_COUNT_INT_FAST32_T_POINTER:
+        ap->a.a_count_int_fast32_t_pointer = va_arg (args, int_fast32_t *);
+        break;
+      case TYPE_COUNT_INT_FAST64_T_POINTER:
+        ap->a.a_count_int_fast64_t_pointer = va_arg (args, int_fast64_t *);
+        break;
 #if ENABLE_UNISTDIO
       /* The unistdio extensions.  */
       case TYPE_U8_STRING:
@@ -179,9 +299,19 @@ PRINTF_FETCHARGS (va_list args, arguments *a)
           }
         break;
 #endif
-      default:
-        /* Unknown type.  */
+      case TYPE_NONE:
+        /* Argument i is not used by any directive, but some argument with
+           number > i is used by a format directive.  POSIX says that this
+           is invalid:
+             "When numbered argument specifications are used, specifying the
+              Nth argument requires that all the leading arguments, from the
+              first to the (N-1)th, are specified in the format string."
+           The reason is that we cannot know how many bytes to skip in the
+           va_arg sequence.  */
         return -1;
+      default:
+        /* Unknown type.  Should not happen.  */
+        abort ();
       }
   return 0;
 }

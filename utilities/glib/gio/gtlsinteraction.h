@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2011 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -89,48 +91,48 @@ struct _GTlsInteractionClass
   gpointer padding[21];
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType                  g_tls_interaction_get_type            (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType                  g_tls_interaction_get_type            (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GTlsInteractionResult  g_tls_interaction_invoke_ask_password (GTlsInteraction    *interaction,
                                                               GTlsPassword       *password,
                                                               GCancellable       *cancellable,
                                                               GError            **error);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GTlsInteractionResult  g_tls_interaction_ask_password        (GTlsInteraction    *interaction,
                                                               GTlsPassword       *password,
                                                               GCancellable       *cancellable,
                                                               GError            **error);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                   g_tls_interaction_ask_password_async  (GTlsInteraction    *interaction,
                                                               GTlsPassword       *password,
                                                               GCancellable       *cancellable,
                                                               GAsyncReadyCallback callback,
                                                               gpointer            user_data);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GTlsInteractionResult  g_tls_interaction_ask_password_finish (GTlsInteraction    *interaction,
                                                               GAsyncResult       *result,
                                                               GError            **error);
 
-GLIB_AVAILABLE_IN_2_40
+GIO_AVAILABLE_IN_2_40
 GTlsInteractionResult  g_tls_interaction_invoke_request_certificate (GTlsInteraction              *interaction,
                                                                      GTlsConnection               *connection,
                                                                      GTlsCertificateRequestFlags   flags,
                                                                      GCancellable                 *cancellable,
                                                                      GError                      **error);
 
-GLIB_AVAILABLE_IN_2_40
+GIO_AVAILABLE_IN_2_40
 GTlsInteractionResult  g_tls_interaction_request_certificate        (GTlsInteraction              *interaction,
                                                                      GTlsConnection               *connection,
                                                                      GTlsCertificateRequestFlags   flags,
                                                                      GCancellable                 *cancellable,
                                                                      GError                      **error);
 
-GLIB_AVAILABLE_IN_2_40
+GIO_AVAILABLE_IN_2_40
 void                   g_tls_interaction_request_certificate_async  (GTlsInteraction              *interaction,
                                                                      GTlsConnection               *connection,
                                                                      GTlsCertificateRequestFlags   flags,
@@ -138,7 +140,7 @@ void                   g_tls_interaction_request_certificate_async  (GTlsInterac
                                                                      GAsyncReadyCallback           callback,
                                                                      gpointer                      user_data);
 
-GLIB_AVAILABLE_IN_2_40
+GIO_AVAILABLE_IN_2_40
 GTlsInteractionResult  g_tls_interaction_request_certificate_finish (GTlsInteraction              *interaction,
                                                                      GAsyncResult                 *result,
                                                                      GError                      **error);

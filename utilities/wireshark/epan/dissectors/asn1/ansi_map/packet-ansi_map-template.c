@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Credit to Tomas Kukosa for developing the asn2wrs compiler.
  *
@@ -90,6 +78,9 @@
 #include <epan/tap.h>
 #include <epan/stat_tap_ui.h>
 #include <epan/asn1.h>
+#include <epan/tfs.h>
+
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-ansi_map.h"
@@ -112,256 +103,258 @@ static range_t *global_ssn_range;
 #define ANSI_MAP_TID_ONLY            0
 #define ANSI_MAP_TID_AND_SOURCE      1
 #define ANSI_MAP_TID_SOURCE_AND_DEST 2
-static gint ansi_map_response_matching_type = ANSI_MAP_TID_AND_SOURCE;
+static int ansi_map_response_matching_type = ANSI_MAP_TID_AND_SOURCE;
 
-static dissector_handle_t ansi_map_handle=NULL;
+static dissector_handle_t ansi_map_handle;
 
 /* Initialize the protocol and registered fields */
-static int ansi_map_tap = -1;
-static int proto_ansi_map = -1;
+static int ansi_map_tap;
+static int proto_ansi_map;
 
-static int hf_ansi_map_op_code_fam = -1;
-static int hf_ansi_map_op_code = -1;
+#if 0
+static int hf_ansi_map_op_code_fam;
+static int hf_ansi_map_op_code;
+#endif
 
-static int hf_ansi_map_reservedBitH = -1;
-static int hf_ansi_map_reservedBitHG = -1;
-static int hf_ansi_map_reservedBitHGFE = -1;
-static int hf_ansi_map_reservedBitFED = -1;
-static int hf_ansi_map_reservedBitD = -1;
-static int hf_ansi_map_reservedBitED = -1;
+static int hf_ansi_map_reservedBitH;
+static int hf_ansi_map_reservedBitHG;
+static int hf_ansi_map_reservedBitHGFE;
+static int hf_ansi_map_reservedBitFED;
+static int hf_ansi_map_reservedBitD;
+static int hf_ansi_map_reservedBitED;
 
-static int hf_ansi_map_type_of_digits = -1;
-static int hf_ansi_map_na = -1;
-static int hf_ansi_map_pi = -1;
-static int hf_ansi_map_navail = -1;
-static int hf_ansi_map_si = -1;
-static int hf_ansi_map_digits_enc = -1;
-static int hf_ansi_map_np = -1;
-static int hf_ansi_map_nr_digits = -1;
-static int hf_ansi_map_bcd_digits = -1;
-static int hf_ansi_map_ia5_digits = -1;
-static int hf_ansi_map_subaddr_type = -1;
-static int hf_ansi_map_subaddr_odd_even = -1;
-static int hf_ansi_alertcode_cadence = -1;
-static int hf_ansi_alertcode_pitch = -1;
-static int hf_ansi_alertcode_alertaction = -1;
-static int hf_ansi_map_announcementcode_tone = -1;
-static int hf_ansi_map_announcementcode_class = -1;
-static int hf_ansi_map_announcementcode_std_ann = -1;
-static int hf_ansi_map_announcementcode_cust_ann = -1;
-static int hf_ansi_map_authorizationperiod_period = -1;
-static int hf_ansi_map_value = -1;
-static int hf_ansi_map_msc_type = -1;
-static int hf_ansi_map_handoffstate_pi = -1;
-static int hf_ansi_map_tgn = -1;
-static int hf_ansi_map_tmn = -1;
-static int hf_ansi_map_messagewaitingnotificationcount_tom = -1;
-static int hf_ansi_map_messagewaitingnotificationcount_no_mw = -1;
-static int hf_ansi_map_messagewaitingnotificationtype_mwi = -1;
-static int hf_ansi_map_messagewaitingnotificationtype_apt = -1;
-static int hf_ansi_map_messagewaitingnotificationtype_pt = -1;
+static int hf_ansi_map_type_of_digits;
+static int hf_ansi_map_na;
+static int hf_ansi_map_pi;
+static int hf_ansi_map_navail;
+static int hf_ansi_map_si;
+static int hf_ansi_map_digits_enc;
+static int hf_ansi_map_np;
+static int hf_ansi_map_nr_digits;
+static int hf_ansi_map_bcd_digits;
+static int hf_ansi_map_ia5_digits;
+static int hf_ansi_map_subaddr_type;
+static int hf_ansi_map_subaddr_odd_even;
+static int hf_ansi_alertcode_cadence;
+static int hf_ansi_alertcode_pitch;
+static int hf_ansi_alertcode_alertaction;
+static int hf_ansi_map_announcementcode_tone;
+static int hf_ansi_map_announcementcode_class;
+static int hf_ansi_map_announcementcode_std_ann;
+static int hf_ansi_map_announcementcode_cust_ann;
+static int hf_ansi_map_authorizationperiod_period;
+static int hf_ansi_map_value;
+static int hf_ansi_map_msc_type;
+static int hf_ansi_map_handoffstate_pi;
+static int hf_ansi_map_tgn;
+static int hf_ansi_map_tmn;
+static int hf_ansi_map_messagewaitingnotificationcount_tom;
+static int hf_ansi_map_messagewaitingnotificationcount_no_mw;
+static int hf_ansi_map_messagewaitingnotificationtype_mwi;
+static int hf_ansi_map_messagewaitingnotificationtype_apt;
+static int hf_ansi_map_messagewaitingnotificationtype_pt;
 
-static int hf_ansi_map_trans_cap_prof = -1;
-static int hf_ansi_map_trans_cap_busy = -1;
-static int hf_ansi_map_trans_cap_ann = -1;
-static int hf_ansi_map_trans_cap_rui = -1;
-static int hf_ansi_map_trans_cap_spini = -1;
-static int hf_ansi_map_trans_cap_uzci = -1;
-static int hf_ansi_map_trans_cap_ndss = -1;
-static int hf_ansi_map_trans_cap_nami = -1;
-static int hf_ansi_trans_cap_multerm = -1;
-static int hf_ansi_map_terminationtriggers_busy = -1;
-static int hf_ansi_map_terminationtriggers_rf = -1;
-static int hf_ansi_map_terminationtriggers_npr = -1;
-static int hf_ansi_map_terminationtriggers_na = -1;
-static int hf_ansi_map_terminationtriggers_nr = -1;
-static int hf_ansi_trans_cap_tl = -1;
-static int hf_ansi_map_cdmaserviceoption = -1;
-static int hf_ansi_trans_cap_waddr = -1;
-static int hf_ansi_map_MarketID = -1;
-static int hf_ansi_map_swno = -1;
-static int hf_ansi_map_idno = -1;
-static int hf_ansi_map_segcount = -1;
-static int hf_ansi_map_sms_originationrestrictions_fmc = -1;
-static int hf_ansi_map_sms_originationrestrictions_direct = -1;
-static int hf_ansi_map_sms_originationrestrictions_default = -1;
-static int hf_ansi_map_systemcapabilities_auth = -1;
-static int hf_ansi_map_systemcapabilities_se = -1;
-static int hf_ansi_map_systemcapabilities_vp = -1;
-static int hf_ansi_map_systemcapabilities_cave = -1;
-static int hf_ansi_map_systemcapabilities_ssd = -1;
-static int hf_ansi_map_systemcapabilities_dp = -1;
+static int hf_ansi_map_trans_cap_prof;
+static int hf_ansi_map_trans_cap_busy;
+static int hf_ansi_map_trans_cap_ann;
+static int hf_ansi_map_trans_cap_rui;
+static int hf_ansi_map_trans_cap_spini;
+static int hf_ansi_map_trans_cap_uzci;
+static int hf_ansi_map_trans_cap_ndss;
+static int hf_ansi_map_trans_cap_nami;
+static int hf_ansi_trans_cap_multerm;
+static int hf_ansi_map_terminationtriggers_busy;
+static int hf_ansi_map_terminationtriggers_rf;
+static int hf_ansi_map_terminationtriggers_npr;
+static int hf_ansi_map_terminationtriggers_na;
+static int hf_ansi_map_terminationtriggers_nr;
+static int hf_ansi_trans_cap_tl;
+static int hf_ansi_map_cdmaserviceoption;
+static int hf_ansi_trans_cap_waddr;
+static int hf_ansi_map_MarketID;
+static int hf_ansi_map_swno;
+static int hf_ansi_map_idno;
+static int hf_ansi_map_segcount;
+static int hf_ansi_map_sms_originationrestrictions_fmc;
+static int hf_ansi_map_sms_originationrestrictions_direct;
+static int hf_ansi_map_sms_originationrestrictions_default;
+static int hf_ansi_map_systemcapabilities_auth;
+static int hf_ansi_map_systemcapabilities_se;
+static int hf_ansi_map_systemcapabilities_vp;
+static int hf_ansi_map_systemcapabilities_cave;
+static int hf_ansi_map_systemcapabilities_ssd;
+static int hf_ansi_map_systemcapabilities_dp;
 
-static int hf_ansi_map_mslocation_lat = -1;
-static int hf_ansi_map_mslocation_long = -1;
-static int hf_ansi_map_mslocation_res = -1;
-static int hf_ansi_map_nampscallmode_namps = -1;
-static int hf_ansi_map_nampscallmode_amps = -1;
-static int hf_ansi_map_nampschanneldata_navca = -1;
-static int hf_ansi_map_nampschanneldata_CCIndicator = -1;
+static int hf_ansi_map_mslocation_lat;
+static int hf_ansi_map_mslocation_long;
+static int hf_ansi_map_mslocation_res;
+static int hf_ansi_map_nampscallmode_namps;
+static int hf_ansi_map_nampscallmode_amps;
+static int hf_ansi_map_nampschanneldata_navca;
+static int hf_ansi_map_nampschanneldata_CCIndicator;
 
-static int hf_ansi_map_callingfeaturesindicator_cfufa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cfbfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cfnafa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cwfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_3wcfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_pcwfa =-1;
-static int hf_ansi_map_callingfeaturesindicator_dpfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_ahfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_uscfvmfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_uscfmsfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_uscfnrfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cpdsfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_ccsfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_epefa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cdfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_vpfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_ctfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cnip1fa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cnip2fa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cnirfa = -1;
-static int hf_ansi_map_callingfeaturesindicator_cniroverfa = -1;
-static int hf_ansi_map_cdmacallmode_cdma = -1;
-static int hf_ansi_map_cdmacallmode_amps = -1;
-static int hf_ansi_map_cdmacallmode_namps = -1;
-static int hf_ansi_map_cdmacallmode_cls1 = -1;
-static int hf_ansi_map_cdmacallmode_cls2 = -1;
-static int hf_ansi_map_cdmacallmode_cls3 = -1;
-static int hf_ansi_map_cdmacallmode_cls4 = -1;
-static int hf_ansi_map_cdmacallmode_cls5 = -1;
-static int hf_ansi_map_cdmacallmode_cls6 = -1;
-static int hf_ansi_map_cdmacallmode_cls7 = -1;
-static int hf_ansi_map_cdmacallmode_cls8 = -1;
-static int hf_ansi_map_cdmacallmode_cls9 = -1;
-static int hf_ansi_map_cdmacallmode_cls10 = -1;
-static int hf_ansi_map_cdmachanneldata_Frame_Offset = -1;
-static int hf_ansi_map_cdmachanneldata_CDMA_ch_no = -1;
-static int hf_ansi_map_cdmachanneldata_band_cls = -1;
-static int hf_ansi_map_cdmachanneldata_lc_mask_b6 = -1;
-static int hf_ansi_map_cdmachanneldata_lc_mask_b5 = -1;
-static int hf_ansi_map_cdmachanneldata_lc_mask_b4 = -1;
-static int hf_ansi_map_cdmachanneldata_lc_mask_b3 = -1;
-static int hf_ansi_map_cdmachanneldata_lc_mask_b2 = -1;
-static int hf_ansi_map_cdmachanneldata_lc_mask_b1 = -1;
-static int hf_ansi_map_cdmachanneldata_np_ext = -1;
-static int hf_ansi_map_cdmachanneldata_nominal_pwr = -1;
-static int hf_ansi_map_cdmachanneldata_nr_preamble = -1;
+static int hf_ansi_map_callingfeaturesindicator_cfufa;
+static int hf_ansi_map_callingfeaturesindicator_cfbfa;
+static int hf_ansi_map_callingfeaturesindicator_cfnafa;
+static int hf_ansi_map_callingfeaturesindicator_cwfa;
+static int hf_ansi_map_callingfeaturesindicator_3wcfa;
+static int hf_ansi_map_callingfeaturesindicator_pcwfa;
+static int hf_ansi_map_callingfeaturesindicator_dpfa;
+static int hf_ansi_map_callingfeaturesindicator_ahfa;
+static int hf_ansi_map_callingfeaturesindicator_uscfvmfa;
+static int hf_ansi_map_callingfeaturesindicator_uscfmsfa;
+static int hf_ansi_map_callingfeaturesindicator_uscfnrfa;
+static int hf_ansi_map_callingfeaturesindicator_cpdsfa;
+static int hf_ansi_map_callingfeaturesindicator_ccsfa;
+static int hf_ansi_map_callingfeaturesindicator_epefa;
+static int hf_ansi_map_callingfeaturesindicator_cdfa;
+static int hf_ansi_map_callingfeaturesindicator_vpfa;
+static int hf_ansi_map_callingfeaturesindicator_ctfa;
+static int hf_ansi_map_callingfeaturesindicator_cnip1fa;
+static int hf_ansi_map_callingfeaturesindicator_cnip2fa;
+static int hf_ansi_map_callingfeaturesindicator_cnirfa;
+static int hf_ansi_map_callingfeaturesindicator_cniroverfa;
+static int hf_ansi_map_cdmacallmode_cdma;
+static int hf_ansi_map_cdmacallmode_amps;
+static int hf_ansi_map_cdmacallmode_namps;
+static int hf_ansi_map_cdmacallmode_cls1;
+static int hf_ansi_map_cdmacallmode_cls2;
+static int hf_ansi_map_cdmacallmode_cls3;
+static int hf_ansi_map_cdmacallmode_cls4;
+static int hf_ansi_map_cdmacallmode_cls5;
+static int hf_ansi_map_cdmacallmode_cls6;
+static int hf_ansi_map_cdmacallmode_cls7;
+static int hf_ansi_map_cdmacallmode_cls8;
+static int hf_ansi_map_cdmacallmode_cls9;
+static int hf_ansi_map_cdmacallmode_cls10;
+static int hf_ansi_map_cdmachanneldata_Frame_Offset;
+static int hf_ansi_map_cdmachanneldata_CDMA_ch_no;
+static int hf_ansi_map_cdmachanneldata_band_cls;
+static int hf_ansi_map_cdmachanneldata_lc_mask_b6;
+static int hf_ansi_map_cdmachanneldata_lc_mask_b5;
+static int hf_ansi_map_cdmachanneldata_lc_mask_b4;
+static int hf_ansi_map_cdmachanneldata_lc_mask_b3;
+static int hf_ansi_map_cdmachanneldata_lc_mask_b2;
+static int hf_ansi_map_cdmachanneldata_lc_mask_b1;
+static int hf_ansi_map_cdmachanneldata_np_ext;
+static int hf_ansi_map_cdmachanneldata_nominal_pwr;
+static int hf_ansi_map_cdmachanneldata_nr_preamble;
 
-static int hf_ansi_map_cdmastationclassmark_pc = -1;
-static int hf_ansi_map_cdmastationclassmark_dtx = -1;
-static int hf_ansi_map_cdmastationclassmark_smi = -1;
-static int hf_ansi_map_cdmastationclassmark_dmi = -1;
-static int hf_ansi_map_channeldata_vmac = -1;
-static int hf_ansi_map_channeldata_dtx = -1;
-static int hf_ansi_map_channeldata_scc = -1;
-static int hf_ansi_map_channeldata_chno = -1;
-static int hf_ansi_map_ConfidentialityModes_vp = -1;
-static int hf_ansi_map_controlchanneldata_dcc = -1;
-static int hf_ansi_map_controlchanneldata_cmac = -1;
-static int hf_ansi_map_controlchanneldata_chno = -1;
-static int hf_ansi_map_controlchanneldata_sdcc1 = -1;
-static int hf_ansi_map_controlchanneldata_sdcc2 = -1;
-static int hf_ansi_map_ConfidentialityModes_se = -1;
-static int hf_ansi_map_deniedauthorizationperiod_period = -1;
-static int hf_ansi_map_ConfidentialityModes_dp = -1;
+static int hf_ansi_map_cdmastationclassmark_pc;
+static int hf_ansi_map_cdmastationclassmark_dtx;
+static int hf_ansi_map_cdmastationclassmark_smi;
+static int hf_ansi_map_cdmastationclassmark_dmi;
+static int hf_ansi_map_channeldata_vmac;
+static int hf_ansi_map_channeldata_dtx;
+static int hf_ansi_map_channeldata_scc;
+static int hf_ansi_map_channeldata_chno;
+static int hf_ansi_map_ConfidentialityModes_vp;
+static int hf_ansi_map_controlchanneldata_dcc;
+static int hf_ansi_map_controlchanneldata_cmac;
+static int hf_ansi_map_controlchanneldata_chno;
+static int hf_ansi_map_controlchanneldata_sdcc1;
+static int hf_ansi_map_controlchanneldata_sdcc2;
+static int hf_ansi_map_ConfidentialityModes_se;
+static int hf_ansi_map_deniedauthorizationperiod_period;
+static int hf_ansi_map_ConfidentialityModes_dp;
 
-static int hf_ansi_map_originationtriggers_all = -1;
-static int hf_ansi_map_originationtriggers_local = -1;
-static int hf_ansi_map_originationtriggers_ilata = -1;
-static int hf_ansi_map_originationtriggers_olata = -1;
-static int hf_ansi_map_originationtriggers_int = -1;
-static int hf_ansi_map_originationtriggers_wz = -1;
-static int hf_ansi_map_originationtriggers_unrec = -1;
-static int hf_ansi_map_originationtriggers_rvtc = -1;
-static int hf_ansi_map_originationtriggers_star = -1;
-static int hf_ansi_map_originationtriggers_ds = -1;
-static int hf_ansi_map_originationtriggers_pound = -1;
-static int hf_ansi_map_originationtriggers_dp = -1;
-static int hf_ansi_map_originationtriggers_pa = -1;
-static int hf_ansi_map_originationtriggers_nodig = -1;
-static int hf_ansi_map_originationtriggers_onedig = -1;
-static int hf_ansi_map_originationtriggers_twodig = -1;
-static int hf_ansi_map_originationtriggers_threedig = -1;
-static int hf_ansi_map_originationtriggers_fourdig = -1;
-static int hf_ansi_map_originationtriggers_fivedig = -1;
-static int hf_ansi_map_originationtriggers_sixdig = -1;
-static int hf_ansi_map_originationtriggers_sevendig = -1;
-static int hf_ansi_map_originationtriggers_eightdig = -1;
-static int hf_ansi_map_originationtriggers_ninedig = -1;
-static int hf_ansi_map_originationtriggers_tendig = -1;
-static int hf_ansi_map_originationtriggers_elevendig = -1;
-static int hf_ansi_map_originationtriggers_twelvedig = -1;
-static int hf_ansi_map_originationtriggers_thirteendig = -1;
-static int hf_ansi_map_originationtriggers_fourteendig = -1;
-static int hf_ansi_map_originationtriggers_fifteendig = -1;
-static int hf_ansi_map_triggercapability_init = -1;
-static int hf_ansi_map_triggercapability_kdigit = -1;
-static int hf_ansi_map_triggercapability_all = -1;
-static int hf_ansi_map_triggercapability_rvtc = -1;
-static int hf_ansi_map_triggercapability_oaa = -1;
-static int hf_ansi_map_triggercapability_oans = -1;
-static int hf_ansi_map_triggercapability_odisc = -1;
-static int hf_ansi_map_triggercapability_ona = -1;
-static int hf_ansi_map_triggercapability_ct = -1;
-static int hf_ansi_map_triggercapability_unrec =-1;
-static int hf_ansi_map_triggercapability_pa = -1;
-static int hf_ansi_map_triggercapability_at = -1;
-static int hf_ansi_map_triggercapability_cgraa = -1;
-static int hf_ansi_map_triggercapability_it = -1;
-static int hf_ansi_map_triggercapability_cdraa = -1;
-static int hf_ansi_map_triggercapability_obsy = -1;
-static int hf_ansi_map_triggercapability_tra = -1;
-static int hf_ansi_map_triggercapability_tbusy = -1;
-static int hf_ansi_map_triggercapability_tna = -1;
-static int hf_ansi_map_triggercapability_tans = -1;
-static int hf_ansi_map_triggercapability_tdisc = -1;
-static int hf_ansi_map_winoperationscapability_conn = -1;
-static int hf_ansi_map_winoperationscapability_ccdir = -1;
-static int hf_ansi_map_winoperationscapability_pos = -1;
-static int hf_ansi_map_PACA_Level = -1;
-static int hf_ansi_map_pacaindicator_pa = -1;
+static int hf_ansi_map_originationtriggers_all;
+static int hf_ansi_map_originationtriggers_local;
+static int hf_ansi_map_originationtriggers_ilata;
+static int hf_ansi_map_originationtriggers_olata;
+static int hf_ansi_map_originationtriggers_int;
+static int hf_ansi_map_originationtriggers_wz;
+static int hf_ansi_map_originationtriggers_unrec;
+static int hf_ansi_map_originationtriggers_rvtc;
+static int hf_ansi_map_originationtriggers_star;
+static int hf_ansi_map_originationtriggers_ds;
+static int hf_ansi_map_originationtriggers_pound;
+static int hf_ansi_map_originationtriggers_dp;
+static int hf_ansi_map_originationtriggers_pa;
+static int hf_ansi_map_originationtriggers_nodig;
+static int hf_ansi_map_originationtriggers_onedig;
+static int hf_ansi_map_originationtriggers_twodig;
+static int hf_ansi_map_originationtriggers_threedig;
+static int hf_ansi_map_originationtriggers_fourdig;
+static int hf_ansi_map_originationtriggers_fivedig;
+static int hf_ansi_map_originationtriggers_sixdig;
+static int hf_ansi_map_originationtriggers_sevendig;
+static int hf_ansi_map_originationtriggers_eightdig;
+static int hf_ansi_map_originationtriggers_ninedig;
+static int hf_ansi_map_originationtriggers_tendig;
+static int hf_ansi_map_originationtriggers_elevendig;
+static int hf_ansi_map_originationtriggers_twelvedig;
+static int hf_ansi_map_originationtriggers_thirteendig;
+static int hf_ansi_map_originationtriggers_fourteendig;
+static int hf_ansi_map_originationtriggers_fifteendig;
+static int hf_ansi_map_triggercapability_init;
+static int hf_ansi_map_triggercapability_kdigit;
+static int hf_ansi_map_triggercapability_all;
+static int hf_ansi_map_triggercapability_rvtc;
+static int hf_ansi_map_triggercapability_oaa;
+static int hf_ansi_map_triggercapability_oans;
+static int hf_ansi_map_triggercapability_odisc;
+static int hf_ansi_map_triggercapability_ona;
+static int hf_ansi_map_triggercapability_ct;
+static int hf_ansi_map_triggercapability_unrec;
+static int hf_ansi_map_triggercapability_pa;
+static int hf_ansi_map_triggercapability_at;
+static int hf_ansi_map_triggercapability_cgraa;
+static int hf_ansi_map_triggercapability_it;
+static int hf_ansi_map_triggercapability_cdraa;
+static int hf_ansi_map_triggercapability_obsy;
+static int hf_ansi_map_triggercapability_tra;
+static int hf_ansi_map_triggercapability_tbusy;
+static int hf_ansi_map_triggercapability_tna;
+static int hf_ansi_map_triggercapability_tans;
+static int hf_ansi_map_triggercapability_tdisc;
+static int hf_ansi_map_winoperationscapability_conn;
+static int hf_ansi_map_winoperationscapability_ccdir;
+static int hf_ansi_map_winoperationscapability_pos;
+static int hf_ansi_map_PACA_Level;
+static int hf_ansi_map_pacaindicator_pa;
 
-static int hf_ansi_map_point_code = -1;
-static int hf_ansi_map_SSN = -1;
-static int hf_ansi_map_win_trigger_list = -1;
+static int hf_ansi_map_point_code;
+static int hf_ansi_map_SSN;
+static int hf_ansi_map_win_trigger_list;
 
 #include "packet-ansi_map-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_ansi_map = -1;
-static gint ett_mintype = -1;
-static gint ett_digitstype = -1;
-static gint ett_billingid = -1;
-static gint ett_sms_bearer_data = -1;
-static gint ett_sms_teleserviceIdentifier = -1;
-static gint ett_extendedmscid = -1;
-static gint ett_extendedsystemmytypecode = -1;
-static gint ett_handoffstate = -1;
-static gint ett_mscid = -1;
-static gint ett_cdmachanneldata = -1;
-static gint ett_cdmastationclassmark = -1;
-static gint ett_channeldata = -1;
-static gint ett_confidentialitymodes = -1;
-static gint ett_controlchanneldata = -1;
-static gint ett_CDMA2000HandoffInvokeIOSData = -1;
-static gint ett_CDMA2000HandoffResponseIOSData = -1;
-static gint ett_originationtriggers = -1;
-static gint ett_pacaindicator = -1;
-static gint ett_callingpartyname = -1;
-static gint ett_triggercapability = -1;
-static gint ett_winoperationscapability = -1;
-static gint ett_win_trigger_list = -1;
-static gint ett_controlnetworkid = -1;
-static gint ett_transactioncapability = -1;
-static gint ett_cdmaserviceoption = -1;
-static gint ett_systemcapabilities = -1;
-static gint ett_sms_originationrestrictions = -1;
+static int ett_ansi_map;
+static int ett_mintype;
+static int ett_digitstype;
+static int ett_billingid;
+static int ett_sms_bearer_data;
+static int ett_sms_teleserviceIdentifier;
+static int ett_extendedmscid;
+static int ett_extendedsystemmytypecode;
+static int ett_handoffstate;
+static int ett_mscid;
+static int ett_cdmachanneldata;
+static int ett_cdmastationclassmark;
+static int ett_channeldata;
+static int ett_confidentialitymodes;
+static int ett_controlchanneldata;
+static int ett_CDMA2000HandoffInvokeIOSData;
+static int ett_CDMA2000HandoffResponseIOSData;
+static int ett_originationtriggers;
+static int ett_pacaindicator;
+static int ett_callingpartyname;
+static int ett_triggercapability;
+static int ett_winoperationscapability;
+static int ett_win_trigger_list;
+static int ett_controlnetworkid;
+static int ett_transactioncapability;
+static int ett_cdmaserviceoption;
+static int ett_systemcapabilities;
+static int ett_sms_originationrestrictions;
 
 #include "packet-ansi_map-ett.c"
 
-static expert_field ei_ansi_map_nr_not_used = EI_INIT;
-static expert_field ei_ansi_map_unknown_invokeData_blob = EI_INIT;
-static expert_field ei_ansi_map_no_data = EI_INIT;
+static expert_field ei_ansi_map_nr_not_used;
+static expert_field ei_ansi_map_unknown_invokeData_blob;
+static expert_field ei_ansi_map_no_data;
 
 /* Global variables */
 static dissector_table_t is637_tele_id_dissector_table; /* IS-637 Teleservice ID */
@@ -369,38 +362,25 @@ static dissector_table_t is683_dissector_table; /* IS-683-A (OTA) */
 static dissector_table_t is801_dissector_table; /* IS-801 (PLD) */
 static packet_info *g_pinfo;
 static proto_tree *g_tree;
-tvbuff_t *SMS_BearerData_tvb = NULL;
-gint32    ansi_map_sms_tele_id = -1;
-static gboolean is683_ota;
-static gboolean is801_pld;
-static gboolean ansi_map_is_invoke;
-static guint32 OperationCode;
-static guint8 ServiceIndicator;
+static tvbuff_t *SMS_BearerData_tvb;
+static int32_t   ansi_map_sms_tele_id = -1;
+static bool is683_ota;
+static bool is801_pld;
+static bool ansi_map_is_invoke;
+static uint32_t OperationCode;
+static uint8_t ServiceIndicator;
 
 
 struct ansi_map_invokedata_t {
-    guint32 opcode;
-    guint8 ServiceIndicator;
+    uint32_t opcode;
+    uint8_t ServiceIndicator;
 };
 
 static void dissect_ansi_map_win_trigger_list(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, asn1_ctx_t *actx _U_);
 
 
 /* Transaction table */
-static GHashTable *TransactionId_table=NULL;
-
-static void
-ansi_map_init(void)
-{
-    TransactionId_table = g_hash_table_new(g_str_hash, g_str_equal);
-}
-
-static void
-ansi_map_cleanup(void)
-{
-    /* Destroy any existing memory chunks / hashes. */
-    g_hash_table_destroy(TransactionId_table);
-}
+static wmem_multimap_t *TransactionId_table;
 
 /* Store Invoke information needed for the corresponding reply */
 static void
@@ -408,43 +388,40 @@ update_saved_invokedata(packet_info *pinfo, struct ansi_tcap_private_t *p_privat
     struct ansi_map_invokedata_t *ansi_map_saved_invokedata;
     address* src = &(pinfo->src);
     address* dst = &(pinfo->dst);
-    guint8 *src_str;
-    guint8 *dst_str;
+    uint8_t *src_str;
+    uint8_t *dst_str;
     const char *buf = NULL;
 
-    src_str = address_to_str(wmem_packet_scope(), src);
-    dst_str = address_to_str(wmem_packet_scope(), dst);
+    src_str = address_to_str(pinfo->pool, src);
+    dst_str = address_to_str(pinfo->pool, dst);
 
     /* Data from the TCAP dissector */
-    if ((!pinfo->fd->flags.visited)&&(p_private_tcap->TransactionID_str)){
+    if ((!pinfo->fd->visited)&&(p_private_tcap->TransactionID_str)){
         /* Only do this once XXX I hope it's the right thing to do */
-        /* The hash string needs to contain src and dest to distiguish differnt flows */
+        /* The hash string needs to contain src and dest to distinguish different flows */
         switch(ansi_map_response_matching_type){
             case ANSI_MAP_TID_ONLY:
-                buf = wmem_strdup(wmem_packet_scope(), p_private_tcap->TransactionID_str);
+                buf = wmem_strdup(pinfo->pool, p_private_tcap->TransactionID_str);
                 break;
             case ANSI_MAP_TID_AND_SOURCE:
-                buf = wmem_strdup_printf(wmem_packet_scope(), "%s%s",p_private_tcap->TransactionID_str,src_str);
+                buf = wmem_strdup_printf(pinfo->pool, "%s%s",p_private_tcap->TransactionID_str,src_str);
                 break;
             case ANSI_MAP_TID_SOURCE_AND_DEST:
             default:
-                buf = wmem_strdup_printf(wmem_packet_scope(), "%s%s%s",p_private_tcap->TransactionID_str,src_str,dst_str);
+                buf = wmem_strdup_printf(pinfo->pool, "%s%s%s",p_private_tcap->TransactionID_str,src_str,dst_str);
                 break;
         }
-        /* If the entry allready exists don't owervrite it */
-        ansi_map_saved_invokedata = (struct ansi_map_invokedata_t *)g_hash_table_lookup(TransactionId_table,buf);
-        if(ansi_map_saved_invokedata)
-            return;
 
         ansi_map_saved_invokedata = wmem_new(wmem_file_scope(), struct ansi_map_invokedata_t);
         ansi_map_saved_invokedata->opcode = p_private_tcap->d.OperationCode_private;
         ansi_map_saved_invokedata->ServiceIndicator = ServiceIndicator;
 
-        g_hash_table_insert(TransactionId_table,
+        wmem_multimap_insert32(TransactionId_table,
                             wmem_strdup(wmem_file_scope(), buf),
+                            pinfo->num,
                             ansi_map_saved_invokedata);
 
-        /*g_warning("Invoke Hash string %s pkt: %u",buf,pinfo->num);*/
+        /*ws_warning("Invoke Hash string %s pkt: %u",buf,pinfo->num);*/
     }
 }
 /* value strings */
@@ -567,14 +544,7 @@ static value_string_ext ansi_map_opr_code_strings_ext = VALUE_STRING_EXT_INIT(an
 
 static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx);
 static int dissect_returnData(proto_tree *tree, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx);
-static int dissect_ansi_map_SystemMyTypeCode(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
-
-static dgt_set_t Dgt_tbcd = {
-    {
-  /*  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e */
-     '0','1','2','3','4','5','6','7','8','9','?','B','C','*','#','?'
-    }
-};
+static int dissect_ansi_map_SystemMyTypeCode(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
 
 /* Type of Digits (octet 1, bits A-H) */
 static const value_string ansi_map_type_of_digits_vals[] = {
@@ -641,7 +611,7 @@ static const value_string ansi_map_np_vals[]  = {
 
 static void
 dissect_ansi_map_min_type(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, asn1_ctx_t *actx _U_){
-    const char *digit_str;
+    char *digit_str;
     int   offset = 0;
 
     proto_tree *subtree;
@@ -649,18 +619,17 @@ dissect_ansi_map_min_type(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tre
 
     subtree = proto_item_add_subtree(actx->created_item, ett_mintype);
 
-    digit_str = tvb_bcd_dig_to_wmem_packet_str(tvb, offset, tvb_reported_length_remaining(tvb,offset), NULL, FALSE);
-    proto_tree_add_string(subtree, hf_ansi_map_bcd_digits, tvb, offset, -1, digit_str);
+    proto_tree_add_item_ret_display_string(subtree, hf_ansi_map_bcd_digits, tvb, offset, tvb_reported_length_remaining(tvb, offset), ENC_BCD_DIGITS_0_9|ENC_LITTLE_ENDIAN, pinfo->pool, &digit_str);
     proto_item_append_text(actx->created_item, " - %s", digit_str);
 }
 
 static void
 dissect_ansi_map_digits_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, asn1_ctx_t *actx _U_){
 
-    guint8 octet , octet_len;
-    guint8 b1,b2,b3,b4;
+    uint8_t octet , octet_len;
+    uint8_t b1,b2,b3,b4;
     int    offset = 0;
-    const char *digit_str;
+    char  *digit_str;
 
     proto_tree *subtree;
 
@@ -679,7 +648,7 @@ dissect_ansi_map_digits_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     proto_tree_add_item(subtree, hf_ansi_map_na, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
     /* Octet 3 */
-    octet = tvb_get_guint8(tvb,offset);
+    octet = tvb_get_uint8(tvb,offset);
     proto_tree_add_item(subtree, hf_ansi_map_np, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_ansi_map_digits_enc, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
@@ -689,26 +658,25 @@ dissect_ansi_map_digits_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         switch ((octet&0xf)){
         case 1:
             /* BCD Coding */
-            octet_len = tvb_get_guint8(tvb,offset);
+            octet_len = tvb_get_uint8(tvb,offset);
             proto_tree_add_item(subtree, hf_ansi_map_nr_digits, tvb, offset, 1, ENC_BIG_ENDIAN);
             if(octet_len == 0)
                 return;
             offset++;
-            digit_str = tvb_bcd_dig_to_wmem_packet_str(tvb, offset, tvb_reported_length_remaining(tvb,offset), &Dgt_tbcd, FALSE);
-            proto_tree_add_string(subtree, hf_ansi_map_bcd_digits, tvb, offset, -1, digit_str);
+            proto_tree_add_item_ret_display_string(subtree, hf_ansi_map_bcd_digits, tvb, offset, -1, ENC_KEYPAD_BC_TBCD|ENC_LITTLE_ENDIAN, pinfo->pool, &digit_str);
             proto_item_append_text(actx->created_item, " - %s", digit_str);
             break;
         case 2:
             {
-            const guint8* digits;
+            const uint8_t* digits;
             /* IA5 Coding */
-            octet_len = tvb_get_guint8(tvb,offset);
+            octet_len = tvb_get_uint8(tvb,offset);
             proto_tree_add_item(subtree, hf_ansi_map_nr_digits, tvb, offset, 1, ENC_BIG_ENDIAN);
             if(octet_len == 0)
                 return;
             offset++;
             proto_tree_add_item_ret_string(subtree, hf_ansi_map_ia5_digits, tvb, offset, tvb_reported_length_remaining(tvb,offset),
-                                            ENC_ASCII|ENC_NA, wmem_packet_scope(), &digits);
+                                            ENC_ASCII|ENC_NA, pinfo->pool, &digits);
             proto_item_append_text(actx->created_item, " - %s", digits);
             }
             break;
@@ -728,7 +696,7 @@ dissect_ansi_map_digits_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     case 2:/* Telephony Numbering (ITU-T Rec. E.164,E.163). */
     case 6:/* Land Mobile Numbering (ITU-T Rec. E.212) */
     case 7:/* Private Numbering Plan */
-        octet_len = tvb_get_guint8(tvb,offset);
+        octet_len = tvb_get_uint8(tvb,offset);
         proto_tree_add_item(subtree, hf_ansi_map_nr_digits, tvb, offset, 1, ENC_BIG_ENDIAN);
         if(octet_len == 0)
             return;
@@ -736,16 +704,15 @@ dissect_ansi_map_digits_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         switch ((octet&0xf)){
         case 1:
             /* BCD Coding */
-            digit_str = tvb_bcd_dig_to_wmem_packet_str(tvb, offset, tvb_reported_length_remaining(tvb,offset), &Dgt_tbcd, FALSE);
-            proto_tree_add_string(subtree, hf_ansi_map_bcd_digits, tvb, offset, -1, digit_str);
+            proto_tree_add_item_ret_display_string(subtree, hf_ansi_map_bcd_digits, tvb, offset, -1, ENC_KEYPAD_BC_TBCD|ENC_LITTLE_ENDIAN, pinfo->pool, &digit_str);
             proto_item_append_text(actx->created_item, " - %s", digit_str);
             break;
         case 2:
             {
-            const guint8* digits;
+            const uint8_t* digits;
             /* IA5 Coding */
             proto_tree_add_item_ret_string(subtree, hf_ansi_map_ia5_digits, tvb, offset, tvb_reported_length_remaining(tvb,offset),
-                                            ENC_ASCII|ENC_NA, wmem_packet_scope(), &digits);
+                                            ENC_ASCII|ENC_NA, pinfo->pool, &digits);
             proto_item_append_text(actx->created_item, " - %s", digits);
             }
             break;
@@ -761,17 +728,17 @@ dissect_ansi_map_digits_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         case 3:
             /* Octet string */
             /* Point Code Member Number octet 2 */
-            b1 = tvb_get_guint8(tvb,offset);
+            b1 = tvb_get_uint8(tvb,offset);
             offset++;
             /* Point Code Cluster Number octet 3 */
-            b2 = tvb_get_guint8(tvb,offset);
+            b2 = tvb_get_uint8(tvb,offset);
             offset++;
             /* Point Code Network Number octet 4 */
-            b3 = tvb_get_guint8(tvb,offset);
+            b3 = tvb_get_uint8(tvb,offset);
             offset++;
             proto_tree_add_bytes_format_value(subtree, hf_ansi_map_point_code, tvb, offset-3, 3, NULL, "%u-%u-%u", b3, b2, b1);
             /* Subsystem Number (SSN) octet 5 */
-            b4 = tvb_get_guint8(tvb,offset);
+            b4 = tvb_get_uint8(tvb,offset);
             proto_tree_add_item(subtree, hf_ansi_map_SSN, tvb, offset, 1, ENC_NA);
             proto_item_append_text(actx->created_item, " - Point Code %u-%u-%u  SSN %u", b3, b2, b1, b4);
             break;
@@ -789,12 +756,6 @@ dissect_ansi_map_digits_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 }
 /* 6.5.3.13. Subaddress */
 
-#if 0
-static const true_false_string ansi_map_Odd_Even_Ind_bool_val  = {
-  "Odd",
-  "Even"
-};
-#endif
 /* Type of Subaddress (octet 1, bits E-G) */
 static const value_string ansi_map_sub_addr_type_vals[]  = {
     {   0, "NSAP (CCITT Rec. X.213 or ISO 8348 AD2)"},
@@ -937,7 +898,7 @@ static const value_string ansi_map_AlertResult_result_vals[]  = {
     {   0, NULL }
 };
 
-/* 6.5.2.5 AnnouncementCode Updatef from NS0018Re*/
+/* 6.5.2.5 AnnouncementCode Updated from NS0018Re*/
 /* Tone (octet 1) */
 static const value_string ansi_map_AnnouncementCode_tone_vals[]  = {
     {   0, "DialTone"},
@@ -1296,7 +1257,7 @@ static const true_false_string ansi_map_CDMACallMode_cls4_bool_val  = {
 };
 /* Call Mode (octet 1, bit H) */
 static const true_false_string ansi_map_CDMACallMode_cls5_bool_val  = {
-    "450 MHz channel (Band Class 5) not acceptable",
+    "450 MHz channel (Band Class 5) acceptable",
     "450 MHz channel (Band Class 5) not acceptable"
 };
 /* Call Mode (octet 2, bit A) */
@@ -1511,10 +1472,6 @@ dissect_ansi_map_channeldata(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
 /* Updated with N.S0008-0 v 1.0*/
 /* Voice Privacy (VP) Confidentiality Status (octet 1, bit A) */
 
-static const true_false_string ansi_map_ConfidentialityModes_bool_val  = {
-    "On",
-    "Off"
-};
 static void
 dissect_ansi_map_confidentialitymodes(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, asn1_ctx_t *actx _U_){
     int offset = 0;
@@ -1663,7 +1620,7 @@ dissect_ansi_map_extendedsystemmytypecode(tvbuff_t *tvb, packet_info *pinfo _U_,
     /* Type (octet 1) */
     proto_tree_add_item(subtree, hf_ansi_map_msc_type, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
-    dissect_ansi_map_SystemMyTypeCode(TRUE, tvb, offset, actx, subtree, hf_ansi_map_systemMyTypeCode);
+    dissect_ansi_map_SystemMyTypeCode(true, tvb, offset, actx, subtree, hf_ansi_map_systemMyTypeCode);
 }
 
 
@@ -1710,16 +1667,16 @@ dissect_ansi_map_intermsccircuitid(tvbuff_t *tvb, packet_info *pinfo _U_, proto_
     int offset = 0;
 
     proto_tree *subtree;
-    guint8 octet, octet2;
+    uint8_t octet, octet2;
 
 
     subtree = proto_item_add_subtree(actx->created_item, ett_billingid);
     /* Trunk Group Number (G) Octet 1 */
-    octet = tvb_get_guint8(tvb,offset);
+    octet = tvb_get_uint8(tvb,offset);
     proto_tree_add_item(subtree, hf_ansi_map_tgn, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
     /* Trunk Member Number (M) Octet2 */
-    octet2 = tvb_get_guint8(tvb,offset);
+    octet2 = tvb_get_uint8(tvb,offset);
     proto_tree_add_item(subtree, hf_ansi_map_tmn, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_item_append_text(actx->created_item, " (G %u/M %u)", octet, octet2);
 }
@@ -2257,7 +2214,7 @@ dissect_ansi_map_pc_ssn(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree 
 
     int offset = 0;
     proto_tree *subtree;
-    guint8 b1,b2,b3;
+    uint8_t b1,b2,b3;
 
 
     subtree = proto_item_add_subtree(actx->created_item, ett_billingid);
@@ -2265,13 +2222,13 @@ dissect_ansi_map_pc_ssn(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree 
     proto_tree_add_item(subtree, hf_ansi_map_msc_type, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
     /* Point Code Member Number octet 2 */
-    b1 = tvb_get_guint8(tvb,offset);
+    b1 = tvb_get_uint8(tvb,offset);
     offset++;
     /* Point Code Cluster Number octet 3 */
-    b2 = tvb_get_guint8(tvb,offset);
+    b2 = tvb_get_uint8(tvb,offset);
     offset++;
     /* Point Code Network Number octet 4 */
-    b3 = tvb_get_guint8(tvb,offset);
+    b3 = tvb_get_uint8(tvb,offset);
     offset++;
     proto_tree_add_bytes_format_value(subtree, hf_ansi_map_point_code, tvb, offset-3, 3, NULL, "%u-%u-%u", b3, b2, b1);
     proto_tree_add_item(subtree, hf_ansi_map_SSN, tvb, offset, 1, ENC_NA);
@@ -2486,7 +2443,6 @@ static const value_string ansi_map_SSDUpdateReport_vals[]  = {
     {   32579, "TDMA Segmented Over-the-Air Activation Teleservice (OATS)"},
     {   32580, "TDMA Segmented Over-the-Air Programming Teleservice (OPTS)."},
     {   32581, "TDMA Segmented General UDP Transport Service (GUTS)"},
-    {   32576, "Reserved"},
     {       0, NULL }
 };
 
@@ -2893,7 +2849,7 @@ static const value_string ansi_map_TDMAServiceCode_vals[]  = {
     {   0, NULL }
 };
 #if 0
-/* 6.5.2.j (IS-730) TDMATerminalCapability N.S0008-0 v 1.0 Updted with N.S0015-0 */
+/* 6.5.2.j (IS-730) TDMATerminalCapability N.S0008-0 v 1.0 Updated with N.S0015-0 */
 /* Supported Frequency Band (octet 1) */
 /* Voice Coder (octet 2) */
 /* Protocol Version (octet 3) N.S0015-0 */
@@ -3643,19 +3599,19 @@ static const value_string ansi_map_VoicePrivacyReport_vals[]  = {
  * 6.5.2.dk N.S0013-0 v 1.0,X.S0004-550-E v1.0 2.301
  */
 static void
-dissect_ansi_map_win_trigger_list(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, asn1_ctx_t *actx _U_){
+dissect_ansi_map_win_trigger_list(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, asn1_ctx_t *actx _U_){
 
     int offset = 0;
     int end_offset = 0;
     int j = 0;
     proto_tree *subtree;
-    guint8 octet;
+    uint8_t octet;
 
     end_offset = tvb_reported_length_remaining(tvb,offset);
     subtree = proto_item_add_subtree(actx->created_item, ett_win_trigger_list);
 
     while(offset< end_offset) {
-        octet = tvb_get_guint8(tvb,offset);
+        octet = tvb_get_uint8(tvb,offset);
         switch (octet){
         case 0xdc:
             proto_tree_add_uint_format(subtree, hf_ansi_map_win_trigger_list, tvb, offset, 1, octet, "TDP-R's armed");
@@ -3674,7 +3630,7 @@ dissect_ansi_map_win_trigger_list(tvbuff_t *tvb, packet_info *pinfo _U_, proto_t
             j=0;
             break;
         default:
-            proto_tree_add_uint_format(subtree, hf_ansi_map_win_trigger_list, tvb, offset, 1, octet, "[%u] (%u) %s",j,octet,val_to_str_ext(octet, &ansi_map_TriggerType_vals_ext, "Unknown TriggerType (%u)"));
+            proto_tree_add_uint_format(subtree, hf_ansi_map_win_trigger_list, tvb, offset, 1, octet, "[%u] (%u) %s",j,octet,val_to_str_ext(pinfo->pool, octet, &ansi_map_TriggerType_vals_ext, "Unknown TriggerType (%u)"));
             j++;
             break;
         }
@@ -3684,7 +3640,7 @@ dissect_ansi_map_win_trigger_list(tvbuff_t *tvb, packet_info *pinfo _U_, proto_t
 
 
 static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx) {
-    static gboolean               opCodeKnown = TRUE;
+    static bool                   opCodeKnown = true;
     static ansi_map_tap_rec_t     tap_rec[16];
     static ansi_map_tap_rec_t     *tap_p;
     static int                    tap_current=0;
@@ -3701,55 +3657,55 @@ static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_
 
     switch(OperationCode){
     case 1: /*Handoff Measurement Request*/
-        offset = dissect_ansi_map_HandoffMeasurementRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffMeasurementRequest);
+        offset = dissect_ansi_map_HandoffMeasurementRequest(true, tvb, offset, actx, tree, hf_ansi_map_handoffMeasurementRequest);
         break;
     case 2: /*Facilities Directive*/
-        offset = dissect_ansi_map_FacilitiesDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_facilitiesDirective);
+        offset = dissect_ansi_map_FacilitiesDirective(true, tvb, offset, actx, tree, hf_ansi_map_facilitiesDirective);
         break;
     case 3: /*Mobile On Channel*/
         proto_tree_add_expert(tree, actx->pinfo, &ei_ansi_map_no_data, tvb, offset, -1);
         break;
     case 4: /*Handoff Back*/
-        offset = dissect_ansi_map_HandoffBack(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffBack);
+        offset = dissect_ansi_map_HandoffBack(true, tvb, offset, actx, tree, hf_ansi_map_handoffBack);
         break;
     case 5: /*Facilities Release*/
-        offset = dissect_ansi_map_FacilitiesRelease(TRUE, tvb, offset, actx, tree, hf_ansi_map_facilitiesRelease);
+        offset = dissect_ansi_map_FacilitiesRelease(true, tvb, offset, actx, tree, hf_ansi_map_facilitiesRelease);
         break;
     case 6: /*Qualification Request*/
-        offset = dissect_ansi_map_QualificationRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_qualificationRequest);
+        offset = dissect_ansi_map_QualificationRequest(true, tvb, offset, actx, tree, hf_ansi_map_qualificationRequest);
         break;
     case 7: /*Qualification Directive*/
-        offset = dissect_ansi_map_QualificationDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_qualificationDirective);
+        offset = dissect_ansi_map_QualificationDirective(true, tvb, offset, actx, tree, hf_ansi_map_qualificationDirective);
         break;
     case 8: /*Blocking*/
-        offset = dissect_ansi_map_Blocking(TRUE, tvb, offset, actx, tree, hf_ansi_map_blocking);
+        offset = dissect_ansi_map_Blocking(true, tvb, offset, actx, tree, hf_ansi_map_blocking);
         break;
     case 9: /*Unblocking*/
-        offset = dissect_ansi_map_Unblocking(TRUE, tvb, offset, actx, tree, hf_ansi_map_unblocking);
+        offset = dissect_ansi_map_Unblocking(true, tvb, offset, actx, tree, hf_ansi_map_unblocking);
         break;
     case 10: /*Reset Circuit*/
-        offset = dissect_ansi_map_ResetCircuit(TRUE, tvb, offset, actx, tree, hf_ansi_map_resetCircuit);
+        offset = dissect_ansi_map_ResetCircuit(true, tvb, offset, actx, tree, hf_ansi_map_resetCircuit);
         break;
     case 11: /*Trunk Test*/
-        offset = dissect_ansi_map_TrunkTest(TRUE, tvb, offset, actx, tree, hf_ansi_map_trunkTest);
+        offset = dissect_ansi_map_TrunkTest(true, tvb, offset, actx, tree, hf_ansi_map_trunkTest);
         break;
     case 12: /*Trunk Test Disconnect*/
-        offset = dissect_ansi_map_TrunkTestDisconnect(TRUE, tvb, offset, actx, tree, hf_ansi_map_trunkTestDisconnect);
+        offset = dissect_ansi_map_TrunkTestDisconnect(true, tvb, offset, actx, tree, hf_ansi_map_trunkTestDisconnect);
         break;
     case  13: /*Registration Notification*/
-        offset = dissect_ansi_map_RegistrationNotification(TRUE, tvb, offset, actx, tree, hf_ansi_map_registrationNotification);
+        offset = dissect_ansi_map_RegistrationNotification(true, tvb, offset, actx, tree, hf_ansi_map_registrationNotification);
         break;
     case  14: /*Registration Cancellation*/
-        offset = dissect_ansi_map_RegistrationCancellation(TRUE, tvb, offset, actx, tree, hf_ansi_map_registrationCancellation);
+        offset = dissect_ansi_map_RegistrationCancellation(true, tvb, offset, actx, tree, hf_ansi_map_registrationCancellation);
         break;
     case  15: /*Location Request*/
-        offset = dissect_ansi_map_LocationRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_locationRequest);
+        offset = dissect_ansi_map_LocationRequest(true, tvb, offset, actx, tree, hf_ansi_map_locationRequest);
         break;
     case  16: /*Routing Request*/
-        offset = dissect_ansi_map_RoutingRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_routingRequest);
+        offset = dissect_ansi_map_RoutingRequest(true, tvb, offset, actx, tree, hf_ansi_map_routingRequest);
         break;
     case  17: /*Feature Request*/
-        offset = dissect_ansi_map_FeatureRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_featureRequest);
+        offset = dissect_ansi_map_FeatureRequest(true, tvb, offset, actx, tree, hf_ansi_map_featureRequest);
         break;
     case  18: /*Reserved 18 (Service Profile Request, IS-41-C)*/
         proto_tree_add_expert_format(tree, actx->pinfo, &ei_ansi_map_unknown_invokeData_blob, tvb, offset, -1, "Unknown invokeData blob(18 (Service Profile Request, IS-41-C)");
@@ -3758,296 +3714,296 @@ static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_
         proto_tree_add_expert_format(tree, actx->pinfo, &ei_ansi_map_unknown_invokeData_blob, tvb, offset, -1, "Unknown invokeData blob(19 Service Profile Directive, IS-41-C)");
         break;
     case  20: /*Unreliable Roamer Data Directive*/
-        offset = dissect_ansi_map_UnreliableRoamerDataDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_unreliableRoamerDataDirective);
+        offset = dissect_ansi_map_UnreliableRoamerDataDirective(true, tvb, offset, actx, tree, hf_ansi_map_unreliableRoamerDataDirective);
         break;
     case  21: /*Reserved 21 (Call Data Request, IS-41-C)*/
         proto_tree_add_expert_format(tree, actx->pinfo, &ei_ansi_map_unknown_invokeData_blob, tvb, offset, -1, "Unknown invokeData blob(Reserved 21 (Call Data Request, IS-41-C)");
         break;
     case  22: /*MS Inactive*/
-        offset = dissect_ansi_map_MSInactive(TRUE, tvb, offset, actx, tree, hf_ansi_map_mSInactive);
+        offset = dissect_ansi_map_MSInactive(true, tvb, offset, actx, tree, hf_ansi_map_mSInactive);
         break;
     case  23: /*Transfer To Number Request*/
-        offset = dissect_ansi_map_TransferToNumberRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_transferToNumberRequest);
+        offset = dissect_ansi_map_TransferToNumberRequest(true, tvb, offset, actx, tree, hf_ansi_map_transferToNumberRequest);
         break;
     case  24: /*Redirection Request*/
-        offset = dissect_ansi_map_RedirectionRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_redirectionRequest);
+        offset = dissect_ansi_map_RedirectionRequest(true, tvb, offset, actx, tree, hf_ansi_map_redirectionRequest);
         break;
     case  25: /*Handoff To Third*/
-        offset = dissect_ansi_map_HandoffToThird(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffToThird);
+        offset = dissect_ansi_map_HandoffToThird(true, tvb, offset, actx, tree, hf_ansi_map_handoffToThird);
         break;
     case  26: /*Flash Request*/
-        offset = dissect_ansi_map_FlashRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_flashRequest);
+        offset = dissect_ansi_map_FlashRequest(true, tvb, offset, actx, tree, hf_ansi_map_flashRequest);
         break;
     case  27: /*Authentication Directive*/
-        offset = dissect_ansi_map_AuthenticationDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationDirective);
+        offset = dissect_ansi_map_AuthenticationDirective(true, tvb, offset, actx, tree, hf_ansi_map_authenticationDirective);
         break;
     case  28: /*Authentication Request*/
-        offset = dissect_ansi_map_AuthenticationRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationRequest);
+        offset = dissect_ansi_map_AuthenticationRequest(true, tvb, offset, actx, tree, hf_ansi_map_authenticationRequest);
         break;
     case  29: /*Base Station Challenge*/
-        offset = dissect_ansi_map_BaseStationChallenge(TRUE, tvb, offset, actx, tree, hf_ansi_map_baseStationChallenge);
+        offset = dissect_ansi_map_BaseStationChallenge(true, tvb, offset, actx, tree, hf_ansi_map_baseStationChallenge);
         break;
     case  30: /*Authentication Failure Report*/
-        offset = dissect_ansi_map_AuthenticationFailureReport(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationFailureReport);
+        offset = dissect_ansi_map_AuthenticationFailureReport(true, tvb, offset, actx, tree, hf_ansi_map_authenticationFailureReport);
         break;
     case  31: /*Count Request*/
-        offset = dissect_ansi_map_CountRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_countRequest);
+        offset = dissect_ansi_map_CountRequest(true, tvb, offset, actx, tree, hf_ansi_map_countRequest);
         break;
     case  32: /*Inter System Page*/
-        offset = dissect_ansi_map_InterSystemPage(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPage);
+        offset = dissect_ansi_map_InterSystemPage(true, tvb, offset, actx, tree, hf_ansi_map_interSystemPage);
         break;
     case  33: /*Unsolicited Response*/
-        offset = dissect_ansi_map_UnsolicitedResponse(TRUE, tvb, offset, actx, tree, hf_ansi_map_unsolicitedResponse);
+        offset = dissect_ansi_map_UnsolicitedResponse(true, tvb, offset, actx, tree, hf_ansi_map_unsolicitedResponse);
         break;
     case  34: /*Bulk Deregistration*/
-        offset = dissect_ansi_map_BulkDeregistration(TRUE, tvb, offset, actx, tree, hf_ansi_map_bulkDeregistration);
+        offset = dissect_ansi_map_BulkDeregistration(true, tvb, offset, actx, tree, hf_ansi_map_bulkDeregistration);
         break;
     case  35: /*Handoff Measurement Request 2*/
-        offset = dissect_ansi_map_HandoffMeasurementRequest2(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffMeasurementRequest2);
+        offset = dissect_ansi_map_HandoffMeasurementRequest2(true, tvb, offset, actx, tree, hf_ansi_map_handoffMeasurementRequest2);
         break;
     case  36: /*Facilities Directive 2*/
-        offset = dissect_ansi_map_FacilitiesDirective2(TRUE, tvb, offset, actx, tree, hf_ansi_map_facilitiesDirective2);
+        offset = dissect_ansi_map_FacilitiesDirective2(true, tvb, offset, actx, tree, hf_ansi_map_facilitiesDirective2);
         break;
     case  37: /*Handoff Back 2*/
-        offset = dissect_ansi_map_HandoffBack2(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffBack2);
+        offset = dissect_ansi_map_HandoffBack2(true, tvb, offset, actx, tree, hf_ansi_map_handoffBack2);
         break;
     case  38: /*Handoff To Third 2*/
-        offset = dissect_ansi_map_HandoffToThird2(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffToThird2);
+        offset = dissect_ansi_map_HandoffToThird2(true, tvb, offset, actx, tree, hf_ansi_map_handoffToThird2);
         break;
     case  39: /*Authentication Directive Forward*/
-        offset = dissect_ansi_map_AuthenticationDirectiveForward(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationDirectiveForward);
+        offset = dissect_ansi_map_AuthenticationDirectiveForward(true, tvb, offset, actx, tree, hf_ansi_map_authenticationDirectiveForward);
         break;
     case  40: /*Authentication Status Report*/
-        offset = dissect_ansi_map_AuthenticationStatusReport(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationStatusReport);
+        offset = dissect_ansi_map_AuthenticationStatusReport(true, tvb, offset, actx, tree, hf_ansi_map_authenticationStatusReport);
         break;
     case  41: /*Reserved 41*/
         proto_tree_add_expert_format(tree, actx->pinfo, &ei_ansi_map_unknown_invokeData_blob, tvb, offset, -1, "Reserved 41, Unknown invokeData blob");
         break;
     case  42: /*Information Directive*/
-        offset = dissect_ansi_map_InformationDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_informationDirective);
+        offset = dissect_ansi_map_InformationDirective(true, tvb, offset, actx, tree, hf_ansi_map_informationDirective);
         break;
     case  43: /*Information Forward*/
-        offset = dissect_ansi_map_InformationForward(TRUE, tvb, offset, actx, tree, hf_ansi_map_informationForward);
+        offset = dissect_ansi_map_InformationForward(true, tvb, offset, actx, tree, hf_ansi_map_informationForward);
         break;
     case  44: /*Inter System Answer*/
-        offset = dissect_ansi_map_InterSystemAnswer(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemAnswer);
+        offset = dissect_ansi_map_InterSystemAnswer(true, tvb, offset, actx, tree, hf_ansi_map_interSystemAnswer);
         break;
     case  45: /*Inter System Page 2*/
-        offset = dissect_ansi_map_InterSystemPage2(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPage2);
+        offset = dissect_ansi_map_InterSystemPage2(true, tvb, offset, actx, tree, hf_ansi_map_interSystemPage2);
         break;
     case  46: /*Inter System Setup*/
-        offset = dissect_ansi_map_InterSystemSetup(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemSetup);
+        offset = dissect_ansi_map_InterSystemSetup(true, tvb, offset, actx, tree, hf_ansi_map_interSystemSetup);
         break;
     case  47: /*OriginationRequest*/
-        offset = dissect_ansi_map_OriginationRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_originationRequest);
+        offset = dissect_ansi_map_OriginationRequest(true, tvb, offset, actx, tree, hf_ansi_map_originationRequest);
         break;
     case  48: /*Random Variable Request*/
-        offset = dissect_ansi_map_RandomVariableRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_randomVariableRequest);
+        offset = dissect_ansi_map_RandomVariableRequest(true, tvb, offset, actx, tree, hf_ansi_map_randomVariableRequest);
         break;
     case  49: /*Redirection Directive*/
-        offset = dissect_ansi_map_RedirectionDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_redirectionDirective);
+        offset = dissect_ansi_map_RedirectionDirective(true, tvb, offset, actx, tree, hf_ansi_map_redirectionDirective);
         break;
     case  50: /*Remote User Interaction Directive*/
-        offset = dissect_ansi_map_RemoteUserInteractionDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_remoteUserInteractionDirective);
+        offset = dissect_ansi_map_RemoteUserInteractionDirective(true, tvb, offset, actx, tree, hf_ansi_map_remoteUserInteractionDirective);
         break;
     case  51: /*SMS Delivery Backward*/
-        offset = dissect_ansi_map_SMSDeliveryBackward(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryBackward);
+        offset = dissect_ansi_map_SMSDeliveryBackward(true, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryBackward);
         break;
     case  52: /*SMS Delivery Forward*/
-        offset = dissect_ansi_map_SMSDeliveryForward(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryForward);
+        offset = dissect_ansi_map_SMSDeliveryForward(true, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryForward);
         break;
     case  53: /*SMS Delivery Point to Point*/
-        offset = dissect_ansi_map_SMSDeliveryPointToPoint(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryPointToPoint);
+        offset = dissect_ansi_map_SMSDeliveryPointToPoint(true, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryPointToPoint);
         break;
     case  54: /*SMS Notification*/
-        offset = dissect_ansi_map_SMSNotification(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSNotification);
+        offset = dissect_ansi_map_SMSNotification(true, tvb, offset, actx, tree, hf_ansi_map_sMSNotification);
         break;
     case  55: /*SMS Request*/
-        offset = dissect_ansi_map_SMSRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSRequest);
+        offset = dissect_ansi_map_SMSRequest(true, tvb, offset, actx, tree, hf_ansi_map_sMSRequest);
         break;
         /* End N.S0005*/
         /* N.S0010-0 v 1.0 */
         /* N.S0011-0 v 1.0 */
     case  56: /*OTASP Request 6.4.2.CC*/
-        offset = dissect_ansi_map_OTASPRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_oTASPRequest);
+        offset = dissect_ansi_map_OTASPRequest(true, tvb, offset, actx, tree, hf_ansi_map_oTASPRequest);
         break;
         /*End N.S0011-0 v 1.0 */
     case  57: /*Information Backward*/
         break;
         /*  N.S0008-0 v 1.0 */
     case  58: /*Change Facilities*/
-        offset = dissect_ansi_map_ChangeFacilities(TRUE, tvb, offset, actx, tree, hf_ansi_map_changeFacilities);
+        offset = dissect_ansi_map_ChangeFacilities(true, tvb, offset, actx, tree, hf_ansi_map_changeFacilities);
         break;
     case  59: /*Change Service*/
-        offset = dissect_ansi_map_ChangeService(TRUE, tvb, offset, actx, tree, hf_ansi_map_changeService);
+        offset = dissect_ansi_map_ChangeService(true, tvb, offset, actx, tree, hf_ansi_map_changeService);
         break;
         /* End N.S0008-0 v 1.0 */
     case  60: /*Parameter Request*/
-        offset = dissect_ansi_map_ParameterRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_parameterRequest);
+        offset = dissect_ansi_map_ParameterRequest(true, tvb, offset, actx, tree, hf_ansi_map_parameterRequest);
         break;
     case  61: /*TMSI Directive*/
-        offset = dissect_ansi_map_TMSIDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_tMSIDirective);
+        offset = dissect_ansi_map_TMSIDirective(true, tvb, offset, actx, tree, hf_ansi_map_tMSIDirective);
         break;
         /*End  N.S0010-0 v 1.0 */
     case  62: /*NumberPortabilityRequest 62*/
-        offset = dissect_ansi_map_NumberPortabilityRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_numberPortabilityRequest);
+        offset = dissect_ansi_map_NumberPortabilityRequest(true, tvb, offset, actx, tree, hf_ansi_map_numberPortabilityRequest);
         break;
     case  63: /*Service Request N.S0012-0 v 1.0*/
-        offset = dissect_ansi_map_ServiceRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_serviceRequest);
+        offset = dissect_ansi_map_ServiceRequest(true, tvb, offset, actx, tree, hf_ansi_map_serviceRequest);
         break;
         /* N.S0013 */
     case  64: /*Analyzed Information Request*/
-        offset = dissect_ansi_map_AnalyzedInformation(TRUE, tvb, offset, actx, tree, hf_ansi_map_analyzedInformation);
+        offset = dissect_ansi_map_AnalyzedInformation(true, tvb, offset, actx, tree, hf_ansi_map_analyzedInformation);
         break;
     case  65: /*Connection Failure Report*/
-        offset = dissect_ansi_map_ConnectionFailureReport(TRUE, tvb, offset, actx, tree, hf_ansi_map_connectionFailureReport);
+        offset = dissect_ansi_map_ConnectionFailureReport(true, tvb, offset, actx, tree, hf_ansi_map_connectionFailureReport);
         break;
     case  66: /*Connect Resource*/
-        offset = dissect_ansi_map_ConnectResource(TRUE, tvb, offset, actx, tree, hf_ansi_map_connectResource);
+        offset = dissect_ansi_map_ConnectResource(true, tvb, offset, actx, tree, hf_ansi_map_connectResource);
         break;
     case  67: /*Disconnect Resource*/
         /* No data */
         break;
     case  68: /*Facility Selected and Available*/
-        offset = dissect_ansi_map_FacilitySelectedAndAvailable(TRUE, tvb, offset, actx, tree, hf_ansi_map_facilitySelectedAndAvailable);
+        offset = dissect_ansi_map_FacilitySelectedAndAvailable(true, tvb, offset, actx, tree, hf_ansi_map_facilitySelectedAndAvailable);
         break;
     case  69: /*Instruction Request*/
         /* No data */
         break;
     case  70: /*Modify*/
-        offset = dissect_ansi_map_Modify(TRUE, tvb, offset, actx, tree, hf_ansi_map_modify);
+        offset = dissect_ansi_map_Modify(true, tvb, offset, actx, tree, hf_ansi_map_modify);
         break;
     case  71: /*Reset Timer*/
         /*No Data*/
         break;
     case  72: /*Search*/
-        offset = dissect_ansi_map_Search(TRUE, tvb, offset, actx, tree, hf_ansi_map_search);
+        offset = dissect_ansi_map_Search(true, tvb, offset, actx, tree, hf_ansi_map_search);
         break;
     case  73: /*Seize Resource*/
-        offset = dissect_ansi_map_SeizeResource(TRUE, tvb, offset, actx, tree, hf_ansi_map_seizeResource);
+        offset = dissect_ansi_map_SeizeResource(true, tvb, offset, actx, tree, hf_ansi_map_seizeResource);
         break;
     case  74: /*SRF Directive*/
-        offset = dissect_ansi_map_SRFDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_sRFDirective);
+        offset = dissect_ansi_map_SRFDirective(true, tvb, offset, actx, tree, hf_ansi_map_sRFDirective);
         break;
     case  75: /*T Busy*/
-        offset = dissect_ansi_map_TBusy(TRUE, tvb, offset, actx, tree, hf_ansi_map_tBusy);
+        offset = dissect_ansi_map_TBusy(true, tvb, offset, actx, tree, hf_ansi_map_tBusy);
         break;
     case  76: /*T NoAnswer*/
-        offset = dissect_ansi_map_TNoAnswer(TRUE, tvb, offset, actx, tree, hf_ansi_map_tNoAnswer);
+        offset = dissect_ansi_map_TNoAnswer(true, tvb, offset, actx, tree, hf_ansi_map_tNoAnswer);
         break;
         /*END N.S0013 */
     case  77: /*Release*/
         break;
     case  78: /*SMS Delivery Point to Point Ack*/
-        offset = dissect_ansi_map_SMSDeliveryPointToPointAck(TRUE, tvb, offset, actx, tree, hf_ansi_map_smsDeliveryPointToPointAck);
+        offset = dissect_ansi_map_SMSDeliveryPointToPointAck(true, tvb, offset, actx, tree, hf_ansi_map_smsDeliveryPointToPointAck);
         break;
         /* N.S0024*/
     case  79: /*Message Directive*/
-        offset = dissect_ansi_map_MessageDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_messageDirective);
+        offset = dissect_ansi_map_MessageDirective(true, tvb, offset, actx, tree, hf_ansi_map_messageDirective);
         break;
         /*END N.S0024*/
         /* N.S0018 PN-4287*/
     case  80: /*Bulk Disconnection*/
-        offset = dissect_ansi_map_BulkDisconnection(TRUE, tvb, offset, actx, tree, hf_ansi_map_bulkDisconnection);
+        offset = dissect_ansi_map_BulkDisconnection(true, tvb, offset, actx, tree, hf_ansi_map_bulkDisconnection);
         break;
     case  81: /*Call Control Directive*/
-        offset = dissect_ansi_map_CallControlDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_callControlDirective);
+        offset = dissect_ansi_map_CallControlDirective(true, tvb, offset, actx, tree, hf_ansi_map_callControlDirective);
         break;
     case  82: /*O Answer*/
-        offset = dissect_ansi_map_OAnswer(TRUE, tvb, offset, actx, tree, hf_ansi_map_oAnswer);
+        offset = dissect_ansi_map_OAnswer(true, tvb, offset, actx, tree, hf_ansi_map_oAnswer);
         break;
     case  83: /*O Disconnect*/
-        offset = dissect_ansi_map_ODisconnect(TRUE, tvb, offset, actx, tree, hf_ansi_map_oDisconnect);
+        offset = dissect_ansi_map_ODisconnect(true, tvb, offset, actx, tree, hf_ansi_map_oDisconnect);
         break;
     case  84: /*Call Recovery Report*/
-        offset = dissect_ansi_map_CallRecoveryReport(TRUE, tvb, offset, actx, tree, hf_ansi_map_callRecoveryReport);
+        offset = dissect_ansi_map_CallRecoveryReport(true, tvb, offset, actx, tree, hf_ansi_map_callRecoveryReport);
         break;
     case  85: /*T Answer*/
-        offset = dissect_ansi_map_TAnswer(TRUE, tvb, offset, actx, tree, hf_ansi_map_tAnswer);
+        offset = dissect_ansi_map_TAnswer(true, tvb, offset, actx, tree, hf_ansi_map_tAnswer);
         break;
     case  86: /*T Disconnect*/
-        offset = dissect_ansi_map_TDisconnect(TRUE, tvb, offset, actx, tree, hf_ansi_map_tDisconnect);
+        offset = dissect_ansi_map_TDisconnect(true, tvb, offset, actx, tree, hf_ansi_map_tDisconnect);
         break;
     case  87: /*Unreliable Call Data*/
-        offset = dissect_ansi_map_UnreliableCallData(TRUE, tvb, offset, actx, tree, hf_ansi_map_unreliableCallData);
+        offset = dissect_ansi_map_UnreliableCallData(true, tvb, offset, actx, tree, hf_ansi_map_unreliableCallData);
         break;
         /* N.S0018 PN-4287*/
         /*N.S0004 */
     case  88: /*O CalledPartyBusy*/
-        offset = dissect_ansi_map_OCalledPartyBusy(TRUE, tvb, offset, actx, tree, hf_ansi_map_oCalledPartyBusy);
+        offset = dissect_ansi_map_OCalledPartyBusy(true, tvb, offset, actx, tree, hf_ansi_map_oCalledPartyBusy);
         break;
     case  89: /*O NoAnswer*/
-        offset = dissect_ansi_map_ONoAnswer(TRUE, tvb, offset, actx, tree, hf_ansi_map_oNoAnswer);
+        offset = dissect_ansi_map_ONoAnswer(true, tvb, offset, actx, tree, hf_ansi_map_oNoAnswer);
         break;
     case  90: /*Position Request*/
-        offset = dissect_ansi_map_PositionRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_positionRequest);
+        offset = dissect_ansi_map_PositionRequest(true, tvb, offset, actx, tree, hf_ansi_map_positionRequest);
         break;
     case  91: /*Position Request Forward*/
-        offset = dissect_ansi_map_PositionRequestForward(TRUE, tvb, offset, actx, tree, hf_ansi_map_positionRequestForward);
+        offset = dissect_ansi_map_PositionRequestForward(true, tvb, offset, actx, tree, hf_ansi_map_positionRequestForward);
         break;
         /*END N.S0004 */
     case  92: /*Call Termination Report*/
-        offset = dissect_ansi_map_CallTerminationReport(TRUE, tvb, offset, actx, tree, hf_ansi_map_callTerminationReport);
+        offset = dissect_ansi_map_CallTerminationReport(true, tvb, offset, actx, tree, hf_ansi_map_callTerminationReport);
         break;
     case  93: /*Geo Position Directive*/
         break;
     case  94: /*Geo Position Request*/
-        offset = dissect_ansi_map_GeoPositionRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequest);
+        offset = dissect_ansi_map_GeoPositionRequest(true, tvb, offset, actx, tree, hf_ansi_map_geoPositionRequest);
         break;
     case  95: /*Inter System Position Request*/
-        offset = dissect_ansi_map_InterSystemPositionRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequest);
+        offset = dissect_ansi_map_InterSystemPositionRequest(true, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequest);
         break;
     case  96: /*Inter System Position Request Forward*/
-        offset = dissect_ansi_map_InterSystemPositionRequestForward(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequestForward);
+        offset = dissect_ansi_map_InterSystemPositionRequestForward(true, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequestForward);
         break;
         /* 3GPP2 N.S0023-0 */
     case  97: /*ACG Directive*/
-        offset = dissect_ansi_map_ACGDirective(TRUE, tvb, offset, actx, tree, hf_ansi_map_aCGDirective);
+        offset = dissect_ansi_map_ACGDirective(true, tvb, offset, actx, tree, hf_ansi_map_aCGDirective);
         break;
         /* END 3GPP2 N.S0023-0 */
     case  98: /*Roamer Database Verification Request*/
-        offset = dissect_ansi_map_RoamerDatabaseVerificationRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_roamerDatabaseVerificationRequest);
+        offset = dissect_ansi_map_RoamerDatabaseVerificationRequest(true, tvb, offset, actx, tree, hf_ansi_map_roamerDatabaseVerificationRequest);
         break;
         /* N.S0029 X.S0001-A v1.0*/
     case  99: /*Add Service*/
-        offset = dissect_ansi_map_AddService(TRUE, tvb, offset, actx, tree, hf_ansi_map_addService);
+        offset = dissect_ansi_map_AddService(true, tvb, offset, actx, tree, hf_ansi_map_addService);
         break;
     case  100: /*Drop Service*/
-        offset = dissect_ansi_map_DropService(TRUE, tvb, offset, actx, tree, hf_ansi_map_dropService);
+        offset = dissect_ansi_map_DropService(true, tvb, offset, actx, tree, hf_ansi_map_dropService);
         break;
         /*End N.S0029 X.S0001-A v1.0*/
         /* X.S0002-0 v1.0 */
         /* LCSParameterRequest */
     case 101:    /* InterSystemSMSPage 101 */
-        offset = dissect_ansi_map_InterSystemSMSPage(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemSMSPage);
+        offset = dissect_ansi_map_InterSystemSMSPage(true, tvb, offset, actx, tree, hf_ansi_map_interSystemSMSPage);
         break;
     case 102:
-        offset = dissect_ansi_map_LCSParameterRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_lcsParameterRequest);
+        offset = dissect_ansi_map_LCSParameterRequest(true, tvb, offset, actx, tree, hf_ansi_map_lcsParameterRequest);
         break;
         /* CheckMEID X.S0008-0 v1.0*/
     case 104:
-        offset = dissect_ansi_map_CheckMEID(TRUE, tvb, offset, actx, tree, hf_ansi_map_checkMEID);
+        offset = dissect_ansi_map_CheckMEID(true, tvb, offset, actx, tree, hf_ansi_map_checkMEID);
         break;
         /* PositionEventNotification */
     case 106:
-        offset = dissect_ansi_map_PositionEventNotification(TRUE, tvb, offset, actx, tree, hf_ansi_map_positionEventNotification);
+        offset = dissect_ansi_map_PositionEventNotification(true, tvb, offset, actx, tree, hf_ansi_map_positionEventNotification);
         break;
     case 107:
         /* StatusRequest X.S0008-0 v1.0*/
-        offset = dissect_ansi_map_StatusRequest(TRUE, tvb, offset, actx, tree, hf_ansi_map_statusRequest);
+        offset = dissect_ansi_map_StatusRequest(true, tvb, offset, actx, tree, hf_ansi_map_statusRequest);
         break;
         /* InterSystemSMSDelivery-PointToPoint 111 X.S0004-540-E v2.0*/
     case 111:
         /* InterSystemSMSDeliveryPointToPoint X.S0004-540-E v2.0 */
-        offset = dissect_ansi_map_InterSystemSMSDeliveryPointToPoint(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemSMSDeliveryPointToPoint);
+        offset = dissect_ansi_map_InterSystemSMSDeliveryPointToPoint(true, tvb, offset, actx, tree, hf_ansi_map_interSystemSMSDeliveryPointToPoint);
         break;
     case 112:
         /* QualificationRequest2 112 X.S0004-540-E v2.0*/
-        offset = dissect_ansi_map_QualificationRequest2(TRUE, tvb, offset, actx, tree, hf_ansi_map_qualificationRequest2);
+        offset = dissect_ansi_map_QualificationRequest2(true, tvb, offset, actx, tree, hf_ansi_map_qualificationRequest2);
         break;
     default:
         proto_tree_add_expert(tree, actx->pinfo, &ei_ansi_map_unknown_invokeData_blob, tvb, offset, -1);
-        opCodeKnown = FALSE;
+        opCodeKnown = false;
         break;
     }
 
@@ -4063,7 +4019,7 @@ static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_
 }
 
 static int dissect_returnData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx) {
-    static gboolean               opCodeKnown = TRUE;
+    static bool                   opCodeKnown = true;
     static ansi_map_tap_rec_t     tap_rec[16];
     static ansi_map_tap_rec_t     *tap_p;
     static int                    tap_current=0;
@@ -4080,245 +4036,245 @@ static int dissect_returnData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_
 
     switch(OperationCode){
     case 1: /*Handoff Measurement Request*/
-        offset = dissect_ansi_map_HandoffMeasurementRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffMeasurementRequestRes);
+        offset = dissect_ansi_map_HandoffMeasurementRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_handoffMeasurementRequestRes);
         break;
     case 2: /*Facilities Directive*/
-        offset = dissect_ansi_map_FacilitiesDirectiveRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_facilitiesDirectiveRes);
+        offset = dissect_ansi_map_FacilitiesDirectiveRes(true, tvb, offset, actx, tree, hf_ansi_map_facilitiesDirectiveRes);
         break;
     case 4: /*Handoff Back*/
-        offset = dissect_ansi_map_HandoffBackRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffBackRes);
+        offset = dissect_ansi_map_HandoffBackRes(true, tvb, offset, actx, tree, hf_ansi_map_handoffBackRes);
         break;
     case 5: /*Facilities Release*/
-        offset = dissect_ansi_map_FacilitiesReleaseRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_facilitiesReleaseRes);
+        offset = dissect_ansi_map_FacilitiesReleaseRes(true, tvb, offset, actx, tree, hf_ansi_map_facilitiesReleaseRes);
         break;
     case 6: /*Qualification Request*/
-        offset = dissect_ansi_map_QualificationRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_qualificationRequestRes);
+        offset = dissect_ansi_map_QualificationRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_qualificationRequestRes);
         break;
     case 7: /*Qualification Directive*/
-        offset = dissect_ansi_map_QualificationDirectiveRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_qualificationDirectiveRes);
+        offset = dissect_ansi_map_QualificationDirectiveRes(true, tvb, offset, actx, tree, hf_ansi_map_qualificationDirectiveRes);
         break;
     case 10: /*Reset Circuit*/
-        offset = dissect_ansi_map_ResetCircuitRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_resetCircuitRes);
+        offset = dissect_ansi_map_ResetCircuitRes(true, tvb, offset, actx, tree, hf_ansi_map_resetCircuitRes);
         break;
     case 13: /*Registration Notification*/
-        offset = dissect_ansi_map_RegistrationNotificationRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_registrationNotificationRes);
+        offset = dissect_ansi_map_RegistrationNotificationRes(true, tvb, offset, actx, tree, hf_ansi_map_registrationNotificationRes);
         break;
     case  14: /*Registration Cancellation*/
-        offset = dissect_ansi_map_RegistrationCancellationRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_registrationCancellationRes);
+        offset = dissect_ansi_map_RegistrationCancellationRes(true, tvb, offset, actx, tree, hf_ansi_map_registrationCancellationRes);
         break;
     case  15: /*Location Request*/
-        offset = dissect_ansi_map_LocationRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_locationRequestRes);
+        offset = dissect_ansi_map_LocationRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_locationRequestRes);
         break;
     case  16: /*Routing Request*/
-        offset = dissect_ansi_map_RoutingRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_routingRequestRes);
+        offset = dissect_ansi_map_RoutingRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_routingRequestRes);
         break;
     case  17: /*Feature Request*/
-        offset = dissect_ansi_map_FeatureRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_featureRequestRes);
+        offset = dissect_ansi_map_FeatureRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_featureRequestRes);
         break;
     case  23: /*Transfer To Number Request*/
-        offset = dissect_ansi_map_TransferToNumberRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_transferToNumberRequestRes);
+        offset = dissect_ansi_map_TransferToNumberRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_transferToNumberRequestRes);
         break;
     case  25: /*Handoff To Third*/
-        offset = dissect_ansi_map_HandoffToThirdRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffToThirdRes);
+        offset = dissect_ansi_map_HandoffToThirdRes(true, tvb, offset, actx, tree, hf_ansi_map_handoffToThirdRes);
         break;
     case  26: /*Flash Request*/
         /* No data */
         proto_tree_add_expert(tree, actx->pinfo, &ei_ansi_map_no_data, tvb, offset, -1);
         break;
     case  27: /*Authentication Directive*/
-        offset = dissect_ansi_map_AuthenticationDirectiveRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationDirectiveRes);
+        offset = dissect_ansi_map_AuthenticationDirectiveRes(true, tvb, offset, actx, tree, hf_ansi_map_authenticationDirectiveRes);
         break;
     case  28: /*Authentication Request*/
-        offset = dissect_ansi_map_AuthenticationRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationRequestRes);
+        offset = dissect_ansi_map_AuthenticationRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_authenticationRequestRes);
         break;
     case  29: /*Base Station Challenge*/
-        offset = dissect_ansi_map_BaseStationChallengeRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_baseStationChallengeRes);
+        offset = dissect_ansi_map_BaseStationChallengeRes(true, tvb, offset, actx, tree, hf_ansi_map_baseStationChallengeRes);
         break;
     case  30: /*Authentication Failure Report*/
-        offset = dissect_ansi_map_AuthenticationFailureReportRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationFailureReportRes);
+        offset = dissect_ansi_map_AuthenticationFailureReportRes(true, tvb, offset, actx, tree, hf_ansi_map_authenticationFailureReportRes);
         break;
     case  31: /*Count Request*/
-        offset = dissect_ansi_map_CountRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_countRequestRes);
+        offset = dissect_ansi_map_CountRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_countRequestRes);
         break;
     case  32: /*Inter System Page*/
-        offset = dissect_ansi_map_InterSystemPageRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPageRes);
+        offset = dissect_ansi_map_InterSystemPageRes(true, tvb, offset, actx, tree, hf_ansi_map_interSystemPageRes);
         break;
     case  33: /*Unsolicited Response*/
-        offset = dissect_ansi_map_UnsolicitedResponseRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_unsolicitedResponseRes);
+        offset = dissect_ansi_map_UnsolicitedResponseRes(true, tvb, offset, actx, tree, hf_ansi_map_unsolicitedResponseRes);
         break;
     case  35: /*Handoff Measurement Request 2*/
-        offset = dissect_ansi_map_HandoffMeasurementRequest2Res(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffMeasurementRequest2Res);
+        offset = dissect_ansi_map_HandoffMeasurementRequest2Res(true, tvb, offset, actx, tree, hf_ansi_map_handoffMeasurementRequest2Res);
         break;
     case  36: /*Facilities Directive 2*/
-        offset = dissect_ansi_map_FacilitiesDirective2Res(TRUE, tvb, offset, actx, tree, hf_ansi_map_facilitiesDirective2Res);
+        offset = dissect_ansi_map_FacilitiesDirective2Res(true, tvb, offset, actx, tree, hf_ansi_map_facilitiesDirective2Res);
         break;
     case  37: /*Handoff Back 2*/
-        offset = dissect_ansi_map_HandoffBack2Res(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffBack2Res);
+        offset = dissect_ansi_map_HandoffBack2Res(true, tvb, offset, actx, tree, hf_ansi_map_handoffBack2Res);
         break;
     case  38: /*Handoff To Third 2*/
-        offset = dissect_ansi_map_HandoffToThird2Res(TRUE, tvb, offset, actx, tree, hf_ansi_map_handoffToThird2Res);
+        offset = dissect_ansi_map_HandoffToThird2Res(true, tvb, offset, actx, tree, hf_ansi_map_handoffToThird2Res);
         break;
     case  39: /*Authentication Directive Forward*/
-        offset = dissect_ansi_map_AuthenticationDirectiveForwardRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationDirectiveForwardRes);
+        offset = dissect_ansi_map_AuthenticationDirectiveForwardRes(true, tvb, offset, actx, tree, hf_ansi_map_authenticationDirectiveForwardRes);
         break;
     case  40: /*Authentication Status Report*/
-        offset = dissect_ansi_map_AuthenticationStatusReportRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_authenticationStatusReportRes);
+        offset = dissect_ansi_map_AuthenticationStatusReportRes(true, tvb, offset, actx, tree, hf_ansi_map_authenticationStatusReportRes);
         break;
         /*Reserved 41*/
     case  42: /*Information Directive*/
-        offset = dissect_ansi_map_InformationDirectiveRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_informationDirectiveRes);
+        offset = dissect_ansi_map_InformationDirectiveRes(true, tvb, offset, actx, tree, hf_ansi_map_informationDirectiveRes);
         break;
     case  43: /*Information Forward*/
-        offset = dissect_ansi_map_InformationForwardRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_informationForwardRes);
+        offset = dissect_ansi_map_InformationForwardRes(true, tvb, offset, actx, tree, hf_ansi_map_informationForwardRes);
         break;
     case  45: /*Inter System Page 2*/
-        offset = dissect_ansi_map_InterSystemPage2Res(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPage2Res);
+        offset = dissect_ansi_map_InterSystemPage2Res(true, tvb, offset, actx, tree, hf_ansi_map_interSystemPage2Res);
         break;
     case  46: /*Inter System Setup*/
-        offset = dissect_ansi_map_InterSystemSetupRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemSetupRes);
+        offset = dissect_ansi_map_InterSystemSetupRes(true, tvb, offset, actx, tree, hf_ansi_map_interSystemSetupRes);
         break;
     case  47: /*OriginationRequest*/
-        offset = dissect_ansi_map_OriginationRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_originationRequestRes);
+        offset = dissect_ansi_map_OriginationRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_originationRequestRes);
         break;
     case  48: /*Random Variable Request*/
-        offset = dissect_ansi_map_RandomVariableRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_randomVariableRequestRes);
+        offset = dissect_ansi_map_RandomVariableRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_randomVariableRequestRes);
         break;
     case  50: /*Remote User Interaction Directive*/
-        offset = dissect_ansi_map_RemoteUserInteractionDirectiveRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_remoteUserInteractionDirectiveRes);
+        offset = dissect_ansi_map_RemoteUserInteractionDirectiveRes(true, tvb, offset, actx, tree, hf_ansi_map_remoteUserInteractionDirectiveRes);
         break;
     case  51: /*SMS Delivery Backward*/
-        offset = dissect_ansi_map_SMSDeliveryBackwardRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryBackwardRes);
+        offset = dissect_ansi_map_SMSDeliveryBackwardRes(true, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryBackwardRes);
         break;
     case  52: /*SMS Delivery Forward*/
-        offset = dissect_ansi_map_SMSDeliveryForwardRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryForwardRes);
+        offset = dissect_ansi_map_SMSDeliveryForwardRes(true, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryForwardRes);
         break;
     case  53: /*SMS Delivery Point to Point*/
-        offset = dissect_ansi_map_SMSDeliveryPointToPointRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryPointToPointRes);
+        offset = dissect_ansi_map_SMSDeliveryPointToPointRes(true, tvb, offset, actx, tree, hf_ansi_map_sMSDeliveryPointToPointRes);
         break;
     case  54: /*SMS Notification*/
-        offset = dissect_ansi_map_SMSNotificationRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSNotificationRes);
+        offset = dissect_ansi_map_SMSNotificationRes(true, tvb, offset, actx, tree, hf_ansi_map_sMSNotificationRes);
         break;
     case  55: /*SMS Request*/
-        offset = dissect_ansi_map_SMSRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_sMSRequestRes);
+        offset = dissect_ansi_map_SMSRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_sMSRequestRes);
         break;
         /*  N.S0008-0 v 1.0 */
     case  56: /*OTASP Request 6.4.2.CC*/
-        offset = dissect_ansi_map_OTASPRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_oTASPRequestRes);
+        offset = dissect_ansi_map_OTASPRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_oTASPRequestRes);
         break;
     /* 57 Information Backward*/
     case  58: /*Change Facilities*/
-        offset = dissect_ansi_map_ChangeFacilitiesRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_changeFacilitiesRes);
+        offset = dissect_ansi_map_ChangeFacilitiesRes(true, tvb, offset, actx, tree, hf_ansi_map_changeFacilitiesRes);
         break;
     case  59: /*Change Service*/
-        offset = dissect_ansi_map_ChangeServiceRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_changeServiceRes);
+        offset = dissect_ansi_map_ChangeServiceRes(true, tvb, offset, actx, tree, hf_ansi_map_changeServiceRes);
         break;
     case  60: /*Parameter Request*/
-        offset = dissect_ansi_map_ParameterRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_parameterRequestRes);
+        offset = dissect_ansi_map_ParameterRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_parameterRequestRes);
         break;
     case  61: /*TMSI Directive*/
-        offset = dissect_ansi_map_TMSIDirectiveRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_tMSIDirectiveRes);
+        offset = dissect_ansi_map_TMSIDirectiveRes(true, tvb, offset, actx, tree, hf_ansi_map_tMSIDirectiveRes);
         break;
     case  62: /*NumberPortabilityRequest */
-        offset = dissect_ansi_map_NumberPortabilityRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_numberPortabilityRequestRes);
+        offset = dissect_ansi_map_NumberPortabilityRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_numberPortabilityRequestRes);
         break;
     case  63: /*Service Request*/
-        offset = dissect_ansi_map_ServiceRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_serviceRequestRes);
+        offset = dissect_ansi_map_ServiceRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_serviceRequestRes);
         break;
         /* N.S0013 */
     case  64: /*Analyzed Information Request*/
-        offset = dissect_ansi_map_AnalyzedInformationRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_analyzedInformationRes);
+        offset = dissect_ansi_map_AnalyzedInformationRes(true, tvb, offset, actx, tree, hf_ansi_map_analyzedInformationRes);
         break;
     /* 65 Connection Failure Report*/
     /* 66 Connect Resource*/
     /* 67 Disconnect Resource*/
     case  68: /*Facility Selected and Available*/
-        offset = dissect_ansi_map_FacilitySelectedAndAvailableRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_facilitySelectedAndAvailableRes);
+        offset = dissect_ansi_map_FacilitySelectedAndAvailableRes(true, tvb, offset, actx, tree, hf_ansi_map_facilitySelectedAndAvailableRes);
         break;
     /* 69 Instruction Request*/
     case  70: /*Modify*/
-        offset = dissect_ansi_map_ModifyRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_modifyRes);
+        offset = dissect_ansi_map_ModifyRes(true, tvb, offset, actx, tree, hf_ansi_map_modifyRes);
         break;
     case  72: /*Search*/
-        offset = dissect_ansi_map_SearchRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_searchRes);
+        offset = dissect_ansi_map_SearchRes(true, tvb, offset, actx, tree, hf_ansi_map_searchRes);
         break;
     case  73: /*Seize Resource*/
-        offset = dissect_ansi_map_SeizeResourceRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_seizeResourceRes);
+        offset = dissect_ansi_map_SeizeResourceRes(true, tvb, offset, actx, tree, hf_ansi_map_seizeResourceRes);
         break;
     case  74: /*SRF Directive*/
-        offset = dissect_ansi_map_SRFDirectiveRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_sRFDirectiveRes);
+        offset = dissect_ansi_map_SRFDirectiveRes(true, tvb, offset, actx, tree, hf_ansi_map_sRFDirectiveRes);
         break;
     case  75: /*T Busy*/
-        offset = dissect_ansi_map_TBusyRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_tBusyRes);
+        offset = dissect_ansi_map_TBusyRes(true, tvb, offset, actx, tree, hf_ansi_map_tBusyRes);
         break;
     case  76: /*T NoAnswer*/
-        offset = dissect_ansi_map_TNoAnswerRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_tNoAnswerRes);
+        offset = dissect_ansi_map_TNoAnswerRes(true, tvb, offset, actx, tree, hf_ansi_map_tNoAnswerRes);
         break;
     case  81: /*Call Control Directive*/
-        offset = dissect_ansi_map_CallControlDirectiveRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_callControlDirectiveRes);
+        offset = dissect_ansi_map_CallControlDirectiveRes(true, tvb, offset, actx, tree, hf_ansi_map_callControlDirectiveRes);
         break;
     case  83: /*O Disconnect*/
-        offset = dissect_ansi_map_ODisconnectRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_oDisconnectRes);
+        offset = dissect_ansi_map_ODisconnectRes(true, tvb, offset, actx, tree, hf_ansi_map_oDisconnectRes);
         break;
     case  86: /*T Disconnect*/
-        offset = dissect_ansi_map_TDisconnectRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_tDisconnectRes);
+        offset = dissect_ansi_map_TDisconnectRes(true, tvb, offset, actx, tree, hf_ansi_map_tDisconnectRes);
         break;
     case  88: /*O CalledPartyBusy*/
-        offset = dissect_ansi_map_OCalledPartyBusyRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_oCalledPartyBusyRes);
+        offset = dissect_ansi_map_OCalledPartyBusyRes(true, tvb, offset, actx, tree, hf_ansi_map_oCalledPartyBusyRes);
         break;
     case  89: /*O NoAnswer*/
-        offset = dissect_ansi_map_ONoAnswerRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_oNoAnswerRes);
+        offset = dissect_ansi_map_ONoAnswerRes(true, tvb, offset, actx, tree, hf_ansi_map_oNoAnswerRes);
         break;
     case  90: /*Position Request*/
-        offset = dissect_ansi_map_PositionRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_positionRequestRes);
+        offset = dissect_ansi_map_PositionRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_positionRequestRes);
         break;
     case  91: /*Position Request Forward*/
-        offset = dissect_ansi_map_PositionRequestForwardRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_positionRequestForwardRes);
+        offset = dissect_ansi_map_PositionRequestForwardRes(true, tvb, offset, actx, tree, hf_ansi_map_positionRequestForwardRes);
         break;
     case  95: /*Inter System Position Request*/
-        offset = dissect_ansi_map_InterSystemPositionRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequestRes);
+        offset = dissect_ansi_map_InterSystemPositionRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequestRes);
         break;
     case  96: /*Inter System Position Request Forward*/
-        offset = dissect_ansi_map_InterSystemPositionRequestForwardRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequestRes);
+        offset = dissect_ansi_map_InterSystemPositionRequestForwardRes(true, tvb, offset, actx, tree, hf_ansi_map_interSystemPositionRequestForwardRes);
         break;
     case  98: /*Roamer Database Verification Request*/
-        offset = dissect_ansi_map_RoamerDatabaseVerificationRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_roamerDatabaseVerificationRequestRes);
+        offset = dissect_ansi_map_RoamerDatabaseVerificationRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_roamerDatabaseVerificationRequestRes);
         break;
     case  99: /*Add Service*/
-        offset = dissect_ansi_map_AddServiceRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_addServiceRes);
+        offset = dissect_ansi_map_AddServiceRes(true, tvb, offset, actx, tree, hf_ansi_map_addServiceRes);
         break;
     case  100: /*Drop Service*/
-        offset = dissect_ansi_map_DropServiceRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_dropServiceRes);
+        offset = dissect_ansi_map_DropServiceRes(true, tvb, offset, actx, tree, hf_ansi_map_dropServiceRes);
         break;
         /*End N.S0029 */
         /* X.S0002-0 v1.0 */
         /* LCSParameterRequest */
     case 102:
-        offset = dissect_ansi_map_LCSParameterRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_lcsParameterRequestRes);
+        offset = dissect_ansi_map_LCSParameterRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_lcsParameterRequestRes);
         break;
         /* CheckMEID X.S0008-0 v1.0*/
     case 104:
-        offset = dissect_ansi_map_CheckMEIDRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_checkMEIDRes);
+        offset = dissect_ansi_map_CheckMEIDRes(true, tvb, offset, actx, tree, hf_ansi_map_checkMEIDRes);
         break;
         /* PositionEventNotification *
            case 106:
-           offset = dissect_ansi_map_PositionEventNotification(TRUE, tvb, offset, actx, tree, hf_ansi_map_positionEventNotificationRes);
+           offset = dissect_ansi_map_PositionEventNotification(true, tvb, offset, actx, tree, hf_ansi_map_positionEventNotificationRes);
            break;
         */
     case 107:
         /* StatusRequest X.S0008-0 v1.0*/
-        offset = dissect_ansi_map_StatusRequestRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_statusRequestRes);
+        offset = dissect_ansi_map_StatusRequestRes(true, tvb, offset, actx, tree, hf_ansi_map_statusRequestRes);
         break;
     case 111:
         /* InterSystemSMSDeliveryPointToPointRes X.S0004-540-E v2.0 */
-        offset = dissect_ansi_map_InterSystemSMSDeliveryPointToPointRes(TRUE, tvb, offset, actx, tree, hf_ansi_map_interSystemSMSDeliveryPointToPointRes);
+        offset = dissect_ansi_map_InterSystemSMSDeliveryPointToPointRes(true, tvb, offset, actx, tree, hf_ansi_map_interSystemSMSDeliveryPointToPointRes);
         break;
     case 112:
         /* QualificationRequest2Res 112 X.S0004-540-E v2.0*/
-        offset = dissect_ansi_map_QualificationRequest2Res(TRUE, tvb, offset, actx, tree, hf_ansi_map_qualificationRequest2Res);
+        offset = dissect_ansi_map_QualificationRequest2Res(true, tvb, offset, actx, tree, hf_ansi_map_qualificationRequest2Res);
         break;
     default:
         proto_tree_add_expert(tree, actx->pinfo, &ei_ansi_map_unknown_invokeData_blob, tvb, offset, -1);
-        opCodeKnown = FALSE;
+        opCodeKnown = false;
         break;
     }
 
@@ -4338,32 +4294,32 @@ find_saved_invokedata(asn1_ctx_t *actx, struct ansi_tcap_private_t *p_private_tc
     struct ansi_map_invokedata_t *ansi_map_saved_invokedata;
     address* src = &(actx->pinfo->src);
     address* dst = &(actx->pinfo->dst);
-    guint8 *src_str;
-    guint8 *dst_str;
+    uint8_t *src_str;
+    uint8_t *dst_str;
     char *buf;
 
-    buf=(char *)wmem_alloc(wmem_packet_scope(), 1024);
+    buf=(char *)wmem_alloc(actx->pinfo->pool, 1024);
 
     /* Data from the TCAP dissector */
-    /* The hash string needs to contain src and dest to distiguish differnt flows */
-    src_str = address_to_str(wmem_packet_scope(), src);
-    dst_str = address_to_str(wmem_packet_scope(), dst);
+    /* The hash string needs to contain src and dest to distinguish different flows */
+    src_str = address_to_str(actx->pinfo->pool, src);
+    dst_str = address_to_str(actx->pinfo->pool, dst);
     /* Reverse order to invoke */
     switch(ansi_map_response_matching_type){
         case ANSI_MAP_TID_ONLY:
-            g_snprintf(buf,1024,"%s",p_private_tcap->TransactionID_str);
+            snprintf(buf,1024,"%s",p_private_tcap->TransactionID_str);
             break;
         case ANSI_MAP_TID_AND_SOURCE:
-            g_snprintf(buf,1024,"%s%s",p_private_tcap->TransactionID_str,dst_str);
+            snprintf(buf,1024,"%s%s",p_private_tcap->TransactionID_str,dst_str);
             break;
         case ANSI_MAP_TID_SOURCE_AND_DEST:
         default:
-            g_snprintf(buf,1024,"%s%s%s",p_private_tcap->TransactionID_str,dst_str,src_str);
+            snprintf(buf,1024,"%s%s%s",p_private_tcap->TransactionID_str,dst_str,src_str);
             break;
     }
 
-    /*g_warning("Find Hash string %s pkt: %u",buf,actx->pinfo->num);*/
-    ansi_map_saved_invokedata = (struct ansi_map_invokedata_t *)g_hash_table_lookup(TransactionId_table, buf);
+    /*ws_warning("Find Hash string %s pkt: %u",buf,actx->pinfo->num);*/
+    ansi_map_saved_invokedata = (struct ansi_map_invokedata_t *)wmem_multimap_lookup32_le(TransactionId_table, buf, actx->pinfo->num);
     if(ansi_map_saved_invokedata){
         OperationCode = ansi_map_saved_invokedata->opcode & 0xff;
         ServiceIndicator = ansi_map_saved_invokedata->ServiceIndicator;
@@ -4381,7 +4337,7 @@ dissect_ansi_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     proto_tree *ansi_map_tree = NULL;
     struct ansi_tcap_private_t *p_private_tcap = (struct ansi_tcap_private_t *)data;
     asn1_ctx_t asn1_ctx;
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
     SMS_BearerData_tvb = NULL;
     ansi_map_sms_tele_id = -1;
@@ -4401,9 +4357,9 @@ dissect_ansi_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
      */
     ansi_map_item = proto_tree_add_item(tree, proto_ansi_map, tvb, 0, -1, ENC_NA);
     ansi_map_tree = proto_item_add_subtree(ansi_map_item, ett_ansi_map);
-    ansi_map_is_invoke = FALSE;
-    is683_ota = FALSE;
-    is801_pld = FALSE;
+    ansi_map_is_invoke = false;
+    is683_ota = false;
+    is801_pld = false;
     ServiceIndicator = 0;
 
     switch(p_private_tcap->d.pdu){
@@ -4415,23 +4371,23 @@ dissect_ansi_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
         */
     case 1:
         OperationCode = p_private_tcap->d.OperationCode_private & 0x00ff;
-        ansi_map_is_invoke = TRUE;
-        col_add_fstr(pinfo->cinfo, COL_INFO,"%s Invoke ", val_to_str_ext(OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
-        proto_item_append_text(p_private_tcap->d.OperationCode_item," %s",val_to_str_ext(OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
+        ansi_map_is_invoke = true;
+        col_add_fstr(pinfo->cinfo, COL_INFO,"%s Invoke ", val_to_str_ext(pinfo->pool, OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
+        proto_item_append_text(p_private_tcap->d.OperationCode_item," %s",val_to_str_ext(pinfo->pool, OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
         dissect_invokeData(ansi_map_tree, tvb, 0, &asn1_ctx);
         update_saved_invokedata(pinfo, p_private_tcap);
         break;
     case 2:
         OperationCode = find_saved_invokedata(&asn1_ctx, p_private_tcap);
-        col_add_fstr(pinfo->cinfo, COL_INFO,"%s ReturnResult ", val_to_str_ext(OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
-        proto_item_append_text(p_private_tcap->d.OperationCode_item," %s",val_to_str_ext(OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
+        col_add_fstr(pinfo->cinfo, COL_INFO,"%s ReturnResult ", val_to_str_ext(pinfo->pool, OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
+        proto_item_append_text(p_private_tcap->d.OperationCode_item," %s",val_to_str_ext(pinfo->pool, OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
         dissect_returnData(ansi_map_tree, tvb, 0, &asn1_ctx);
         break;
     case 3:
-        col_add_fstr(pinfo->cinfo, COL_INFO,"%s ReturnError ", val_to_str_ext(OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
+        col_add_fstr(pinfo->cinfo, COL_INFO,"%s ReturnError ", val_to_str_ext(pinfo->pool, OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
         break;
     case 4:
-        col_add_fstr(pinfo->cinfo, COL_INFO,"%s Reject ", val_to_str_ext(OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
+        col_add_fstr(pinfo->cinfo, COL_INFO,"%s Reject ", val_to_str_ext(pinfo->pool, OperationCode, &ansi_map_opr_code_strings_ext, "Unknown ANSI-MAP PDU (%u)"));
         break;
     default:
         /* Must be Invoke ReturnResult ReturnError or Reject */
@@ -4442,17 +4398,17 @@ dissect_ansi_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     return tvb_captured_length(tvb);
 }
 
-static void range_delete_callback(guint32 ssn)
+static void range_delete_callback(uint32_t ssn, void *ptr _U_)
 {
     if (ssn) {
-        delete_ansi_tcap_subdissector(ssn , ansi_map_handle);
+        delete_ansi_tcap_subdissector(ssn, ansi_map_handle);
     }
 }
 
-static void range_add_callback(guint32 ssn)
+static void range_add_callback(uint32_t ssn, void *ptr _U_)
 {
     if (ssn) {
-        add_ansi_tcap_subdissector(ssn , ansi_map_handle);
+        add_ansi_tcap_subdissector(ssn, ansi_map_handle);
     }
 }
 
@@ -4470,14 +4426,24 @@ static stat_tap_table_item stat_fields[] = {{TABLE_ITEM_UINT, TAP_ALIGN_RIGHT, "
         {TABLE_ITEM_UINT, TAP_ALIGN_RIGHT, "Count", "  %d  "}, {TABLE_ITEM_UINT, TAP_ALIGN_RIGHT, "Total Bytes", "  %d  "},
         {TABLE_ITEM_FLOAT, TAP_ALIGN_RIGHT, "Avg Bytes", "  %8.2f  "}};
 
-static void ansi_map_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb gui_callback, void* gui_data)
+static void ansi_map_stat_init(stat_tap_table_ui* new_stat)
 {
-    int num_fields = sizeof(stat_fields)/sizeof(stat_tap_table_item);
-    stat_tap_table* table = new_stat_tap_init_table("ANSI MAP Operation Statistics", num_fields, 0, "ansi_map.op_code", gui_callback, gui_data);
+    const char *table_name = "ANSI MAP Operation Statistics";
+    int num_fields = array_length(stat_fields);
+    stat_tap_table *table;
     int i = 0;
-    stat_tap_table_item_type items[sizeof(stat_fields)/sizeof(stat_tap_table_item)];
+    stat_tap_table_item_type items[array_length(stat_fields)];
 
-    new_stat_tap_add_table(new_stat, table);
+    table = stat_tap_find_table(new_stat, table_name);
+    if (table) {
+        if (new_stat->stat_tap_reset_table_cb) {
+            new_stat->stat_tap_reset_table_cb(table);
+        }
+        return;
+    }
+
+    table = stat_tap_init_table(table_name, num_fields, 0, "ansi_map.op_code");
+    stat_tap_add_table(new_stat, table);
 
     /* Add a fow for each value type */
     while (ansi_map_opr_code_strings[i].strptr)
@@ -4493,63 +4459,63 @@ static void ansi_map_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_ini
         items[AVG_BYTES_COLUMN].type = TABLE_ITEM_FLOAT;
         items[AVG_BYTES_COLUMN].value.float_value = 0.0f;
 
-        new_stat_tap_init_table_row(table, ansi_map_opr_code_strings[i].value, num_fields, items);
+        stat_tap_init_table_row(table, ansi_map_opr_code_strings[i].value, num_fields, items);
         i++;
     }
 }
 
 
-static gboolean
-ansi_map_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data)
+static tap_packet_status
+ansi_map_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data, tap_flags_t flags _U_)
 {
-    new_stat_data_t* stat_data = (new_stat_data_t*)tapdata;
+    stat_data_t* stat_data = (stat_data_t*)tapdata;
     const ansi_map_tap_rec_t    *data_p = (const ansi_map_tap_rec_t *)data;
     stat_tap_table* table;
     stat_tap_table_item_type* item_data;
-    guint i = 0, count, total_bytes;
+    unsigned count, total_bytes;
 
     /* Only tracking field values we know */
     if (try_val_to_str(data_p->message_type, ansi_map_opr_code_strings) == NULL)
-        return FALSE;
+        return TAP_PACKET_DONT_REDRAW;
 
-    table = g_array_index(stat_data->stat_tap_data->tables, stat_tap_table*, i);
+    table = g_array_index(stat_data->stat_tap_data->tables, stat_tap_table*, 0);
 
-    item_data = new_stat_tap_get_field_data(table, data_p->message_type, COUNT_COLUMN);
+    item_data = stat_tap_get_field_data(table, data_p->message_type, COUNT_COLUMN);
     item_data->value.uint_value++;
     count = item_data->value.uint_value;
-    new_stat_tap_set_field_data(table, data_p->message_type, COUNT_COLUMN, item_data);
+    stat_tap_set_field_data(table, data_p->message_type, COUNT_COLUMN, item_data);
 
-    item_data = new_stat_tap_get_field_data(table, data_p->message_type, TOTAL_BYTES_COLUMN);
+    item_data = stat_tap_get_field_data(table, data_p->message_type, TOTAL_BYTES_COLUMN);
     item_data->value.uint_value += data_p->size;
     total_bytes = item_data->value.uint_value;
-    new_stat_tap_set_field_data(table, data_p->message_type, TOTAL_BYTES_COLUMN, item_data);
+    stat_tap_set_field_data(table, data_p->message_type, TOTAL_BYTES_COLUMN, item_data);
 
-    item_data = new_stat_tap_get_field_data(table, data_p->message_type, AVG_BYTES_COLUMN);
+    item_data = stat_tap_get_field_data(table, data_p->message_type, AVG_BYTES_COLUMN);
     item_data->value.float_value = (float)total_bytes/(float)count;
-    new_stat_tap_set_field_data(table, data_p->message_type, AVG_BYTES_COLUMN, item_data);
+    stat_tap_set_field_data(table, data_p->message_type, AVG_BYTES_COLUMN, item_data);
 
-    return TRUE;
+    return TAP_PACKET_REDRAW;
 }
 
 static void
 ansi_map_stat_reset(stat_tap_table* table)
 {
-    guint element;
+    unsigned element;
     stat_tap_table_item_type* item_data;
 
     for (element = 0; element < table->num_elements; element++)
     {
-        item_data = new_stat_tap_get_field_data(table, element, COUNT_COLUMN);
+        item_data = stat_tap_get_field_data(table, element, COUNT_COLUMN);
         item_data->value.uint_value = 0;
-        new_stat_tap_set_field_data(table, element, COUNT_COLUMN, item_data);
+        stat_tap_set_field_data(table, element, COUNT_COLUMN, item_data);
 
-        item_data = new_stat_tap_get_field_data(table, element, TOTAL_BYTES_COLUMN);
+        item_data = stat_tap_get_field_data(table, element, TOTAL_BYTES_COLUMN);
         item_data->value.uint_value = 0;
-        new_stat_tap_set_field_data(table, element, TOTAL_BYTES_COLUMN, item_data);
+        stat_tap_set_field_data(table, element, TOTAL_BYTES_COLUMN, item_data);
 
-        item_data = new_stat_tap_get_field_data(table, element, AVG_BYTES_COLUMN);
+        item_data = stat_tap_get_field_data(table, element, AVG_BYTES_COLUMN);
         item_data->value.float_value = 0.0f;
-        new_stat_tap_set_field_data(table, element, AVG_BYTES_COLUMN, item_data);
+        stat_tap_set_field_data(table, element, AVG_BYTES_COLUMN, item_data);
     }
 
 }
@@ -4557,22 +4523,22 @@ ansi_map_stat_reset(stat_tap_table* table)
 void
 proto_reg_handoff_ansi_map(void)
 {
-    static gboolean ansi_map_prefs_initialized = FALSE;
+    static bool ansi_map_prefs_initialized = false;
     static range_t *ssn_range;
 
     if(!ansi_map_prefs_initialized)
     {
-        ansi_map_prefs_initialized = TRUE;
+        ansi_map_prefs_initialized = true;
     }
     else
     {
-        range_foreach(ssn_range, range_delete_callback);
-        g_free(ssn_range);
+        range_foreach(ssn_range, range_delete_callback, NULL);
+        wmem_free(wmem_epan_scope(), ssn_range);
     }
 
-    ssn_range = range_copy(global_ssn_range);
+    ssn_range = range_copy(wmem_epan_scope(), global_ssn_range);
 
-    range_foreach(ssn_range, range_add_callback);
+    range_foreach(ssn_range, range_add_callback, NULL);
 }
 
 /*--- proto_register_ansi_map -------------------------------------------*/
@@ -4583,10 +4549,12 @@ void proto_register_ansi_map(void) {
     /* List of fields */
     static hf_register_info hf[] = {
 
+#if 0
         { &hf_ansi_map_op_code_fam,
           { "Operation Code Family", "ansi_map.op_code_fam",
             FT_UINT8, BASE_DEC, NULL, 0,
             NULL, HFILL }},
+#endif
         { &hf_ansi_map_reservedBitH,
           { "Reserved", "ansi_map.reserved_bitH",
             FT_BOOLEAN, 8, NULL,0x80,
@@ -4611,10 +4579,12 @@ void proto_register_ansi_map(void) {
           { "Reserved", "ansi_map.reserved_bitED",
             FT_UINT8, BASE_DEC, NULL, 0x18,
             NULL, HFILL }},
+#if 0
         { &hf_ansi_map_op_code,
           { "Operation Code", "ansi_map.op_code",
             FT_UINT8, BASE_DEC|BASE_EXT_STRING, &ansi_map_opr_code_strings_ext, 0x0,
             NULL, HFILL }},
+#endif
         { &hf_ansi_map_type_of_digits,
           { "Type of Digits", "ansi_map.type_of_digits",
             FT_UINT8, BASE_DEC, VALS(ansi_map_type_of_digits_vals), 0x0,
@@ -4862,11 +4832,11 @@ void proto_register_ansi_map(void) {
 
         { &hf_ansi_map_mslocation_lat,
           { "Latitude in tenths of a second", "ansi_map.mslocation.lat",
-            FT_UINT8, BASE_DEC, NULL, 0,
+            FT_UINT24, BASE_DEC, NULL, 0,
             NULL, HFILL }},
         { &hf_ansi_map_mslocation_long,
           { "Longitude in tenths of a second", "ansi_map.mslocation.long",
-            FT_UINT8, BASE_DEC, NULL, 0,
+            FT_UINT24, BASE_DEC, NULL, 0,
             "Switch Number (SWNO)", HFILL }},
         { &hf_ansi_map_mslocation_res,
           { "Resolution in units of 1 foot", "ansi_map.mslocation.res",
@@ -5050,7 +5020,7 @@ void proto_register_ansi_map(void) {
         {&hf_ansi_map_cdmachanneldata_lc_mask_b6,
          { "Long Code Mask (byte 6) MSB", "ansi_map.cdmachanneldata.lc_mask_b6",
            FT_UINT8, BASE_HEX, NULL, 0x03,
-           "Long Code Mask MSB (byte 6)", HFILL }},
+           NULL, HFILL }},
         {&hf_ansi_map_cdmachanneldata_lc_mask_b5,
          { "Long Code Mask (byte 5)", "ansi_map.cdmachanneldata.lc_mask_b5",
            FT_UINT8, BASE_HEX, NULL, 0xff,
@@ -5077,7 +5047,7 @@ void proto_register_ansi_map(void) {
            NULL, HFILL }},
         {&hf_ansi_map_cdmachanneldata_nominal_pwr,
          { "Nominal Power", "ansi_map.cdmachanneldata.nominal_pwr",
-           FT_UINT8, BASE_DEC, NULL, 0x71,
+           FT_UINT8, BASE_DEC, NULL, 0x78,
            NULL, HFILL }},
         {&hf_ansi_map_cdmachanneldata_nr_preamble,
          { "Number Preamble", "ansi_map.cdmachanneldata.nr_preamble",
@@ -5119,7 +5089,7 @@ void proto_register_ansi_map(void) {
             NULL, HFILL }},
         { &hf_ansi_map_ConfidentialityModes_vp,
           { "Voice Privacy (VP) Confidentiality Status", "ansi_map.confidentialitymodes.vp",
-            FT_BOOLEAN, 8, TFS(&ansi_map_ConfidentialityModes_bool_val),0x01,
+            FT_BOOLEAN, 8, TFS(&tfs_on_off),0x01,
             NULL, HFILL }},
         { &hf_ansi_map_controlchanneldata_dcc,
           { "Digital Color Code (DCC)", "ansi_map.controlchanneldata.dcc",
@@ -5143,11 +5113,11 @@ void proto_register_ansi_map(void) {
             NULL, HFILL }},
         { &hf_ansi_map_ConfidentialityModes_se,
           { "Signaling Message Encryption (SE) Confidentiality Status", "ansi_map.confidentialitymodes.se",
-            FT_BOOLEAN, 8, TFS(&ansi_map_ConfidentialityModes_bool_val),0x02,
+            FT_BOOLEAN, 8, TFS(&tfs_on_off),0x02,
             NULL, HFILL }},
         { &hf_ansi_map_ConfidentialityModes_dp,
           { "DataPrivacy (DP) Confidentiality Status", "ansi_map.confidentialitymodes.dp",
-            FT_BOOLEAN, 8, TFS(&ansi_map_ConfidentialityModes_bool_val),0x04,
+            FT_BOOLEAN, 8, TFS(&tfs_on_off),0x04,
             NULL, HFILL }},
 
         { &hf_ansi_map_deniedauthorizationperiod_period,
@@ -5396,7 +5366,7 @@ void proto_register_ansi_map(void) {
     };
 
     /* List of subtrees */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ansi_map,
         &ett_mintype,
         &ett_digitstype,
@@ -5437,15 +5407,15 @@ void proto_register_ansi_map(void) {
     expert_module_t* expert_ansi_map;
 
     static const enum_val_t ansi_map_response_matching_type_values[] = {
-        {"Only Transaction ID will be used in Invoke/response matching",                    "Transaction ID only", ANSI_MAP_TID_ONLY},
-        {"Transaction ID and Source will be used in Invoke/response matching",                "Transaction ID and Source", ANSI_MAP_TID_AND_SOURCE},
-        {"Transaction ID Source and Destination will be used in Invoke/response matching",    "Transaction ID Source and Destination", ANSI_MAP_TID_SOURCE_AND_DEST},
+        {"tid",                "Transaction ID only", ANSI_MAP_TID_ONLY},
+        {"tid_source",         "Transaction ID and Source", ANSI_MAP_TID_AND_SOURCE},
+        {"tid_source_dest",    "Transaction ID Source and Destination", ANSI_MAP_TID_SOURCE_AND_DEST},
         {NULL, NULL, -1}
     };
 
     /* TAP STAT INFO */
     static stat_tap_table_ui stat_table = {
-        REGISTER_STAT_GROUP_TELEPHONY_ANSI,
+        REGISTER_TELEPHONY_GROUP_ANSI,
         "Map Operation Statistics",
         "ansi_map",
         "ansi_map",
@@ -5454,7 +5424,7 @@ void proto_register_ansi_map(void) {
         ansi_map_stat_reset,
         NULL,
         NULL,
-        sizeof(stat_fields)/sizeof(stat_tap_table_item), stat_fields,
+        array_length(stat_fields), stat_fields,
         0, NULL,
         NULL,
         0
@@ -5485,7 +5455,7 @@ void proto_register_ansi_map(void) {
     ansi_map_tap = register_tap("ansi_map");
 
 
-    range_convert_str(&global_ssn_range, "5-14", MAX_SSN);
+    range_convert_str(wmem_epan_scope(), &global_ssn_range, "5-14", MAX_SSN);
 
     ansi_map_module = prefs_register_protocol(proto_ansi_map, proto_reg_handoff_ansi_map);
 
@@ -5497,15 +5467,14 @@ void proto_register_ansi_map(void) {
     prefs_register_enum_preference(ansi_map_module, "transaction.matchtype",
                                   "Type of matching invoke/response",
                                   "Type of matching invoke/response, risk of mismatch if loose matching chosen",
-                                  &ansi_map_response_matching_type, ansi_map_response_matching_type_values, FALSE);
+                                  &ansi_map_response_matching_type, ansi_map_response_matching_type_values, false);
 
-    register_init_routine(&ansi_map_init);
-    register_cleanup_routine(&ansi_map_cleanup);
+    TransactionId_table = wmem_multimap_new_autoreset(wmem_epan_scope(), wmem_file_scope(), wmem_str_hash, g_str_equal);
     register_stat_tap_table_ui(&stat_table);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

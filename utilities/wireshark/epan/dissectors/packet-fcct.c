@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,27 +19,29 @@
 void proto_register_fcct(void);
 void proto_reg_handoff_fcct(void);
 
+static dissector_handle_t fcct_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_fcct           = -1;
-static int hf_fcct_revision     = -1;
-static int hf_fcct_inid         = -1;
-static int hf_fcct_gstype       = -1;
-static int hf_fcct_gssubtype    = -1;
-static int hf_fcct_options      = -1;
-static int hf_fcct_server       = -1; /* derived field */
+static int proto_fcct;
+static int hf_fcct_revision;
+static int hf_fcct_inid;
+static int hf_fcct_gstype;
+static int hf_fcct_gssubtype;
+static int hf_fcct_options;
+static int hf_fcct_server; /* derived field */
 
 /* Extended preamble fields */
 #if 0
-static int hf_fcct_ext_said     = -1;
-static int hf_fcct_ext_tid      = -1;
-static int hf_fcct_ext_reqname  = -1;
-static int hf_fcct_ext_tstamp   = -1;
-static int hf_fcct_ext_authblk  = -1;
+static int hf_fcct_ext_said;
+static int hf_fcct_ext_tid;
+static int hf_fcct_ext_reqname;
+static int hf_fcct_ext_tstamp;
+static int hf_fcct_ext_authblk;
 #endif
 
 /* Initialize the subtree pointers */
-static gint ett_fcct = -1;
-static gint ett_fcct_ext = -1;  /* for the extended header */
+static int ett_fcct;
+static int ett_fcct_ext;  /* for the extended header */
 
 const value_string fc_ct_rjt_code_vals [] = {
     {FCCT_RJT_INVCMDCODE, "Invalid Cmd Code"},
@@ -91,8 +81,8 @@ const value_string fc_ct_gsserver_vals[] = {
 
 static dissector_table_t fcct_gserver_table;
 
-guint8
-get_gs_server (guint8 gstype, guint8 gssubtype)
+uint8_t
+get_gs_server (uint8_t gstype, uint8_t gssubtype)
 {
     switch (gstype) {
     case FCCT_GSTYPE_KEYSVC:
@@ -139,7 +129,7 @@ dissect_fcct (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
     tvbuff_t *next_tvb;
     int in_id,
         offset = 0;
-    guint8 server;
+    uint8_t server;
     fc_ct_preamble cthdr;
     address addr;
 
@@ -147,15 +137,15 @@ dissect_fcct (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FC_CT");
 
     /*
-      cthdr.revision = tvb_get_guint8 (tvb, offset++);
+      cthdr.revision = tvb_get_uint8 (tvb, offset++);
       cthdr.in_id = tvb_get_ntoh24 (tvb, offset);
       offset += 3;
 
-      cthdr.gstype = tvb_get_guint8 (tvb, offset++);
-      cthdr.options = tvb_get_guint8 (tvb, offset++);
+      cthdr.gstype = tvb_get_uint8 (tvb, offset++);
+      cthdr.options = tvb_get_uint8 (tvb, offset++);
     */
-    tvb_memcpy (tvb, (guint8 *)&cthdr, offset, FCCT_PRMBL_SIZE);
-    cthdr.revision = tvb_get_guint8 (tvb, offset++);
+    tvb_memcpy (tvb, (uint8_t *)&cthdr, offset, FCCT_PRMBL_SIZE);
+    cthdr.revision = tvb_get_uint8 (tvb, offset++);
     cthdr.in_id = tvb_get_ntoh24 (tvb, offset);
     cthdr.opcode = g_ntohs (cthdr.opcode);
     cthdr.maxres_size = g_ntohs (cthdr.maxres_size);
@@ -168,7 +158,7 @@ dissect_fcct (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
     }
     else if (cthdr.opcode == FCCT_MSG_RJT) {
         col_append_fstr (pinfo->cinfo, COL_INFO, " Reject (%s)",
-                            val_to_str (cthdr.rjt_code, fc_ct_rjt_code_vals, "0x%x"));
+                            val_to_str(pinfo->pool, cthdr.rjt_code, fc_ct_rjt_code_vals, "0x%x"));
     }
     else {
         col_append_str (pinfo->cinfo, COL_INFO, " Reserved");
@@ -187,20 +177,20 @@ dissect_fcct (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
         fcct_tree = proto_item_add_subtree (ti, ett_fcct);
 
         proto_tree_add_item (fcct_tree, hf_fcct_revision, tvb, offset++,
-                             sizeof (guint8), ENC_BIG_ENDIAN);
+                             sizeof (uint8_t), ENC_BIG_ENDIAN);
         set_address(&addr, AT_FC, 3, &in_id);
         proto_tree_add_string (fcct_tree, hf_fcct_inid, tvb, offset, 3,
-                               address_to_str(wmem_packet_scope(), &addr));
+                               address_to_str(pinfo->pool, &addr));
         offset += 3; /* sizeof FC address */
 
         proto_tree_add_item (fcct_tree, hf_fcct_gstype, tvb, offset++,
-                             sizeof (guint8), ENC_BIG_ENDIAN);
+                             sizeof (uint8_t), ENC_BIG_ENDIAN);
         proto_tree_add_item (fcct_tree, hf_fcct_gssubtype, tvb, offset,
-                             sizeof (guint8), ENC_BIG_ENDIAN);
+                             sizeof (uint8_t), ENC_BIG_ENDIAN);
         proto_tree_add_uint (fcct_tree, hf_fcct_server, tvb, offset++, 1,
                              server);
         proto_tree_add_item (fcct_tree, hf_fcct_options, tvb, offset++,
-                             sizeof (guint8), ENC_BIG_ENDIAN);
+                             sizeof (uint8_t), ENC_BIG_ENDIAN);
 
     }
     /* We do not change the starting offset for the next protocol in the
@@ -208,8 +198,8 @@ dissect_fcct (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
      * Pass the fchdr* received from parent dissector through to sub-protocols
      */
     next_tvb = tvb_new_subset_remaining (tvb, 0);
-    if (!dissector_try_uint_new(fcct_gserver_table, server, next_tvb, pinfo,
-                             tree, TRUE, data)) {
+    if (!dissector_try_uint_with_data(fcct_gserver_table, server, next_tvb, pinfo,
+                             tree, true, data)) {
         call_data_dissector(next_tvb, pinfo, tree);
     }
 
@@ -261,7 +251,7 @@ proto_register_fcct(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_fcct,
         &ett_fcct_ext,
     };
@@ -276,19 +266,18 @@ proto_register_fcct(void)
     fcct_gserver_table = register_dissector_table ("fcct.server",
                                                    "FCCT Server",
                                                    proto_fcct, FT_UINT8, BASE_HEX);
+
+    fcct_handle = register_dissector("fcct", dissect_fcct, proto_fcct);
 }
 
 void
 proto_reg_handoff_fcct (void)
 {
-    dissector_handle_t fcct_handle;
-
-    fcct_handle = create_dissector_handle (dissect_fcct, proto_fcct);
     dissector_add_uint("fc.ftype", FC_FTYPE_FCCT, fcct_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

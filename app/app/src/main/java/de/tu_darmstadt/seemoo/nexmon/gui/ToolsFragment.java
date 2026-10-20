@@ -68,7 +68,7 @@ public class ToolsFragment extends Fragment {
     private CheckBox chkNetcat;
     private CheckBox chkIw;
     private CheckBox chkWirelessTools;
-    private CheckBox chkMdk3;
+    private CheckBox chkMdk4;
     private CheckBox chkSocat;
     private Spinner spnBinInstallLocation;
     private Spinner spnLibInstallLocation;
@@ -146,7 +146,7 @@ public class ToolsFragment extends Fragment {
         chkNetcat = (CheckBox) view.findViewById(R.id.chkNetcat);
         chkIw = (CheckBox) view.findViewById(R.id.chkIw);
         chkWirelessTools = (CheckBox) view.findViewById(R.id.chkWirelessTools);
-        chkMdk3 = (CheckBox) view.findViewById(R.id.chkMdk3);
+        chkMdk4 = (CheckBox) view.findViewById(R.id.chkMdk4);
         chkSocat = (CheckBox) view.findViewById(R.id.chkSocat);
         spnBinInstallLocation = (Spinner) view.findViewById(R.id.spnBinInstallLocation);
         spnLibInstallLocation = (Spinner) view.findViewById(R.id.spnLibInstallLocation);
@@ -186,10 +186,21 @@ public class ToolsFragment extends Fragment {
     	}
     }
 
+    /**
+     * Single-quote a string so it is one literal argument to /bin/sh, keeping a
+     * path with shell metacharacters from being interpreted when the command is
+     * run as root. Embedded single quotes become '\''.
+     */
+    private static String shq(String s) {
+        if (s == null) s = "";
+        return "'" + s.replace("'", "'\\''") + "'";
+    }
+
     private void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
-        while (in.read(buffer) != -1) {
-            out.write(buffer);
+        int len;
+        while ((len = in.read(buffer)) != -1) {
+            out.write(buffer, 0, len);
         }
     }
 
@@ -214,9 +225,9 @@ public class ToolsFragment extends Fragment {
 
     private void copyExtractedAsset(final String installLocation, final String filename) throws TimeoutException, IOException, RootDeniedException {
         RootTools.getShell(true).add(new Command(0, "mount -o rw,remount /system", "mount -o rw,remount /", //root for /su path
-                "rm -f " + installLocation + "/" + filename,
-                "cp " + sdCardPath + "nexmon/" + filename + " " + installLocation,
-                "chmod 755 " + installLocation + "/" + filename) {
+                "rm -f " + shq(installLocation + "/" + filename),
+                "cp " + shq(sdCardPath + "nexmon/" + filename) + " " + shq(installLocation),
+                "chmod 755 " + shq(installLocation + "/" + filename)) {
 
             @Override
             public void commandCompleted(int id, int exitcode) {
@@ -310,13 +321,13 @@ public class ToolsFragment extends Fragment {
                         copyExtractedAsset(binInstallLocation, "iwpriv");
                     }
 
-                    if (chkMdk3.isChecked()) {
-                        //toast("Installing mdk3 ...");
-                        copyExtractedAsset(binInstallLocation, "mdk3");
+                    if (chkMdk4.isChecked()) {
+                        //toast("Installing mdk4 ...");
+                        copyExtractedAsset(binInstallLocation, "mdk4");
                     }
 
                     if (chkSocat.isChecked()) {
-                        //toast("Installing mdk3 ...");
+                        //toast("Installing socat ...");
                         copyExtractedAsset(binInstallLocation, "socat");
                     }
 

@@ -1,33 +1,19 @@
-/* packet_format_group_box.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
 #ifndef PACKET_FORMAT_GROUP_BOX_H
 #define PACKET_FORMAT_GROUP_BOX_H
 
-#include <QGroupBox>
+#include "file.h"
 
-namespace Ui {
-class PacketFormatGroupBox;
-}
+#include <QGroupBox>
 
 class PacketFormatGroupBox : public QGroupBox
 {
@@ -35,29 +21,91 @@ class PacketFormatGroupBox : public QGroupBox
 
 public:
     explicit PacketFormatGroupBox(QWidget *parent = 0);
-    ~PacketFormatGroupBox();
 
-    bool summaryEnabled();
-    bool detailsEnabled();
-    bool bytesEnabled();
-
-    bool allCollapsedEnabled();
-    bool asDisplayedEnabled();
-    bool allExpandedEnabled();
+    virtual bool isValid() const;
+    virtual void updatePrintArgs(print_args_t& print_args) = 0;
 
 signals:
     void formatChanged();
 
+};
+
+class PacketFormatBlankGroupBox : public PacketFormatGroupBox
+{
+    Q_OBJECT
+
+public:
+    explicit PacketFormatBlankGroupBox(QWidget *parent = 0);
+
+    void updatePrintArgs(print_args_t& print_args) override;
+};
+
+namespace Ui {
+class PacketFormatTextGroupBox;
+}
+
+class PacketFormatTextGroupBox : public PacketFormatGroupBox
+{
+    Q_OBJECT
+
+public:
+    explicit PacketFormatTextGroupBox(QWidget *parent = 0);
+    ~PacketFormatTextGroupBox();
+
+    bool isValid() const override;
+    void updatePrintArgs(print_args_t& print_args) override;
+
+    bool summaryEnabled() const;
+    bool detailsEnabled() const;
+    bool bytesEnabled() const;
+
+    bool includeColumnHeadingsEnabled() const;
+
+    bool allCollapsedEnabled() const;
+    bool asDisplayedEnabled() const;
+    bool allExpandedEnabled() const;
+
+    uint getHexdumpOptions() const;
+
 private slots:
-    void on_detailsCheckBox_toggled(bool checked);
     void on_summaryCheckBox_toggled(bool checked);
+    void on_detailsCheckBox_toggled(bool checked);
     void on_bytesCheckBox_toggled(bool checked);
+
+    void on_includeColumnHeadingsCheckBox_toggled(bool checked);
+
     void on_allCollapsedButton_toggled(bool checked);
     void on_asDisplayedButton_toggled(bool checked);
     void on_allExpandedButton_toggled(bool checked);
 
+    void on_includeDataSourcesCheckBox_toggled(bool checked);
+    void on_timestampCheckBox_toggled(bool checked);
+
 private:
-    Ui::PacketFormatGroupBox *pf_ui_;
+    Ui::PacketFormatTextGroupBox *pf_ui_;
+};
+
+namespace Ui {
+class PacketFormatJSONGroupBox;
+}
+
+class PacketFormatJSONGroupBox : public PacketFormatGroupBox
+{
+    Q_OBJECT
+
+public:
+    explicit PacketFormatJSONGroupBox(QWidget *parent = 0);
+    ~PacketFormatJSONGroupBox();
+
+    bool isValid() const override;
+    void updatePrintArgs(print_args_t& print_args) override;
+    bool noDuplicateKeys();
+
+private:
+    bool valuesEnabled() const;
+    bool bytesEnabled() const;
+
+    Ui::PacketFormatJSONGroupBox *pf_ui_;
 };
 
 #endif // PACKET_FORMAT_GROUP_BOX_H

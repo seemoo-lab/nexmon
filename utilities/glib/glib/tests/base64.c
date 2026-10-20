@@ -5,11 +5,11 @@
 #define DATA_SIZE 1024
 #define BLOCK_SIZE 32
 #define NUM_BLOCKS 32
-static guchar data[DATA_SIZE];
+static guchar global_data[DATA_SIZE];
 
 static void
 test_incremental (gboolean line_break,
-                  gint     length)
+                  gsize    length)
 {
   char *p;
   gsize len, decoded_len, max, input_len, block_size;
@@ -28,7 +28,7 @@ test_incremental (gboolean line_break,
   while (input_len < length)
     {
       block_size = MIN (BLOCK_SIZE, length - input_len);
-      len += g_base64_encode_step (data + input_len, block_size,
+      len += g_base64_encode_step (global_data + input_len, block_size,
                                    line_break, text + len, &state, &save);
       input_len += block_size;
     }
@@ -57,7 +57,7 @@ test_incremental (gboolean line_break,
       len -= chunk_len;
     }
 
-  g_assert_cmpmem (data, length, data2, decoded_len);
+  g_assert_cmpmem (global_data, length, data2, decoded_len);
 
   g_free (text);
   g_free (data2);
@@ -66,7 +66,7 @@ test_incremental (gboolean line_break,
 static void
 test_incremental_break (gconstpointer d)
 {
-  gint length = GPOINTER_TO_INT (d);
+  gsize length = GPOINTER_TO_UINT (d);
 
   test_incremental (TRUE, length);
 }
@@ -74,7 +74,7 @@ test_incremental_break (gconstpointer d)
 static void
 test_incremental_nobreak (gconstpointer d)
 {
-  gint length = GPOINTER_TO_INT (d);
+  gsize length = GPOINTER_TO_UINT (d);
 
   test_incremental (FALSE, length);
 }
@@ -82,23 +82,23 @@ test_incremental_nobreak (gconstpointer d)
 static void
 test_full (gconstpointer d)
 {
-  gint length = GPOINTER_TO_INT (d);
+  gsize length = GPOINTER_TO_UINT (d);
   char *text;
   guchar *data2;
   gsize len;
 
-  text = g_base64_encode (data, length);
+  text = g_base64_encode (global_data, length);
   data2 = g_base64_decode (text, &len);
   g_free (text);
 
-  g_assert_cmpmem (data, length, data2, len);
+  g_assert_cmpmem (global_data, length, data2, len);
 
   g_free (data2);
 }
 
 struct MyRawData
 {
-  gint length;   /* of data */
+  gsize length;   /* of data */
   guchar data[DATA_SIZE];
 };
 
@@ -220,7 +220,7 @@ static void
 test_base64_encode (void)
 {
   int i;
-  gint length = 1;
+  gsize length = 1;
   char *text;
   struct MyRawData myraw;
 
@@ -236,6 +236,58 @@ test_base64_encode (void)
     }
 }
 
+/* Test that incremental and all-in-one encoding of strings of a length which
+ * is not a multiple of 3 bytes behave the same, as the state carried over
+ * between g_base64_encode_step() calls varies depending on how the input is
+ * split up. This is like the test_base64_decode_smallblock() test, but for
+ * encoding. */
+static void
+test_base64_encode_incremental_small_block (gconstpointer block_size_p)
+{
+  gsize i;
+  struct MyRawData myraw;
+
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=780066");
+
+  generate_databuffer_for_base64 (&myraw);
+
+  for (i = 0; ok_100_encode_strs[i] != NULL; i++)
+    {
+      const guint block_size = GPOINTER_TO_UINT (block_size_p);
+      gchar *encoded_complete = NULL;
+      gchar encoded_stepped[1024];
+      gint state = 0, save = 0;
+      gsize len_written, len_read, len_to_read, input_length;
+
+      input_length = i + 1;
+
+      /* Do it all at once. */
+      encoded_complete = g_base64_encode (myraw.data, input_length);
+
+      /* Split the data up so some number of bits remain after each step. */
+      for (len_written = 0, len_read = 0; len_read < input_length; len_read += len_to_read)
+        {
+          len_to_read = MIN (block_size, input_length - len_read);
+          len_written += g_base64_encode_step (myraw.data + len_read, len_to_read,
+                                               FALSE,
+                                               encoded_stepped + len_written,
+                                               &state, &save);
+        }
+
+      len_written += g_base64_encode_close (FALSE, encoded_stepped + len_written,
+                                            &state, &save);
+      g_assert_cmpuint (len_written, <, G_N_ELEMENTS (encoded_stepped));
+
+      /* Nul-terminate to make string comparison easier. */
+      encoded_stepped[len_written] = '\0';
+
+      /* Compare results. They should be the same. */
+      g_assert_cmpstr (encoded_complete, ==, ok_100_encode_strs[i]);
+      g_assert_cmpstr (encoded_stepped, ==, encoded_complete);
+
+      g_free (encoded_complete);
+    }
+}
 
 static void
 decode_and_compare (const gchar            *datap,
@@ -354,6 +406,85 @@ test_base64_decode_smallblock (gconstpointer blocksize_p)
     }
 }
 
+/* Test that calling g_base64_encode (NULL, 0) returns correct output. This is
+ * as per the first test vector in RFC 4648 §10.
+ * https://tools.ietf.org/html/rfc4648#section-10 */
+static void
+test_base64_encode_empty (void)
+{
+  gchar *encoded = NULL;
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/1698");
+
+  encoded = g_base64_encode (NULL, 0);
+  g_assert_cmpstr (encoded, ==, "");
+  g_free (encoded);
+
+  encoded = g_base64_encode ((const guchar *) "", 0);
+  g_assert_cmpstr (encoded, ==, "");
+  g_free (encoded);
+}
+
+/* Test that calling g_base64_decode ("", *) returns correct output. This is
+ * as per the first test vector in RFC 4648 §10. Note that calling
+ * g_base64_decode (NULL, *) is not allowed.
+ * https://tools.ietf.org/html/rfc4648#section-10 */
+static void
+test_base64_decode_empty (void)
+{
+  guchar *decoded = NULL;
+  gsize decoded_len;
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/1698");
+
+  decoded = g_base64_decode ("", &decoded_len);
+  g_assert_cmpstr ((gchar *) decoded, ==, "");
+  g_assert_cmpuint (decoded_len, ==, 0);
+  g_free (decoded);
+}
+
+/* Check all the RFC 4648 test vectors for base 64 encoding from §10.
+ * https://tools.ietf.org/html/rfc4648#section-10 */
+static void
+test_base64_encode_decode_rfc4648 (void)
+{
+  const struct
+    {
+      const gchar *decoded;  /* technically this should be a byte array, but all the test vectors are ASCII strings */
+      const gchar *encoded;
+    }
+  vectors[] =
+    {
+      { "", "" },
+      { "f", "Zg==" },
+      { "fo", "Zm8=" },
+      { "foo", "Zm9v" },
+      { "foob", "Zm9vYg==" },
+      { "fooba", "Zm9vYmE=" },
+      { "foobar", "Zm9vYmFy" },
+    };
+  gsize i;
+
+  for (i = 0; i < G_N_ELEMENTS (vectors); i++)
+    {
+      gchar *encoded = NULL;
+      guchar *decoded = NULL;
+      gsize expected_decoded_len = strlen (vectors[i].decoded);
+      gsize decoded_len;
+
+      g_test_message ("Vector %" G_GSIZE_FORMAT ": %s", i, vectors[i].decoded);
+
+      encoded = g_base64_encode ((const guchar *) vectors[i].decoded, expected_decoded_len);
+      g_assert_cmpstr (encoded, ==, vectors[i].encoded);
+
+      decoded = g_base64_decode (encoded, &decoded_len);
+      g_assert_cmpstr ((gchar *) decoded, ==, vectors[i].decoded);
+      g_assert_cmpuint (decoded_len, ==, expected_decoded_len);
+
+      g_free (encoded);
+      g_free (decoded);
+    }
+}
 
 int
 main (int argc, char *argv[])
@@ -363,12 +494,17 @@ main (int argc, char *argv[])
   g_test_init (&argc, &argv, NULL);
 
   for (i = 0; i < DATA_SIZE; i++)
-    data[i] = (guchar)i;
+    global_data[i] = (guchar) i;
 
   g_test_add_data_func ("/base64/full/1", GINT_TO_POINTER (DATA_SIZE), test_full);
   g_test_add_data_func ("/base64/full/2", GINT_TO_POINTER (1), test_full);
   g_test_add_data_func ("/base64/full/3", GINT_TO_POINTER (2), test_full);
   g_test_add_data_func ("/base64/full/4", GINT_TO_POINTER (3), test_full);
+
+  g_test_add_data_func ("/base64/encode/incremental/small-block/1", GINT_TO_POINTER (1), test_base64_encode_incremental_small_block);
+  g_test_add_data_func ("/base64/encode/incremental/small-block/2", GINT_TO_POINTER (2), test_base64_encode_incremental_small_block);
+  g_test_add_data_func ("/base64/encode/incremental/small-block/3", GINT_TO_POINTER (3), test_base64_encode_incremental_small_block);
+  g_test_add_data_func ("/base64/encode/incremental/small-block/4", GINT_TO_POINTER (4), test_base64_encode_incremental_small_block);
 
   g_test_add_data_func ("/base64/incremental/nobreak/1", GINT_TO_POINTER (DATA_SIZE), test_incremental_nobreak);
   g_test_add_data_func ("/base64/incremental/break/1", GINT_TO_POINTER (DATA_SIZE), test_incremental_break);
@@ -396,6 +532,11 @@ main (int argc, char *argv[])
                         test_base64_decode_smallblock);
   g_test_add_data_func ("/base64/incremental/smallblock/4", GINT_TO_POINTER(4),
                         test_base64_decode_smallblock);
+
+  g_test_add_func ("/base64/encode/empty", test_base64_encode_empty);
+  g_test_add_func ("/base64/decode/empty", test_base64_decode_empty);
+
+  g_test_add_func ("/base64/encode-decode/rfc4648", test_base64_encode_decode_rfc4648);
 
   return g_test_run ();
 }

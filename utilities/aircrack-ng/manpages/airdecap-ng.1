@@ -1,4 +1,4 @@
-.TH AIRDECAP-NG 1 "February 2016" "Version 1.2-rc4"
+.TH AIRDECAP-NG 1 "May 2022" "Version 1.7.0"
 
 .SH NAME
 airdecap-ng - decrypt a WEP/WPA crypted pcap file
@@ -7,7 +7,7 @@ airdecap-ng - decrypt a WEP/WPA crypted pcap file
 [options] <pcap file>
 .SH DESCRIPTION
 .BI airdecap-ng
-decrypts a WEP/WPA crypted pcap file to a uncrypted one by using the right WEP/WPA keys.
+decrypts a WEP/WPA crypted pcap file to a unencrypted one by using the right WEP/WPA keys.
 .SH OPTIONS
 .TP
 .I -H, --help
@@ -23,7 +23,7 @@ Access point MAC address filter.
 WPA Pairwise Master Key in hex.
 .TP
 .I -e <essid>
-Target network SSID. For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
+Target network SSID. For SSID containing special characters, see https://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc_in_ap_names
 .TP
 .I -p <pass>
 Target network WPA passphrase.
@@ -84,3 +84,6 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .B packetforge-ng(1)
 .br
 .B wpaclean(1)
+.br
+.B airventriloquist(8)
+

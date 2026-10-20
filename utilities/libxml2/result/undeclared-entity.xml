@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<!-- Having an external DTD makes undeclared entities a warning. -->
+<!DOCTYPE doc SYSTEM "foo">
+<doc>
+    <elem attr=""/>
+    <elem>&undeclared;</elem>
+</doc>

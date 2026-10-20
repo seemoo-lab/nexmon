@@ -1,0 +1,2086 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlParserCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlParserCtxt</compoundname>
+    <includes local="no">parser.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0a831e13ad9f85f9d5b80333cfd15d9b" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlSAXHandler" kindref="compound">_xmlSAXHandler</ref> *</type>
+        <definition>struct _xmlSAXHandler* sax</definition>
+        <argsstring></argsstring>
+        <name>sax</name>
+        <qualifiedname>_xmlParserCtxt::sax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000021"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1acbb3e2b891672b5351aed8162d974b44" kindref="member">xmlCtxtGetSaxHandler()</ref> and <ref refid="parser_8h_1ade34cc9274ed0c3336545e48564e66ef" kindref="member">xmlCtxtSetSaxHandler()</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para>the SAX handler </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="264" column="25" bodyfile="parser.h" bodystart="264" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a2e294dd14122c554baa0665072b4ca7a" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* userData</definition>
+        <argsstring></argsstring>
+        <name>userData</name>
+        <qualifiedname>_xmlParserCtxt::userData</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000022"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1abd7ac198c80839e8808f233d29e02fc1" kindref="member">xmlCtxtGetUserData</ref></para>
+</xrefdescription></xrefsect></para>
+<para>user data for SAX interface, defaults to the context itself </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="270" column="10" bodyfile="parser.h" bodystart="270" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a86e3769eb2d000bb026aff4f2b38d5c2" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc* myDoc</definition>
+        <argsstring></argsstring>
+        <name>myDoc</name>
+        <qualifiedname>_xmlParserCtxt::myDoc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000023"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a298011fdad3362493ce7afcb0abdd572" kindref="member">xmlCtxtGetDocument()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>the document being built </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="276" column="12" bodyfile="parser.h" bodystart="276" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a74539821abc9bdbe4613df62a1bfb811" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int wellFormed</definition>
+        <argsstring></argsstring>
+        <name>wellFormed</name>
+        <qualifiedname>_xmlParserCtxt::wellFormed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000024"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1af2c13485b4f93dac83e915cc21b2122c" kindref="member">xmlCtxtGetStatus()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>is the document well formed? </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="282" column="9" bodyfile="parser.h" bodystart="282" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0677bf88ef0f007d2a1f1edde8537c6e" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int replaceEntities</definition>
+        <argsstring></argsstring>
+        <name>replaceEntities</name>
+        <qualifiedname>_xmlParserCtxt::replaceEntities</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000025"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOENT</para>
+</xrefdescription></xrefsect></para>
+<para>shall we replace entities? </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="288" column="9" bodyfile="parser.h" bodystart="288" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a65011b3d522f9a64f8aedf1dde4a6964" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* version</definition>
+        <argsstring></argsstring>
+        <name>version</name>
+        <qualifiedname>_xmlParserCtxt::version</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000026"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1aeb4d40a990cc73c7dfc15cc7d9f7d2aa" kindref="member">xmlCtxtGetVersion()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>the XML version string </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="294" column="13" bodyfile="parser.h" bodystart="294" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a3c934269709c5e7333c58e6f7d6c142d" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* encoding</definition>
+        <argsstring></argsstring>
+        <name>encoding</name>
+        <qualifiedname>_xmlParserCtxt::encoding</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000027"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a94d9434a8bdcc2348feca88552f95a0b" kindref="member">xmlCtxtGetDeclaredEncoding()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>the declared encoding, if any </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="300" column="13" bodyfile="parser.h" bodystart="300" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a368b793347ffa762c10a94d75ca7c38c" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int standalone</definition>
+        <argsstring></argsstring>
+        <name>standalone</name>
+        <qualifiedname>_xmlParserCtxt::standalone</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000028"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a5b83afa81d9c7870731039fe2b277910" kindref="member">xmlCtxtGetStandalone()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>standalone document </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="306" column="9" bodyfile="parser.h" bodystart="306" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a82fd893df0b570f805cf80d5baf0dc47" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int html</definition>
+        <argsstring></argsstring>
+        <name>html</name>
+        <qualifiedname>_xmlParserCtxt::html</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000029"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a92077b375fcf9e241c9751c3c91f65ca" kindref="member">xmlCtxtIsHtml()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>non-zero for HTML documents, actually an htmlInsertMode </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="313" column="9" bodyfile="parser.h" bodystart="313" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a15852070da29edc2601cacd38fcb4950" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *</type>
+        <definition>xmlParserInput* input</definition>
+        <argsstring></argsstring>
+        <name>input</name>
+        <qualifiedname>_xmlParserCtxt::input</qualifiedname>
+        <briefdescription>
+<para>Current input stream. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="321" column="20" bodyfile="parser.h" bodystart="321" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a1ee8e801fcf0ba5bea1b5f9dba0953b1" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int inputNr</definition>
+        <argsstring></argsstring>
+        <name>inputNr</name>
+        <qualifiedname>_xmlParserCtxt::inputNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="323" column="9" bodyfile="parser.h" bodystart="323" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1aeb7357710e9a38c44cb69a1949960597" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int inputMax</definition>
+        <argsstring></argsstring>
+        <name>inputMax</name>
+        <qualifiedname>_xmlParserCtxt::inputMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="325" column="9" bodyfile="parser.h" bodystart="325" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a87bba0f39b05ba1d694d29076da3284c" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> **</type>
+        <definition>xmlParserInput** inputTab</definition>
+        <argsstring></argsstring>
+        <name>inputTab</name>
+        <qualifiedname>_xmlParserCtxt::inputTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="327" column="20" bodyfile="parser.h" bodystart="327" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a8bedaa23f1809c00fd1a1dbaadd3df7c" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+        <definition>xmlNode* node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>_xmlParserCtxt::node</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000030"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1ae847f35d4d290e3a76f93b99afb3636e" kindref="member">xmlCtxtGetNode</ref></para>
+</xrefdescription></xrefsect></para>
+<para>The current element. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="336" column="13" bodyfile="parser.h" bodystart="336" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a5ce5432f84da49f34031f268b02b1dee" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodeNr</definition>
+        <argsstring></argsstring>
+        <name>nodeNr</name>
+        <qualifiedname>_xmlParserCtxt::nodeNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="338" column="9" bodyfile="parser.h" bodystart="338" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a92019f32d3d0ece68985302090814ae1" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodeMax</definition>
+        <argsstring></argsstring>
+        <name>nodeMax</name>
+        <qualifiedname>_xmlParserCtxt::nodeMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="340" column="9" bodyfile="parser.h" bodystart="340" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a9449f68212cfaf496c1971e4be3b9706" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> **</type>
+        <definition>xmlNode** nodeTab</definition>
+        <argsstring></argsstring>
+        <name>nodeTab</name>
+        <qualifiedname>_xmlParserCtxt::nodeTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="342" column="13" bodyfile="parser.h" bodystart="342" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1aa1e7bb128ad81a5fce90022abedffccd" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int record_info</definition>
+        <argsstring></argsstring>
+        <name>record_info</name>
+        <qualifiedname>_xmlParserCtxt::record_info</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="345" column="9" bodyfile="parser.h" bodystart="345" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ab08589a34fdec776d0f7e8f7eb392a82" prot="public" static="no" mutable="no">
+        <type>xmlParserNodeInfoSeq</type>
+        <definition>xmlParserNodeInfoSeq node_seq</definition>
+        <argsstring></argsstring>
+        <name>node_seq</name>
+        <qualifiedname>_xmlParserCtxt::node_seq</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="347" column="26" bodyfile="parser.h" bodystart="347" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a1e9f18db46820d6e92e1cbbd0353d99e" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int errNo</definition>
+        <argsstring></argsstring>
+        <name>errNo</name>
+        <qualifiedname>_xmlParserCtxt::errNo</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000031"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="xmlerror_8h_1a5a94b4438df18110def1bcb42e642410" kindref="member">xmlCtxtGetLastError()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>error code </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="354" column="9" bodyfile="parser.h" bodystart="354" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a463e387748f33ec1960f54431d51fa92" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int hasExternalSubset</definition>
+        <argsstring></argsstring>
+        <name>hasExternalSubset</name>
+        <qualifiedname>_xmlParserCtxt::hasExternalSubset</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="357" column="9" bodyfile="parser.h" bodystart="357" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a55436ba7c37f2c346d8aa5fe1a08989c" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int hasPErefs</definition>
+        <argsstring></argsstring>
+        <name>hasPErefs</name>
+        <qualifiedname>_xmlParserCtxt::hasPErefs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="359" column="9" bodyfile="parser.h" bodystart="359" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a79267324f5bdd751611f0886cefa66cf" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int external</definition>
+        <argsstring></argsstring>
+        <name>external</name>
+        <qualifiedname>_xmlParserCtxt::external</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="361" column="9" bodyfile="parser.h" bodystart="361" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ac63b1f168765a53e565a8ba27f5469d1" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int valid</definition>
+        <argsstring></argsstring>
+        <name>valid</name>
+        <qualifiedname>_xmlParserCtxt::valid</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000032"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1af2c13485b4f93dac83e915cc21b2122c" kindref="member">xmlCtxtGetStatus()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>is the document valid </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="368" column="9" bodyfile="parser.h" bodystart="368" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a8d391f3cd6e23f6d46b9a3e7f2baabf2" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int validate</definition>
+        <argsstring></argsstring>
+        <name>validate</name>
+        <qualifiedname>_xmlParserCtxt::validate</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000033"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_DTDVALID</para>
+</xrefdescription></xrefsect></para>
+<para>shall we try to validate? </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="374" column="9" bodyfile="parser.h" bodystart="374" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0527715680b7e211a63b5e361f949024" prot="public" static="no" mutable="no">
+        <type>xmlValidCtxt</type>
+        <definition>xmlValidCtxt vctxt</definition>
+        <argsstring></argsstring>
+        <name>vctxt</name>
+        <qualifiedname>_xmlParserCtxt::vctxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000034"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1aaacf2733f3e40fc30dab089ee1355ebc" kindref="member">xmlCtxtGetValidCtxt()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>The validity context </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="380" column="18" bodyfile="parser.h" bodystart="380" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a087bda408f1d0b3d33dbd3043087b2e2" prot="public" static="no" mutable="no">
+        <type>xmlParserInputState</type>
+        <definition>xmlParserInputState instate</definition>
+        <argsstring></argsstring>
+        <name>instate</name>
+        <qualifiedname>_xmlParserCtxt::instate</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="383" column="25" bodyfile="parser.h" bodystart="383" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a8abb7e972adc09624edab301e021dc5f" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int token</definition>
+        <argsstring></argsstring>
+        <name>token</name>
+        <qualifiedname>_xmlParserCtxt::token</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="385" column="9" bodyfile="parser.h" bodystart="385" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a8eadc6730ef4fbdae87a20414b789faf" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* directory</definition>
+        <argsstring></argsstring>
+        <name>directory</name>
+        <qualifiedname>_xmlParserCtxt::directory</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000035"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para>The main document URI, if available, with its last component stripped. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="393" column="10" bodyfile="parser.h" bodystart="393" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlParserCtxt::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="398" column="19" bodyfile="parser.h" bodystart="398" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a402ff59b323fe74829aead853387432e" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nameNr</definition>
+        <argsstring></argsstring>
+        <name>nameNr</name>
+        <qualifiedname>_xmlParserCtxt::nameNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="400" column="9" bodyfile="parser.h" bodystart="400" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a251994f8f1522367d583ed38d6292bed" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nameMax</definition>
+        <argsstring></argsstring>
+        <name>nameMax</name>
+        <qualifiedname>_xmlParserCtxt::nameMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="402" column="9" bodyfile="parser.h" bodystart="402" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a2c0a5b5e58f8b5aec6409c2042003616" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+        <definition>const xmlChar** nameTab</definition>
+        <argsstring></argsstring>
+        <name>nameTab</name>
+        <qualifiedname>_xmlParserCtxt::nameTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="404" column="19" bodyfile="parser.h" bodystart="404" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ac935a66e253d0c4919c578c8909a97fd" prot="public" static="no" mutable="no">
+        <type>long</type>
+        <definition>long nbChars</definition>
+        <argsstring></argsstring>
+        <name>nbChars</name>
+        <qualifiedname>_xmlParserCtxt::nbChars</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="407" column="10" bodyfile="parser.h" bodystart="407" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a359987976c3c159a95e9a9b7c1386183" prot="public" static="no" mutable="no">
+        <type>long</type>
+        <definition>long checkIndex</definition>
+        <argsstring></argsstring>
+        <name>checkIndex</name>
+        <qualifiedname>_xmlParserCtxt::checkIndex</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="409" column="10" bodyfile="parser.h" bodystart="409" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a6e2103e40ed808ecb7eec83d847636a6" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int keepBlanks</definition>
+        <argsstring></argsstring>
+        <name>keepBlanks</name>
+        <qualifiedname>_xmlParserCtxt::keepBlanks</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000036"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use inverted <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOBLANKS</para>
+</xrefdescription></xrefsect></para>
+<para>ugly but ... </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="415" column="9" bodyfile="parser.h" bodystart="415" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1aa7539038718937ce7752345836ae2a6d" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int disableSAX</definition>
+        <argsstring></argsstring>
+        <name>disableSAX</name>
+        <qualifiedname>_xmlParserCtxt::disableSAX</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000037"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a42c2fb7c292c2b60900aeddbe412a194" kindref="member">xmlCtxtIsStopped()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>SAX callbacks are disabled </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="421" column="9" bodyfile="parser.h" bodystart="421" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a56c00b6e6966960ab7059e6fbf5043c3" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int inSubset</definition>
+        <argsstring></argsstring>
+        <name>inSubset</name>
+        <qualifiedname>_xmlParserCtxt::inSubset</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000038"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use xmlCtxtIsInSubset</para>
+</xrefdescription></xrefsect></para>
+<para>Set if DTD content is parsed.</para>
+<para><itemizedlist>
+<listitem><para>0: not in DTD</para>
+</listitem><listitem><para>1: in internal DTD subset</para>
+</listitem><listitem><para>2: in external DTD subset </para>
+</listitem></itemizedlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="431" column="9" bodyfile="parser.h" bodystart="431" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a21d8a7346f98bb2fa0641a417f27ec6c" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* intSubName</definition>
+        <argsstring></argsstring>
+        <name>intSubName</name>
+        <qualifiedname>_xmlParserCtxt::intSubName</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000039"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use the <computeroutput>name</computeroutput> argument of the <computeroutput>internalSubset</computeroutput> SAX callback or <ref refid="parser_8h_1ac457f016ceaa7cea92f3bf823a09c362" kindref="member">xmlCtxtGetDocTypeDecl</ref></para>
+</xrefdescription></xrefsect></para>
+<para>Name of the internal subset (root element type). </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="438" column="19" bodyfile="parser.h" bodystart="438" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a5325b513ce2f7be5cd7d2c9604567b27" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* extSubURI</definition>
+        <argsstring></argsstring>
+        <name>extSubURI</name>
+        <qualifiedname>_xmlParserCtxt::extSubURI</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000040"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use the <computeroutput>systemId</computeroutput> argument of the <computeroutput>internalSubset</computeroutput> SAX callback or <ref refid="parser_8h_1ac457f016ceaa7cea92f3bf823a09c362" kindref="member">xmlCtxtGetDocTypeDecl</ref></para>
+</xrefdescription></xrefsect></para>
+<para>System identifier (URI) of external the subset. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="445" column="13" bodyfile="parser.h" bodystart="445" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ad17b163b9053abf907a0a0db8dac4971" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* extSubSystem</definition>
+        <argsstring></argsstring>
+        <name>extSubSystem</name>
+        <qualifiedname>_xmlParserCtxt::extSubSystem</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000041"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use the <computeroutput>publicId</computeroutput> argument of the <computeroutput>internalSubset</computeroutput> SAX callback or <ref refid="parser_8h_1ac457f016ceaa7cea92f3bf823a09c362" kindref="member">xmlCtxtGetDocTypeDecl</ref></para>
+</xrefdescription></xrefsect></para>
+<para>This member is MISNAMED. It contains the <emphasis>public</emphasis> identifier of the external subset. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="453" column="13" bodyfile="parser.h" bodystart="453" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a73f07ee8b7694944aa7e53f8ee9e453d" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* space</definition>
+        <argsstring></argsstring>
+        <name>space</name>
+        <qualifiedname>_xmlParserCtxt::space</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="458" column="9" bodyfile="parser.h" bodystart="458" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a9b4b8352daf0b52c50a15caf124cb1c3" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int spaceNr</definition>
+        <argsstring></argsstring>
+        <name>spaceNr</name>
+        <qualifiedname>_xmlParserCtxt::spaceNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="460" column="9" bodyfile="parser.h" bodystart="460" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1acc57651f8533906084b3471be9b56a8a" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int spaceMax</definition>
+        <argsstring></argsstring>
+        <name>spaceMax</name>
+        <qualifiedname>_xmlParserCtxt::spaceMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="462" column="9" bodyfile="parser.h" bodystart="462" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a8f591a669b55d1238b562edf822c7a9a" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* spaceTab</definition>
+        <argsstring></argsstring>
+        <name>spaceTab</name>
+        <qualifiedname>_xmlParserCtxt::spaceTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="464" column="9" bodyfile="parser.h" bodystart="464" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1acb5ba97551079e0b072c62c21d784ac5" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int depth</definition>
+        <argsstring></argsstring>
+        <name>depth</name>
+        <qualifiedname>_xmlParserCtxt::depth</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="467" column="9" bodyfile="parser.h" bodystart="467" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ad491cb43464c986a702d4fa71295f59f" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *</type>
+        <definition>xmlParserInput* entity</definition>
+        <argsstring></argsstring>
+        <name>entity</name>
+        <qualifiedname>_xmlParserCtxt::entity</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="469" column="20" bodyfile="parser.h" bodystart="469" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ae6b90f61a1b2bc35802afd92fdcb9a0b" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int charset</definition>
+        <argsstring></argsstring>
+        <name>charset</name>
+        <qualifiedname>_xmlParserCtxt::charset</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="471" column="9" bodyfile="parser.h" bodystart="471" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a066dfe9a939e284a6a65aba0af8155ea" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodelen</definition>
+        <argsstring></argsstring>
+        <name>nodelen</name>
+        <qualifiedname>_xmlParserCtxt::nodelen</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="473" column="9" bodyfile="parser.h" bodystart="473" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a57c816224a4a1ca77f889bbb1263f3bf" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodemem</definition>
+        <argsstring></argsstring>
+        <name>nodemem</name>
+        <qualifiedname>_xmlParserCtxt::nodemem</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="474" column="9" bodyfile="parser.h" bodystart="474" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1af26e25032f46caaa1ead40bbb43f7ec0" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int pedantic</definition>
+        <argsstring></argsstring>
+        <name>pedantic</name>
+        <qualifiedname>_xmlParserCtxt::pedantic</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000042"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_PEDANTIC</para>
+</xrefdescription></xrefsect></para>
+<para>signal pedantic warnings </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="480" column="9" bodyfile="parser.h" bodystart="480" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a1cb76d737bf6f5b53e6c970073cba051" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* _private</definition>
+        <argsstring></argsstring>
+        <name>_private</name>
+        <qualifiedname>_xmlParserCtxt::_private</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000043"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a416b57ce9df30de4eb36507648b3987b" kindref="member">xmlCtxtGetPrivate()</ref> and <ref refid="parser_8h_1adf8a364b2fbcee2f78d6d47483f040a2" kindref="member">xmlCtxtSetPrivate()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>For user data, libxml won&apos;t touch it </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="486" column="10" bodyfile="parser.h" bodystart="486" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a04c9a9945d43d9cd5b3e232ec01cb248" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int loadsubset</definition>
+        <argsstring></argsstring>
+        <name>loadsubset</name>
+        <qualifiedname>_xmlParserCtxt::loadsubset</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000044"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_DTDLOAD, XML_PARSE_DTDATTR or XML_PARSE_SKIP_IDS.</para>
+</xrefdescription></xrefsect></para>
+<para>Control loading of the external subset and handling of IDs. Other options like <computeroutput><ref refid="struct__xmlParserCtxt_1a8d391f3cd6e23f6d46b9a3e7f2baabf2" kindref="member">validate</ref></computeroutput> can override this value.</para>
+<para><itemizedlist>
+<listitem><para>0: The default behavior is to process IDs and to ignore the external subset.</para>
+</listitem><listitem><para>XML_DETECT_IDS: Load external subset. This flag is misnamed. ID handling is only controlled by XML_SKIP_IDS.</para>
+</listitem><listitem><para>XML_COMPLETE_ATTRS: Load external subset and process default attributes.</para>
+</listitem><listitem><para>XML_SKIP_IDS: Ignore IDs. </para>
+</listitem></itemizedlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="502" column="9" bodyfile="parser.h" bodystart="502" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a74885ce5dd283ccc755abcc639e16d5c" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int linenumbers</definition>
+        <argsstring></argsstring>
+        <name>linenumbers</name>
+        <qualifiedname>_xmlParserCtxt::linenumbers</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="504" column="9" bodyfile="parser.h" bodystart="504" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ad03012e15a5a13d83a58047e808cdc8f" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* catalogs</definition>
+        <argsstring></argsstring>
+        <name>catalogs</name>
+        <qualifiedname>_xmlParserCtxt::catalogs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000045"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a649621391f9d03f0de610a0082d81e58" kindref="member">xmlCtxtGetCatalogs()</ref> and <ref refid="parser_8h_1a72e4bdaa2e1278821b849c7abc3b818b" kindref="member">xmlCtxtSetCatalogs()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>document&apos;s own catalog </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="510" column="10" bodyfile="parser.h" bodystart="510" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a77bfbfc2650fbef505fee9d8d8aeabfe" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int recovery</definition>
+        <argsstring></argsstring>
+        <name>recovery</name>
+        <qualifiedname>_xmlParserCtxt::recovery</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000046"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_RECOVER run in recovery mode </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="515" column="9" bodyfile="parser.h" bodystart="515" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a214f22b7cb734fad98ccab641c89ba98" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int progressive</definition>
+        <argsstring></argsstring>
+        <name>progressive</name>
+        <qualifiedname>_xmlParserCtxt::progressive</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="517" column="9" bodyfile="parser.h" bodystart="517" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ae6cb4bd5bd5a5f50be4c5edc678877a1" prot="public" static="no" mutable="no">
+        <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+        <definition>xmlDict* dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>_xmlParserCtxt::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000047"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1ac5d476cd48aed48ba8bdc316704f91c0" kindref="member">xmlCtxtGetDict()</ref> and <ref refid="parser_8h_1aab51622c52892838c58083227bc0cead" kindref="member">xmlCtxtSetDict()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>dictionary for the parser </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="523" column="13" bodyfile="parser.h" bodystart="523" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0ac37de07bda62807117571eb641e47a" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+        <definition>const xmlChar** atts</definition>
+        <argsstring></argsstring>
+        <name>atts</name>
+        <qualifiedname>_xmlParserCtxt::atts</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="525" column="19" bodyfile="parser.h" bodystart="525" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ad5b59d66e3beca9fe5b79e9945a42e59" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxatts</definition>
+        <argsstring></argsstring>
+        <name>maxatts</name>
+        <qualifiedname>_xmlParserCtxt::maxatts</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="527" column="9" bodyfile="parser.h" bodystart="527" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1af34dbf2addac7f9cda79f987c5f38869" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int docdict</definition>
+        <argsstring></argsstring>
+        <name>docdict</name>
+        <qualifiedname>_xmlParserCtxt::docdict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="529" column="9" bodyfile="parser.h" bodystart="529" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1acc7057e6eb09b523e6b128ffaacbede1" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* str_xml</definition>
+        <argsstring></argsstring>
+        <name>str_xml</name>
+        <qualifiedname>_xmlParserCtxt::str_xml</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="534" column="19" bodyfile="parser.h" bodystart="534" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a927d568711968b9472293870b253dcd5" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* str_xmlns</definition>
+        <argsstring></argsstring>
+        <name>str_xmlns</name>
+        <qualifiedname>_xmlParserCtxt::str_xmlns</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="535" column="19" bodyfile="parser.h" bodystart="535" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ab7186533569856f5ae9d13325092353f" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* str_xml_ns</definition>
+        <argsstring></argsstring>
+        <name>str_xml_ns</name>
+        <qualifiedname>_xmlParserCtxt::str_xml_ns</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="536" column="19" bodyfile="parser.h" bodystart="536" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a3d29ca0ba6a166681cdda3e2d99767a2" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int sax2</definition>
+        <argsstring></argsstring>
+        <name>sax2</name>
+        <qualifiedname>_xmlParserCtxt::sax2</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="543" column="9" bodyfile="parser.h" bodystart="543" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a4a9621c1dc0c3ddd3b199e7d818e86e1" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nsNr</definition>
+        <argsstring></argsstring>
+        <name>nsNr</name>
+        <qualifiedname>_xmlParserCtxt::nsNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="545" column="9" bodyfile="parser.h" bodystart="545" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0e8b493ec7967cae99b3d0847eb5b341" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nsMax</definition>
+        <argsstring></argsstring>
+        <name>nsMax</name>
+        <qualifiedname>_xmlParserCtxt::nsMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="547" column="9" bodyfile="parser.h" bodystart="547" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a1d13fe8bdb858897c17fc90629570107" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+        <definition>const xmlChar** nsTab</definition>
+        <argsstring></argsstring>
+        <name>nsTab</name>
+        <qualifiedname>_xmlParserCtxt::nsTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="549" column="19" bodyfile="parser.h" bodystart="549" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0b22c39587dd39314e4fd919543a748b" prot="public" static="no" mutable="no">
+        <type>unsigned *</type>
+        <definition>unsigned* attallocs</definition>
+        <argsstring></argsstring>
+        <name>attallocs</name>
+        <qualifiedname>_xmlParserCtxt::attallocs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="551" column="14" bodyfile="parser.h" bodystart="551" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a65345cd8b8c54a718ecd50a061ed3f28" prot="public" static="no" mutable="no">
+        <type>xmlStartTag *</type>
+        <definition>xmlStartTag* pushTab</definition>
+        <argsstring></argsstring>
+        <name>pushTab</name>
+        <qualifiedname>_xmlParserCtxt::pushTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="553" column="17" bodyfile="parser.h" bodystart="553" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ac3de5b2a00693fa3e16ca18cfe6fbca4" prot="public" static="no" mutable="no">
+        <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+        <definition>xmlHashTable* attsDefault</definition>
+        <argsstring></argsstring>
+        <name>attsDefault</name>
+        <qualifiedname>_xmlParserCtxt::attsDefault</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="555" column="18" bodyfile="parser.h" bodystart="555" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a3399652e64ef88057093d6f3d647d499" prot="public" static="no" mutable="no">
+        <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+        <definition>xmlHashTable* attsSpecial</definition>
+        <argsstring></argsstring>
+        <name>attsSpecial</name>
+        <qualifiedname>_xmlParserCtxt::attsSpecial</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="557" column="18" bodyfile="parser.h" bodystart="557" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a9a8a001ccdd5313cc0e95e63f5e06a63" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nsWellFormed</definition>
+        <argsstring></argsstring>
+        <name>nsWellFormed</name>
+        <qualifiedname>_xmlParserCtxt::nsWellFormed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000048"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1af2c13485b4f93dac83e915cc21b2122c" kindref="member">xmlCtxtGetStatus()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>is the document XML Namespace okay </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="564" column="9" bodyfile="parser.h" bodystart="564" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a849fa981f121eb25a67e4e14392840ba" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int options</definition>
+        <argsstring></argsstring>
+        <name>options</name>
+        <qualifiedname>_xmlParserCtxt::options</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000049"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1a539694793176574f4318fadc71468165" kindref="member">xmlCtxtGetOptions()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>Extra options </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="570" column="9" bodyfile="parser.h" bodystart="570" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a47d490aadcaaa4007eed1e7f1c5868de" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int dictNames</definition>
+        <argsstring></argsstring>
+        <name>dictNames</name>
+        <qualifiedname>_xmlParserCtxt::dictNames</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000050"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use inverted <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NODICT</para>
+</xrefdescription></xrefsect></para>
+<para>Use dictionary names for the tree </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="577" column="9" bodyfile="parser.h" bodystart="577" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ab3c9599678b97592a699c9c8e89deaf0" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int freeElemsNr</definition>
+        <argsstring></argsstring>
+        <name>freeElemsNr</name>
+        <qualifiedname>_xmlParserCtxt::freeElemsNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="584" column="9" bodyfile="parser.h" bodystart="584" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1af60ef131e5ff66c48c430192c74982cd" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+        <definition>xmlNode* freeElems</definition>
+        <argsstring></argsstring>
+        <name>freeElems</name>
+        <qualifiedname>_xmlParserCtxt::freeElems</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="586" column="13" bodyfile="parser.h" bodystart="586" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ad879142f3a907f26a63c4f8d9a419432" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int freeAttrsNr</definition>
+        <argsstring></argsstring>
+        <name>freeAttrsNr</name>
+        <qualifiedname>_xmlParserCtxt::freeAttrsNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="588" column="9" bodyfile="parser.h" bodystart="588" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a2d2acb4d9a306fab8a7b3977d0e76ace" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a94c0908950e8e798cf7eb5ed524da0af" kindref="member">xmlAttr</ref> *</type>
+        <definition>xmlAttr* freeAttrs</definition>
+        <argsstring></argsstring>
+        <name>freeAttrs</name>
+        <qualifiedname>_xmlParserCtxt::freeAttrs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="590" column="13" bodyfile="parser.h" bodystart="590" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a31b3046c62759a76aca8ead53a0f4754" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref></type>
+        <definition>xmlError lastError</definition>
+        <argsstring></argsstring>
+        <name>lastError</name>
+        <qualifiedname>_xmlParserCtxt::lastError</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000051"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="xmlerror_8h_1a5a94b4438df18110def1bcb42e642410" kindref="member">xmlCtxtGetLastError()</ref></para>
+</xrefdescription></xrefsect></para>
+<para>the complete error information for the last error. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="597" column="14" bodyfile="parser.h" bodystart="597" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a6c4c5b682d1946655e72098db874e159" prot="public" static="no" mutable="no">
+        <type>xmlParserMode</type>
+        <definition>xmlParserMode parseMode</definition>
+        <argsstring></argsstring>
+        <name>parseMode</name>
+        <qualifiedname>_xmlParserCtxt::parseMode</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="599" column="19" bodyfile="parser.h" bodystart="599" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a3c16887c099f3322f02a0f2d55d26a78" prot="public" static="no" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long nbentities</definition>
+        <argsstring></argsstring>
+        <name>nbentities</name>
+        <qualifiedname>_xmlParserCtxt::nbentities</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="601" column="19" bodyfile="parser.h" bodystart="601" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a381fd69d27563ca8a32d25b38e3e4980" prot="public" static="no" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long sizeentities</definition>
+        <argsstring></argsstring>
+        <name>sizeentities</name>
+        <qualifiedname>_xmlParserCtxt::sizeentities</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="603" column="19" bodyfile="parser.h" bodystart="603" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0e7cd39cdb02faa1c286511cb1a603fb" prot="public" static="no" mutable="no">
+        <type>xmlParserNodeInfo *</type>
+        <definition>xmlParserNodeInfo* nodeInfo</definition>
+        <argsstring></argsstring>
+        <name>nodeInfo</name>
+        <qualifiedname>_xmlParserCtxt::nodeInfo</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="607" column="23" bodyfile="parser.h" bodystart="607" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1aad46b056fb691db7ca92ff3a603c9d6c" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodeInfoNr</definition>
+        <argsstring></argsstring>
+        <name>nodeInfoNr</name>
+        <qualifiedname>_xmlParserCtxt::nodeInfoNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="609" column="9" bodyfile="parser.h" bodystart="609" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a23c0d80df29256afb4cf426e76b7c37c" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodeInfoMax</definition>
+        <argsstring></argsstring>
+        <name>nodeInfoMax</name>
+        <qualifiedname>_xmlParserCtxt::nodeInfoMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="611" column="9" bodyfile="parser.h" bodystart="611" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0dcc829ff4ad123b622013b4e5788282" prot="public" static="no" mutable="no">
+        <type>xmlParserNodeInfo *</type>
+        <definition>xmlParserNodeInfo* nodeInfoTab</definition>
+        <argsstring></argsstring>
+        <name>nodeInfoTab</name>
+        <qualifiedname>_xmlParserCtxt::nodeInfoTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="613" column="23" bodyfile="parser.h" bodystart="613" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a4fbdc4b25fc887c48a6087b5ca600c41" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int input_id</definition>
+        <argsstring></argsstring>
+        <name>input_id</name>
+        <qualifiedname>_xmlParserCtxt::input_id</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="616" column="9" bodyfile="parser.h" bodystart="616" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a5dd6283cf07f17e5b74b461a1c989ed7" prot="public" static="no" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long sizeentcopy</definition>
+        <argsstring></argsstring>
+        <name>sizeentcopy</name>
+        <qualifiedname>_xmlParserCtxt::sizeentcopy</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="618" column="19" bodyfile="parser.h" bodystart="618" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a85a8e37b94809e040ffc233b2c55bf68" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int endCheckState</definition>
+        <argsstring></argsstring>
+        <name>endCheckState</name>
+        <qualifiedname>_xmlParserCtxt::endCheckState</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="621" column="9" bodyfile="parser.h" bodystart="621" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a4771a896fa4b3127f228957349fbe47b" prot="public" static="no" mutable="no">
+        <type>unsigned short</type>
+        <definition>unsigned short nbErrors</definition>
+        <argsstring></argsstring>
+        <name>nbErrors</name>
+        <qualifiedname>_xmlParserCtxt::nbErrors</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="623" column="20" bodyfile="parser.h" bodystart="623" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1acbd42247eafb7588127209a2ff7f60db" prot="public" static="no" mutable="no">
+        <type>unsigned short</type>
+        <definition>unsigned short nbWarnings</definition>
+        <argsstring></argsstring>
+        <name>nbWarnings</name>
+        <qualifiedname>_xmlParserCtxt::nbWarnings</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="625" column="20" bodyfile="parser.h" bodystart="625" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a0e04bb6c2bcbd0cc5c5bac2e60d87053" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned maxAmpl</definition>
+        <argsstring></argsstring>
+        <name>maxAmpl</name>
+        <qualifiedname>_xmlParserCtxt::maxAmpl</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="627" column="14" bodyfile="parser.h" bodystart="627" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a27bff3f4165d7737f30afb83f75e1f42" prot="public" static="no" mutable="no">
+        <type>xmlParserNsData *</type>
+        <definition>xmlParserNsData* nsdb</definition>
+        <argsstring></argsstring>
+        <name>nsdb</name>
+        <qualifiedname>_xmlParserCtxt::nsdb</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="630" column="21" bodyfile="parser.h" bodystart="630" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1aa72e451a06c66a3d77b0ac49a480ea86" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned attrHashMax</definition>
+        <argsstring></argsstring>
+        <name>attrHashMax</name>
+        <qualifiedname>_xmlParserCtxt::attrHashMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="632" column="14" bodyfile="parser.h" bodystart="632" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a91a41558c4773ad4acf6da9f2051ba85" prot="public" static="no" mutable="no">
+        <type>xmlAttrHashBucket *</type>
+        <definition>xmlAttrHashBucket* attrHash</definition>
+        <argsstring></argsstring>
+        <name>attrHash</name>
+        <qualifiedname>_xmlParserCtxt::attrHash</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="634" column="23" bodyfile="parser.h" bodystart="634" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a35c22f982a2638011b4860d3a6076e8b" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+        <definition>xmlStructuredErrorFunc errorHandler</definition>
+        <argsstring></argsstring>
+        <name>errorHandler</name>
+        <qualifiedname>_xmlParserCtxt::errorHandler</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="636" column="28" bodyfile="parser.h" bodystart="636" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1acefd225fa9cf48ba9281f4f97abe0db7" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* errorCtxt</definition>
+        <argsstring></argsstring>
+        <name>errorCtxt</name>
+        <qualifiedname>_xmlParserCtxt::errorCtxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="637" column="10" bodyfile="parser.h" bodystart="637" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1a30c0d77a995c819ff3a6bc91e0e92a8c" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a7c18bf0fce4a02394bd219d9422c27ed" kindref="member">xmlResourceLoader</ref></type>
+        <definition>xmlResourceLoader resourceLoader</definition>
+        <argsstring></argsstring>
+        <name>resourceLoader</name>
+        <qualifiedname>_xmlParserCtxt::resourceLoader</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="639" column="23" bodyfile="parser.h" bodystart="639" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ac728bd981e68086ac20cf0e6feb826ca" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* resourceCtxt</definition>
+        <argsstring></argsstring>
+        <name>resourceCtxt</name>
+        <qualifiedname>_xmlParserCtxt::resourceCtxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="640" column="10" bodyfile="parser.h" bodystart="640" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1adf445cd8a85a7c86627323c80d230bde" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1aeaace285ae5305c799468365fb3f4ec1" kindref="member">xmlCharEncConvImpl</ref></type>
+        <definition>xmlCharEncConvImpl convImpl</definition>
+        <argsstring></argsstring>
+        <name>convImpl</name>
+        <qualifiedname>_xmlParserCtxt::convImpl</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="642" column="24" bodyfile="parser.h" bodystart="642" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserCtxt_1ae23fa552b7a67d6bb008670784f57cc3" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* convCtxt</definition>
+        <argsstring></argsstring>
+        <name>convCtxt</name>
+        <qualifiedname>_xmlParserCtxt::convCtxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="643" column="10" bodyfile="parser.h" bodystart="643" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Parser context. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="14">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="23">
+        <label>_xmlAttribute</label>
+        <link refid="struct__xmlAttribute"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>nexth</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>tree</edgelabel>
+        </childnode>
+      </node>
+      <node id="33">
+        <label>_xmlAutomata</label>
+        <childnode refid="25" relation="usage">
+          <edgelabel>end</edgelabel>
+          <edgelabel>start</edgelabel>
+          <edgelabel>state</edgelabel>
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="27" relation="usage">
+          <edgelabel>atom</edgelabel>
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="29" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+      <node id="25">
+        <label>_xmlAutomataState</label>
+        <childnode refid="26" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="5">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="12">
+        <label>_xmlDict</label>
+        <childnode refid="13" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="13">
+        <label>_xmlDictStrings</label>
+        <childnode refid="13" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="22">
+        <label>_xmlElement</label>
+        <link refid="struct__xmlElement"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>content</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>attributes</edgelabel>
+        </childnode>
+        <childnode refid="24" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+      </node>
+      <node id="17">
+        <label>_xmlElementContent</label>
+        <link refid="struct__xmlElementContent"/>
+        <childnode refid="17" relation="usage">
+          <edgelabel>c1</edgelabel>
+          <edgelabel>c2</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlEntity</label>
+        <link refid="struct__xmlEntity"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>nexte</edgelabel>
+        </childnode>
+      </node>
+      <node id="16">
+        <label>_xmlEnumeration</label>
+        <link refid="struct__xmlEnumeration"/>
+        <childnode refid="16" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="19">
+        <label>_xmlError</label>
+        <link refid="struct__xmlError"/>
+      </node>
+      <node id="34">
+        <label>_xmlHashTable</label>
+        <childnode refid="35" relation="usage">
+          <edgelabel>table</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="15">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="15" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="11" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlParserCtxt</label>
+        <link refid="struct__xmlParserCtxt"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>sax</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>myDoc</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>entity</edgelabel>
+          <edgelabel>input</edgelabel>
+          <edgelabel>inputTab</edgelabel>
+          <edgelabel>resourceLoader</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>freeElems</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>vctxt</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="34" relation="usage">
+          <edgelabel>attsDefault</edgelabel>
+          <edgelabel>attsSpecial</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>freeAttrs</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>errorHandler</edgelabel>
+          <edgelabel>lastError</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>convImpl</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlParserInput</label>
+        <link refid="struct__xmlParserInput"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>buf</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>entity</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlParserInputBuffer</label>
+        <link refid="struct__xmlParserInputBuffer"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>raw</edgelabel>
+        </childnode>
+      </node>
+      <node id="27">
+        <label>_xmlRegAtom</label>
+        <childnode refid="25" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="28" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="29">
+        <label>_xmlRegCounter</label>
+      </node>
+      <node id="30">
+        <label>_xmlRegExecCtxt</label>
+        <childnode refid="24" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>callback</edgelabel>
+        </childnode>
+        <childnode refid="25" relation="usage">
+          <edgelabel>errState</edgelabel>
+          <edgelabel>state</edgelabel>
+        </childnode>
+        <childnode refid="31" relation="usage">
+          <edgelabel>rollbacks</edgelabel>
+        </childnode>
+        <childnode refid="32" relation="usage">
+          <edgelabel>inputStack</edgelabel>
+        </childnode>
+      </node>
+      <node id="31">
+        <label>_xmlRegExecRollback</label>
+        <childnode refid="25" relation="usage">
+          <edgelabel>state</edgelabel>
+        </childnode>
+      </node>
+      <node id="32">
+        <label>_xmlRegInputToken</label>
+      </node>
+      <node id="28">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="26">
+        <label>_xmlRegTrans</label>
+        <childnode refid="27" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+      <node id="24">
+        <label>_xmlRegexp</label>
+        <childnode refid="25" relation="usage">
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="27" relation="usage">
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="29" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlSAXHandler</label>
+        <link refid="struct__xmlSAXHandler"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>resolveEntity</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>getEntity</edgelabel>
+          <edgelabel>getParameterEntity</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>attributeDecl</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>elementDecl</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>setDocumentLocator</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>serror</edgelabel>
+        </childnode>
+      </node>
+      <node id="18">
+        <label>_xmlSAXLocator</label>
+        <link refid="struct__xmlSAXLocator"/>
+      </node>
+      <node id="20">
+        <label>_xmlValidCtxt</label>
+        <link refid="struct__xmlValidCtxt"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="21" relation="usage">
+          <edgelabel>vstate</edgelabel>
+          <edgelabel>vstateTab</edgelabel>
+        </childnode>
+        <childnode refid="33" relation="usage">
+          <edgelabel>am</edgelabel>
+        </childnode>
+        <childnode refid="25" relation="usage">
+          <edgelabel>state</edgelabel>
+        </childnode>
+      </node>
+      <node id="21">
+        <label>_xmlValidState</label>
+        <childnode refid="22" relation="usage">
+          <edgelabel>elemDecl</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>exec</edgelabel>
+        </childnode>
+      </node>
+      <node id="35">
+        <label>xmlHashEntry</label>
+      </node>
+    </collaborationgraph>
+    <location file="parser.h" line="257" column="1" bodyfile="parser.h" bodystart="257" bodyend="644"/>
+    <listofallmembers>
+      <member refid="struct__xmlParserCtxt_1a1cb76d737bf6f5b53e6c970073cba051" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>_private</name></member>
+      <member refid="struct__xmlParserCtxt_1a0b22c39587dd39314e4fd919543a748b" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>attallocs</name></member>
+      <member refid="struct__xmlParserCtxt_1a91a41558c4773ad4acf6da9f2051ba85" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>attrHash</name></member>
+      <member refid="struct__xmlParserCtxt_1aa72e451a06c66a3d77b0ac49a480ea86" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>attrHashMax</name></member>
+      <member refid="struct__xmlParserCtxt_1a0ac37de07bda62807117571eb641e47a" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>atts</name></member>
+      <member refid="struct__xmlParserCtxt_1ac3de5b2a00693fa3e16ca18cfe6fbca4" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>attsDefault</name></member>
+      <member refid="struct__xmlParserCtxt_1a3399652e64ef88057093d6f3d647d499" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>attsSpecial</name></member>
+      <member refid="struct__xmlParserCtxt_1ad03012e15a5a13d83a58047e808cdc8f" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>catalogs</name></member>
+      <member refid="struct__xmlParserCtxt_1ae6b90f61a1b2bc35802afd92fdcb9a0b" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>charset</name></member>
+      <member refid="struct__xmlParserCtxt_1a359987976c3c159a95e9a9b7c1386183" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>checkIndex</name></member>
+      <member refid="struct__xmlParserCtxt_1ae23fa552b7a67d6bb008670784f57cc3" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>convCtxt</name></member>
+      <member refid="struct__xmlParserCtxt_1adf445cd8a85a7c86627323c80d230bde" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>convImpl</name></member>
+      <member refid="struct__xmlParserCtxt_1acb5ba97551079e0b072c62c21d784ac5" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>depth</name></member>
+      <member refid="struct__xmlParserCtxt_1ae6cb4bd5bd5a5f50be4c5edc678877a1" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>dict</name></member>
+      <member refid="struct__xmlParserCtxt_1a47d490aadcaaa4007eed1e7f1c5868de" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>dictNames</name></member>
+      <member refid="struct__xmlParserCtxt_1a8eadc6730ef4fbdae87a20414b789faf" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>directory</name></member>
+      <member refid="struct__xmlParserCtxt_1aa7539038718937ce7752345836ae2a6d" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>disableSAX</name></member>
+      <member refid="struct__xmlParserCtxt_1af34dbf2addac7f9cda79f987c5f38869" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>docdict</name></member>
+      <member refid="struct__xmlParserCtxt_1a3c934269709c5e7333c58e6f7d6c142d" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>encoding</name></member>
+      <member refid="struct__xmlParserCtxt_1a85a8e37b94809e040ffc233b2c55bf68" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>endCheckState</name></member>
+      <member refid="struct__xmlParserCtxt_1ad491cb43464c986a702d4fa71295f59f" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>entity</name></member>
+      <member refid="struct__xmlParserCtxt_1a1e9f18db46820d6e92e1cbbd0353d99e" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>errNo</name></member>
+      <member refid="struct__xmlParserCtxt_1acefd225fa9cf48ba9281f4f97abe0db7" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>errorCtxt</name></member>
+      <member refid="struct__xmlParserCtxt_1a35c22f982a2638011b4860d3a6076e8b" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>errorHandler</name></member>
+      <member refid="struct__xmlParserCtxt_1a79267324f5bdd751611f0886cefa66cf" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>external</name></member>
+      <member refid="struct__xmlParserCtxt_1ad17b163b9053abf907a0a0db8dac4971" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>extSubSystem</name></member>
+      <member refid="struct__xmlParserCtxt_1a5325b513ce2f7be5cd7d2c9604567b27" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>extSubURI</name></member>
+      <member refid="struct__xmlParserCtxt_1a2d2acb4d9a306fab8a7b3977d0e76ace" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>freeAttrs</name></member>
+      <member refid="struct__xmlParserCtxt_1ad879142f3a907f26a63c4f8d9a419432" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>freeAttrsNr</name></member>
+      <member refid="struct__xmlParserCtxt_1af60ef131e5ff66c48c430192c74982cd" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>freeElems</name></member>
+      <member refid="struct__xmlParserCtxt_1ab3c9599678b97592a699c9c8e89deaf0" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>freeElemsNr</name></member>
+      <member refid="struct__xmlParserCtxt_1a463e387748f33ec1960f54431d51fa92" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>hasExternalSubset</name></member>
+      <member refid="struct__xmlParserCtxt_1a55436ba7c37f2c346d8aa5fe1a08989c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>hasPErefs</name></member>
+      <member refid="struct__xmlParserCtxt_1a82fd893df0b570f805cf80d5baf0dc47" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>html</name></member>
+      <member refid="struct__xmlParserCtxt_1a15852070da29edc2601cacd38fcb4950" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>input</name></member>
+      <member refid="struct__xmlParserCtxt_1a4fbdc4b25fc887c48a6087b5ca600c41" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>input_id</name></member>
+      <member refid="struct__xmlParserCtxt_1aeb7357710e9a38c44cb69a1949960597" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>inputMax</name></member>
+      <member refid="struct__xmlParserCtxt_1a1ee8e801fcf0ba5bea1b5f9dba0953b1" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>inputNr</name></member>
+      <member refid="struct__xmlParserCtxt_1a87bba0f39b05ba1d694d29076da3284c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>inputTab</name></member>
+      <member refid="struct__xmlParserCtxt_1a087bda408f1d0b3d33dbd3043087b2e2" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>instate</name></member>
+      <member refid="struct__xmlParserCtxt_1a56c00b6e6966960ab7059e6fbf5043c3" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>inSubset</name></member>
+      <member refid="struct__xmlParserCtxt_1a21d8a7346f98bb2fa0641a417f27ec6c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>intSubName</name></member>
+      <member refid="struct__xmlParserCtxt_1a6e2103e40ed808ecb7eec83d847636a6" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>keepBlanks</name></member>
+      <member refid="struct__xmlParserCtxt_1a31b3046c62759a76aca8ead53a0f4754" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>lastError</name></member>
+      <member refid="struct__xmlParserCtxt_1a74885ce5dd283ccc755abcc639e16d5c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>linenumbers</name></member>
+      <member refid="struct__xmlParserCtxt_1a04c9a9945d43d9cd5b3e232ec01cb248" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>loadsubset</name></member>
+      <member refid="struct__xmlParserCtxt_1a0e04bb6c2bcbd0cc5c5bac2e60d87053" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>maxAmpl</name></member>
+      <member refid="struct__xmlParserCtxt_1ad5b59d66e3beca9fe5b79e9945a42e59" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>maxatts</name></member>
+      <member refid="struct__xmlParserCtxt_1a86e3769eb2d000bb026aff4f2b38d5c2" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>myDoc</name></member>
+      <member refid="struct__xmlParserCtxt_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>name</name></member>
+      <member refid="struct__xmlParserCtxt_1a251994f8f1522367d583ed38d6292bed" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nameMax</name></member>
+      <member refid="struct__xmlParserCtxt_1a402ff59b323fe74829aead853387432e" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nameNr</name></member>
+      <member refid="struct__xmlParserCtxt_1a2c0a5b5e58f8b5aec6409c2042003616" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nameTab</name></member>
+      <member refid="struct__xmlParserCtxt_1ac935a66e253d0c4919c578c8909a97fd" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nbChars</name></member>
+      <member refid="struct__xmlParserCtxt_1a3c16887c099f3322f02a0f2d55d26a78" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nbentities</name></member>
+      <member refid="struct__xmlParserCtxt_1a4771a896fa4b3127f228957349fbe47b" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nbErrors</name></member>
+      <member refid="struct__xmlParserCtxt_1acbd42247eafb7588127209a2ff7f60db" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nbWarnings</name></member>
+      <member refid="struct__xmlParserCtxt_1a8bedaa23f1809c00fd1a1dbaadd3df7c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>node</name></member>
+      <member refid="struct__xmlParserCtxt_1ab08589a34fdec776d0f7e8f7eb392a82" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>node_seq</name></member>
+      <member refid="struct__xmlParserCtxt_1a0e7cd39cdb02faa1c286511cb1a603fb" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodeInfo</name></member>
+      <member refid="struct__xmlParserCtxt_1a23c0d80df29256afb4cf426e76b7c37c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodeInfoMax</name></member>
+      <member refid="struct__xmlParserCtxt_1aad46b056fb691db7ca92ff3a603c9d6c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodeInfoNr</name></member>
+      <member refid="struct__xmlParserCtxt_1a0dcc829ff4ad123b622013b4e5788282" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodeInfoTab</name></member>
+      <member refid="struct__xmlParserCtxt_1a066dfe9a939e284a6a65aba0af8155ea" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodelen</name></member>
+      <member refid="struct__xmlParserCtxt_1a92019f32d3d0ece68985302090814ae1" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodeMax</name></member>
+      <member refid="struct__xmlParserCtxt_1a57c816224a4a1ca77f889bbb1263f3bf" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodemem</name></member>
+      <member refid="struct__xmlParserCtxt_1a5ce5432f84da49f34031f268b02b1dee" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodeNr</name></member>
+      <member refid="struct__xmlParserCtxt_1a9449f68212cfaf496c1971e4be3b9706" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nodeTab</name></member>
+      <member refid="struct__xmlParserCtxt_1a27bff3f4165d7737f30afb83f75e1f42" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nsdb</name></member>
+      <member refid="struct__xmlParserCtxt_1a0e8b493ec7967cae99b3d0847eb5b341" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nsMax</name></member>
+      <member refid="struct__xmlParserCtxt_1a4a9621c1dc0c3ddd3b199e7d818e86e1" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nsNr</name></member>
+      <member refid="struct__xmlParserCtxt_1a1d13fe8bdb858897c17fc90629570107" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nsTab</name></member>
+      <member refid="struct__xmlParserCtxt_1a9a8a001ccdd5313cc0e95e63f5e06a63" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>nsWellFormed</name></member>
+      <member refid="struct__xmlParserCtxt_1a849fa981f121eb25a67e4e14392840ba" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>options</name></member>
+      <member refid="struct__xmlParserCtxt_1a6c4c5b682d1946655e72098db874e159" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>parseMode</name></member>
+      <member refid="struct__xmlParserCtxt_1af26e25032f46caaa1ead40bbb43f7ec0" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>pedantic</name></member>
+      <member refid="struct__xmlParserCtxt_1a214f22b7cb734fad98ccab641c89ba98" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>progressive</name></member>
+      <member refid="struct__xmlParserCtxt_1a65345cd8b8c54a718ecd50a061ed3f28" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>pushTab</name></member>
+      <member refid="struct__xmlParserCtxt_1aa1e7bb128ad81a5fce90022abedffccd" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>record_info</name></member>
+      <member refid="struct__xmlParserCtxt_1a77bfbfc2650fbef505fee9d8d8aeabfe" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>recovery</name></member>
+      <member refid="struct__xmlParserCtxt_1a0677bf88ef0f007d2a1f1edde8537c6e" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>replaceEntities</name></member>
+      <member refid="struct__xmlParserCtxt_1ac728bd981e68086ac20cf0e6feb826ca" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>resourceCtxt</name></member>
+      <member refid="struct__xmlParserCtxt_1a30c0d77a995c819ff3a6bc91e0e92a8c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>resourceLoader</name></member>
+      <member refid="struct__xmlParserCtxt_1a0a831e13ad9f85f9d5b80333cfd15d9b" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>sax</name></member>
+      <member refid="struct__xmlParserCtxt_1a3d29ca0ba6a166681cdda3e2d99767a2" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>sax2</name></member>
+      <member refid="struct__xmlParserCtxt_1a5dd6283cf07f17e5b74b461a1c989ed7" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>sizeentcopy</name></member>
+      <member refid="struct__xmlParserCtxt_1a381fd69d27563ca8a32d25b38e3e4980" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>sizeentities</name></member>
+      <member refid="struct__xmlParserCtxt_1a73f07ee8b7694944aa7e53f8ee9e453d" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>space</name></member>
+      <member refid="struct__xmlParserCtxt_1acc57651f8533906084b3471be9b56a8a" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>spaceMax</name></member>
+      <member refid="struct__xmlParserCtxt_1a9b4b8352daf0b52c50a15caf124cb1c3" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>spaceNr</name></member>
+      <member refid="struct__xmlParserCtxt_1a8f591a669b55d1238b562edf822c7a9a" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>spaceTab</name></member>
+      <member refid="struct__xmlParserCtxt_1a368b793347ffa762c10a94d75ca7c38c" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>standalone</name></member>
+      <member refid="struct__xmlParserCtxt_1acc7057e6eb09b523e6b128ffaacbede1" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>str_xml</name></member>
+      <member refid="struct__xmlParserCtxt_1ab7186533569856f5ae9d13325092353f" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>str_xml_ns</name></member>
+      <member refid="struct__xmlParserCtxt_1a927d568711968b9472293870b253dcd5" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>str_xmlns</name></member>
+      <member refid="struct__xmlParserCtxt_1a8abb7e972adc09624edab301e021dc5f" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>token</name></member>
+      <member refid="struct__xmlParserCtxt_1a2e294dd14122c554baa0665072b4ca7a" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>userData</name></member>
+      <member refid="struct__xmlParserCtxt_1ac63b1f168765a53e565a8ba27f5469d1" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>valid</name></member>
+      <member refid="struct__xmlParserCtxt_1a8d391f3cd6e23f6d46b9a3e7f2baabf2" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>validate</name></member>
+      <member refid="struct__xmlParserCtxt_1a0527715680b7e211a63b5e361f949024" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>vctxt</name></member>
+      <member refid="struct__xmlParserCtxt_1a65011b3d522f9a64f8aedf1dde4a6964" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>version</name></member>
+      <member refid="struct__xmlParserCtxt_1a74539821abc9bdbe4613df62a1bfb811" prot="public" virt="non-virtual"><scope>_xmlParserCtxt</scope><name>wellFormed</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

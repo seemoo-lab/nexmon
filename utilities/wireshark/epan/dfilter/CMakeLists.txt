@@ -4,64 +4,93 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
-include_directories(
-	${CMAKE_CURRENT_BINARY_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}
+set(DFILTER_PUBLIC_HEADERS
+	dfilter.h
+	dfilter-int.h
+	dfilter-loc.h
+	dfilter-plugin.h
+	dfilter-translator.h
+	dfunctions.h
+	drange.h
+	syntax-tree.h
 )
 
-set(DFILTER_FILES
+set(DFILTER_HEADER_FILES
+	${DFILTER_PUBLIC_HEADERS}
+	dfilter-macro.h
+	dfilter-macro-uat.h
+	dfvm.h
+	gencode.h
+	semcheck.h
+	sttype-field.h
+	sttype-function.h
+	sttype-number.h
+	sttype-pointer.h
+	sttype-set.h
+	sttype-slice.h
+	sttype-op.h
+)
+
+set(DFILTER_NONGENERATED_FILES
 	dfilter.c
 	dfilter-macro.c
+	dfilter-macro-uat.c
+	dfilter-plugin.c
+	dfilter-translator.c
 	dfunctions.c
 	dfvm.c
 	drange.c
 	gencode.c
 	semcheck.c
+	sttype-field.c
 	sttype-function.c
-	sttype-integer.c
+	sttype-number.c
 	sttype-pointer.c
-	sttype-range.c
 	sttype-set.c
+	sttype-slice.c
 	sttype-string.c
-	sttype-test.c
+	sttype-op.c
 	syntax-tree.c
 )
-source_group(dfilter FILES ${DFILTER_FILES})
+source_group(dfilter FILES ${DFILTER_NONGENERATED_FILES})
 
-if(WERROR_COMMON_FLAGS)
-	set_source_files_properties(
-		${DFILTER_FILES}
-		PROPERTIES
-		COMPILE_FLAGS ${WERROR_COMMON_FLAGS}
-	)
-endif()
+set(DFILTER_FILES ${DFILTER_NONGENERATED_FILES})
 
-add_lex_files(LEX_FILES GENERATED_FILES
+add_lex_files(LEX_FILES DFILTER_FILES
 	scanner.l
 )
 
-add_lemon_files(LEMON_FILES GENERATED_FILES
+add_lemon_files(LEMON_FILES DFILTER_FILES
 	grammar.lemon
 )
 
+#
+# We don't enable -Werror on generated code to make the build a
+# little less fragile when configured warnings change.
+#
+set_source_files_properties(
+	${DFILTER_NONGENERATED_FILES}
+	PROPERTIES
+	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
+)
+
 add_library(dfilter OBJECT
+
+	#Included so that Visual Studio can properly put header files in solution
+	${DFILTER_HEADER_FILES}
+
 	${DFILTER_FILES}
-	${GENERATED_FILES}
+)
+
+target_include_directories(dfilter
+	PRIVATE
+		${CMAKE_CURRENT_BINARY_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${CMAKE_SOURCE_DIR}/epan
+		${CMAKE_SOURCE_DIR}/tools/lemon
 )
 
 set_target_properties(dfilter PROPERTIES
@@ -69,20 +98,22 @@ set_target_properties(dfilter PROPERTIES
 	COMPILE_DEFINITIONS "WS_BUILD_DLL"
 )
 
+install(FILES ${DFILTER_PUBLIC_HEADERS}
+	DESTINATION "${PROJECT_INSTALL_INCLUDEDIR}/epan/dfilter"
+	COMPONENT "Development"
+	EXCLUDE_FROM_ALL
+)
+
 CHECKAPI(
 	NAME
 	  dfilter
 	SWITCHES
-	  -g termoutput -build
 	SOURCES
-	  ${DFILTER_FILES}
-# LEX files commented out due to use of malloc, free etc.
-#	  ${LEX_FILES}
-	  ${LEMON_FILES}
+	  ${DFILTER_NONGENERATED_FILES}
 )
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8

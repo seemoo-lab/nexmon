@@ -1,5 +1,5 @@
 /* ngettext - retrieve plural form string from message catalog and print it.
-   Copyright (C) 1995-1997, 2000-2007, 2015-2016 Free Software Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,27 +12,31 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Ulrich Drepper and Bruno Haible.  */
 
-#include <getopt.h>
+#include <config.h>
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
+#include <ctype.h>
 #include <errno.h>
 
+#include <error.h>
+#include "options.h"
+#include "attribute.h"
+#include "noreturn.h"
 #include "closeout.h"
-#include "error.h"
 #include "progname.h"
 #include "relocatable.h"
-#include "basename.h"
+#include "basename-lgpl.h"
 #include "xalloc.h"
 #include "propername.h"
+#include "escapes.h"
 #include "gettext.h"
 
 #define _(str) gettext (str)
@@ -41,92 +45,91 @@
    message catalog.  */
 static int do_expand;
 
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "domain", required_argument, NULL, 'd' },
-  { "help", no_argument, NULL, 'h' },
-  { "version", no_argument, NULL, 'V' },
-  { NULL, 0, NULL, 0 }
-};
-
 /* Forward declaration of local functions.  */
-static void usage (int status)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-     __attribute__ ((noreturn))
-#endif
-;
-static const char *expand_escape (const char *str);
+_GL_NORETURN_FUNC static void usage (int status);
 
 int
 main (int argc, char *argv[])
 {
-  int optchar;
-  const char *msgid;
-  const char *msgid_plural;
-  const char *count;
-  unsigned long n;
+  /* Set program name for message texts.  */
+  set_program_name (argv[0]);
+
+  /* Set locale via LC_ALL.  */
+  setlocale (LC_ALL, "");
+
+  /* Set the text message domain.  */
+  bindtextdomain (PACKAGE, relocate (LOCALEDIR));
+  bindtextdomain ("gnulib", relocate (GNULIB_LOCALEDIR));
+  textdomain (PACKAGE);
+
+  /* Ensure that write errors on stdout are detected.  */
+  atexit (close_stdout);
 
   /* Default values for command line options.  */
   bool do_help = false;
   bool do_version = false;
   const char *domain = getenv ("TEXTDOMAIN");
   const char *domaindir = getenv ("TEXTDOMAINDIR");
+  const char *context = NULL;
   do_expand = false;
 
-  /* Set program name for message texts.  */
-  set_program_name (argv[0]);
-
-#ifdef HAVE_SETLOCALE
-  /* Set locale via LC_ALL.  */
-  setlocale (LC_ALL, "");
-#endif
-
-  /* Set the text message domain.  */
-  bindtextdomain (PACKAGE, relocate (LOCALEDIR));
-  textdomain (PACKAGE);
-
-  /* Ensure that write errors on stdout are detected.  */
-  atexit (close_stdout);
-
   /* Parse command line options.  */
-  while ((optchar = getopt_long (argc, argv, "+d:eEhV", long_options, NULL))
-         != EOF)
-    switch (optchar)
-    {
-    case '\0':          /* Long option.  */
-      break;
-    case 'd':
-      domain = optarg;
-      break;
-    case 'e':
-      do_expand = true;
-      break;
-    case 'E':
-      /* Ignore.  Just for compatibility.  */
-      break;
-    case 'h':
-      do_help = true;
-      break;
-    case 'V':
-      do_version = true;
-      break;
-    default:
-      usage (EXIT_FAILURE);
-    }
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "context", 'c', required_argument },
+    { "domain",  'd', required_argument },
+    { "help",    'h', no_argument       },
+    { "version", 'V', no_argument       },
+    { NULL,      'e', no_argument       },
+    { NULL,      'E', no_argument       },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  start_options (argc, argv, options, NON_OPTION_TERMINATES_OPTIONS, 0);
+  {
+    int optchar;
+    while ((optchar = get_next_option ()) != -1)
+      switch (optchar)
+        {
+        case '\0':          /* Long option with key == 0.  */
+          break;
+        case 'c':
+          context = optarg;
+          break;
+        case 'd':
+          domain = optarg;
+          break;
+        case 'e':
+          do_expand = true;
+          break;
+        case 'E':
+          /* Ignore.  Just for compatibility.  */
+          break;
+        case 'h':
+          do_help = true;
+          break;
+        case 'V':
+          do_version = true;
+          break;
+        default:
+          usage (EXIT_FAILURE);
+        }
+  }
 
   /* Version information is requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "1995-1997, 2000-2007");
-      printf (_("Written by %s.\n"), proper_name ("Ulrich Drepper"));
+              "1995-2026", "https://gnu.org/licenses/gpl.html");
+      printf (_("Written by %s and %s.\n"),
+              proper_name ("Ulrich Drepper"), proper_name ("Bruno Haible"));
       exit (EXIT_SUCCESS);
     }
 
@@ -142,7 +145,7 @@ There is NO WARRANTY, to the extent permitted by law.\n\
 
     case 4:
       domain = argv[optind++];
-      /* FALLTHROUGH */
+      FALLTHROUGH;
 
     case 3:
       break;
@@ -154,20 +157,22 @@ There is NO WARRANTY, to the extent permitted by law.\n\
     }
 
   /* Now the mandatory command line options.  */
-  msgid = argv[optind++];
-  msgid_plural = argv[optind++];
-  count = argv[optind++];
+  const char *msgid = argv[optind++];
+  const char *msgid_plural = argv[optind++];
+  const char *count = argv[optind++];
 
   if (optind != argc)
     abort ();
 
+  unsigned long n;
   {
     char *endp;
     unsigned long tmp_val;
 
-    errno = 0;
-    tmp_val = strtoul (count, &endp, 10);
-    if (errno == 0 && count[0] != '\0' && endp[0] == '\0')
+    if (isdigit ((unsigned char) count[0])
+        && (errno = 0,
+            tmp_val = strtoul (count, &endp, 10),
+            errno == 0 && endp[0] == '\0'))
       n = tmp_val;
     else
       /* When COUNT is not valid, use plural.  */
@@ -177,8 +182,8 @@ There is NO WARRANTY, to the extent permitted by law.\n\
   /* Expand escape sequences if enabled.  */
   if (do_expand)
     {
-      msgid = expand_escape (msgid);
-      msgid_plural = expand_escape (msgid_plural);
+      msgid = expand_escapes (msgid, NULL);
+      msgid_plural = expand_escapes (msgid_plural, NULL);
     }
 
   /* If no domain name is given we don't translate, and we use English
@@ -192,7 +197,10 @@ There is NO WARRANTY, to the extent permitted by law.\n\
         bindtextdomain (domain, domaindir);
 
       /* Write out the result.  */
-      fputs (dngettext (domain, msgid, msgid_plural, n), stdout);
+      fputs ((context != NULL
+              ? dnpgettext_expr (domain, context, msgid, msgid_plural, n)
+              : dngettext (domain, msgid, msgid_plural, n)),
+             stdout);
     }
 
   exit (EXIT_SUCCESS);
@@ -218,16 +226,30 @@ Usage: %s [OPTION] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n\
 Display native language translation of a textual message whose grammatical\n\
 form depends on a number.\n"));
       printf ("\n");
+      printf (_("\
+Options and arguments:\n"));
       /* xgettext: no-wrap */
       printf (_("\
-  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n\
-  -e                        enable expansion of some escape sequences\n\
-  -E                        (ignored for compatibility)\n\
-  -h, --help                display this help and exit\n\
-  -V, --version             display version information and exit\n\
-  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n\
-  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n\
+  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"));
+      printf (_("\
+  -c, --context=CONTEXT     specify context for MSGID\n"));
+      printf (_("\
+  -e                        enable expansion of some escape sequences\n"));
+      printf (_("\
+  -E                        (ignored for compatibility)\n"));
+      printf (_("\
+  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"));
+      printf (_("\
+  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"));
+      printf (_("\
   COUNT                     choose singular/plural form based on this value\n"));
+      printf ("\n");
+      printf (_("\
+Informative output:\n"));
+      printf (_("\
+  -h, --help                display this help and exit\n"));
+      printf (_("\
+  -V, --version             display version information and exit\n"));
       printf ("\n");
       /* xgettext: no-wrap */
       printf (_("\
@@ -236,113 +258,19 @@ environment variable TEXTDOMAIN.  If the message catalog is not found in the\n\
 regular directory, another location can be specified with the environment\n\
 variable TEXTDOMAINDIR.\n\
 Standard search directory: %s\n"),
-              getenv ("IN_HELP2MAN") == NULL ? LOCALEDIR : "@localedir@");
+              getenv ("IN_HELP2MAN") == NULL ? relocate (LOCALEDIR) : "@localedir@");
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"), stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+              "https://savannah.gnu.org/projects/gettext",
+              "bug-gettext@gnu.org");
     }
 
   exit (status);
-}
-
-
-/* Expand some escape sequences found in the argument string.  */
-static const char *
-expand_escape (const char *str)
-{
-  char *retval, *rp;
-  const char *cp = str;
-
-  for (;;)
-    {
-      while (cp[0] != '\0' && cp[0] != '\\')
-        ++cp;
-      if (cp[0] == '\0')
-        return str;
-      /* Found a backslash.  */
-      if (cp[1] == '\0')
-        return str;
-      if (strchr ("abcfnrtv\\01234567", cp[1]) != NULL)
-        break;
-      ++cp;
-    }
-
-  retval = XNMALLOC (strlen (str), char);
-
-  rp = retval + (cp - str);
-  memcpy (retval, str, cp - str);
-
-  do
-    {
-      /* Here cp[0] == '\\'.  */
-      switch (*++cp)
-        {
-        case 'a':               /* alert */
-          *rp++ = '\a';
-          ++cp;
-          break;
-        case 'b':               /* backspace */
-          *rp++ = '\b';
-          ++cp;
-          break;
-        case 'f':               /* form feed */
-          *rp++ = '\f';
-          ++cp;
-          break;
-        case 'n':               /* new line */
-          *rp++ = '\n';
-          ++cp;
-          break;
-        case 'r':               /* carriage return */
-          *rp++ = '\r';
-          ++cp;
-          break;
-        case 't':               /* horizontal tab */
-          *rp++ = '\t';
-          ++cp;
-          break;
-        case 'v':               /* vertical tab */
-          *rp++ = '\v';
-          ++cp;
-          break;
-        case '\\':
-          *rp = '\\';
-          ++cp;
-          break;
-        case '0': case '1': case '2': case '3':
-        case '4': case '5': case '6': case '7':
-          {
-            int ch = *cp++ - '0';
-
-            if (*cp >= '0' && *cp <= '7')
-              {
-                ch *= 8;
-                ch += *cp++ - '0';
-
-                if (*cp >= '0' && *cp <= '7')
-                  {
-                    ch *= 8;
-                    ch += *cp++ - '0';
-                  }
-              }
-            *rp = ch;
-          }
-          break;
-        default:
-          *rp = '\\';
-          break;
-        }
-
-      while (cp[0] != '\0' && cp[0] != '\\')
-        *rp++ = *cp++;
-    }
-  while (cp[0] != '\0');
-
-  /* Terminate string.  */
-  *rp = '\0';
-
-  return (const char *) retval;
 }

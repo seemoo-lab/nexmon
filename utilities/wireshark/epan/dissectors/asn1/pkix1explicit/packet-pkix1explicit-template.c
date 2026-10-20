@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,12 +16,16 @@
 #include <epan/asn1.h>
 #include <epan/oids.h>
 #include <epan/afn.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-pkix1explicit.h"
 #include "packet-x509af.h"
 #include "packet-x509if.h"
 #include "packet-x509ce.h"
+
+/* from packet-tls-utils.h */
+extern const value_string tls_hello_extension_types[];
 
 #define PNAME  "PKIX1Explicit"
 #define PSNAME "PKIX1EXPLICIT"
@@ -43,12 +35,12 @@ void proto_register_pkix1explicit(void);
 void proto_reg_handoff_pkix1explicit(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_pkix1explicit = -1;
-static int hf_pkix1explicit_object_identifier_id = -1;
-static int hf_pkix1explicit_addressFamily_afn = -1;
-static int hf_pkix1explicit_addressFamily_safi = -1;
+static int proto_pkix1explicit;
+static int hf_pkix1explicit_object_identifier_id;
+static int hf_pkix1explicit_addressFamily_afn;
+static int hf_pkix1explicit_addressFamily_safi;
 
-static int ett_pkix1explicit_addressFamily = -1;
+static int ett_pkix1explicit_addressFamily;
 
 #include "packet-pkix1explicit-hf.c"
 
@@ -56,38 +48,38 @@ static int ett_pkix1explicit_addressFamily = -1;
 #include "packet-pkix1explicit-ett.c"
 
 int
-dissect_pkix1explicit_Certificate(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+dissect_pkix1explicit_Certificate(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
   offset = dissect_x509af_Certificate(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
 }
 int
-dissect_pkix1explicit_CertificateList(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+dissect_pkix1explicit_CertificateList(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
   offset = dissect_x509af_CertificateList(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
 }
 int
-dissect_pkix1explicit_GeneralName(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+dissect_pkix1explicit_GeneralName(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
   offset = dissect_x509ce_GeneralName(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
 }
 int
-dissect_pkix1explicit_Name(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+dissect_pkix1explicit_Name(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
   offset = dissect_x509if_Name(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
 }
 int
-dissect_pkix1explicit_AlgorithmIdentifier(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+dissect_pkix1explicit_AlgorithmIdentifier(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
   offset = dissect_x509af_AlgorithmIdentifier(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
 }
 
 int
-dissect_pkix1explicit_SubjectPublicKeyInfo(gboolean implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+dissect_pkix1explicit_SubjectPublicKeyInfo(bool implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
   offset = dissect_x509af_SubjectPublicKeyInfo(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -103,7 +95,7 @@ void proto_register_pkix1explicit(void) {
   /* List of fields */
   static hf_register_info hf[] = {
     { &hf_pkix1explicit_object_identifier_id,
-      { "Id", "pkix1explicit.id", FT_STRING, BASE_NONE, NULL, 0,
+      { "Object Id", "pkix1explicit.oid", FT_OID, BASE_NONE, NULL, 0,
 	"Object identifier Id", HFILL }},
 
     { &hf_pkix1explicit_addressFamily_afn,
@@ -117,7 +109,7 @@ void proto_register_pkix1explicit(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 	  &ett_pkix1explicit_addressFamily,
 #include "packet-pkix1explicit-ettarr.c"
   };
@@ -138,4 +130,3 @@ void proto_reg_handoff_pkix1explicit(void) {
 	oid_add_from_string("id-dsa-with-sha1","1.2.840.10040.4.3");
 #include "packet-pkix1explicit-dis-tab.c"
 }
-

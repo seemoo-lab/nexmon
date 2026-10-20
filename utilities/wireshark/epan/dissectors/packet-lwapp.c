@@ -9,81 +9,83 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/proto_data.h>
+#include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_lwapp(void);
 void proto_reg_handoff_lwapp(void);
+
+static dissector_handle_t lwapp_l3_handle;
+static dissector_handle_t lwapp_handle;
+
+#define LWAPP_8023_PORT     12220 /* Not IANA registered */
+#define LWAPP_UDP_PORT_RANGE  "12222-12223" /* Not IANA registered */
 
 #define LWAPP_FLAGS_T 0x04
 #define LWAPP_FLAGS_F 0x02
 #define LWAPP_FLAGS_FT 0x01
 
-static gint proto_lwapp = -1;
-static gint proto_lwapp_l3 = -1;
-static gint proto_lwapp_control = -1;
-static gint ett_lwapp = -1;
-static gint ett_lwapp_l3 = -1;
-static gint ett_lwapp_flags = -1;
-static gint ett_lwapp_control = -1;
+static int proto_lwapp;
+static int proto_lwapp_l3;
+static int proto_lwapp_control;
+static int ett_lwapp;
+static int ett_lwapp_l3;
+static int ett_lwapp_flags;
+static int ett_lwapp_control;
 
-static gint hf_lwapp_version = -1;
-static gint hf_lwapp_slotid = -1;
-static gint hf_lwapp_flags = -1;
-static gint hf_lwapp_flags_type = -1;
-static gint hf_lwapp_flags_fragment = -1;
-static gint hf_lwapp_flags_fragment_type = -1;
-static gint hf_lwapp_fragment_id = -1;
-static gint hf_lwapp_length = -1;
-static gint hf_lwapp_rssi = -1;
-static gint hf_lwapp_snr = -1;
-/* static gint hf_lwapp_control = -1; */
-static gint hf_lwapp_control_mac = -1;
-static gint hf_lwapp_control_type = -1;
-static gint hf_lwapp_control_seq_no = -1;
-static gint hf_lwapp_control_length = -1;
+static int hf_lwapp_version;
+static int hf_lwapp_slotid;
+static int hf_lwapp_flags;
+static int hf_lwapp_flags_type;
+static int hf_lwapp_flags_fragment;
+static int hf_lwapp_flags_fragment_type;
+static int hf_lwapp_fragment_id;
+static int hf_lwapp_length;
+static int hf_lwapp_rssi;
+static int hf_lwapp_snr;
+/* static int hf_lwapp_control; */
+static int hf_lwapp_control_mac;
+static int hf_lwapp_control_type;
+static int hf_lwapp_control_seq_no;
+static int hf_lwapp_control_length;
+
+#define LWAPP_MAX_NESTED_ENCAP 10
+
+static expert_field ei_lwapp_too_many_encap;
 
 static dissector_handle_t eth_withoutfcs_handle;
 static dissector_handle_t wlan_handle;
 static dissector_handle_t wlan_bsfc_handle;
 
 /* Set by preferences */
-static gboolean swap_frame_control;
+static bool swap_frame_control;
 
 typedef struct {
-    guint8  flags;
-    guint8  fragmentId;
-    guint16 length;
-    guint8  rssi;
-    guint8  snr;
+    uint8_t flags;
+    uint8_t fragmentId;
+    uint16_t length;
+    uint8_t rssi;
+    uint8_t snr;
 } LWAPP_Header;
 
 typedef struct {
-    guint8   tag;
-    guint16  length;
+    uint8_t  tag;
+    uint16_t length;
 } CNTL_Data_Header;
 
 typedef struct {
-    guint8  type;
-    guint8  seqNo;
-    guint16 length;
+    uint8_t type;
+    uint8_t seqNo;
+    uint16_t length;
 } CNTL_Header;
 
 #if 0
@@ -259,7 +261,7 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo,
 
     /* Set up structures needed to add the protocol subtree and manage it */
     proto_item      *ti;
-    gint             offset=0;
+    int              offset=0;
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "LWAPP");
@@ -267,7 +269,7 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo,
                     "CNTL ");
 
     /* Copy our header */
-    tvb_memcpy(tvb, (guint8*) &header, offset, sizeof(header));
+    tvb_memcpy(tvb, (uint8_t*) &header, offset, sizeof(header));
 
     /*
      * Fix the length (network byte ordering), and set our version &
@@ -276,7 +278,7 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo,
     header.length = g_ntohs(header.length);
 
     col_append_str(pinfo->cinfo, COL_INFO,
-        val_to_str_ext(header.type, &control_msg_vals_ext, "Bad Type: 0x%02x"));
+        val_to_str_ext(pinfo->pool, header.type, &control_msg_vals_ext, "Bad Type: 0x%02x"));
 
     /* In the interest of speed, if "tree" is NULL, don't do any work not
        necessary to generate protocol tree items. */
@@ -317,7 +319,7 @@ dissect_lwapp_l3(tvbuff_t *tvb, packet_info *pinfo,
     /* Set up structures needed to add the protocol subtree and manage it */
     proto_item *ti;
     proto_tree *lwapp_tree;
-    gint        offset = 0;
+    int         offset = 0;
     tvbuff_t   *next_client;
 
     /* Make entries in Protocol column and Info column on summary display */
@@ -348,22 +350,23 @@ dissect_lwapp(tvbuff_t *tvb, packet_info *pinfo,
                         proto_tree *tree, void* data _U_)
 {
     LWAPP_Header header;
-    guint8       slotId;
-    guint8       version;
+    uint8_t      slotId;
+    uint8_t      version;
     proto_tree  *lwapp_tree;
     tvbuff_t    *next_client;
-    guint8       dest_mac[6];
-    guint8       have_destmac=0;
-    static const int * flags[] = {
+    uint8_t      dest_mac[6];
+    uint8_t      have_destmac=0;
+    static int * const flags[] = {
         &hf_lwapp_flags_type,
         &hf_lwapp_flags_fragment,
         &hf_lwapp_flags_fragment_type,
         NULL
     };
+    unsigned encap_nested_count;
 
     /* Set up structures needed to add the protocol subtree and manage it */
     proto_item      *ti;
-    gint             offset=0;
+    int              offset=0;
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "LWAPP");
@@ -377,11 +380,11 @@ dissect_lwapp(tvbuff_t *tvb, packet_info *pinfo,
         have_destmac = 1;
 
         /* Copy our header */
-        tvb_memcpy(tvb, (guint8*) &header, offset + 6, sizeof(header));
+        tvb_memcpy(tvb, (uint8_t*) &header, offset + 6, sizeof(header));
     } else {
 
         /* Copy our header */
-        tvb_memcpy(tvb, (guint8*) &header, offset, sizeof(header));
+        tvb_memcpy(tvb, (uint8_t*) &header, offset, sizeof(header));
     }
 
 
@@ -400,12 +403,19 @@ dissect_lwapp(tvbuff_t *tvb, packet_info *pinfo,
         col_append_str(pinfo->cinfo, COL_INFO,
                         " 802.11 Packet");
 
+    /* create display subtree for the protocol */
+    ti = proto_tree_add_item(tree, proto_lwapp, tvb, offset, -1, ENC_NA);
+    encap_nested_count = GPOINTER_TO_UINT(p_get_proto_data(pinfo->pool, pinfo, proto_lwapp, 0));
+    if (++encap_nested_count > LWAPP_MAX_NESTED_ENCAP) {
+        expert_add_info(pinfo, ti, &ei_lwapp_too_many_encap);
+        return tvb_captured_length(tvb);
+    }
+    p_add_proto_data(pinfo->pool, pinfo, proto_lwapp, 0, GUINT_TO_POINTER(encap_nested_count));
+
     /* In the interest of speed, if "tree" is NULL, don't do any work not
        necessary to generate protocol tree items. */
     if (tree) {
 
-        /* create display subtree for the protocol */
-        ti = proto_tree_add_item(tree, proto_lwapp, tvb, offset, -1, ENC_NA);
         lwapp_tree = proto_item_add_subtree(ti, ett_lwapp);
 
         if (have_destmac) {
@@ -506,51 +516,50 @@ proto_register_lwapp(void)
           { "Control Length","lwapp.control.length", FT_UINT16, BASE_DEC,
             NULL, 0x0, NULL, HFILL }},
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_lwapp_l3,
         &ett_lwapp,
         &ett_lwapp_control,
         &ett_lwapp_flags
     };
+    static ei_register_info ei[] = {
+        { &ei_lwapp_too_many_encap, { "lwapp.too_many_encap", PI_UNDECODED, PI_WARN, "Too many LWAPP encapsulation levels", EXPFILL }}
+    };
     module_t *lwapp_module;
+    expert_module_t* expert_lwapp;
 
-    proto_lwapp = proto_register_protocol ("LWAPP Encapsulated Packet",
-                                         "LWAPP", "lwapp");
+    proto_lwapp = proto_register_protocol ("LWAPP Encapsulated Packet", "LWAPP", "lwapp");
 
-    proto_lwapp_l3 = proto_register_protocol ("LWAPP Layer 3 Packet",
-                                         "LWAPP-L3", "lwapp-l3");
+    proto_lwapp_l3 = proto_register_protocol_in_name_only ("LWAPP Layer 3 Packet", "LWAPP-L3", "lwapp-l3", proto_lwapp, FT_PROTOCOL);
 
-    proto_lwapp_control = proto_register_protocol ("LWAPP Control Message",
-                                         "LWAPP-CNTL", "lwapp-cntl");
+    proto_lwapp_control = proto_register_protocol_in_name_only ("LWAPP Control Message", "LWAPP-CNTL", "lwapp-cntl", proto_lwapp, FT_PROTOCOL);
     proto_register_field_array(proto_lwapp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    expert_lwapp = expert_register_protocol(proto_lwapp);
+    expert_register_field_array(expert_lwapp, ei, array_length(ei));
 
     lwapp_module = prefs_register_protocol(proto_lwapp, NULL);
 
     prefs_register_bool_preference(lwapp_module,"swap_fc","Swap Frame Control",
-                                   "Swap frame control bytes (needed for some APs",
+                                   "Swap frame control bytes (needed for some APs).",
                                    &swap_frame_control);
 
+    /* This dissector assumes lwapp packets in an 802.3 frame */
+    lwapp_l3_handle = register_dissector("lwapp-l3", dissect_lwapp_l3, proto_lwapp_l3);
+
+    /* This dissector assumes a lwapp packet */
+    lwapp_handle = register_dissector("lwapp", dissect_lwapp, proto_lwapp);
 }
 
 void
 proto_reg_handoff_lwapp(void)
 {
-    dissector_handle_t lwapp_l3_handle;
-    dissector_handle_t lwapp_handle;
-
     /*
      * Get handles for the Ethernet and wireless dissectors.
      */
     eth_withoutfcs_handle = find_dissector_add_dependency("eth_withoutfcs", proto_lwapp);
     wlan_handle = find_dissector_add_dependency("wlan_withoutfcs", proto_lwapp);
     wlan_bsfc_handle = find_dissector_add_dependency("wlan_bsfc", proto_lwapp);
-
-    /* This dissector assumes lwapp packets in an 802.3 frame */
-    lwapp_l3_handle = create_dissector_handle(dissect_lwapp_l3, proto_lwapp_l3);
-
-    /* This dissector assumes a lwapp packet */
-    lwapp_handle = create_dissector_handle(dissect_lwapp, proto_lwapp);
 
     /*
      * Ok, the following deserves some comments.  We have four
@@ -573,12 +582,10 @@ proto_reg_handoff_lwapp(void)
      */
 
     /* Obsoleted LWAPP via encapsulated 802.3 over UDP */
-
-    dissector_add_uint("udp.port", 12220, lwapp_l3_handle);
+    dissector_add_uint_with_preference("udp.port", LWAPP_8023_PORT, lwapp_l3_handle);
 
     /* new-style lwapp directly over UDP: L3-lwapp*/
-    dissector_add_uint("udp.port", 12222, lwapp_handle);
-    dissector_add_uint("udp.port", 12223, lwapp_handle);
+    dissector_add_uint_range_with_preference("udp.port", LWAPP_UDP_PORT_RANGE, lwapp_handle);
 
     /* Lwapp over L2 */
     dissector_add_uint("ethertype", 0x88bb, lwapp_handle);
@@ -587,7 +594,7 @@ proto_reg_handoff_lwapp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

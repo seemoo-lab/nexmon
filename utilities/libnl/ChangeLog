@@ -1,5 +1,5 @@
 ChangeLog discontinued, git history can be found here:
-http://git.kernel.org/?p=libs/netlink/libnl.git
+https://github.com/thom311/libnl
 
 Summary of Changes from 1.0-pre6 to 1.0-pre7
 ================================================
@@ -42,7 +42,7 @@ Summary of Changes from 1.0-pre6 to 1.0-pre7
 	    NL_SKIP
 	  o Fixed nl_recvmsgs() to stop reading after parsing if not in the
 	    middle of a multipart message.
-	  o Fixed nl_recvmsgs() to not stop after receving an ACK
+	  o Fixed nl_recvmsgs() to not stop after receiving an ACK
 	  o Fixed nl_recvmsgs() to not blindly discard remaining messages
 	    if a NLMSG_DONE message is received.
 	
@@ -205,7 +205,7 @@ Summary of Changes from 1.0-pre1 to 1.0-pre2
 	  o Removed non-reentrant translation routines, only bloating
 	    the code and too risky.
 	  o Fixed wrong version number from 1.0-pre1.
-	  o Reenabled unfinished policer module.
+	  o Re-enabled unfinished policer module.
 	  o Reworked TBF module, automatic caluclation of transmit times,
 	    limit setable via latency, automatic cell size calculation,
 	    options TLV generation. (untested)
@@ -219,7 +219,7 @@ Summary of Changes from 1.0-pre1 to 1.0-pre2
 	  o Add empty install target to src/Makefile
 
 	Simon Stelling <blubb@gentoo.org>
-	  o Use LIBDIR instead of $(prefix)/lib for users to alllow librariers
+	  o Use LIBDIR instead of $(prefix)/lib for users to allow librariers
 	    into $(prefix)/lib64.
 
 Summary of Changes from 0.5.0 to 1.0-pre1
@@ -231,7 +231,7 @@ Summary of Changes from 0.5.0 to 1.0-pre1
 	Petr Gotthard <petr.gotthard@siemens.com>,
 	Siemens AG Oesterreich
 	  o added class_build, rtnl_class_build_add_request, rtnl_class_add
-	  o added HTB (Hierachical Token Bucket) class support
+	  o added HTB (Hierarchical Token Bucket) class support
 	  o added nl_xmittime, nl_build_rtable
 	  o added nl_data_append to realloc a nl_data structure
 	  o added rtnl_rcopy_ratespec as reverse to rtnl_copy_ratespec
@@ -248,9 +248,9 @@ Summary of Changes from 0.4.4 to 0.5.0
 	  o nl_cache_filter to manually filter on a object
 	  o partial routing support
 	  o routing rules support
-	  o Propely set address family when setting addresses
+	  o Properly set address family when setting addresses
 	  o debug flag and some rare messages, more to come
-	  o make error mesage verboseness configureable
+	  o make error message verboseness configurable
 	  o tc fixes to wait for ack
 	  o cleanup and adaption of address code to latest internal API
 	  o various cleanups

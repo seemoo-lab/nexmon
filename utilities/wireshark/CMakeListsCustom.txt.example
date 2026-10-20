@@ -4,31 +4,39 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Add a list of your custom plugins SRC dir here including the path
 #
 
+# Fail CMake stage if any of these plugins are missing from source tree
 set(CUSTOM_PLUGIN_SRC_DIR
 #	private_plugins/foo
 # or
-#	plugins/foo
+#	plugins/epan/foo
 )
 
+# Do not fail CMake stage if any of the optional plugins are missing from source tree
+set(_OPTIONAL_CUSTOM_PLUGIN_SRC_DIR
+#	plugins/epan/bar
+)
+
+# Add your custom TShark taps here
+set(CUSTOM_TSHARK_TAP_SRC
+#	ui/cli/tap-baz.c
+)
+
+# This loop handles supporting optional plugins
+foreach(  _plugin_dir ${_OPTIONAL_CUSTOM_PLUGIN_SRC_DIR} )
+	if( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${_plugin_dir}/CMakeLists.txt )
+		list( APPEND CUSTOM_PLUGIN_SRC_DIR ${_plugin_dir} )
+	else()
+		message( WARNING "Custom plugins: No ${_plugin_dir}/CMakeLists.txt file found - ignoring" )
+	endif()
+endforeach()
+
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8

@@ -9,23 +9,15 @@
  * Added support for Connection Configuration Object
  *   ryan wamsley * Copyright 2007
  *
+ * Added support for PCCC Objects
+ *   Jared Rittle - Cisco Talos
+ *   Copyright 2017
+ *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_CIP_H
@@ -59,18 +51,27 @@
 #define CIP_SC_RESPONSE_MASK     0x80
 
 /* Classes that have class-specific dissectors */
-#define CI_CLS_MR   0x02    /* Message Router */
-#define CI_CLS_CM   0x06    /* Connection Manager */
-#define CI_CLS_MB   0x44    /* Modbus Object */
-#define CI_CLS_CCO  0xF3    /* Connection Configuration Object */
+#define CI_CLS_MR     0x02  /* Message Router */
+#define CI_CLS_CM     0x06  /* Connection Manager */
+#define CI_CLS_PCCC   0x67  /* PCCC Class */
+#define CI_CLS_MOTION 0x42  /* Motion Device Axis Object */
+#define CI_CLS_MB     0x44  /* Modbus Object */
+#define CI_CLS_CCO    0xF3  /* Connection Configuration Object */
 
 /* Class specific services */
 /* Connection Manager */
 #define SC_CM_FWD_CLOSE             0x4E
 #define SC_CM_UNCON_SEND            0x52
 #define SC_CM_FWD_OPEN              0x54
+#define SC_CM_GET_CONN_DATA         0x56
+#define SC_CM_SEARCH_CONN_DATA      0x57
 #define SC_CM_LARGE_FWD_OPEN        0x5B
 #define SC_CM_GET_CONN_OWNER        0x5A
+#define SC_CM_CONCURRENT_FWD_OPEN   0x5C
+#define SC_CM_CONCURRENT_FWD_CLOSE  0x5E
+
+/* PCCC Class */
+#define SC_PCCC_EXECUTE_PCCC        0x4B
 
 /* Modbus Object services */
 #define SC_MB_READ_DISCRETE_INPUTS    0x4B
@@ -141,6 +142,173 @@
 #define CI_GRC_STILL_PROCESSING     0xFF
 
 
+/* PCCC Status Codes */
+#define PCCC_GS_SUCCESS                    0x00
+#define PCCC_GS_ILLEGAL_CMD                0x10
+#define PCCC_GS_HOST_COMMS                 0x20
+#define PCCC_GS_MISSING_REMOTE_NODE        0x30
+#define PCCC_GS_HARDWARE_FAULT             0x40
+#define PCCC_GS_ADDRESSING_ERROR           0x50
+#define PCCC_GS_CMD_PROTECTION             0x60
+#define PCCC_GS_PROGRAM_MODE               0x70
+#define PCCC_GS_MISSING_COMPATIBILITY_FILE 0x80
+#define PCCC_GS_BUFFER_FULL_1              0x90
+#define PCCC_GS_WAIT_ACK                   0xA0
+#define PCCC_GS_REMOTE_DOWNLOAD_ERROR      0xB0
+#define PCCC_GS_BUFFER_FULL_2              0xC0
+#define PCCC_GS_NOT_USED_1                 0xD0
+#define PCCC_GS_NOT_USED_2                 0xE0
+#define PCCC_GS_USE_EXTSTS                 0xF0
+
+/* PCCC Extended Status Codes */
+#define PCCC_ES_ILLEGAL_VALUE         0x01
+#define PCCC_ES_SHORT_ADDRESS         0x02
+#define PCCC_ES_LONG_ADDRESS          0x03
+#define PCCC_ES_NOT_FOUND             0x04
+#define PCCC_ES_BAD_FORMAT            0x05
+#define PCCC_ES_BAD_POINTER           0x06
+#define PCCC_ES_BAD_SIZE              0x07
+#define PCCC_ES_SITUATION_CHANGED     0x08
+#define PCCC_ES_DATA_TOO_LARGE        0x09
+#define PCCC_ES_TRANS_TOO_LARGE       0x0A
+#define PCCC_ES_ACCESS_DENIED         0x0B
+#define PCCC_ES_NOT_AVAILABLE         0x0C
+#define PCCC_ES_ALREADY_EXISTS        0x0D
+#define PCCC_ES_NO_EXECUTION          0x0E
+#define PCCC_ES_HIST_OVERFLOW         0x0F
+#define PCCC_ES_NO_ACCESS             0x10
+#define PCCC_ES_ILLEGAL_DATA_TYPE     0x11
+#define PCCC_ES_INVALID_DATA          0x12
+#define PCCC_ES_BAD_REFERENCE         0x13
+#define PCCC_ES_EXECUTION_FAILURE     0x14
+#define PCCC_ES_CONVERSION_ERROR      0x15
+#define PCCC_ES_NO_COMMS              0x16
+#define PCCC_ES_TYPE_MISMATCH         0x17
+#define PCCC_ES_BAD_RESPONSE          0x18
+#define PCCC_ES_DUP_LABEL             0x19
+#define PCCC_ES_FILE_ALREADY_OPEN     0x1A
+#define PCCC_ES_PROGRAM_ALREADY_OWNED 0x1B
+#define PCCC_ES_RESERVED_1            0x1C
+#define PCCC_ES_RESERVED_2            0x1D
+#define PCCC_ES_PROTECTION_VIOLATION  0x1E
+#define PCCC_ES_TMP_INTERNAL_ERROR    0x1F
+#define PCCC_ES_RACK_FAULT            0x22
+#define PCCC_ES_TIMEOUT               0x23
+#define PCCC_ES_UNKNOWN               0x24
+
+/* PCCC Command Codes */
+#define PCCC_CMD_00 0x00
+#define PCCC_CMD_01 0x01
+#define PCCC_CMD_02 0x02
+#define PCCC_CMD_04 0x04
+#define PCCC_CMD_05 0x05
+#define PCCC_CMD_06 0x06
+#define PCCC_CMD_07 0x07
+#define PCCC_CMD_08 0x08
+#define PCCC_CMD_0F 0x0F
+
+/* PCCC Function Codes */
+#define PCCC_FNC_06_00 0x00
+#define PCCC_FNC_06_01 0x01
+#define PCCC_FNC_06_02 0x02
+#define PCCC_FNC_06_03 0x03
+#define PCCC_FNC_06_04 0x04
+#define PCCC_FNC_06_05 0x05
+#define PCCC_FNC_06_06 0x06
+#define PCCC_FNC_06_07 0x07
+#define PCCC_FNC_06_08 0x08
+#define PCCC_FNC_06_09 0x09
+#define PCCC_FNC_06_0A 0x0A
+
+#define PCCC_FNC_07_00 0x00
+#define PCCC_FNC_07_01 0x01
+#define PCCC_FNC_07_03 0x03
+#define PCCC_FNC_07_04 0x04
+#define PCCC_FNC_07_05 0x05
+#define PCCC_FNC_07_06 0x06
+
+#define PCCC_FNC_0F_00 0x00
+#define PCCC_FNC_0F_01 0x01
+#define PCCC_FNC_0F_02 0x02
+#define PCCC_FNC_0F_03 0x03
+#define PCCC_FNC_0F_04 0x04
+#define PCCC_FNC_0F_05 0x05
+#define PCCC_FNC_0F_06 0x06
+#define PCCC_FNC_0F_07 0x07
+#define PCCC_FNC_0F_08 0x08
+#define PCCC_FNC_0F_09 0x09
+#define PCCC_FNC_0F_0A 0x0A
+#define PCCC_FNC_0F_11 0x11
+#define PCCC_FNC_0F_12 0x12
+#define PCCC_FNC_0F_17 0x17
+#define PCCC_FNC_0F_18 0x18
+#define PCCC_FNC_0F_26 0x26
+#define PCCC_FNC_0F_29 0x29
+#define PCCC_FNC_0F_3A 0x3A
+#define PCCC_FNC_0F_41 0x41
+#define PCCC_FNC_0F_50 0x50
+#define PCCC_FNC_0F_52 0x52
+#define PCCC_FNC_0F_53 0x53
+#define PCCC_FNC_0F_55 0x55
+#define PCCC_FNC_0F_57 0x57
+#define PCCC_FNC_0F_5E 0x5E
+#define PCCC_FNC_0F_67 0x67
+#define PCCC_FNC_0F_68 0x68
+#define PCCC_FNC_0F_79 0x79
+#define PCCC_FNC_0F_80 0x80
+#define PCCC_FNC_0F_81 0x81
+#define PCCC_FNC_0F_82 0x82
+#define PCCC_FNC_0F_88 0x88
+#define PCCC_FNC_0F_8F 0x8F
+#define PCCC_FNC_0F_A1 0xA1
+#define PCCC_FNC_0F_A2 0xA2
+#define PCCC_FNC_0F_A3 0xA3
+#define PCCC_FNC_0F_A7 0xA7
+#define PCCC_FNC_0F_A9 0xA9
+#define PCCC_FNC_0F_AA 0xAA
+#define PCCC_FNC_0F_AB 0xAB
+#define PCCC_FNC_0F_AF 0xAF
+
+/* PCCC File Types */
+#define PCCC_FILE_TYPE_LOGIC            0x22
+#define PCCC_FILE_TYPE_FUNCTION_CS0_CS2 0x48
+#define PCCC_FILE_TYPE_CHANNEL_CONFIG   0x49
+#define PCCC_FILE_TYPE_FUNCTION_ES1     0x4A
+#define PCCC_FILE_TYPE_ONLINE_EDIT      0x65
+#define PCCC_FILE_TYPE_FUNCTION_IOS     0x6A
+#define PCCC_FILE_TYPE_DATA_OUTPUT      0x82
+#define PCCC_FILE_TYPE_DATA_INPUT       0x83
+#define PCCC_FILE_TYPE_DATA_STATUS      0x84
+#define PCCC_FILE_TYPE_DATA_BINARY      0x85
+#define PCCC_FILE_TYPE_DATA_TIMER       0x86
+#define PCCC_FILE_TYPE_DATA_COUNTER     0x87
+#define PCCC_FILE_TYPE_DATA_CONTROL     0x88
+#define PCCC_FILE_TYPE_DATA_INTEGER     0x89
+#define PCCC_FILE_TYPE_DATA_FLOAT       0x8A
+#define PCCC_FILE_TYPE_FORCE_OUTPUT     0xA1
+#define PCCC_FILE_TYPE_FORCE_INPUT      0xA2
+#define PCCC_FILE_TYPE_FUNCTION_ES0     0xE0
+#define PCCC_FILE_TYPE_FUNCTION_STI     0xE2
+#define PCCC_FILE_TYPE_FUNCTION_EII     0xE3
+#define PCCC_FILE_TYPE_FUNCTION_RTC     0xE4
+#define PCCC_FILE_TYPE_FUNCTION_BHI     0xE5
+#define PCCC_FILE_TYPE_FUNCTION_MMI     0xE6
+#define PCCC_FILE_TYPE_FUNCTION_LCD     0xEC
+#define PCCC_FILE_TYPE_FUNCTION_PTOX    0xED
+#define PCCC_FILE_TYPE_FUNCTION_PWMX    0xEE
+
+/* PCCC CPU Mode Codes */
+#define PCCC_CPU_3A_PROGRAM     0x01
+#define PCCC_CPU_3A_RUN         0x02
+
+#define PCCC_CPU_80_PROGRAM     0x01
+#define PCCC_CPU_80_RUN         0x06
+#define PCCC_CPU_80_TEST_CONT   0x07
+#define PCCC_CPU_80_TEST_SINGLE 0x08
+#define PCCC_CPU_80_TEST_DEBUG  0x09
+
+
+
 /* IOI Path types */
 #define CI_SEGMENT_TYPE_MASK        0xE0
 
@@ -171,6 +339,7 @@
 #define CI_LOGICAL_SEG_E_KEY        0x00
 
 #define CI_E_KEY_FORMAT_VAL         0x04
+#define CI_E_SERIAL_NUMBER_KEY_FORMAT_VAL 0x05
 
 #define CI_DATA_SEG_TYPE_MASK       0x1F
 #define CI_DATA_SEG_SIMPLE          0x00
@@ -183,6 +352,8 @@
 #define CI_NETWORK_SEG_SAFETY       0x10
 #define CI_NETWORK_SEG_PROD_INHI_US 0x11
 #define CI_NETWORK_SEG_EXTENDED     0x1F
+
+#define CI_CONCURRENT_EXTENDED_NETWORK_SEG 0x02
 
 #define CI_SYMBOL_SEG_FORMAT_MASK   0xE0
 #define CI_SYMBOL_SEG_SIZE_MASK     0x1F
@@ -204,6 +375,8 @@
 #define CONN_TYPE_RESERVED          3
 
 #define ENIP_CIP_INTERFACE          0
+
+#define CC_CRC_LENGTH               4
 
 /* Define common services */
 #define GENERIC_SC_LIST \
@@ -230,11 +403,27 @@
    { SC_REMOVE_MEMBER,        "Remove Member" }, \
    { SC_GROUP_SYNC,           "Group Sync" }, \
 
+#define SEGMENT_VALUE_NOT_SET ((uint32_t)-1)
 typedef struct cip_simple_request_info {
-   guint32 iClass;
-   guint32 iInstance;
-   guint32 iAttribute;
-   guint32 iMember;
+   // First Class ID
+   uint32_t iClassA;
+   // Last Class ID
+   uint32_t iClass;
+
+   // First Instance ID
+   uint32_t iInstanceA;
+   // Last Instance ID
+   uint32_t iInstance;
+
+   uint32_t iAttribute;
+   uint32_t iMember;
+
+   // First Connection Point
+   uint32_t iConnPointA;
+   // Last Connection Point. The 2nd (last) Connection Point defines the Motion I/O Format.
+   uint32_t iConnPoint;
+
+   bool hasSimpleData;
 } cip_simple_request_info_t;
 
 enum cip_datatype {
@@ -251,15 +440,18 @@ enum cip_datatype {
    cip_ulint,
    cip_real,
    cip_lreal,
+   cip_stime,
+   cip_utime,
    cip_itime,
    cip_time,
    cip_ftime,
    cip_ltime,
+   cip_ntime,
    cip_short_string,
    cip_string,
    cip_string2,
+   cip_stringi,
    cip_byte,
-   cip_byte_array,
    cip_word,
    cip_dword,
    cip_lword,
@@ -270,55 +462,134 @@ enum cip_datatype {
 
    /* Currently not supported */
    cip_stringN,
-   cip_stringi
 };
 
 typedef int attribute_dissector_func(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
                              int offset, int total_len);
 
+#define CIP_ATTR_CLASS (true)
+#define CIP_ATTR_INSTANCE (false)
 typedef struct attribute_info {
-   guint                     class_id;
-   gboolean                  class_instance;
-   guint                     attribute;
-   int                       gaa_index; /* Index of attribute in GetAttributeAll response (< 0 means not in GetAttrbuteAll */
+   unsigned                  class_id;
+   bool                      class_instance;
+   unsigned                  attribute;
+   int                       gaa_index; /* Index of attribute in GetAttributeAll response (< 0 means not in GetAttributeAll */
    const char               *text;
    enum cip_datatype         datatype;
    int*                      phf;
    attribute_dissector_func *pdissect;
 } attribute_info_t;
 
+// offset - starts at command specific data.
+// returns - size of data that was parsed.
+typedef int service_dissector_func(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
+   int offset, bool request);
+typedef struct cip_service_info {
+   uint32_t                class_id;
+   uint8_t                 service_id;
+   const char             *service_name;
+   service_dissector_func *pdissect;
+} cip_service_info_t;
+
+// This describes a one-way connection. Each CIP Connection includes 2 of these.
+#define CIP_CONNECTION_SIZE_TYPE_FIXED (0)
 typedef struct cip_connID_info {
-   guint32 connID;
+   // Connection ID from Forward Open Request. This may get updated in the Forward Open Response.
+   uint32_t connID;
+
+   // From Common Packet Format, Sockaddr Info Item.
    address ipaddress;
-   guint16 port;
-   guint8  type;
+   uint16_t port;
+
+   // Network Connection Parameters
+   uint32_t type;  // See: cip_con_type_vals
+   uint32_t connection_size;
+   uint32_t connection_size_type;  // 0 = Fixed, 1 = Variable
+
+   // Requested Packet Interval in microseconds.
+   uint32_t rpi;
+
+   // Actual Packet Interval in microseconds.
+   uint32_t api;
+
+   // These are used to track the previous timestamps for each direction. These are only used during a first pass calculation.
+   nstime_t timestamp;
 } cip_connID_info_t;
 
 enum cip_safety_format_type {CIP_SAFETY_BASE_FORMAT, CIP_SAFETY_EXTENDED_FORMAT};
+enum cip_safety_open_type {CIP_SAFETY_OPEN_UNKNOWN, CIP_SAFETY_OPEN_TYPE1, CIP_SAFETY_OPEN_TYPE2A, CIP_SAFETY_OPEN_TYPE2B};
+enum cip_safety_originator_type {CIP_SAFETY_ORIGINATOR_UNKNOWN, CIP_SAFETY_ORIGINATOR_CONSUMER, CIP_SAFETY_ORIGINATOR_PRODUCER};
+
+typedef struct cip_connection_triad {
+   uint16_t ConnSerialNumber;
+   uint16_t VendorID;
+   uint32_t DeviceSerialNumber;
+} cip_connection_triad_t;
 
 typedef struct cip_safety_epath_info {
-   gboolean safety_seg;
+   bool safety_seg;
+
    enum cip_safety_format_type format;
+   enum cip_safety_open_type safety_open_type;
+
+   enum cip_safety_originator_type originator_type;
+
+   // These 3x variables are only used during a first pass calculation.
+   uint16_t running_rollover_value;   /* Keep track of the rollover value over the course of the connection */
+   uint16_t running_timestamp_value;  /* Keep track of the timestamp value over the course of the connection */
+   bool seen_non_zero_timestamp; /* True if we have seen a non-zero timestamp on this connection */
+
+   // The Target CIP Connection Triad from the Forward Open Response, Safety Application Reply Data.
+   cip_connection_triad_t target_triad;
+
+   // Network Time Expectation, in milliseconds.
+   float nte_value_ms;
 } cip_safety_epath_info_t;
 
+// Information for a given CIP Connection, for both directions (O->T and T->O)
 typedef struct cip_conn_info {
-   guint16                 ConnSerialNumber;
-   guint16                 VendorID;
-   guint32                 DeviceSerialNumber;
-   guint32                 forward_open_frame;
-   cip_connID_info_t       O2T;
-   cip_connID_info_t       T2O;
-   guint8                  TransportClass_trigger;
+   // Forward Open Data
+   cip_connection_triad_t  triad;
+   uint8_t                 TransportClass_trigger;
+   uint32_t                timeout_multiplier;
    cip_safety_epath_info_t safety;
-   gboolean                motion;
-   guint32                 ClassID;
+   uint32_t                FwdOpenPathLenBytes;
+   void*                   pFwdOpenPathData;
+   cip_simple_request_info_t connection_path;
+
+   // Information about specific packet numbers.
+   uint32_t open_req_frame;
+   uint32_t open_reply_frame;
+   uint32_t close_frame;
+
+   // Information about each direction of the overall connection.
+   cip_connID_info_t O2T;
+   cip_connID_info_t T2O;
+
+   // Unique ID generated that links together the CIP Connections.
+   //  - If the full connection information is available (eg: FwdOpen found), then it will link both
+   //    connections (one for each direction)
+   uint32_t connid;
+
+   bool is_concurrent_connection;
+
+   // True if this is a Null Forward Open. In this case, a new connection is not created.
+   bool IsNullFwdOpen;
 } cip_conn_info_t;
 
 typedef struct cip_req_info {
    dissector_handle_t         dissector;
-   guint8                     bService;
-   guint                      IOILen;
+
+   // This is the CIP Service Code. It does not include the Response bit.
+   uint8_t                    bService;
+
+   // Number of 16-bit words in pIOI.
+   unsigned                   IOILen;
    void                      *pIOI;
+
+   unsigned                   RouteConnectionPathLen;
+   void                      *pRouteConnectionPath;
+
    void                      *pData;
    cip_simple_request_info_t *ciaData;
    cip_conn_info_t*           connInfo;
@@ -329,24 +600,83 @@ typedef struct cip_req_info {
 */
 
 /* Depending on if a Class or Symbol segment appears in Connection Path or
-   a Request Path, display '->' before or after the actual name. */
+   a Request Path, display '-' before or after the actual name. */
 #define NO_DISPLAY 0
 #define DISPLAY_CONNECTION_PATH 1
 #define DISPLAY_REQUEST_PATH 2
 extern void dissect_epath( tvbuff_t *tvb, packet_info *pinfo, proto_tree *path_tree, proto_item *epath_item, int offset, int path_length,
-                          gboolean generate, gboolean packed, cip_simple_request_info_t* req_data, cip_safety_epath_info_t* safety,
+                          bool generate, bool packed, cip_simple_request_info_t* req_data, cip_safety_epath_info_t* safety,
                           int display_type, proto_item *msp_item,
-                          gboolean is_msp_item);
+                          bool is_msp_item);
+
+// Elementary Data Types.
+enum cip_elem_data_types {
+    CIP_STRING_TYPE = 0xD0,
+    CIP_SHORT_STRING_TYPE = 0xDA,
+    CIP_STRING2_TYPE = 0xD5
+};
+
+extern void add_cip_service_to_info_column(packet_info *pinfo, uint8_t service, const value_string* service_vals);
+extern const attribute_info_t * cip_get_attribute(unsigned class_id, unsigned instance, unsigned attribute);
+extern cip_service_info_t* cip_get_service_one_table(cip_service_info_t* services, size_t size, uint32_t class_id, uint8_t service_id);
+extern void cip_rpi_api_fmt(char *s, uint32_t value);
+
+extern int  dissect_cip_attribute(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb, const attribute_info_t* attr, int offset, int total_len);
+extern void dissect_cip_data(proto_tree *item_tree, tvbuff_t *tvb, int offset, packet_info *pinfo, cip_req_info_t *preq_info, proto_item* msp_item, bool is_msp_item);
 extern void dissect_cip_date_and_time(proto_tree *tree, tvbuff_t *tvb, int offset, int hf_datetime);
-extern attribute_info_t* cip_get_attribute(guint class_id, guint instance, guint attribute);
-extern void dissect_cip_get_attribute_all_rsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+extern int dissect_cip_utime(proto_tree* tree, tvbuff_t* tvb, int offset, int hf_datetime);
+extern int dissect_cip_generic_service_rsp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree);
+extern int  dissect_cip_get_attribute_list_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_item * item,
+   int offset, cip_simple_request_info_t* req_data);
+extern int  dissect_cip_multiple_service_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_item * item, int offset, bool request);
+extern int  dissect_cip_response_status(proto_tree* tree, tvbuff_t* tvb, int offset, int hf_general_status, bool have_additional_status);
+extern void dissect_cip_run_idle(tvbuff_t* tvb, int offset, proto_tree* item_tree);
+extern int  dissect_cip_segment_single(packet_info *pinfo, tvbuff_t *tvb, int offset, proto_tree *path_tree, proto_item *epath_item,
+   bool generate, bool packed, cip_simple_request_info_t* req_data, cip_safety_epath_info_t* safety,
+   int display_type, proto_item *msp_item,
+   bool is_msp_item);
+extern int  dissect_cip_string_type(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb, int offset, int hf_type, int string_type);
+extern int  dissect_cip_get_attribute_all_rsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     int offset, cip_simple_request_info_t* req_data);
+extern int  dissect_cip_set_attribute_list_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_item * item,
+   int offset, cip_simple_request_info_t* req_data);
+extern int  dissect_cip_set_attribute_list_rsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_item * item,
+   int offset, cip_simple_request_info_t* req_data);
+extern void dissect_deviceid(tvbuff_t *tvb, int offset, proto_tree *tree,
+   int hf_vendor, int hf_devtype, int hf_prodcode,
+   int hf_compatibility, int hf_comp_bit, int hf_majrev, int hf_minrev,
+   bool generate, unsigned encoding);
+extern int dissect_electronic_key_format(tvbuff_t* tvb, int offset, proto_tree* tree, bool generate, uint8_t key_format, unsigned encoding);
+extern int  dissect_optional_attr_list(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
+   int offset, int total_len);
+extern int  dissect_optional_service_list(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
+   int offset, int total_len);
+extern int  dissect_padded_epath_len_usint(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
+   int offset, int total_len);
+extern int  dissect_padded_epath_len_uint(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
+   int offset, int total_len);
+
+extern int dissect_cip_id_status(packet_info* pinfo, proto_tree* tree, proto_item* item, tvbuff_t* tvb,
+   int offset, int total_len);
+
+extern void load_cip_request_data(packet_info *pinfo, cip_simple_request_info_t *req_data);
+extern void reset_cip_request_info(cip_simple_request_info_t* req_data);
+extern bool should_dissect_cip_response(tvbuff_t *tvb, int offset, uint8_t gen_status);
+extern bool cip_connection_triad_match(const cip_connection_triad_t* left, const cip_connection_triad_t* right);
+extern int dissect_concurrent_connection_packet(packet_info* pinfo, tvbuff_t* tvb, int offset, proto_tree* tree);
+extern int dissect_concurrent_connection_network_segment(packet_info* pinfo, tvbuff_t* tvb, int offset, proto_tree* tree);
 
 /*
 ** Exported variables
 */
 extern const value_string cip_sc_rr[];
 extern const value_string cip_reset_type_vals[];
+extern const value_string cip_con_prio_vals[];
+extern const value_string cip_con_type_vals[];
+extern const value_string cip_con_time_mult_vals[];
+extern const value_string cip_class_names_vals[];
+extern const value_string cip_port_number_vals[];
+extern const value_string cip_id_state_vals[];
 extern value_string_ext cip_gs_vals_ext;
 extern value_string_ext cip_cm_ext_st_vals_ext;
 extern value_string_ext cip_vendor_vals_ext;
@@ -363,6 +693,7 @@ extern int hf_attr_class_opt_service_num;
 extern int hf_attr_class_service_code;
 extern int hf_attr_class_num_class_attr;
 extern int hf_attr_class_num_inst_attr;
+extern int hf_cip_instance16;
 
 #define CLASS_ATTRIBUTE_1_NAME  "Revision"
 #define CLASS_ATTRIBUTE_2_NAME  "Max Instance"
@@ -371,22 +702,6 @@ extern int hf_attr_class_num_inst_attr;
 #define CLASS_ATTRIBUTE_5_NAME  "Optional Service List"
 #define CLASS_ATTRIBUTE_6_NAME  "Maximum ID Number Class Attributes"
 #define CLASS_ATTRIBUTE_7_NAME  "Maximum ID Number Instance Attributes"
-
-extern void add_cip_service_to_info_column(packet_info *pinfo, guint8 service, const value_string* service_vals);
-
-extern int dissect_optional_attr_list(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
-   int offset, int total_len);
-extern int dissect_optional_service_list(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
-   int offset, int total_len);
-
-extern int dissect_packed_epath(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
-   int offset, int total_len);
-extern int dissect_padded_epath(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
-   int offset, int total_len);
-extern int dissect_padded_epath_len_usint(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
-   int offset, int total_len);
-extern int dissect_padded_epath_len_uint(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
-   int offset, int total_len);
 
 /*
  * Editor modelines

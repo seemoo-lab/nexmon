@@ -1,9 +1,9 @@
 /* Tests of readlink.
-   Copyright (C) 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Eric Blake <ebb9@byu.net>, 2009.  */
 
@@ -38,7 +38,8 @@ test_readlink (ssize_t (*func) (char const *, char *, size_t), bool print)
   ASSERT (errno == ENOENT);
   errno = 0;
   ASSERT (func ("", buf, sizeof buf) == -1);
-  ASSERT (errno == ENOENT || errno == EINVAL);
+  ASSERT (errno == ENOENT || errno == EINVAL
+          || errno == EBADF /* Cygwin < 3.5 */);
   errno = 0;
   ASSERT (func (".", buf, sizeof buf) == -1);
   ASSERT (errno == EINVAL);
@@ -77,13 +78,10 @@ test_readlink (ssize_t (*func) (char const *, char *, size_t), bool print)
   ASSERT (errno == ENOTDIR || errno == EINVAL); /* AIX yields EINVAL */
   ASSERT (unlink (BASE "file") == 0);
   ASSERT (unlink (BASE "link2") == 0);
-  {
-    /* Up till now, no readlink has been successful, so buf should be
-       unchanged.  */
-    int i;
-    for (i = 0; i < sizeof buf; i++)
-      ASSERT (buf[i] == (char) 0xff);
-  }
+  /* Up till now, no readlink has been successful, so buf should be
+     unchanged.  */
+  for (int i = 0; i < sizeof buf; i++)
+    ASSERT (buf[i] == (char) 0xff);
   {
     size_t len = strlen (BASE "dir");
     /* When passing too small of a buffer, expect the truncated
@@ -111,6 +109,12 @@ test_readlink (ssize_t (*func) (char const *, char *, size_t), bool print)
     /* POSIX says rest of buf is unspecified; but in practice, it is
        either left alone, or NUL-terminated.  */
     ASSERT (buf[len] == '\0' || buf[len] == (char) 0xff);
+  }
+  {
+    /* On Cygwin 3.3.6, readlink("/dev/null") returns "\\Device\\Null", which
+       is unusable.  Verify that gnulib works around this nonsense.  */
+    ssize_t result = func ("/dev/null", buf, sizeof buf);
+    ASSERT (result == -1 || buf[0] != '\\');
   }
   ASSERT (rmdir (BASE "dir") == 0);
   ASSERT (unlink (BASE "link") == 0);

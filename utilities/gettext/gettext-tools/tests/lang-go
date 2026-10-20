@@ -1,0 +1,161 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of gettext facilities in the Go language.
+# Assumes an fr_FR locale is installed.
+# Assumes the following packages are installed: golang-go or gccgo.
+
+# Test whether we can build and test Go programs.
+test "${GO_CHOICE}" != no || {
+  echo "Skipping test: configured with --disable-go"
+  Exit 77
+}
+test -n "${GO}" || {
+  echo "Skipping test: Go compiler not found"
+  Exit 77
+}
+
+cat <<\EOF > go.mod
+module hello
+go 1.11
+require github.com/leonelquinteros/gotext v1.6.0
+EOF
+
+cat <<\EOF > program.go
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"github.com/leonelquinteros/gotext"
+)
+
+func getUserLanguage() string {
+	// Look at the POSIX environment variables.
+	for _, variable := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
+		if value := os.Getenv(variable); value != "" {
+			return gotext.SimplifiedLocale(value)
+		}
+	}
+	// The "C" locale is essentially the same as the en-US locale.
+	return "en_US"
+}
+
+func main () {
+	n, _ := strconv.Atoi(os.Args[1])
+
+	// Specify locale.
+	language := getUserLanguage()
+
+	// Specify localedir, domain.
+	gotext.Configure(".", language, "prog")
+
+	fmt.Println(gotext.Get("'Your command, please?', asked the waiter."))
+	fmt.Println(gotext.GetN("%.0sa piece of cake", "%s pieces of cake", n, strconv.Itoa(n)));
+	fmt.Println(gotext.Get("%s is replaced by %s.", "FF", "EUR"));
+}
+EOF
+
+${GO} mod download github.com/leonelquinteros/gotext || {
+  # Attempt to fix an error
+  # "go: GOPROXY list is not the empty string, but contains no entries"
+  # The precise cause of this error is not known, but it appears to be a
+  # version mismatch. (Between what? The 'go' command? A nonexistent go.env
+  # file? The $HOME/go/ cache?) The workaround is from
+  # <https://github.com/golang/go/issues/61928#issuecomment-2053877087>.
+  unset GOROOT
+  ${GO} mod download github.com/leonelquinteros/gotext
+}
+
+: ${GOCOMP="/bin/sh ../../gocomp.sh"}
+${GOCOMP} program.go 2>prog.err \
+  || { cat prog.err 1>&2; Exit 1; }
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -o prog.tmp --omit-header --no-location program.go || Exit 1
+LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
+
+cat <<\EOF > prog.ok
+msgid "'Your command, please?', asked the waiter."
+msgstr ""
+
+#, go-format
+msgid "%.0sa piece of cake"
+msgid_plural "%s pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+
+#, go-format
+msgid "%s is replaced by %s."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} prog.ok prog.pot || Exit 1
+
+cat <<\EOF > fr.po
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "'Your command, please?', asked the waiter."
+msgstr "«Votre commande, s'il vous plait», dit le garçon."
+
+# Les gateaux allemands sont les meilleurs du monde.
+#, go-format
+msgid "%.0sa piece of cake"
+msgid_plural "%s pieces of cake"
+msgstr[0] "%.0sun morceau de gateau"
+msgstr[1] "%s morceaux de gateau"
+
+# Reverse the arguments.
+#, go-format
+msgid "%s is replaced by %s."
+msgstr "%[2]s remplace %[1]s."
+EOF
+
+: ${MSGMERGE=msgmerge}
+${MSGMERGE} -q -o fr.po.tmp fr.po prog.pot || Exit 1
+LC_ALL=C tr -d '\r' < fr.po.tmp > fr.po.new || Exit 1
+
+: ${DIFF=diff}
+${DIFF} fr.po fr.po.new || Exit 1
+
+test -d fr || mkdir fr
+test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
+
+: ${DIFF=diff}
+cat <<\EOF > prog.ok
+«Votre commande, s'il vous plait», dit le garçon.
+2 morceaux de gateau
+EUR remplace FF.
+EOF
+
+# Test which of the fr_FR locales are installed.
+: ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+if test $LOCALE_FR_UTF8 != none; then
+  LC_ALL=$LOCALE_FR_UTF8 ../testlocale
+  case $? in
+    0) ;;
+    77) LOCALE_FR_UTF8=none;;
+    *) Exit 1;;
+  esac
+fi
+if test $LOCALE_FR_UTF8 = none; then
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: no french Unicode locale is installed"
+  else
+    echo "Skipping test: no french Unicode locale is supported"
+  fi
+  Exit 77
+fi
+
+LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 ./program 2 > prog.out || Exit 1
+${DIFF} prog.ok prog.out || Exit 1
+
+Exit 0

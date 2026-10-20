@@ -1,0 +1,29 @@
+/* Example for use of GNU gettext.
+   This file is in the public domain.
+
+   Source code of the D program.  */
+
+
+// Get writeln.
+import std.stdio;
+// Get format.
+import std.format;
+// Get locale constants.
+import core.stdc.locale : LC_ALL;
+// Get textdomain, bindtextdomain, gettext, ngettext, setlocale.
+import gnu.libintl : textdomain, bindtextdomain, gettext, ngettext, setlocale;
+// Get thisProcessID.
+import std.process : thisProcessID;
+
+// Define _() as a shorthand for gettext().
+alias _ = gettext;
+
+void main (string[] args)
+{
+  setlocale (LC_ALL, "");
+  textdomain ("hello-d");
+  bindtextdomain ("hello-d", `@localedir@`);
+
+  writeln (_("Hello, world!"));
+  writeln (format (_("This program is running as process number %d."), thisProcessID));
+}

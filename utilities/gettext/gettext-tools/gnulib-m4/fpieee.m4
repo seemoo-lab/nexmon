@@ -1,8 +1,10 @@
-# fpieee.m4 serial 2  -*- coding: utf-8 -*-
-dnl Copyright (C) 2007, 2009-2016 Free Software Foundation, Inc.
+# fpieee.m4
+# serial 2
+dnl Copyright (C) 2007, 2009-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl IEEE 754 standardized three items:
 dnl - The formats of single-float and double-float - nowadays commonly
@@ -33,7 +35,7 @@ AC_DEFUN([gl_FP_IEEE],
     alpha*)
       # On Alpha systems, a compiler option provides the behaviour.
       # See the ieee(3) manual page, also available at
-      # <http://h30097.www3.hp.com/docs/base_doc/DOCUMENTATION/V51B_HTML/MAN/MAN3/0600____.HTM>
+      # <https://backdrift.org/man/tru64/man3/ieee.3.html>
       if test -n "$GCC"; then
         # GCC has the option -mieee.
         # For full IEEE compliance (rarely needed), use option -mieee-with-inexact.

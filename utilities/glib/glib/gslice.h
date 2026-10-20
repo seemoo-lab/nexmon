@@ -1,10 +1,12 @@
 /* GLIB sliced memory - fast threaded memory chunk allocator
  * Copyright (C) 2005 Tim Janik
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,6 +25,7 @@
 #endif
 
 #include <glib/gtypes.h>
+#include <string.h>
 
 G_BEGIN_DECLS
 
@@ -34,7 +37,7 @@ GLIB_AVAILABLE_IN_ALL
 gpointer g_slice_alloc0         	(gsize         block_size) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_ALL
 gpointer g_slice_copy                   (gsize         block_size,
-                                         gconstpointer mem_block) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
+                                         gconstpointer mem_block) G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_ALL
 void     g_slice_free1          	(gsize         block_size,
 					 gpointer      mem_block);
@@ -42,8 +45,31 @@ GLIB_AVAILABLE_IN_ALL
 void     g_slice_free_chain_with_offset (gsize         block_size,
 					 gpointer      mem_chain,
 					 gsize         next_offset);
-#define  g_slice_new(type)      ((type*) g_slice_alloc (sizeof (type)))
-#define  g_slice_new0(type)     ((type*) g_slice_alloc0 (sizeof (type)))
+
+#ifndef __GI_SCANNER__
+/* Private helper to give the allocation size for a struct — we want to
+ * guarantee non-empty allocations, so it returns a minimum of 1B. This is
+ * necessary because some compilers do allow empty (zero size) structs. */
+#define g_slice_alloc_size(type) (sizeof (type) > 0 ? sizeof (type) : 1)
+#endif
+
+#define  g_slice_new(type)      ((type*) g_slice_alloc (g_slice_alloc_size (type)))
+
+/* Allow the compiler to inline memset(). Since the size is a constant, this
+ * can significantly improve performance. */
+#if defined (__GNUC__) && (__GNUC__ >= 2) && defined (__OPTIMIZE__)
+#  define g_slice_new0(type)                                    \
+  (type *) (G_GNUC_EXTENSION ({                                 \
+    gsize _s = g_slice_alloc_size (type);                       \
+    gpointer _p;                                                \
+    _p = g_slice_alloc (_s);                                    \
+    memset (_p, 0, _s);                                         \
+    _p;                                                         \
+  }))
+#else
+#  define g_slice_new0(type)    ((type*) g_slice_alloc0 (g_slice_alloc_size (type)))
+#endif
+
 /* MemoryBlockType *
  *       g_slice_dup                    (MemoryBlockType,
  *	                                 MemoryBlockType *mem_block);
@@ -58,7 +84,7 @@ void     g_slice_free_chain_with_offset (gsize         block_size,
 
 /* we go through extra hoops to ensure type safety */
 #define g_slice_dup(type, mem)                                  \
-  (1 ? (type*) g_slice_copy (sizeof (type), (mem))              \
+  (1 ? (type*) g_slice_copy (g_slice_alloc_size (type), (mem))     \
      : ((void) ((type*) 0 == (mem)), (type*) 0))
 #define g_slice_free(type, mem)                                 \
 G_STMT_START {                                                  \
@@ -89,9 +115,11 @@ gint64   g_slice_get_config	   (GSliceConfig ckey);
 GLIB_DEPRECATED_IN_2_34
 gint64*  g_slice_get_config_state  (GSliceConfig ckey, gint64 address, guint *n_values);
 
+#ifndef __GI_SCANNER__
 #ifdef G_ENABLE_DEBUG
 GLIB_AVAILABLE_IN_ALL
 void     g_slice_debug_tree_statistics (void);
+#endif
 #endif
 
 G_END_DECLS

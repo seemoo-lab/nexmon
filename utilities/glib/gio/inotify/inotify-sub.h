@@ -2,19 +2,20 @@
 
    Copyright (C) 2006 John McCutchan
 
-   The Gnome Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   SPDX-License-Identifier: LGPL-2.1-or-later
 
-   The Gnome Library is distributed in the hope that it will be useful,
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
-   License along with the Gnome Library; see the file COPYING.LIB.  If not,
-   see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU Lesser General Public License
+   along with this library; if not, see <http://www.gnu.org/licenses/>.
 
    Author: John McCutchan <john@johnmccutchan.com>
 */
@@ -34,8 +35,8 @@ typedef struct
 } inotify_sub;
 
 inotify_sub *_ih_sub_new (const gchar  *dirname,
+			  const gchar  *basename,
 			  const gchar  *filename,
-			  gboolean      watch_hardlinks,
 			  gpointer      user_data);
 void         _ih_sub_free (inotify_sub *sub);
 

@@ -5,44 +5,40 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-nfs.h"
-#include "packet-klm.h"
 
 void proto_register_klm(void);
 void proto_reg_handoff_klm(void);
 
-static int proto_klm = -1;
-static int hf_klm_procedure_v1 = -1;
-static int hf_klm_exclusive = -1;
-static int hf_klm_lock = -1;
-static int hf_klm_servername = -1;
-static int hf_klm_pid = -1;
-static int hf_klm_offset = -1;
-static int hf_klm_len = -1;
-static int hf_klm_stats = -1;
-static int hf_klm_holder = -1;
-static int hf_klm_block = -1;
+static int proto_klm;
+static int hf_klm_procedure_v1;
+static int hf_klm_exclusive;
+static int hf_klm_lock;
+static int hf_klm_servername;
+static int hf_klm_pid;
+static int hf_klm_offset;
+static int hf_klm_len;
+static int hf_klm_stats;
+static int hf_klm_holder;
+static int hf_klm_block;
 
-static gint ett_klm = -1;
-static gint ett_klm_lock = -1;
-static gint ett_klm_holder = -1;
+static int ett_klm;
+static int ett_klm_lock;
+static int ett_klm_holder;
+
+#define KLMPROC_TEST   1
+#define KLMPROC_LOCK   2
+#define KLMPROC_CANCEL 3
+#define KLMPROC_UNLOCK 4
+
+#define KLM_PROGRAM 100020
 
 static const value_string names_klm_stats[] =
 {
@@ -94,7 +90,7 @@ dissect_lock(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int offset, rp
 
 	lock_tree = proto_item_add_subtree(lock_item, ett_klm_lock);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_klm_servername, offset, NULL);
 
 	offset = dissect_nfs3_fh(tvb, offset, pinfo, lock_tree,"fh", NULL, civ);
@@ -141,7 +137,7 @@ dissect_klm_lock_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 static int
 dissect_klm_test_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
 {
-	gint32	stats;
+	int32_t	stats;
 	int offset = 0;
 
 	stats = tvb_get_ntohl(tvb, offset);
@@ -240,7 +236,7 @@ proto_register_klm(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_klm,
 		&ett_klm_lock,
 		&ett_klm_holder,
@@ -261,7 +257,7 @@ proto_reg_handoff_klm(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

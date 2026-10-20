@@ -6,24 +6,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-ipx.h"
 #include "packet-netbios.h"
 
@@ -32,36 +22,39 @@ void proto_reg_handoff_nbipx(void);
 void proto_register_nmpi(void);
 void proto_reg_handoff_nmpi(void);
 
-static int proto_nbipx = -1;
-static int hf_nbipx_packettype = -1;
-static int hf_nbipx_name_flags = -1;
-static int hf_nbipx_name_flags_group = -1;
-static int hf_nbipx_name_flags_in_use = -1;
-static int hf_nbipx_name_flags_registered = -1;
-static int hf_nbipx_name_flags_duplicated = -1;
-static int hf_nbipx_name_flags_deregistered = -1;
-static int hf_nbipx_conn_control = -1;
-static int hf_nbipx_conn_control_sys_packet = -1;
-static int hf_nbipx_conn_control_ack = -1;
-static int hf_nbipx_conn_control_attention = -1;
-static int hf_nbipx_conn_control_end_msg = -1;
-static int hf_nbipx_conn_control_resend = -1;
-static int hf_nbipx_session_src_conn_id = -1;
-static int hf_nbipx_session_dest_conn_id = -1;
-static int hf_nbipx_session_send_seq_number = -1;
-static int hf_nbipx_session_total_data_length = -1;
-static int hf_nbipx_session_offset = -1;
-static int hf_nbipx_session_data_length = -1;
-static int hf_nbipx_session_recv_seq_number = -1;
-static int hf_nbipx_session_bytes_received = -1;
-static int hf_nbipx_ipx_network = -1;
-static int hf_nbipx_opcode = -1;
-static int hf_nbipx_name_type = -1;
-static int hf_nbipx_messageid = -1;
+static dissector_handle_t nbipx_handle;
+static dissector_handle_t nmpi_handle;
 
-static gint ett_nbipx = -1;
-static gint ett_nbipx_conn_ctrl = -1;
-static gint ett_nbipx_name_type_flags = -1;
+static int proto_nbipx;
+static int hf_nbipx_packettype;
+static int hf_nbipx_name_flags;
+static int hf_nbipx_name_flags_group;
+static int hf_nbipx_name_flags_in_use;
+static int hf_nbipx_name_flags_registered;
+static int hf_nbipx_name_flags_duplicated;
+static int hf_nbipx_name_flags_deregistered;
+static int hf_nbipx_conn_control;
+static int hf_nbipx_conn_control_sys_packet;
+static int hf_nbipx_conn_control_ack;
+static int hf_nbipx_conn_control_attention;
+static int hf_nbipx_conn_control_end_msg;
+static int hf_nbipx_conn_control_resend;
+static int hf_nbipx_session_src_conn_id;
+static int hf_nbipx_session_dest_conn_id;
+static int hf_nbipx_session_send_seq_number;
+static int hf_nbipx_session_total_data_length;
+static int hf_nbipx_session_offset;
+static int hf_nbipx_session_data_length;
+static int hf_nbipx_session_recv_seq_number;
+static int hf_nbipx_session_bytes_received;
+static int hf_nbipx_ipx_network;
+static int hf_nbipx_opcode;
+static int hf_nbipx_name_type;
+static int hf_nbipx_messageid;
+
+static int ett_nbipx;
+static int ett_nbipx_conn_ctrl;
+static int ett_nbipx_name_type_flags;
 
 static void dissect_conn_control(tvbuff_t *tvb, int offset, proto_tree *tree);
 
@@ -73,7 +66,7 @@ static heur_dissector_list_t netbios_heur_subdissector_list;
  *
  * A list of "NovelNetBIOS" packet types can be found at
  *
- *	http://www.protocols.com/pbook/novel.htm#NetBIOS
+ *	http://web.archive.org/web/20150319134837/http://www.protocols.com/pbook/novel.htm#NetBIOS
  *
  * and at least some of those packet types appear to match what's in
  * some NBIPX packets.
@@ -279,16 +272,16 @@ dissect_netbios_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 static int
 dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
-	gboolean	has_routes;
+	bool	has_routes;
 	proto_tree	*nbipx_tree = NULL;
 	proto_item	*ti = NULL;
 	int		offset = 0;
-	guint8		packet_type;
+	uint8_t		packet_type;
 	proto_tree	*name_type_flag_tree;
 	proto_item	*tf;
 	char		name[(NETBIOS_NAME_LEN - 1)*4 + 1];
 	int		name_type;
-	gboolean	has_payload;
+	bool	has_payload;
 	tvbuff_t	*next_tvb;
 	ipxhdr_t *ipxh;
 
@@ -305,7 +298,7 @@ dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 		 * This is a WAN Broadcast packet; we assume it will have
 		 * 8 IPX addresses at the beginning.
 		 */
-		has_routes = TRUE;
+		has_routes = true;
 	} else {
 		/*
 		 * This isn't a WAN Broadcast packet, but it still might
@@ -321,9 +314,9 @@ dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 		 * know how to interpret this packet, so we can't dissect
 		 * it anyway.
 		 */
-		has_routes = FALSE;	/* start out assuming it doesn't */
+		has_routes = false;	/* start out assuming it doesn't */
 		if (tvb_reported_length(tvb) == 50) {
-			packet_type = tvb_get_guint8(tvb, offset + 32 + 1);
+			packet_type = tvb_get_uint8(tvb, offset + 32 + 1);
 			switch (packet_type) {
 
 			case NBIPX_FIND_NAME:
@@ -331,7 +324,7 @@ dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 			case NBIPX_CHECK_NAME:
 			case NBIPX_NAME_IN_USE:
 			case NBIPX_DEREGISTER_NAME:
-				has_routes = TRUE;
+				has_routes = true;
 				break;
 			}
 		}
@@ -349,7 +342,7 @@ dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 		offset += 32;
 	}
 
-	packet_type = tvb_get_guint8(tvb, offset + 1);
+	packet_type = tvb_get_uint8(tvb, offset + 1);
 
 	switch (packet_type) {
 
@@ -385,7 +378,7 @@ dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 		/*
 		 * No payload to be interpreted by another protocol.
 		 */
-		has_payload = FALSE;
+		has_payload = false;
 		break;
 
 	case NBIPX_SESSION_DATA:
@@ -427,7 +420,7 @@ dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 		/*
 		 * We may have payload to dissect.
 		 */
-		has_payload = TRUE;
+		has_payload = true;
 		break;
 
 	case NBIPX_DIRECTED_DATAGRAM:
@@ -453,7 +446,7 @@ dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 		/*
 		 * We may have payload to dissect.
 		 */
-		has_payload = TRUE;
+		has_payload = true;
 		break;
 
 	default:
@@ -474,7 +467,7 @@ dissect_nbipx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 		/*
 		 * We don't know what the rest of the packet is.
 		 */
-		has_payload = FALSE;
+		has_payload = false;
 	}
 
 	/*
@@ -639,7 +632,7 @@ proto_register_nbipx(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_nbipx,
 		&ett_nbipx_conn_ctrl,
 		&ett_nbipx_name_type_flags,
@@ -648,14 +641,13 @@ proto_register_nbipx(void)
 	proto_nbipx = proto_register_protocol("NetBIOS over IPX", "NBIPX", "nbipx");
 	proto_register_field_array(proto_nbipx, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	nbipx_handle = register_dissector("nbipx", dissect_nbipx, proto_nbipx);
 }
 
 void
 proto_reg_handoff_nbipx(void)
 {
-	dissector_handle_t nbipx_handle;
-
-	nbipx_handle = create_dissector_handle(dissect_nbipx, proto_nbipx);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_NETBIOS, nbipx_handle);
 	netbios_heur_subdissector_list = find_heur_dissector_list("netbios");
 }
@@ -739,10 +731,10 @@ proto_reg_handoff_nbipx(void)
  *	INTYPE_WKGROUP	2
  *	INTYPE_BROWSER	3
  */
-static int proto_nmpi = -1;
+static int proto_nmpi;
 
-static gint ett_nmpi = -1;
-static gint ett_nmpi_name_type_flags = -1;
+static int ett_nmpi;
+static int ett_nmpi_name_type_flags;
 
 
 static int
@@ -751,7 +743,7 @@ dissect_nmpi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	proto_tree	*nmpi_tree = NULL;
 	proto_item	*ti;
 	int		offset = 0;
-	guint8		opcode;
+	uint8_t		opcode;
 	char		name[(NETBIOS_NAME_LEN - 1)*4 + 1];
 	int		name_type;
 	char		node_name[(NETBIOS_NAME_LEN - 1)*4 + 1];
@@ -773,7 +765,7 @@ dissect_nmpi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	/*
 	 * XXX - we don't use "node_name" or "node_name_type".
 	 */
-	opcode = tvb_get_guint8(tvb, offset);
+	opcode = tvb_get_uint8(tvb, offset);
 	name_type = get_netbios_name(tvb, offset+4, name, (NETBIOS_NAME_LEN - 1)*4 + 1);
 	/*node_name_type = */get_netbios_name(tvb, offset+20, node_name, (NETBIOS_NAME_LEN - 1)*4 + 1);
 
@@ -851,7 +843,7 @@ proto_register_nmpi(void)
 		{ &variable,
 		{ "Name",           "nmpi.abbreviation", TYPE, VALS_POINTER }},
 	}; */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_nmpi,
 		&ett_nmpi_name_type_flags,
 	};
@@ -860,14 +852,13 @@ proto_register_nmpi(void)
 	    "NMPI", "nmpi");
 	/*       proto_register_field_array(proto_nmpi, hf, array_length(hf));*/
 	proto_register_subtree_array(ett, array_length(ett));
+
+	nmpi_handle = register_dissector("nmpi", dissect_nmpi, proto_nmpi);
 }
 
 void
 proto_reg_handoff_nmpi(void)
 {
-	dissector_handle_t nmpi_handle;
-
-	nmpi_handle = create_dissector_handle(dissect_nmpi, proto_nmpi);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_NWLINK_SMB_NAMEQUERY,
 	    nmpi_handle);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_NWLINK_SMB_MAILSLOT,
@@ -875,7 +866,7 @@ proto_reg_handoff_nmpi(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

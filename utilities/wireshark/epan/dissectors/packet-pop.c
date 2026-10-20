@@ -9,19 +9,7 @@
  *
  * Copied from packet-tftp.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,52 +22,62 @@
 #include <epan/prefs.h>
 #include <epan/reassemble.h>
 #include <epan/proto_data.h>
+#include <epan/expert.h>
 
 #include <wsutil/str_util.h>
-#include "packet-ssl.h"
-#include "packet-ssl-utils.h"
+#include <wsutil/strtoi.h>
+
+#include <ui/tap-credentials.h>
+#include <tap.h>
+
+#include "packet-tls.h"
+#include "packet-tls-utils.h"
 
 void proto_register_pop(void);
 void proto_reg_handoff_pop(void);
 
-static int proto_pop = -1;
+static int proto_pop;
 
-static int hf_pop_response = -1;
-static int hf_pop_response_indicator = -1;
-static int hf_pop_response_description = -1;
-static int hf_pop_response_data = -1;
+static int credentials_tap;
 
-static int hf_pop_request = -1;
-static int hf_pop_request_command = -1;
-static int hf_pop_request_parameter = -1;
-static int hf_pop_request_data = -1;
+static int hf_pop_response;
+static int hf_pop_response_indicator;
+static int hf_pop_response_description;
+static int hf_pop_response_data;
 
-static int hf_pop_data_fragments = -1;
-static int hf_pop_data_fragment = -1;
-static int hf_pop_data_fragment_overlap = -1;
-static int hf_pop_data_fragment_overlap_conflicts = -1;
-static int hf_pop_data_fragment_multiple_tails = -1;
-static int hf_pop_data_fragment_too_long_fragment = -1;
-static int hf_pop_data_fragment_error = -1;
-static int hf_pop_data_fragment_count = -1;
-static int hf_pop_data_reassembled_in = -1;
-static int hf_pop_data_reassembled_length = -1;
+static int hf_pop_request;
+static int hf_pop_request_command;
+static int hf_pop_request_parameter;
+static int hf_pop_request_data;
 
-static gint ett_pop = -1;
-static gint ett_pop_reqresp = -1;
+static int hf_pop_data_fragments;
+static int hf_pop_data_fragment;
+static int hf_pop_data_fragment_overlap;
+static int hf_pop_data_fragment_overlap_conflicts;
+static int hf_pop_data_fragment_multiple_tails;
+static int hf_pop_data_fragment_too_long_fragment;
+static int hf_pop_data_fragment_error;
+static int hf_pop_data_fragment_count;
+static int hf_pop_data_reassembled_in;
+static int hf_pop_data_reassembled_length;
 
-static gint ett_pop_data_fragment = -1;
-static gint ett_pop_data_fragments = -1;
+static expert_field ei_pop_resp_tot_len_invalid;
+
+static int ett_pop;
+static int ett_pop_reqresp;
+
+static int ett_pop_data_fragment;
+static int ett_pop_data_fragments;
 
 static dissector_handle_t pop_handle;
 static dissector_handle_t imf_handle;
-static dissector_handle_t ssl_handle;
+static dissector_handle_t tls_handle;
 
 #define TCP_PORT_POP            110
 #define TCP_PORT_SSL_POP        995
 
 /* desegmentation of POP command and response lines */
-static gboolean pop_data_desegment = TRUE;
+static bool pop_data_desegment = true;
 
 static reassembly_table pop_data_reassembly_table;
 
@@ -106,45 +104,52 @@ static const fragment_items pop_data_frag_items = {
   "DATA fragments"
 };
 
+typedef enum {
+  pop_arg_type_unknown,
+  pop_arg_type_username,
+  pop_arg_type_password
+} pop_arg_type_t;
+
 struct pop_proto_data {
-  guint16 conversation_id;
-  gboolean more_frags;
+  uint16_t conversation_id;
+  bool more_frags;
+  bool ei_tot_len_invalid;
+  pop_arg_type_t arg_type;
 };
 
 struct pop_data_val {
-  gboolean msg_request;
-  guint32 msg_read_len;  /* Length of RETR message read so far */
-  guint32 msg_tot_len;   /* Total length of RETR message */
-  gboolean stls_request;  /* Received STLS request */
+  bool msg_request;
+  uint32_t msg_read_len;  /* Length of RETR message read so far */
+  uint32_t msg_tot_len;   /* Total length of RETR message */
+  bool stls_request;  /* Received STLS request */
+  char* username;
+  unsigned username_num;
 };
 
-
-
-static gboolean response_is_continuation(const guchar *data);
+static bool response_is_continuation(const unsigned char *data);
 
 static int
 dissect_pop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
   struct pop_proto_data  *frame_data_p;
-  gboolean               is_request;
-  gboolean               is_continuation;
+  bool                   is_request;
+  bool                   is_continuation;
   proto_tree             *pop_tree, *reqresp_tree;
   proto_item             *ti;
-  gint                   offset = 0;
-  const guchar           *line;
-  gint                   next_offset;
+  int                    offset = 0;
+  unsigned char          *line;
+  int                    next_offset;
   int                    linelen;
   int                    tokenlen;
-  const guchar           *next_token;
-  fragment_head          *frag_msg = NULL;
-  tvbuff_t               *next_tvb = NULL;
-  conversation_t         *conversation = NULL;
-  struct pop_data_val    *data_val = NULL;
-  gint                   length_remaining;
+  const unsigned char    *next_token;
+  fragment_head          *frag_msg;
+  tvbuff_t               *next_tvb;
+  conversation_t         *conversation;
+  struct pop_data_val    *data_val;
+  int                    length_remaining;
+  pop_arg_type_t         pop_arg_type = pop_arg_type_unknown;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "POP");
-
-  frame_data_p = (struct pop_proto_data *)p_get_proto_data(wmem_file_scope(), pinfo, proto_pop, 0);
 
   conversation = find_or_create_conversation(pinfo);
   data_val = (struct pop_data_val *)conversation_get_proto_data(conversation, proto_pop);
@@ -160,19 +165,17 @@ dissect_pop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
   /*
    * Find the end of the first line.
-   *
-   * Note that "tvb_find_line_end()" will return a value that is
-   * not longer than what's in the buffer, so the "tvb_get_ptr()"
-   * call won't throw an exception.
    */
-  linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
-  line = tvb_get_ptr(tvb, offset, linelen);
+  linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
+  line = (unsigned char*)wmem_alloc(pinfo->pool, linelen+1);
+  tvb_memcpy(tvb, line, offset, linelen);
+  line[linelen] = '\0';
 
   if (pinfo->match_uint == pinfo->destport) {
-    is_request = TRUE;
-    is_continuation = FALSE;
+    is_request = true;
+    is_continuation = false;
   } else {
-    is_request = FALSE;
+    is_request = false;
     is_continuation = response_is_continuation(line);
   }
 
@@ -189,7 +192,7 @@ dissect_pop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
   }
   else
     col_add_fstr(pinfo->cinfo, COL_INFO, "%s: %s", is_request ? "C" : "S",
-                   format_text(line, linelen));
+                   format_text(pinfo->pool, line, linelen));
 
   ti = proto_tree_add_item(tree, proto_pop, tvb, offset, -1, ENC_NA);
   pop_tree = proto_item_add_subtree(ti, ett_pop);
@@ -198,16 +201,19 @@ dissect_pop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     if (pop_data_desegment) {
 
-      if (!frame_data_p) {
+      if (!PINFO_FD_VISITED(pinfo)) {
 
         data_val->msg_read_len += tvb_reported_length(tvb);
 
-        frame_data_p = wmem_new(wmem_file_scope(), struct pop_proto_data);
+        frame_data_p = wmem_new0(wmem_file_scope(), struct pop_proto_data);
 
         frame_data_p->conversation_id = conversation->conv_index;
         frame_data_p->more_frags = data_val->msg_read_len < data_val->msg_tot_len;
 
         p_add_proto_data(wmem_file_scope(), pinfo, proto_pop, 0, frame_data_p);
+      } else {
+          frame_data_p = (struct pop_proto_data *)p_get_proto_data(wmem_file_scope(), pinfo, proto_pop, 0);
+          DISSECTOR_ASSERT(frame_data_p);
       }
 
       frag_msg = fragment_add_seq_next(&pop_data_reassembly_table, tvb, 0,
@@ -227,15 +233,15 @@ dissect_pop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         if (imf_handle)
           call_dissector(imf_handle, next_tvb, pinfo, tree);
 
-        if (data_val) {
+        if (!PINFO_FD_VISITED(pinfo)) {
           /* we have read everything - reset */
 
           data_val->msg_read_len = 0;
           data_val->msg_tot_len = 0;
         }
-        pinfo->fragmented = FALSE;
+        pinfo->fragmented = false;
       } else {
-        pinfo->fragmented = TRUE;
+        pinfo->fragmented = true;
       }
 
     } else {
@@ -259,7 +265,7 @@ dissect_pop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
                                     tvb, offset,
                                     next_offset - offset,
                                     "", "%s",
-                                    tvb_format_text(tvb, offset, next_offset - offset));
+                                    tvb_format_text(pinfo->pool, tvb, offset, next_offset - offset));
   reqresp_tree = proto_item_add_subtree(ti, ett_pop_reqresp);
 
   /*
@@ -274,110 +280,149 @@ dissect_pop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
                             hf_pop_response_indicator,
                         tvb, offset, tokenlen, ENC_ASCII|ENC_NA);
 
-    if (data_val) {
+    if (!PINFO_FD_VISITED(pinfo)) {
       if (is_request) {
         /* see if this is RETR or TOP command */
         if (g_ascii_strncasecmp(line, "RETR", 4) == 0 ||
            g_ascii_strncasecmp(line, "TOP", 3) == 0)
           /* the next response will tell us how many bytes */
-          data_val->msg_request = TRUE;
+          data_val->msg_request = true;
 
         if (g_ascii_strncasecmp(line, "STLS", 4) == 0) {
-          data_val->stls_request = TRUE;
+          data_val->stls_request = true;
+        }
+
+        if (g_ascii_strncasecmp(line, "USER", 4) == 0) {
+          pop_arg_type = pop_arg_type_username;
+        }
+
+        if (g_ascii_strncasecmp(line, "PASS", 4) == 0) {
+          pop_arg_type = pop_arg_type_password;
+        }
+
+        if (pop_arg_type != pop_arg_type_unknown) {
+          /* store info for subsequent pass */
+          frame_data_p = wmem_new0(wmem_file_scope(), struct pop_proto_data);
+          frame_data_p->arg_type = pop_arg_type;
+          p_add_proto_data(wmem_file_scope(), pinfo, proto_pop, 0, frame_data_p);
         }
       } else {
         if (data_val->msg_request) {
           /* this is a response to a RETR or TOP command */
 
-          if (g_ascii_strncasecmp(line, "+OK ", 4) == 0) {
+          if (g_ascii_strncasecmp(line, "+OK ", 4) == 0 && linelen > 4) {
             /* the message will be sent - work out how many bytes */
             data_val->msg_read_len = 0;
-            data_val->msg_tot_len = atoi(line + 4);
+            data_val->msg_tot_len = 0;
+            if (sscanf(line, "%*s %u %*s", &data_val->msg_tot_len) != 1) {
+              expert_add_info(pinfo, ti, &ei_pop_resp_tot_len_invalid);
+              /* store expect info presence to add it to the tree during subsequent pass */
+              frame_data_p = wmem_new0(wmem_file_scope(), struct pop_proto_data);
+              frame_data_p->ei_tot_len_invalid = true;
+              p_add_proto_data(wmem_file_scope(), pinfo, proto_pop, 0, frame_data_p);
+            }
           }
-          data_val->msg_request = FALSE;
+          data_val->msg_request = false;
         }
 
         if (data_val->stls_request) {
           if (g_ascii_strncasecmp(line, "+OK ", 4) == 0) {
               /* This is the last non-TLS frame. */
-              ssl_starttls_ack(ssl_handle, pinfo, pop_handle);
+              ssl_starttls_ack(tls_handle, pinfo, pop_handle);
           }
-          data_val->stls_request = FALSE;
+          data_val->stls_request = false;
         }
+      }
+    } else {
+      frame_data_p = (struct pop_proto_data *)p_get_proto_data(wmem_file_scope(), pinfo, proto_pop, 0);
+      if (frame_data_p) {
+        pop_arg_type = frame_data_p->arg_type;
+        if (frame_data_p->ei_tot_len_invalid)
+          expert_add_info(pinfo, ti, &ei_pop_resp_tot_len_invalid);
       }
     }
 
-    offset += (gint) (next_token - line);
+    offset += (int) (next_token - line);
     linelen -= (int) (next_token - line);
   }
 
 
-  if (tree) {
-    /*
-     * Add the rest of the first line as request or
-     * reply param/description.
-     */
-    if (linelen != 0) {
-      proto_tree_add_item(reqresp_tree,
-                          (is_request) ?
-                              hf_pop_request_parameter :
-                              hf_pop_response_description,
-                          tvb, offset, linelen, ENC_ASCII|ENC_NA);
+  /*
+   * Add the rest of the first line as request or
+   * reply param/description.
+   */
+  if (linelen != 0) {
+    tap_credential_t* auth;
+    proto_tree_add_item(reqresp_tree,
+                        (is_request) ?
+                            hf_pop_request_parameter :
+                            hf_pop_response_description,
+                        tvb, offset, linelen, ENC_ASCII|ENC_NA);
+    switch (pop_arg_type) {
+      case pop_arg_type_username:
+        if (!data_val->username && linelen > 0) {
+          data_val->username = tvb_get_string_enc(wmem_file_scope(), tvb, offset, linelen, ENC_NA|ENC_ASCII);
+          data_val->username_num = pinfo->num;
+        }
+        break;
+      case pop_arg_type_password:
+        auth = wmem_new0(pinfo->pool, tap_credential_t);
+        auth->num = pinfo->num;
+        auth->username_num = data_val->username_num;
+        auth->password_hf_id = hf_pop_request_parameter;
+        auth->username = data_val->username;
+        auth->proto = "POP3";
+        auth->info = wmem_strdup_printf(pinfo->pool, "Username in packet %u", data_val->username_num);
+        tap_queue_packet(credentials_tap, pinfo, auth);
+        break;
+      default:
+        break;
     }
+  }
+  offset = next_offset;
+
+  /*
+   * Show the rest of the request or response as text,
+   * a line at a time.
+   */
+  while (tvb_offset_exists(tvb, offset)) {
+    /*
+     * Find the end of the line.
+     */
+    tvb_find_line_end(tvb, offset, -1, &next_offset, false);
+
+    /*
+     * Put this line.
+     */
+    proto_tree_add_string_format(pop_tree,
+                                 (is_request) ?
+                                     hf_pop_request_data :
+                                     hf_pop_response_data,
+                                 tvb, offset,
+                                 next_offset - offset,
+                                 "", "%s",
+                                 tvb_format_text(pinfo->pool, tvb, offset, next_offset - offset));
     offset = next_offset;
-
-    /*
-     * Show the rest of the request or response as text,
-     * a line at a time.
-     */
-    while (tvb_offset_exists(tvb, offset)) {
-      /*
-       * Find the end of the line.
-       */
-      tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
-
-      /*
-       * Put this line.
-       */
-      proto_tree_add_string_format(pop_tree,
-                                   (is_request) ?
-                                       hf_pop_request_data :
-                                       hf_pop_response_data,
-                                   tvb, offset,
-                                   next_offset - offset,
-                                   "", "%s",
-                                   tvb_format_text(tvb, offset, next_offset - offset));
-      offset = next_offset;
-    }
   }
   return tvb_captured_length(tvb);
 }
 
-static gboolean response_is_continuation(const guchar *data)
+static bool response_is_continuation(const unsigned char *data)
 {
   if (strncmp(data, "+OK", strlen("+OK")) == 0)
-    return FALSE;
+    return false;
 
   if (strncmp(data, "-ERR", strlen("-ERR")) == 0)
-    return FALSE;
+    return false;
 
-  return TRUE;
-}
-
-static void pop_data_reassemble_init (void)
-{
-  reassembly_table_init (&pop_data_reassembly_table,
-                         &addresses_ports_reassembly_table_functions);
-}
-
-static void pop_data_reassemble_cleanup (void)
-{
-  reassembly_table_destroy(&pop_data_reassembly_table);
+  return true;
 }
 
 void
 proto_register_pop(void)
 {
+  expert_module_t* expert_pop;
+
   static hf_register_info hf[] = {
     { &hf_pop_response,
       { "Response",           "pop.response",
@@ -439,7 +484,12 @@ proto_register_pop(void)
         NULL, 0x00, "The total length of the reassembled payload", HFILL } },
   };
 
-  static gint *ett[] = {
+  static ei_register_info ei[] = {
+    { &ei_pop_resp_tot_len_invalid, { "pop.response.tot_len.invalid", PI_MALFORMED, PI_ERROR,
+      "Length must be a string containing an integer", EXPFILL }}
+  };
+
+  static int *ett[] = {
     &ett_pop,
     &ett_pop_reqresp,
     &ett_pop_data_fragment,
@@ -449,11 +499,12 @@ proto_register_pop(void)
 
 
   proto_pop = proto_register_protocol("Post Office Protocol", "POP", "pop");
-  register_dissector("pop", dissect_pop, proto_pop);
+  pop_handle = register_dissector("pop", dissect_pop, proto_pop);
   proto_register_field_array(proto_pop, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
-  register_init_routine (&pop_data_reassemble_init);
-  register_cleanup_routine (&pop_data_reassemble_cleanup);
+
+  reassembly_table_register (&pop_data_reassembly_table,
+                         &addresses_ports_reassembly_table_functions);
 
   /* Preferences */
   pop_module = prefs_register_protocol(proto_pop, NULL);
@@ -463,24 +514,28 @@ proto_register_pop(void)
     "Whether the POP dissector should reassemble RETR and TOP responses and spanning multiple TCP segments."
     " To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
     &pop_data_desegment);
+
+  expert_pop = expert_register_protocol(proto_pop);
+  expert_register_field_array(expert_pop, ei, array_length(ei));
+
+  credentials_tap = register_tap("credentials");
 }
 
 void
 proto_reg_handoff_pop(void)
 {
-  pop_handle = find_dissector("pop");
-  dissector_add_uint("tcp.port", TCP_PORT_POP, pop_handle);
+  dissector_add_uint_with_preference("tcp.port", TCP_PORT_POP, pop_handle);
   ssl_dissector_add(TCP_PORT_SSL_POP, pop_handle);
 
   /* find the IMF dissector */
   imf_handle = find_dissector_add_dependency("imf", proto_pop);
 
-  /* find the SSL dissector */
-  ssl_handle = find_dissector_add_dependency("ssl", proto_pop);
+  /* find the TLS dissector */
+  tls_handle = find_dissector_add_dependency("tls", proto_pop);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

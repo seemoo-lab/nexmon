@@ -7,30 +7,18 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_BTAVCTP_H__
 #define __PACKET_BTAVCTP_H__
 
 typedef struct _btavctp_data_t {
-    guint32   interface_id;
-    guint32   adapter_id;
-    guint16   chandle;  /* only low 12 bits used */
-    guint16   psm;
-    guint8    cr;
+    uint32_t  interface_id;
+    uint32_t  adapter_id;
+    uint16_t  chandle;  /* only low 12 bits used */
+    uint16_t  psm;
+    uint8_t   cr;
 } btavctp_data_t;
 
 extern int proto_btavctp;
@@ -38,7 +26,7 @@ extern int proto_btavctp;
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

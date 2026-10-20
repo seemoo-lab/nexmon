@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlIDCHashEntry" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlIDCHashEntry</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlIDCHashEntry_1aa3c54552265f819e58bcdbac1c3c1567" prot="public" static="no" mutable="no">
+        <type>xmlIDCHashEntryPtr</type>
+        <definition>xmlIDCHashEntryPtr next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlIDCHashEntry::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="1022" column="24" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="1022" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlIDCHashEntry_1a750b5d744c39a06bfb13e6eb010e35d0" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int index</definition>
+        <argsstring></argsstring>
+        <name>index</name>
+        <qualifiedname>_xmlIDCHashEntry::index</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="1023" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="1023" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlIDCHashEntry</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlschemas.c" line="1021" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="1021" bodyend="1024"/>
+    <listofallmembers>
+      <member refid="struct__xmlIDCHashEntry_1a750b5d744c39a06bfb13e6eb010e35d0" prot="public" virt="non-virtual"><scope>_xmlIDCHashEntry</scope><name>index</name></member>
+      <member refid="struct__xmlIDCHashEntry_1aa3c54552265f819e58bcdbac1c3c1567" prot="public" virt="non-virtual"><scope>_xmlIDCHashEntry</scope><name>next</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

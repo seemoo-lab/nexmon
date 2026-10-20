@@ -9,83 +9,71 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include <epan/expert.h>
 
 void proto_register_ar_drone(void);
 void proto_reg_handoff_ar_drone(void);
-
-static guint ar_drone_port = 0;
 
 /* ************************************************ */
 /* Begin static variable declaration/initialization */
 /* ************************************************ */
 
 /* ar_drone Protocol */
-static int proto_ar_drone = -1;
+static int proto_ar_drone;
+
+/* ar_drone Dissector handle */
+static dissector_handle_t ar_drone_handle;
 
 /* Headers */
-static int hf_command = -1;
-static int hf_PCMD_id = -1;
-static int hf_PCMD_flag = -1;
-static int hf_PCMD_roll = -1;
-static int hf_PCMD_pitch = -1;
-static int hf_PCMD_gaz = -1;
-static int hf_PCMD_yaw = -1;
-static int hf_REF_id = -1;
-static int hf_REF_ctrl = -1;
-static int hf_FTRIM_seq = -1;
-static int hf_CONFIG_seq = -1;
-static int hf_CONFIG_name = -1;
-static int hf_CONFIG_val = -1;
-static int hf_CONFIG_ID_seq = -1;
-static int hf_CONFIG_ID_session = -1;
-static int hf_CONFIG_ID_user = -1;
-static int hf_CONFIG_ID_app = -1;
-static int hf_COMWDG = -1;
-static int hf_LED_seq = -1;
-static int hf_LED_anim = -1;
-static int hf_LED_freq = -1;
-static int hf_LED_sec = -1;
-static int hf_ANIM_seq = -1;
-static int hf_ANIM_anim = -1;
-static int hf_ANIM_sec = -1;
-static int hf_CTRL_seq = -1;
-static int hf_CTRL_mode = -1;
-static int hf_CTRL_fsize = -1;
+static int hf_command;
+static int hf_PCMD_id;
+static int hf_PCMD_flag;
+static int hf_PCMD_roll;
+static int hf_PCMD_pitch;
+static int hf_PCMD_gaz;
+static int hf_PCMD_yaw;
+static int hf_REF_id;
+static int hf_REF_ctrl;
+static int hf_FTRIM_seq;
+static int hf_CONFIG_seq;
+static int hf_CONFIG_name;
+static int hf_CONFIG_val;
+static int hf_CONFIG_ID_seq;
+static int hf_CONFIG_ID_session;
+static int hf_CONFIG_ID_user;
+static int hf_CONFIG_ID_app;
+static int hf_COMWDG;
+static int hf_LED_seq;
+static int hf_LED_anim;
+static int hf_LED_freq;
+static int hf_LED_sec;
+static int hf_ANIM_seq;
+static int hf_ANIM_anim;
+static int hf_ANIM_sec;
+static int hf_CTRL_seq;
+static int hf_CTRL_mode;
+static int hf_CTRL_fsize;
 
 /**Subtrees */
-static gint ett_FTRIM = -1;
-static gint ett_ar_drone = -1;
-static gint ett_PCMD = -1;
-static gint ett_REF = -1;
-static gint ett_CONFIG = -1;
-static gint ett_CONFIG_ID = -1;
-static gint ett_COMWDG = -1;
-static gint ett_LED = -1;
-static gint ett_ANIM = -1;
-static gint ett_CTRL = -1;
+static int ett_FTRIM;
+static int ett_ar_drone;
+static int ett_PCMD;
+static int ett_REF;
+static int ett_CONFIG;
+static int ett_CONFIG_ID;
+static int ett_COMWDG;
+static int ett_LED;
+static int ett_ANIM;
+static int ett_CTRL;
 
-static expert_field ei_NO_COMMA = EI_INIT;
-static expert_field ei_NO_CR = EI_INIT;
+static expert_field ei_NO_COMMA;
+static expert_field ei_NO_CR;
 
 /* Value String */
 #if 0 /* TODO: Delete these?  Or make use of them? */
@@ -106,7 +94,7 @@ static const string_string CTRL_mode_vs[] = {
     { "4" , " (CFG_GET_CONTROL_MODE)" },
     { "5" , " (ACK_CONTROL_MODE)" },
     { "6" , " (CUSTOM_CFG_GET_CONTROL_MODE)" },
-    { 0, NULL }
+    { NULL, NULL }
 };
 
 /* ********************************************** */
@@ -115,12 +103,13 @@ static const string_string CTRL_mode_vs[] = {
 static int
 dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    gint        offset, length;
-    gint        master_offset = 0;
+    int         offset, length;
+    int         master_offset = 0;
     proto_item *ti, *sub_item;
     proto_tree *ar_tree, *sub_tree;
     char       *command;
-    guint32     dword;
+    uint8_t    *complete_str;
+    uint32_t    dword;
 
     if (tvb_captured_length(tvb) < 4)
         return 0;
@@ -142,18 +131,18 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     while (tvb_reported_length_remaining(tvb, master_offset) > 3)
     {
         /* Get a string to compare our command strings (aka "AT*PCMD", etc.) to */
-        offset = tvb_find_guint8(tvb, master_offset, -1, '=');
+        offset = tvb_find_uint8(tvb, master_offset, -1, '=');
         if (offset < master_offset)
             return master_offset;
 
-        command = tvb_get_string_enc(wmem_packet_scope(), tvb, master_offset, offset-master_offset, ENC_ASCII|ENC_NA);
-        sub_item = proto_tree_add_string(ar_tree, hf_command, tvb, master_offset, -1,
-            tvb_get_string_enc(wmem_packet_scope(), tvb, master_offset+3, offset-master_offset-3, ENC_ASCII|ENC_NA));
+        command = tvb_get_string_enc(pinfo->pool, tvb, master_offset, offset-master_offset, ENC_ASCII|ENC_NA);
+        complete_str = tvb_get_string_enc(pinfo->pool, tvb, master_offset+3, offset-master_offset-3, ENC_ASCII|ENC_NA);
+        sub_item = proto_tree_add_string(ar_tree, hf_command, tvb, master_offset, -1, complete_str);
 
         if (!strncmp(command, "AT*PCMD", 7))
         {
             /** Parse according the PCMD layout: */
-            guint8      PCMD_byte;
+            uint8_t     PCMD_byte;
             const char *PCMD_str;
 
             sub_tree = proto_item_add_subtree(sub_item, ett_PCMD);
@@ -161,39 +150,39 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 8;
 
             /* Add PCMD ID */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_PCMD_id, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_PCMD_id, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add PCMD Flag */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_PCMD_flag, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_PCMD_flag, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add PCMD Roll */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            ti = proto_tree_add_item(sub_tree, hf_PCMD_roll, tvb, offset, length, ENC_ASCII|ENC_NA);
+            ti = proto_tree_add_item(sub_tree, hf_PCMD_roll, tvb, offset, length, ENC_ASCII);
 
-            PCMD_byte = tvb_get_guint8(tvb, offset);
+            PCMD_byte = tvb_get_uint8(tvb, offset);
             if (PCMD_byte == 0x30)
             {
                 PCMD_str = " (NO CHANGE)";
             }
             else if (PCMD_byte == 0x2d)
             {
-                PCMD_byte = tvb_get_guint8(tvb, offset + 1);
+                PCMD_byte = tvb_get_uint8(tvb, offset + 1);
                 if (PCMD_byte == 0x30)
                 {
                     PCMD_str = " (NO CHANGE)";
@@ -211,21 +200,21 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset += (length + 1);
 
             /* Add PCMD Pitch */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            ti = proto_tree_add_item(sub_tree, hf_PCMD_pitch, tvb, offset, length, ENC_ASCII|ENC_NA);
+            ti = proto_tree_add_item(sub_tree, hf_PCMD_pitch, tvb, offset, length, ENC_ASCII);
 
-            PCMD_byte = tvb_get_guint8(tvb, offset);
+            PCMD_byte = tvb_get_uint8(tvb, offset);
             if (PCMD_byte == 0x30)
             {
                 PCMD_str = " (NO CHANGE)";
             }
             else if (PCMD_byte == 0x2d)
             {
-                PCMD_byte = tvb_get_guint8(tvb, offset + 1);
+                PCMD_byte = tvb_get_uint8(tvb, offset + 1);
                 if (PCMD_byte == 0x30)
                 {
                     PCMD_str = " (NO CHANGE)";
@@ -243,21 +232,21 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset += (length + 1);
 
             /* Add PCMD Gaz */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            ti = proto_tree_add_item(sub_tree, hf_PCMD_gaz, tvb, offset, length, ENC_ASCII|ENC_NA);
+            ti = proto_tree_add_item(sub_tree, hf_PCMD_gaz, tvb, offset, length, ENC_ASCII);
 
-            PCMD_byte = tvb_get_guint8(tvb, offset);
+            PCMD_byte = tvb_get_uint8(tvb, offset);
             if (PCMD_byte == 0x30)
             {
                 PCMD_str = " (NO CHANGE)";
             }
             else if (PCMD_byte == 0x2d)
             {
-                PCMD_byte = tvb_get_guint8(tvb, offset + 1);
+                PCMD_byte = tvb_get_uint8(tvb, offset + 1);
                 if (PCMD_byte == 0x30)
                 {
                     PCMD_str = " (NO CHANGE)";
@@ -275,21 +264,21 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset += (length + 1);
 
             /* Add PCMD Yaw */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
-            ti = proto_tree_add_item(sub_tree, hf_PCMD_yaw, tvb, offset, length, ENC_ASCII|ENC_NA);
+            ti = proto_tree_add_item(sub_tree, hf_PCMD_yaw, tvb, offset, length, ENC_ASCII);
 
-            PCMD_byte = tvb_get_guint8(tvb, offset);
+            PCMD_byte = tvb_get_uint8(tvb, offset);
             if (PCMD_byte == 0x30)
             {
                 PCMD_str = " (NO CHANGE)";
             }
             else if (PCMD_byte == 0x2d)
             {
-                PCMD_byte = tvb_get_guint8(tvb, offset + 1);
+                PCMD_byte = tvb_get_uint8(tvb, offset + 1);
                 if (PCMD_byte == 0x30)
                 {
                     PCMD_str = " (NO CHANGE)";
@@ -314,21 +303,21 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 7;
 
             /* Add REF ID */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_REF_id, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_REF_id, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add REF ctrl */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_REF_ctrl, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_REF_ctrl, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
         } else if (!strncmp(command, "AT*CONFIG_IDS", 13))
@@ -339,39 +328,39 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 14;
 
             /* Add Sequence Number */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CONFIG_ID_seq, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CONFIG_ID_seq, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add Session ID */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CONFIG_ID_session, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CONFIG_ID_session, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add User ID */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CONFIG_ID_user, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CONFIG_ID_user, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add Application ID */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CONFIG_ID_app, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CONFIG_ID_app, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
         } else if (!strncmp(command, "AT*ANIM", 7))
@@ -382,30 +371,30 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 8;
 
             /* Add sequence */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_ANIM_seq, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_ANIM_seq, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add Animation */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_ANIM_anim, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_ANIM_anim, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add animation time(sec) */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_ANIM_sec, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_ANIM_sec, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
         } else if (!strncmp(command, "AT*FTRIM", 8))
@@ -416,13 +405,13 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 9;
 
             /* Add sequence number */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
             proto_item_append_text(sub_item, " (Sets the reference for the horizontal plane)");
-            proto_tree_add_item(sub_tree, hf_FTRIM_seq, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_FTRIM_seq, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
         } else if (!strncmp(command, "AT*CONFIG", 9))
         {
@@ -432,30 +421,30 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 10;
 
             /* Add sequence */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CONFIG_seq, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CONFIG_seq, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add Name */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CONFIG_name, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CONFIG_name, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add Value */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CONFIG_val, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CONFIG_val, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
         } else if (!strncmp(command, "AT*LED", 6))
@@ -466,39 +455,39 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 7;
 
             /* Add sequence */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_LED_seq, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_LED_seq, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add animation to play */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_LED_anim, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_LED_anim, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add frequency */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_LED_freq, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_LED_freq, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add Time to play in sec  */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_LED_sec, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_LED_sec, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
         } else if (!strncmp(command, "AT*COMWDG", 9))
@@ -509,17 +498,17 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 10;
 
             /* Add sequence number */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_COMWDG, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_COMWDG, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
         }else if (!strncmp(command, "AT*CTRL", 7))
         {
-            const guint8* CTRL_mode_str;
+            const uint8_t* CTRL_mode_str;
 
             /** Parse according to the CTRL layout: */
             sub_tree = proto_item_add_subtree(sub_item, ett_CTRL);
@@ -527,31 +516,31 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             offset = master_offset + 8;
 
             /* Add sequence */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CTRL_seq, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CTRL_seq, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
 
             /* Add Mode */
-            length = tvb_find_guint8(tvb, offset, -1, ',') - offset;
+            length = tvb_find_uint8(tvb, offset, -1, ',') - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_COMMA);
                 return offset;
             }
-            ti = proto_tree_add_item_ret_string(sub_tree, hf_CTRL_mode, tvb, offset, length, ENC_ASCII|ENC_NA, wmem_packet_scope(), &CTRL_mode_str);
-            proto_item_append_text(ti, "%s", str_to_str(CTRL_mode_str, CTRL_mode_vs, " (Unknown Mode)"));
+            ti = proto_tree_add_item_ret_string(sub_tree, hf_CTRL_mode, tvb, offset, length, ENC_ASCII|ENC_NA, pinfo->pool, &CTRL_mode_str);
+            proto_item_append_text(ti, "%s", str_to_str_wmem(pinfo->pool, CTRL_mode_str, CTRL_mode_vs, " (Unknown Mode)"));
             offset += (length + 1);
 
             /* Add File Size */
-            length = tvb_find_guint8(tvb, offset, -1, 0x0d) - offset;
+            length = tvb_find_uint8(tvb, offset, -1, 0x0d) - offset;
             if (length < 0) {
                 expert_add_info(pinfo, sub_item, &ei_NO_CR);
                 return offset;
             }
-            proto_tree_add_item(sub_tree, hf_CTRL_fsize, tvb, offset, length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(sub_tree, hf_CTRL_fsize, tvb, offset, length, ENC_ASCII);
             offset += (length + 1);
         }
         else
@@ -565,6 +554,12 @@ dissect_ar_drone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     }
 
     return master_offset;
+}
+
+static bool
+dissect_ar_drone_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    return dissect_ar_drone(tvb, pinfo, tree, data) > 0;
 }
 
 void
@@ -708,19 +703,19 @@ proto_register_ar_drone(void)
         { "Animation Sequence Number", "ar_drone.anim.seq",
         FT_STRING, BASE_NONE,
         NULL, 0x0,
-        "Movment(Animation) Sequence #", HFILL }
+        "Movement(Animation) Sequence #", HFILL }
     },
     { &hf_ANIM_anim,
         { "Selected Animation Number", "ar_drone.anim.num",
         FT_STRING, BASE_NONE,
         NULL, 0x0,
-        "Movment(Animation) to Play", HFILL }
+        "Movement(Animation) to Play", HFILL }
     },
     { &hf_ANIM_sec,
         { "Animation Duration (seconds)", "ar_drone.anim.sec",
         FT_STRING, BASE_NONE,
         NULL, 0x0,
-        "Movment(Animation) Time in Seconds", HFILL }
+        "Movement(Animation) Time in Seconds", HFILL }
     },
     { &hf_CTRL_seq,
         { "Sequence Number", "ar_drone.ctrl.seq",
@@ -743,7 +738,7 @@ proto_register_ar_drone(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
     &ett_ar_drone,
     &ett_PCMD,
     &ett_REF,
@@ -761,63 +756,28 @@ proto_register_ar_drone(void)
         { &ei_NO_CR,    { "ar_drone.no_cr",    PI_MALFORMED, PI_ERROR, "Carriage return delimiter (0x0d) not found", EXPFILL }},
     };
 
-    module_t         *drone_module;
     expert_module_t*  expert_drone;
 
     /* Setup protocol info */
-    proto_ar_drone = proto_register_protocol (
-        "AR Drone Packet", /* name       */
-        "AR Drone",        /* short name */
-        "ar_drone"         /* abbrev     */
-    );
+    proto_ar_drone = proto_register_protocol("AR Drone Packet", "AR Drone", "ar_drone");
+    ar_drone_handle = register_dissector("ar_drone", dissect_ar_drone, proto_ar_drone);
 
     proto_register_field_array(proto_ar_drone, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
     expert_drone = expert_register_protocol(proto_ar_drone);
     expert_register_field_array(expert_drone, ei, array_length(ei));
-
-    drone_module = prefs_register_protocol(proto_ar_drone, NULL);
-
-    prefs_register_uint_preference(drone_module, "udp.port",
-                                   "AR Drone UDP Port",
-                                   "AR Drone UDP port",
-                                   10,
-                                   &ar_drone_port);
 }
 
 void
 proto_reg_handoff_ar_drone(void)
 {
-    static dissector_handle_t ar_drone_handle;
-    static guint old_port = 0;
-    static gboolean initialized = FALSE;
-
-    if (initialized == FALSE)
-    {
-        ar_drone_handle = create_dissector_handle(dissect_ar_drone, proto_ar_drone);
-
-        heur_dissector_add("udp", dissect_ar_drone, "AR Drone over UDP", "ar_drone_udp", proto_ar_drone, HEURISTIC_ENABLE);
-
-        initialized = TRUE;
-    }
-
-    /* Register UDP port for dissection */
-    if (old_port != 0 && old_port != ar_drone_port)
-    {
-        dissector_delete_uint("udp.port", old_port, ar_drone_handle);
-    }
-
-    if (ar_drone_port != 0 && old_port != ar_drone_port)
-    {
-        dissector_add_uint("udp.port", ar_drone_port, ar_drone_handle);
-    }
-
-    old_port = ar_drone_port;
+    heur_dissector_add("udp", dissect_ar_drone_heur, "AR Drone over UDP", "ar_drone_udp", proto_ar_drone, HEURISTIC_ENABLE);
+    dissector_add_for_decode_as_with_preference("udp.port", ar_drone_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

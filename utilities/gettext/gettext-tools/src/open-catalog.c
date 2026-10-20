@@ -1,7 +1,5 @@
 /* open-po - search for .po file along search path list and open for reading
-   Copyright (C) 1995-1996, 2000-2003, 2005-2009, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, April 1995.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Ulrich Drepper and Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "open-catalog.h"
@@ -45,57 +43,57 @@
 static FILE *
 try_open_catalog_file (const char *input_name, char **real_file_name_p)
 {
-  static const char *extension[] = { "", ".po", ".pot", };
-  char *file_name;
-  FILE *ret_val;
-  int j;
-  size_t k;
-  const char *dir;
-
   if (strcmp (input_name, "-") == 0 || strcmp (input_name, "/dev/stdin") == 0)
     {
       *real_file_name_p = xstrdup (_("<stdin>"));
       return stdin;
     }
 
-  /* We have a real name for the input file.  If the name is absolute,
-     try the various extensions, but ignore the directory search list.  */
-  if (IS_ABSOLUTE_PATH (input_name))
-    {
-      for (k = 0; k < SIZEOF (extension); ++k)
-        {
-          file_name = xconcatenated_filename ("", input_name, extension[k]);
+  static const char *extension[] = { "", ".po", ".pot", };
 
-          ret_val = fopen (file_name, "r");
-          if (ret_val != NULL || errno != ENOENT)
-            {
-              /* We found the file.  */
-              *real_file_name_p = file_name;
-              return ret_val;
-            }
-
-          free (file_name);
-        }
-    }
-  else
+  /* We have a real name for the input file.  */
+  if (IS_RELATIVE_FILE_NAME (input_name))
     {
       /* For relative file names, look through the directory search list,
          trying the various extensions.  If no directory search list is
          specified, the current directory is used.  */
-      for (j = 0; (dir = dir_list_nth (j)) != NULL; ++j)
-        for (k = 0; k < SIZEOF (extension); ++k)
+      const char *dir;
+      for (int j = 0; (dir = dir_list_nth (j)) != NULL; ++j)
+        for (size_t k = 0; k < SIZEOF (extension); ++k)
           {
-            file_name = xconcatenated_filename (dir, input_name, extension[k]);
+            char *file_name =
+              xconcatenated_filename (dir, input_name, extension[k]);
 
-            ret_val = fopen (file_name, "r");
-            if (ret_val != NULL || errno != ENOENT)
+            FILE *fp = fopen (file_name, "r");
+            if (fp != NULL || errno != ENOENT)
               {
+                /* We found the file.  */
                 *real_file_name_p = file_name;
-                return ret_val;
+                return fp;
               }
 
             free (file_name);
           }
+    }
+  else
+    {
+      /* The name is not relative.  Try the various extensions, but ignore the
+         directory search list.  */
+      for (size_t k = 0; k < SIZEOF (extension); ++k)
+        {
+          char *file_name =
+            xconcatenated_filename ("", input_name, extension[k]);
+
+          FILE *fp = fopen (file_name, "r");
+          if (fp != NULL || errno != ENOENT)
+            {
+              /* We found the file.  */
+              *real_file_name_p = file_name;
+              return fp;
+            }
+
+          free (file_name);
+        }
     }
 
   /* File does not exist.  */

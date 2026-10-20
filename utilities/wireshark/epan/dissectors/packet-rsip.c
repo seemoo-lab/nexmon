@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,41 +21,43 @@ void proto_register_rsip(void);
 /* Forward declaration we need below */
 void proto_reg_handoff_rsip(void);
 
+static dissector_handle_t rsip_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_rsip = -1;
-static int hf_rsip_version = -1;
-static int hf_rsip_message_type = -1;
-static int hf_rsip_message_length = -1;
-static int hf_rsip_parameter_type = -1;
-static int hf_rsip_parameter_length = -1;
-static int hf_rsip_parameter_value = -1;
-static int hf_rsip_parameter_address_type = -1;
-static int hf_rsip_parameter_address_ipv4 = -1;
-static int hf_rsip_parameter_address_ipv4_netmask = -1;
-static int hf_rsip_parameter_address_ipv6 = -1;
-static int hf_rsip_parameter_address_fqdn = -1;
-static int hf_rsip_parameter_ports_number = -1;
-static int hf_rsip_parameter_ports_port_number = -1;
-static int hf_rsip_parameter_lease_time = -1;
-static int hf_rsip_parameter_client_id = -1;
-static int hf_rsip_parameter_bind_id = -1;
-static int hf_rsip_parameter_tunnel_type = -1;
-static int hf_rsip_parameter_method = -1;
-static int hf_rsip_parameter_error = -1;
-static int hf_rsip_parameter_flow_policy_local = -1;
-static int hf_rsip_parameter_flow_policy_remote = -1;
-static int hf_rsip_parameter_indicator = -1;
-static int hf_rsip_parameter_message_counter = -1;
-static int hf_rsip_parameter_vendor_specific_vendor_id = -1;
-static int hf_rsip_parameter_vendor_specific_subtype = -1;
-static int hf_rsip_parameter_vendor_specific_value = -1;
-static int hf_rsip_parameter_spi_number = -1;
-static int hf_rsip_parameter_spi = -1;
+static int proto_rsip;
+static int hf_rsip_version;
+static int hf_rsip_message_type;
+static int hf_rsip_message_length;
+static int hf_rsip_parameter_type;
+static int hf_rsip_parameter_length;
+static int hf_rsip_parameter_value;
+static int hf_rsip_parameter_address_type;
+static int hf_rsip_parameter_address_ipv4;
+static int hf_rsip_parameter_address_ipv4_netmask;
+static int hf_rsip_parameter_address_ipv6;
+static int hf_rsip_parameter_address_fqdn;
+static int hf_rsip_parameter_ports_number;
+static int hf_rsip_parameter_ports_port_number;
+static int hf_rsip_parameter_lease_time;
+static int hf_rsip_parameter_client_id;
+static int hf_rsip_parameter_bind_id;
+static int hf_rsip_parameter_tunnel_type;
+static int hf_rsip_parameter_method;
+static int hf_rsip_parameter_error;
+static int hf_rsip_parameter_flow_policy_local;
+static int hf_rsip_parameter_flow_policy_remote;
+static int hf_rsip_parameter_indicator;
+static int hf_rsip_parameter_message_counter;
+static int hf_rsip_parameter_vendor_specific_vendor_id;
+static int hf_rsip_parameter_vendor_specific_subtype;
+static int hf_rsip_parameter_vendor_specific_value;
+static int hf_rsip_parameter_spi_number;
+static int hf_rsip_parameter_spi;
 
 /* Initialize the subtree pointers */
-static gint ett_rsip = -1;
-static gint ett_rsip_param = -1;
-static gint ett_rsip_param_val = -1;
+static int ett_rsip;
+static int ett_rsip_param;
+static int ett_rsip_param_val;
 
 #define UDP_PORT_RSIP	4555
 #define TCP_PORT_RSIP	4555
@@ -248,12 +238,12 @@ static const value_string rmt_flow_policy_vals[] = {
 
 /* Code to actually dissect the packets */
 static int
-rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
+rsip_parameter(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree, int off, int eoff)
 {
 	int		consumed, i, paramleft;
-	guint8		addrtype, flowpolicy, method, number, paramtype, tuntype;
-	guint16		error, ind, paramlen, portnum;
-	guint32		bid, cid, leasetm, msgc;
+	uint8_t		addrtype, flowpolicy, method, number, paramtype, tuntype;
+	uint16_t		error, ind, paramlen, portnum;
+	uint32_t		bid, cid, leasetm, msgc;
 	proto_tree	*p_tree, *v_tree;
 	proto_item	*pti, *vti;
 
@@ -261,12 +251,12 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 	if (off >= eoff)
 		return 0;
 
-	paramtype = tvb_get_guint8(tvb, off);
+	paramtype = tvb_get_uint8(tvb, off);
 	paramlen = tvb_get_ntohs(tvb, off + 1);
 
 	p_tree = proto_tree_add_subtree(rsip_tree, tvb, off, 3 + paramlen,
 	    ett_rsip_param, &pti,
-	    val_to_str(paramtype, param_type_vals, "Unknown (%d)"));
+	    val_to_str(pinfo->pool, paramtype, param_type_vals, "Unknown (%d)"));
 
 	proto_tree_add_item(p_tree, hf_rsip_parameter_type, tvb,
 	    off, 1, ENC_BIG_ENDIAN);
@@ -286,7 +276,7 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 		proto_tree_add_item(v_tree, hf_rsip_parameter_address_type,
 		    tvb, off + 3, 1, ENC_BIG_ENDIAN);
 
-		addrtype = tvb_get_guint8(tvb, off + 3);
+		addrtype = tvb_get_uint8(tvb, off + 3);
 
 		switch (addrtype) {
 		case 0:		/* Reserved */
@@ -297,7 +287,7 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 				    hf_rsip_parameter_address_ipv4, tvb,
 				    off + 4, paramlen - 1, ENC_BIG_ENDIAN);
 				proto_item_append_text(pti, ": %s",
-				    tvb_ip_to_str(tvb, off + 4));
+				    tvb_ip_to_str(pinfo->pool, tvb, off + 4));
 			} else
 				proto_item_append_text(pti,
 				    ": Any IPv4 Address");
@@ -308,7 +298,7 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 				    hf_rsip_parameter_address_ipv4_netmask,
 				    tvb, off + 4, paramlen - 1, ENC_BIG_ENDIAN);
 				proto_item_append_text(pti, "(netmask): %s",
-				    tvb_ip_to_str(tvb, off + 4));
+				    tvb_ip_to_str(pinfo->pool, tvb, off + 4));
 			} else
 				proto_item_append_text(pti,
 				    ": Any IPv4 Netmask");
@@ -319,7 +309,7 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 				    hf_rsip_parameter_address_ipv6, tvb,
 				    off + 4, paramlen - 1, ENC_NA);
 				proto_item_append_text(pti, ": %s",
-				    tvb_ip6_to_str(tvb, off + 4));
+				    tvb_ip6_to_str(pinfo->pool, tvb, off + 4));
 			} else
 				proto_item_append_text(pti,
 				    ": Any IPv6 Address");
@@ -328,9 +318,9 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 			if (paramlen - 1 > 0) {
 				proto_tree_add_item(v_tree,
 				    hf_rsip_parameter_address_fqdn, tvb,
-				    off + 4, paramlen - 1, ENC_ASCII|ENC_NA);
+				    off + 4, paramlen - 1, ENC_ASCII);
 				proto_item_append_text(pti, ": %s",
-				    tvb_format_text(tvb, off + 4, paramlen - 1));
+				    tvb_format_text(pinfo->pool, tvb, off + 4, paramlen - 1));
 			} else
 				proto_item_append_text(pti,
 				    ": Any Fully Qualified Domain Name");
@@ -343,7 +333,7 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 	case 2:		/* Ports */
 		proto_tree_add_item(v_tree, hf_rsip_parameter_ports_number,
 		    tvb, off + 3, 1, ENC_BIG_ENDIAN);
-		number = tvb_get_guint8(tvb, off + 3);
+		number = tvb_get_uint8(tvb, off + 3);
 		if (paramlen == 1) {
 			switch (number) {
 			case 0:
@@ -411,18 +401,18 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 		/* XXX if paramlen != 1 we've got a protocol violation */
 		proto_tree_add_item(v_tree, hf_rsip_parameter_tunnel_type,
 		    tvb, off + 3, paramlen, ENC_BIG_ENDIAN);
-		tuntype = tvb_get_guint8(tvb, off + 3);
+		tuntype = tvb_get_uint8(tvb, off + 3);
 		proto_item_append_text(pti, ": %s",
-		    val_to_str(tuntype, tunnel_type_vals,
+		    val_to_str(pinfo->pool, tuntype, tunnel_type_vals,
 		        "Unknown Tunnel Type (%d)"));
 		break;
 	case 7:		/* RSIP Method */
 		/* XXX if paramlen != 1 we've got a protocol violation */
 		proto_tree_add_item(v_tree, hf_rsip_parameter_method,
 		    tvb, off + 3, paramlen, ENC_BIG_ENDIAN);
-		method = tvb_get_guint8(tvb, off + 3);
+		method = tvb_get_uint8(tvb, off + 3);
 		proto_item_append_text(pti, ": %s",
-		    val_to_str(method, method_vals,
+		    val_to_str(pinfo->pool, method, method_vals,
 		    "Unknown RSIP Method (%d)"));
 		break;
 	case 8:		/* Error */
@@ -431,22 +421,22 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 		    tvb, off + 3, paramlen, ENC_BIG_ENDIAN);
 		error = tvb_get_ntohs(tvb, off + 3);
 		proto_item_append_text(pti, ": %s",
-		    val_to_str(error, error_number_vals, "Undefined Error (%d)"));
+		    val_to_str(pinfo->pool, error, error_number_vals, "Undefined Error (%d)"));
 		break;
 	case 9:		/* Flow Policy */
 		/* XXX if paramlen != 2 we've got a protocol violation */
 		proto_tree_add_item(v_tree,
 		    hf_rsip_parameter_flow_policy_local, tvb, off + 3, 1, ENC_BIG_ENDIAN);
-		flowpolicy = tvb_get_guint8(tvb, off + 3);
+		flowpolicy = tvb_get_uint8(tvb, off + 3);
 		proto_item_append_text(pti, ": %s",
-		    val_to_str(flowpolicy, lcl_flow_policy_vals,
+		    val_to_str(pinfo->pool, flowpolicy, lcl_flow_policy_vals,
 		    "Undefined Local Flow Policy (%d)"));
 		proto_tree_add_item(v_tree,
 		    hf_rsip_parameter_flow_policy_remote, tvb, off + 4, 1,
 		    ENC_BIG_ENDIAN);
-		flowpolicy = tvb_get_guint8(tvb, off + 4);
+		flowpolicy = tvb_get_uint8(tvb, off + 4);
 		proto_item_append_text(pti, "/%s",
-		    val_to_str(flowpolicy, rmt_flow_policy_vals,
+		    val_to_str(pinfo->pool, flowpolicy, rmt_flow_policy_vals,
 		    "Undefined Remote Flow Policy (%d)"));
 		break;
 	case 10:	/* Indicator */
@@ -491,7 +481,7 @@ rsip_parameter(tvbuff_t *tvb, proto_tree *rsip_tree, int off, int eoff)
 }
 
 static int
-rsip_message_error_response(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_error_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			    int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -505,7 +495,7 @@ rsip_message_error_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -514,7 +504,7 @@ rsip_message_error_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_register_request(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_register_request(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			      int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -525,7 +515,7 @@ rsip_message_register_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -534,7 +524,7 @@ rsip_message_register_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_register_response(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_register_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			       int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -550,7 +540,7 @@ rsip_message_register_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -559,7 +549,7 @@ rsip_message_register_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_deregister_request(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_deregister_request(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 				int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -571,7 +561,7 @@ rsip_message_deregister_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -580,14 +570,14 @@ rsip_message_deregister_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_deregister_response(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_deregister_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 				 int offset, int eoffset)
 {
-	return rsip_message_deregister_request(tvb, rsip_tree, offset, eoffset);
+	return rsip_message_deregister_request(tvb, pinfo, rsip_tree, offset, eoffset);
 }
 
 static int
-rsip_message_assign_request_rsaip(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_assign_request_rsaip(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 				  int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -604,7 +594,7 @@ rsip_message_assign_request_rsaip(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -613,7 +603,7 @@ rsip_message_assign_request_rsaip(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_assign_response_rsaip(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_assign_response_rsaip(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 				   int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -632,7 +622,7 @@ rsip_message_assign_response_rsaip(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -641,7 +631,7 @@ rsip_message_assign_response_rsaip(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_assign_request_rsapip(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_assign_request_rsapip(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 				   int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -659,7 +649,7 @@ rsip_message_assign_request_rsapip(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -668,7 +658,7 @@ rsip_message_assign_request_rsapip(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_assign_response_rsapip(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_assign_response_rsapip(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 				    int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -688,7 +678,7 @@ rsip_message_assign_response_rsapip(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -697,7 +687,7 @@ rsip_message_assign_response_rsapip(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_extend_request(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_extend_request(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			    int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -711,7 +701,7 @@ rsip_message_extend_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -720,7 +710,7 @@ rsip_message_extend_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_extend_response(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_extend_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			     int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -734,7 +724,7 @@ rsip_message_extend_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -743,7 +733,7 @@ rsip_message_extend_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_free_request(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_free_request(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			  int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -756,7 +746,7 @@ rsip_message_free_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -765,7 +755,7 @@ rsip_message_free_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_free_response(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_free_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			   int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -778,7 +768,7 @@ rsip_message_free_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -787,7 +777,7 @@ rsip_message_free_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_query_request(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_query_request(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			   int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -808,7 +798,7 @@ rsip_message_query_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -817,7 +807,7 @@ rsip_message_query_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_query_response(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_query_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			    int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -847,7 +837,7 @@ rsip_message_query_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -856,7 +846,7 @@ rsip_message_query_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_listen_request(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_listen_request(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			    int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -874,7 +864,7 @@ rsip_message_listen_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -883,7 +873,7 @@ rsip_message_listen_request(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_listen_response(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_listen_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 			     int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -903,7 +893,7 @@ rsip_message_listen_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -912,7 +902,7 @@ rsip_message_listen_response(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_assign_request_rsipsec(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_assign_request_rsipsec(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 				    int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -930,7 +920,7 @@ rsip_message_assign_request_rsipsec(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -939,7 +929,7 @@ rsip_message_assign_request_rsipsec(tvbuff_t *tvb, proto_tree *rsip_tree,
 }
 
 static int
-rsip_message_assign_response_rsipsec(tvbuff_t *tvb, proto_tree *rsip_tree,
+rsip_message_assign_response_rsipsec(tvbuff_t *tvb, packet_info* pinfo, proto_tree *rsip_tree,
 				     int offset, int eoffset)
 {
 	int		consumed, offset_delta;
@@ -959,7 +949,7 @@ rsip_message_assign_response_rsipsec(tvbuff_t *tvb, proto_tree *rsip_tree,
 	consumed = 0;
 	do {
 		offset_delta =
-		    rsip_parameter(tvb, rsip_tree, offset, eoffset);
+		    rsip_parameter(tvb, pinfo, rsip_tree, offset, eoffset);
 		offset += offset_delta;
 		consumed += offset_delta;
 	} while ((offset_delta > 0) && (offset < eoffset));
@@ -972,18 +962,18 @@ dissect_rsip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 {
 	proto_item	*ti;
 	proto_tree	*rsip_tree;
-	guint8		msgtype;
-	/*gboolean	msgcnt_required;*/
+	uint8_t		msgtype;
+	/*bool	msgcnt_required;*/
 	int		eoff;
 
-	msgtype = tvb_get_guint8(tvb, 1);
+	msgtype = tvb_get_uint8(tvb, 1);
 
-	/*msgcnt_required = (pinfo->ipproto == IP_PROTO_UDP)? TRUE : FALSE;*/
+	/*msgcnt_required = (pinfo->ipproto == IP_PROTO_UDP)? true : false;*/
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "RSIP");
 
 	col_add_str(pinfo->cinfo, COL_INFO,
-	    val_to_str(msgtype, msg_type_vals,
+	    val_to_str(pinfo->pool, msgtype, msg_type_vals,
 	        "Unknown Message Type (0x%0x)"));
 
 	if (tree) {
@@ -1002,61 +992,61 @@ dissect_rsip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 		switch (msgtype) {
 		case 1:		/* Error Response */
-			rsip_message_error_response(tvb, rsip_tree, 4, eoff);
+			rsip_message_error_response(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 2:		/* Register Request */
-			rsip_message_register_request(tvb, rsip_tree, 4, eoff);
+			rsip_message_register_request(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 3:		/* Register Response */
-			rsip_message_register_response(tvb, rsip_tree, 4, eoff);
+			rsip_message_register_response(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 4:		/* De-register Request */
-			rsip_message_deregister_request(tvb, rsip_tree, 4, eoff);
+			rsip_message_deregister_request(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 5:		/* De-register Response */
-			rsip_message_deregister_response(tvb, rsip_tree, 4, eoff);
+			rsip_message_deregister_response(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 6:		/* Assign Request RSA-IP */
-			rsip_message_assign_request_rsaip(tvb, rsip_tree, 4, eoff);
+			rsip_message_assign_request_rsaip(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 7:		/* Assign Response RSA-IP */
-			rsip_message_assign_response_rsaip(tvb, rsip_tree, 4, eoff);
+			rsip_message_assign_response_rsaip(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 8:		/* Assign Request RSAP-IP */
-			rsip_message_assign_request_rsapip(tvb, rsip_tree, 4, eoff);
+			rsip_message_assign_request_rsapip(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 9:		/* Assign Response RSAP-IP */
-			rsip_message_assign_response_rsapip(tvb, rsip_tree, 4, eoff);
+			rsip_message_assign_response_rsapip(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 10:	/* Extend Request */
-			rsip_message_extend_request(tvb, rsip_tree, 4, eoff);
+			rsip_message_extend_request(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 11:	/* Extend Response */
-			rsip_message_extend_response(tvb, rsip_tree, 4, eoff);
+			rsip_message_extend_response(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 12:	/* Free Request */
-			rsip_message_free_request(tvb, rsip_tree, 4, eoff);
+			rsip_message_free_request(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 13:	/* Free Response */
-			rsip_message_free_response(tvb, rsip_tree, 4, eoff);
+			rsip_message_free_response(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 14:	/* Query Request */
-			rsip_message_query_request(tvb, rsip_tree, 4, eoff);
+			rsip_message_query_request(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 15:	/* Query Response */
-			rsip_message_query_response(tvb, rsip_tree, 4, eoff);
+			rsip_message_query_response(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 16:	/* Listen Request */
-			rsip_message_listen_request(tvb, rsip_tree, 4, eoff);
+			rsip_message_listen_request(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 17:	/* Listen Response */
-			rsip_message_listen_response(tvb, rsip_tree, 4, eoff);
+			rsip_message_listen_response(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 22:	/* Assign Request RSIPsec */
-			rsip_message_assign_request_rsipsec(tvb, rsip_tree, 4, eoff);
+			rsip_message_assign_request_rsipsec(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		case 23:	/* Assign Response RSIPsec */
-			rsip_message_assign_response_rsipsec(tvb, rsip_tree, 4, eoff);
+			rsip_message_assign_response_rsipsec(tvb, pinfo, rsip_tree, 4, eoff);
 			break;
 		}
 	}
@@ -1093,7 +1083,7 @@ proto_register_rsip(void)
 		},
 		{ &hf_rsip_parameter_length,
 			{ "Length",		"rsip.parameter.length",
-			  FT_UINT8, BASE_DEC, NULL, 0x0,
+			  FT_UINT16, BASE_DEC, NULL, 0x0,
 			  NULL, HFILL }
 		},
 		{ &hf_rsip_parameter_value,
@@ -1225,7 +1215,7 @@ proto_register_rsip(void)
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_rsip,
 		&ett_rsip_param,
 		&ett_rsip_param_val
@@ -1237,27 +1227,18 @@ proto_register_rsip(void)
 	proto_register_field_array(proto_rsip, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
+	rsip_handle = register_dissector("rsip", dissect_rsip, proto_rsip);
 }
 
 void
 proto_reg_handoff_rsip(void)
 {
-	static gboolean initialized = FALSE;
-	dissector_handle_t rsip_handle;
-
-	if (!initialized) {
-
-		rsip_handle = create_dissector_handle(dissect_rsip,
-		    proto_rsip);
-		dissector_add_uint("udp.port", UDP_PORT_RSIP, rsip_handle);
-		dissector_add_uint("tcp.port", TCP_PORT_RSIP, rsip_handle);
-
-		initialized = TRUE;
-	}
+	dissector_add_uint_with_preference("udp.port", UDP_PORT_RSIP, rsip_handle);
+	dissector_add_uint_with_preference("tcp.port", TCP_PORT_RSIP, rsip_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

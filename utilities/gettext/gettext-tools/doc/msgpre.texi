@@ -1,0 +1,245 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
+@pindex msgpre
+@cindex @code{msgpre} program, usage
+@example
+msgpre [@var{option}...]
+@end example
+
+@cindex pretranslate a message catalog
+@cindex translate through a Large Language Model
+The @code{msgpre} program pretranslates a translation catalog.
+
+@strong{Warning:} The pretranslations might not be what you expect.
+They might be of the wrong form, be of poor quality, or reflect some biases.
+
+@subsection Input file location
+
+@table @samp
+@item -i @var{inputfile}
+@itemx --input=@var{inputfile}
+@opindex -i@r{, @code{msgpre} option}
+@opindex --input@r{, @code{msgpre} option}
+Input PO file.
+
+@item -D @var{directory}
+@itemx --directory=@var{directory}
+@opindex -D@r{, @code{msgpre} option}
+@opindex --directory@r{, @code{msgpre} option}
+Add @var{directory} to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting @file{.po}
+file will be written relative to the current directory, though.
+
+@end table
+
+If no @var{inputfile} is given or if it is @samp{-}, standard input is read.
+
+@subsection Output file location
+
+@table @samp
+@item -o @var{file}
+@itemx --output-file=@var{file}
+@opindex -o@r{, @code{msgpre} option}
+@opindex --output-file@r{, @code{msgpre} option}
+Write output to specified file.
+
+@end table
+
+The results are written to standard output if no output file is specified
+or if it is @samp{-}.
+
+@subsection Message selection
+
+@table @samp
+@item --keep-fuzzy
+@opindex --keep-fuzzy@r{, @code{msgpre} option}
+Keep fuzzy messages unmodified.
+Pretranslate only untranslated messages.
+
+@end table
+
+@subsection Large Language Model (LLM) options
+
+@table @samp
+@item --species=@var{type}
+@opindex --species@r{, @code{msgpre} option}
+Specifies the type of Large Language Model execution engine.
+The default and only valid value is @code{ollama}.
+
+@item --url=@var{url}
+@opindex --url@r{, @code{msgpre} option}
+Specifies the URL of the server that runs Large Language Model execution engine.
+For @code{ollama}, the default is @code{http://localhost:11434}.
+
+@item -m @var{model}
+@itemx --model=@var{model}
+@opindex -m@r{, @code{msgpre} option}
+@opindex --model@r{, @code{msgpre} option}
+Specifies the model to use.
+This option is mandatory; no default exists.
+The specified model must
+already be installed in the Large Language Model execution engine.
+
+@item --prompt=@var{text}
+@opindex --prompt@r{, @code{msgpre} option}
+Specifies the prompt to use before each @code{msgid} from the PO file.
+It allows you to specify extra instructions for the LLM.
+The prompt should include an instruction like
+"Translate into @var{target language}.".
+Some hints for good prompts are described in the article
+``How to write AI prompts for translation''
+@url{https://poeditor.com/blog/ai-prompts-for-translation/}.
+
+@item --postprocess=@var{command}
+@opindex --postprocess@r{, @code{msgpre} option}
+Specifies a command to post-process the output from the LLM.
+This should be a Bourne shell command
+that reads from standard input and writes to standard output.
+
+For instance, the @code{ministral-3:14b} model
+often emphasizes part of the output with @samp{**} characters.
+To eliminate these markers,
+you could use the command @samp{sed -e 's/[*][*]//g'}.
+
+@end table
+
+@subsection Input file syntax
+
+@table @samp
+@item -P
+@itemx --properties-input
+@opindex -P@r{, @code{msgpre} option}
+@opindex --properties-input@r{, @code{msgpre} option}
+Assume the input file is a Java ResourceBundle in Java @code{.properties}
+syntax, not in PO file syntax.
+
+@item --stringtable-input
+@opindex --stringtable-input@r{, @code{msgpre} option}
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+@code{.strings} syntax, not in PO file syntax.
+
+@end table
+
+@subsection Output details
+
+@table @samp
+@item --color
+@itemx --color=@var{when}
+@opindex --color@r{, @code{msgpre} option}
+Specify whether or when to use colors and other text attributes.
+See @ref{The --color option} for details.
+
+@item --style=@var{style_file}
+@opindex --style@r{, @code{msgpre} option}
+Specify the CSS style rule file to use for @code{--color}.
+See @ref{The --style option} for details.
+
+@item --force-po
+@opindex --force-po@r{, @code{msgpre} option}
+Always write an output file even if it contains no message.
+
+@item --indent
+@opindex --indent@r{, @code{msgpre} option}
+Write the .po file using indented style.
+
+@item --no-location
+@opindex --no-location@r{, @code{msgpre} option}
+Do not write @samp{#: @var{filename}:@var{line}} lines.
+
+@item -n
+@itemx --add-location=@var{type}
+@opindex --add-location@r{, @code{msgpre} option}
+Generate @samp{#: @var{filename}:@var{line}} lines (default).
+
+The optional @var{type} can be either @samp{full}, @samp{file}, or
+@samp{never}.  If it is not given or @samp{full}, it generates the
+lines with both file name and line number.  If it is @samp{file}, the
+line number part is omitted.  If it is @samp{never}, it completely
+suppresses the lines (same as @code{--no-location}).
+
+@item --strict
+@opindex --strict@r{, @code{msgpre} option}
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+@item -p
+@itemx --properties-output
+@opindex -p@r{, @code{msgpre} option}
+@opindex --properties-output@r{, @code{msgpre} option}
+Write out a Java ResourceBundle in Java @code{.properties} syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+@item --stringtable-output
+@opindex --stringtable-output@r{, @code{msgpre} option}
+Write out a NeXTstep/GNUstep localized resource file in @code{.strings} syntax.
+Note that this file format doesn't support plural forms.
+
+@item -w @var{number}
+@itemx --width=@var{number}
+@opindex -w@r{, @code{msgpre} option}
+@opindex --width@r{, @code{msgpre} option}
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given @var{number}.
+
+@item --no-wrap
+@opindex --no-wrap@r{, @code{msgpre} option}
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+@item -s
+@itemx --sort-output
+@opindex -s@r{, @code{msgpre} option}
+@opindex --sort-output@r{, @code{msgpre} option}
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+@item -F
+@itemx --sort-by-file
+@opindex -F@r{, @code{msgpre} option}
+@opindex --sort-by-file@r{, @code{msgpre} option}
+Sort output by file location.
+
+@end table
+
+@subsection Informative output
+
+@table @samp
+@item -h
+@itemx --help
+@opindex -h@r{, @code{msgpre} option}
+@opindex --help@r{, @code{msgpre} option}
+Display this help and exit.
+
+@item -V
+@itemx --version
+@opindex -V@r{, @code{msgpre} option}
+@opindex --version@r{, @code{msgpre} option}
+Output version information and exit.
+
+@item -q
+@itemx --quiet
+@itemx --silent
+@opindex -q@r{, @code{msgpre} option}
+@opindex --quiet@r{, @code{msgpre} option}
+@opindex --silent@r{, @code{msgpre} option}
+Suppress progress indicators.
+
+@end table
+
+@subsection Examples
+
+To pretranslate the file @code{foo.po}:
+
+@smallexample
+msgpre --model=ministral-3:14b < foo.po > foo-pretranslated.po
+@end smallexample
+
+@noindent
+Note that this command can take a long time,
+depending on the model and the available hardware.

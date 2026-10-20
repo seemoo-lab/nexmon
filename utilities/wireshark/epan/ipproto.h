@@ -1,4 +1,4 @@
-/* ipproto.h
+/** @file
  * Declarations of IP protocol numbers, and of routines for converting
  * IP protocol numbers into strings.
  *
@@ -6,31 +6,19 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __IPPROTO_H__
 #define __IPPROTO_H__
 
 #include "ws_symbol_export.h"
+#include <wsutil/value_string.h>
 
 /*
  * IP protocol numbers.
  * http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml
  */
-#define IP_PROTO_IP             0       /* dummy for IP */
 #define IP_PROTO_HOPOPTS        0       /* IP6 hop-by-hop options - RFC1883 */
 #define IP_PROTO_ICMP           1       /* control message protocol - RFC792 */
 #define IP_PROTO_IGMP           2       /* group mgmt protocol - RFC1112 */
@@ -61,7 +49,7 @@
 #define IP_PROTO_LEAF1          25
 #define IP_PROTO_LEAF2          26
 #define IP_PROTO_RDP            27      /* Reliable Data Protocol - RFC908 */
-#define IP_PROTO_IRT            28      /* Internet Reliable Transation - RFC938 */
+#define IP_PROTO_IRT            28      /* Internet Reliable Transaction - RFC938 */
 #define IP_PROTO_TP             29      /* tp-4 w/ class negotiation - RFC905 */
 #define IP_PROTO_BULK           30      /* Bulk Data Transfer Protocol - RFC969 */
 #define IP_PROTO_MFE_NSP        31      /* MFE Network Services Protocol */
@@ -121,7 +109,7 @@
 #define IP_PROTO_CPHB           73      /* Computer Protocol Heart Beat */
 #define IP_PROTO_WSN            74      /* WANG Span Network */
 #define IP_PROTO_PVP            75      /* Packet Video Protocol */
-#define IP_PROTO_BRSATMON       76      /* Backroon SATNET Monitoring */
+#define IP_PROTO_BRSATMON       76      /* Backroom SATNET Monitoring */
 #define IP_PROTO_SUNND          77      /* SUN ND Protocol - Temporary */
 #define IP_PROTO_WBMON          78      /* Wideband Monitoring */
 #define IP_PROTO_WBEXPAK        79      /* Wideband EXPAK */
@@ -188,6 +176,11 @@
 #define IP_PROTO_SHIM6          140     /* Shim6 Protocol */
 #define IP_PROTO_WESP           141     /* 141 WESP Wrapped Encapsulating Security Payload [RFC5840] */
 #define IP_PROTO_ROHC           142     /* 142 ROHC Robust Header Compression [RFC5858] */
+#define IP_PROTO_ETHERNET       143     /* Ethernet [RFC8986] */
+#define IP_PROTO_AGGFRAG        144     /* AGGFRAG encapsulation payload for ESP */
+#define IP_PROTO_NSH            145     /* Network Service Header */
+#define IP_PROTO_HOMA           146     /* Homa */
+#define IP_PROTO_BIT_EMU        147     /* Bit-stream Emulation */
 #define IP_PROTO_AX4000         173     /* AX/4000 Testblock - non IANA */
 #define IP_PROTO_NCS_HEARTBEAT  224     /* Novell NCS Heartbeat - http://support.novell.com/cgi-bin/search/searchtid.cgi?/10071158.htm */
 

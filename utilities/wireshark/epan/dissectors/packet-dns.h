@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -27,10 +15,18 @@
 
 extern const value_string dns_classes[];
 
-int expand_dns_name(tvbuff_t *, int, int, int, const guchar **);
-/* Just like expand_dns_name, but pretty-prints empty names. */
-int get_dns_name(tvbuff_t *, int, int, int, const guchar **);
+/*
+ * Expands DNS name from TVB into a byte string.
+ *
+ * Returns int: byte size of DNS data.
+ * Returns char *name: a dot (.) separated raw string of DNS domain name labels.
+ * This string is null terminated. Labels are copied directly from raw packet
+ * data without any validation for a string encoding. This is the callers responsibility.
+ * Return int name_len: byte length of "name".
+ */
+int get_dns_name(wmem_allocator_t* scope, tvbuff_t *tvb, int offset, int max_len, int dns_data_offset,
+    const char **name, int* name_len);
 
-#define MAXDNAME        1025            /* maximum domain name length */
+#define MAX_DNAME_LEN   255             /* maximum domain name length */
 
 #endif /* packet-dns.h */

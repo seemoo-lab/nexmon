@@ -1,0 +1,128 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
+@node Rust
+@subsection Rust
+@cindex Rust
+
+@ignore
+Note: When we say "Rust" here, we mean the Rust programming language.
+According to the Rust trademark policy valid in 2024
+https://foundation.rust-lang.org/policies/logo-policy-and-media-guide/#trademark-policy
+our use of the term "Rust" in the code does not require approval:
+  "Stating accurately that software is written in the Rust programming
+   language, that it is compatible with the Rust programming language,
+   or that it contains the Rust programming language, is allowed. In
+   those cases, you may use the Rust trademarks to indicate this,
+   without prior approval. This is true both for non-commercial and
+   commercial uses."
+And our use of the term "Rust" in the documentation does not require
+approval either:
+  "Using the word “Rust” on websites, brochures, documentation, academic
+   papers, books, and product packaging to refer to the Rust programming
+   language or the Rust project is allowed."
+So, we do NOT have to use different spellings, such as "R*st" or "Crablang".
+@end ignore
+
+@table @asis
+@item RPMs
+rust, rust-cargo
+
+@item Ubuntu packages
+rustc, cargo
+@c optionally librust-gettext-rs-dev
+
+@item File extension
+@code{rs}
+
+@item String syntax
+@code{"abc"}, @code{r"abc"}, @code{r#"abc"#} etc.
+
+@item gettext shorthand
+---
+
+@item gettext/ngettext functions
+@code{gettext}, @code{ngettext}
+
+@item textdomain
+@code{textdomain} function
+
+@item bindtextdomain
+@code{bindtextdomain} function
+
+@item setlocale
+@code{setlocale} function
+
+@item Prerequisite
+@code{$ cargo add gettext-rs}
+
+@code{use gettextrs::*;}
+
+Note: We recommend the @samp{gettext-rs} crate.
+We do not recommend the @samp{gettext} crate, because
+(as of 2025) it does not handle
+catalog fallback (e.g. from @code{de_AT} to @code{de})
+nor the @code{LANGUAGE} environment variable.
+
+@item Use or emulate GNU gettext
+use
+
+@item Extractor
+@code{xgettext}
+
+@item Formatting with positions
+There are three common ways of doing string formatting in Rust:
+@itemize @bullet
+@item
+Using the built-ins @code{format!}, @code{println!}, etc.
+This facility supports only constant strings, known at compile-time.
+Thus it cannot be used with translated format strings.
+You would get an error such as
+``error: format argument must be a string literal''.
+@item
+Using the @code{strfmt} library.
+@c https://crates.io/crates/strfmt
+@c https://lib.rs/crates/strfmt
+@c https://github.com/vitiral/strfmt
+The facility cannot be recommended,
+because it does not support the case where
+some of the values are strings and some of the values are numbers
+(without an excessive amount of contortions).
+@item
+Using the @code{formatx} library.
+@c https://crates.io/crates/formatx
+@c https://lib.rs/crates/formatx
+@c https://github.com/clitic/formatx
+This is the one we recommend.
+@end itemize
+
+So, you have to convert the @code{format!}, @code{println!}, etc.
+invocations to use @code{formatx}.
+For example,
+@example
+println!("Hello @{@}, you got @{@} coins.", name, left);
+@end example
+@noindent
+becomes
+@example
+println!("@{@}", formatx!(gettext("Hello @{@}, you got @{@} coins."),
+                        name, left)
+               .unwrap());
+@end example
+
+For swapped positions, a translator may translate
+@code{"Hello @{@}, you got @{@} coins."}
+with
+@code{"Hello, @{1@} coins are left for you, @{0@}."}
+
+@item Portability
+fully portable
+
+@item po-mode marking
+---
+@end table
+
+An example is available in the @file{examples} directory: @code{hello-rust}.
+
+@c Rust me harder. Cargo me to hell.

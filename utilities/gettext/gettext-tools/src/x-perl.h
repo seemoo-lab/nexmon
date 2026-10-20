@@ -1,7 +1,5 @@
 /* xgettext Perl backend.
-   Copyright (C) 2002-2003, 2006, 2010, 2015-2016 Free Software Foundation,
-   Inc.
-   Written by Guido Flohr <guido@imperia.net>, 2002-2003
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,13 +12,15 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Guido Flohr.  */
 
 
 #include <stdio.h>
 
 #include "message.h"
-#include "xgettext.h"
+#include "xg-arglist-context.h"
 
 
 #ifdef __cplusplus
@@ -36,8 +36,8 @@ extern "C" {
   { "cgi",   "perl"   },                                                \
 
 #define SCANNERS_PERL \
-  { "perl",             extract_perl,                                   \
-            &flag_table_perl, &formatstring_perl, &formatstring_perl_brace, NULL }, \
+  { "perl",             extract_perl, NULL,                             \
+            &flag_table_perl, &formatstring_perl, &formatstring_perl_brace }, \
 
 /* Scan a Perl file and add its translatable strings to mdlp.  */
 extern void extract_perl (FILE *fp, const char *real_filename,

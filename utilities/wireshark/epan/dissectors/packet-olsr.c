@@ -7,25 +7,13 @@
  * Currently maintained by Jeff Weston <weston@itd.nrl.navy.mil>.
  *
  * Updated to Olsr.org and NRLOLSR packages by Henning Rogge <rogge@fgan.de>
- * http://www.ietf.org/rfc/rfc3626.txt
+ * https://www.ietf.org/rfc/rfc3626
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,9 +23,11 @@
 #include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/to_str.h>
+#include <wsutil/array.h>
 
 void proto_register_olsr(void);
 void proto_reg_handoff_olsr(void);
+static dissector_handle_t olsr_handle;
 
 #define UDP_PORT_OLSR   698
 #define HELLO   1
@@ -51,68 +41,68 @@ void proto_reg_handoff_olsr(void);
 #define NRLOLSR_TC_EXTRA     241
 
 /* Initialize the protocol and registered fields */
-static int proto_olsr = -1;
+static int proto_olsr;
 
-static int hf_olsr_packet_len = -1;
-static int hf_olsr_packet_seq_num = -1;
+static int hf_olsr_packet_len;
+static int hf_olsr_packet_seq_num;
 
-static int hf_olsr_message = -1;
-static int hf_olsr_message_type = -1;
-static int hf_olsr_vtime = -1;
-static int hf_olsr_message_size = -1;
-static int hf_olsr_ttl = -1;
-static int hf_olsr_hop_count = -1;
-static int hf_olsr_message_seq_num = -1;
+static int hf_olsr_message;
+static int hf_olsr_message_type;
+static int hf_olsr_vtime;
+static int hf_olsr_message_size;
+static int hf_olsr_ttl;
+static int hf_olsr_hop_count;
+static int hf_olsr_message_seq_num;
 
-static int hf_olsr_htime = -1;
-static int hf_olsr_willingness = -1;
+static int hf_olsr_htime;
+static int hf_olsr_willingness;
 
-static int hf_olsr_link_type = -1;
-static int hf_olsr_link_message_size = -1;
-static int hf_olsr_ansn = -1;
+static int hf_olsr_link_type;
+static int hf_olsr_link_message_size;
+static int hf_olsr_ansn;
 
-static int hf_olsr_neighbor = -1;
-static int hf_olsr_origin_addr = -1;
-static int hf_olsr_neighbor_addr = -1;
-static int hf_olsr_interface_addr = -1;
-static int hf_olsr_netmask = -1;
-static int hf_olsr_network_addr = -1;
+static int hf_olsr_neighbor;
+static int hf_olsr_origin_addr;
+static int hf_olsr_neighbor_addr;
+static int hf_olsr_interface_addr;
+static int hf_olsr_netmask;
+static int hf_olsr_network_addr;
 
-/* static int hf_olsr_neighbor6 = -1; */
-static int hf_olsr_origin6_addr = -1;
-static int hf_olsr_neighbor6_addr = -1;
-static int hf_olsr_interface6_addr = -1;
-static int hf_olsr_netmask6 = -1;
-static int hf_olsr_network6_addr = -1;
+/* static int hf_olsr_neighbor6; */
+static int hf_olsr_origin6_addr;
+static int hf_olsr_neighbor6_addr;
+static int hf_olsr_interface6_addr;
+static int hf_olsr_netmask6;
+static int hf_olsr_network6_addr;
 
-static int hf_olsrorg_lq = -1;
-static int hf_olsrorg_nlq = -1;
-static int hf_nrlolsr_f1 = -1;
-static int hf_nrlolsr_f2 = -1;
+static int hf_olsrorg_lq;
+static int hf_olsrorg_nlq;
+static int hf_nrlolsr_f1;
+static int hf_nrlolsr_f2;
 
-static int hf_olsrorg_ns_version = -1;
-static int hf_olsrorg_ns_count = -1;
+static int hf_olsrorg_ns_version;
+static int hf_olsrorg_ns_count;
 
-static int hf_olsrorg_ns = -1;
-static int hf_olsrorg_ns_type = -1;
-static int hf_olsrorg_ns_length = -1;
-static int hf_olsrorg_ns_ip = -1;
-static int hf_olsrorg_ns_ip6 = -1;
-static int hf_olsrorg_ns_content = -1;
+static int hf_olsrorg_ns;
+static int hf_olsrorg_ns_type;
+static int hf_olsrorg_ns_length;
+static int hf_olsrorg_ns_ip;
+static int hf_olsrorg_ns_ip6;
+static int hf_olsrorg_ns_content;
 
-static int hf_olsr_data = -1;
+static int hf_olsr_data;
 
 /* Initialize the subtree pointers*/
-static gint ett_olsr = -1;
-static gint ett_olsr_message[G_MAXUINT8 + 1];
-static gint ett_olsr_message_linktype = -1;
-static gint ett_olsr_message_neigh = -1;
-static gint ett_olsr_message_neigh6 = -1;
-static gint ett_olsr_message_ns = -1;
+static int ett_olsr;
+static int ett_olsr_message[UINT8_MAX + 1];
+static int ett_olsr_message_linktype;
+static int ett_olsr_message_neigh;
+static int ett_olsr_message_neigh6;
+static int ett_olsr_message_ns;
 
-static expert_field ei_olsr_not_enough_bytes = EI_INIT;
-static expert_field ei_olsrorg_ns_version = EI_INIT;
-static expert_field ei_olsr_data_misaligned = EI_INIT;
+static expert_field ei_olsr_not_enough_bytes;
+static expert_field ei_olsrorg_ns_version;
+static expert_field ei_olsr_data_misaligned;
 
 static const value_string message_type_vals[] = {
     { HELLO,                "HELLO" },
@@ -150,15 +140,15 @@ static const value_string nameservice_type_vals[] = {
     { 0, NULL }
 };
 
-static gboolean global_olsr_olsrorg = TRUE;
-static gboolean global_olsr_nrlolsr = TRUE;
+static bool global_olsr_olsrorg = true;
+static bool global_olsr_nrlolsr = true;
 
-static double getOlsrTime(guint8 timeval) {
+static double getOlsrTime(uint8_t timeval) {
   int high_bits, low_bits;
 
   high_bits = ((timeval & 0xF0) >> 4);
   low_bits  = (timeval & 0x0F);
-  return ((G_GUINT64_CONSTANT(1) << low_bits) / 16.0) * (1 + (high_bits / 16.0));
+  return ((UINT64_C(1) << low_bits) / 16.0) * (1 + (high_bits / 16.0));
 }
 
 /*------------------------- TC Dissecting Code-------------------------*/
@@ -204,7 +194,7 @@ static int dissect_olsrorg_lq_tc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
   while (offset < message_end) {
     proto_item *address_group;
     proto_tree *address_tree;
-    guint8 lq, nlq;
+    uint8_t lq, nlq;
 
     if (pinfo->src.type == AT_IPv4) {
       if (message_end - offset < 8) {
@@ -212,11 +202,11 @@ static int dissect_olsrorg_lq_tc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
             "Not enough bytes for last entry (need 8 bytes)");
         return message_end;
       }
-      lq = tvb_get_guint8(tvb, offset + 4);
-      nlq = tvb_get_guint8(tvb, offset + 5);
+      lq = tvb_get_uint8(tvb, offset + 4);
+      nlq = tvb_get_uint8(tvb, offset + 5);
 
       address_group = proto_tree_add_bytes_format_value(olsr_tree, hf_olsr_neighbor, tvb, offset, 8,
-          NULL, "%s (%d/%d)", tvb_ip_to_str(tvb, offset), lq, nlq);
+          NULL, "%s (%d/%d)", tvb_ip_to_str(pinfo->pool, tvb, offset), lq, nlq);
 
       address_tree = proto_item_add_subtree(address_group, ett_olsr_message_neigh);
 
@@ -228,11 +218,11 @@ static int dissect_olsrorg_lq_tc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
             "Not enough bytes for last entry (need 20 bytes)");
         return message_end;
       }
-      lq = tvb_get_guint8(tvb, offset + 16);
-      nlq = tvb_get_guint8(tvb, offset + 17);
+      lq = tvb_get_uint8(tvb, offset + 16);
+      nlq = tvb_get_uint8(tvb, offset + 17);
 
       address_group = proto_tree_add_bytes_format_value(olsr_tree, hf_olsr_neighbor, tvb, offset, 20,
-          NULL, "%s (%d/%d)", tvb_ip6_to_str(tvb, offset), lq, nlq);
+          NULL, "%s (%d/%d)", tvb_ip6_to_str(pinfo->pool, tvb, offset), lq, nlq);
 
       address_tree = proto_item_add_subtree(address_group, ett_olsr_message_neigh);
 
@@ -288,7 +278,7 @@ static int dissect_olsr_hello(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ols
   proto_item *ti;
   proto_tree *link_type_tree;
 
-  guint16     message_size = 0;
+  uint16_t    message_size;
 
   if (message_end - offset < 4) {
     proto_tree_add_expert_format(olsr_tree, pinfo, &ei_olsr_not_enough_bytes, tvb, offset, message_end - offset,
@@ -298,8 +288,8 @@ static int dissect_olsr_hello(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ols
 
   offset += 2;
 
-  /*---------------------Dissect Hello Emission Invertal-------------------*/
-  hTime = getOlsrTime(tvb_get_guint8(tvb, offset));
+  /*---------------------Dissect Hello Emission Inverval-------------------*/
+  hTime = getOlsrTime(tvb_get_uint8(tvb, offset));
   proto_tree_add_double_format_value(olsr_tree, hf_olsr_htime, tvb, offset, 1, hTime,
       "%.3f (in seconds)", hTime);
   offset += 1;
@@ -364,7 +354,7 @@ static int handle_olsr_hello_olsrorg(tvbuff_t *tvb, packet_info *pinfo, proto_tr
   while (offset < link_message_end) {
     proto_item *address_group;
     proto_tree *address_tree;
-    guint8      lq, nlq;
+    uint8_t     lq, nlq;
 
     if (link_message_end - offset < pinfo->src.len + 4) {
       proto_tree_add_expert_format(olsr_tree, pinfo, &ei_olsr_not_enough_bytes, tvb, offset, link_message_end - offset,
@@ -373,22 +363,22 @@ static int handle_olsr_hello_olsrorg(tvbuff_t *tvb, packet_info *pinfo, proto_tr
     }
 
     if (pinfo->src.type == AT_IPv4) {
-      lq = tvb_get_guint8(tvb, offset + 4);
-      nlq = tvb_get_guint8(tvb, offset + 5);
+      lq = tvb_get_uint8(tvb, offset + 4);
+      nlq = tvb_get_uint8(tvb, offset + 5);
 
       address_group = proto_tree_add_bytes_format_value(olsr_tree, hf_olsr_neighbor, tvb, offset, 8,
-           NULL, "%s (%d/%d)", tvb_ip_to_str(tvb, offset), lq, nlq);
+           NULL, "%s (%d/%d)", tvb_ip_to_str(pinfo->pool, tvb, offset), lq, nlq);
 
       address_tree = proto_item_add_subtree(address_group, ett_olsr_message_neigh);
 
       proto_tree_add_item(address_tree, hf_olsr_neighbor_addr, tvb, offset, 4, ENC_BIG_ENDIAN);
       offset += 4;
     } else if (pinfo->src.type == AT_IPv6) {
-      lq = tvb_get_guint8(tvb, offset + 16);
-      nlq = tvb_get_guint8(tvb, offset + 17);
+      lq = tvb_get_uint8(tvb, offset + 16);
+      nlq = tvb_get_uint8(tvb, offset + 17);
 
       address_group = proto_tree_add_bytes_format_value(olsr_tree, hf_olsr_neighbor, tvb, offset, 20,
-          NULL, "%s (%d/%d)", tvb_ip6_to_str(tvb, offset), lq, nlq);
+          NULL, "%s (%d/%d)", tvb_ip6_to_str(pinfo->pool, tvb, offset), lq, nlq);
 
       address_tree = proto_item_add_subtree(address_group, ett_olsr_message_neigh);
 
@@ -455,7 +445,7 @@ static int dissect_olsr_hna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *olsr_
 /*------------------------- MID Dissecting Code-------------------------*/
 static int dissect_olsrorg_nameservice(tvbuff_t *tvb, packet_info *pinfo, proto_tree *olsr_tree, int offset,
     int message_end) {
-  guint16     version, count;
+  uint16_t    version, count;
 
   proto_item *olsr_ns_item, *ti;
   proto_tree *olsr_ns_tree;
@@ -482,7 +472,7 @@ static int dissect_olsrorg_nameservice(tvbuff_t *tvb, packet_info *pinfo, proto_
   }
 
   while (offset < message_end && count-- > 0) {
-    guint16 type, length;
+    uint16_t type, length;
     int total_length;
 
     if (message_end - offset < 20) {
@@ -517,7 +507,7 @@ static int dissect_olsrorg_nameservice(tvbuff_t *tvb, packet_info *pinfo, proto_
           "Not enough bytes for content of last nameservice entry");
       return message_end;
     }
-    proto_tree_add_item(olsr_ns_tree, hf_olsrorg_ns_content, tvb, offset + 20, length, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(olsr_ns_tree, hf_olsrorg_ns_content, tvb, offset + 20, length, ENC_ASCII);
     offset += 4 + 16 + ((length - 1) | 3) + 1;
   }
   return message_end;
@@ -529,10 +519,10 @@ static int dissect_olsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
   proto_tree *olsr_tree;
 
   int    offset, message_len, message_end;
-  guint  message_type;
+  unsigned  message_type;
   double vTime;
 
-  guint16 packet_len;
+  uint16_t packet_len;
 
   /* Does this packet have a valid message type at the beginning? */
   if (tvb_captured_length(tvb) < 4) {
@@ -578,8 +568,8 @@ static int dissect_olsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
         break;
       }
 
-      message_type = tvb_get_guint8(tvb, offset);
-      vTime = getOlsrTime(tvb_get_guint8(tvb, offset + 1));
+      message_type = tvb_get_uint8(tvb, offset);
+      vTime = getOlsrTime(tvb_get_uint8(tvb, offset + 1));
       message_len = tvb_get_ntohs(tvb, offset + 2);
 
       message_item = proto_tree_add_bytes_format_value(olsr_tree, hf_olsr_message, tvb, offset, message_len,
@@ -948,7 +938,7 @@ void proto_register_olsr(void) {
     }
   };
 
-  static gint *ett_base[] = {
+  static int *ett_base[] = {
     &ett_olsr,
     &ett_olsr_message_linktype,
     &ett_olsr_message_neigh,
@@ -962,7 +952,7 @@ void proto_register_olsr(void) {
     { &ei_olsr_data_misaligned,  { "olsr.data.misaligned", PI_PROTOCOL, PI_WARN, "Must be aligned on 32 bits", EXPFILL }},
   };
 
-  gint *ett[array_length(ett_base) + (G_MAXUINT8+1)];
+  int *ett[array_length(ett_base) + (UINT8_MAX+1)];
 
   module_t        *olsr_module;
   expert_module_t *expert_olsr;
@@ -970,12 +960,12 @@ void proto_register_olsr(void) {
 
   memcpy(ett, ett_base, sizeof(ett_base));
   j = array_length(ett_base);
-  for (i=0; i<G_MAXUINT8+1; i++) {
-    ett_olsr_message[i] = -1;
+  for (i=0; i<UINT8_MAX+1; i++) {
     ett[j++] = &ett_olsr_message[i];
   }
 
   proto_olsr = proto_register_protocol("Optimized Link State Routing Protocol", "OLSR", "olsr");
+  olsr_handle = register_dissector("olsr", dissect_olsr, proto_olsr);
 
   proto_register_field_array(proto_olsr, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
@@ -992,10 +982,7 @@ void proto_register_olsr(void) {
 }
 
 void proto_reg_handoff_olsr(void) {
-  dissector_handle_t olsr_handle;
-
-  olsr_handle = create_dissector_handle(dissect_olsr, proto_olsr);
-  dissector_add_uint("udp.port", UDP_PORT_OLSR, olsr_handle);
+  dissector_add_uint_with_preference("udp.port", UDP_PORT_OLSR, olsr_handle);
 }
 
 /*

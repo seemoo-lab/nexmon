@@ -24,19 +24,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 use strict;
@@ -66,6 +54,15 @@ my $searchReplaceEncNAHRef =
     "ENC_ASCII|ENC_NA"   => "ENC_NA",
     "ENC_ASCII | ENC_NA" => "ENC_NA"
    };
+
+my $searchReplaceDissectorTable =
+  {
+   "FALSE"              => "STRING_CASE_SENSITIVE",
+   "0"                  => "STRING_CASE_SENSITIVE",
+   "BASE_NONE"          => "STRING_CASE_SENSITIVE",
+   "TRUE"               => "STRING_CASE_INSENSITIVE",
+   "1"                  => "STRING_CASE_INSENSITIVE"
+  };
 
 # ---------------------------------------------------------------------
 # Conversion "request" structure
@@ -97,25 +94,22 @@ my @types_STRING =
   (
    [qw (FT_STRING FT_STRINGZ)],
    {
-    "FALSE"                        => "ENC_ASCII|ENC_NA",
-    "0"                            => "ENC_ASCII|ENC_NA",
-    "TRUE"                         => "ENC_ASCII|ENC_NA",
-    "1"                            => "ENC_ASCII|ENC_NA",
-    "ENC_LITTLE_ENDIAN"            => "ENC_ASCII|ENC_NA",
-    "ENC_BIG_ENDIAN"               => "ENC_ASCII|ENC_NA",
-    "ENC_NA"                       => "ENC_ASCII|ENC_NA",
+    "FALSE"                        => "ENC_ASCII",
+    "0"                            => "ENC_ASCII",
+    "TRUE"                         => "ENC_ASCII",
+    "1"                            => "ENC_ASCII",
+    "ENC_LITTLE_ENDIAN"            => "ENC_ASCII",
+    "ENC_BIG_ENDIAN"               => "ENC_ASCII",
+    "ENC_NA"                       => "ENC_ASCII",
 
-    "ENC_ASCII"                    => "ENC_ASCII|ENC_NA",
-    "ENC_ASCII|ENC_LITTLE_ENDIAN"  => "ENC_ASCII|ENC_NA",
-    "ENC_ASCII|ENC_BIG_ENDIAN"     => "ENC_ASCII|ENC_NA",
+    "ENC_ASCII|ENC_LITTLE_ENDIAN"  => "ENC_ASCII",
+    "ENC_ASCII|ENC_BIG_ENDIAN"     => "ENC_ASCII",
 
-    "ENC_UTF_8"                    => "ENC_UTF_8|ENC_NA",
-    "ENC_UTF_8|ENC_LITTLE_ENDIAN"  => "ENC_UTF_8|ENC_NA",
-    "ENC_UTF_8|ENC_BIG_ENDIAN"     => "ENC_UTF_8|ENC_NA",
+    "ENC_UTF_8|ENC_LITTLE_ENDIAN"  => "ENC_UTF_8",
+    "ENC_UTF_8|ENC_BIG_ENDIAN"     => "ENC_UTF_8",
 
-    "ENC_EBCDIC"                   => "ENC_EBCDIC|ENC_NA",
-    "ENC_EBCDIC|ENC_LITTLE_ENDIAN" => "ENC_EBCDIC|ENC_NA",
-    "ENC_EBCDIC|ENC_BIG_ENDIAN"    => "ENC_EBCDIC|ENC_NA",
+    "ENC_EBCDIC|ENC_LITTLE_ENDIAN" => "ENC_EBCDIC",
+    "ENC_EBCDIC|ENC_BIG_ENDIAN"    => "ENC_EBCDIC",
    }
   );
 
@@ -142,69 +136,6 @@ my @types_REG_PROTO  =
   );
 
 # ---------------------------------------------------------------------
-# For searching (and doing no substitutions) (obsolete ?)
-
-my @types_TIME =  (
-                    [qw (FT_ABSOLUTE_TIME FT_RELATIVE_TIME)],
-                    {}
-                   );
-
-my @types_ALL =
-  (
-   [qw (
-           FT_NONE
-           FT_PROTOCOL
-           FT_BOOLEAN
-           FT_UINT8
-           FT_UINT16
-           FT_UINT24
-           FT_UINT32
-           FT_UINT64
-           FT_INT8
-           FT_INT16
-           FT_INT24
-           FT_INT32
-           FT_INT64
-           FT_FLOAT
-           FT_DOUBLE
-           FT_ABSOLUTE_TIME
-           FT_RELATIVE_TIME
-           FT_STRING
-           FT_STRINGZ
-           FT_UINT_STRING
-           FT_ETHER
-           FT_BYTES
-           FT_UINT_BYTES
-           FT_IPv4
-           FT_IPv6
-           FT_IPXNET
-           FT_FRAMENUM
-           FT_PCRE
-           FT_GUID
-           FT_OID
-	   FT_REL_OID
-           FT_EUI64
-      )],
-   {# valid encoding args
-    "a"=>"ENC_NA",
-    "b"=>"ENC_LITTLE_ENDIAN",
-    "c"=>"ENC_BIG_ENDIAN",
-
-    "d"=>"ENC_ASCII|ENC_NA",
-    "e"=>"ENC_ASCII|ENC_LITTLE_ENDIAN",
-    "f"=>"ENC_ASCII|ENC_BIG_ENDIAN",
-
-    "g"=>"ENC_UTF_8|ENC_NA",
-    "h"=>"ENC_UTF_8|ENC_LITTLE_ENDIAN",
-    "i"=>"ENC_UTF_8|ENC_BIG_ENDIAN",
-
-    "j"=>"ENC_EBCDIC|ENC_NA",
-    "k"=>"ENC_EBCDIC|ENC_LITTLE_ENDIAN",
-    "l"=>"ENC_EBCDIC|ENC_BIG_ENDIAN",
-   }
-  );
-
-# ---------------------------------------------------------------------
 
 my @findAllFunctionList =
 ##         proto_tree_add_bitmask_text  !! ToDo: encoding arg not last arg
@@ -222,6 +153,7 @@ my @findAllFunctionList =
          tvb_get_bits64
          ptvcursor_add
          ptvcursor_add_no_advance
+         register_dissector_table
     );
 
 # ---------------------------------------------------------------------
@@ -322,6 +254,8 @@ while (my $fileName = $ARGV[0]) {
         $found += fix_encoding_args(1, $searchReplaceFalseTrueHRef, "tvb_get_bits(?:16|24|32|64)?",              \$fileContents, $fileName);
         $found += fix_encoding_args(1, $searchReplaceFalseTrueHRef, "tvb_get_(?:ephemeral_)?unicode_string[z]?", \$fileContents, $fileName);
 
+        $found += fix_dissector_table_args(1, $searchReplaceDissectorTable, "register_dissector_table",           \$fileContents, $fileName);
+
         # If desired and if any changes, write out the changed version to a file
         if (($writeFlag) && ($found > 0)) {
             open(FCO, ">", $fileName . ".encoding-arg-fixes");
@@ -338,19 +272,6 @@ while (my $fileName = $ARGV[0]) {
         $found_total += find_all(\@findAllFunctionList, \$fileContents, $fileName);
     }
 
-# Optional searches: (kind of obsolete ?)
-# search for (and output) proto_tree_add_item() statements with invalid encoding arg for specified field types
-#    $fcn_name = "proto_tree_add_item";
-#    fix_encoding_args(2, \@types_NA,          $fcn_name, \$fileContents, $hfArrayEntryFieldTypeHRef, $fileName);
-#    fix_encoding_args(2, \@types_INT,         $fcn_name, \$fileContents, $hfArrayEntryFieldTypeHRef, $fileName);
-#    fix_encoding_args(2, \@types_MISC,        $fcn_name, \$fileContents, $hfArrayEntryFieldTypeHRef, $fileName);
-#    fix_encoding_args(2, \@types_STRING,      $fcn_name, \$fileContents, $hfArrayEntryFieldTypeHRef, $fileName);
-#    fix_encoding_args(2, \@types_UINT_STRING, $fcn_name, \$fileContents, $hfArrayEntryFieldTypeHRef, $fileName);
-#    fix_encoding_args(2, \@types_ALL,         $fcn_name, \$fileContents, $hfArrayEntryFieldTypeHRef, $fileName);
-# search for (and output) proto_tree_add_item()$fcn_name,  statements with any encoding arg for specified field types
-#    fix_encoding_args(3, \@types_TIME,        $fcn_name, \$fileContents, $hfArrayEntryFieldTypeHRef, $fileName);
-#
-
 } # while
 
 exit $found_total;
@@ -364,7 +285,7 @@ sub find_hf_array_entries {
     my ($fileContentsRef, $fileName) = @_;
 
     # The below Regexp is based on one from:
-    # http://aspn.activestate.com/ASPN/Cookbook/Rx/Recipe/59811
+    # https://web.archive.org/web/20080614012925/http://aspn.activestate.com/ASPN/Cookbook/Rx/Recipe/59811
     # It is in the public domain.
     # A complicated regex which matches C-style comments.
     my $CCommentRegEx = qr{ / [*] [^*]* [*]+ (?: [^/*] [^*]* [*]+ )* / }xo;
@@ -402,22 +323,22 @@ sub find_hf_array_entries {
         }
     }
 
+    # pre-process contents to fold multiple lines and speed up matching.
+    $fileContentsWithoutComments =~ s/\s*=\s*/=/gs;
+    $fileContentsWithoutComments =~ s/^\s+//g;
+
     # RegEx to get "proto" variable name
     my $protoRegEx = qr /
-                            ^ \s*                     # note m modifier below
+                            ^                         # note m modifier below
                             (
                                 [a-zA-Z0-9_]+
                             )
-                            \s*
                             =
-                            \s*
-                            proto_register_protocol
-                            \s*
-                            \(
-                        /xoms;
+                            proto_register_protocol\b
+                        /xom;
 
     # Find all registered protocols
-    while ($fileContentsWithoutComments =~ m { $protoRegEx }xgioms ) {
+    while ($fileContentsWithoutComments =~ m { $protoRegEx }xgom ) {
         ##print "$1\n";
         if (exists $hfArrayEntryFieldType{$1}) {
             printf "%-35.35s: ? duplicate 'proto': no fixes done for: $1; manual action may be req'd\n", $fileName;
@@ -529,8 +450,8 @@ sub find_hf_array_entries {
 #      - ref to array containing hf[] types to be processed (FT_STRING, etc)
 #      - ref to hash containing search (keys) and replacement (values) for encoding arg
 #   fcn_name string
-#   ref to hfArrayEntries hash (key: hf name; value: field type)
 #   ref to string containing file contents
+#   ref to hfArrayEntries hash (key: hf name; value: field type)
 #   filename string
 
 {  # block begin
@@ -566,7 +487,7 @@ sub find_hf_array_entries {
             # Find all the <fcn_name>() statements wherein the encoding arg is a value other than
             #      one of the "replace" values.
             #  Uses zero-length negative-lookahead to find <fcn_name>() statements for which the encoding
-            #    arg is something other than one of the the provided replace values.
+            #    arg is something other than one of the provided replace values.
             # Escape any "|" characters in the values to be matched
             #  and then create "alternatives" string containing all the value strings. Ex: "A|B|C\|D|..."
             my $match_str = join "|",  map { my $copy = $_; $copy =~ s{ ( \| ) }{\\$1}gx; $copy } values %$searchReplaceHRef;
@@ -585,24 +506,32 @@ sub find_hf_array_entries {
             $encArgPat = qr / [^,)]+? /x;
         }
 
+        my @hf_index_names;
+
         # For each hf[] entry which matches a type in %hfTypes do replacements
         $found = 0;
         foreach my $key (keys %$hfArrayEntryFieldTypeHRef) {
             $hf_index_name = $key;
-            $hf_index_name =~ s{ ( \[ | \] ) }{\\$1}xg;     # escape any "[" or "]" characters
             $hf_field_type = $$hfArrayEntryFieldTypeHRef{$key};
             ##printf "--> %-35.35s: %s\n", $hf_index_name,  $hf_field_type;
 
             next unless exists $hfTypes{$hf_field_type};    # Do we want to process for this hf[] entry type ?
 
+            ##print "\n$hf_index_name $hf_field_type\n";
+            push @hf_index_names, $hf_index_name;
+        }
+
+        if (@hf_index_names) {
             # build the complete pattern
+            my $hf_index_names_re = join('|', @hf_index_names);
+            $hf_index_names_re =~ s/\[|\]/\\$&/g;   # escape any "[" or "]" characters
             my $patRegEx = qr /
                                   # part 1: $1
                                   (
                                       $fcn_name \s* \(
                                       [^;]+?
                                       ,\s*
-                                      $hf_index_name
+                                      (?:$hf_index_names_re)
                                       \s*,
                                       [^;]+
                                       ,\s*
@@ -619,7 +548,6 @@ sub find_hf_array_entries {
                                   )
                               /xs;
 
-            ##print "\n$hf_index_name $hf_field_type\n";
             ##print "\n$patRegEx\n";
 
             ## Match and substitute as specified
@@ -646,6 +574,92 @@ sub find_hf_array_entries {
         return $_[0] . $substr . $_[2];
     }
 }  # block end
+
+# ---------------------------------------------------------------------
+# fix_dissector_table_args
+# Substitute new values for the specified <fcn_name>() encoding arg values
+#    when the encoding arg is the *last* arg of the call to fcn_name
+# args:
+#   substitute_flag: 1: replace specified encoding arg values by a new value (keys/values in search hash);
+#   ref to hash containing search (keys) and replacement (values) for encoding arg
+#   fcn_name string
+#   ref to string containing file contents
+#   filename string
+#
+{ # block begin
+
+    # shared variables
+    my $fileName;
+    my $searchReplaceHRef;
+    my $found;
+
+    sub fix_dissector_table_args {
+        (my $subFlag, $searchReplaceHRef, my $fcn_name, my $fileContentsRef, $fileName) = @_;
+
+        my $encArgPat;
+
+        if ($subFlag == 1) {
+            # just match for <fcn_name>() statements which have an encoding arg matching one of the
+            #   keys in the searchReplace hash.
+            # Escape any "|" characters in the keys
+            #  and then create "alternatives" string containing all the resulting key strings. Ex: "(A|B|C\|D|..."
+            $encArgPat = join "|",  map { my $copy = $_; $copy =~ s{ ( \| ) }{\\$1}gx; $copy } keys %$searchReplaceHRef;
+        } elsif ($subFlag == 3) {
+            # match for <fcn_name>() statements for any value of the encoding parameter
+            # IOW: find all the <fcn_name> statements
+            $encArgPat = qr / [^,)]+? /x;
+        }
+
+        # build the complete pattern
+        my $patRegEx = qr /
+                              # part 1: $1
+                              (
+                                  (?:^|=)            # don't try to handle fcn_name call when arg of another fcn call
+                                  \s*
+                                  $fcn_name \s* \(
+                                  [^;]+?             # a bit dangerous
+                                  ,\s*
+                                  FT_STRING[A-Z]*
+                                  ,\s*
+                              )
+
+                              # part 2: $2
+                              #  exact match of pattern (including spaces)
+                              ((?-x)$encArgPat)
+
+                              # part 3: $3
+                              (
+                                  \s* \)
+                                  \s* ;
+                              )
+                          /xms;  # m for ^ above
+
+        ##print "$patRegEx\n";
+
+        ## Match and substitute as specified
+        $found = 0;
+
+        $$fileContentsRef =~ s/ $patRegEx /patsuby($1,$2,$3)/xges;
+
+        return $found;
+    }
+
+    # Called from fix_encoding_args to determine replacement string when a regex match is encountered
+    #  $_[0]: part 1
+    #  $_[1]: part 2: encoding arg
+    #  $_[2]: part 3
+    #  lookup the desired replacement value for the encoding arg
+    #  print match string showing and highlighting the encoding arg replacement
+    #  return "replacement" string
+    sub patsuby {
+        $found += 1;
+        my $substr = exists $$searchReplaceHRef{$_[1]} ? $$searchReplaceHRef{$_[1]} : "???";
+        my $str = sprintf("%s[[%s]-->[%s]]%s", $_[0], $_[1], $substr,  $_[2]);
+        $str =~ tr/\t\n\r/ /d;
+        printf "%s: $str\n", $fileName;
+        return $_[0] . $substr . $_[2];
+    }
+} # block end
 
 # ---------------------------------------------------------------------
 # Find all <fcnList> statements

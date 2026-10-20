@@ -9,26 +9,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/capture_dissectors.h>
-#include <wiretap/wtap.h>
 #include <epan/to_str.h>
 
 #include "packet-llc.h"
@@ -36,22 +23,26 @@
 void proto_register_ipfc(void);
 void proto_reg_handoff_ipfc(void);
 
+static dissector_handle_t ipfc_handle;
+static capture_dissector_handle_t ipfc_cap_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_ipfc              = -1;
-static int hf_ipfc_network_da = -1;
-static int hf_ipfc_network_sa = -1;
+static int proto_ipfc;
+static int hf_ipfc_network_da;
+static int hf_ipfc_network_sa;
 
 /* Initialize the subtree pointers */
-static gint ett_ipfc = -1;
+static int ett_ipfc;
 static dissector_handle_t llc_handle;
+static capture_dissector_handle_t llc_cap_handle;
 
-static gboolean
-capture_ipfc (const guchar *pd, int offset _U_, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
+static bool
+capture_ipfc (const unsigned char *pd, int offset _U_, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
 {
   if (!BYTES_ARE_IN_FRAME(0, len, 16))
-    return FALSE;
+    return false;
 
-  return capture_llc(pd, 16, len, cpinfo, pseudo_header);
+  return call_capture_dissector(llc_cap_handle, pd, 16, len, cpinfo, pseudo_header);
 }
 
 static int
@@ -102,7 +93,7 @@ proto_register_ipfc (void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ipfc,
     };
 
@@ -112,6 +103,9 @@ proto_register_ipfc (void)
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_ipfc, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    ipfc_handle = register_dissector("ipfc", dissect_ipfc, proto_ipfc);
+    ipfc_cap_handle = register_capture_dissector("ipfc", capture_ipfc, proto_ipfc);
 }
 
 /* If this dissector uses sub-dissector registration add a registration routine.
@@ -121,18 +115,16 @@ proto_register_ipfc (void)
 void
 proto_reg_handoff_ipfc (void)
 {
-    dissector_handle_t ipfc_handle;
-
-    ipfc_handle = create_dissector_handle (dissect_ipfc, proto_ipfc);
     dissector_add_uint("wtap_encap", WTAP_ENCAP_IP_OVER_FC, ipfc_handle);
 
     llc_handle = find_dissector_add_dependency("llc", proto_ipfc);
+    llc_cap_handle = find_capture_dissector("llc");
 
-    register_capture_dissector("wtap_encap", WTAP_ENCAP_IP_OVER_FC, capture_ipfc, proto_ipfc);
+    capture_dissector_add_uint("wtap_encap", WTAP_ENCAP_IP_OVER_FC, ipfc_cap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

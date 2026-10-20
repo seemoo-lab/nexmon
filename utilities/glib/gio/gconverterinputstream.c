@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2009 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,17 +33,14 @@
 
 
 /**
- * SECTION:gconverterinputstream
- * @short_description: Converter Input Stream
- * @include: gio/gio.h
- * @see_also: #GInputStream, #GConverter
+ * GConverterInputStream:
  *
- * Converter input stream implements #GInputStream and allows
+ * Converter input stream implements [class@Gio.InputStream] and allows
  * conversion of data of various types during reading.
  *
- * As of GLib 2.34, #GConverterInputStream implements
- * #GPollableInputStream.
- **/
+ * As of GLib 2.34, `GConverterInputStream` implements
+ * [iface@Gio.PollableInputStream].
+ */
 
 #define INITIAL_BUFFER_SIZE 4096
 
@@ -114,11 +113,14 @@ g_converter_input_stream_class_init (GConverterInputStreamClass *klass)
   istream_class = G_INPUT_STREAM_CLASS (klass);
   istream_class->read_fn = g_converter_input_stream_read;
 
+  /**
+   * GConverterInputStream:converter:
+   *
+   * The converter object.
+   */
   g_object_class_install_property (object_class,
 				   PROP_CONVERTER,
-				   g_param_spec_object ("converter",
-							P_("Converter"),
-							P_("The converter object"),
+				   g_param_spec_object ("converter", NULL, NULL,
 							G_TYPE_CONVERTER,
 							G_PARAM_READWRITE|
 							G_PARAM_CONSTRUCT_ONLY|
@@ -262,7 +264,9 @@ buffer_read (Buffer *buffer,
 	     char *dest,
 	     gsize count)
 {
-  memcpy (dest, buffer->data + buffer->start, count);
+  if (count != 0)
+    memcpy (dest, buffer->data + buffer->start, count);
+
   buffer_consumed (buffer, count);
 }
 
@@ -293,9 +297,11 @@ grow_buffer (Buffer *buffer)
   data = g_malloc (size);
   in_buffer = buffer_data_size (buffer);
 
-  memcpy (data,
-	  buffer->data + buffer->start,
-	  in_buffer);
+  if (in_buffer != 0)
+    memcpy (data,
+            buffer->data + buffer->start,
+            in_buffer);
+
   g_free (buffer->data);
   buffer->data = data;
   buffer->end -= buffer->start;

@@ -6,52 +6,43 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
 #include "packet-mpeg-sect.h"
 #include "packet-mpeg-descriptor.h"
 
 void proto_register_dvb_eit(void);
 void proto_reg_handoff_dvb_eit(void);
 
-static int proto_dvb_eit = -1;
-static int hf_dvb_eit_service_id = -1;
-static int hf_dvb_eit_reserved = -1;
-static int hf_dvb_eit_version_number = -1;
-static int hf_dvb_eit_current_next_indicator = -1;
-static int hf_dvb_eit_section_number = -1;
-static int hf_dvb_eit_last_section_number = -1;
+static dissector_handle_t dvb_eit_handle;
 
-static int hf_dvb_eit_transport_stream_id = -1;
-static int hf_dvb_eit_original_network_id = -1;
-static int hf_dvb_eit_segment_last_section_number = -1;
-static int hf_dvb_eit_last_table_id = -1;
+static int proto_dvb_eit;
+static int hf_dvb_eit_service_id;
+static int hf_dvb_eit_reserved;
+static int hf_dvb_eit_version_number;
+static int hf_dvb_eit_current_next_indicator;
+static int hf_dvb_eit_section_number;
+static int hf_dvb_eit_last_section_number;
 
-static int hf_dvb_eit_event_id = -1;
-static int hf_dvb_eit_start_time = -1;
-static int hf_dvb_eit_duration = -1;
-static int hf_dvb_eit_running_status = -1;
-static int hf_dvb_eit_free_ca_mode = -1;
-static int hf_dvb_eit_descriptors_loop_length = -1;
+static int hf_dvb_eit_transport_stream_id;
+static int hf_dvb_eit_original_network_id;
+static int hf_dvb_eit_segment_last_section_number;
+static int hf_dvb_eit_last_table_id;
 
-static gint ett_dvb_eit = -1;
-static gint ett_dvb_eit_event = -1;
+static int hf_dvb_eit_event_id;
+static int hf_dvb_eit_start_time;
+static int hf_dvb_eit_duration;
+static int hf_dvb_eit_running_status;
+static int hf_dvb_eit_free_ca_mode;
+static int hf_dvb_eit_descriptors_loop_length;
+
+static int ett_dvb_eit;
+static int ett_dvb_eit_event;
 
 
 #define DVB_EIT_RESERVED_MASK                     0xC0
@@ -61,13 +52,6 @@ static gint ett_dvb_eit_event = -1;
 #define DVB_EIT_RUNNING_STATUS_MASK             0xE000
 #define DVB_EIT_FREE_CA_MODE_MASK               0x1000
 #define DVB_EIT_DESCRIPTORS_LOOP_LENGTH_MASK    0x0FFF
-
-static const value_string dvb_eit_cur_next_vals[] = {
-    { 0, "Not yet applicable" },
-    { 1, "Currently applicable" },
-
-    { 0, NULL }
-};
 
 static const value_string dvb_eit_running_status_vals[] = {
     { 0, "Undefined" },
@@ -91,9 +75,9 @@ static int
 dissect_dvb_eit(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 
-    guint       offset = 0, length = 0;
-    guint       descriptor_len;
-    guint16     evt_id;
+    unsigned    offset = 0, length = 0;
+    unsigned    descriptor_len;
+    uint16_t    evt_id;
 
     proto_item *ti;
     proto_tree *dvb_eit_tree;
@@ -151,7 +135,7 @@ dissect_dvb_eit(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
         proto_tree_add_item(dvb_eit_event_tree, hf_dvb_eit_event_id, tvb, offset, 2, ENC_BIG_ENDIAN);
         offset += 2;
 
-        if (tvb_memeql(tvb, offset, "\xFF\xFF\xFF\xFF\xFF", 5)) {
+        if (tvb_memeql(tvb, offset, (const uint8_t*)"\xFF\xFF\xFF\xFF\xFF", 5)) {
             if (packet_mpeg_sect_mjd_to_utc_time(tvb, offset, &start_time) < 0) {
                 proto_tree_add_time_format(dvb_eit_event_tree, hf_dvb_eit_start_time, tvb, offset, 5,
                                     &start_time, "Unparseable time");
@@ -168,9 +152,9 @@ dissect_dvb_eit(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 
         duration_item = proto_tree_add_item(dvb_eit_event_tree, hf_dvb_eit_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
         proto_item_append_text(duration_item, " (%02u:%02u:%02u)",
-            MPEG_SECT_BCD44_TO_DEC(tvb_get_guint8(tvb, offset)),
-            MPEG_SECT_BCD44_TO_DEC(tvb_get_guint8(tvb, offset + 1)),
-            MPEG_SECT_BCD44_TO_DEC(tvb_get_guint8(tvb, offset + 2)));
+            MPEG_SECT_BCD44_TO_DEC(tvb_get_uint8(tvb, offset)),
+            MPEG_SECT_BCD44_TO_DEC(tvb_get_uint8(tvb, offset + 1)),
+            MPEG_SECT_BCD44_TO_DEC(tvb_get_uint8(tvb, offset + 2)));
         offset += 3;
 
         proto_tree_add_item(dvb_eit_event_tree, hf_dvb_eit_running_status,          tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -179,7 +163,7 @@ dissect_dvb_eit(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
         descriptor_len = tvb_get_ntohs(tvb, offset) & DVB_EIT_DESCRIPTORS_LOOP_LENGTH_MASK;
         offset += 2;
 
-        offset += proto_mpeg_descriptor_loop_dissect(tvb, offset, descriptor_len, dvb_eit_event_tree);
+        offset += proto_mpeg_descriptor_loop_dissect(tvb, pinfo, offset, descriptor_len, dvb_eit_event_tree);
     }
 
     offset += packet_mpeg_sect_crc(tvb, pinfo, dvb_eit_tree, 0, offset);
@@ -211,7 +195,7 @@ proto_register_dvb_eit(void)
 
         { &hf_dvb_eit_current_next_indicator, {
             "Current/Next Indicator", "dvb_eit.cur_next_ind",
-            FT_UINT8, BASE_DEC, VALS(dvb_eit_cur_next_vals), DVB_EIT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
+            FT_BOOLEAN, 8, TFS(&tfs_current_not_yet), DVB_EIT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
         } },
 
         { &hf_dvb_eit_section_number, {
@@ -271,11 +255,11 @@ proto_register_dvb_eit(void)
 
         { &hf_dvb_eit_descriptors_loop_length, {
             "Descriptors Loop Length", "dvb_eit.evt.descr_loop_len",
-            FT_UINT16, BASE_HEX, NULL, DVB_EIT_DESCRIPTORS_LOOP_LENGTH_MASK, NULL, HFILL
+            FT_UINT16, BASE_DEC, NULL, DVB_EIT_DESCRIPTORS_LOOP_LENGTH_MASK, NULL, HFILL
         } }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_dvb_eit,
         &ett_dvb_eit_event
     };
@@ -285,15 +269,13 @@ proto_register_dvb_eit(void)
     proto_register_field_array(proto_dvb_eit, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
+    dvb_eit_handle = register_dissector("dvb_eit", dissect_dvb_eit, proto_dvb_eit);
 }
 
 
 void proto_reg_handoff_dvb_eit(void)
 {
     int tid;
-    dissector_handle_t dvb_eit_handle;
-
-    dvb_eit_handle = create_dissector_handle(dissect_dvb_eit, proto_dvb_eit);
 
     for (tid = DVB_EIT_TID_MIN; tid <= DVB_EIT_TID_MAX; tid++)
         dissector_add_uint("mpeg_sect.tid", tid, dvb_eit_handle);
@@ -301,7 +283,7 @@ void proto_reg_handoff_dvb_eit(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

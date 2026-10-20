@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <glib.h>
 #include <locale.h>
 #include <stdlib.h>
@@ -231,6 +233,23 @@ const gchar *sorted2[] = {
 };
 
 const gchar *file_sorted2[] = {
+  /* Filename collation in OS X follows Finder style which gives
+   * a slightly different order from usual Linux locales. */
+#ifdef HAVE_CARBON
+  "a-.a",
+  "a.a",
+  "aa.a",
+  "file:foo",
+  "file0000",
+  "file000x",
+  "file1",
+  "file5",
+  "file10",
+  "file26",
+  "file0027",
+  "file027",
+  "file100",
+#else
   "a.a",
   "a-.a",
   "aa.a",
@@ -244,6 +263,7 @@ const gchar *file_sorted2[] = {
   "file0027",
   "file100",
   "file:foo",
+#endif
   NULL
 };
 
@@ -251,7 +271,7 @@ int
 main (int argc, char *argv[])
 {
   gchar *path;
-  gint i;
+  guint i;
   const gchar *locale;
   CollateTest test[3];
 
@@ -292,4 +312,3 @@ main (int argc, char *argv[])
 
   return g_test_run ();
 }
-

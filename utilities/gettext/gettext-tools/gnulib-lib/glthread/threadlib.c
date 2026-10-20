@@ -1,18 +1,18 @@
 /* Multithreading primitives.
-   Copyright (C) 2005-2016 Free Software Foundation, Inc.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2005.  */
 
@@ -20,14 +20,47 @@
 
 /* ========================================================================= */
 
-#if USE_POSIX_THREADS
+#if USE_POSIX_THREADS || USE_ISOC_AND_POSIX_THREADS
 
 /* Use the POSIX threads library.  */
 
+# include <errno.h>
 # include <pthread.h>
 # include <stdlib.h>
 
 # if PTHREAD_IN_USE_DETECTION_HARD
+
+#  if defined __FreeBSD__ || defined __DragonFly__                 /* FreeBSD */
+
+/* Test using pthread_key_create.  */
+
+int
+glthread_in_use (void)
+{
+  static int tested;
+  static int result; /* 1: linked with -lpthread, 0: only with libc */
+
+  if (!tested)
+    {
+      pthread_key_t key;
+      int err = pthread_key_create (&key, NULL);
+
+      if (err == ENOSYS)
+        result = 0;
+      else
+        {
+          result = 1;
+          if (err == 0)
+            pthread_key_delete (key);
+        }
+      tested = 1;
+    }
+  return result;
+}
+
+#  else                                                     /* Solaris, HP-UX */
+
+/* Test using pthread_create.  */
 
 /* The function to be executed by a dummy thread.  */
 static void *
@@ -61,6 +94,8 @@ glthread_in_use (void)
     }
   return result;
 }
+
+#  endif
 
 # endif
 

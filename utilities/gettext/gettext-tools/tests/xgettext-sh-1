@@ -1,9 +1,26 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test of Shell support.
+# Test of Shell support: escape sequences, format strings, string concatenation,
+# strings with embedded expressions.
+
+# Note! This file contains unescaped ASCII control characters. Edit carefully!
 
 cat <<\EOF > xg-sh-1.sh
+# Test escape sequences expansion.
+
+gettext -e 'escape_0_\n'
+gettext -e 'escape_1_\a'
+gettext -e 'escape_2_\b'
+gettext -e 'escape_3_\f'
+gettext -e 'escape_4_\r'
+gettext -e 'escape_5_\t'
+gettext -e 'escape_6_\v'
+gettext -e 'escape_7_\\\\z'
+gettext -e 'escape_10_\40'
+gettext -e 'escape_11_\044'
+gettext -e 'escape_12_\140'
+
 # Test backslash before normal alphabetic character.
 
 gettext  depth_0_none_0_x
@@ -308,6 +325,10 @@ echo "`echo "\`gettext 'depth_2_11_squote_6_\\\\\\$var'\`"`"
 echo "`echo "\`gettext 'depth_2_11_squote_7_\\\\\\\$var'\`"`"
 echo "`echo "\`gettext 'depth_2_11_squote_8_\\\\\\\\$var'\`"`"
 
+# Test backslash before single-quote.
+
+echo \'
+
 # Test backslash before semicolon.
 
 ngettext  depth_0_none_0_semi ;
@@ -459,6 +480,48 @@ echo "`echo "\`ngettext 'depth_2_11_squote_5_semi \\\\\;'\`"`"
 echo "`echo "\`ngettext 'depth_2_11_squote_6_semi \\\\\\;'\`"`"
 echo "`echo "\`ngettext 'depth_2_11_squote_7_semi \\\\\\\;'\`"`"
 echo "`echo "\`ngettext 'depth_2_11_squote_8_semi \\\\\\\\;'\`"`"
+
+# Test dollar-single-quote strings.
+
+gettext $'depth_0_dollar_posix_0_"ab\"cd\'ef\\gh\eij\fkl\nmn\rop\tqr\vst'
+gettext $'depth_0_dollar_posix_1_\cvab\cVcd\c[ef\c\\gh\c]ij\c?kl'
+gettext $'depth_0_dollar_bash_0_\Eab'
+
+echo `gettext $'depth_1_dollar_posix_0_"ab\"cd\'ef\\gh\eij\fkl\nmn\rop\tqr\vst'`
+echo `gettext $'depth_1_dollar_posix_1_\cvab\cVcd\c[ef\c\\gh\c]ij\c?kl'`
+echo `gettext $'depth_1_dollar_bash_0_\Eab'`
+
+echo `echo \`gettext $'depth_2_dollar_posix_0_"ab\"cd\'ef\\gh\eij\fkl\nmn\rop\tqr\vst'\``
+echo `echo \`gettext $'depth_2_dollar_posix_1_\cvab\cVcd\c[ef\c\\gh\c]ij\c?kl'\``
+echo `echo \`gettext $'depth_2_dollar_bash_0_\Eab'\``
+
+# Test format strings.
+
+printf "`gettext 'User name: %s\nUser ID: %u'`"'\n' "$USER" `id -u`
+
+printf_gettext 'User name: %s\nUser id: %u\n' "$USER" `id -u`
+
+printf_ngettext 'Delete the file?' 'Delete %u files?' $n $n
+
+# Test string concatenation.
+
+gettext "concat_0_""part2"
+gettext "concat_1_"'part2'
+gettext "concat_2_"part2
+gettext 'concat_3_'"part2"
+gettext 'concat_4_''part2'
+gettext 'concat_5_'part2
+gettext  concat_6_"part2"
+gettext  concat_7_'part2'
+gettext  concat_8_ part2
+gettext "concat_9_"'part2'"part3"
+
+# Test strings with embedded expressions.
+
+gettext "embedded_1_${foo}_bar"
+gettext "embedded_2_${foo-`gettext embedded_2_sub1`}_bar_${foo-`gettext embedded_2_sub2`}_baz"
+gettext "embedded_3_${foo:-`gettext embedded_3_sub1`}_bar_${foo:-`gettext embedded_3_sub2`}_baz"
+gettext "embedded_4"
 EOF
 
 : ${XGETTEXT=xgettext}
@@ -468,6 +531,39 @@ ${XGETTEXT} --omit-header --no-location --keyword=ngettext:1 \
 LC_ALL=C tr -d '\r' < xg-sh-1.tmp.po > xg-sh-1.po || Exit 1
 
 cat <<\EOF > xg-sh-1.ok
+msgid "escape_0_\n"
+msgstr ""
+
+msgid "escape_1_\a"
+msgstr ""
+
+msgid "escape_2_\b"
+msgstr ""
+
+msgid "escape_3_\f"
+msgstr ""
+
+msgid "escape_4_\r"
+msgstr ""
+
+msgid "escape_5_\t"
+msgstr ""
+
+msgid "escape_6_\v"
+msgstr ""
+
+msgid "escape_7_\\\\z"
+msgstr ""
+
+msgid "escape_10_ "
+msgstr ""
+
+msgid "escape_11_$"
+msgstr ""
+
+msgid "escape_12_`"
+msgstr ""
+
 msgid "depth_0_none_0_x"
 msgstr ""
 
@@ -1796,6 +1892,98 @@ msgid "depth_2_11_squote_7_semi \\\\;"
 msgstr ""
 
 msgid "depth_2_11_squote_8_semi \\\\;"
+msgstr ""
+
+msgid ""
+"depth_0_dollar_posix_0_\"ab\"cd'ef\\ghij\fkl\n"
+"mn\rop\tqr\vst"
+msgstr ""
+
+msgid "depth_0_dollar_posix_1_abcdefghijkl"
+msgstr ""
+
+msgid "depth_0_dollar_bash_0_ab"
+msgstr ""
+
+msgid ""
+"depth_1_dollar_posix_0_\"ab\"cd'ef\\ghij\fkl\n"
+"mn\rop\tqr\vst"
+msgstr ""
+
+msgid "depth_1_dollar_posix_1_abcdefghijkl"
+msgstr ""
+
+msgid "depth_1_dollar_bash_0_ab"
+msgstr ""
+
+msgid ""
+"depth_2_dollar_posix_0_\"ab\"cd'ef\\ghij\fkl\n"
+"mn\rop\tqr\vst"
+msgstr ""
+
+msgid "depth_2_dollar_posix_1_abcdefghijkl"
+msgstr ""
+
+msgid "depth_2_dollar_bash_0_ab"
+msgstr ""
+
+#, sh-printf-format
+msgid "User name: %s\\nUser ID: %u"
+msgstr ""
+
+#, sh-printf-format
+msgid "User name: %s\\nUser id: %u\\n"
+msgstr ""
+
+#, sh-printf-format
+msgid "Delete the file?"
+msgid_plural "Delete %u files?"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "concat_0_part2"
+msgstr ""
+
+msgid "concat_1_part2"
+msgstr ""
+
+msgid "concat_2_part2"
+msgstr ""
+
+msgid "concat_3_part2"
+msgstr ""
+
+msgid "concat_4_part2"
+msgstr ""
+
+msgid "concat_5_part2"
+msgstr ""
+
+msgid "concat_6_part2"
+msgstr ""
+
+msgid "concat_7_part2"
+msgstr ""
+
+msgid "concat_8_"
+msgstr ""
+
+msgid "concat_9_part2part3"
+msgstr ""
+
+msgid "embedded_2_sub1"
+msgstr ""
+
+msgid "embedded_2_sub2"
+msgstr ""
+
+msgid "embedded_3_sub1"
+msgstr ""
+
+msgid "embedded_3_sub2"
+msgstr ""
+
+msgid "embedded_4"
 msgstr ""
 EOF
 

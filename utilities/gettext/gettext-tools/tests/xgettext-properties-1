@@ -3,7 +3,7 @@
 
 # Test C, C++, JavaProperties extractors.
 
-cat <<EOF > xg-pr-1.in.properties
+cat <<\EOF > xg-pr-1.in.properties
 #: file1.c:199
 #, fuzzy
 !extract\ me=some text to get fuzzy copied to result
@@ -16,7 +16,7 @@ cat <<EOF > xg-pr-1.in.properties
 !hello=Again some text for fuzzy
 EOF
 
-cat <<EOF > xg-pr-1.c
+cat <<\EOF > xg-pr-1.c
 #include <libintl.h>
 #include <stdio.h>
 int
@@ -27,7 +27,7 @@ main (int argc, char *argv[])
 }
 EOF
 
-cat <<EOF > xg-pr-1.cc
+cat <<\EOF > xg-pr-1.cc
 #include <iostream.h>
 #include <libintl.h>
 #include <locale.h>
@@ -44,7 +44,7 @@ ${XGETTEXT} --omit-header -n \
   -d xg-pr-1.tmp xg-pr-1.in.properties xg-pr-1.c xg-pr-1.cc || Exit 1
 LC_ALL=C tr -d '\r' < xg-pr-1.tmp.po > xg-pr-1.po || Exit 1
 
-cat <<EOF > xg-pr-1.ok
+cat <<\EOF > xg-pr-1.ok
 #: file1.c:199
 #, fuzzy
 msgid "extract me"

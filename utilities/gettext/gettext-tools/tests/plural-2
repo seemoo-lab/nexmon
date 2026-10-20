@@ -1,12 +1,14 @@
 #! /bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
+# Test that ngettext() selects the correct plural form, for 0 <= n < 200.
+
 : ${MSGFMT=msgfmt}
 test -d plural-2-dir || mkdir plural-2-dir
 test -d plural-2-dir/ll || mkdir plural-2-dir/ll
 test -d plural-2-dir/ll/LC_MESSAGES || mkdir plural-2-dir/ll/LC_MESSAGES
 
-cat <<EOF > plural-2.data
+cat <<\EOF > plural-2.data
 ja
 0
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

@@ -1,6 +1,25 @@
+/* NaNs and Infinity in floating-point numbers.
+   Copyright (C) 2015-2026 Free Software Foundation, Inc.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Daiki Ueno.  */
+
 /* Replacement 'trionan.c', using Gnulib functions.  */
 
 #include "config.h"
+#include <float.h>
 #include <math.h>
 
 /* Copied from gnulib/tests/infinity.h.  */
@@ -45,6 +64,7 @@ NaNd ()
    The expression -DBL_MIN * DBL_MIN does not work when cross-compiling
    to PowerPC on Mac OS X 10.5.  */
 #if defined __hpux || defined __sgi || defined __ICC
+_GL_ATTRIBUTE_MAYBE_UNUSED
 static double
 compute_minus_zerod (void)
 {
@@ -52,6 +72,7 @@ compute_minus_zerod (void)
 }
 # define minus_zerod compute_minus_zerod ()
 #else
+_GL_ATTRIBUTE_MAYBE_UNUSED
 static double minus_zerod = -0.0;
 #endif
 

@@ -181,12 +181,17 @@ EntryInformationSelection/extraAttributes/select	extraSelect
 
 SaslCredentials/credentials				saslCredentials
 
-# This table creates the value_sting to name DAP operation codes and errors
+#.FIELD_ATTR
+SaslCredentials/credentials ABBREV=saslCredentials
+TokenData/time				ABBREV=utctime
+NameErrorData/matched		ABBREV=matched_name
+
+# This table creates the value_string to name DAP operation codes and errors
 # in file packet-dap-table.c which is included in the template file
 #
 #.TABLE_HDR
 /* DAP OPERATIONS */
-const value_string dap_opr_code_string_vals[] = {
+static const value_string dap_opr_code_string_vals[] = {
 #.TABLE_BODY OPERATION
 	{ %(&operationCode)s, "%(_ident)s" },
 #.TABLE_FTR
@@ -257,7 +262,7 @@ OPERATION.&ResultType
 
 #.FN_BODY 	DirectoryBindArgument
 
-	guint32 len;
+	uint32_t len;
 
 	/* check and see if this is an empty set */
 	dissect_ber_length(actx->pinfo, tree, tvb, offset+1, &len, NULL);
@@ -290,18 +295,14 @@ OPERATION.&ResultType
 	%(DEFAULT_BODY)s
 
 	if(out_tvb) {
-		len = tvb_reported_length(out_tvb);
 		/* now see if we can add a string representation */
-		for(i=0; i<len; i++)
-			if(!g_ascii_isprint(tvb_get_guint8(out_tvb, i)))
-				break;
-
-		if(i == len) {
+		len = tvb_reported_length(out_tvb);
+		if(tvb_ascii_isprint(out_tvb, 0, len)) {
 			if(actx->created_item) {
 
 				proto_item_append_text(actx->created_item," (");
 				for(i=0; i<len; i++)
-					proto_item_append_text(actx->created_item,"%%c",tvb_get_guint8(out_tvb,i));
+					proto_item_append_text(actx->created_item,"%%c",tvb_get_uint8(out_tvb,i));
 				proto_item_append_text(actx->created_item,")");
 			}
 		}
@@ -311,51 +312,51 @@ OPERATION.&ResultType
 	VAL_PTR = &problem
 
 #.FN_BODY SecurityProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, dap_SecurityProblem_vals, "SecurityProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, dap_SecurityProblem_vals, "SecurityProblem(%%d)"));
 
 #.FN_PARS ServiceProblem
 	VAL_PTR = &problem
 
 #.FN_BODY ServiceProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, dap_ServiceProblem_vals, "ServiceProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, dap_ServiceProblem_vals, "ServiceProblem(%%d)"));
 
 #.FN_PARS UpdateProblem
 	VAL_PTR = &problem
 
 #.FN_BODY UpdateProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, dap_UpdateProblem_vals, "UpdateProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, dap_UpdateProblem_vals, "UpdateProblem(%%d)"));
 
 #.FN_PARS LimitProblem
 	VAL_PTR = &problem
 
 #.FN_BODY LimitProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, dap_LimitProblem_vals, "LimitProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, dap_LimitProblem_vals, "LimitProblem(%%d)"));
 
 #.END
 
 
 #.FN_BODY SearchArgumentData/subset  VAL_PTR=&subset
-  guint32 subset;
+  uint32_t subset;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(subset, dap_T_subset_vals, "Subset(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, subset, dap_T_subset_vals, "Subset(%%d)"));
 
 
 #.FN_BODY Name
@@ -365,4 +366,5 @@ OPERATION.&ResultType
 
 	dn = x509if_get_last_dn();
 	col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", (dn && *dn) ? dn : "(root)");
+
 

@@ -1,14 +1,44 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * Author: Aleksey Sanin <aleksey@aleksey.com>
+ */
+
 /*
  * "Canonical XML" implementation
  * http://www.w3.org/TR/xml-c14n
  *
  * "Exclusive XML Canonicalization" implementation
  * http://www.w3.org/TR/xml-exc-c14n
- *
- * See Copyright for the status of this software.
- *
- * Author: Aleksey Sanin <aleksey@aleksey.com>
  */
+
 #define IN_LIBXML
 #include "libxml.h"
 #ifdef LIBXML_C14N_ENABLED
@@ -89,7 +119,7 @@ static int			xmlExcC14NVisibleNsStackFind	(xmlC14NVisibleNsStackPtr cur,
 								 xmlNsPtr ns,
 								 xmlC14NCtxPtr ctx);
 
-static int			xmlC14NIsNodeInNodeset		(xmlNodeSetPtr nodes,
+static int			xmlC14NIsNodeInNodeset		(void *user_data,
 								 xmlNodePtr node,
 								 xmlNodePtr parent);
 
@@ -252,7 +282,8 @@ xmlC14NErr(xmlC14NCtxPtr ctxt, xmlNodePtr node, int error,
 #define XML_NAMESPACES_DEFAULT		16
 
 static int
-xmlC14NIsNodeInNodeset(xmlNodeSetPtr nodes, xmlNodePtr node, xmlNodePtr parent) {
+xmlC14NIsNodeInNodeset(void *user_data, xmlNodePtr node, xmlNodePtr parent) {
+    xmlNodeSetPtr nodes = (xmlNodeSetPtr) user_data;
     if((nodes != NULL) && (node != NULL)) {
 	if(node->type != XML_NAMESPACE_DECL) {
 	    return(xmlXPathNodeSetContains(nodes, node));
@@ -513,8 +544,10 @@ xmlC14NIsXmlNs(xmlNsPtr ns)
  * Returns -1 if ns1 < ns2, 0 if ns1 == ns2 or 1 if ns1 > ns2.
  */
 static int
-xmlC14NNsCompare(xmlNsPtr ns1, xmlNsPtr ns2)
+xmlC14NNsCompare(const void *data1, const void *data2)
 {
+    const xmlNsPtr ns1 = (const xmlNsPtr) data1;
+    const xmlNsPtr ns2 = (const xmlNsPtr) data2;
     if (ns1 == ns2)
         return (0);
     if (ns1 == NULL)
@@ -557,6 +590,11 @@ xmlC14NPrintNamespaces(const xmlNsPtr ns, xmlC14NCtxPtr ctx)
     	xmlOutputBufferWriteString(ctx->buf, "\"\"");
     }
     return (1);
+}
+
+static int
+xmlC14NPrintNamespacesWalker(const void *ns, void *ctx) {
+    return xmlC14NPrintNamespaces((const xmlNsPtr) ns, (xmlC14NCtxPtr) ctx);
 }
 
 /**
@@ -615,7 +653,7 @@ xmlC14NProcessNamespacesAxis(xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
     /*
      * Create a sorted list to store element namespaces
      */
-    list = xmlListCreate(NULL, (xmlListDataCompare) xmlC14NNsCompare);
+    list = xmlListCreate(NULL, xmlC14NNsCompare);
     if (list == NULL) {
         xmlC14NErrInternal("creating namespaces list (c14n)");
         return (-1);
@@ -663,7 +701,7 @@ xmlC14NProcessNamespacesAxis(xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
     /*
      * print out all elements from list
      */
-    xmlListWalk(list, (xmlListWalker) xmlC14NPrintNamespaces, (const void *) ctx);
+    xmlListWalk(list, xmlC14NPrintNamespacesWalker, (void *) ctx);
 
     /*
      * Cleanup
@@ -728,7 +766,7 @@ xmlExcC14NProcessNamespacesAxis(xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
     /*
      * Create a sorted list to store element namespaces
      */
-    list = xmlListCreate(NULL, (xmlListDataCompare) xmlC14NNsCompare);
+    list = xmlListCreate(NULL, xmlC14NNsCompare);
     if (list == NULL) {
         xmlC14NErrInternal("creating namespaces list (exc c14n)");
         return (-1);
@@ -840,7 +878,7 @@ xmlExcC14NProcessNamespacesAxis(xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)
     /*
      * print out all elements from list
      */
-    xmlListWalk(list, (xmlListWalker) xmlC14NPrintNamespaces, (const void *) ctx);
+    xmlListWalk(list, xmlC14NPrintNamespacesWalker, (void *) ctx);
 
     /*
      * Cleanup
@@ -879,8 +917,10 @@ xmlC14NIsXmlAttr(xmlAttrPtr attr)
  * Returns -1 if attr1 < attr2, 0 if attr1 == attr2 or 1 if attr1 > attr2.
  */
 static int
-xmlC14NAttrsCompare(xmlAttrPtr attr1, xmlAttrPtr attr2)
+xmlC14NAttrsCompare(const void *data1, const void *data2)
 {
+    const xmlAttrPtr attr1 = (const xmlAttrPtr) data1;
+    const xmlAttrPtr attr2 = (const xmlAttrPtr) data2;
     int ret = 0;
 
     /*
@@ -931,8 +971,10 @@ xmlC14NAttrsCompare(xmlAttrPtr attr1, xmlAttrPtr attr2)
  * Returns 1 on success or 0 on fail.
  */
 static int
-xmlC14NPrintAttrs(const xmlAttrPtr attr, xmlC14NCtxPtr ctx)
+xmlC14NPrintAttrs(const void *data, void *user)
 {
+    const xmlAttrPtr attr = (const xmlAttrPtr) data;
+    xmlC14NCtxPtr ctx = (xmlC14NCtxPtr) user;
     xmlChar *value;
     xmlChar *buffer;
 
@@ -1142,7 +1184,7 @@ xmlC14NProcessAttrsAxis(xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
     /*
      * Create a sorted list to store element attributes
      */
-    list = xmlListCreate(NULL, (xmlListDataCompare) xmlC14NAttrsCompare);
+    list = xmlListCreate(NULL, xmlC14NAttrsCompare);
     if (list == NULL) {
         xmlC14NErrInternal("creating attributes list");
         return (-1);
@@ -1331,7 +1373,7 @@ xmlC14NProcessAttrsAxis(xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
     /*
      * print out all elements from list
      */
-    xmlListWalk(list, (xmlListWalker) xmlC14NPrintAttrs, (const void *) ctx);
+    xmlListWalk(list, xmlC14NPrintAttrs, (void *) ctx);
 
     /*
      * Cleanup
@@ -1371,13 +1413,6 @@ xmlC14NCheckForRelativeNamespaces(xmlC14NCtxPtr ctx, xmlNodePtr cur)
                 return (-1);
             }
             if (xmlStrlen((const xmlChar *) uri->scheme) == 0) {
-                xmlC14NErrRelativeNamespace(uri->scheme);
-                xmlFreeURI(uri);
-                return (-1);
-            }
-            if ((xmlStrcasecmp((const xmlChar *) uri->scheme, BAD_CAST "urn") != 0)
-                && (xmlStrcasecmp((const xmlChar *) uri->scheme, BAD_CAST "dav") !=0)
-                && (xmlStrlen((const xmlChar *) uri->server) == 0)) {
                 xmlC14NErrRelativeNamespace(uri->scheme);
                 xmlFreeURI(uri);
                 return (-1);
@@ -1793,15 +1828,6 @@ xmlC14NNewCtx(xmlDocPtr doc,
     }
 
     /*
-     *  Validate the XML document encoding value, if provided.
-     */
-    if (doc->charset != XML_CHAR_ENCODING_UTF8) {
-        xmlC14NErr(ctx, (xmlNodePtr) doc, XML_C14N_REQUIRES_UTF8,
-		   "xmlC14NNewCtx: source document not in UTF8\n");
-        return (NULL);
-    }
-
-    /*
      * Allocate a new xmlC14NCtxPtr and fill the fields.
      */
     ctx = (xmlC14NCtxPtr) xmlMalloc(sizeof(xmlC14NCtx));
@@ -1971,7 +1997,7 @@ xmlC14NDocSaveTo(xmlDocPtr doc, xmlNodeSetPtr nodes,
                  int mode, xmlChar ** inclusive_ns_prefixes,
                  int with_comments, xmlOutputBufferPtr buf) {
     return(xmlC14NExecute(doc,
-			(xmlC14NIsVisibleCallback)xmlC14NIsNodeInNodeset,
+			xmlC14NIsNodeInNodeset,
 			nodes,
 			mode,
 			inclusive_ns_prefixes,
@@ -2084,7 +2110,7 @@ xmlC14NDocSave(xmlDocPtr doc, xmlNodeSetPtr nodes,
         xmlC14NErrParam("saving doc");
         return (-1);
     }
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
     if (compression < 0)
         compression = xmlGetCompressMode();
 #endif

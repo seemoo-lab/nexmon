@@ -3,18 +3,20 @@
  *  Copyright (C) 2006 Alexander Larsson <alexl@redhat.com>
  *  Copyright (C) 2000-2003 Ximian Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
+ * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * This is based on code in camel, written by:
  *    Michael Zucchi <notzed@ximian.com>
@@ -28,30 +30,6 @@
 #include "gbase64.h"
 #include "gtestutils.h"
 #include "glibintl.h"
-
-
-/**
- * SECTION:base64
- * @title: Base64 Encoding
- * @short_description: encodes and decodes data in Base64 format
- *
- * Base64 is an encoding that allows a sequence of arbitrary bytes to be
- * encoded as a sequence of printable ASCII characters. For the definition
- * of Base64, see 
- * [RFC 1421](http://www.ietf.org/rfc/rfc1421.txt)
- * or
- * [RFC 2045](http://www.ietf.org/rfc/rfc2045.txt).
- * Base64 is most commonly used as a MIME transfer encoding
- * for email.
- *
- * GLib supports incremental encoding using g_base64_encode_step() and
- * g_base64_encode_close(). Incremental decoding can be done with
- * g_base64_decode_step(). To encode or decode data in one go, use
- * g_base64_encode() or g_base64_decode(). To avoid memory allocation when
- * decoding, you can use g_base64_decode_inplace().
- *
- * Support for Base64 encoding has been added in GLib 2.12.
- */
 
 static const char base64_alphabet[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -76,10 +54,10 @@ static const char base64_alphabet[] =
  * be written to it. Due to the way base64 encodes you will need
  * at least: (@len / 3 + 1) * 4 + 4 bytes (+ 4 may be needed in case of
  * non-zero state). If you enable line-breaking you will need at least:
- * ((@len / 3 + 1) * 4 + 4) / 72 + 1 bytes of extra space.
+ * ((@len / 3 + 1) * 4 + 4) / 76 + 1 bytes of extra space.
  *
  * @break_lines is typically used when putting base64-encoded data in emails.
- * It breaks the lines at 72 columns instead of putting all of the text on
+ * It breaks the lines at 76 columns instead of putting all of the text on
  * the same line. This avoids problems with long lines in the email system.
  * Note however that it breaks the lines with `LF` characters, not
  * `CR LF` sequences, so the result cannot be passed directly to SMTP
@@ -100,12 +78,12 @@ g_base64_encode_step (const guchar *in,
   char *outptr;
   const guchar *inptr;
 
-  g_return_val_if_fail (in != NULL, 0);
+  g_return_val_if_fail (in != NULL || len == 0, 0);
   g_return_val_if_fail (out != NULL, 0);
   g_return_val_if_fail (state != NULL, 0);
   g_return_val_if_fail (save != NULL, 0);
 
-  if (len <= 0)
+  if (len == 0)
     return 0;
 
   inptr = in;
@@ -160,7 +138,8 @@ g_base64_encode_step (const guchar *in,
       *state = already;
     }
 
-  if (len>0)
+  g_assert (len == 0 || len == 1 || len == 2);
+
     {
       char *saveout;
 
@@ -170,8 +149,11 @@ g_base64_encode_step (const guchar *in,
       /* len can only be 0 1 or 2 */
       switch(len)
         {
-        case 2: *saveout++ = *inptr++;
-        case 1: *saveout++ = *inptr++;
+        case 2:
+          *saveout++ = *inptr++;
+          G_GNUC_FALLTHROUGH;
+        case 1:
+          *saveout++ = *inptr++;
         }
       ((char *)save)[0] += len;
     }
@@ -191,6 +173,8 @@ g_base64_encode_step (const guchar *in,
  * The output buffer must be large enough to fit all the data that will
  * be written to it. It will need up to 4 bytes, or up to 5 bytes if
  * line-breaking is enabled.
+ *
+ * The @out array will not be automatically nul-terminated.
  *
  * Returns: The number of bytes of output that was written
  *
@@ -220,6 +204,7 @@ g_base64_encode_close (gboolean  break_lines,
       goto skip;
     case 1:
       outptr[2] = '=';
+      c2 = 0;  /* saved state here is not relevant */
     skip:
       outptr [0] = base64_alphabet [ c1 >> 2 ];
       outptr [1] = base64_alphabet [ c2 >> 4 | ( (c1&0x3) << 4 )];
@@ -238,7 +223,7 @@ g_base64_encode_close (gboolean  break_lines,
 
 /**
  * g_base64_encode:
- * @data: (array length=len) (element-type guint8): the binary data to encode
+ * @data: (array length=len) (element-type guint8) (nullable): the binary data to encode
  * @len: the length of @data
  *
  * Encode a sequence of binary data into its Base-64 stringified
@@ -255,21 +240,26 @@ g_base64_encode (const guchar *data,
                  gsize         len)
 {
   gchar *out;
-  gint state = 0, outlen;
+  gint state = 0;
   gint save = 0;
+  gsize outlen;
+  gsize allocsize;
 
   g_return_val_if_fail (data != NULL || len == 0, NULL);
 
   /* We can use a smaller limit here, since we know the saved state is 0,
      +1 is needed for trailing \0, also check for unlikely integer overflow */
-  if (len >= ((G_MAXSIZE - 1) / 4 - 1) * 3)
-    g_error("%s: input too large for Base64 encoding (%"G_GSIZE_FORMAT" chars)",
-        G_STRLOC, len);
+  g_return_val_if_fail (len < ((G_MAXSIZE - 1) / 4 - 1) * 3, NULL);
 
-  out = g_malloc ((len / 3 + 1) * 4 + 1);
+  allocsize = (len / 3 + 1) * 4 + 1;
+  out = g_malloc (allocsize);
 
   outlen = g_base64_encode_step (data, len, FALSE, out, &state, &save);
+  g_assert (outlen <= allocsize);
+
   outlen += g_base64_encode_close (FALSE, out + outlen, &state, &save);
+  g_assert (outlen <= allocsize);
+
   out[outlen] = '\0';
 
   return (gchar *) out;
@@ -295,10 +285,10 @@ static const unsigned char mime_base64_rank[256] = {
 };
 
 /**
- * g_base64_decode_step:
- * @in: (array length=len) (element-type guint8): binary input data
+ * g_base64_decode_step: (skip)
+ * @in: (array length=len): base-64 encoded input data
  * @len: max length of @in data to decode
- * @out: (out) (array) (element-type guint8): output buffer
+ * @out: (out caller-allocates) (array) (element-type guint8): output buffer
  * @state: (inout): Saved state between steps, initialize to 0
  * @save: (inout): Saved state between steps, initialize to 0
  *
@@ -330,12 +320,12 @@ g_base64_decode_step (const gchar  *in,
   unsigned int v;
   int i;
 
-  g_return_val_if_fail (in != NULL, 0);
+  g_return_val_if_fail (in != NULL || len == 0, 0);
   g_return_val_if_fail (out != NULL, 0);
   g_return_val_if_fail (state != NULL, 0);
   g_return_val_if_fail (save != NULL, 0);
 
-  if (len <= 0)
+  if (len == 0)
     return 0;
 
   inend = (const guchar *)in+len;
@@ -386,7 +376,7 @@ g_base64_decode_step (const gchar  *in,
 
 /**
  * g_base64_decode:
- * @text: zero-terminated string with base64 text to decode
+ * @text: (not nullable): zero-terminated string with base64 text to decode
  * @out_len: (out): The length of the decoded data is written here
  *
  * Decode a sequence of Base-64 encoded text into binary data.  Note
@@ -441,7 +431,8 @@ guchar *
 g_base64_decode_inplace (gchar *text,
                          gsize *out_len)
 {
-  gint input_length, state = 0;
+  gint state = 0;
+  size_t input_length;
   guint save = 0;
 
   g_return_val_if_fail (text != NULL, NULL);

@@ -1,0 +1,67 @@
+<ELEMENTS>
+  <ELEMENT>
+    <items>
+      <!-- Some dupls. -->
+      <item>dupl1</item>
+      <item>dupl2</item>
+      <item>dupl3</item>
+      <item>dupl4</item>
+      <item>dupl5</item>
+      <item>dupl6</item>
+      <item>dupl7</item>
+      <item>dupl8</item>
+      <item>dupl9</item>
+      <item>dupl10</item>
+      <item>dupl11</item>
+      <item>dupl12</item>
+      <item>dupl13</item>
+      <item>dupl14</item>
+      <item>dupl15</item>
+      <item>dupl16</item>
+      <item>dupl17</item>
+      <item>dupl18</item>
+      <item>dupl19</item>
+      <item>dupl20</item>
+      <item>dupl21</item>
+      <item>dupl22</item>
+      <item>dupl23</item>
+      <item>dupl24</item>
+      <item>dupl25</item>
+      <items>
+        <!-- Some dupls. -->
+        <item>dupl1</item>
+        <item>dupl2</item>
+        <item>dupl3</item>
+        <item>dupl4</item>
+        <item>dupl5</item>
+        <item>dupl6</item>
+        <item>dupl7</item>
+        <item>dupl8</item>
+        <item>dupl9</item>
+        <item>dupl10</item>
+        <item>dupl11</item>
+        <item>dupl12</item>
+        <item>dupl13</item>
+        <item>dupl14</item>
+        <item>dupl15</item>
+        <item>dupl16</item>
+        <item>dupl17</item>
+        <item>dupl18</item>
+        <item>dupl19</item>
+        <item>dupl20</item>
+        <item>dupl21</item>
+        <item>dupl22</item>
+        <item>dupl23</item>
+        <item>dupl24</item>
+        <item>dupl25</item>
+        <items>
+          <item>dupl1</item>
+          <item>1</item>
+        </items>
+      </items>
+    </items>
+    <!-- Keyrefs. -->
+    <ref>1</ref>
+  </ELEMENT>
+</ELEMENTS>
+

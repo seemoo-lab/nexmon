@@ -1,4 +1,4 @@
-/* ppptypes.h
+/** @file
  * Defines PPP packet types.
  *
  * Wireshark - Network traffic analyzer
@@ -6,19 +6,7 @@
  * Copyright 1998 Gerald Combs
  *
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PPPTYPES_H__
@@ -87,7 +75,7 @@
 #define PPP_MPLS_UNI	0x0281	/* MPLS Unicast */
 #define PPP_MPLS_MULTI	0x0283	/* MPLS Multicast */
 #define PPP_P12844	0x0285	/* IEEE p1284.4 standard - data packets */
-#define PPP_TETRA	0x0287	/* ETSI TETRA Network Procotol Type 1 */
+#define PPP_TETRA	0x0287	/* ETSI TETRA Network Protocol Type 1 */
 #define PPP_MFTP	0x0289	/* Multichannel Flow Treatment Protocol */
 #define PPP_RTP_CTCPND	0x2063	/* RTP IPHC Compressed TCP No Delta */
 #define PPP_RTP_CS	0x2065	/* RTP IPHC Context State */
@@ -132,7 +120,7 @@
 #define PPP_VSNCP	0x805b	/* Vendor-Specific Network Control Protocol (VSNCP)   [RFC3772] */
 #define PPP_TNCP	0x805d	/* TRILL Network Control Protocol (TNCP) */
 #define PPP_STAMPEDECP	0x806f	/* Stampede Bridging Control Protocol */
-#define PPP_MPPCP	0x8073	/* MP+ Contorol Protocol */
+#define PPP_MPPCP	0x8073	/* MP+ Control Protocol */
 #define PPP_IPICP	0x80c1	/* NTCITS IPI Control Protocol */
 #define PPP_SLCC	0x80fb	/* Single link compression in multilink control */
 #define PPP_CCP		0x80fd	/* Compression Control Protocol */

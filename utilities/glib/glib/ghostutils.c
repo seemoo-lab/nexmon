@@ -3,10 +3,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 2008 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,35 +20,28 @@
  */
 
 #include "config.h"
+#include "glibconfig.h"
 
 #include <string.h>
+
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
 
 #include "ghostutils.h"
 
 #include "garray.h"
 #include "gmem.h"
+#include "gmessages.h"
 #include "gstring.h"
 #include "gstrfuncs.h"
+#include "gtestutils.h"
 #include "glibintl.h"
 
+#ifdef G_PLATFORM_WIN32
+#include <windows.h>
+#endif
 
-/**
- * SECTION:ghostutils
- * @short_description: Internet hostname utilities
- *
- * Functions for manipulating internet hostnames; in particular, for
- * converting between Unicode and ASCII-encoded forms of
- * Internationalized Domain Names (IDNs).
- *
- * The
- * [Internationalized Domain Names for Applications (IDNA)](http://www.ietf.org/rfc/rfc3490.txt)
- * standards allow for the use
- * of Unicode domain names in applications, while providing
- * backward-compatibility with the old ASCII-only DNS, by defining an
- * ASCII-Compatible Encoding of any given Unicode name, which can be
- * used with non-IDN-aware applications and protocols. (For example,
- * "Παν語.org" maps to "xn--4wa8awb4637h.org".)
- **/
 
 #define IDNA_ACE_PREFIX     "xn--"
 #define IDNA_ACE_PREFIX_LEN 4
@@ -61,7 +56,8 @@
 #define PUNYCODE_INITIAL_BIAS  72
 #define PUNYCODE_INITIAL_N   0x80
 
-#define PUNYCODE_IS_BASIC(cp) ((guint)(cp) < 0x80)
+#define IS_ASCII(cp) ((guint) (cp) < 0x80)
+#define PUNYCODE_IS_BASIC(cp) IS_ASCII (cp)
 
 /* Encode/decode a single base-36 digit */
 static inline gchar
@@ -119,14 +115,17 @@ punycode_encode (const gchar *input_utf8,
 {
   guint delta, handled_chars, num_basic_chars, bias, j, q, k, t, digit;
   gunichar n, m, *input;
-  glong input_length;
+  glong written_chars;
+  gsize input_length;
   gboolean success = FALSE;
 
   /* Convert from UTF-8 to Unicode code points */
   input = g_utf8_to_ucs4 (input_utf8, input_utf8_length, NULL,
-			  &input_length, NULL);
+			  &written_chars, NULL);
   if (!input)
     return FALSE;
+
+  input_length = (gsize) (written_chars > 0 ? written_chars : 0);
 
   /* Copy basic chars */
   for (j = num_basic_chars = 0; j < input_length; j++)
@@ -211,7 +210,7 @@ punycode_encode (const gchar *input_utf8,
  */
 static gchar *
 remove_junk (const gchar *str,
-             gint         len)
+             gssize       len)
 {
   GString *cleaned = NULL;
   const gchar *p;
@@ -240,7 +239,7 @@ remove_junk (const gchar *str,
 
 static inline gboolean
 contains_uppercase_letters (const gchar *str,
-                            gint         len)
+                            gssize       len)
 {
   const gchar *p;
 
@@ -254,14 +253,14 @@ contains_uppercase_letters (const gchar *str,
 
 static inline gboolean
 contains_non_ascii (const gchar *str,
-                    gint         len)
+                    gssize       len)
 {
   const gchar *p;
 
   for (p = str; len == -1 ? *p : p < str + len; p++)
     {
-      if ((guchar)*p > 0x80)
-	return TRUE;
+      if (!IS_ASCII (*p))
+        return TRUE;
     }
   return FALSE;
 }
@@ -301,10 +300,11 @@ idna_is_prohibited (gunichar ch)
 /* RFC 3491 IDN cleanup algorithm. */
 static gchar *
 nameprep (const gchar *hostname,
-          gint         len,
+          gssize       len,
           gboolean    *is_unicode)
 {
-  gchar *name, *tmp = NULL, *p;
+  const char *name, *p;
+  char *name_owned = NULL, *name_normalized = NULL;
 
   /* It would be nice if we could do this without repeatedly
    * allocating strings and converting back and forth between
@@ -314,21 +314,20 @@ nameprep (const gchar *hostname,
    */
 
   /* Remove presentation-only characters */
-  name = remove_junk (hostname, len);
+  name = name_owned = remove_junk (hostname, len);
   if (name)
-    {
-      tmp = name;
-      len = -1;
-    }
+    len = -1;
   else
-    name = (gchar *)hostname;
+    name = hostname;
 
   /* Convert to lowercase */
   if (contains_uppercase_letters (name, len))
     {
-      name = g_utf8_strdown (name, len);
-      g_free (tmp);
-      tmp = name;
+      char *name_owned_lower = NULL;
+
+      name = name_owned_lower = g_utf8_strdown (name, len);
+      g_free (name_owned);
+      name_owned = g_steal_pointer (&name_owned_lower);
       len = -1;
     }
 
@@ -336,18 +335,19 @@ nameprep (const gchar *hostname,
   if (!contains_non_ascii (name, len))
     {
       *is_unicode = FALSE;
-      if (name == (gchar *)hostname)
+      if (name == hostname)
         return len == -1 ? g_strdup (hostname) : g_strndup (hostname, len);
       else
-        return name;
+        return g_steal_pointer (&name_owned);
     }
 
   *is_unicode = TRUE;
 
   /* Normalize */
-  name = g_utf8_normalize (name, len, G_NORMALIZE_NFKC);
-  g_free (tmp);
-  tmp = name;
+  name = name_normalized = g_utf8_normalize (name, len, G_NORMALIZE_NFKC);
+  g_free (name_owned);
+  name_owned = g_steal_pointer (&name_normalized);
+  len = -1;
 
   if (!name)
     return NULL;
@@ -359,11 +359,14 @@ nameprep (const gchar *hostname,
    * same as tolower(nfkc(X)), then we could skip the first tolower,
    * but I'm not sure it is.)
    */
-  if (contains_uppercase_letters (name, -1))
+  if (contains_uppercase_letters (name, len))
     {
-      name = g_utf8_strdown (name, -1);
-      g_free (tmp);
-      tmp = name;
+      char *name_owned_lower = NULL;
+
+      name = name_owned_lower = g_utf8_strdown (name, len);
+      g_free (name_owned);
+      name_owned = g_steal_pointer (&name_owned_lower);
+      len = -1;
     }
 
   /* Check for prohibited characters */
@@ -372,7 +375,8 @@ nameprep (const gchar *hostname,
       if (idna_is_prohibited (g_utf8_get_char (p)))
 	{
 	  name = NULL;
-          g_free (tmp);
+          g_clear_pointer (&name_owned, g_free);
+          len = -1;
 	  goto done;
 	}
     }
@@ -382,7 +386,7 @@ nameprep (const gchar *hostname,
    */
 
  done:
-  return name;
+  return g_steal_pointer (&name_owned);
 }
 
 /* RFC 3490, section 3.1 says '.', 0x3002, 0xFF0E, and 0xFF61 count as
@@ -405,6 +409,45 @@ idna_end_of_label (const gchar *str)
   return str;
 }
 
+static gsize
+get_hostname_max_length_bytes (void)
+{
+#if defined(G_OS_WIN32)
+  wchar_t tmp[MAX_COMPUTERNAME_LENGTH];
+  return sizeof (tmp) / sizeof (tmp[0]);
+#elif defined(_SC_HOST_NAME_MAX)
+  glong max = sysconf (_SC_HOST_NAME_MAX);
+  if (max > 0)
+    return (gsize) max;
+
+#ifdef HOST_NAME_MAX
+  return HOST_NAME_MAX;
+#else
+  return _POSIX_HOST_NAME_MAX;
+#endif /* HOST_NAME_MAX */
+#else
+  /* Fallback to some reasonable value
+   * See https://stackoverflow.com/questions/8724954/what-is-the-maximum-number-of-characters-for-a-host-name-in-unix/28918017#28918017 */
+  return 255;
+#endif
+}
+
+/* Returns %TRUE if `strlen (str) > comparison_length`, but without actually
+ * running `strlen(str)`, as that would take a very long time for long
+ * (untrusted) input strings. */
+static gboolean
+strlen_greater_than (const gchar *str,
+                     gsize        comparison_length)
+{
+  gsize i;
+
+  for (i = 0; str[i] != '\0'; i++)
+    if (i > comparison_length)
+      return TRUE;
+
+  return FALSE;
+}
+
 /**
  * g_hostname_to_ascii:
  * @hostname: a valid UTF-8 or ASCII hostname
@@ -413,8 +456,8 @@ idna_end_of_label (const gchar *str)
  * string containing no uppercase letters and not ending with a
  * trailing dot.
  *
- * Returns: an ASCII hostname, which must be freed, or %NULL if
- * @hostname is in some way invalid.
+ * Returns: (nullable) (transfer full): an ASCII hostname, which must be freed,
+ *    or %NULL if @hostname is in some way invalid.
  *
  * Since: 2.22
  **/
@@ -425,6 +468,32 @@ g_hostname_to_ascii (const gchar *hostname)
   GString *out;
   gssize llen, oldlen;
   gboolean unicode;
+  gsize hostname_max_length_bytes = get_hostname_max_length_bytes ();
+
+  /* Do an initial check on the hostname length, as overlong hostnames take a
+   * long time in the IDN cleanup algorithm in nameprep(). The ultimate
+   * restriction is that the IDN-decoded (i.e. pure ASCII) hostname cannot be
+   * longer than 255 bytes. That’s the least restrictive limit on hostname
+   * length of all the ways hostnames can be interpreted. Typically, the
+   * hostname will be an FQDN, which is limited to 253 bytes long. POSIX
+   * hostnames are limited to `get_hostname_max_length_bytes()` (typically 255
+   * bytes).
+   *
+   * See https://stackoverflow.com/a/28918017/2931197
+   *
+   * It’s possible for a hostname to be %-encoded, in which case its decoded
+   * length will be as much as 3× shorter.
+   *
+   * It’s also possible for a hostname to use overlong UTF-8 encodings, in which
+   * case its decoded length will be as much as 4× shorter.
+   *
+   * Note: This check is not intended as an absolute guarantee that a hostname
+   * is the right length and will be accepted by other systems. It’s intended to
+   * stop wildly-invalid hostnames from taking forever in nameprep().
+   */
+  if (hostname_max_length_bytes <= G_MAXSIZE / 4 &&
+      strlen_greater_than (hostname, 4 * MAX (255, hostname_max_length_bytes)))
+    return NULL;
 
   label = name = nameprep (hostname, -1, &unicode);
   if (!name || !unicode)
@@ -437,9 +506,9 @@ g_hostname_to_ascii (const gchar *hostname)
       unicode = FALSE;
       for (p = label; *p && !idna_is_dot (p); p++)
 	{
-	  if ((guchar)*p > 0x80)
-	    unicode = TRUE;
-	}
+          if (!IS_ASCII (*p))
+            unicode = TRUE;
+        }
 
       oldlen = out->len;
       llen = p - label;
@@ -520,8 +589,10 @@ punycode_decode (const gchar *input,
     split--;
   if (split > input)
     {
+      g_assert ((guint) (split - input) <= G_MAXUINT);
+
       output_chars = g_array_sized_new (FALSE, FALSE, sizeof (gunichar),
-					split - input);
+					(guint) (split - input));
       input_length -= (split - input) + 1;
       while (input < split)
 	{
@@ -594,8 +665,8 @@ punycode_decode (const gchar *input,
  * Of course if @hostname is not an internationalized hostname, then
  * the canonical presentation form will be entirely ASCII.
  *
- * Returns: a UTF-8 hostname, which must be freed, or %NULL if
- * @hostname is in some way invalid.
+ * Returns: (nullable) (transfer full): a UTF-8 hostname, which must be freed,
+ *    or %NULL if @hostname is in some way invalid.
  *
  * Since: 2.22
  **/
@@ -604,6 +675,14 @@ g_hostname_to_unicode (const gchar *hostname)
 {
   GString *out;
   gssize llen;
+  gsize hostname_max_length_bytes = get_hostname_max_length_bytes ();
+
+  g_return_val_if_fail (hostname != NULL, NULL);
+
+  /* See the comment at the top of g_hostname_to_ascii(). */
+  if (hostname_max_length_bytes <= G_MAXSIZE / 4 &&
+      strlen_greater_than (hostname, 4 * MAX (255, hostname_max_length_bytes)))
+    return NULL;
 
   out = g_string_new (NULL);
 
@@ -685,6 +764,8 @@ g_hostname_is_ascii_encoded (const gchar *hostname)
  * Tests if @hostname is the string form of an IPv4 or IPv6 address.
  * (Eg, "192.168.0.1".)
  *
+ * Since 2.66, IPv6 addresses with a zone-id are accepted (RFC6874).
+ *
  * Returns: %TRUE if @hostname is an IP address
  *
  * Since: 2.22
@@ -716,7 +797,7 @@ g_hostname_is_ip_address (const gchar *hostname)
 
       nsegments = 0;
       skipped = FALSE;
-      while (*p && nsegments < 8)
+      while (*p && *p != '%' && nsegments < 8)
         {
           /* Each segment after the first must be preceded by a ':'.
            * (We also handle half of the "string starts with ::" case
@@ -760,7 +841,7 @@ g_hostname_is_ip_address (const gchar *hostname)
           p = end;
         }
 
-      return !*p && (nsegments == 8 || skipped);
+      return (!*p || (p[0] == '%' && p[1])) && (nsegments == 8 || skipped);
     }
 
  parse_ipv4:
@@ -785,7 +866,12 @@ g_hostname_is_ip_address (const gchar *hostname)
       else
         {
           for (end = p; g_ascii_isdigit (*end); end++)
-            octet = 10 * octet + (*end - '0');
+            {
+              octet = 10 * octet + (*end - '0');
+
+              if (octet > 255)
+                break;
+            }
         }
       if (end == p || end > p + 3 || octet > 255)
         return FALSE;

@@ -1,24 +1,12 @@
 /* packet-wccp.c
- * Routines for Web Cache Communication Protocol dissection
+ * Routines for Web Cache C* Protocol dissection
  * Jerry Talkington <jtalkington@users.sourceforge.net>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,275 +15,281 @@
 #include <epan/to_str.h>
 #include <epan/ipproto.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-wccp.h"
 
 void proto_register_wccp(void);
 void proto_reg_handoff_wccp(void);
 
-static int proto_wccp = -1;
-static int hf_wccp_message_type = -1;   /* the message type */
-static int hf_wccp_version = -1;        /* protocol version */
-static int hf_bucket = -1;
-static int hf_bucket_bit = -1;
-static int hf_message_header_version = -1;
-static int hf_hash_revision = -1;       /* the version of the hash */
-static int hf_change_num = -1;          /* change number */
-static int hf_hash_flag = -1;
-static int hf_hash_flag_u = -1;
-static int hf_recvd_id = -1;
-static int hf_wc_num = -1;
-static int hf_wc_view_wc_num = -1;
-static int hf_cache_ip = -1;
-static int hf_message_header_length = -1;
-static int hf_item_type = -1;
-static int hf_item_length = -1;
-static int hf_item_data = -1;
-static int hf_security_info_option = -1;
-static int hf_security_info_md5_checksum = -1;
-static int hf_command_element_type = -1;
-static int hf_command_element_length = -1;
-static int hf_command_length = -1;
-static int hf_command_element_shutdown_ip_index = -1;
-static int hf_command_element_shutdown_ipv4 = -1;
-static int hf_command_element_shutdown_ipv6 = -1;
-static int hf_command_unknown = -1;
-static int hf_service_info_type = -1;
-static int hf_service_info_id_standard = -1;
-static int hf_service_info_id_dynamic = -1;
-static int hf_service_info_priority = -1;
-static int hf_service_info_protocol = -1;
-static int hf_service_info_flags = -1;
-static int hf_service_info_flags_src_ip_hash = -1;
-static int hf_service_info_flags_dest_ip_hash = -1;
-static int hf_service_info_flags_src_port_hash = -1;
-static int hf_service_info_flags_dest_port_hash = -1;
-static int hf_service_info_flags_ports_defined = -1;
-static int hf_service_info_flags_ports_source = -1;
-static int hf_service_info_flags_redirect_only_protocol_0 = -1;
-static int hf_service_info_flags_src_ip_alt_hash = -1;
-static int hf_service_info_flags_dest_ip_alt_hash = -1;
-static int hf_service_info_flags_src_port_alt_hash = -1;
-static int hf_service_info_flags_dest_port_alt_hash = -1;
-static int hf_service_info_flags_reserved = -1;
-static int hf_service_info_source_port = -1;
-static int hf_service_info_destination_port = -1;
-static int hf_router_identity_ip_index = -1;
-static int hf_router_identity_ipv4 = -1;
-static int hf_router_identity_ipv6 = -1;
-static int hf_router_identity_receive_id = -1;
-static int hf_router_identity_send_to_ip_index = -1;
-static int hf_router_identity_send_to_ipv4 = -1;
-static int hf_router_identity_send_to_ipv6 = -1;
-static int hf_router_identity_received_from_num = -1;
-static int hf_web_cache_identity_index = -1;
-static int hf_web_cache_identity_ipv4 = -1;
-static int hf_web_cache_identity_ipv6 = -1;
-static int hf_web_cache_identity_hash_rev = -1;
-static int hf_web_cache_identity_flags = -1;
-static int hf_web_cache_identity_flag_hash_info = -1;
-static int hf_web_cache_identity_flag_assign_type = -1;
-static int hf_web_cache_identity_flag_version_request = -1;
-static int hf_web_cache_identity_flag_reserved = -1;
-static int hf_mask_value_set_element_value_element_num = -1;
-static int hf_assignment_weight = -1;
-static int hf_assignment_status = -1;
-static int hf_assignment_key_ip_index = -1;
-static int hf_assignment_key_ipv4 = -1;
-static int hf_assignment_key_ipv6 = -1;
-static int hf_assignment_key_change_num = -1;
-static int hf_assignment_no_data = -1;
-static int hf_router_view_member_change_num = -1;
-static int hf_router_router_num = -1;
-static int hf_router_identity_router_ip_index = -1;
-static int hf_router_identity_router_ipv4 = -1;
-static int hf_router_identity_router_ipv6 = -1;
-static int hf_wc_view_info_change_num = -1;
-static int hf_wc_view_info_router_ip_index = -1;
-static int hf_wc_view_info_router_ipv4 = -1;
-static int hf_wc_view_info_router_ipv6 = -1;
-static int hf_wc_view_info_wc_ip_index = -1;
-static int hf_wc_view_info_wc_ipv4 = -1;
-static int hf_wc_view_info_wc_ipv6 = -1;
-static int hf_wc_view_router_num = -1;
-static int hf_wc_identity_ip_address_index = -1;
-static int hf_wc_identity_ip_address_ipv4 = -1;
-static int hf_wc_identity_ip_address_ipv6 = -1;
-static int hf_router_identity_received_from_ip_index = -1;
-static int hf_router_identity_received_from_ipv4 = -1;
-static int hf_router_identity_received_from_ipv6 = -1;
-static int hf_router_assignment_element_change_num = -1;
-static int hf_assignment_info_router_num = -1;
-static int hf_hash_buckets_assignment_wc_num = -1;
-static int hf_hash_buckets_assignment_wc_ip_index = -1;
-static int hf_hash_buckets_assignment_wc_ipv4 = -1;
-static int hf_hash_buckets_assignment_wc_ipv6 = -1;
-static int hf_assignment_info_router_ip_index = -1;
-static int hf_assignment_info_router_ipv4 = -1;
-static int hf_assignment_info_router_ipv6 = -1;
-static int hf_router_view_ip_index = -1;
-static int hf_router_view_ipv4 = -1;
-static int hf_router_view_ipv6 = -1;
-static int hf_router_query_info_ip_index = -1;
-static int hf_router_query_info_ipv4 = -1;
-static int hf_router_query_info_ipv6 = -1;
-static int hf_router_query_info_send_to_ip_index = -1;
-static int hf_router_query_info_send_to_ipv4 = -1;
-static int hf_router_query_info_send_to_ipv6 = -1;
-static int hf_router_query_info_target_ip_index = -1;
-static int hf_router_query_info_target_ipv4 = -1;
-static int hf_router_query_info_target_ipv6 = -1;
-static int hf_capability_element_type = -1;
-static int hf_capability_element_length = -1;
-static int hf_capability_info_value = -1;
-static int hf_capability_forwarding_method_flag_gre = -1;
-static int hf_capability_forwarding_method_flag_l2 = -1;
-static int hf_capability_assignment_method_flag_hash = -1;
-static int hf_capability_assignment_method_flag_mask = -1;
-static int hf_capability_return_method_flag_gre = -1;
-static int hf_capability_return_method_flag_l2 = -1;
-static int hf_capability_transmit_t = -1;
-static int hf_capability_transmit_t_upper_limit = -1;
-static int hf_capability_transmit_t_lower_limit = -1;
-static int hf_capability_timer_scale_timeout_scale = -1;
-static int hf_capability_timer_scale_ra_timer_scale = -1;
-static int hf_capability_timer_scale_timeout_scale_upper_limit = -1;
-static int hf_capability_timer_scale_timeout_scale_lower_limit = -1;
-static int hf_capability_timer_scale_ra_scale_upper_limit = -1;
-static int hf_capability_timer_scale_ra_scale_lower_limit = -1;
-static int hf_capability_value = -1;
-static int hf_reserved_zero = -1;
-static int hf_value_element_src_ip_index = -1;
-static int hf_value_element_src_ipv4 = -1;
-static int hf_value_element_src_ipv6 = -1;
-static int hf_value_element_dest_ip_index = -1;
-static int hf_value_element_dest_ipv4 = -1;
-static int hf_value_element_dest_ipv6 = -1;
-static int hf_value_element_src_port = -1;
-static int hf_value_element_dest_port = -1;
-static int hf_value_element_web_cache_ip_index = -1;
-static int hf_value_element_web_cache_ipv4 = -1;
-static int hf_value_element_web_cache_ipv6 = -1;
-static int hf_mask_value_set_list_num_elements = -1;
-static int hf_mask_element_src_ip = -1;
-static int hf_mask_element_dest_ip = -1;
-static int hf_mask_element_src_port = -1;
-static int hf_mask_element_dest_port = -1;
-static int hf_alt_assignment_info_assignment_type = -1;
-static int hf_extended_assignment_data_type = -1;
-static int hf_alt_assignment_info_assignment_length = -1;
-static int hf_alt_assignment_map_assignment_type = -1;
-static int hf_alt_assignment_map_assignment_length = -1;
-static int hf_extended_assignment_data_length = -1;
-static int hf_alt_assignment_info_num_routers = -1;
-static int hf_alt_assignment_mask_value_set_element_num_wc_value_elements = -1;
-static int hf_web_cache_value_element_wc_address_index = -1;
-static int hf_web_cache_value_element_wc_address_ipv4 = -1;
-static int hf_web_cache_value_element_wc_address_ipv6 = -1;
-static int hf_web_cache_value_element_num_values = -1;
-static int hf_web_cache_value_seq_num = -1;
-static int hf_alt_assignment_mask_value_set_list_num_elements = -1;
-static int hf_address_table_family = -1;
-static int hf_address_table_address_length = -1;
-static int hf_address_table_length = -1;
-static int hf_address_table_element = -1;
+static dissector_handle_t wccp_handle;
 
-static gint ett_wccp = -1;
-static gint ett_buckets = -1;
-static gint ett_hash_assignment_buckets = -1;
-static gint ett_mask_assignment_data_element = -1;
-static gint ett_alternate_mask_assignment_data_element = -1;
-static gint ett_extended_assigment_data_element = -1;
-static gint ett_table_element = -1;
-static gint ett_hash_flags = -1;
-static gint ett_wc_identity_flags = -1;
-static gint ett_cache_info = -1;
-static gint ett_security_info = -1;
-static gint ett_service_info = -1;
-static gint ett_service_flags = -1;
-static gint ett_service_info_ports = -1;
-static gint ett_wc_view_info_router_element = -1;
-static gint ett_router_identity_info = -1;
-static gint ett_wc_identity_element = -1;
-static gint ett_wc_identity_info = -1;
-static gint ett_router_view_info = -1;
-static gint ett_wc_view_info = -1;
-static gint ett_router_assignment_element = -1;
-static gint ett_hash_buckets_assignment_wc_element=-1;
-static gint ett_hash_buckets_assignment_buckets=-1;
-static gint ett_router_alt_assignment_element = -1;
-static gint ett_router_assignment_info = -1;
-static gint ett_query_info = -1;
-static gint ett_capabilities_info = -1;
-static gint ett_capability_element = -1;
-static gint ett_capability_forwarding_method = -1;
-static gint ett_capability_assignment_method = -1;
-static gint ett_capability_return_method = -1;
-static gint ett_capability_transmit_t = -1;
-static gint ett_capability_timer_scale = -1;
-static gint ett_alt_assignment_info = -1;
-static gint ett_alt_assignment_map = -1;
-static gint ett_address_table = -1;
-static gint ett_assignment_map = -1;
-static gint ett_command_extension = -1;
-static gint ett_alternate_mask_value_set=-1;
-static gint ett_alternate_mask_value_set_element=-1;
-static gint ett_mv_set_list = -1;
-static gint ett_mv_set_element = -1;
-static gint ett_mv_set_value_list = -1;
-static gint ett_alternate_mv_set_element_list = -1;
-static gint ett_web_cache_value_element_list = -1;
-static gint ett_alternate_mv_set_element = -1;
-static gint ett_value_element = -1;
-static gint ett_unknown_info = -1;
+static int proto_wccp;
+static int hf_wccp_message_type;   /* the message type */
+static int hf_wccp_version;        /* protocol version */
+static int hf_bucket;
+static int hf_bucket_bit;
+static int hf_message_header_version;
+static int hf_hash_revision;       /* the version of the hash */
+static int hf_change_num;          /* change number */
+static int hf_hash_flag;
+static int hf_hash_flag_u;
+static int hf_recvd_id;
+static int hf_wc_num;
+static int hf_wc_view_wc_num;
+static int hf_cache_ip;
+static int hf_message_header_length;
+static int hf_item_type;
+static int hf_item_length;
+static int hf_item_data;
+static int hf_security_info_option;
+static int hf_security_info_md5_checksum;
+static int hf_command_element_type;
+static int hf_command_element_length;
+static int hf_command_length;
+static int hf_command_element_shutdown_ip_index;
+static int hf_command_element_shutdown_ipv4;
+static int hf_command_element_shutdown_ipv6;
+static int hf_command_unknown;
+static int hf_service_info_type;
+static int hf_service_info_id_standard;
+static int hf_service_info_id_dynamic;
+static int hf_service_info_priority;
+static int hf_service_info_protocol;
+static int hf_service_info_flags;
+static int hf_service_info_flags_src_ip_hash;
+static int hf_service_info_flags_dest_ip_hash;
+static int hf_service_info_flags_src_port_hash;
+static int hf_service_info_flags_dest_port_hash;
+static int hf_service_info_flags_ports_defined;
+static int hf_service_info_flags_ports_source;
+static int hf_service_info_flags_redirect_only_protocol_0;
+static int hf_service_info_flags_src_ip_alt_hash;
+static int hf_service_info_flags_dest_ip_alt_hash;
+static int hf_service_info_flags_src_port_alt_hash;
+static int hf_service_info_flags_dest_port_alt_hash;
+static int hf_service_info_flags_reserved;
+static int hf_service_info_source_port;
+static int hf_service_info_destination_port;
+static int hf_router_identity_ip_index;
+static int hf_router_identity_ipv4;
+static int hf_router_identity_ipv6;
+static int hf_router_identity_receive_id;
+static int hf_router_identity_send_to_ip_index;
+static int hf_router_identity_send_to_ipv4;
+static int hf_router_identity_send_to_ipv6;
+static int hf_router_identity_received_from_num;
+static int hf_web_cache_identity_index;
+static int hf_web_cache_identity_ipv4;
+static int hf_web_cache_identity_ipv6;
+static int hf_web_cache_identity_hash_rev;
+static int hf_web_cache_identity_flags;
+static int hf_web_cache_identity_flag_hash_info;
+static int hf_web_cache_identity_flag_assign_type;
+static int hf_web_cache_identity_flag_version_request;
+static int hf_web_cache_identity_flag_reserved;
+static int hf_mask_value_set_element_value_element_num;
+static int hf_assignment_weight;
+static int hf_assignment_status;
+static int hf_assignment_key_ip_index;
+static int hf_assignment_key_ipv4;
+static int hf_assignment_key_ipv6;
+static int hf_assignment_key_change_num;
+static int hf_assignment_no_data;
+static int hf_router_view_member_change_num;
+static int hf_router_router_num;
+static int hf_router_identity_router_ip_index;
+static int hf_router_identity_router_ipv4;
+static int hf_router_identity_router_ipv6;
+static int hf_wc_view_info_change_num;
+static int hf_wc_view_info_router_ip_index;
+static int hf_wc_view_info_router_ipv4;
+static int hf_wc_view_info_router_ipv6;
+static int hf_wc_view_info_wc_ip_index;
+static int hf_wc_view_info_wc_ipv4;
+static int hf_wc_view_info_wc_ipv6;
+static int hf_wc_view_router_num;
+static int hf_wc_identity_ip_address_index;
+static int hf_wc_identity_ip_address_ipv4;
+static int hf_wc_identity_ip_address_ipv6;
+static int hf_router_identity_received_from_ip_index;
+static int hf_router_identity_received_from_ipv4;
+static int hf_router_identity_received_from_ipv6;
+static int hf_router_assignment_element_change_num;
+static int hf_assignment_info_router_num;
+static int hf_hash_buckets_assignment_wc_num;
+static int hf_hash_buckets_assignment_wc_ip_index;
+static int hf_hash_buckets_assignment_wc_ipv4;
+static int hf_hash_buckets_assignment_wc_ipv6;
+static int hf_assignment_info_router_ip_index;
+static int hf_assignment_info_router_ipv4;
+static int hf_assignment_info_router_ipv6;
+static int hf_router_view_ip_index;
+static int hf_router_view_ipv4;
+static int hf_router_view_ipv6;
+static int hf_router_query_info_ip_index;
+static int hf_router_query_info_ipv4;
+static int hf_router_query_info_ipv6;
+static int hf_router_query_info_send_to_ip_index;
+static int hf_router_query_info_send_to_ipv4;
+static int hf_router_query_info_send_to_ipv6;
+static int hf_router_query_info_target_ip_index;
+static int hf_router_query_info_target_ipv4;
+static int hf_router_query_info_target_ipv6;
+static int hf_capability_element_type;
+static int hf_capability_element_length;
+static int hf_capability_info_value;
+static int hf_capability_forwarding_method_flag_gre;
+static int hf_capability_forwarding_method_flag_l2;
+static int hf_capability_assignment_method_flag_hash;
+static int hf_capability_assignment_method_flag_mask;
+static int hf_capability_return_method_flag_gre;
+static int hf_capability_return_method_flag_l2;
+static int hf_capability_transmit_t;
+static int hf_capability_transmit_t_upper_limit;
+static int hf_capability_transmit_t_lower_limit;
+static int hf_capability_timer_scale_timeout_scale;
+static int hf_capability_timer_scale_ra_timer_scale;
+static int hf_capability_timer_scale_timeout_scale_upper_limit;
+static int hf_capability_timer_scale_timeout_scale_lower_limit;
+static int hf_capability_timer_scale_ra_scale_upper_limit;
+static int hf_capability_timer_scale_ra_scale_lower_limit;
+static int hf_capability_value;
+static int hf_reserved_zero;
+static int hf_value_element_src_ip_index;
+static int hf_value_element_src_ipv4;
+static int hf_value_element_src_ipv6;
+static int hf_value_element_dest_ip_index;
+static int hf_value_element_dest_ipv4;
+static int hf_value_element_dest_ipv6;
+static int hf_value_element_src_port;
+static int hf_value_element_dest_port;
+static int hf_value_element_web_cache_ip_index;
+static int hf_value_element_web_cache_ipv4;
+static int hf_value_element_web_cache_ipv6;
+static int hf_mask_value_set_list_num_elements;
+static int hf_mask_element_src_ip;
+static int hf_mask_element_dest_ip;
+static int hf_mask_element_src_port;
+static int hf_mask_element_dest_port;
+static int hf_alt_assignment_info_assignment_type;
+static int hf_extended_assignment_data_type;
+static int hf_alt_assignment_info_assignment_length;
+static int hf_alt_assignment_map_assignment_type;
+static int hf_alt_assignment_map_assignment_length;
+static int hf_extended_assignment_data_length;
+static int hf_alt_assignment_info_num_routers;
+static int hf_alt_assignment_mask_value_set_element_num_wc_value_elements;
+static int hf_web_cache_value_element_wc_address_index;
+static int hf_web_cache_value_element_wc_address_ipv4;
+static int hf_web_cache_value_element_wc_address_ipv6;
+static int hf_web_cache_value_element_num_values;
+static int hf_web_cache_value_seq_num;
+static int hf_alt_assignment_mask_value_set_list_num_elements;
+static int hf_address_table_family;
+static int hf_address_table_address_length;
+static int hf_address_table_length;
+static int hf_address_table_element;
 
-static expert_field ei_wccp_missing_security_info = EI_INIT;
-static expert_field ei_wccp_missing_service_info = EI_INIT;
-static expert_field ei_wccp_missing_wc_id_info = EI_INIT;
-static expert_field ei_wccp_missing_router_id_info = EI_INIT;
-static expert_field ei_wccp_missing_query_info = EI_INIT;
-static expert_field ei_wccp_missing_wc_view_info = EI_INIT;
-static expert_field ei_wccp_missing_rtr_view_info = EI_INIT;
-static expert_field ei_wccp_contains_redirect_assignment = EI_INIT;
-static expert_field ei_wccp_contains_router_id_info = EI_INIT;
-static expert_field ei_wccp_contains_rtr_view_info = EI_INIT;
-static expert_field ei_wccp_contains_query_info = EI_INIT;
-static expert_field ei_wccp_contains_alt_assignment = EI_INIT;
-static expert_field ei_wccp_contains_assign_map = EI_INIT;
-static expert_field ei_wccp_contains_alt_assignment_map = EI_INIT;
-static expert_field ei_wccp_contains_wc_id_info = EI_INIT;
-static expert_field ei_wccp_contains_wc_view_info = EI_INIT;
-static expert_field ei_wccp_contains_capabilities_info = EI_INIT;
-static expert_field ei_wccp_contains_command_extension = EI_INIT;
-static expert_field ei_wccp_missing_assignment = EI_INIT;
-static expert_field ei_wccp_assignment_length_bad = EI_INIT;
-static expert_field ei_wccp_length_bad = EI_INIT;
-static expert_field ei_wccp_service_info_priority_nonzero = EI_INIT;
-static expert_field ei_wccp_service_info_protocol_nonzero = EI_INIT;
-static expert_field ei_wccp_router_identity_receive_id_zero = EI_INIT;
-static expert_field ei_wccp_web_cache_identity_hash_rev_zero = EI_INIT;
-static expert_field ei_wccp_address_table_family_unknown = EI_INIT;
-static expert_field ei_wccp_capability_element_length = EI_INIT;
-static expert_field ei_wccp_port_fields_not_used = EI_INIT;
-static expert_field ei_wccp_a_zero_not_c = EI_INIT;
-/* static expert_field ei_wccp_c_zero_not_a = EI_INIT; */
+static int ett_wccp;
+static int ett_buckets;
+static int ett_hash_assignment_buckets;
+static int ett_mask_assignment_data_element;
+static int ett_alternate_mask_assignment_data_element;
+static int ett_extended_assigment_data_element;
+static int ett_table_element;
+static int ett_hash_flags;
+static int ett_wc_identity_flags;
+static int ett_cache_info;
+static int ett_security_info;
+static int ett_service_info;
+static int ett_service_flags;
+static int ett_service_info_ports;
+static int ett_wc_view_info_router_element;
+static int ett_router_identity_info;
+static int ett_wc_identity_element;
+static int ett_wc_identity_info;
+static int ett_router_view_info;
+static int ett_wc_view_info;
+static int ett_router_assignment_element;
+static int ett_hash_buckets_assignment_wc_element;
+static int ett_hash_buckets_assignment_buckets;
+static int ett_router_alt_assignment_element;
+static int ett_router_assignment_info;
+static int ett_query_info;
+static int ett_capabilities_info;
+static int ett_capability_element;
+static int ett_capability_forwarding_method;
+static int ett_capability_assignment_method;
+static int ett_capability_return_method;
+static int ett_capability_transmit_t;
+static int ett_capability_timer_scale;
+static int ett_alt_assignment_info;
+static int ett_alt_assignment_map;
+static int ett_address_table;
+static int ett_assignment_map;
+static int ett_command_extension;
+static int ett_alternate_mask_value_set;
+static int ett_alternate_mask_value_set_element;
+static int ett_mv_set_list;
+static int ett_mv_set_element;
+static int ett_mv_set_value_list;
+static int ett_alternate_mv_set_element_list;
+static int ett_web_cache_value_element_list;
+static int ett_alternate_mv_set_element;
+static int ett_value_element;
+static int ett_unknown_info;
+
+static expert_field ei_wccp_missing_security_info;
+static expert_field ei_wccp_missing_service_info;
+static expert_field ei_wccp_missing_wc_id_info;
+static expert_field ei_wccp_missing_router_id_info;
+static expert_field ei_wccp_missing_query_info;
+static expert_field ei_wccp_missing_wc_view_info;
+static expert_field ei_wccp_missing_rtr_view_info;
+static expert_field ei_wccp_contains_redirect_assignment;
+static expert_field ei_wccp_contains_router_id_info;
+static expert_field ei_wccp_contains_rtr_view_info;
+static expert_field ei_wccp_contains_query_info;
+static expert_field ei_wccp_contains_alt_assignment;
+static expert_field ei_wccp_contains_assign_map;
+static expert_field ei_wccp_contains_alt_assignment_map;
+static expert_field ei_wccp_contains_wc_id_info;
+static expert_field ei_wccp_contains_wc_view_info;
+static expert_field ei_wccp_contains_capabilities_info;
+static expert_field ei_wccp_contains_command_extension;
+static expert_field ei_wccp_missing_assignment;
+static expert_field ei_wccp_assignment_length_bad;
+static expert_field ei_wccp_length_bad;
+static expert_field ei_wccp_service_info_priority_nonzero;
+static expert_field ei_wccp_service_info_protocol_nonzero;
+static expert_field ei_wccp_router_identity_receive_id_zero;
+static expert_field ei_wccp_web_cache_identity_hash_rev_zero;
+static expert_field ei_wccp_address_table_family_unknown;
+static expert_field ei_wccp_capability_element_length;
+static expert_field ei_wccp_port_fields_not_used;
+static expert_field ei_wccp_a_zero_not_c;
+/* static expert_field ei_wccp_c_zero_not_a; */
 
 /*
  * At
  *
- *      http://tools.ietf.org/html/draft-forster-wrec-wccp-v1-00
+ *      https://datatracker.ietf.org/doc/html/draft-forster-wrec-wccp-v1-00
  *
- * is a copy of the now-expired Internet-Draft for WCCP 1.0.
+ * is the now-expired Internet-Draft for WCCP 1.0 (Web Cache Coordination
+ * Protocol V1.0).
  *
  * At
  *
- *      http://tools.ietf.org/id/draft-wilson-wrec-wccp-v2-01.txt
+ *      https://datatracker.ietf.org/doc/html/draft-wilson-wrec-wccp-v2-01
  *
- * is an Internet-Draft for WCCP 2.0.
+ * is the now-expired Internet-Draft for WCCP 2.0 (Web Cache Communication
+ * Protocol V2.0).
  *
- * http://tools.ietf.org/html/draft-mclaggan-wccp-v2rev1
+ *      https://datatracker.ietf.org/doc/html/draft-param-wccp-v2rev1-01
  *
- * is the current draft for WCCP 2.01
- *
+ * is the now-expired Internet-Draft for WCCP 2.01 (Web Cache Communication
+ * Protocol V2, Revision 1).
  */
 
 /* This is NOT IANA assigned */
@@ -330,10 +324,10 @@ static const value_string wccp_version_val[] = {
   { 0, NULL}
 };
 
-const true_false_string tfs_src_dest_port = { "Source port", "Destination port" };
-const true_false_string tfs_redirect_protocol0 = { "Redirect only protocol 0 (IP)", "Redirect all traffic" };
-const true_false_string tfs_historical_current = { "Historical", "Current" };
-const true_false_string tfs_version_min_max = {"WCCP version set is maximum supported by CE", "WCCP version set is minimum supported by CE"};
+static const true_false_string tfs_src_dest_port = { "Source port", "Destination port" };
+static const true_false_string tfs_redirect_protocol0 = { "Redirect only protocol 0 (IP)", "Redirect all traffic" };
+static const true_false_string tfs_historical_current = { "Historical", "Current" };
+static const true_false_string tfs_version_min_max = {"WCCP version set is maximum supported by CE", "WCCP version set is minimum supported by CE"};
 
 static const value_string wccp_address_family_val[] = {
   { 0, "Reserved" },
@@ -398,7 +392,7 @@ const value_string service_id_vals[] = {
 };
 
 typedef struct capability_flag {
-  guint32 value;
+  uint32_t value;
   const char *short_name;
   int* phf;
 } capability_flag;
@@ -438,56 +432,56 @@ static const value_string capability_type_vals[] = {
 /* with version 2.01 we now have a address table which is possibly present */
 
 typedef struct wccp_address_table {
-  gboolean in_use;
-  gint16 family;
-  gint16 version;
-  guint16 table_length;
-  guint32 *table_ipv4;
-  struct e_in6_addr *table_ipv6;
+  bool in_use;
+  int16_t family;
+  int16_t version;
+  uint16_t table_length;
+  ws_in4_addr *table_ipv4;
+  ws_in6_addr *table_ipv6;
 } wccp_address_table;
 
-static int wccp_bucket_info(guint8 bucket_info, proto_tree *bucket_tree,
-                            guint32 start, tvbuff_t *tvb, int offset);
+static int wccp_bucket_info(uint8_t bucket_info, proto_tree *bucket_tree,
+                            uint32_t start, tvbuff_t *tvb, int offset);
 
 /* The V2 dissectors will return the remaining length of the packet
    and a negative number if there are missing bytes to finish the
    dissection */
-static gint dissect_wccp2_mask_assignment_data_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo,
+static int dissect_wccp2_mask_assignment_data_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
                                                        proto_tree *info_tree, wccp_address_table* addr_table);
-static gint dissect_wccp2_hash_buckets_assignment_element(tvbuff_t *tvb, int offset, gint length,
+static int dissect_wccp2_hash_buckets_assignment_element(tvbuff_t *tvb, int offset, int length,
                                                           packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table);
-static gint  dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset,
+static int   dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset,
                                                 int length, packet_info *pinfo, proto_tree *info_tree,
                                                 wccp_address_table* wccp_wccp_address_table);
-static gint dissect_wccp2_hash_assignment_data_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo,
+static int dissect_wccp2_hash_assignment_data_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
                                                        proto_tree *info_tree);
-static gint dissect_wccp2_assignment_weight_and_status_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo,
+static int dissect_wccp2_assignment_weight_and_status_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
                                                                proto_tree *info_tree);
-static gint dissect_wccp2_extended_assignment_data_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo,
+static int dissect_wccp2_extended_assignment_data_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
                                                            proto_tree *info_tree, wccp_address_table* addr_table);
-static gint dissect_wccp2_capability_element(tvbuff_t *tvb, int offset, gint length,
+static int dissect_wccp2_capability_element(tvbuff_t *tvb, int offset, int length,
                                              packet_info *pinfo _U_, proto_tree *info_tree);
-static gint  dissect_wccp2_mask_value_set_list(tvbuff_t *tvb, int offset,
+static int   dissect_wccp2_mask_value_set_list(tvbuff_t *tvb, int offset,
                                                int length, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table);
 
 /* Utility functions */
-static gint dissect_wccp2_mask_value_set_element(tvbuff_t *tvb, int offset,
-                                                 gint length, int idx, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table);
-static gint dissect_wccp2_alternate_mask_value_set_list(tvbuff_t *tvb, int offset,
-                                                        gint length, packet_info *pinfo _U_, proto_tree *info_tree, wccp_address_table* addr_table);
-static gint dissect_wccp2_alternate_mask_value_set_element(tvbuff_t *tvb, int offset, gint length, guint el_index, packet_info *pinfo,
+static int dissect_wccp2_mask_value_set_element(tvbuff_t *tvb, int offset,
+                                                 int length, int idx, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table);
+static int dissect_wccp2_alternate_mask_value_set_list(tvbuff_t *tvb, int offset,
+                                                        int length, packet_info *pinfo _U_, proto_tree *info_tree, wccp_address_table* addr_table);
+static int dissect_wccp2_alternate_mask_value_set_element(tvbuff_t *tvb, int offset, int length, unsigned el_index, packet_info *pinfo,
                                                     proto_tree *info_tree, wccp_address_table* addr_table);
-static gint dissect_wccp2_web_cache_value_element(tvbuff_t *tvb, int offset,
-                                                  gint length,  packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table);
+static int dissect_wccp2_web_cache_value_element(tvbuff_t *tvb, int offset,
+                                                  int length,  packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table);
 static void dissect_32_bit_capability_flags(tvbuff_t *tvb, int curr_offset,
-                                            guint16 capability_val_len, gint ett, const capability_flag *flags,
+                                            uint16_t capability_val_len, int ett, const capability_flag *flags,
                                             proto_tree *element_tree, proto_item *header,
                                             proto_item *length_item, packet_info *pinfo);
 static void dissect_transmit_t_capability(tvbuff_t *tvb, proto_item *te, int curr_offset,
-                                          guint16 capability_val_len, gint ett, proto_tree *element_tree,
+                                          uint16_t capability_val_len, int ett, proto_tree *element_tree,
                                           proto_item *length_item, packet_info *pinfo);
 static void dissect_timer_scale_capability(tvbuff_t *tvb, int curr_offset,
-                                           guint16 capability_val_len, gint ett, proto_tree *element_tree,
+                                           uint16_t capability_val_len, int ett, proto_tree *element_tree,
                                            proto_item *length_item, packet_info *pinfo);
 
 
@@ -503,8 +497,8 @@ static void
 find_wccp_address_table(tvbuff_t *tvb, int offset,
                         packet_info *pinfo, proto_tree *wccp_tree _U_, wccp_address_table* wccp_wccp_address_table)
 {
-  guint16 type;
-  guint16 item_length;
+  uint16_t type;
+  uint16_t item_length;
 
   for (;;) {
     if (4 > tvb_reported_length_remaining(tvb, offset)) {
@@ -549,94 +543,100 @@ find_wccp_address_table(tvbuff_t *tvb, int offset,
    we need to fix that
 */
 
-static void wccp_fmt_ipaddress(gchar *buffer, guint32 host_addr, wccp_address_table* addr_table)
+static const char * decode_wccp_encoded_address(tvbuff_t *tvb, int offset, packet_info *pinfo,
+                        proto_tree *info_tree _U_, wccp_address_table* addr_table)
 {
+  uint32_t host_addr;
+  char *buffer;
+
   /* are we using an address table? */
   if (!addr_table->in_use)
     {
-      /* no return the IPv4 IP */
-      /* first fix the byte order */
-      guint addr= GUINT32_SWAP_LE_BE(host_addr);
-
-      ip_to_str_buf( (guint8 *) &addr, buffer, ITEM_LABEL_LENGTH);
-      return;
+      /* no; return the IPv4 IP */
+      host_addr = tvb_get_ipv4(tvb,offset);
+      buffer = (char *) wmem_alloc(pinfo->pool, WS_INET_ADDRSTRLEN);
+      ip_addr_to_str_buf(&host_addr, buffer, WS_INET_ADDRSTRLEN);
     }
   else
     {
-      /* we need to decode the encoded address: */
-      guint16 reserv = (host_addr & 0xFF00) >> 16;
-      guint16 addr_index  = (host_addr & 0x00FF);
+      /* yes; we need to decode the encoded address */
+      uint16_t reserv;
+      uint16_t addr_index;
+
+      host_addr = tvb_get_ntohl(tvb,offset);
+      reserv = (host_addr & 0xFFFF0000) >> 16;
+      addr_index = (host_addr & 0x0000FFFF);
 
       if (reserv != 0) {
-        g_snprintf(buffer, ITEM_LABEL_LENGTH, "INVALID: reserved part non zero");
-        return;
+        buffer = wmem_strdup(pinfo->pool, "INVALID: reserved part non zero");
       }
+      else {
+        /* now check if it's IPv4 or IPv6 we need to print */
+        switch (addr_table->family) {
+        case 1:
+          /* IPv4 */
 
-      /* now check if it's IPv4 or IPv6 we need to print */
-      switch (addr_table->family) {
-      case 1:
-        /* IPv4 */
+          /* special case: index 0 -> undefined IP */
+          if (addr_index == 0) {
+            buffer = wmem_strdup(pinfo->pool, "0.0.0.0");
+            break;
+          }
+          /* are we be beyond the end of the table? */
+          if (addr_index > addr_table->table_length) {
+            buffer = wmem_strdup_printf(pinfo->pool, "INVALID IPv4 index: %d > %d",
+                       addr_index, addr_table->table_length);
+            break;
+          }
 
-        /* special case: index 0 -> undefined IP */
-        if (addr_index == 0) {
-          g_snprintf(buffer, ITEM_LABEL_LENGTH, "0.0.0.0");
-          return;
-        }
-        /* are we be beyond the end of the table? */
-        if (addr_index > addr_table->table_length) {
-          g_snprintf(buffer, ITEM_LABEL_LENGTH, "INVALID IPv4 index: %d > %d",
-                     addr_index, addr_table->table_length);
-          return;
-        }
+          /* ok get the IP */
+          if (addr_table->table_ipv4 != NULL) {
+            buffer = (char *) wmem_alloc(pinfo->pool, WS_INET_ADDRSTRLEN);
+            ip_addr_to_str_buf(&addr_table->table_ipv4[addr_index-1], buffer, WS_INET_ADDRSTRLEN);
+          }
+          else {
+            buffer = wmem_strdup(pinfo->pool, "INVALID IPv4 table empty!");
+          }
+          break;
+        case 2:
+          /* IPv6 */
+          /* special case: index 0 -> undefined IP */
+          if (addr_index == 0) {
+            buffer = wmem_strdup(pinfo->pool, "::");
+            break;
+          }
 
-        /* ok get the IP */
-        if (addr_table->table_ipv4 != NULL) {
-          ip_to_str_buf( (guint8 *) &(addr_table->table_ipv4[addr_index-1]), buffer, ITEM_LABEL_LENGTH);
-          return;
-        }
-        else {
-          g_snprintf(buffer, ITEM_LABEL_LENGTH, "INVALID IPv4 table empty!");
-          return;
-        }
-        break;
-      case 2:
-        /* IPv6 */
-        /* special case: index 0 -> undefined IP */
-        if (addr_index == 0) {
-          g_snprintf(buffer, ITEM_LABEL_LENGTH, "::");
-          return;
-        }
+          /* are we be beyond the end of the table? */
+          if (addr_index > addr_table->table_length) {
+            buffer = wmem_strdup_printf(pinfo->pool, "INVALID IPv6 index: %d > %d",
+                       addr_index, addr_table->table_length);
+            break;
+          }
 
-        /* are we be beyond the end of the table? */
-        if (addr_index > addr_table->table_length) {
-          g_snprintf(buffer, ITEM_LABEL_LENGTH, "INVALID IPv6 index: %d > %d",
-                     addr_index, addr_table->table_length);
-          return;
+          /* ok get the IP */
+          if (addr_table->table_ipv6 != NULL) {
+            buffer = (char *) wmem_alloc(pinfo->pool, WS_INET6_ADDRSTRLEN);
+            ip6_to_str_buf(&(addr_table->table_ipv6[addr_index-1]), buffer, WS_INET6_ADDRSTRLEN);
+          }
+          else {
+            buffer = wmem_strdup(pinfo->pool, "INVALID IPv6 table empty!");
+          }
+          break;
+        default:
+          buffer = wmem_strdup(pinfo->pool, "INVALID IP family");
+          break;
         }
-
-        /* ok get the IP */
-        if (addr_table->table_ipv6 != NULL) {
-          ip6_to_str_buf(&(addr_table->table_ipv6[addr_index-1]), buffer, ITEM_LABEL_LENGTH);
-          return;
-        }
-        else {
-          g_snprintf(buffer, ITEM_LABEL_LENGTH, "INVALID IPv6 table empty!");
-          return;
-        }
-        break;
-      default:
-        g_snprintf(buffer, ITEM_LABEL_LENGTH, "INVALID IP family");
-        return;
       }
     }
+
+  return buffer;
 }
 
 static proto_item* wccp_add_ipaddress_item(proto_tree* tree, int hf_index, int hf_ipv4, int hf_ipv6, tvbuff_t *tvb,
-                                    int offset, gint length, wccp_address_table* addr_table)
+                                    int offset, int length, wccp_address_table* addr_table)
 {
-    guint32 host_addr;
-    struct e_in6_addr ipv6_zero;
-    guint16 reserv, addr_index;
+    uint32_t host_addr;
+    ws_in6_addr ipv6_zero;
+    uint16_t reserv, addr_index;
 
     /* are we using an address table? */
     if (! addr_table->in_use)
@@ -645,8 +645,8 @@ static proto_item* wccp_add_ipaddress_item(proto_tree* tree, int hf_index, int h
     host_addr = tvb_get_ntohl(tvb, offset);
 
     /* we need to decode the encoded address: */
-    reserv = (host_addr & 0xFF00) >> 16;
-    addr_index  = (host_addr & 0x00FF);
+    reserv = (host_addr & 0xFFFF0000) >> 16;
+    addr_index  = (host_addr & 0x0000FFFF);
 
     memset(&ipv6_zero, 0, sizeof(ipv6_zero));
 
@@ -697,33 +697,20 @@ static proto_item* wccp_add_ipaddress_item(proto_tree* tree, int hf_index, int h
                         "INVALID IPv6 table empty!");
     }
 
-    return proto_tree_add_ipv4_format(tree, hf_index, tvb, offset, length, host_addr, "INVALID IP family");
+    return proto_tree_add_uint_format(tree, hf_index, tvb, offset, length, host_addr, "INVALID IP family");
 }
 
-#define WCCP_IP_MAX_LENGTH (MAX_IP_STR_LEN > 46 ? MAX_IP_STR_LEN : 46)
+#define WCCP_IP_MAX_LENGTH (WS_INET_ADDRSTRLEN > 46 ? WS_INET_ADDRSTRLEN : 46)
 
 
-static const gchar * decode_wccp_encoded_address(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
-                        proto_tree *info_tree _U_, wccp_address_table* addr_table)
-{
-  gchar *buffer;
-  guint32 host_addr;
-
-  buffer= (char *) wmem_alloc(wmem_packet_scope(), WCCP_IP_MAX_LENGTH+1);
-  host_addr = tvb_get_ntohl(tvb,offset);
-
-  wccp_fmt_ipaddress(buffer, host_addr, addr_table);
-  return buffer;
-}
-
-static guint
+static unsigned
 dissect_hash_data(tvbuff_t *tvb, int offset, proto_tree *wccp_tree)
 {
   proto_tree *bucket_tree;
   proto_item *tf;
   proto_tree *field_tree;
   int i;
-  guint8 bucket_info;
+  uint8_t bucket_info;
   int n;
 
   proto_tree_add_item(wccp_tree, hf_hash_revision, tvb, offset, 4,
@@ -734,7 +721,7 @@ dissect_hash_data(tvbuff_t *tvb, int offset, proto_tree *wccp_tree)
                                     ett_buckets, NULL, "Hash information");
 
   for (i = 0, n = 0; i < 32; i++) {
-    bucket_info = tvb_get_guint8(tvb, offset);
+    bucket_info = tvb_get_uint8(tvb, offset);
     n = wccp_bucket_info(bucket_info, bucket_tree, n, tvb, offset);
     offset += 1;
   }
@@ -745,7 +732,7 @@ dissect_hash_data(tvbuff_t *tvb, int offset, proto_tree *wccp_tree)
   return offset;
 }
 
-static guint
+static unsigned
 dissect_web_cache_list_entry(tvbuff_t *tvb, int offset, int idx,
                              proto_tree *wccp_tree)
 {
@@ -766,17 +753,17 @@ dissect_web_cache_list_entry(tvbuff_t *tvb, int offset, int idx,
  * the corresponding proto_tree entries, returning the next bucket number.
  */
 static int
-wccp_bucket_info(guint8 bucket_info, proto_tree *bucket_tree, guint32 start,
+wccp_bucket_info(uint8_t bucket_info, proto_tree *bucket_tree, uint32_t start,
                  tvbuff_t *tvb, int offset)
 {
-  guint32 i;
+  uint32_t i;
 
   for(i = 0; i < 8; i++) {
     proto_tree_add_uint_format(bucket_tree, hf_bucket_bit, tvb, offset, 1, bucket_info & 1<<i,
                     "Bucket %3d: %s", start, (bucket_info & 1<<i ? "Assigned" : "Not Assigned") );
     start++;
   }
-  return(start);
+  return start;
 }
 
 
@@ -788,7 +775,13 @@ wccp_bucket_info(guint8 bucket_info, proto_tree *bucket_tree, guint32 start,
 
 #define EAT_AND_CHECK(x,next) {length -= x; offset += x; if (length < next) return length - next;}
 
-#define NOTE_EATEN_LENGTH(new_length) {if (new_length<0) return new_length;  offset += length-new_length; length = new_length; }
+#define CHECK_LENGTH_ADVANCE_OFFSET(new_length) { \
+  int old_offset = offset; \
+  if (new_length<0) return new_length; \
+  offset += length-new_length; \
+  if (old_offset >= offset) return offset - old_offset; \
+  length = new_length; \
+  }
 
 
 /* 5.1.1 Security Info Component */
@@ -800,18 +793,18 @@ wccp_bucket_info(guint8 bucket_info, proto_tree *bucket_tree, guint32 start,
 
 #define SECURITY_INFO_LEN               4
 
-const value_string security_option_vals[] = {
+static const value_string security_option_vals[] = {
   { WCCP2_NO_SECURITY, "None" },
   { WCCP2_MD5_SECURITY, "MD5" },
   { 0,    NULL }
 };
 
 
-static gint
-dissect_wccp2_security_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_security_info(tvbuff_t *tvb, int offset, int length,
                             packet_info *pinfo _U_, proto_tree *info_tree, wccp_address_table* addr_table _U_)
 {
-  guint32 security_option;
+  uint32_t security_option;
 
   if (length < SECURITY_INFO_LEN)
     return (length-SECURITY_INFO_LEN);
@@ -837,7 +830,7 @@ dissect_wccp2_security_info(tvbuff_t *tvb, int offset, gint length,
 #define WCCP2_SERVICE_STANDARD          0
 #define WCCP2_SERVICE_DYNAMIC           1
 
-const value_string service_type_vals[] = {
+static const value_string service_type_vals[] = {
   { WCCP2_SERVICE_STANDARD, "Standard predefined service"},
   { WCCP2_SERVICE_DYNAMIC, "Dynamic CE defined service" },
   { 0,    NULL }
@@ -846,31 +839,31 @@ const value_string service_type_vals[] = {
 /*
  * Service flags.
  */
-#define WCCP2_SI_SRC_IP_HASH                    0x0001
-#define WCCP2_SI_DST_IP_HASH                    0x0002
-#define WCCP2_SI_SRC_PORT_HASH                  0x0004
-#define WCCP2_SI_DST_PORT_HASH                  0x0008
-#define WCCP2_SI_PORTS_DEFINED                  0x0010
-#define WCCP2_SI_PORTS_SOURCE                   0x0020
-#define WCCP2r1_SI_REDIRECT_ONLY_PROTOCOL_0     0x0040
-#define WCCP2_SI_SRC_IP_ALT_HASH                0x0100
-#define WCCP2_SI_DST_IP_ALT_HASH                0x0200
-#define WCCP2_SI_SRC_PORT_ALT_HASH              0x0400
-#define WCCP2_SI_DST_PORT_ALT_HASH              0x0800
+#define WCCP2_SI_SRC_IP_HASH                    0x00000001
+#define WCCP2_SI_DST_IP_HASH                    0x00000002
+#define WCCP2_SI_SRC_PORT_HASH                  0x00000004
+#define WCCP2_SI_DST_PORT_HASH                  0x00000008
+#define WCCP2_SI_PORTS_DEFINED                  0x00000010
+#define WCCP2_SI_PORTS_SOURCE                   0x00000020
+#define WCCP2r1_SI_REDIRECT_ONLY_PROTOCOL_0     0x00000040
+#define WCCP2_SI_SRC_IP_ALT_HASH                0x00000100
+#define WCCP2_SI_DST_IP_ALT_HASH                0x00000200
+#define WCCP2_SI_SRC_PORT_ALT_HASH              0x00000400
+#define WCCP2_SI_DST_PORT_ALT_HASH              0x00000800
 
 
-static gint
-dissect_wccp2_service_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_service_info(tvbuff_t *tvb, int offset, int length,
                            packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table _U_)
 {
-  guint8 service_type;
-  guint32 flags;
+  uint8_t service_type;
+  uint32_t flags;
   proto_item *tf;
   proto_tree *ports_tree;
   int i;
   int max_offset = offset+length;
 
-  static const int *flag_fields[] = {
+  static int * const flag_fields[] = {
     &hf_service_info_flags_src_ip_hash,
     &hf_service_info_flags_dest_ip_hash,
     &hf_service_info_flags_src_port_hash,
@@ -889,7 +882,7 @@ dissect_wccp2_service_info(tvbuff_t *tvb, int offset, gint length,
   if (length != SERVICE_INFO_LEN)
     return length - SERVICE_INFO_LEN;
 
-  service_type = tvb_get_guint8(tvb, offset);
+  service_type = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(info_tree, hf_service_info_type, tvb,
                       offset, 1, ENC_BIG_ENDIAN);
 
@@ -900,13 +893,13 @@ dissect_wccp2_service_info(tvbuff_t *tvb, int offset, gint length,
                         offset +1 , 1, ENC_BIG_ENDIAN);
 
     tf = proto_tree_add_item(info_tree, hf_service_info_priority, tvb, offset+2, 1, ENC_BIG_ENDIAN);
-    if (tvb_get_guint8(tvb, offset+2) != 0)
+    if (tvb_get_uint8(tvb, offset+2) != 0)
       expert_add_info(pinfo, tf, &ei_wccp_service_info_priority_nonzero);
 
     tf = proto_tree_add_item(info_tree, hf_service_info_protocol, tvb,
                         offset+3, 1, ENC_BIG_ENDIAN);
 
-    if (tvb_get_guint8(tvb, offset+3) != 0)
+    if (tvb_get_uint8(tvb, offset+3) != 0)
       expert_add_info(pinfo, tf, &ei_wccp_service_info_protocol_nonzero);
     break;
 
@@ -931,7 +924,7 @@ dissect_wccp2_service_info(tvbuff_t *tvb, int offset, gint length,
                              ett_service_info_ports, &tf, "Ports list: ");
 
     for (i = 0; i < 8; i++) {
-      guint16 port = tvb_get_ntohs(tvb, offset);
+      uint16_t port = tvb_get_ntohs(tvb, offset);
 
       if (port) {
         if (flags & WCCP2_SI_SRC_PORT_HASH)
@@ -973,12 +966,12 @@ dissect_wccp2_router_identity_element(tvbuff_t *tvb, int offset, packet_info *pi
 #define ROUTER_ID_INFO_MIN_LEN          (8+4+4)
 
 /* 5.3.1 Router Identity Info Component */
-static gint
-dissect_wccp2_router_identity_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_router_identity_info(tvbuff_t *tvb, int offset, int length,
                                    packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint32 n_received_from;
-  guint i;
+  uint32_t n_received_from;
+  unsigned i;
   proto_item *te;
   proto_tree *element_tree;
 
@@ -1015,15 +1008,15 @@ dissect_wccp2_router_identity_info(tvbuff_t *tvb, int offset, gint length,
 #define ROUTER_WC_ID_ELEMENT_MIN_LEN (4+2+2)
 
 /* 6.4 Web-Cache Identity Element */
-static gint
-dissect_wccp2_web_cache_identity_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo,
+static int
+dissect_wccp2_web_cache_identity_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
                                          proto_tree *info_tree, wccp_address_table* addr_table)
 {
   proto_item *tf;
-  guint16 flags;
-  guint data_element_type;
+  uint16_t flags;
+  unsigned data_element_type;
 
-  static const int *flag_fields[] = {
+  static int * const flag_fields[] = {
     &hf_web_cache_identity_flag_hash_info,
     &hf_web_cache_identity_flag_assign_type,
     &hf_web_cache_identity_flag_version_request,
@@ -1058,7 +1051,6 @@ dissect_wccp2_web_cache_identity_element(tvbuff_t *tvb, int offset, gint length,
   case WCCP2_WEB_CACHE_ASSIGNMENT_DATA_TYPE_NOT_PRESENT:
     proto_tree_add_item(info_tree, hf_assignment_no_data, tvb, offset, 2, ENC_NA);
     return length;
-    break;
   case WCCP2_WEB_CACHE_ASSIGNMENT_DATA_TYPE_EXTENDED:
     return dissect_wccp2_extended_assignment_data_element(tvb,offset,length,pinfo,info_tree, addr_table);
   }
@@ -1066,8 +1058,8 @@ dissect_wccp2_web_cache_identity_element(tvbuff_t *tvb, int offset, gint length,
 }
 
 /* 5.2.1  Web-Cache Identity Info Component */
-static gint
-dissect_wccp2_wc_identity_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_wc_identity_info(tvbuff_t *tvb, int offset, int length,
                                packet_info *pinfo _U_, proto_tree *info_tree, wccp_address_table* addr_table)
 {
   proto_item *te;
@@ -1082,8 +1074,8 @@ dissect_wccp2_wc_identity_info(tvbuff_t *tvb, int offset, gint length,
 }
 
 /* 6.3 Assignment Key Element */
-static gint
-dissect_wccp2_assignment_key_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo _U_,
+static int
+dissect_wccp2_assignment_key_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo _U_,
                                      proto_tree *info_tree, wccp_address_table* addr_table)
 {
   if (length < 8)
@@ -1103,16 +1095,16 @@ dissect_wccp2_assignment_key_element(tvbuff_t *tvb, int offset, gint length, pac
 #define ROUTER_VIEW_INFO_MIN_LEN        (4+8+4+4)
 
 /* 5.3.2 Router View Info Component */
-static gint
-dissect_wccp2_router_view_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_router_view_info(tvbuff_t *tvb, int offset, int length,
                                packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint32 n_routers;
-  guint32 n_web_caches;
-  guint i;
+  uint32_t n_routers;
+  uint32_t n_web_caches;
+  unsigned i;
   proto_item *te;
   proto_tree *element_tree;
-  gint new_length;
+  int new_length;
 
   if (length < ROUTER_VIEW_INFO_MIN_LEN)
     return length - ROUTER_VIEW_INFO_MIN_LEN;
@@ -1121,7 +1113,7 @@ dissect_wccp2_router_view_info(tvbuff_t *tvb, int offset, gint length,
   EAT(4);
 
   new_length=dissect_wccp2_assignment_key_element(tvb, offset, length, pinfo, info_tree, addr_table);
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
 
   n_routers = tvb_get_ntohl(tvb, offset);
   proto_tree_add_uint(info_tree, hf_router_router_num, tvb, offset, 4, n_routers);
@@ -1143,7 +1135,7 @@ dissect_wccp2_router_view_info(tvbuff_t *tvb, int offset, gint length,
   EAT(4);
 
   for (i = 0; i < n_web_caches; i++) {
-    gint old_length;
+    int old_length;
     old_length = length;
 
     if (length < 4)
@@ -1167,13 +1159,13 @@ dissect_wccp2_router_view_info(tvbuff_t *tvb, int offset, gint length,
 
 /* 5.2.2 Web Cache View Info Component */
 
-static gint
-dissect_wccp2_web_cache_view_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_web_cache_view_info(tvbuff_t *tvb, int offset, int length,
                                   packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint32 n_routers;
-  guint32 n_web_caches;
-  guint i;
+  uint32_t n_routers;
+  uint32_t n_web_caches;
+  unsigned i;
   proto_item *te;
   proto_tree *element_tree;
 
@@ -1222,7 +1214,7 @@ dissect_wccp2_web_cache_view_info(tvbuff_t *tvb, int offset, gint length,
 /* 6.2 Router Assignment Element */
 static void
 dissect_wccp2_router_assignment_element(tvbuff_t *tvb, int offset,
-                                        gint length, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
+                                        int length _U_, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
   dissect_wccp2_router_identity_element(tvb,offset,pinfo,info_tree, addr_table);
   EAT(8);
@@ -1230,15 +1222,15 @@ dissect_wccp2_router_assignment_element(tvbuff_t *tvb, int offset,
   EAT(4);
 }
 
-static const gchar *
-assignment_bucket_name(guint8 bucket)
+static const char *
+assignment_bucket_name(wmem_allocator_t* allocator, uint8_t bucket)
 {
-  const gchar *cur;
+  const char *cur;
 
   if (bucket == 0xff) {
-    cur= "Unassigned";
+    cur= wmem_strdup(allocator, "Unassigned");
   } else {
-    cur=wmem_strdup_printf(wmem_packet_scope(), "%u%s", bucket & 0x7F,
+    cur=wmem_strdup_printf(allocator, "%u%s", bucket & 0x7F,
                          (bucket & 0x80) ? " (Alt)" : "");
   }
   return cur;
@@ -1247,22 +1239,22 @@ assignment_bucket_name(guint8 bucket)
 #define ASSIGNMENT_INFO_MIN_LEN         (8+4+4)
 
 /* 5.4.1 Assignment Info Component  */
-static gint
-dissect_wccp2_assignment_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_assignment_info(tvbuff_t *tvb, int offset, int length,
                               packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint32 n_routers;
-  guint i;
+  uint32_t n_routers;
+  unsigned i;
   proto_item *te;
   proto_tree *element_tree;
-  gint new_length;
+  int new_length;
 
   if (length < ASSIGNMENT_INFO_MIN_LEN)
     return length - ASSIGNMENT_INFO_MIN_LEN;
 
 
   new_length=dissect_wccp2_assignment_key_element(tvb, offset, length, pinfo, info_tree, addr_table);
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
 
   n_routers = tvb_get_ntohl(tvb, offset);
   proto_tree_add_uint(info_tree, hf_assignment_info_router_num, tvb, offset, 4, n_routers);
@@ -1281,7 +1273,7 @@ dissect_wccp2_assignment_info(tvbuff_t *tvb, int offset, gint length,
   }
 
   new_length = dissect_wccp2_hash_buckets_assignment_element(tvb, offset, length, pinfo, info_tree, addr_table);
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
   return length;
 }
 
@@ -1289,8 +1281,8 @@ dissect_wccp2_assignment_info(tvbuff_t *tvb, int offset, gint length,
 #define QUERY_INFO_LEN                  (4+4+4+4)
 
 /* 5.5.1 Router Query Info Component */
-static gboolean
-dissect_wccp2_router_query_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_router_query_info(tvbuff_t *tvb, int offset, int length,
                                 packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
   if (length < QUERY_INFO_LEN)
@@ -1308,13 +1300,13 @@ dissect_wccp2_router_query_info(tvbuff_t *tvb, int offset, gint length,
 }
 
 /* 6.5 Hash Buckets Assignment Element */
-static gint dissect_wccp2_hash_buckets_assignment_element(tvbuff_t *tvb, int offset, gint length,
+static int dissect_wccp2_hash_buckets_assignment_element(tvbuff_t *tvb, int offset, int length,
                                                           packet_info *pinfo _U_, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint32 i,n_web_caches;
+  uint32_t i,n_web_caches;
   proto_item *te;
   proto_tree *element_tree;
-  guint8 bucket;
+  uint8_t bucket;
 
   if (length < 4)
     return length - 4;
@@ -1340,10 +1332,10 @@ static gint dissect_wccp2_hash_buckets_assignment_element(tvbuff_t *tvb, int off
   for (i = 0; i < 256; i++, offset++, length--) {
     if (length < 1)
       return length - (256-i);
-    bucket = tvb_get_guint8(tvb, offset);
+    bucket = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint_format(element_tree, hf_bucket, tvb, offset, 1,
                         bucket, "Bucket %3d: %10s",
-                        i, assignment_bucket_name(bucket));
+                        i, assignment_bucket_name(pinfo->pool, bucket));
   }
   return length;
 }
@@ -1389,16 +1381,16 @@ static const value_string wccp_command_type_vals[] = {
 
 /* 5.1.3 Capabilities Info Component */
 
-static gint
-dissect_wccp2_capability_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_capability_info(tvbuff_t *tvb, int offset, int length,
                               packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table _U_)
 {
-  gint capability_length;
+  int capability_length;
 
   while (length >= 8) {
     capability_length = dissect_wccp2_capability_element(tvb,offset,length,pinfo,info_tree);
 
-    NOTE_EATEN_LENGTH(capability_length);
+    CHECK_LENGTH_ADVANCE_OFFSET(capability_length);
   }
   return length;
 }
@@ -1408,12 +1400,12 @@ dissect_wccp2_capability_info(tvbuff_t *tvb, int offset, gint length,
 
 /* 5.1.4 && 6.12 Command Extension Component */
 
-static gint
+static int
 dissect_wccp2_command_extension(tvbuff_t *tvb, int offset,
                                 int length, packet_info *pinfo _U_, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint16 command_type;
-  guint32 command_length;
+  uint16_t command_type;
+  uint32_t command_length;
 
   for (;;) {
     if (length == 0)
@@ -1452,14 +1444,14 @@ dissect_wccp2_command_extension(tvbuff_t *tvb, int offset,
 /* this function is special as it can be invoked twice during a packet decode:
    once to get the tables, once to display them
 */
-static gint
+static int
 dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset, int length,
                                    packet_info *pinfo, proto_tree *info_tree, wccp_address_table* wccp_wccp_address_table)
 {
-  guint16 address_length;
-  guint32 i;
-  gint16 family;
-  guint16 table_length;
+  uint16_t address_length;
+  uint32_t i;
+  int16_t family;
+  uint16_t table_length;
   proto_tree *element_tree;
   proto_item *tf;
 
@@ -1479,7 +1471,7 @@ dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset, int length,
   element_tree = proto_item_add_subtree(tf, ett_table_element);
   EAT(4);
 
-  if (wccp_wccp_address_table->in_use == FALSE) {
+  if (wccp_wccp_address_table->in_use == false) {
     wccp_wccp_address_table->family = family;
     wccp_wccp_address_table->table_length =  table_length;
 
@@ -1487,7 +1479,7 @@ dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset, int length,
     switch (wccp_wccp_address_table->family) {
     case 1:
       if (wccp_wccp_address_table->table_ipv4 == NULL)
-        wccp_wccp_address_table->table_ipv4 = (guint32 *)
+        wccp_wccp_address_table->table_ipv4 = (uint32_t *)
           wmem_alloc0(pinfo->pool, wccp_wccp_address_table->table_length * 4);
       if (address_length != 4) {
         expert_add_info_format(pinfo, tf, &ei_wccp_length_bad,
@@ -1498,8 +1490,8 @@ dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset, int length,
       break;
     case 2:
       if (wccp_wccp_address_table->table_ipv6 == NULL)
-        wccp_wccp_address_table->table_ipv6 = (struct e_in6_addr *)
-          wmem_alloc0(pinfo->pool, wccp_wccp_address_table->table_length * sizeof(struct e_in6_addr));
+        wccp_wccp_address_table->table_ipv6 = (ws_in6_addr *)
+          wmem_alloc0(pinfo->pool, wccp_wccp_address_table->table_length * sizeof(ws_in6_addr));
       if (address_length != 16) {
         expert_add_info_format(pinfo, tf, &ei_wccp_length_bad,
                                "The Address length must be 16, but I found %d for IPv6 addresses. Correcting this.",
@@ -1516,27 +1508,27 @@ dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset, int length,
   /* now read the addresses and print/store them */
 
   for(i=0; i<table_length; i++) {
-    const gchar *addr;
+    const char *addr;
 
     switch (family) {
     case 1:
       /* IPv4 */
-      addr  =  tvb_ip_to_str(tvb, offset);
-      if ((wccp_wccp_address_table->in_use == FALSE) &&
+      addr  =  tvb_ip_to_str(pinfo->pool, tvb, offset);
+      if ((wccp_wccp_address_table->in_use == false) &&
           (wccp_wccp_address_table->table_ipv4 != NULL) &&
           (i < wccp_wccp_address_table->table_length))
-        wccp_wccp_address_table->table_ipv4[i] = tvb_get_ntohl(tvb, offset);
+        wccp_wccp_address_table->table_ipv4[i] = tvb_get_ipv4(tvb, offset);
       break;
     case 2:
       /* IPv6 */
-      addr = tvb_ip6_to_str(tvb, offset);
-      if ((wccp_wccp_address_table->in_use == FALSE) &&
+      addr = tvb_ip6_to_str(pinfo->pool, tvb, offset);
+      if ((wccp_wccp_address_table->in_use == false) &&
           (wccp_wccp_address_table->table_ipv6 != NULL) &&
           (i < wccp_wccp_address_table->table_length))
         tvb_get_ipv6(tvb, offset, &(wccp_wccp_address_table->table_ipv6[i]));
       break;
     default:
-      addr = wmem_strdup_printf(wmem_packet_scope(), "unknown family %d", wccp_wccp_address_table->family);
+      addr = wmem_strdup_printf(pinfo->pool, "unknown family %d", wccp_wccp_address_table->family);
     };
 
     if (element_tree) {
@@ -1551,7 +1543,7 @@ dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset, int length,
     EAT(address_length);
   }
 
-  wccp_wccp_address_table->in_use = TRUE;
+  wccp_wccp_address_table->in_use = true;
   return length;
 }
 
@@ -1562,13 +1554,13 @@ dissect_wccp2r1_address_table_info(tvbuff_t *tvb, int offset, int length,
 #define HASH_ASSIGNMENT_INFO_MIN_LEN (4+256)
 
 /* part of 5.6.11 Alternate Assignment Component */
-static gint
-dissect_wccp2_hash_assignment_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_hash_assignment_info(tvbuff_t *tvb, int offset, int length,
                                    packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint32 n_web_caches, host_addr;
-  guint i;
-  guint8 bucket;
+  uint32_t n_web_caches, host_addr;
+  unsigned i;
+  uint8_t bucket;
 
   if (length < HASH_ASSIGNMENT_INFO_MIN_LEN)
     return length - ASSIGNMENT_INFO_MIN_LEN;
@@ -1581,8 +1573,13 @@ dissect_wccp2_hash_assignment_info(tvbuff_t *tvb, int offset, gint length,
       return length - 4*(n_web_caches-i)-256;
 
     host_addr = tvb_get_ntohl(tvb,offset);
-    proto_tree_add_uint_format(info_tree, hf_cache_ip, tvb, offset, 4, host_addr, "Web-Cache %d: IP address %s", i,
+    if (! addr_table->in_use){
+      proto_tree_add_ipv4_format(info_tree, hf_cache_ip, tvb, offset, 4, host_addr, "Web-Cache %d: IP address %s", i,
                         decode_wccp_encoded_address(tvb, offset, pinfo, info_tree, addr_table));
+    } else {
+      proto_tree_add_uint_format(info_tree, hf_web_cache_identity_index, tvb, offset, 4, host_addr, "Web-Cache %d: IP address %s", i,
+                        decode_wccp_encoded_address(tvb, offset, pinfo, info_tree, addr_table));
+    }
     EAT(4);
   }
 
@@ -1590,23 +1587,23 @@ dissect_wccp2_hash_assignment_info(tvbuff_t *tvb, int offset, gint length,
   for (i = 0; i < 256; i++, offset++, length--) {
     if (length < 1)
       return length - (256-i);
-    bucket = tvb_get_guint8(tvb, offset);
+    bucket = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint_format(info_tree, hf_bucket, tvb, offset, 1,
                         bucket, "Bucket %3d: %10s",
-                        i, assignment_bucket_name(bucket));
+                        i, assignment_bucket_name(pinfo->pool, bucket));
   }
   return length;
 }
 
 /* 5.3.3 Assignment Map Component */
-static gint dissect_wccp2_assignment_map(tvbuff_t *tvb, int offset,
+static int dissect_wccp2_assignment_map(tvbuff_t *tvb, int offset,
                                          int length, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  gint new_length;
+  int new_length;
 
   new_length=dissect_wccp2_mask_value_set_list(tvb, offset, length, pinfo, info_tree, addr_table);
 
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
 
   return length;
 }
@@ -1616,12 +1613,12 @@ static gint dissect_wccp2_assignment_map(tvbuff_t *tvb, int offset,
 #define ALT_ASSIGNMENT_MAP_MIN_LEN  (4)
 
 /* 5.3.4 Alternate Assignment Map Component */
-static gint
+static int
 dissect_wccp2r1_alt_assignment_map_info(tvbuff_t *tvb, int offset,
                                         int length, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint16 assignment_type;
-  guint16 assignment_length;
+  uint16_t assignment_type;
+  uint16_t assignment_length;
   proto_item *tf=NULL;
 
   if (length < ALT_ASSIGNMENT_MAP_MIN_LEN )
@@ -1668,15 +1665,15 @@ dissect_wccp2r1_alt_assignment_map_info(tvbuff_t *tvb, int offset,
 
 
 /* 6.6 Hash Assignment Data Element */
-static gint
-dissect_wccp2_hash_assignment_data_element(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_hash_assignment_data_element(tvbuff_t *tvb, int offset, int length,
                                            packet_info *pinfo _U_,
                                            proto_tree *info_tree)
 
 {
   proto_tree *bucket_tree;
   int i;
-  guint8 bucket_info;
+  uint8_t bucket_info;
   int n;
 
 
@@ -1688,7 +1685,7 @@ dissect_wccp2_hash_assignment_data_element(tvbuff_t *tvb, int offset, gint lengt
       return -i-2-2;
     }
 
-    bucket_info = tvb_get_guint8(tvb, offset);
+    bucket_info = tvb_get_uint8(tvb, offset);
     n = wccp_bucket_info(bucket_info, bucket_tree, n, tvb, offset);
     EAT(1);
   }
@@ -1701,14 +1698,14 @@ dissect_wccp2_hash_assignment_data_element(tvbuff_t *tvb, int offset, gint lengt
 }
 
 /* 6.7 Mask Assignment Data Element */
-static gint
-dissect_wccp2_mask_assignment_data_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo,
+static int
+dissect_wccp2_mask_assignment_data_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
                                            proto_tree *info_tree, wccp_address_table* addr_table)
 
 {
   proto_item *mask_item;
   proto_tree *mask_tree;
-  gint new_length,start;
+  int new_length,start;
 
 
   mask_tree = proto_tree_add_subtree(info_tree, tvb, offset, 4,
@@ -1717,13 +1714,13 @@ dissect_wccp2_mask_assignment_data_element(tvbuff_t *tvb, int offset, gint lengt
 
   new_length=dissect_wccp2_mask_value_set_list(tvb, offset, length, pinfo, mask_tree, addr_table);
 
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
 
   if (length < 2)
     return length-4;
 
   new_length =  dissect_wccp2_assignment_weight_and_status_element(tvb, offset, length, pinfo, info_tree);
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
 
   proto_item_set_len(mask_item, offset-start);
   return length;
@@ -1731,8 +1728,8 @@ dissect_wccp2_mask_assignment_data_element(tvbuff_t *tvb, int offset, gint lengt
 
 
 /* 5.7.5 Alternate Mask Assignment Data Element */
-static gint
-dissect_wccp2_alternate_mask_assignment_data_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo,
+static int
+dissect_wccp2_alternate_mask_assignment_data_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
                                                      proto_tree *info_tree, wccp_address_table* addr_table)
 {
   proto_tree *mask_tree;
@@ -1746,11 +1743,11 @@ dissect_wccp2_alternate_mask_assignment_data_element(tvbuff_t *tvb, int offset, 
   if (length > 4)
     for (;length >4;)
       {
-        gint new_length;
+        int new_length;
 
         new_length=dissect_wccp2_alternate_mask_value_set_list(tvb, offset, length, pinfo, mask_tree, addr_table);
 
-        NOTE_EATEN_LENGTH(new_length);
+        CHECK_LENGTH_ADVANCE_OFFSET(new_length);
       }
 
   if (length < 2)
@@ -1761,8 +1758,8 @@ dissect_wccp2_alternate_mask_assignment_data_element(tvbuff_t *tvb, int offset, 
 
 
 /* 6.9 Assignment Weight and Status Data Element */
-static gint
-dissect_wccp2_assignment_weight_and_status_element(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_assignment_weight_and_status_element(tvbuff_t *tvb, int offset, int length,
                                                    packet_info *pinfo _U_,
                                                    proto_tree *info_tree)
 
@@ -1780,16 +1777,16 @@ dissect_wccp2_assignment_weight_and_status_element(tvbuff_t *tvb, int offset, gi
 
 
 /* 6.10 Extended Assignment Data Element */
-static gint
-dissect_wccp2_extended_assignment_data_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo,
+static int
+dissect_wccp2_extended_assignment_data_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
                                                proto_tree *info_tree, wccp_address_table* addr_table)
 {
   proto_item *element_item, *header;
   proto_tree *item_tree;
 
-  guint type_of_assignment;
+  unsigned type_of_assignment;
 
-  gint assignment_length;
+  int assignment_length;
 
   if (length < 4)
     return length-4;
@@ -1817,7 +1814,7 @@ dissect_wccp2_extended_assignment_data_element(tvbuff_t *tvb, int offset, gint l
       (length == (assignment_length + 4)))
     {
       expert_add_info_format(pinfo, element_item, &ei_wccp_assignment_length_bad,
-                             "Assignment length is %d but %d remain in the packet. Assuming that this is wrong as this is only 4 bytes to small, proceding with the assumption it is %d",
+                             "Assignment length is %d but %d remain in the packet. Assuming that this is wrong as this is only 4 bytes too small, proceeding with the assumption it is %d",
                              assignment_length, length, length);
       assignment_length = length;
     }
@@ -1853,12 +1850,12 @@ dissect_wccp2_extended_assignment_data_element(tvbuff_t *tvb, int offset, gint l
 
 
 /* 6.11 Capability Element */
-static gint
-dissect_wccp2_capability_element(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_capability_element(tvbuff_t *tvb, int offset, int length,
                                  packet_info *pinfo, proto_tree *info_tree)
 {
-  guint16 capability_type;
-  guint16 capability_val_len;
+  uint16_t capability_type;
+  uint16_t capability_val_len;
   proto_item *te, *header, *tf;
   proto_tree *element_tree;
 
@@ -1868,7 +1865,7 @@ dissect_wccp2_capability_element(tvbuff_t *tvb, int offset, gint length,
   capability_type = tvb_get_ntohs(tvb, offset);
   element_tree = proto_tree_add_subtree_format(info_tree, tvb, offset, -1, ett_capability_element, &te,
                                                "Type: %s",
-                                               val_to_str(capability_type,
+                                               val_to_str(pinfo->pool, capability_type,
                                                           capability_type_vals,
                                                           "Unknown (0x%08X)"));
   header = te;
@@ -1929,15 +1926,15 @@ dissect_wccp2_capability_element(tvbuff_t *tvb, int offset, gint length,
 
 
 /* 6.13 Mask/Value Set List */
-static gint
+static int
 dissect_wccp2_mask_value_set_list(tvbuff_t *tvb, int offset,
                                   int length, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint num_of_elem;
-  guint i;
+  unsigned num_of_elem;
+  unsigned i;
   proto_item *te;
   proto_tree *element_tree;
-  guint start;
+  unsigned start;
 
 
   if (length < 4)
@@ -1955,11 +1952,11 @@ dissect_wccp2_mask_value_set_list(tvbuff_t *tvb, int offset,
 
   for (i = 0; i < num_of_elem; i++)
     {
-      gint new_length;
+      int new_length;
 
       new_length=dissect_wccp2_mask_value_set_element(tvb, offset, length, i, pinfo, element_tree, addr_table);
 
-      NOTE_EATEN_LENGTH(new_length);
+      CHECK_LENGTH_ADVANCE_OFFSET(new_length);
     }
 
   proto_item_set_len(te, offset-start);
@@ -1971,8 +1968,8 @@ dissect_wccp2_mask_value_set_list(tvbuff_t *tvb, int offset,
 
 
 /* 6.15 Mask Element */
-static gint
-dissect_wccp2_mask_element(tvbuff_t *tvb, int offset, gint length, packet_info *pinfo _U_, proto_tree *info_tree)
+static int
+dissect_wccp2_mask_element(tvbuff_t *tvb, int offset, int length, packet_info *pinfo _U_, proto_tree *info_tree)
 {
   if (length < 2)
     return length-12;
@@ -1996,12 +1993,12 @@ dissect_wccp2_mask_element(tvbuff_t *tvb, int offset, gint length, packet_info *
 
 
 /* 6.17 Alternate Mask/Value Set List */
-static gint dissect_wccp2_alternate_mask_value_set_list(tvbuff_t *tvb, int offset,
+static int dissect_wccp2_alternate_mask_value_set_list(tvbuff_t *tvb, int offset,
                                                         int length, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
   proto_tree *list_tree;
-  guint num_of_val_elements;
-  guint i;
+  unsigned num_of_val_elements;
+  unsigned i;
 
   if (length < 4)
     return length - 4;
@@ -2014,26 +2011,26 @@ static gint dissect_wccp2_alternate_mask_value_set_list(tvbuff_t *tvb, int offse
   EAT(4);
 
   for(i=0;i<num_of_val_elements;i++) {
-    gint new_length;
+    int new_length;
 
     new_length=dissect_wccp2_alternate_mask_value_set_element(tvb, offset, length, i, pinfo, list_tree, addr_table);
 
-    NOTE_EATEN_LENGTH(new_length);
+    CHECK_LENGTH_ADVANCE_OFFSET(new_length);
   }
   return length;
 }
 
 
 /* 6.18 Alternate Mask/Value Set Element */
-static gint
-dissect_wccp2_alternate_mask_value_set_element(tvbuff_t *tvb, int offset, gint length, guint el_index, packet_info *pinfo,
+static int
+dissect_wccp2_alternate_mask_value_set_element(tvbuff_t *tvb, int offset, int length, unsigned el_index, packet_info *pinfo,
                     proto_tree *info_tree, wccp_address_table* addr_table)
 {
   proto_item *tl, *header;
   proto_tree *element_tree, *value_tree;
-  guint number_of_elements;
-  gint new_length, total_length;
-  guint i;
+  unsigned number_of_elements;
+  int new_length, total_length;
+  unsigned i;
 
   element_tree = proto_tree_add_subtree_format(info_tree, tvb, offset, 0,
                                ett_alternate_mask_value_set_element, &header,
@@ -2043,7 +2040,7 @@ dissect_wccp2_alternate_mask_value_set_element(tvbuff_t *tvb, int offset, gint l
 
   new_length=dissect_wccp2_mask_element(tvb,offset,length,pinfo,element_tree);
   total_length += length - new_length;
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
 
   if (length < 4)
     return length - 4;
@@ -2054,10 +2051,11 @@ dissect_wccp2_alternate_mask_value_set_element(tvbuff_t *tvb, int offset, gint l
   total_length += 4;
   EAT(4);
 
+  /* XXX Add a bounds check for number_of_elements? */
   for (i=0; i < number_of_elements; i++) {
     new_length=dissect_wccp2_web_cache_value_element(tvb, offset, length, pinfo, value_tree, addr_table);
     total_length += length - new_length;
-    NOTE_EATEN_LENGTH(new_length);
+    CHECK_LENGTH_ADVANCE_OFFSET(new_length);
   }
   proto_item_set_len(header, total_length);
 
@@ -2065,13 +2063,13 @@ dissect_wccp2_alternate_mask_value_set_element(tvbuff_t *tvb, int offset, gint l
 }
 
 /* 6.19 Web-Cache Value Element */
-static gint
-dissect_wccp2_web_cache_value_element(tvbuff_t *tvb, int offset, gint length,  packet_info *pinfo _U_, proto_tree *info_tree, wccp_address_table* addr_table)
+static int
+dissect_wccp2_web_cache_value_element(tvbuff_t *tvb, int offset, int length,  packet_info *pinfo _U_, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint number_of_elements, seq_num;
+  unsigned number_of_elements, seq_num;
   proto_item *tl;
   proto_tree *element_tree;
-  guint i;
+  unsigned i;
 
   if (length < 4)
     return length - 8;
@@ -2104,15 +2102,15 @@ dissect_wccp2_web_cache_value_element(tvbuff_t *tvb, int offset, gint length,  p
 
 static void
 dissect_32_bit_capability_flags(tvbuff_t *tvb, int curr_offset,
-                                guint16 capability_val_len, gint ett, const capability_flag *flags,
+                                uint16_t capability_val_len, int ett, const capability_flag *flags,
                                 proto_tree *element_tree, proto_item *header,
                                 proto_item *length_item, packet_info *pinfo)
 {
-  guint32 capability_val;
+  uint32_t capability_val;
   proto_item *tm;
   proto_tree *method_tree;
   int i;
-  gboolean first = TRUE;
+  bool first = true;
 
   if (capability_val_len != 4) {
     expert_add_info_format(pinfo, length_item, &ei_wccp_capability_element_length,
@@ -2128,7 +2126,7 @@ dissect_32_bit_capability_flags(tvbuff_t *tvb, int curr_offset,
       if (first) {
         proto_item_append_text( tm, " (%s", flags[i].short_name);
         proto_item_append_text( header, " (%s", flags[i].short_name);
-        first = FALSE;
+        first = false;
       } else {
         proto_item_append_text( tm, ", %s", flags[i].short_name);
         proto_item_append_text( header, " (%s", flags[i].short_name);
@@ -2136,7 +2134,7 @@ dissect_32_bit_capability_flags(tvbuff_t *tvb, int curr_offset,
     }
   }
 
-  if (first == FALSE) {
+  if (first == false) {
     proto_item_append_text( tm, ")");
     proto_item_append_text( header, ")");
   }
@@ -2151,10 +2149,10 @@ dissect_32_bit_capability_flags(tvbuff_t *tvb, int curr_offset,
 /* 6.11.4 Capability Type WCCP2_TRANSMIT_T */
 static void
 dissect_transmit_t_capability(tvbuff_t *tvb, proto_item *te, int curr_offset,
-                              guint16 capability_val_len, gint ett, proto_tree *element_tree,
+                              uint16_t capability_val_len, int ett, proto_tree *element_tree,
                               proto_item *length_item, packet_info *pinfo)
 {
-  guint16 upper_limit, lower_limit;
+  uint16_t upper_limit, lower_limit;
   proto_tree *method_tree;
 
   if (capability_val_len != 4) {
@@ -2188,10 +2186,10 @@ dissect_transmit_t_capability(tvbuff_t *tvb, proto_item *te, int curr_offset,
 
 static void
 dissect_timer_scale_capability(tvbuff_t *tvb, int curr_offset,
-                               guint16 capability_val_len, gint ett, proto_tree *element_tree,
+                               uint16_t capability_val_len, int ett, proto_tree *element_tree,
                                proto_item *length_item, packet_info *pinfo)
 {
-  guint8 a,c;
+  uint8_t a,c;
   proto_tree *method_tree;
 
   if (capability_val_len != 4) {
@@ -2200,8 +2198,8 @@ dissect_timer_scale_capability(tvbuff_t *tvb, int curr_offset,
     return;
   }
 
-  a = tvb_get_guint8(tvb, curr_offset);
-  c = tvb_get_guint8(tvb, curr_offset+2);
+  a = tvb_get_uint8(tvb, curr_offset);
+  c = tvb_get_uint8(tvb, curr_offset+2);
 
   if ( a == 0) {
     if ( c == 0) {
@@ -2239,8 +2237,8 @@ dissect_timer_scale_capability(tvbuff_t *tvb, int curr_offset,
 
 
 /* 6.16 Value Element */
-static gint
-dissect_wccp2_value_element(tvbuff_t *tvb, int offset, gint length, int idx, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
+static int
+dissect_wccp2_value_element(tvbuff_t *tvb, int offset, int length, int idx, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
   proto_tree *element_tree;
 
@@ -2269,20 +2267,20 @@ dissect_wccp2_value_element(tvbuff_t *tvb, int offset, gint length, int idx, pac
 
 
 /* 6.14 Mask/Value Set Element */
-static gint
-dissect_wccp2_mask_value_set_element(tvbuff_t *tvb, int offset, gint length, int idx, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
+static int
+dissect_wccp2_mask_value_set_element(tvbuff_t *tvb, int offset, int length, int idx, packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
   proto_item *tl, *te;
   proto_tree *element_tree, *value_tree;
-  guint num_of_val_elements;
-  guint i;
-  gint new_length;
+  unsigned num_of_val_elements;
+  unsigned i;
+  int new_length;
 
   element_tree = proto_tree_add_subtree_format(info_tree, tvb, offset, 0,
                            ett_mv_set_element, &tl, "Mask/Value Set Element(%d)", idx);
 
   new_length = dissect_wccp2_mask_element(tvb,offset,length,pinfo,element_tree);
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
 
   if (length < 4)
     return length-4;
@@ -2297,7 +2295,7 @@ dissect_wccp2_mask_value_set_element(tvbuff_t *tvb, int offset, gint length, int
     {
       new_length=dissect_wccp2_value_element(tvb, offset, length, i, pinfo,  value_tree, addr_table);
 
-      NOTE_EATEN_LENGTH(new_length);
+      CHECK_LENGTH_ADVANCE_OFFSET(new_length);
     }
 
   proto_item_set_len(tl, 16+num_of_val_elements*16);
@@ -2308,18 +2306,18 @@ dissect_wccp2_mask_value_set_element(tvbuff_t *tvb, int offset, gint length, int
 #define ALT_ASSIGNMENT_INFO_MIN_LEN    (4+4)
 
 /* 5.4.2 Alternate Assignment Component */
-static gint
-dissect_wccp2_alternate_assignment_info(tvbuff_t *tvb, int offset, gint length,
+static int
+dissect_wccp2_alternate_assignment_info(tvbuff_t *tvb, int offset, int length,
                                         packet_info *pinfo, proto_tree *info_tree, wccp_address_table* addr_table)
 {
-  guint16 assignment_type;
-  guint16 assignment_length;
+  uint16_t assignment_type;
+  uint16_t assignment_length;
   proto_item *tf=NULL;
 
-  guint32 n_routers;
-  guint i;
+  uint32_t n_routers;
+  unsigned i;
   proto_tree *element_tree;
-  gint new_length;
+  int new_length;
 
 
   if (length < ALT_ASSIGNMENT_INFO_MIN_LEN)
@@ -2346,7 +2344,7 @@ dissect_wccp2_alternate_assignment_info(tvbuff_t *tvb, int offset, gint length,
   }
 
   new_length=dissect_wccp2_assignment_key_element(tvb, offset, length, pinfo,  info_tree, addr_table);
-  NOTE_EATEN_LENGTH(new_length);
+  CHECK_LENGTH_ADVANCE_OFFSET(new_length);
 
   n_routers = tvb_get_ntohl(tvb, offset);
   proto_tree_add_uint(info_tree, hf_alt_assignment_info_num_routers, tvb, offset, 4, n_routers);
@@ -2383,117 +2381,116 @@ dissect_wccp2_alternate_assignment_info(tvbuff_t *tvb, int offset, gint length,
 static void
 dissect_wccp2_info(tvbuff_t *tvb, int offset,
                    packet_info *pinfo, proto_tree *wccp_tree,
-                   guint32 message_type)
+                   uint32_t message_type)
 {
-  int length_remaining;
-  guint16 type;
-  guint16 item_length;
+  uint16_t type;
+  uint16_t item_length;
   proto_item *tf;
   proto_tree *info_tree;
-  gint ett;
-  gint (*dissector)(tvbuff_t *, int, int, packet_info *, proto_tree *, wccp_address_table*);
+  int ett;
+  int (*dissector)(tvbuff_t *, int, int, packet_info *, proto_tree *, wccp_address_table*);
 
   /* check if all required fields are there */
-  gboolean wccp2_security_info;
-  gboolean wccp2_service_info;
-  gboolean wccp2_router_id_info;
-  gboolean wccp2_wc_id_info;
-  gboolean wccp2_rtr_view_info;
-  gboolean wccp2_wc_view_info;
-  gboolean wccp2_redirect_assignment;
-  gboolean wccp2_query_info;
-  gboolean wccp2_capabilities_info;
-  gboolean wccp2_alt_assignment;
-  gboolean wccp2_assign_map;
-  gboolean wccp2_command_extension;
-  gboolean wccp2r1_alt_assignment_map;
-  wccp_address_table wccp_wccp_address_table = {FALSE, -1, -1, 0, NULL, NULL};
+  bool wccp2_security_info;
+  bool wccp2_service_info;
+  bool wccp2_router_id_info;
+  bool wccp2_wc_id_info;
+  bool wccp2_rtr_view_info;
+  bool wccp2_wc_view_info;
+  bool wccp2_redirect_assignment;
+  bool wccp2_query_info;
+  bool wccp2_capabilities_info;
+  bool wccp2_alt_assignment;
+  bool wccp2_assign_map;
+  bool wccp2_command_extension;
+  bool wccp2r1_alt_assignment_map;
+  wccp_address_table wccp_wccp_address_table = {false, -1, -1, 0, NULL, NULL};
 
-  wccp2_security_info=FALSE;
-  wccp2_service_info=FALSE;
-  wccp2_router_id_info=FALSE;
-  wccp2_wc_id_info=FALSE;
-  wccp2_rtr_view_info=FALSE;
-  wccp2_wc_view_info=FALSE;
-  wccp2_redirect_assignment=FALSE;
-  wccp2_query_info=FALSE;
-  wccp2_capabilities_info=FALSE;
-  wccp2_alt_assignment=FALSE;
-  wccp2_assign_map=FALSE;
-  wccp2_command_extension=FALSE;
-  wccp2r1_alt_assignment_map=FALSE;
+  wccp2_security_info=false;
+  wccp2_service_info=false;
+  wccp2_router_id_info=false;
+  wccp2_wc_id_info=false;
+  wccp2_rtr_view_info=false;
+  wccp2_wc_view_info=false;
+  wccp2_redirect_assignment=false;
+  wccp2_query_info=false;
+  wccp2_capabilities_info=false;
+  wccp2_alt_assignment=false;
+  wccp2_assign_map=false;
+  wccp2_command_extension=false;
+  wccp2r1_alt_assignment_map=false;
 
   /* ugly hack: we first need to check for the address table
      component, otherwise we cannot print the IP's.
   */
   find_wccp_address_table(tvb,offset,pinfo,wccp_tree, &wccp_wccp_address_table);
 
-  while ((length_remaining = tvb_reported_length_remaining(tvb, offset)) > 0) {
+  while (tvb_reported_length_remaining(tvb, offset) > 0) {
     type = tvb_get_ntohs(tvb, offset);
     switch (type) {
 
     case WCCP2_SECURITY_INFO:
-      wccp2_security_info=TRUE;
+      wccp2_security_info=true;
       ett = ett_security_info;
       dissector = dissect_wccp2_security_info;
       break;
 
     case WCCP2_SERVICE_INFO:
-      wccp2_service_info=TRUE;
+      wccp2_service_info=true;
       ett = ett_service_info;
       dissector = dissect_wccp2_service_info;
       break;
 
     case WCCP2_ROUTER_ID_INFO:
-      wccp2_router_id_info=TRUE;
+      wccp2_router_id_info=true;
       ett = ett_router_identity_info;
       dissector = dissect_wccp2_router_identity_info;
       break;
 
     case WCCP2_WC_ID_INFO:
-      wccp2_wc_id_info=TRUE;
+      wccp2_wc_id_info=true;
       ett = ett_wc_identity_info;
       dissector = dissect_wccp2_wc_identity_info;
       break;
 
     case WCCP2_RTR_VIEW_INFO:
-      wccp2_rtr_view_info=TRUE;
+      wccp2_rtr_view_info=true;
       ett = ett_router_view_info;
       dissector = dissect_wccp2_router_view_info;
       break;
 
     case WCCP2_WC_VIEW_INFO:
-      wccp2_wc_view_info=TRUE;
+      wccp2_wc_view_info=true;
       ett = ett_wc_view_info;
       dissector = dissect_wccp2_web_cache_view_info;
       break;
 
     case WCCP2_REDIRECT_ASSIGNMENT:
-      wccp2_redirect_assignment=TRUE;
+      wccp2_redirect_assignment=true;
       ett = ett_router_assignment_info;
       dissector = dissect_wccp2_assignment_info;
       break;
 
     case WCCP2_QUERY_INFO:
-      wccp2_query_info=TRUE;
+      wccp2_query_info=true;
       ett = ett_query_info;
       dissector = dissect_wccp2_router_query_info;
       break;
 
     case WCCP2_CAPABILITIES_INFO:
-      wccp2_capabilities_info=TRUE;
+      wccp2_capabilities_info=true;
       ett = ett_capabilities_info;
       dissector = dissect_wccp2_capability_info;
       break;
 
     case WCCP2_ALT_ASSIGNMENT:
-      wccp2_alt_assignment=TRUE;
+      wccp2_alt_assignment=true;
       ett = ett_alt_assignment_info;
       dissector = dissect_wccp2_alternate_assignment_info;
       break;
 
     case WCCP2r1_ALT_ASSIGNMENT_MAP:
-      wccp2r1_alt_assignment_map=TRUE;
+      wccp2r1_alt_assignment_map=true;
       ett = ett_alt_assignment_map;
       dissector = dissect_wccp2r1_alt_assignment_map_info;
       break;
@@ -2504,12 +2501,12 @@ dissect_wccp2_info(tvbuff_t *tvb, int offset,
       break;
 
     case WCCP2_ASSIGN_MAP:
-      wccp2_assign_map=TRUE;
+      wccp2_assign_map=true;
       ett = ett_assignment_map;
       dissector = dissect_wccp2_assignment_map;
       break;
     case WCCP2_COMMAND_EXTENSION:
-      wccp2_command_extension=TRUE;
+      wccp2_command_extension=true;
       ett = ett_command_extension;
       dissector = dissect_wccp2_command_extension;
       break;
@@ -2521,7 +2518,7 @@ dissect_wccp2_info(tvbuff_t *tvb, int offset,
     }
 
     info_tree = proto_tree_add_subtree(wccp_tree, tvb, offset, -1, ett, &tf,
-                             val_to_str(type, info_type_vals, "Unknown info type (%u)"));
+                             val_to_str(pinfo->pool, type, info_type_vals, "Unknown info type (%u)"));
 
     proto_tree_add_item(info_tree, hf_item_type, tvb, offset, 2, ENC_BIG_ENDIAN);
 
@@ -2531,7 +2528,7 @@ dissect_wccp2_info(tvbuff_t *tvb, int offset,
     offset += 4;
 
     if (dissector != NULL) {
-      gint remaining_item_length = (*dissector)(tvb, offset, item_length, pinfo, info_tree, &wccp_wccp_address_table);
+      int remaining_item_length = (*dissector)(tvb, offset, item_length, pinfo, info_tree, &wccp_wccp_address_table);
 
       /* warn if we left bytes */
       if (remaining_item_length > 0)
@@ -2663,14 +2660,14 @@ dissect_wccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
   int offset = 0;
   proto_tree *wccp_tree = NULL;
   proto_item *wccp_tree_item;
-  guint32 wccp_message_type;
-  guint16 length;
-  gint wccp2_length;
+  uint32_t wccp_message_type;
+  uint16_t length;
+  int wccp2_length;
   proto_item *length_item;
-  guint32 cache_count;
-  guint32 ipaddr;
-  guint i;
-  guint8 bucket;
+  uint32_t cache_count;
+  uint32_t ipaddr;
+  unsigned i;
+  uint8_t bucket;
 
   wccp_message_type = tvb_get_ntohl(tvb, offset);
 
@@ -2680,7 +2677,7 @@ dissect_wccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "WCCP");
 
-  col_add_str(pinfo->cinfo, COL_INFO, val_to_str(wccp_message_type,
+  col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, wccp_message_type,
                                                    wccp_type_vals, "Unknown WCCP message (%u)"));
 
   wccp_tree_item = proto_tree_add_item(tree, proto_wccp, tvb, offset, -1, ENC_NA);
@@ -2741,12 +2738,12 @@ dissect_wccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                                    hf_cache_ip, tvb, offset, 4,
                                    ipaddr,
                                    "Web Cache %d IP Address: %s", i,
-                                   tvb_ip_to_str(tvb, offset));
+                                   tvb_ip_to_str(pinfo->pool, tvb, offset));
         offset += 4;
       }
 
       for (i = 0; i < 256; i++) {
-          bucket = tvb_get_guint8(tvb, offset);
+          bucket = tvb_get_uint8(tvb, offset);
           if (bucket == 0xff) {
               proto_tree_add_uint_format(wccp_tree, hf_bucket, tvb, offset, 1,
                   bucket, "Bucket %d: Unassigned", i);
@@ -2776,7 +2773,7 @@ dissect_wccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
       /* Is the length plus the length of the data preceding it longer than
          the length of our packet? */
       wccp2_length = tvb_reported_length_remaining(tvb, offset);
-      if (length > (guint)wccp2_length) {
+      if (length > (unsigned)wccp2_length) {
         expert_add_info_format(pinfo, length_item, &ei_wccp_length_bad,
                                "The length as specified by the length field is bigger than the length of the packet");
         length = wccp2_length - offset;
@@ -2833,7 +2830,7 @@ proto_register_wccp(void)
         NULL, HFILL }
     },
     { &hf_hash_flag_u,
-      { "Hash information", "wccp.hash_flag.u", FT_BOOLEAN, 32, TFS(&tfs_historical_current), 0x10000,
+      { "Hash information", "wccp.hash_flag.u", FT_BOOLEAN, 32, TFS(&tfs_historical_current), 0x00010000,
         NULL, HFILL }
     },
     { &hf_recvd_id,
@@ -2865,7 +2862,7 @@ proto_register_wccp(void)
         "The data for an unknown item type", HFILL }
     },
     { &hf_security_info_option,
-      { "Security Option", "wccp.security_info_option", FT_UINT16, BASE_DEC, VALS(security_option_vals), 0x0,
+      { "Security Option", "wccp.security_info_option", FT_UINT32, BASE_DEC, VALS(security_option_vals), 0x0,
         NULL, HFILL }
     },
     { &hf_security_info_md5_checksum,
@@ -2885,15 +2882,15 @@ proto_register_wccp(void)
        NULL, HFILL }
     },
     { &hf_command_element_shutdown_ip_index,
-      {"Command Element Shutdown IP", "wccp.command_element_shudown_ip_Address.index", FT_UINT32, BASE_HEX, NULL, 0x0,
+      {"Command Element Shutdown IP", "wccp.command_element_shutdown_ip_Address.index", FT_UINT32, BASE_HEX, NULL, 0x0,
        NULL, HFILL }
     },
     { &hf_command_element_shutdown_ipv4,
-      {"Command Element Shutdown IP", "wccp.command_element_shudown_ip_address.ipv4", FT_IPv4, BASE_NONE, NULL, 0x0,
+      {"Command Element Shutdown IP", "wccp.command_element_shutdown_ip_address.ipv4", FT_IPv4, BASE_NONE, NULL, 0x0,
        NULL, HFILL }
     },
     { &hf_command_element_shutdown_ipv6,
-      {"Command Element Shutdown IP", "wccp.command_element_shudown_ip_address.ipv6", FT_IPv6, BASE_NONE, NULL, 0x0,
+      {"Command Element Shutdown IP", "wccp.command_element_shutdown_ip_address.ipv6", FT_IPv6, BASE_NONE, NULL, 0x0,
        NULL, HFILL }
     },
     { &hf_command_unknown,
@@ -2981,7 +2978,7 @@ proto_register_wccp(void)
         NULL, HFILL }
     },
     { &hf_router_identity_ip_index,
-      { "IP Address", "wccp.router_identity.ip_address.index", FT_UINT32, BASE_HEX, NULL, 0x0,
+      { "IP Address", "wccp.router_identity.ip_address.index", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }
     },
     { &hf_router_identity_ipv4,
@@ -3053,7 +3050,7 @@ proto_register_wccp(void)
         NULL, HFILL }
     },
     { &hf_mask_value_set_element_value_element_num,
-      { "Number of Value Elements", "wccp.mask_value_set_selement.value_element_num", FT_UINT32, BASE_DEC, 0x0, 0x0,
+      { "Number of Value Elements", "wccp.mask_value_set_element.value_element_num", FT_UINT32, BASE_DEC, 0x0, 0x0,
         NULL, HFILL }
     },
     { &hf_assignment_weight,
@@ -3065,7 +3062,7 @@ proto_register_wccp(void)
         NULL, HFILL }
     },
     { &hf_assignment_key_ip_index,
-      { "Assignment Key IP Address", "wccp.assignment_key.ip_index", FT_UINT32, BASE_HEX, NULL, 0x0,
+      { "Assignment Key IP Address", "wccp.assignment_key.ip_index", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }
     },
     { &hf_assignment_key_ipv4,
@@ -3153,7 +3150,7 @@ proto_register_wccp(void)
         NULL, HFILL }
     },
     { &hf_wc_identity_ip_address_index,
-      { "Web Cache Identity", "wccp.wc_identity_ip_address.index", FT_UINT32, BASE_HEX, NULL, 0x0,
+      { "Web Cache Identity", "wccp.wc_identity_ip_address.index", FT_UINT32, BASE_DEC, NULL, 0x0,
         "The IP identifying the Web Cache", HFILL }
     },
     { &hf_wc_identity_ip_address_ipv4,
@@ -3293,7 +3290,7 @@ proto_register_wccp(void)
         NULL, HFILL }
     },
     { &hf_capability_transmit_t_lower_limit,
-      { "Message interval lower limit in milliseconds", "wccp.capability.transmit_t.upper_limit", FT_UINT16, BASE_DEC, NULL, 0x0,
+      { "Message interval lower limit in milliseconds", "wccp.capability.transmit_t.lower_limit", FT_UINT16, BASE_DEC, NULL, 0x0,
         NULL, HFILL }
     },
     { &hf_capability_timer_scale_timeout_scale,
@@ -3457,7 +3454,7 @@ proto_register_wccp(void)
         "The WCCP Address Table Address Length", HFILL }
     },
     { &hf_address_table_length,
-      { "Length", "wccp.address_table.length", FT_UINT16, BASE_DEC, NULL, 0x0,
+      { "Length", "wccp.address_table.length", FT_UINT32, BASE_DEC, NULL, 0x0,
         "The WCCP Address Table Length", HFILL }
     },
     { &hf_address_table_element,
@@ -3466,7 +3463,7 @@ proto_register_wccp(void)
     },
 
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_wccp,
     &ett_buckets,
     &ett_hash_assignment_buckets,
@@ -3561,19 +3558,17 @@ proto_register_wccp(void)
   proto_register_subtree_array(ett, array_length(ett));
   expert_wccp = expert_register_protocol(proto_wccp);
   expert_register_field_array(expert_wccp, ei, array_length(ei));
+  wccp_handle = register_dissector("wccp", dissect_wccp, proto_wccp);
 }
 
 void
 proto_reg_handoff_wccp(void)
 {
-  dissector_handle_t wccp_handle;
-
-  wccp_handle = create_dissector_handle(dissect_wccp, proto_wccp);
-  dissector_add_uint("udp.port", UDP_PORT_WCCP, wccp_handle);
+  dissector_add_uint_with_preference("udp.port", UDP_PORT_WCCP, wccp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

@@ -1,0 +1,8 @@
+This example contains a simple "hello world" program.
+
+A more elaborate program that demonstrates advanced Gtk 3 features is
+not available here, because
+  - derived GObject classes have a number of pain points with gtkmm
+    (see <https://thinkingeek.com/2023/02/04/writing-gobjects-in-cpp/>),
+  - widget templates are not supported in gtkmm (see
+    <https://github.com/rofirrim/libadwaitamm/blob/main/demo/templatewidget.h>).

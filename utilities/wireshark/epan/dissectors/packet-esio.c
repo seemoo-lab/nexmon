@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,35 +21,39 @@
 void proto_register_esio(void);
 void proto_reg_handoff_esio(void);
 
+static dissector_handle_t esio_handle;
+
+#define ESIO_UDP_PORT       6060 /* Not IANA registered */
+
 /* Initialize the protocol and registered fields */
-static int proto_esio = -1;
-static int hf_esio_type = -1;
-static int hf_esio_version = -1;
-static int hf_esio_length = -1;
-static int hf_esio_transaction_id = -1;
-static int hf_esio_tlg_id = -1;
-static int hf_esio_src_stn_id = -1;
-static int hf_esio_data_nbr = -1;
-static int hf_esio_data_flags = -1;
-static int hf_esio_data_transfer_id = -1;
-static int hf_esio_data_dest_id = -1;
-static int hf_esio_data_length = -1;
-static int hf_esio_data = -1;
-static int hf_esio_sts_type = -1;
-static int hf_esio_sts_size = -1;
-static int hf_esio_rio_sts = -1;
-static int hf_esio_rio_tlgs_lost = -1;
-static int hf_esio_rio_diag = -1;
-static int hf_esio_rio_flags = -1;
+static int proto_esio;
+static int hf_esio_type;
+static int hf_esio_version;
+static int hf_esio_length;
+static int hf_esio_transaction_id;
+static int hf_esio_tlg_id;
+static int hf_esio_src_stn_id;
+static int hf_esio_data_nbr;
+static int hf_esio_data_flags;
+static int hf_esio_data_transfer_id;
+static int hf_esio_data_dest_id;
+static int hf_esio_data_length;
+static int hf_esio_data;
+static int hf_esio_sts_type;
+static int hf_esio_sts_size;
+static int hf_esio_rio_sts;
+static int hf_esio_rio_tlgs_lost;
+static int hf_esio_rio_diag;
+static int hf_esio_rio_flags;
 
 /* Initialize the subtree pointers */
-static gint ett_esio = -1;
-static gint ett_esio_header = -1;
-static gint ett_esio_transfer_header = -1;
-static gint ett_esio_transfer_data = -1;
-static gint ett_esio_data = -1;
+static int ett_esio;
+static int ett_esio_header;
+static int ett_esio_transfer_header;
+static int ett_esio_transfer_data;
+static int ett_esio_data;
 
-static expert_field ei_esio_telegram_lost = EI_INIT;
+static expert_field ei_esio_telegram_lost;
 
 /* value to string definitions*/
 /* Ether-S-I/O telegram types*/
@@ -80,37 +72,37 @@ static const value_string esio_sts_types[] = {
 };
 
 /* check whether the packet looks like SBUS or not */
-static gboolean
+static bool
 is_esio_pdu(tvbuff_t *tvb)
 {
        /* we need at least 8 bytes to determine whether this is
           Ether-S-I/O or not*/
        /* minimal length is 20 bytes*/
        if (tvb_captured_length(tvb) < 20) {
-              return FALSE;
+              return false;
        }
        /* First four bytes must be "ESIO"*/
        if (tvb_strneql(tvb, 0, "ESIO", 4) != 0) {
-              return FALSE;
+              return false;
        }
        /* fifth byte must be 0*/
-       if (tvb_get_guint8(tvb, 4) > 0x00) {
-              return FALSE;
+       if (tvb_get_uint8(tvb, 4) > 0x00) {
+              return false;
        }
        /* sixth byte indicates telegram type and must be 0, 1 or 2*/
-       if (tvb_get_guint8(tvb, 5) > 0x02) {
-              return FALSE;
+       if (tvb_get_uint8(tvb, 5) > 0x02) {
+              return false;
        }
        /* seventh byte must be 0*/
-       if (tvb_get_guint8(tvb, 6) > 0x00) {
-              return FALSE;
+       if (tvb_get_uint8(tvb, 6) > 0x00) {
+              return false;
        }
        /* eight byte indicates telegram version and must be 0 (up to now)*/
-       if (tvb_get_guint8(tvb, 7) > 0x00) {
-              return FALSE;
+       if (tvb_get_uint8(tvb, 7) > 0x00) {
+              return false;
        }
        /*header seems to be Ether-S-I/O*/
-       return TRUE;
+       return true;
 }
 
 /*Dissect the telegram*/
@@ -123,15 +115,15 @@ dissect_esio(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
        proto_tree *esio_tree, *esio_header_tree, *esio_transfer_header_tree,
                   *esio_data_tansfer_tree, *esio_data_tree;
 
-       gint        i;
-       gint        offset;
-       guint8      esio_nbr_data_transfers;
-       guint16     esio_telegram_type;
-       guint16     esio_tlg_type;
-       guint16     esio_transfer_length;
-       guint32     esio_transfer_dest_id;
-       guint32     esio_src_id;
-       guint32     esio_dst_id;
+       int         i;
+       int         offset;
+       uint8_t     esio_nbr_data_transfers;
+       uint16_t    esio_telegram_type;
+       uint16_t    esio_tlg_type;
+       uint16_t    esio_transfer_length;
+       uint32_t    esio_transfer_dest_id;
+       uint32_t    esio_src_id;
+       uint32_t    esio_dst_id;
 
 /* does this look like an sbus pdu? */
        if (!is_esio_pdu(tvb)) {
@@ -141,12 +133,12 @@ dissect_esio(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 /* Make entries in Protocol column and Info column on summary display */
        col_set_str(pinfo->cinfo, COL_PROTOCOL, "ESIO");
        col_clear(pinfo->cinfo, COL_INFO);
-       esio_telegram_type = tvb_get_guint8(tvb,5);
+       esio_telegram_type = tvb_get_uint8(tvb,5);
 
        switch (esio_telegram_type) {
        case ESIO_TRANSFER:
                 esio_src_id = tvb_get_ntohl(tvb,16);
-                esio_nbr_data_transfers = tvb_get_guint8(tvb, 20);
+                esio_nbr_data_transfers = tvb_get_uint8(tvb, 20);
                 esio_dst_id = tvb_get_ntohl(tvb,26);
                 col_add_fstr( pinfo->cinfo, COL_INFO,
                             "Data transfer: Src ID: %d, Dst ID(s): %d",
@@ -202,7 +194,7 @@ dissect_esio(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                      proto_tree_add_item(esio_transfer_header_tree,
                                          hf_esio_src_stn_id, tvb, offset, 4, ENC_BIG_ENDIAN);
                      offset += 4;
-                     esio_nbr_data_transfers = tvb_get_guint8(tvb,offset);
+                     esio_nbr_data_transfers = tvb_get_uint8(tvb,offset);
                      proto_tree_add_item(esio_transfer_header_tree,
                                          hf_esio_data_nbr, tvb, offset, 1, ENC_BIG_ENDIAN);
                      offset += 1;
@@ -259,7 +251,7 @@ dissect_esio(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                      proto_tree_add_item(esio_tree,
                                          hf_esio_rio_flags, tvb, offset+11, 1, ENC_BIG_ENDIAN);
               } /* if (tree) */
-              if (tvb_get_guint8(tvb, offset + 9) > 0) {
+              if (tvb_get_uint8(tvb, offset + 9) > 0) {
                      expert_add_info(pinfo, hi, &ei_esio_telegram_lost);
               }
               break;
@@ -389,7 +381,7 @@ proto_register_esio(void)
 
 
 /* Setup protocol subtree array */
-       static gint *ett[] = {
+       static int *ett[] = {
               &ett_esio,
               &ett_esio_header,
               &ett_esio_transfer_header,
@@ -411,15 +403,15 @@ proto_register_esio(void)
        proto_register_subtree_array(ett, array_length(ett));
        expert_esio = expert_register_protocol(proto_esio);
        expert_register_field_array(expert_esio, ei, array_length(ei));
+
+/* Register the dissector by name and save its handle */
+       esio_handle = register_dissector("esio", dissect_esio, proto_esio);
 }
 
 void
 proto_reg_handoff_esio(void)
 {
-       dissector_handle_t esio_handle;
-
-       esio_handle = create_dissector_handle(dissect_esio, proto_esio);
-       dissector_add_uint("udp.port", 6060, esio_handle);
+       dissector_add_uint_with_preference("udp.port", ESIO_UDP_PORT, esio_handle);
 }
 
 /*

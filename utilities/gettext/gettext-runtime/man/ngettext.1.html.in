@@ -36,7 +36,7 @@
 
 
 <p style="margin-left:11%; margin-top: 1em">ngettext
-&minus; translate message and choose plural form</p>
+- translate message and choose plural form</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
@@ -63,12 +63,20 @@ the translation was found.</p>
 
 <p style="margin-left:11%; margin-top: 1em">Display native
 language translation of a textual message whose grammatical
-form depends on a number. <b><br>
-&minus;d</b>,
-<b>&minus;&minus;domain</b>=<i>TEXTDOMAIN</i></p>
+form depends on a number.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Options and
+arguments: <br>
+-d</b>,
+<b>--domain</b>=<i>TEXTDOMAIN</i></p>
 
 <p style="margin-left:22%;">retrieve translated message
 from TEXTDOMAIN</p>
+
+<p style="margin-left:11%;"><b>-c</b>,
+<b>--context</b>=<i>CONTEXT</i></p>
+
+<p style="margin-left:22%;">specify context for MSGID</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -77,7 +85,7 @@ from TEXTDOMAIN</p>
 <td width="3%">
 
 
-<p><b>&minus;e</b></p></td>
+<p><b>-e</b></p></td>
 <td width="8%"></td>
 <td width="63%">
 
@@ -90,7 +98,7 @@ from TEXTDOMAIN</p>
 <td width="3%">
 
 
-<p><b>&minus;E</b></p></td>
+<p><b>-E</b></p></td>
 <td width="8%"></td>
 <td width="63%">
 
@@ -99,17 +107,6 @@ from TEXTDOMAIN</p>
 <td width="15%">
 </td></tr>
 </table>
-
-<p style="margin-left:11%;"><b>&minus;h</b>,
-<b>&minus;&minus;help</b></p>
-
-<p style="margin-left:22%;">display this help and exit</p>
-
-<p style="margin-left:11%;"><b>&minus;V</b>,
-<b>&minus;&minus;version</b></p>
-
-<p style="margin-left:22%;">display version information and
-exit</p>
 
 <p style="margin-left:11%;">[TEXTDOMAIN]</p>
 
@@ -138,6 +135,18 @@ MSGID-PLURAL (plural)</p>
 </td></tr>
 </table>
 
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">display version information and
+exit</p>
+
 <p style="margin-left:11%; margin-top: 1em">If the
 TEXTDOMAIN parameter is not given, the domain is determined
 from the environment variable TEXTDOMAIN. If the message
@@ -151,15 +160,17 @@ TEXTDOMAINDIR. Standard search directory: @localedir@</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Written by
-Ulrich Drepper.</p>
+Ulrich Drepper and Bruno Haible.</p>
 
 <h2>REPORTING BUGS
 <a name="REPORTING BUGS"></a>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Report bugs to
-&lt;bug-gnu-gettext@gnu.org&gt;.</p>
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
 
 <h2>COPYRIGHT
 <a name="COPYRIGHT"></a>
@@ -167,9 +178,9 @@ Ulrich Drepper.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Copyright
-&copy; 1995-1997, 2000-2007 Free Software Foundation, Inc.
+&copy; 1995-2026 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later
-&lt;http://gnu.org/licenses/gpl.html&gt; <br>
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
 This is free software: you are free to change and
 redistribute it. There is NO WARRANTY, to the extent
 permitted by law.</p>

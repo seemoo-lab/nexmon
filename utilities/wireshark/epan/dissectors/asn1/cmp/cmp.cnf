@@ -4,51 +4,17 @@
 #.MODULE_IMPORT
 PKIX1Explicit88	pkix1explicit
 PKIX1Implicit88	pkix1implicit
-PKIXCRMF-2005	crmf
+PKCS-10 pkcs10
 
 #.INCLUDE ../pkix1explicit/pkix1explicit_exp.cnf
 #.INCLUDE ../pkix1implicit/pkix1implicit_exp.cnf
-#.IMPORT ../crmf/crmf-exp.cnf
+#.INCLUDE ../crmf/crmf-exp.cnf
 
 #.EXPORTS
-CAKeyUpdAnnContent
-CMPCertificate
-CRLAnnContent
-CertAnnContent
-CertConfirmContent
-CertOrEncCert
-CertRepMessage
-CertResponse
-CertStatus
-CertifiedKeyPair
-Challenge
-DHBMParameter
-ErrorMsgContent
-GenMsgContent
-InfoTypeAndValue
-KeyRecRepContent
-NestedMessageContent
+PKIMessage
+ProtectedPart
 OOBCert
 OOBCertHash
-PBMParameter
-PKIBody
-PKIConfirmContent
-PKIFailureInfo
-PKIFreeText
-PKIHeader
-PKIMessage
-PKIMessages
-PKIProtection
-PKIStatus
-PKIStatusInfo
-POPODecKeyRespContent
-PollRepContent
-PollReqContent
-ProtectedPart
-RevAnnContent
-RevDetails
-RevRepContent
-RevReqContent
 
 #.REGISTER
 PBMParameter           B "1.2.840.113533.7.66.13" "id-PasswordBasedMac"
@@ -68,7 +34,6 @@ ConfirmWaitTimeValue   B "1.3.6.1.5.5.7.4.14"     "id-it-confirmWaitTime"
 OrigPKIMessageValue    B "1.3.6.1.5.5.7.4.15"     "id-it-origPKIMessage"
 SuppLangTagsValue      B "1.3.6.1.5.5.7.4.16"     "id-it-suppLangTags"
 
-
 #.NO_EMIT
 
 #.TYPE_RENAME
@@ -79,6 +44,9 @@ CertResponse/status     pkistatusinf
 KeyRecRepContent/status pkistatusinf
 PKIStatusInfo/status pkistatus
 RevAnnContent/status pkistatus
+#.FIELD_ATTR
+PKIStatusInfo/status    ABBREV=pkistatus
+RevRepContent/status    ABBREV=rvrpcnt_status
 
 
 #.FN_PARS InfoTypeAndValue/infoType
@@ -91,20 +59,20 @@ RevAnnContent/status pkistatus
   VAL_PTR = &branch_taken
 
 #.FN_BODY PKIBody
-  gint branch_taken;
+  int branch_taken;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " Body=%%s", val_to_str(branch_taken, cmp_PKIBody_vals, "unknown"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " Body=%%s", val_to_str_const(branch_taken, cmp_PKIBody_vals, "unknown"));
 
 #.FN_PARS PKIStatus
   VAL_PTR = &value
 
 #.FN_BODY PKIStatus
-  guint32 value;
+  uint32_t value;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " Status=%%s", val_to_str(value, cmp_PKIStatus_vals, "unknown"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " Status=%%s", val_to_str_const(value, cmp_PKIStatus_vals, "unknown"));
 
 #.END_OF_CNF

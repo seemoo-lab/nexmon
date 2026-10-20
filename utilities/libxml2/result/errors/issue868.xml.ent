@@ -1,0 +1,3 @@
+./test/errors/issue868.xml:3: parser error : Content error in the internal subset
+<!]>
+^

@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="indexpage" kind="page">
+    <compoundname>index</compoundname>
+    <title>API Documentation</title>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para><anchor id="index_1md__2builds_2GNOME_2libxml2_2doc_2mainpage"/></para>
+<para>See <ulink url="files.html">File List</ulink> for API documentation sorted by public header files.</para>
+<sect1 id="index_1autotoc_md1">
+<title>About</title><para>libxml2 is an XML toolkit implemented in C, originally developed for the GNOME Project.</para>
+<para>Official releases can be downloaded from <ulink url="https://download.gnome.org/sources/libxml2/">https://download.gnome.org/sources/libxml2/</ulink></para>
+<para>The git repository is hosted on GNOME&apos;s GitLab server: <ulink url="https://gitlab.gnome.org/GNOME/libxml2">https://gitlab.gnome.org/GNOME/libxml2</ulink></para>
+<para>Bugs should be reported at <ulink url="https://gitlab.gnome.org/GNOME/libxml2/-/issues">https://gitlab.gnome.org/GNOME/libxml2/-/issues</ulink></para>
+<para>Other documentation is available at <ulink url="https://gitlab.gnome.org/GNOME/libxml2/-/wikis">https://gitlab.gnome.org/GNOME/libxml2/-/wikis</ulink></para>
+</sect1>
+<sect1 id="index_1autotoc_md2">
+<title>License</title><para>This code is released under the MIT License, see the Copyright file. </para>
+</sect1>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/doc/mainpage.md"/>
+  </compounddef>
+</doxygen>

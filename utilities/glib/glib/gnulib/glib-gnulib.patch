@@ -1,0 +1,460 @@
+These changes are mostly inherited from previous iterations
+of gnulib-printf-in-glib.
+
+Here are explanations for some of them:
+* g-gnulib.h is a minimal replacement for gnulib config.h
+* gnulib_math.h is a processed copy of gnulib math.in.h
+  We can't keep it named math.h, since we need to include
+  both the system math.h and this header in some places.
+* gnulib_math.h needs _GL_ATTRIBUTE_CONST, put it directly
+  there instead of getting it from config.h
+  Also, instead of copying _GL_FUNCDECL_RPL and _GL_WARN_ON_USE
+  we simply include headers where these macros are defined.
+* isnan source files get extra includes, in gnulib these
+  were probably handled by makefiles and/or configure scripts
+* glib has a test result named HAVE_LONG_LONG instead of HAVE_LONG_LONG_INT,
+  so make the code use that
+* One of the goals of using this gnulib implementation in glib is
+  to have C99-compliant 3-digit exponent, therefore gnulib
+  ifdefs that *disable* that behaviour are altered to keep it enabled.
+  Another possible location for such a change is where %n use is
+  being enabled or disabled. That, however, is not activated anyway,
+  because this code is made not to use snprintf
+* glib has G_MAXSIZE instead of SIZE_MAX, so use that
+* The code is made to use glib alloca header
+--- glib-82c3e92/glib/gnulib/asnprintf.c	2019-02-09 09:44:55.013866300 +0000
++++ glib-82c3e92/glib/gnulib/asnprintf.c	2019-02-09 10:08:46.444859600 +0000
+@@ -16,6 +16,8 @@
+ 
+ #include <config.h>
+ 
++#include "g-gnulib.h"
++
+ /* Specification.  */
+ #include "vasnprintf.h"
+ 
+--- glib-82c3e92/glib/gnulib/isnand.c	2019-02-09 09:44:56.075691800 +0000
++++ glib-82c3e92/glib/gnulib/isnand.c	2019-02-09 10:09:35.443191100 +0000
+@@ -16,4 +16,7 @@
+ 
+ /* Written by Bruno Haible <bruno@clisp.org>, 2008.  */
+ 
++#include <config.h>
++#include "gnulib_math.h"
++#include "isnand-nolibm.h"
+ #include "isnan.c"
+--- glib-82c3e92/glib/gnulib/isnand-nolibm.h	2019-02-09 09:44:55.973651800 +0000
++++ glib-82c3e92/glib/gnulib/isnand-nolibm.h	2019-02-09 10:09:17.089604000 +0000
+@@ -16,7 +16,7 @@
+ 
+ #if HAVE_ISNAND_IN_LIBC
+ /* Get declaration of isnan macro.  */
+-# include <math.h>
++# include <gnulib_math.h>
+ # if __GNUC__ >= 4
+    /* GCC 4.0 and newer provides three built-ins for isnan.  */
+ #  undef isnand
+--- glib-82c3e92/glib/gnulib/isnanl.c	2019-02-09 09:44:56.285650400 +0000
++++ glib-82c3e92/glib/gnulib/isnanl.c	2019-02-09 10:10:00.060305200 +0000
+@@ -17,4 +17,7 @@
+ /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
+ 
+ #define USE_LONG_DOUBLE
++#include <config.h>
++#include "gnulib_math.h"
++#include "isnanl-nolibm.h"
+ #include "isnan.c"
+--- glib-82c3e92/glib/gnulib/isnanl-nolibm.h	2019-02-09 09:44:56.181628200 +0000
++++ glib-82c3e92/glib/gnulib/isnanl-nolibm.h	2019-02-09 10:09:45.731187400 +0000
+@@ -16,7 +16,7 @@
+ 
+ #if HAVE_ISNANL_IN_LIBC
+ /* Get declaration of isnan macro or (older) isnanl function.  */
+-# include <math.h>
++# include <gnulib_math.h>
+ # if __GNUC__ >= 4
+    /* GCC 4.0 and newer provides three built-ins for isnan.  */
+ #  undef isnanl
+--- glib-82c3e92/glib/gnulib/printf-args.c	2019-02-09 09:44:57.147081400 +0000
++++ glib-82c3e92/glib/gnulib/printf-args.c	2019-02-09 10:10:45.869597700 +0000
+@@ -24,6 +24,8 @@
+ # include <config.h>
+ #endif
+ 
++#include "g-gnulib.h"
++
+ /* Specification.  */
+ #ifndef PRINTF_FETCHARGS
+ # include "printf-args.h"
+@@ -65,7 +67,7 @@
+       case TYPE_ULONGINT:
+         ap->a.a_ulongint = va_arg (args, unsigned long int);
+         break;
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+       case TYPE_LONGLONGINT:
+         ap->a.a_longlongint = va_arg (args, long long int);
+         break;
+@@ -135,7 +137,7 @@
+       case TYPE_COUNT_LONGINT_POINTER:
+         ap->a.a_count_longint_pointer = va_arg (args, long int *);
+         break;
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+       case TYPE_COUNT_LONGLONGINT_POINTER:
+         ap->a.a_count_longlongint_pointer = va_arg (args, long long int *);
+         break;
+--- glib-82c3e92/glib/gnulib/printf-args.h	2019-02-09 09:44:57.245167700 +0000
++++ glib-82c3e92/glib/gnulib/printf-args.h	2019-02-09 10:10:55.543592500 +0000
+@@ -57,7 +57,7 @@
+   TYPE_UINT,
+   TYPE_LONGINT,
+   TYPE_ULONGINT,
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+   TYPE_LONGLONGINT,
+   TYPE_ULONGLONGINT,
+ #endif
+@@ -76,7 +76,7 @@
+   TYPE_COUNT_SHORT_POINTER,
+   TYPE_COUNT_INT_POINTER,
+   TYPE_COUNT_LONGINT_POINTER
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+ , TYPE_COUNT_LONGLONGINT_POINTER
+ #endif
+ #if ENABLE_UNISTDIO
+@@ -101,7 +101,7 @@
+     unsigned int                a_uint;
+     long int                    a_longint;
+     unsigned long int           a_ulongint;
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+     long long int               a_longlongint;
+     unsigned long long int      a_ulonglongint;
+ #endif
+@@ -121,7 +121,7 @@
+     short *                     a_count_short_pointer;
+     int *                       a_count_int_pointer;
+     long int *                  a_count_longint_pointer;
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+     long long int *             a_count_longlongint_pointer;
+ #endif
+ #if ENABLE_UNISTDIO
+--- glib-82c3e92/glib/gnulib/printf-frexp.c	2019-02-09 09:44:57.355099800 +0000
++++ glib-82c3e92/glib/gnulib/printf-frexp.c	2019-02-09 10:11:15.476905600 +0000
+@@ -26,7 +26,7 @@
+ #endif
+ 
+ #include <float.h>
+-#include <math.h>
++#include <gnulib_math.h>
+ #ifdef USE_LONG_DOUBLE
+ # include "fpucw.h"
+ #endif
+--- glib-82c3e92/glib/gnulib/printf-parse.c	2019-02-09 09:44:57.790835100 +0000
++++ glib-82c3e92/glib/gnulib/printf-parse.c	2019-02-09 10:11:32.783744500 +0000
+@@ -31,6 +31,8 @@
+ # include <config.h>
+ #endif
+ 
++#include "g-gnulib.h"
++
+ /* Specification.  */
+ #ifndef PRINTF_PARSE
+ # include "printf-parse.h"
+@@ -447,7 +449,7 @@
+               switch (c)
+                 {
+                 case 'd': case 'i':
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+                   /* If 'long long' exists and is larger than 'long':  */
+                   if (flags >= 16 || (flags & 4))
+                     type = TYPE_LONGLONGINT;
+@@ -465,7 +467,7 @@
+                     type = TYPE_INT;
+                   break;
+                 case 'o': case 'u': case 'x': case 'X':
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+                   /* If 'long long' exists and is larger than 'long':  */
+                   if (flags >= 16 || (flags & 4))
+                     type = TYPE_ULONGLONGINT;
+@@ -525,7 +527,7 @@
+                   type = TYPE_POINTER;
+                   break;
+                 case 'n':
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+                   /* If 'long long' exists and is larger than 'long':  */
+                   if (flags >= 16 || (flags & 4))
+                     type = TYPE_COUNT_LONGLONGINT_POINTER;
+--- glib-82c3e92/glib/gnulib/vasnprintf.c	2019-02-09 09:44:58.585342000 +0000
++++ glib-82c3e92/glib/gnulib/vasnprintf.c	2019-02-09 10:22:13.196848200 +0000
+@@ -43,19 +43,21 @@
+      DCHAR_IS_UINT16_T  Set to 1 if DCHAR_T is uint16_t.
+      DCHAR_IS_UINT32_T  Set to 1 if DCHAR_T is uint32_t.  */
+ 
++#ifndef _WIN32
+ /* Tell glibc's <stdio.h> to provide a prototype for snprintf().
+    This must come before <config.h> because <config.h> may include
+    <features.h>, and once <features.h> has been included, it's too late.  */
+ #ifndef _GNU_SOURCE
+ # define _GNU_SOURCE    1
+ #endif
++#endif
+ 
+ #ifndef VASNPRINTF
+ # include <config.h>
+ #endif
+-#ifndef IN_LIBINTL
+-# include <alloca.h>
+-#endif
++#include "glib/galloca.h"
++
++#include "g-gnulib.h"
+ 
+ /* Specification.  */
+ #ifndef VASNPRINTF
+@@ -90,29 +92,29 @@
+ #include "verify.h"
+ 
+ #if (NEED_PRINTF_DOUBLE || NEED_PRINTF_LONG_DOUBLE) && !defined IN_LIBINTL
+-# include <math.h>
++# include <gnulib_math.h>
+ # include "float+.h"
+ #endif
+ 
+ #if (NEED_PRINTF_DOUBLE || NEED_PRINTF_INFINITE_DOUBLE) && !defined IN_LIBINTL
+-# include <math.h>
++# include <gnulib_math.h>
+ # include "isnand-nolibm.h"
+ #endif
+ 
+ #if (NEED_PRINTF_LONG_DOUBLE || NEED_PRINTF_INFINITE_LONG_DOUBLE) && !defined IN_LIBINTL
+-# include <math.h>
++# include <gnulib_math.h>
+ # include "isnanl-nolibm.h"
+ # include "fpucw.h"
+ #endif
+ 
+ #if (NEED_PRINTF_DIRECTIVE_A || NEED_PRINTF_DOUBLE) && !defined IN_LIBINTL
+-# include <math.h>
++# include <gnulib_math.h>
+ # include "isnand-nolibm.h"
+ # include "printf-frexp.h"
+ #endif
+ 
+ #if (NEED_PRINTF_DIRECTIVE_A || NEED_PRINTF_LONG_DOUBLE) && !defined IN_LIBINTL
+-# include <math.h>
++# include <gnulib_math.h>
+ # include "isnanl-nolibm.h"
+ # include "printf-frexpl.h"
+ # include "fpucw.h"
+@@ -1553,7 +1555,7 @@
+   switch (conversion)
+     {
+     case 'd': case 'i': case 'u':
+-# if HAVE_LONG_LONG_INT
++# if HAVE_LONG_LONG
+       if (type == TYPE_LONGLONGINT || type == TYPE_ULONGLONGINT)
+         tmp_length =
+           (unsigned int) (sizeof (unsigned long long) * CHAR_BIT
+@@ -1583,7 +1585,7 @@
+       break;
+ 
+     case 'o':
+-# if HAVE_LONG_LONG_INT
++# if HAVE_LONG_LONG
+       if (type == TYPE_LONGLONGINT || type == TYPE_ULONGLONGINT)
+         tmp_length =
+           (unsigned int) (sizeof (unsigned long long) * CHAR_BIT
+@@ -1611,7 +1613,7 @@
+       break;
+ 
+     case 'x': case 'X':
+-# if HAVE_LONG_LONG_INT
++# if HAVE_LONG_LONG
+       if (type == TYPE_LONGLONGINT || type == TYPE_ULONGLONGINT)
+         tmp_length =
+           (unsigned int) (sizeof (unsigned long long) * CHAR_BIT
+@@ -1939,7 +1941,7 @@
+                   case TYPE_COUNT_LONGINT_POINTER:
+                     *a.arg[dp->arg_index].a.a_count_longint_pointer = length;
+                     break;
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+                   case TYPE_COUNT_LONGLONGINT_POINTER:
+                     *a.arg[dp->arg_index].a.a_count_longlongint_pointer = length;
+                     break;
+@@ -4245,7 +4247,7 @@
+                                   static const wchar_t decimal_format[] =
+                                     /* Produce the same number of exponent digits
+                                        as the native printf implementation.  */
+-#    if defined _WIN32 && ! defined __CYGWIN__
++#    if (defined _WIN32 && FALSE) && ! defined __CYGWIN__
+                                     { '%', '+', '.', '3', 'd', '\0' };
+ #    else
+                                     { '%', '+', '.', '2', 'd', '\0' };
+@@ -4259,7 +4261,7 @@
+                                   static const char decimal_format[] =
+                                     /* Produce the same number of exponent digits
+                                        as the native printf implementation.  */
+-#    if defined _WIN32 && ! defined __CYGWIN__
++#    if (defined _WIN32 && FALSE) && ! defined __CYGWIN__
+                                     "%+.3d";
+ #    else
+                                     "%+.2d";
+@@ -4438,7 +4440,7 @@
+                                           static const wchar_t decimal_format[] =
+                                             /* Produce the same number of exponent digits
+                                                as the native printf implementation.  */
+-#    if defined _WIN32 && ! defined __CYGWIN__
++#    if (defined _WIN32 && FALSE) && ! defined __CYGWIN__
+                                             { '%', '+', '.', '3', 'd', '\0' };
+ #    else
+                                             { '%', '+', '.', '2', 'd', '\0' };
+@@ -4452,7 +4454,7 @@
+                                           static const char decimal_format[] =
+                                             /* Produce the same number of exponent digits
+                                                as the native printf implementation.  */
+-#    if defined _WIN32 && ! defined __CYGWIN__
++#    if (defined _WIN32 && FALSE) && ! defined __CYGWIN__
+                                             "%+.3d";
+ #    else
+                                             "%+.2d";
+@@ -4510,7 +4512,7 @@
+                                 *p++ = '+';
+                                 /* Produce the same number of exponent digits as
+                                    the native printf implementation.  */
+-#   if defined _WIN32 && ! defined __CYGWIN__
++#   if (defined _WIN32 && FALSE) && ! defined __CYGWIN__
+                                 *p++ = '0';
+ #   endif
+                                 *p++ = '0';
+@@ -4835,10 +4837,10 @@
+ 
+                 switch (type)
+                   {
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+                   case TYPE_LONGLONGINT:
+                   case TYPE_ULONGLONGINT:
+-# if defined _WIN32 && ! defined __CYGWIN__
++# if (defined _WIN32 && FALSE) && ! defined __CYGWIN__
+                     *fbp++ = 'I';
+                     *fbp++ = '6';
+                     *fbp++ = '4';
+@@ -5063,7 +5065,7 @@
+                           SNPRINTF_BUF (arg);
+                         }
+                         break;
+-#if HAVE_LONG_LONG_INT
++#if HAVE_LONG_LONG
+                       case TYPE_LONGLONGINT:
+                         {
+                           long long int arg = a.arg[dp->arg_index].a.a_longlongint;
+--- glib-82c3e92/glib/gnulib/xsize.h	2019-02-09 09:44:59.231076600 +0000
++++ glib-82c3e92/glib/gnulib/xsize.h	2019-02-09 10:21:28.789553900 +0000
+@@ -18,10 +18,12 @@
+ #ifndef _XSIZE_H
+ #define _XSIZE_H
+ 
++#include <glib.h>
++
+ /* Get size_t.  */
+ #include <stddef.h>
+ 
+-/* Get SIZE_MAX.  */
++/* Get G_MAXSIZE.  */
+ #include <limits.h>
+ #if HAVE_STDINT_H
+ # include <stdint.h>
+@@ -42,8 +44,8 @@
+    returns a piece of memory that is way too small, and the program then
+    crashes while attempting to fill the memory.
+    To avoid this, the functions and macros in this file check for overflow.
+-   The convention is that SIZE_MAX represents overflow.
+-   malloc (SIZE_MAX) is not guaranteed to fail -- think of a malloc
++   The convention is that G_MAXSIZE represents overflow.
++   malloc (G_MAXSIZE) is not guaranteed to fail -- think of a malloc
+    implementation that uses mmap --, it's recommended to use size_overflow_p()
+    or size_in_bounds_p() before invoking malloc().
+    The example thus becomes:
+@@ -53,7 +55,7 @@
+ 
+ /* Convert an arbitrary value >= 0 to type size_t.  */
+ #define xcast_size_t(N) \
+-  ((N) <= SIZE_MAX ? (size_t) (N) : SIZE_MAX)
++  ((N) <= G_MAXSIZE ? (size_t) (N) : G_MAXSIZE)
+ 
+ /* Sum of two sizes, with overflow check.  */
+ XSIZE_INLINE size_t
+@@ -63,7 +65,7 @@
+ xsum (size_t size1, size_t size2)
+ {
+   size_t sum = size1 + size2;
+-  return (sum >= size1 ? sum : SIZE_MAX);
++  return (sum >= size1 ? sum : G_MAXSIZE);
+ }
+ 
+ /* Sum of three sizes, with overflow check.  */
+@@ -94,23 +96,23 @@
+ xmax (size_t size1, size_t size2)
+ {
+   /* No explicit check is needed here, because for any n:
+-     max (SIZE_MAX, n) == SIZE_MAX and max (n, SIZE_MAX) == SIZE_MAX.  */
++     max (G_MAXSIZE, n) == G_MAXSIZE and max (n, G_MAXSIZE) == G_MAXSIZE.  */
+   return (size1 >= size2 ? size1 : size2);
+ }
+ 
+ /* Multiplication of a count with an element size, with overflow check.
+    The count must be >= 0 and the element size must be > 0.
+    This is a macro, not a function, so that it works correctly even
+-   when N is of a wider type and N > SIZE_MAX.  */
++   when N is of a wider type and N > G_MAXSIZE.  */
+ #define xtimes(N, ELSIZE) \
+-  ((N) <= SIZE_MAX / (ELSIZE) ? (size_t) (N) * (ELSIZE) : SIZE_MAX)
++  ((N) <= G_MAXSIZE / (ELSIZE) ? (size_t) (N) * (ELSIZE) : G_MAXSIZE)
+ 
+ /* Check for overflow.  */
+ #define size_overflow_p(SIZE) \
+-  ((SIZE) == SIZE_MAX)
++  ((SIZE) == G_MAXSIZE)
+ /* Check against overflow.  */
+ #define size_in_bounds_p(SIZE) \
+-  ((SIZE) != SIZE_MAX)
++  ((SIZE) != G_MAXSIZE)
+ 
+ _GL_INLINE_HEADER_END
+ 
+--- a/glib/gnulib/gnulib_math.h.in
++++ b/glib/gnulib/gnulib_math.h.in
+@@ -25,6 +25,13 @@
+ /* The include_next requires a split double-inclusion guard.  */
+ #@INCLUDE_NEXT_AS_FIRST_DIRECTIVE@ @NEXT_AS_FIRST_DIRECTIVE_MATH_H@
+ 
++/* The __const__ attribute was added in gcc 2.95.  */
++#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
++# define _GL_ATTRIBUTE_CONST __attribute__ ((__const__))
++#else
++# define _GL_ATTRIBUTE_CONST /* empty */
++#endif
++
+ #ifndef _@GUARD_PREFIX@_MATH_H
+ #define _@GUARD_PREFIX@_MATH_H
+ 
+@@ -41,9 +48,9 @@ _GL_INLINE_HEADER_BEGIN
+ # define _GL_MATH_INLINE _GL_INLINE
+ #endif
+ 
+-/* The definitions of _GL_FUNCDECL_RPL etc. are copied here.  */
++#include "c++defs.h"
+ 
+-/* The definition of _GL_ARG_NONNULL is copied here.  */
++#include "arg-nonnull.h"
+ 
+ /* The definition of _GL_WARN_ON_USE is copied here.  */
+ 

@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Yoyodyne, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the hello-c++-kde package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
+"Project-Id-Version: hello-c++-kde 0\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2025-10-01 13:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,11 +25,11 @@ msgstr ""
 msgid "Hello world example"
 msgstr ""
 
-#: hello-c++-kde/hellowindow.cc:42
+#: hello-c++-kde/hellowindow.cc:47
 msgid "Hello, world!"
 msgstr ""
 
-#: hello-c++-kde/hellowindow.cc:49
+#: hello-c++-kde/hellowindow.cc:54
 #, qt-format
 msgid "This program is running as process number %1."
 msgstr ""

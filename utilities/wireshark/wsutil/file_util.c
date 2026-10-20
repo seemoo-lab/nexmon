@@ -4,20 +4,7 @@
  *  utility library)
  * Copyright (c) 1998 by Gilbert Ramirez <gram@alumni.rice.edu>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -64,16 +51,18 @@
 #include <glib.h>
 
 #include <windows.h>
+#include <winsock2.h>
 #include <errno.h>
 #include <wchar.h>
 #include <tchar.h>
 #include <stdlib.h>
 
 #include "file_util.h"
+#include "ws_attributes.h"
 
-static gchar *program_path = NULL;
-static gchar *system_path = NULL;
-static gchar *npcap_path = NULL;
+static char *program_path;
+static char *system_path;
+static char *npcap_path;
 
 /**
  * g_open:
@@ -96,27 +85,25 @@ static gchar *npcap_path = NULL;
  * Since: 2.6
  */
 int
-ws_stdio_open (const gchar *filename,
-        int          flags,
-        int          mode)
+ws_stdio_open (const char *filename, int flags, int mode)
 {
-      wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
-      int retval;
-      int save_errno;
+    wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+    int retval;
+    int save_errno;
 
-      if (wfilename == NULL)
-        {
-          errno = EINVAL;
-          return -1;
-        }
+    if (wfilename == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
 
-      retval = _wopen (wfilename, flags, mode);
-      save_errno = errno;
+    retval = _wopen (wfilename, flags, mode);
+    save_errno = errno;
 
-      g_free (wfilename);
+    g_free (wfilename);
 
-      errno = save_errno;
-      return retval;
+    errno = save_errno;
+    return retval;
 }
 
 
@@ -138,36 +125,35 @@ ws_stdio_open (const gchar *filename,
  * Since: 2.6
  */
 int
-ws_stdio_rename (const gchar *oldfilename,
-          const gchar *newfilename)
+ws_stdio_rename (const char *oldfilename, const char *newfilename)
 {
-      wchar_t *woldfilename = g_utf8_to_utf16 (oldfilename, -1, NULL, NULL, NULL);
-      wchar_t *wnewfilename;
-      int retval;
-      int save_errno = 0;
+    wchar_t *woldfilename = g_utf8_to_utf16 (oldfilename, -1, NULL, NULL, NULL);
+    wchar_t *wnewfilename;
+    int retval;
+    int save_errno = 0;
 
-      if (woldfilename == NULL)
-        {
-          errno = EINVAL;
-          return -1;
-        }
+    if (woldfilename == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
 
-      wnewfilename = g_utf8_to_utf16 (newfilename, -1, NULL, NULL, NULL);
+    wnewfilename = g_utf8_to_utf16 (newfilename, -1, NULL, NULL, NULL);
 
-      if (wnewfilename == NULL)
-        {
-          g_free (woldfilename);
-          errno = EINVAL;
-          return -1;
-        }
+    if (wnewfilename == NULL)
+    {
+        g_free (woldfilename);
+        errno = EINVAL;
+        return -1;
+    }
 
-      if (MoveFileExW (woldfilename, wnewfilename, MOVEFILE_REPLACE_EXISTING))
+    if (MoveFileExW (woldfilename, wnewfilename, MOVEFILE_REPLACE_EXISTING))
         retval = 0;
-      else
+    else
+    {
+        retval = -1;
+        switch (GetLastError ())
         {
-          retval = -1;
-          switch (GetLastError ())
-            {
 #define CASE(a,b) case ERROR_##a: save_errno = b; break
             CASE (FILE_NOT_FOUND, ENOENT);
             CASE (PATH_NOT_FOUND, ENOENT);
@@ -179,14 +165,14 @@ ws_stdio_rename (const gchar *oldfilename,
             CASE (ALREADY_EXISTS, EEXIST);
 #undef CASE
             default: save_errno = EIO;
-            }
         }
+    }
 
-      g_free (woldfilename);
-      g_free (wnewfilename);
+    g_free (woldfilename);
+    g_free (wnewfilename);
 
-      errno = save_errno;
-      return retval;
+    errno = save_errno;
+    return retval;
 }
 
 /**
@@ -205,26 +191,25 @@ ws_stdio_rename (const gchar *oldfilename,
  * Since: 2.6
  */
 int
-ws_stdio_mkdir (const gchar *filename,
-         int          mode)
+ws_stdio_mkdir (const char *filename, int mode _U_)
 {
-      wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
-      int retval;
-      int save_errno;
+    wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+    int retval;
+    int save_errno;
 
-      if (wfilename == NULL)
-        {
-          errno = EINVAL;
-          return -1;
-        }
+    if (wfilename == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
 
-      retval = _wmkdir (wfilename);
-      save_errno = errno;
+    retval = _wmkdir (wfilename);
+    save_errno = errno;
 
-      g_free (wfilename);
+    g_free (wfilename);
 
-      errno = save_errno;
-      return retval;
+    errno = save_errno;
+    return retval;
 }
 
 /**
@@ -244,34 +229,33 @@ ws_stdio_mkdir (const gchar *filename,
  * Since: 2.6
  */
 int
-ws_stdio_stat64 (const gchar *filename,
-        ws_statb64 *buf)
+ws_stdio_stat64 (const char *filename, ws_statb64 *buf)
 {
-      wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
-      int retval;
-      int save_errno;
-      size_t len;
+    wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+    int retval;
+    int save_errno;
+    size_t len;
 
-      if (wfilename == NULL)
-        {
-          errno = EINVAL;
-          return -1;
-        }
+    if (wfilename == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
 
-      len = wcslen (wfilename);
-      while (len > 0 && G_IS_DIR_SEPARATOR (wfilename[len-1]))
+    len = wcslen (wfilename);
+    while (len > 0 && G_IS_DIR_SEPARATOR (wfilename[len-1]))
         len--;
-      if (len > 0 &&
-          (!g_path_is_absolute (filename) || len > (size_t) (g_path_skip_root (filename) - filename)))
+    if (len > 0 &&
+            (!g_path_is_absolute (filename) || len > (size_t) (g_path_skip_root (filename) - filename)))
         wfilename[len] = '\0';
 
-      retval = _wstati64 (wfilename, buf);
-      save_errno = errno;
+    retval = _wstati64 (wfilename, buf);
+    save_errno = errno;
 
-      g_free (wfilename);
+    g_free (wfilename);
 
-      errno = save_errno;
-      return retval;
+    errno = save_errno;
+    return retval;
 }
 /**
  * g_unlink:
@@ -293,25 +277,25 @@ ws_stdio_stat64 (const gchar *filename,
  */
 
 int
-ws_stdio_unlink (const gchar *filename)
+ws_stdio_unlink (const char *filename)
 {
-      wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
-      int retval;
-      int save_errno;
+    wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+    int retval;
+    int save_errno;
 
-      if (wfilename == NULL)
-        {
-          errno = EINVAL;
-          return -1;
-        }
+    if (wfilename == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
 
-      retval = _wunlink (wfilename);
-      save_errno = errno;
+    retval = _wunlink (wfilename);
+    save_errno = errno;
 
-      g_free (wfilename);
+    g_free (wfilename);
 
-      errno = save_errno;
-      return retval;
+    errno = save_errno;
+    return retval;
 }
 
 /**
@@ -341,27 +325,27 @@ ws_stdio_unlink (const gchar *filename)
  * Since: 2.6
  */
 int
-ws_stdio_remove (const gchar *filename)
+ws_stdio_remove (const char *filename)
 {
-      wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
-      int retval;
-      int save_errno;
+    wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+    int retval;
+    int save_errno;
 
-      if (wfilename == NULL)
-        {
-          errno = EINVAL;
-          return -1;
-        }
+    if (wfilename == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
 
-      retval = _wremove (wfilename);
-      if (retval == -1)
+    retval = _wremove (wfilename);
+    if (retval == -1)
         retval = _wrmdir (wfilename);
-      save_errno = errno;
+    save_errno = errno;
 
-      g_free (wfilename);
+    g_free (wfilename);
 
-      errno = save_errno;
-      return retval;
+    errno = save_errno;
+    return retval;
 }
 
 /**
@@ -381,37 +365,36 @@ ws_stdio_remove (const gchar *filename)
  * Since: 2.6
  */
 FILE *
-ws_stdio_fopen (const gchar *filename,
-         const gchar *mode)
+ws_stdio_fopen (const char *filename, const char *mode)
 {
-      wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
-      wchar_t *wmode;
-      FILE *retval;
-      int save_errno;
+    wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+    wchar_t *wmode;
+    FILE *retval;
+    int save_errno;
 
-      if (wfilename == NULL)
-        {
-          errno = EINVAL;
-          return NULL;
-        }
+    if (wfilename == NULL)
+    {
+        errno = EINVAL;
+        return NULL;
+    }
 
-      wmode = g_utf8_to_utf16 (mode, -1, NULL, NULL, NULL);
+    wmode = g_utf8_to_utf16 (mode, -1, NULL, NULL, NULL);
 
-      if (wmode == NULL)
-        {
-          g_free (wfilename);
-          errno = EINVAL;
-          return NULL;
-        }
+    if (wmode == NULL)
+    {
+        g_free (wfilename);
+        errno = EINVAL;
+        return NULL;
+    }
 
-      retval = _wfopen (wfilename, wmode);
-      save_errno = errno;
+    retval = _wfopen (wfilename, wmode);
+    save_errno = errno;
 
-      g_free (wfilename);
-      g_free (wmode);
+    g_free (wfilename);
+    g_free (wmode);
 
-      errno = save_errno;
-      return retval;
+    errno = save_errno;
+    return retval;
 }
 
 /**
@@ -432,113 +415,98 @@ ws_stdio_fopen (const gchar *filename,
  * Since: 2.6
  */
 FILE *
-ws_stdio_freopen (const gchar *filename,
-           const gchar *mode,
-           FILE        *stream)
+ws_stdio_freopen (const char *filename, const char *mode, FILE *stream)
 {
-      wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
-      wchar_t *wmode;
-      FILE *retval;
-      int save_errno;
+    wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+    wchar_t *wmode;
+    FILE *retval;
+    int save_errno;
 
-      if (wfilename == NULL)
-        {
-          errno = EINVAL;
-          return NULL;
-        }
+    if (wfilename == NULL)
+    {
+        errno = EINVAL;
+        return NULL;
+    }
 
-      wmode = g_utf8_to_utf16 (mode, -1, NULL, NULL, NULL);
+    wmode = g_utf8_to_utf16 (mode, -1, NULL, NULL, NULL);
 
-      if (wmode == NULL)
-        {
-          g_free (wfilename);
-          errno = EINVAL;
-          return NULL;
-        }
+    if (wmode == NULL)
+    {
+        g_free (wfilename);
+        errno = EINVAL;
+        return NULL;
+    }
 
-      retval = _wfreopen (wfilename, wmode, stream);
-      save_errno = errno;
+    retval = _wfreopen (wfilename, wmode, stream);
+    save_errno = errno;
 
-      g_free (wfilename);
-      g_free (wmode);
+    g_free (wfilename);
+    g_free (wmode);
 
-      errno = save_errno;
-      return retval;
+    errno = save_errno;
+    return retval;
 }
 
 
 /* DLL loading */
-static gboolean
-init_dll_load_paths()
+static bool
+init_dll_load_paths(void)
 {
-      TCHAR path_w[MAX_PATH];
+    TCHAR path_w[MAX_PATH];
 
-      if (program_path && system_path && npcap_path)
-            return TRUE;
+    if (program_path && system_path && npcap_path)
+        return true;
 
-      /* XXX - Duplicate code in filesystem.c:init_progfile_dir */
-      if (GetModuleFileName(NULL, path_w, MAX_PATH) == 0 || GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            return FALSE;
-      }
+    /* XXX - Duplicate code in filesystem.c:configuration_init */
+    if (GetModuleFileName(NULL, path_w, MAX_PATH) == 0 || GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+        return false;
+    }
 
-      if (!program_path) {
-            gchar *app_path;
-            app_path = g_utf16_to_utf8(path_w, -1, NULL, NULL, NULL);
-            /* We could use PathRemoveFileSpec here but we'd have to link to Shlwapi.dll */
-            program_path = g_path_get_dirname(app_path);
-            g_free(app_path);
-      }
+    if (!program_path) {
+        char *app_path;
+        app_path = g_utf16_to_utf8(path_w, -1, NULL, NULL, NULL);
+        /* We could use PathRemoveFileSpec here but we'd have to link to Shlwapi.dll */
+        program_path = g_path_get_dirname(app_path);
+        g_free(app_path);
+    }
 
-      if (GetSystemDirectory(path_w, MAX_PATH) == 0) {
-            return FALSE;
-      }
+    if (GetSystemDirectory(path_w, MAX_PATH) == 0) {
+        return false;
+    }
 
-      if (!system_path) {
-            system_path = g_utf16_to_utf8(path_w, -1, NULL, NULL, NULL);
-      }
+    if (!system_path) {
+        system_path = g_utf16_to_utf8(path_w, -1, NULL, NULL, NULL);
+    }
 
-      _tcscat_s(path_w, MAX_PATH, _T("\\Npcap"));
+    _tcscat_s(path_w, MAX_PATH, _T("\\Npcap"));
 
-      if (!npcap_path) {
-            npcap_path = g_utf16_to_utf8(path_w, -1, NULL, NULL, NULL);
-      }
+    if (!npcap_path) {
+        npcap_path = g_utf16_to_utf8(path_w, -1, NULL, NULL, NULL);
+    }
 
-      if (program_path && system_path && npcap_path)
-            return TRUE;
+    if (program_path && system_path && npcap_path)
+        return true;
 
-      return FALSE;
+    return false;
 }
 
-gboolean
-ws_init_dll_search_path()
+bool
+ws_init_dll_search_path(void)
 {
-      gboolean dll_dir_set = FALSE;
-      wchar_t *program_path_w;
-      wchar_t npcap_path_w[MAX_PATH];
-      unsigned int retval;
+    bool dll_dir_set = false;
+    wchar_t *program_path_w;
 
-      typedef BOOL (WINAPI *SetDllDirectoryHandler)(LPCTSTR);
-      SetDllDirectoryHandler PSetDllDirectory;
+    /* Remove the current directory from the default DLL search path. */
+    SetDllDirectory(_T(""));
 
-      PSetDllDirectory = (SetDllDirectoryHandler) GetProcAddress(GetModuleHandle(_T("kernel32.dll")), "SetDllDirectoryW");
-      if (PSetDllDirectory) {
-            dll_dir_set = PSetDllDirectory(_T(""));
-            if (dll_dir_set) {
-                  retval = GetSystemDirectoryW(npcap_path_w, MAX_PATH);
-                  if (0 < retval && retval <= MAX_PATH) {
-                        wcscat_s(npcap_path_w, MAX_PATH, L"\\Npcap");
-                        dll_dir_set = PSetDllDirectory(npcap_path_w);
-                  }
-            }
-      }
+    if (init_dll_load_paths()) {
+        /* Ensure that extcap executables can find wsutil, etc. */
+        program_path_w = g_utf8_to_utf16(program_path, -1, NULL, NULL, NULL);
+        dll_dir_set = SetDllDirectory(program_path_w);
+        g_free(program_path_w);
+    }
 
-      if (!dll_dir_set && init_dll_load_paths()) {
-            program_path_w = g_utf8_to_utf16(program_path, -1, NULL, NULL, NULL);
-            SetCurrentDirectory(program_path_w);
-            g_free(program_path_w);
-      }
-
-      return dll_dir_set;
+    return dll_dir_set;
 }
 
 /*
@@ -549,127 +517,184 @@ ws_init_dll_search_path()
  */
 
 void *
-ws_load_library(const gchar *library_name)
+ws_load_library(const char *library_name)
 {
-      gchar   *full_path;
-      wchar_t *full_path_w;
-      HMODULE  dll_h;
+    char    *full_path;
+    wchar_t *full_path_w;
+    HMODULE  dll_h;
 
-      if (!init_dll_load_paths() || !library_name)
-            return NULL;
+    if (!init_dll_load_paths() || !library_name)
+        return NULL;
 
-      /* First try the program directory */
-      full_path = g_module_build_path(program_path, library_name);
-      full_path_w = g_utf8_to_utf16(full_path, -1, NULL, NULL, NULL);
+    /* First try the program directory */
+    full_path = g_strconcat(program_path, G_DIR_SEPARATOR_S, library_name, NULL);
+    full_path_w = g_utf8_to_utf16(full_path, -1, NULL, NULL, NULL);
 
-      if (full_path && full_path_w) {
-            dll_h = LoadLibraryW(full_path_w);
-            if (dll_h) {
-                  g_free(full_path);
-                  g_free(full_path_w);
-                  return dll_h;
-            }
-      }
+    if (full_path && full_path_w) {
+        dll_h = LoadLibraryW(full_path_w);
+        if (dll_h) {
+            g_free(full_path);
+            g_free(full_path_w);
+            return dll_h;
+        }
+    }
 
-      /* Next try the system directory */
-      full_path = g_module_build_path(system_path, library_name);
-      full_path_w = g_utf8_to_utf16(full_path, -1, NULL, NULL, NULL);
+    /* Next try the system directory */
+    full_path = g_strconcat(system_path, G_DIR_SEPARATOR_S, library_name, NULL);
+    full_path_w = g_utf8_to_utf16(full_path, -1, NULL, NULL, NULL);
 
-      if (full_path && full_path_w) {
-            dll_h = LoadLibraryW(full_path_w);
-            if (dll_h) {
-                  g_free(full_path);
-                  g_free(full_path_w);
-                  return dll_h;
-            }
-      }
+    if (full_path && full_path_w) {
+        dll_h = LoadLibraryW(full_path_w);
+        if (dll_h) {
+            g_free(full_path);
+            g_free(full_path_w);
+            return dll_h;
+        }
+    }
 
-      return NULL;
+    return NULL;
+}
+
+static GModule *
+load_npcap_module(const char *full_path, GModuleFlags flags)
+{
+    /*
+     * Npcap's wpcap.dll requires packet.dll from the same directory. Either
+     * SetDllDirectory or SetCurrentDirectory could make this work, but it
+     * interferes with other uses of these settings. LoadLibraryEx is ideal as
+     * it can be configured to put the directory containing the DLL to the
+     * search path. Unfortunately g_module_open uses LoadLibrary internally, so
+     * as a workaround manually load the Npcap libraries first and then use
+     * g_module_open to obtain a GModule for the loaded library.
+     */
+
+    wchar_t *wpath = g_utf8_to_utf16(full_path, -1, NULL, NULL, NULL);
+    HMODULE module = LoadLibraryEx(wpath, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+    g_free(wpath);
+    if (!module) {
+        return NULL;
+    }
+    GModule *mod = g_module_open(full_path, flags);
+    FreeLibrary(module);
+    return mod;
 }
 
 GModule *
-ws_module_open(gchar *module_name, GModuleFlags flags)
+load_wpcap_module(void)
 {
-      gchar   *full_path;
-      GModule *mod;
+    char    *module_name = "wpcap.dll";
+    char    *full_path;
+    GModule *mod;
+    GModuleFlags flags = 0;
 
-      if (!init_dll_load_paths() || !module_name)
-            return NULL;
+    if (!init_dll_load_paths())
+        return NULL;
 
-      /* First try the program directory */
-      full_path = g_module_build_path(program_path, module_name);
+    /* First try the program directory */
+    full_path = g_strconcat(program_path, G_DIR_SEPARATOR_S, module_name, NULL);
 
-      if (full_path) {
-            mod = g_module_open(full_path, flags);
-            if (mod) {
-                  g_free(full_path);
-                  return mod;
-            }
-      }
+    if (full_path) {
+        mod = g_module_open(full_path, flags);
+        g_free(full_path);
+        if (mod) {
+            return mod;
+        }
+    }
 
-      /* Next try the system directory */
-      full_path = g_module_build_path(system_path, module_name);
+    /* Next try the Npcap directory */
+    full_path = g_strconcat(npcap_path, G_DIR_SEPARATOR_S, module_name, NULL);
 
-      if (full_path) {
-            mod = g_module_open(full_path, flags);
-            if (mod) {
-                  g_free(full_path);
-                  return mod;
-            }
-      }
+    if (full_path) {
+        mod = load_npcap_module(full_path, flags);
+        g_free(full_path);
+        if (mod) {
+            return mod;
+        }
+    }
 
-      /* At last try the Npcap directory */
-      full_path = g_module_build_path(npcap_path, module_name);
+    /* At last try the system directory */
+    full_path = g_strconcat(system_path, G_DIR_SEPARATOR_S, module_name, NULL);
 
-      if (full_path) {
-            mod = g_module_open(full_path, flags);
-            if (mod) {
-                  g_free(full_path);
-                  return mod;
-            }
-      }
+    if (full_path) {
+        mod = g_module_open(full_path, flags);
+        g_free(full_path);
+        if (mod) {
+            return mod;
+        }
+    }
 
-      return NULL;
+    return NULL;
 }
 
 /** Create or open a "Wireshark is running" mutex.
  */
 #define WIRESHARK_IS_RUNNING_UUID "9CA78EEA-EA4D-4490-9240-FC01FCEF464B"
 
-static SECURITY_ATTRIBUTES *sec_attributes_;
+static HANDLE local_running_mutex;
+static HANDLE global_running_mutex;
 
-void create_app_running_mutex() {
-      SECURITY_ATTRIBUTES *sa = NULL;
+void create_app_running_mutex(void) {
+    SECURITY_DESCRIPTOR sec_descriptor;
+    SECURITY_ATTRIBUTES sec_attributes;
+    SECURITY_ATTRIBUTES *sa;
+    memset(&sec_descriptor, 0, sizeof(SECURITY_DESCRIPTOR));
+    if (!InitializeSecurityDescriptor(&sec_descriptor, SECURITY_DESCRIPTOR_REVISION) ||
+        !SetSecurityDescriptorDacl(&sec_descriptor, true, NULL, false)) {
+        /*
+         * We couldn't set up the security descriptor, so use the default
+         * security attributes when creating the mutexes.
+         */
+        sa = NULL;
+    } else {
+        /*
+         * We could set it up, so set up some attributes that refer
+         * to it.
+         */
+        memset(&sec_attributes, 0, sizeof(SECURITY_ATTRIBUTES));
+        sec_attributes.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sec_attributes.lpSecurityDescriptor = &sec_descriptor;
+        sec_attributes.bInheritHandle = true;
+        sa = &sec_attributes;
+    }
+    local_running_mutex = CreateMutex(sa, false, _T("Wireshark-is-running-{") _T(WIRESHARK_IS_RUNNING_UUID) _T("}"));
+    global_running_mutex = CreateMutex(sa, false, _T("Global\\Wireshark-is-running-{") _T(WIRESHARK_IS_RUNNING_UUID) _T("}"));
+}
 
-      if (!sec_attributes_) sec_attributes_ = g_new0(SECURITY_ATTRIBUTES, 1);
+void close_app_running_mutex(void) {
+    if (local_running_mutex) {
+        CloseHandle(local_running_mutex);
+        local_running_mutex = NULL;
+    }
+    if (global_running_mutex) {
+        CloseHandle(global_running_mutex);
+        global_running_mutex = NULL;
+    }
+}
 
-      sec_attributes_->nLength = sizeof(SECURITY_ATTRIBUTES);
-      sec_attributes_->lpSecurityDescriptor = g_new0(SECURITY_DESCRIPTOR, 1);
-      sec_attributes_->bInheritHandle = TRUE;
-      if (InitializeSecurityDescriptor(sec_attributes_->lpSecurityDescriptor, SECURITY_DESCRIPTOR_REVISION)) {
-            if (SetSecurityDescriptorDacl(sec_attributes_->lpSecurityDescriptor, TRUE, NULL, FALSE)) {
-                  sa = sec_attributes_;
-            }
-      }
+int ws_close_if_possible(int fd) {
+    fd_set rfds;
+    struct timeval tv = { 0, 1 };
+    int retval;
 
-      if (!sa) {
-            g_free(sec_attributes_->lpSecurityDescriptor);
-            g_free(sec_attributes_);
-            sec_attributes_ = NULL;
-      }
-      CreateMutex(sa, FALSE, _T("Wireshark-is-running-{") _T(WIRESHARK_IS_RUNNING_UUID) _T("}"));
-      CreateMutex(sa, FALSE, _T("Global\\Wireshark-is-running-{") _T(WIRESHARK_IS_RUNNING_UUID) _T("}"));
+    FD_ZERO(&rfds);
+    FD_SET(fd, &rfds);
+
+    retval = select(1, &rfds, NULL, NULL, &tv);
+    if (retval > -1)
+        return _close(fd);
+
+    return -1;
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
- * Local variables:
- * c-basic-offset: 6
+ * Local Variables:
+ * c-basic-offset: 4
  * tab-width: 8
  * indent-tabs-mode: nil
  * End:
  *
- * vi: set shiftwidth=6 tabstop=8 expandtab:
- * :indentSize=6:tabSize=8:noTabs=true:
+ * ex: set shiftwidth=4 tabstop=8 expandtab:
+ * :indentSize=4:tabSize=8:noTabs=true:
  */

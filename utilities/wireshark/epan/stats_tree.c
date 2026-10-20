@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
  /* stats_tree modifications by Deon van der Westhuysen, November 2013
@@ -42,6 +30,7 @@
 
 #include "strutil.h"
 #include "stats_tree.h"
+#include <wsutil/ws_assert.h>
 
 enum _stat_tree_columns {
     COL_NAME,
@@ -57,44 +46,46 @@ enum _stat_tree_columns {
 };
 
 /* used to contain the registered stat trees */
-static GHashTable *registry = NULL;
+static GHashTable *registry;
 
 /* a text representation of a node
 if buffer is NULL returns a newly allocated string */
-extern gchar*
-stats_tree_node_to_str(const stat_node *node, gchar *buffer, guint len)
+extern char*
+stats_tree_node_to_str(const stat_node *node, char *buffer, unsigned len)
 {
     if (buffer) {
-        g_snprintf(buffer,len,"%s: %i",node->name, node->counter);
+        snprintf(buffer,len,"%s: %i",node->name, node->counter);
         return buffer;
     } else {
-        return g_strdup_printf("%s: %i",node->name, node->counter);
+        return ws_strdup_printf("%s: %i",node->name, node->counter);
     }
 }
 
-extern guint
-stats_tree_branch_max_namelen(const stat_node *node, guint indent)
+extern unsigned
+// NOLINTNEXTLINE(misc-no-recursion)
+stats_tree_branch_max_namelen(const stat_node *node, unsigned indent)
 {
     stat_node *child;
-    guint maxlen = 0;
-    guint len;
+    unsigned maxlen = 0;
+    unsigned len;
 
     indent = indent > INDENT_MAX ? INDENT_MAX : indent;
 
     if (node->children) {
         for (child = node->children; child; child = child->next ) {
+            // Recursion is limited by proto.c checks
             len = stats_tree_branch_max_namelen(child,indent+1);
             maxlen = len > maxlen ? len : maxlen;
         }
     }
 
     if (node->st_flags&ST_FLG_ROOTCHILD) {
-        gchar *display_name= stats_tree_get_displayname(node->name);
-        len = (guint) strlen(display_name) + indent;
+        char *display_name = stats_tree_get_displayname(node->name);
+        len = (unsigned) strlen(display_name) + indent;
         g_free(display_name);
     }
     else {
-    len = (guint) strlen(node->name) + indent;
+    len = (unsigned) strlen(node->name) + indent;
     }
     maxlen = len > maxlen ? len : maxlen;
 
@@ -103,6 +94,7 @@ stats_tree_branch_max_namelen(const stat_node *node, guint indent)
 
 /* frees the resources allocated by a stat_tree node */
 static void
+// NOLINTNEXTLINE(misc-no-recursion)
 free_stat_node(stat_node *node)
 {
     stat_node *child;
@@ -113,6 +105,7 @@ free_stat_node(stat_node *node)
     for (child = node->children; child; child = next ) {
         /* child->next will be gone after free_stat_node, so cache it here */
         next = child->next;
+        // Recursion is limited by proto.c checks
         free_stat_node(child);
     }
     }
@@ -141,14 +134,20 @@ stats_tree_free(stats_tree *st)
 
     g_free(st->filter);
     g_hash_table_destroy(st->names);
-    g_ptr_array_free(st->parents,TRUE);
+    g_ptr_array_free(st->parents,true);
     g_free(st->display_name);
 
+    /* st->root is not allocated with malloc, so we have to call
+     * free_stat_node on each child and free the root's dynamically
+     * allocated members instead of calling free_stat_node(&str->root)
+     */
     for (child = st->root.children; child; child = next ) {
         /* child->next will be gone after free_stat_node, so cache it here */
         next = child->next;
         free_stat_node(child);
     }
+    g_free(st->root.name);
+    g_free(st->root.bh);
 
     if (st->cfg->free_tree_pr)
         st->cfg->free_tree_pr(st);
@@ -162,15 +161,26 @@ stats_tree_free(stats_tree *st)
 
 /* reset a node to its original state */
 static void
+// NOLINTNEXTLINE(misc-no-recursion)
 reset_stat_node(stat_node *node)
 {
     stat_node *child;
     burst_bucket *bucket;
 
     node->counter = 0;
-    node->total = 0;
-    node->minvalue = G_MAXINT;
-    node->maxvalue = G_MININT;
+    switch (node->datatype)
+    {
+    case STAT_DT_INT:
+        node->total.int_total = 0;
+        node->minvalue.int_min = INT_MAX;
+        node->maxvalue.int_max = INT_MIN;
+        break;
+    case STAT_DT_FLOAT:
+        node->total.float_total = 0;
+        node->minvalue.float_min = FLT_MAX;
+        node->maxvalue.float_max = FLT_MIN;
+        break;
+    }
     node->st_flags = 0;
 
     while (node->bh) {
@@ -178,7 +188,7 @@ reset_stat_node(stat_node *node)
         node->bh = bucket->next;
         g_free(bucket);
     }
-    node->bh = (burst_bucket*)g_malloc0(sizeof(burst_bucket));
+    node->bh = g_new0(burst_bucket, 1);
     node->bt = node->bh;
     node->bcount = 0;
     node->max_burst = 0;
@@ -186,6 +196,7 @@ reset_stat_node(stat_node *node)
 
     if (node->children) {
         for (child = node->children; child; child = child->next )
+            // Recursion is limited by proto.c checks
             reset_stat_node(child);
     }
 }
@@ -218,12 +229,23 @@ stats_tree_reinit(void *p)
 
     st->root.children = NULL;
     st->root.counter = 0;
-    st->root.total = 0;
-    st->root.minvalue = G_MAXINT;
-    st->root.maxvalue = G_MININT;
+    switch (st->root.datatype)
+    {
+    case STAT_DT_INT:
+        st->root.total.int_total = 0;
+        st->root.minvalue.int_min = INT_MAX;
+        st->root.maxvalue.int_max = INT_MIN;
+        break;
+    case STAT_DT_FLOAT:
+        st->root.total.float_total = 0;
+        st->root.minvalue.float_min = FLT_MAX;
+        st->root.maxvalue.float_max = FLT_MIN;
+        break;
+    }
     st->root.st_flags = 0;
 
-    st->root.bh = (burst_bucket*)g_malloc0(sizeof(burst_bucket));
+    g_free(st->root.bh);
+    st->root.bh = g_new0(burst_bucket, 1);
     st->root.bt = st->root.bh;
     st->root.bcount = 0;
     st->root.max_burst = 0;
@@ -237,30 +259,53 @@ stats_tree_reinit(void *p)
 
     /* Do not update st_flags for the tree (sorting) - leave as was */
     st->num_columns = N_COLUMNS;
+    /* XXX - Do we really need to recreate the display name? */
     g_free(st->display_name);
-    st->display_name= stats_tree_get_displayname(st->cfg->name);
+    st->display_name = stats_tree_get_displayname(st->cfg->path);
 
     if (st->cfg->init) {
         st->cfg->init(st);
     }
 }
 
-/* register a new stats_tree */
-extern void
-stats_tree_register_with_group(const char *tapname, const char *abbr, const char *name,
-            guint flags,
-            stat_tree_packet_cb packet, stat_tree_init_cb init,
-            stat_tree_cleanup_cb cleanup, register_stat_group_t stat_group)
+static void
+stats_tree_free_configuration(void *p)
 {
-    stats_tree_cfg *cfg = (stats_tree_cfg *)g_malloc0( sizeof(stats_tree_cfg) );
+    stats_tree_cfg* cfg = (stats_tree_cfg*)p;
+    g_free(cfg->tapname);
+    g_free(cfg->abbr);
+    g_free(cfg->path);
+    g_free(cfg->title);
+    g_free(cfg->first_column_name);
+    g_free(cfg);
+}
+
+/* register a new stats_tree */
+extern stats_tree_cfg *
+stats_tree_register(const char *tapname, const char *abbr, const char *path,
+            unsigned flags,
+            stat_tree_packet_cb packet, stat_tree_init_cb init,
+            stat_tree_cleanup_cb cleanup)
+{
+    stats_tree_cfg *cfg = g_new0(stats_tree_cfg, 1);
 
     /* at the very least the abbrev and the packet function should be given */
-    g_assert( tapname && abbr && packet );
+    ws_assert( tapname && abbr && packet );
 
     cfg->tapname = g_strdup(tapname);
     cfg->abbr = g_strdup(abbr);
-    cfg->name = name ? g_strdup(name) : g_strdup(abbr);
-    cfg->stat_group = stat_group;
+    cfg->path = path ? g_strdup(path) : g_strdup(abbr);
+    cfg->stat_group = REGISTER_PACKET_STAT_GROUP_UNSORTED;
+
+    GString *title_str = g_string_new("");
+    char **split = g_strsplit(path, STATS_TREE_MENU_SEPARATOR, 0);
+    const char *sep = "";
+    for (size_t idx = 0; split[idx]; idx++) {
+        g_string_append_printf(title_str, "%s%s", sep, g_strstrip(split[idx]));
+        sep = " / ";
+    }
+    g_strfreev(split);
+    cfg->title = g_string_free(title_str, FALSE);
 
     cfg->packet = packet;
     cfg->init = init;
@@ -269,45 +314,45 @@ stats_tree_register_with_group(const char *tapname, const char *abbr, const char
     cfg->flags = flags&~ST_FLG_MASK;
     cfg->st_flags = flags&ST_FLG_MASK;
 
-    if (!registry) registry = g_hash_table_new(g_str_hash,g_str_equal);
+    if (!registry) registry = g_hash_table_new_full(g_str_hash,g_str_equal,NULL,stats_tree_free_configuration);
 
     g_hash_table_insert(registry,cfg->abbr,cfg);
+
+    return cfg;
 }
 
-/* register a new stats_tree with default group REGISTER_STAT_GROUP_UNSORTED */
-extern void
-stats_tree_register(const char *tapname, const char *abbr, const char *name,
-            guint flags,
+/* register a new stat_tree with default group REGISTER_PACKET_STAT_GROUP_UNSORTED from a plugin */
+extern stats_tree_cfg *
+stats_tree_register_plugin(const char *tapname, const char *abbr, const char *path,
+            unsigned flags,
             stat_tree_packet_cb packet, stat_tree_init_cb init,
             stat_tree_cleanup_cb cleanup)
 {
-    stats_tree_register_with_group(tapname, abbr, name,
-            flags,
-            packet, init,
-            cleanup, REGISTER_STAT_GROUP_UNSORTED);
+    stats_tree_cfg *cfg = stats_tree_register(tapname, abbr, path,
+            flags, packet, init, cleanup);
+    cfg->plugin = true;
+
+    return cfg;
 }
 
-/* register a new stat_tree with default group REGISTER_STAT_GROUP_UNSORTED from a plugin */
 extern void
-stats_tree_register_plugin(const char *tapname, const char *abbr, const char *name,
-            guint flags,
-            stat_tree_packet_cb packet, stat_tree_init_cb init,
-            stat_tree_cleanup_cb cleanup)
-{
-    stats_tree_cfg *cfg;
+stats_tree_set_group(stats_tree_cfg *st_config, register_stat_group_t stat_group) {
+    if (st_config) {
+        st_config->stat_group = stat_group;
+    }
+}
 
-    stats_tree_register(tapname, abbr, name,
-            flags,
-            packet, init,
-            cleanup);
-    cfg = stats_tree_get_cfg_by_abbr(abbr);
-    cfg->plugin = TRUE;
+extern void
+stats_tree_set_first_column_name(stats_tree_cfg *st_config, const char *column_name) {
+    if (st_config) {
+        st_config->first_column_name = g_strdup(column_name);
+    }
 }
 
 extern stats_tree*
 stats_tree_new(stats_tree_cfg *cfg, tree_pres *pr, const char *filter)
 {
-    stats_tree *st = (stats_tree *)g_malloc0(sizeof(stats_tree));
+    stats_tree *st = g_new0(stats_tree, 1);
 
     st->cfg = cfg;
     st->pr = pr;
@@ -319,14 +364,23 @@ stats_tree_new(stats_tree_cfg *cfg, tree_pres *pr, const char *filter)
     st->start = -1.0;
     st->elapsed = 0.0;
 
-    st->root.minvalue = G_MAXINT;
-    st->root.maxvalue = G_MININT;
+    switch (st->root.datatype)
+    {
+    case STAT_DT_INT:
+        st->root.minvalue.int_min = INT_MAX;
+        st->root.maxvalue.int_max = INT_MIN;
+        break;
+    case STAT_DT_FLOAT:
+        st->root.minvalue.float_min = FLT_MAX;
+        st->root.maxvalue.float_max = FLT_MIN;
+        break;
+    }
 
-    st->root.bh = (burst_bucket*)g_malloc0(sizeof(burst_bucket));
+    st->root.bh = g_new0(burst_bucket, 1);
     st->root.bt = st->root.bh;
     st->root.burst_time = -1.0;
 
-    st->root.name = stats_tree_get_displayname(cfg->name);
+    st->root.name = stats_tree_get_displayname(cfg->path);
     st->root.st = st;
 
     st->st_flags = st->cfg->st_flags;
@@ -339,7 +393,7 @@ stats_tree_new(stats_tree_cfg *cfg, tree_pres *pr, const char *filter)
         }
     }
     st->num_columns = N_COLUMNS;
-    st->display_name= stats_tree_get_displayname(st->cfg->name);
+    st->display_name = stats_tree_get_displayname(st->cfg->path);
 
     g_ptr_array_add(st->parents,&st->root);
 
@@ -347,8 +401,8 @@ stats_tree_new(stats_tree_cfg *cfg, tree_pres *pr, const char *filter)
 }
 
 /* will be the tap packet cb */
-extern int
-stats_tree_packet(void *p, packet_info *pinfo, epan_dissect_t *edt, const void *pri)
+extern tap_packet_status
+stats_tree_packet(void *p, packet_info *pinfo, epan_dissect_t *edt, const void *pri, tap_flags_t flags)
 {
     stats_tree *st = (stats_tree *)p;
 
@@ -358,9 +412,9 @@ stats_tree_packet(void *p, packet_info *pinfo, epan_dissect_t *edt, const void *
     st->elapsed = st->now - st->start;
 
     if (st->cfg->packet)
-        return st->cfg->packet(st,pinfo,edt,pri);
+        return st->cfg->packet(st,pinfo,edt,pri, flags);
     else
-        return 0;
+        return TAP_PACKET_DONT_REDRAW;
 }
 
 extern stats_tree_cfg*
@@ -370,13 +424,13 @@ stats_tree_get_cfg_by_abbr(const char *abbr)
     return (stats_tree_cfg *)g_hash_table_lookup(registry,abbr);
 }
 
-static gint
-compare_stat_menu_item(gconstpointer stat_a, gconstpointer stat_b)
+static int
+compare_stat_menu_item(const void *stat_a, const void *stat_b)
 {
     const stats_tree_cfg* stat_cfg_a = (const stats_tree_cfg*)stat_a;
     const stats_tree_cfg* stat_cfg_b = (const stats_tree_cfg*)stat_b;
 
-    return strcmp(stat_cfg_a->name, stat_cfg_b->name);
+    return strcmp(stat_cfg_a->path, stat_cfg_b->path);
 }
 
 extern GList*
@@ -395,19 +449,18 @@ struct _stats_tree_pres_cbs {
 };
 
 static void
-setup_tree_presentation(gpointer k _U_, gpointer v, gpointer p)
+setup_tree_presentation(void *k _U_, void *v, void *p)
 {
     stats_tree_cfg *cfg = (stats_tree_cfg *)v;
     struct _stats_tree_pres_cbs *d = (struct _stats_tree_pres_cbs *)p;
 
-    cfg->in_use = FALSE;
     cfg->setup_node_pr = d->setup_node_pr;
     cfg->free_tree_pr = d->free_tree_pr;
 
 }
 
 extern void
-stats_tree_presentation(void (*registry_iterator)(gpointer,gpointer,gpointer),
+stats_tree_presentation(void (*registry_iterator)(void *,void *,void *),
             void (*setup_node_pr)(stat_node*),
             void (*free_tree_pr)(stats_tree*),
             void *data)
@@ -432,23 +485,33 @@ stats_tree_presentation(void (*registry_iterator)(gpointer,gpointer,gpointer),
 *    as_named_node: whether or not it has to be registered in the root namespace
 */
 static stat_node*
-new_stat_node(stats_tree *st, const gchar *name, int parent_id,
-          gboolean with_hash, gboolean as_parent_node)
+new_stat_node(stats_tree *st, const char *name, int parent_id, stat_node_datatype datatype,
+          bool with_hash, bool as_parent_node)
 {
 
-    stat_node *node = (stat_node *)g_malloc0(sizeof(stat_node));
+    stat_node *node = g_new0(stat_node, 1);
     stat_node *last_chld = NULL;
 
-    node->minvalue = G_MAXINT;
-    node->maxvalue = G_MININT;
+    node->datatype = datatype;
+    switch (datatype)
+    {
+    case STAT_DT_INT:
+        node->minvalue.int_min = INT_MAX;
+        node->maxvalue.int_max = INT_MIN;
+        break;
+    case STAT_DT_FLOAT:
+        node->minvalue.float_min = FLT_MAX;
+        node->maxvalue.float_max = FLT_MIN;
+        break;
+    }
     node->st_flags = parent_id?0:ST_FLG_ROOTCHILD;
 
-    node->bh = (burst_bucket*)g_malloc0(sizeof(burst_bucket));
+    node->bh = g_new0(burst_bucket, 1);
     node->bt = node->bh;
     node->burst_time = -1.0;
 
     node->name = g_strdup(name);
-    node->st = (stats_tree*) st;
+    node->st = st;
     node->hash = with_hash ? g_hash_table_new(g_str_hash,g_str_equal) : NULL;
 
     if (as_parent_node) {
@@ -467,7 +530,7 @@ new_stat_node(stats_tree *st, const gchar *name, int parent_id,
         node->parent = (stat_node *)g_ptr_array_index(st->parents,parent_id);
     } else {
         /* ??? should we set the parent to be root ??? */
-        g_assert_not_reached();
+        ws_assert_not_reached();
     }
 
     if (node->parent->children) {
@@ -485,7 +548,7 @@ new_stat_node(stats_tree *st, const gchar *name, int parent_id,
     }
 
     if(node->parent->hash) {
-        g_hash_table_insert(node->parent->hash,node->name,node);
+        g_hash_table_replace(node->parent->hash,node->name,node);
     }
 
     if (st->cfg->setup_node_pr) {
@@ -499,9 +562,9 @@ new_stat_node(stats_tree *st, const gchar *name, int parent_id,
 /***/
 
 extern int
-stats_tree_create_node(stats_tree *st, const gchar *name, int parent_id, gboolean with_hash)
+stats_tree_create_node(stats_tree *st, const char *name, int parent_id, stat_node_datatype datatype, bool with_hash)
 {
-    stat_node *node = new_stat_node(st,name,parent_id,with_hash,TRUE);
+    stat_node *node = new_stat_node(st,name,parent_id,datatype,with_hash,true);
 
     if (node)
         return node->id;
@@ -511,15 +574,15 @@ stats_tree_create_node(stats_tree *st, const gchar *name, int parent_id, gboolea
 
 /* XXX: should this be a macro? */
 extern int
-stats_tree_create_node_by_pname(stats_tree *st, const gchar *name,
-                const gchar *parent_name, gboolean with_children)
+stats_tree_create_node_by_pname(stats_tree *st, const char *name,
+                const char *parent_name, stat_node_datatype datatype, bool with_children)
 {
-    return stats_tree_create_node(st,name,stats_tree_parent_id_by_name(st,parent_name),with_children);
+    return stats_tree_create_node(st,name,stats_tree_parent_id_by_name(st,parent_name),datatype,with_children);
 }
 
 /* Internal function to update the burst calculation data - add entry to bucket */
 static void
-update_burst_calc(stat_node *node, gint value)
+update_burst_calc(stat_node *node, int value)
 {
     double current_bucket;
     double burstwin;
@@ -532,11 +595,11 @@ update_burst_calc(stat_node *node, gint value)
 
     /* NB thebucket list should always contain at least one node - even if it is */
     /* the dummy created at init time. Head and tail should never be NULL!       */
-    current_bucket= floor(node->st->now/prefs.st_burst_resolution);
-    burstwin= prefs.st_burst_windowlen/prefs.st_burst_resolution;
+    current_bucket = floor(node->st->now/prefs.st_burst_resolution);
+    burstwin = prefs.st_burst_windowlen/prefs.st_burst_resolution;
     if (current_bucket>node->bt->bucket_no) {
         /* Must add a new bucket at the burst list tail */
-        bn = (burst_bucket*)g_malloc0(sizeof(burst_bucket));
+        bn = g_new0(burst_bucket, 1);
         bn->count = value;
         bn->bucket_no = current_bucket;
         bn->start_time = node->st->now;
@@ -559,7 +622,7 @@ update_burst_calc(stat_node *node, gint value)
         /* Packet must be added at head of burst list - check if not too old */
         if ((current_bucket+burstwin)>node->bt->bucket_no) {
             /* packet still within the window */
-            bn = (burst_bucket*)g_malloc0(sizeof(burst_bucket));
+            bn = g_new0(burst_bucket, 1);
             bn->count = value;
             bn->bucket_no = current_bucket;
             bn->start_time = node->st->now;
@@ -586,7 +649,7 @@ update_burst_calc(stat_node *node, gint value)
         }
         else {
             /* must add a new bucket after bn. */
-            bn = (burst_bucket*)g_malloc0(sizeof(burst_bucket));
+            bn = g_new0(burst_bucket, 1);
             bn->count = value;
             bn->bucket_no = current_bucket;
             bn->start_time = node->st->now;
@@ -608,16 +671,16 @@ update_burst_calc(stat_node *node, gint value)
  * Increases by delta the counter of the node whose name is given
  * if the node does not exist yet it's created (with counter=1)
  * using parent_name as parent node.
- * with_hash=TRUE to indicate that the created node will have a parent
+ * with_hash=true to indicate that the created node will have a parent
  */
-extern int
-stats_tree_manip_node(manip_node_mode mode, stats_tree *st, const char *name,
-              int parent_id, gboolean with_hash, gint value)
+int
+stats_tree_manip_node_int(manip_node_mode mode, stats_tree *st, const char *name,
+              int parent_id, bool with_hash, int value)
 {
     stat_node *node = NULL;
     stat_node *parent = NULL;
 
-    g_assert( parent_id >= 0 && parent_id < (int) st->parents->len );
+    ws_assert( parent_id >= 0 && parent_id < (int) st->parents->len );
 
     parent = (stat_node *)g_ptr_array_index(st->parents,parent_id);
 
@@ -628,25 +691,27 @@ stats_tree_manip_node(manip_node_mode mode, stats_tree *st, const char *name,
     }
 
     if ( node == NULL )
-        node = new_stat_node(st,name,parent_id,with_hash,with_hash);
+        node = new_stat_node(st,name,parent_id,STAT_DT_INT,with_hash,with_hash);
 
     switch (mode) {
         case MN_INCREASE:
             node->counter += value;
             update_burst_calc(node, value);
             break;
-        case MN_SET: node->counter = value; break;
+        case MN_SET:
+            node->counter = value;
+            break;
         case MN_AVERAGE:
             node->counter++;
             update_burst_calc(node, 1);
-            /* fall through to average code */
+            /* fall through */ /*to average code */
         case MN_AVERAGE_NOTICK:
-            node->total += value;
-            if (node->minvalue > value) {
-                node->minvalue = value;
+            node->total.int_total += value;
+            if (node->minvalue.int_min > value) {
+                node->minvalue.int_min = value;
             }
-            if (node->maxvalue < value) {
-                node->maxvalue = value;
+            if (node->maxvalue.int_max < value) {
+                node->maxvalue.int_max = value;
             }
             node->st_flags |= ST_FLG_AVERAGE;
             break;
@@ -664,15 +729,68 @@ stats_tree_manip_node(manip_node_mode mode, stats_tree *st, const char *name,
         return -1;
 }
 
+/*
+* Increases by delta the counter of the node whose name is given
+* if the node does not exist yet it's created (with counter=1)
+* using parent_name as parent node.
+* with_hash=true to indicate that the created node will have a parent
+*/
+int
+stats_tree_manip_node_float(manip_node_mode mode, stats_tree *st, const char *name,
+    int parent_id, bool with_hash, float value)
+{
+    stat_node *node = NULL;
+    stat_node *parent = NULL;
+
+    ws_assert(parent_id >= 0 && parent_id < (int)st->parents->len);
+
+    parent = (stat_node *)g_ptr_array_index(st->parents, parent_id);
+
+    if (parent->hash) {
+        node = (stat_node *)g_hash_table_lookup(parent->hash, name);
+    }
+    else {
+        node = (stat_node *)g_hash_table_lookup(st->names, name);
+    }
+
+    if (node == NULL)
+        node = new_stat_node(st, name, parent_id, STAT_DT_FLOAT, with_hash, with_hash);
+
+    switch (mode) {
+    case MN_AVERAGE:
+        node->counter++;
+        update_burst_calc(node, 1);
+        /* fall through */ /*to average code */
+    case MN_AVERAGE_NOTICK:
+        node->total.float_total += value;
+        if (node->minvalue.float_min > value) {
+            node->minvalue.float_min = value;
+        }
+        if (node->maxvalue.float_max < value) {
+            node->maxvalue.float_max = value;
+        }
+        node->st_flags |= ST_FLG_AVERAGE;
+        break;
+    default:
+        //only average is currently supported
+        ws_assert_not_reached();
+        break;
+    }
+
+    if (node)
+        return node->id;
+    else
+        return -1;
+}
 
 extern char*
 stats_tree_get_abbr(const char *opt_arg)
 {
-    guint i;
+    unsigned i;
 
     /* XXX: this fails when tshark is given any options
        after the -z */
-    g_assert(opt_arg != NULL);
+    ws_assert(opt_arg != NULL);
 
     for (i=0; opt_arg[i] && opt_arg[i] != ','; i++);
 
@@ -692,9 +810,9 @@ stats_tree_get_abbr(const char *opt_arg)
  * It is allowed to define a range string in the following ways :
  *
  * "0-10" -> { 0, 10 }
- * "-0" -> { G_MININT, 0 }
- * "0-" -> { 0, G_MAXINT }
- * "-" -> { G_MININT, G_MAXINT }
+ * "-0" -> { INT_MIN, 0 }
+ * "0-" -> { 0, INT_MAX }
+ * "-" -> { INT_MIN, INT_MAX }
  *
  * Note that this function is robust to buggy input string. If in some cases it
  * returns NULL, it but may also return a pair with undefined values.
@@ -703,10 +821,10 @@ stats_tree_get_abbr(const char *opt_arg)
 static range_pair_t*
 get_range(char *rngstr)
 {
-    gchar **split;
+    char **split;
     range_pair_t *rng;
 
-    split = g_strsplit((gchar*)rngstr,"-",2);
+    split = g_strsplit((char*)rngstr,"-",2);
 
     /* empty string */
     if (split[0] == NULL) {
@@ -714,28 +832,28 @@ get_range(char *rngstr)
         return NULL;
     }
 
-    rng = (range_pair_t *)g_malloc(sizeof(range_pair_t));
+    rng = g_new(range_pair_t, 1);
 
     if (split[1] == NULL) {
         /* means we have a non empty string with no delimiter
          * so it must be a single number */
-        rng->floor = (gint)strtol(split[0],NULL,10);
+        rng->floor = (int)strtol(split[0],NULL,10);
         rng->ceil = rng->floor;
     } else {
       /* string == "X-?" */
         if (*(split[0]) != '\0') {
-            rng->floor = (gint)strtol(split[0],NULL,10);
+            rng->floor = (int)strtol(split[0],NULL,10);
         } else {
             /* string == "-?" */
-            rng->floor = G_MININT;
+            rng->floor = INT_MIN;
         }
 
         /* string != "?-" */
         if (*(split[1]) != '\0') {
-            rng->ceil  = (gint)strtol(split[1],NULL,10);
+            rng->ceil  = (int)strtol(split[1],NULL,10);
         } else {
             /* string == "?-" */
-            rng->ceil = G_MAXINT;
+            rng->ceil = INT_MAX;
         }
     }
     g_strfreev(split);
@@ -745,16 +863,16 @@ get_range(char *rngstr)
 
 
 extern int
-stats_tree_create_range_node(stats_tree *st, const gchar *name, int parent_id, ...)
+stats_tree_create_range_node(stats_tree *st, const char *name, int parent_id, ...)
 {
     va_list list;
-    gchar *curr_range;
-    stat_node *rng_root = new_stat_node(st, name, parent_id, FALSE, TRUE);
+    char *curr_range;
+    stat_node *rng_root = new_stat_node(st, name, parent_id, STAT_DT_INT, false, true);
     stat_node *range_node = NULL;
 
     va_start( list, parent_id );
-    while (( curr_range = va_arg(list, gchar*) )) {
-        range_node = new_stat_node(st, curr_range, rng_root->id, FALSE, FALSE);
+    while (( curr_range = va_arg(list, char*) )) {
+        range_node = new_stat_node(st, curr_range, rng_root->id, STAT_DT_INT, false, false);
         range_node->rng = get_range(curr_range);
     }
     va_end( list );
@@ -763,17 +881,22 @@ stats_tree_create_range_node(stats_tree *st, const gchar *name, int parent_id, .
 }
 
 extern int
-stats_tree_create_range_node_string(stats_tree *st, const gchar *name,
+stats_tree_create_range_node_string(stats_tree *st, const char *name,
                     int parent_id, int num_str_ranges,
-                    gchar** str_ranges)
+                    char** str_ranges)
 {
     int i;
-    stat_node *rng_root = new_stat_node(st, name, parent_id, FALSE, TRUE);
+    stat_node *rng_root = new_stat_node(st, name, parent_id, STAT_DT_INT, false, true);
     stat_node *range_node = NULL;
 
-    for (i = 0; i < num_str_ranges; i++) {
-        range_node = new_stat_node(st, str_ranges[i], rng_root->id, FALSE, FALSE);
+    for (i = 0; i < num_str_ranges - 1; i++) {
+        range_node = new_stat_node(st, str_ranges[i], rng_root->id, STAT_DT_INT, false, false);
         range_node->rng = get_range(str_ranges[i]);
+    }
+    range_node = new_stat_node(st, str_ranges[i], rng_root->id, STAT_DT_INT, false, false);
+    range_node->rng = get_range(str_ranges[i]);
+    if (range_node->rng->floor == range_node->rng->ceil) {
+        range_node->rng->ceil = INT_MAX;
     }
 
     return rng_root->id;
@@ -781,30 +904,30 @@ stats_tree_create_range_node_string(stats_tree *st, const gchar *name,
 
 /****/
 extern int
-stats_tree_parent_id_by_name(stats_tree *st, const gchar *parent_name)
+stats_tree_parent_id_by_name(stats_tree *st, const char *parent_name)
 {
     stat_node *node = (stat_node *)g_hash_table_lookup(st->names,parent_name);
 
     if (node)
         return node->id;
     else
-        return 0; /* XXX: this is the root shoud we return -1 instead?*/
+        return 0; /* XXX: this is the root should we return -1 instead?*/
 }
 
 
 extern int
-stats_tree_range_node_with_pname(stats_tree *st, const gchar *name,
-                 const gchar *parent_name, ...)
+stats_tree_range_node_with_pname(stats_tree *st, const char *name,
+                 const char *parent_name, ...)
 {
     va_list list;
-    gchar *curr_range;
+    char *curr_range;
     stat_node *range_node = NULL;
     int parent_id = stats_tree_parent_id_by_name(st,parent_name);
-    stat_node *rng_root = new_stat_node(st, name, parent_id, FALSE, TRUE);
+    stat_node *rng_root = new_stat_node(st, name, parent_id, STAT_DT_INT, false, true);
 
     va_start( list, parent_name );
-    while (( curr_range = va_arg(list, gchar*) )) {
-        range_node = new_stat_node(st, curr_range, rng_root->id, FALSE, FALSE);
+    while (( curr_range = va_arg(list, char*) )) {
+        range_node = new_stat_node(st, curr_range, rng_root->id, STAT_DT_INT, false, false);
         range_node->rng = get_range(curr_range);
     }
     va_end( list );
@@ -814,19 +937,19 @@ stats_tree_range_node_with_pname(stats_tree *st, const gchar *name,
 
 
 extern int
-stats_tree_tick_range(stats_tree *st, const gchar *name, int parent_id,
+stats_tree_tick_range(stats_tree *st, const char *name, int parent_id,
               int value_in_range)
 {
 
     stat_node *node = NULL;
     stat_node *parent = NULL;
     stat_node *child = NULL;
-    gint stat_floor, stat_ceil;
+    int stat_floor, stat_ceil;
 
     if (parent_id >= 0 && parent_id < (int) st->parents->len) {
         parent = (stat_node *)g_ptr_array_index(st->parents,parent_id);
     } else {
-        g_assert_not_reached();
+        ws_assert_not_reached();
     }
 
     if( parent->hash ) {
@@ -836,15 +959,15 @@ stats_tree_tick_range(stats_tree *st, const gchar *name, int parent_id,
     }
 
     if ( node == NULL )
-        g_assert_not_reached();
+        ws_assert_not_reached();
 
     /* update stats for container node. counter should already be ticked so we only update total and min/max */
-    node->total += value_in_range;
-    if (node->minvalue > value_in_range) {
-        node->minvalue = value_in_range;
+    node->total.int_total += value_in_range;
+    if (node->minvalue.int_min > value_in_range) {
+        node->minvalue.int_min = value_in_range;
     }
-    if (node->maxvalue < value_in_range) {
-        node->maxvalue = value_in_range;
+    if (node->maxvalue.int_max < value_in_range) {
+        node->maxvalue.int_max = value_in_range;
     }
     node->st_flags |= ST_FLG_AVERAGE;
 
@@ -854,12 +977,12 @@ stats_tree_tick_range(stats_tree *st, const gchar *name, int parent_id,
 
         if ( value_in_range >= stat_floor && value_in_range <= stat_ceil ) {
             child->counter++;
-            child->total += value_in_range;
-            if (child->minvalue > value_in_range) {
-                child->minvalue = value_in_range;
+            child->total.int_total += value_in_range;
+            if (child->minvalue.int_min > value_in_range) {
+                child->minvalue.int_min = value_in_range;
             }
-            if (child->maxvalue < value_in_range) {
-                child->maxvalue = value_in_range;
+            if (child->maxvalue.int_max < value_in_range) {
+                child->maxvalue.int_max = value_in_range;
             }
             child->st_flags |= ST_FLG_AVERAGE;
             update_burst_calc(child, 1);
@@ -871,9 +994,9 @@ stats_tree_tick_range(stats_tree *st, const gchar *name, int parent_id,
 }
 
 extern int
-stats_tree_create_pivot(stats_tree *st, const gchar *name, int parent_id)
+stats_tree_create_pivot(stats_tree *st, const char *name, int parent_id)
 {
-    stat_node *node = new_stat_node(st,name,parent_id,TRUE,TRUE);
+    stat_node *node = new_stat_node(st,name,parent_id,STAT_DT_INT,true,true);
 
     if (node)
         return node->id;
@@ -882,13 +1005,13 @@ stats_tree_create_pivot(stats_tree *st, const gchar *name, int parent_id)
 }
 
 extern int
-stats_tree_create_pivot_by_pname(stats_tree *st, const gchar *name,
-                 const gchar *parent_name)
+stats_tree_create_pivot_by_pname(stats_tree *st, const char *name,
+                 const char *parent_name)
 {
     int parent_id = stats_tree_parent_id_by_name(st,parent_name);
     stat_node *node;
 
-    node = new_stat_node(st,name,parent_id,TRUE,TRUE);
+    node = new_stat_node(st,name,parent_id,STAT_DT_INT,true,true);
 
     if (node)
         return node->id;
@@ -897,30 +1020,30 @@ stats_tree_create_pivot_by_pname(stats_tree *st, const gchar *name,
 }
 
 extern int
-stats_tree_tick_pivot(stats_tree *st, int pivot_id, const gchar *pivot_value)
+stats_tree_tick_pivot(stats_tree *st, int pivot_id, const char *pivot_value)
 {
     stat_node *parent = (stat_node *)g_ptr_array_index(st->parents,pivot_id);
 
     parent->counter++;
     update_burst_calc(parent, 1);
-    stats_tree_manip_node( MN_INCREASE, st, pivot_value, pivot_id, FALSE, 1);
+    stats_tree_manip_node_int( MN_INCREASE, st, pivot_value, pivot_id, false, 1);
 
     return pivot_id;
 }
 
-extern gchar*
-stats_tree_get_displayname (gchar* fullname)
+extern char*
+stats_tree_get_displayname (char* fullname)
 {
-    gchar *buf = g_strdup(fullname);
-    gchar *sep;
+    char *buf = g_strdup(fullname);
+    char *sep;
 
     if (prefs.st_sort_showfullname) {
-        return buf; /* unmodifed */
+        return buf; /* unmodified */
     }
 
     sep = buf;
     while ((sep = strchr(sep,'/')) != NULL) {
-        if (*(++sep)=='/') {  /* escapeded slash - two slash characters after each other */
+        if (*(++sep)=='/') {  /* escaped slash - two slash characters after each other */
             memmove(sep,sep+1,strlen(sep));
         }
         else {
@@ -933,7 +1056,7 @@ stats_tree_get_displayname (gchar* fullname)
     return buf;
 }
 
-extern gint
+extern int
 stats_tree_get_default_sort_col (stats_tree *st)
 {
     switch ((st->st_flags&ST_FLG_SRTCOL_MASK)>>ST_FLG_SRTCOL_SHIFT) {
@@ -953,41 +1076,44 @@ stats_tree_get_default_sort_col (stats_tree *st)
     return COL_COUNT;   /* nothing specific set */
 }
 
-extern gboolean
+extern bool
 stats_tree_is_default_sort_DESC (stats_tree *st)
 {
     return st->st_flags&ST_FLG_SORT_DESC;
 }
 
-extern const gchar*
-stats_tree_get_column_name (gint col_index)
+extern const char*
+stats_tree_get_column_name (stats_tree_cfg *st_config, int col_index)
 {
     switch (col_index) {
         case COL_NAME:
+            if (st_config->first_column_name) {
+                return st_config->first_column_name;
+            }
             return "Topic / Item";
         case COL_COUNT:
             return "Count";
         case COL_AVERAGE:
             return "Average";
         case COL_MIN:
-            return "Min val";
+            return "Min Val";
         case COL_MAX:
-            return "Max val";
+            return "Max Val";
         case COL_RATE:
             return "Rate (ms)";
         case COL_PERCENT:
             return "Percent";
         case COL_BURSTRATE:
-            return prefs.st_burst_showcount?"Burst count":"Burst rate";
+            return prefs.st_burst_showcount ? "Burst Count" : "Burst Rate";
         case COL_BURSTTIME:
-            return "Burst start";
+            return "Burst Start";
         default:
             return "(Unknown)";
     }
 }
 
-extern gint
-stats_tree_get_column_size (gint col_index)
+extern int
+stats_tree_get_column_size (int col_index)
 {
     if (col_index==COL_NAME) {
         return 36;      /* but caller should really call stats_tree_branch_max_namelen() */
@@ -998,50 +1124,99 @@ stats_tree_get_column_size (gint col_index)
     return 0;           /* invalid column */
 }
 
-extern gchar**
+extern char**
 stats_tree_get_values_from_node (const stat_node* node)
 {
-    gchar **values = (gchar**) g_malloc0(sizeof(gchar*)*(node->st->num_columns));
+    char **values = (char**) g_malloc0(sizeof(char*)*(node->st->num_columns));
 
-    values[COL_NAME]= (node->st_flags&ST_FLG_ROOTCHILD)?stats_tree_get_displayname(node->name):g_strdup(node->name);
-    values[COL_COUNT]= g_strdup_printf("%u",node->counter);
-    values[COL_AVERAGE]= ((node->st_flags&ST_FLG_AVERAGE)||node->rng)?
-                (node->counter?g_strdup_printf("%.2f",((float)node->total)/node->counter):g_strdup("-")):
-                g_strdup("");
-    values[COL_MIN]= ((node->st_flags&ST_FLG_AVERAGE)||node->rng)?
-                (node->counter?g_strdup_printf("%u",node->minvalue):g_strdup("-")):
-                g_strdup("");
-    values[COL_MAX]= ((node->st_flags&ST_FLG_AVERAGE)||node->rng)?
-                (node->counter?g_strdup_printf("%u",node->maxvalue):g_strdup("-")):
-                g_strdup("");
-    values[COL_RATE]= (node->st->elapsed)?g_strdup_printf("%.4f",((float)node->counter)/node->st->elapsed):g_strdup("");
-    values[COL_PERCENT]= ((node->parent)&&(node->parent->counter))?
-                g_strdup_printf("%.2f%%",(node->counter*100.0)/node->parent->counter):
+    values[COL_NAME] = (node->st_flags&ST_FLG_ROOTCHILD)?stats_tree_get_displayname(node->name):g_strdup(node->name);
+    values[COL_COUNT] = ws_strdup_printf("%u",node->counter);
+    if (((node->st_flags&ST_FLG_AVERAGE) || node->rng)) {
+        if (node->counter) {
+            switch (node->datatype)
+            {
+            case STAT_DT_INT:
+                values[COL_AVERAGE] = ws_strdup_printf("%.2f", ((float)node->total.int_total) / node->counter);
+                break;
+            case STAT_DT_FLOAT:
+                values[COL_AVERAGE] = ws_strdup_printf("%.2f", node->total.float_total / node->counter);
+                break;
+            }
+        } else {
+            values[COL_AVERAGE] = g_strdup("-");
+        }
+    } else {
+        values[COL_AVERAGE] = g_strdup("");
+    }
+
+    if (((node->st_flags&ST_FLG_AVERAGE) || node->rng)) {
+        if (node->counter) {
+            switch (node->datatype)
+            {
+            case STAT_DT_INT:
+                values[COL_MIN] = ws_strdup_printf("%d", node->minvalue.int_min);
+                break;
+            case STAT_DT_FLOAT:
+                values[COL_MIN] = ws_strdup_printf("%f", node->minvalue.float_min);
+                break;
+            }
+        }
+        else {
+            values[COL_MIN] = g_strdup("-");
+        }
+    }
+    else {
+        values[COL_MIN] = g_strdup("");
+    }
+
+    if (((node->st_flags&ST_FLG_AVERAGE) || node->rng)) {
+        if (node->counter) {
+            switch (node->datatype)
+            {
+            case STAT_DT_INT:
+                values[COL_MAX] = ws_strdup_printf("%d", node->maxvalue.int_max);
+                break;
+            case STAT_DT_FLOAT:
+                values[COL_MAX] = ws_strdup_printf("%f", node->maxvalue.float_max);
+                break;
+            }
+        }
+        else {
+            values[COL_MAX] = g_strdup("-");
+        }
+    }
+    else {
+        values[COL_MAX] = g_strdup("");
+    }
+
+    values[COL_RATE] = (node->st->elapsed)?ws_strdup_printf("%.4f",((float)node->counter)/node->st->elapsed):g_strdup("");
+    values[COL_PERCENT] = ((node->parent)&&(node->parent->counter))?
+                ws_strdup_printf("%.2f%%",(node->counter*100.0)/node->parent->counter):
                 (node->parent==&(node->st->root)?g_strdup("100%"):g_strdup(""));
     if (node->st->num_columns>COL_BURSTTIME) {
-        values[COL_BURSTRATE]= (!prefs.st_enable_burstinfo)?g_strdup(""):
+        values[COL_BURSTRATE] = (!prefs.st_enable_burstinfo)?g_strdup(""):
                 (node->max_burst?(prefs.st_burst_showcount?
-                                g_strdup_printf("%d",node->max_burst):
-                                g_strdup_printf("%.4f",((double)node->max_burst)/prefs.st_burst_windowlen)):
+                                ws_strdup_printf("%d",node->max_burst):
+                                ws_strdup_printf("%.4f",((double)node->max_burst)/prefs.st_burst_windowlen)):
                 g_strdup("-"));
-        values[COL_BURSTTIME]= (!prefs.st_enable_burstinfo)?g_strdup(""):
-                (node->max_burst?g_strdup_printf("%.3f",((double)node->burst_time/1000.0)):g_strdup("-"));
+        values[COL_BURSTTIME] = (!prefs.st_enable_burstinfo)?g_strdup(""):
+                (node->max_burst?ws_strdup_printf("%.3f",(node->burst_time/1000.0)):g_strdup("-"));
     }
     return values;
 }
 
-extern gint
-stats_tree_sort_compare (const stat_node *a, const stat_node *b, gint sort_column,
-                    gboolean sort_descending)
+extern int
+stats_tree_sort_compare (const stat_node *a, const stat_node *b, int sort_column,
+                    bool sort_descending)
 {
     int result = 0;
-    float avg_a, avg_b;
+    float avg_a = 0, avg_b = 0;
 
     if  (prefs.st_sort_rng_nameonly&&(a->rng&&b->rng)) {
         /* always sort ranges by range name */
         result = a->rng->floor - b->rng->floor;
         if (sort_descending&&(!prefs.st_sort_rng_fixorder)) {
-            result= -result;
+            result = -result;
         }
         return result;
     }
@@ -1066,25 +1241,42 @@ stats_tree_sort_compare (const stat_node *a, const stat_node *b, gint sort_colum
             break;
 
         case COL_AVERAGE:
-            if (a->counter) {
-                result= 1;      /* assume a>b */
-                if (b->counter) {
-                    avg_a= ((float)a->total)/a->counter;
-                    avg_b= ((float)b->total)/b->counter;
-                    result= (avg_a>avg_b)?1:((avg_a<avg_b)?-1:0);
-                }
+            switch (a->datatype)
+            {
+            case STAT_DT_INT:
+                avg_a = a->counter ? ((float)a->total.int_total)/a->counter : 0;
+                avg_b = b->counter ? ((float)b->total.int_total)/b->counter : 0;
+                break;
+            case STAT_DT_FLOAT:
+                avg_a = a->counter ? ((float)a->total.float_total) / a->counter : 0;
+                avg_b = b->counter ? ((float)b->total.float_total) / b->counter : 0;
+                break;
             }
-            else {
-                result= -1;     /* let b>a */
-            }
+            result = (avg_a>avg_b) ? 1 : ( (avg_a<avg_b) ? -1 : 0);
             break;
 
         case COL_MIN:
-            result = a->minvalue - b->minvalue;
+            switch (a->datatype)
+            {
+            case STAT_DT_INT:
+                result = a->minvalue.int_min - b->minvalue.int_min;
+                break;
+            case STAT_DT_FLOAT:
+                result = (a->minvalue.float_min>b->minvalue.int_min) ? 1 : ((a->minvalue.float_min<b->minvalue.int_min) ? -1 : 0);
+                break;
+            }
             break;
 
         case COL_MAX:
-            result = a->maxvalue - b->maxvalue;
+            switch (a->datatype)
+            {
+            case STAT_DT_INT:
+                result = a->maxvalue.int_max - b->maxvalue.int_max;
+                break;
+            case STAT_DT_FLOAT:
+                result = (a->maxvalue.float_max>b->maxvalue.float_max) ? 1 : ((a->maxvalue.float_max<b->maxvalue.float_max) ? -1 : 0);
+                break;
+            }
             break;
 
         case COL_BURSTRATE:
@@ -1097,7 +1289,7 @@ stats_tree_sort_compare (const stat_node *a, const stat_node *b, gint sort_colum
 
         default:
             /* no sort comparison found for column - must update this switch statement */
-            g_assert_not_reached();
+            ws_assert_not_reached();
     }
 
     /* break tie between items with same primary search result */
@@ -1120,25 +1312,25 @@ stats_tree_sort_compare (const stat_node *a, const stat_node *b, gint sort_colum
 
     /* take into account sort order */
     if (sort_descending) {
-        result= -result;
+        result = -result;
     }
 
     if ((a->st_flags&ST_FLG_SORT_TOP)!=(b->st_flags&ST_FLG_SORT_TOP)) {
         /* different sort groups top vs non-top */
-        result= (a->st_flags&ST_FLG_SORT_TOP)?-1:1;
+        result = (a->st_flags&ST_FLG_SORT_TOP)?-1:1;
     }
     return result;
 }
 
 extern GString*
 stats_tree_format_as_str(const stats_tree* st, st_format_type format_type,
-                    gint sort_column, gboolean sort_descending)
+                    int sort_column, bool sort_descending)
 {
-    int maxnamelen= stats_tree_branch_max_namelen(&st->root,0);
+    int maxnamelen = stats_tree_branch_max_namelen(&st->root,0);
     stat_node *child;
     GString *s;
     int count;
-    gchar *separator = NULL;
+    char *separator = NULL;
 
     switch(format_type) {
         case ST_FORMAT_YAML:
@@ -1150,7 +1342,7 @@ stats_tree_format_as_str(const stats_tree* st, st_format_type format_type,
         case ST_FORMAT_CSV:
             s = g_string_new("\"level\",\"parent\",");
             for (count = 0; count<st->num_columns; count++) {
-                g_string_append_printf(s,"\"%s\",",stats_tree_get_column_name(count));
+                g_string_append_printf(s,"\"%s\",",stats_tree_get_column_name(st->cfg, count));
             }
             g_string_append (s,"\n");
             break;
@@ -1159,22 +1351,22 @@ stats_tree_format_as_str(const stats_tree* st, st_format_type format_type,
             char fmt[16];
             int sep_length;
 
-            sep_length= maxnamelen;
+            sep_length = maxnamelen;
             for (count = 1; count<st->num_columns; count++) {
                 sep_length += stats_tree_get_column_size(count)+2;
             }
-            separator = (gchar *)g_malloc(sep_length+1);
+            separator = (char *)g_malloc(sep_length+1);
             memset (separator, '=', sep_length);
             separator[sep_length] = 0;
 
             s = g_string_new("\n");
             g_string_append(s,separator);
-            g_string_append_printf(s,"\n%s:\n",st->cfg->name);
-            g_snprintf (fmt,(gulong)sizeof(fmt),"%%-%us",maxnamelen);
-            g_string_append_printf(s,fmt,stats_tree_get_column_name(0));
+            g_string_append_printf(s,"\n%s:\n",st->cfg->title);
+            snprintf (fmt,sizeof(fmt),"%%-%us",maxnamelen);
+            g_string_append_printf(s,fmt,stats_tree_get_column_name(st->cfg, 0));
             for (count = 1; count<st->num_columns; count++) {
-                g_snprintf (fmt,(gulong)sizeof(fmt)," %%-%us",stats_tree_get_column_size(count)+1);
-                g_string_append_printf(s,fmt,stats_tree_get_column_name(count));
+                snprintf (fmt,sizeof(fmt)," %%-%ds",stats_tree_get_column_size(count)+1);
+                g_string_append_printf(s,fmt,stats_tree_get_column_name(st->cfg, count));
             }
             memset (separator, '-', sep_length);
             g_string_append_printf(s,"\n%s\n",separator);
@@ -1198,52 +1390,53 @@ stats_tree_format_as_str(const stats_tree* st, st_format_type format_type,
 }
 
 typedef struct {
-    gint sort_column;
-    gboolean sort_descending;
+    int sort_column;
+    bool sort_descending;
 }   sortinfo;
 
 /* Function to compare elements for child array sort. a and b are children, user_data
 points to a st_flags value */
-extern gint
-stat_node_array_sortcmp (gconstpointer a, gconstpointer b, gpointer user_data)
+extern int
+stat_node_array_sortcmp (const void *a, const void *b, void *user_data)
 {
-    /* user_data is *guint value to st_flags */
+    /* user_data is *unsigned value to st_flags */
     return stats_tree_sort_compare (*(const stat_node*const*)a,*(const stat_node*const*)b,
                     ((sortinfo*)user_data)->sort_column,((sortinfo*)user_data)->sort_descending);
 }
 
-static gchar*
-clean_for_xml_tag (gchar *str)
+static char*
+clean_for_xml_tag (char *str)
 {
-    gchar *s = str;
+    char *s = str;
     while ((s=strpbrk(s,"!\"#$%%&'()*+,/;<=>?@[\\]^`{|}~ ")) != NULL) {
         *(s++) = '-';
     }
     return str;
 }
 
-/** helper funcation to add note to formatted stats_tree */
+/** helper function to add note to formatted stats_tree */
+// NOLINTNEXTLINE(misc-no-recursion)
 WS_DLL_PUBLIC void stats_tree_format_node_as_str(const stat_node *node,
                          GString *s,
                          st_format_type format_type,
-                         guint indent,
-                         const gchar *path,
-                         gint maxnamelen,
-                         gint sort_column,
-                         gboolean sort_descending)
+                         unsigned indent,
+                         const char *path,
+                         int maxnamelen,
+                         int sort_column,
+                         bool sort_descending)
 {
     int count;
-    int num_columns= node->st->num_columns;
-    gchar **values= stats_tree_get_values_from_node(node);
+    int num_columns = node->st->num_columns;
+    char **values = stats_tree_get_values_from_node(node);
     stat_node *child;
     sortinfo si;
-    gchar *full_path;
+    char *full_path;
     char fmt[16] = "%s%s%s";
 
     switch(format_type) {
         case ST_FORMAT_YAML:
             if (indent) {
-                g_snprintf(fmt, (gulong)sizeof(fmt), "%%%ds%%s%%s", indent*4-2);
+                snprintf(fmt, sizeof(fmt), "%%%ds%%s%%s", indent*4-2);
             }
             g_string_append_printf(s, fmt, "", indent?"- ":"", "Description");
             g_string_append_printf(s, ": \"%s\"\n", values[0]);
@@ -1251,7 +1444,7 @@ WS_DLL_PUBLIC void stats_tree_format_node_as_str(const stat_node *node,
             for (count = 1; count<num_columns; count++) {
                 if (*values[count]) {
                     g_string_append_printf(s, fmt, "", indent?"  ":"",
-                                            stats_tree_get_column_name(count));
+                                            stats_tree_get_column_name(node->st->cfg, count));
                     g_string_append_printf(s, ": %s\n", values[count]);
                 }
             }
@@ -1266,7 +1459,7 @@ WS_DLL_PUBLIC void stats_tree_format_node_as_str(const stat_node *node,
                     node->rng?" isrange=\"true\"":"");
             g_free(itemname);
             for (count = 1; count<num_columns; count++) {
-                gchar *colname= g_strdup(stats_tree_get_column_name(count));
+                char *colname = g_strdup(stats_tree_get_column_name(node->st->cfg, count));
                 g_string_append_printf(s,"<%s>",clean_for_xml_tag(colname));
                 g_string_append_printf(s,"%s</%s>\n",values[count],colname);
                 g_free(colname);
@@ -1281,10 +1474,10 @@ WS_DLL_PUBLIC void stats_tree_format_node_as_str(const stat_node *node,
             g_string_append (s,"\n");
             break;
         case ST_FORMAT_PLAIN:
-            g_snprintf (fmt,(gulong)sizeof(fmt),"%%%ds%%-%us",indent,maxnamelen-indent);
+            snprintf (fmt,sizeof(fmt),"%%%ds%%-%us",indent,maxnamelen-indent);
             g_string_append_printf(s,fmt,"",values[0]);
             for (count = 1; count<num_columns; count++) {
-                g_snprintf (fmt,(gulong)sizeof(fmt)," %%-%us",stats_tree_get_column_size(count)+1);
+                snprintf (fmt,sizeof(fmt)," %%-%us",stats_tree_get_column_size(count)+1);
                 g_string_append_printf(s,fmt,values[count]);
             }
             g_string_append (s,"\n");
@@ -1293,7 +1486,7 @@ WS_DLL_PUBLIC void stats_tree_format_node_as_str(const stat_node *node,
 
     indent++;
     indent = indent > INDENT_MAX ? INDENT_MAX : indent;
-    full_path= g_strdup_printf ("%s/%s",path,values[0]);
+    full_path = ws_strdup_printf ("%s/%s",path,values[0]);
 
     for (count = 0; count<num_columns; count++) {
         g_free(values[count]);
@@ -1301,7 +1494,7 @@ WS_DLL_PUBLIC void stats_tree_format_node_as_str(const stat_node *node,
     g_free(values);
 
     if (node->children) {
-        GArray *Children= g_array_new(FALSE,FALSE,sizeof(child));
+        GArray *Children = g_array_new(false,false,sizeof(child));
         for (child = node->children; child; child = child->next ) {
             g_array_append_val(Children,child);
         }
@@ -1312,7 +1505,7 @@ WS_DLL_PUBLIC void stats_tree_format_node_as_str(const stat_node *node,
             stats_tree_format_node_as_str(g_array_index(Children,stat_node*,count), s, format_type,
                     indent, full_path, maxnamelen, sort_column, sort_descending);
         }
-        g_array_free(Children,FALSE);
+        g_array_free(Children, true);
     }
     g_free(full_path);
 
@@ -1321,8 +1514,13 @@ WS_DLL_PUBLIC void stats_tree_format_node_as_str(const stat_node *node,
     }
 }
 
+void stats_tree_cleanup(void)
+{
+    g_hash_table_destroy(registry);
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

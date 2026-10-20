@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 """
-This program parse the output from pcap_compile() to visualize the CFG after
+This program parses the output from pcap_compile() to visualize the CFG after
 each optimize phase.
 
 Usage guide:
-1. Enable optimizier debugging code when configure libpcap,
+1. Enable optimizer debugging code when configure libpcap,
    and build libpcap & the test programs
        ./configure --enable-optimizer-dbg
        make
@@ -15,23 +15,24 @@ Usage guide:
        testprogs/filtertest -g EN10MB host 192.168.1.1 > a.txt
 3. Send a.txt to this program's standard input
        cat a.txt | testprogs/visopts.py
+   (Graphviz must be installed)
 4. Step 2&3 can be merged:
        testprogs/filtertest -g EN10MB host 192.168.1.1 | testprogs/visopts.py
 5. The standard output is something like this:
        generated files under directory: /tmp/visopts-W9ekBw
          the directory will be removed when this programs finished.
        open this link: http://localhost:39062/expr1.html
-6. Using open link at the 3rd line `http://localhost:39062/expr1.html'
+6. Open the URL at the 3rd line in a browser.
 
 Note:
-1. The CFG is translated to SVG an document, expr1.html embeded them as external
-   document. If you open expr1.html as local file using file:// protocol, some
-   browsers will deny such requests so the web pages will not shown properly.
-   For chrome, you can run it using following command to avoid this:
+1. The CFG is translated to SVG images, expr1.html embeds them as external
+   documents. If you open expr1.html as local file using file:// protocol, some
+   browsers will deny such requests so the web page will not work properly.
+   For Chrome, you can run it using the following command to avoid this:
        chromium --disable-web-security
-   That's why this program start a localhost http server.
-2. expr1.html use jquery from http://ajax.googleapis.com, so you need internet
-   access to show the web page.
+   That's why this program starts a localhost HTTP server.
+2. expr1.html uses jQuery from https://ajax.googleapis.com, so it needs Internet
+   access to work.
 """
 
 import sys, os
@@ -52,7 +53,7 @@ html_template = string.Template("""
       }
     </style>
 
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/></script>
     <!--script type="text/javascript" src="./jquery.min.js"/></script-->
     <script type="text/javascript">
       var expr = '$expr';
@@ -142,7 +143,7 @@ html_template = string.Template("""
       }
       function load_left(index) {
         var url = gurl(index);
-        var frag = "<embed id='leftsvgc'  type='image/svg+xml' pluginspage='http://www.adobe.com/svg/viewer/install/' src='" + url + "'/>";
+        var frag = "<embed id='leftsvgc'  type='image/svg+xml' pluginspage='https://www.adobe.com/svg/viewer/install/' src='" + url + "'/>";
         $$("#lsvg").html(frag);
         $$("#lcomment").html(logs[index]);
         $$("#lsvglink").attr("href", url);
@@ -151,7 +152,7 @@ html_template = string.Template("""
       }
       function load_right(index) {
         var url = gurl(index);
-        var frag = "<embed id='rightsvgc' type='image/svg+xml' pluginspage='http://www.adobe.com/svg/viewer/install/' src='" + url + "'/>";
+        var frag = "<embed id='rightsvgc' type='image/svg+xml' pluginspage='https://www.adobe.com/svg/viewer/install/' src='" + url + "'/>";
         $$("#rsvg").html(frag);
         $$("#rcomment").html(logs[index]);
         $$("#rsvglink").attr("href", url);
@@ -255,7 +256,13 @@ def render_on_html(infile):
             log += line
 
         if indot == 2:
-            p = subprocess.Popen(['dot', '-Tsvg'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            try:
+                p = subprocess.Popen(['dot', '-Tsvg'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            except OSError as ose:
+                print "Failed to run 'dot':", ose
+                print "(Is Graphviz installed?)"
+                exit(1)
+
             svg = p.communicate(dot)[0]
             with file("expr1_g%03d.svg" % (gid), "wt") as f:
                 f.write(svg)
@@ -296,7 +303,7 @@ def main():
     os.chdir(tempfile.mkdtemp(prefix="visopts-"))
     atexit.register(shutil.rmtree, os.getcwd())
     print "generated files under directory: %s" % os.getcwd()
-    print "  the directory will be removed when this programs finished."
+    print "  the directory will be removed when this program has finished."
 
     if not render_on_html(sys.stdin):
         return 1

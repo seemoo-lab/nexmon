@@ -4604,6 +4604,102 @@ msgstr[1] "%s బైట్లు"
 msgid "%.1f KB"
 msgstr "%.1f KB"
 
+msgctxt "full month name with day"
+msgid "January"
+msgstr "జనవరి"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "ఫిబ్రవరి"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "మార్చి"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "ఏప్రిల్"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "మే"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "జూన్"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "జూలై"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "ఆగష్టు"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "సెప్టెంబరు"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "అక్టోబరు"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "నవంబరు"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "డిసెంబరు"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "జనవరి"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "ఫిబ్రవరి"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "మార్చి"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "ఏప్రిల్"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "మే"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "జూన్"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "జూలై"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "ఆగష్టు"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "సెప్టెంబరు"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "అక్టోబరు"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "నవంబరు"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "డిసెంబరు"
+
 #~ msgid ""
 #~ "Error processing input file with xmllint:\n"
 #~ "%s"

@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2010 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,20 +30,12 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gproxyaddress
- * @short_description: An internet address with proxy information
- * @include: gio/gio.h
- *
- * Support for proxied #GInetSocketAddress.
- */
-
-/**
  * GProxyAddress:
  *
- * A #GInetSocketAddress representing a connection via a proxy server
+ * A [class@Gio.InetSocketAddress] representing a connection via a proxy server.
  *
  * Since: 2.26
- **/
+ */
 
 /**
  * GProxyAddressClass:
@@ -192,31 +186,46 @@ g_proxy_address_class_init (GProxyAddressClass *klass)
   gobject_class->set_property = g_proxy_address_set_property;
   gobject_class->get_property = g_proxy_address_get_property;
 
+  /**
+   * GProxyAddress:protocol:
+   *
+   * The proxy protocol.
+   *
+   * Since: 2.26
+   */
   g_object_class_install_property (gobject_class,
 				   PROP_PROTOCOL,
-				   g_param_spec_string ("protocol",
-						       P_("Protocol"),
-						       P_("The proxy protocol"),
+				   g_param_spec_string ("protocol", NULL, NULL,
 						       NULL,
 						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
 						       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GProxyAddress:username:
+   *
+   * The proxy username.
+   *
+   * Since: 2.26
+   */
   g_object_class_install_property (gobject_class,
 				   PROP_USERNAME,
-				   g_param_spec_string ("username",
-						       P_("Username"),
-						       P_("The proxy username"),
+				   g_param_spec_string ("username", NULL, NULL,
 						       NULL,
 						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
 						       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GProxyAddress:password:
+   *
+   * The proxy password.
+   *
+   * Since: 2.26
+   */
   g_object_class_install_property (gobject_class,
 				   PROP_PASSWORD,
-				   g_param_spec_string ("password",
-						       P_("Password"),
-						       P_("The proxy password"),
+				   g_param_spec_string ("password", NULL, NULL,
 						       NULL,
 						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
@@ -232,29 +241,37 @@ g_proxy_address_class_init (GProxyAddressClass *klass)
    */
   g_object_class_install_property (gobject_class,
 				   PROP_DESTINATION_PROTOCOL,
-				   g_param_spec_string ("destination-protocol",
-						       P_("Destionation Protocol"),
-						       P_("The proxy destination protocol"),
+				   g_param_spec_string ("destination-protocol", NULL, NULL,
 						       NULL,
 						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
 						       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GProxyAddress:destination-hostname:
+   *
+   * The proxy destination hostname.
+   *
+   * Since: 2.26
+   */
   g_object_class_install_property (gobject_class,
 				   PROP_DESTINATION_HOSTNAME,
-				   g_param_spec_string ("destination-hostname",
-						       P_("Destination Hostname"),
-						       P_("The proxy destination hostname"),
+				   g_param_spec_string ("destination-hostname", NULL, NULL,
 						       NULL,
 						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
 						       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GProxyAddress:destination-port:
+   *
+   * The proxy destination port.
+   *
+   * Since: 2.26
+   */
   g_object_class_install_property (gobject_class,
 				   PROP_DESTINATION_PORT,
-				   g_param_spec_uint ("destination-port",
-						      P_("Destination Port"),
-						      P_("The proxy destination port"),
+				   g_param_spec_uint ("destination-port", NULL, NULL,
 						      0, 65535, 0,
 						      G_PARAM_READWRITE |
 						      G_PARAM_CONSTRUCT_ONLY |
@@ -270,9 +287,7 @@ g_proxy_address_class_init (GProxyAddressClass *klass)
    */
   g_object_class_install_property (gobject_class,
 				   PROP_URI,
-				   g_param_spec_string ("uri",
-							P_("URI"),
-							P_("The proxy's URI"),
+				   g_param_spec_string ("uri", NULL, NULL,
 							NULL,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -297,9 +312,9 @@ g_proxy_address_init (GProxyAddress *proxy)
  * @protocol: The proxy protocol to support, in lower case (e.g. socks, http).
  * @dest_hostname: The destination hostname the proxy should tunnel to.
  * @dest_port: The destination port to tunnel to.
- * @username: (allow-none): The username to authenticate to the proxy server
+ * @username: (nullable): The username to authenticate to the proxy server
  *     (or %NULL).
- * @password: (allow-none): The password to authenticate to the proxy server
+ * @password: (nullable): The password to authenticate to the proxy server
  *     (or %NULL).
  *
  * Creates a new #GProxyAddress for @inetaddr with @protocol that should
@@ -409,7 +424,7 @@ g_proxy_address_get_destination_port (GProxyAddress *proxy)
  *
  * Gets @proxy's username.
  *
- * Returns: the @proxy's username
+ * Returns: (nullable): the @proxy's username
  *
  * Since: 2.26
  */
@@ -425,7 +440,7 @@ g_proxy_address_get_username (GProxyAddress *proxy)
  *
  * Gets @proxy's password.
  *
- * Returns: the @proxy's password
+ * Returns: (nullable): the @proxy's password
  *
  * Since: 2.26
  */
@@ -442,7 +457,7 @@ g_proxy_address_get_password (GProxyAddress *proxy)
  *
  * Gets the proxy URI that @proxy was constructed from.
  *
- * Returns: the @proxy's URI, or %NULL if unknown
+ * Returns: (nullable): the @proxy's URI, or %NULL if unknown
  *
  * Since: 2.34
  */

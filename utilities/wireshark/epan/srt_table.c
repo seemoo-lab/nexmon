@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,6 +15,7 @@
 #include "proto.h"
 #include "packet_info.h"
 #include "srt_table.h"
+#include <wsutil/ws_assert.h>
 
 struct register_srt {
     int proto_id;              /* protocol id (0-indexed) */
@@ -87,20 +76,17 @@ free_srt_table_data(srt_stat_table *rst)
     rst->num_procs=0;
 }
 
-void free_srt_table(register_srt_t *srt, GArray* srt_array, srt_gui_free_cb gui_callback, void *callback_data)
+void free_srt_table(register_srt_t *srt, GArray* srt_array)
 {
-    guint i = 0;
+    unsigned i = 0;
     srt_stat_table *srt_table;
 
     for (i = 0; i < srt_array->len; i++)
     {
         srt_table = g_array_index(srt_array, srt_stat_table*, i);
 
-        /* Give GUI the first crack at it before we clean up */
-        if (gui_callback)
-            gui_callback(srt_table, callback_data);
-
         free_srt_table_data(srt_table);
+        g_free(srt_table);
     }
 
     /* Clear the tables */
@@ -120,43 +106,27 @@ static void reset_srt_table_data(srt_stat_table *rst)
     }
 }
 
-void reset_srt_table(GArray* srt_array, srt_gui_reset_cb gui_callback, void *callback_data)
+void reset_srt_table(GArray* srt_array)
 {
-    guint i = 0;
+    unsigned i = 0;
     srt_stat_table *srt_table;
 
     for (i = 0; i < srt_array->len; i++)
     {
         srt_table = g_array_index(srt_array, srt_stat_table*, i);
 
-        /* Give GUI the first crack at it before we clean up */
-        if (gui_callback)
-            gui_callback(srt_table, callback_data);
-
         reset_srt_table_data(srt_table);
     }
 }
 
-static GSList *registered_srt_tables = NULL;
+static wmem_tree_t *registered_srt_tables;
 
 register_srt_t* get_srt_table_by_name(const char* name)
 {
-    guint i, size = g_slist_length(registered_srt_tables);
-    register_srt_t* srt;
-    GSList   *slist;
-
-    for (i = 0; i < size; i++) {
-        slist = g_slist_nth(registered_srt_tables, i);
-        srt = (register_srt_t*)slist->data;
-
-        if (strcmp(name, proto_get_protocol_filter_name(srt->proto_id)) == 0)
-            return srt;
-    }
-
-    return NULL;
+    return (register_srt_t*)wmem_tree_lookup_string(registered_srt_tables, name, 0);
 }
 
-gchar* srt_table_get_tap_string(register_srt_t* srt)
+char* srt_table_get_tap_string(register_srt_t* srt)
 {
     GString *cmd_str = g_string_new(proto_get_protocol_filter_name(srt->proto_id));
     g_string_append(cmd_str, ",srt");
@@ -165,9 +135,9 @@ gchar* srt_table_get_tap_string(register_srt_t* srt)
 
 void srt_table_get_filter(register_srt_t* srt, const char *opt_arg, const char **filter, char** err)
 {
-    gchar* cmd_str = srt_table_get_tap_string(srt);
-    guint len = (guint32)strlen(cmd_str);
-    guint pos = len;
+    char* cmd_str = srt_table_get_tap_string(srt);
+    unsigned len = (uint32_t)strlen(cmd_str);
+    unsigned pos = len;
     *filter=NULL;
     *err = NULL;
 
@@ -192,18 +162,9 @@ void srt_table_get_filter(register_srt_t* srt, const char *opt_arg, const char *
     g_free(cmd_str);
 }
 
-void srt_table_dissector_init(register_srt_t* srt, GArray* srt_array, srt_gui_init_cb gui_callback, void *callback_data)
+void srt_table_dissector_init(register_srt_t* srt, GArray* srt_array)
 {
-    srt->srt_init(srt, srt_array, gui_callback, callback_data);
-}
-
-static gint
-insert_sorted_by_table_name(gconstpointer aparam, gconstpointer bparam)
-{
-    const register_srt_t *a = (const register_srt_t *)aparam;
-    const register_srt_t *b = (const register_srt_t *)bparam;
-
-    return g_ascii_strcasecmp(proto_get_protocol_short_name(find_protocol_by_id(a->proto_id)), proto_get_protocol_short_name(find_protocol_by_id(b->proto_id)));
+    srt->srt_init(srt, srt_array);
 }
 
 void
@@ -213,7 +174,7 @@ register_srt_table(const int proto_id, const char* tap_listener, int max_tables,
     DISSECTOR_ASSERT(init_cb);
     DISSECTOR_ASSERT(srt_packet_func);
 
-    table = g_new(register_srt_t,1);
+    table = wmem_new(wmem_epan_scope(), register_srt_t);
 
     table->proto_id      = proto_id;
     if (tap_listener != NULL)
@@ -226,32 +187,31 @@ register_srt_table(const int proto_id, const char* tap_listener, int max_tables,
     table->param_cb      = param_cb;
     table->param_data    = NULL;
 
-    registered_srt_tables = g_slist_insert_sorted(registered_srt_tables, table, insert_sorted_by_table_name);
+    if (registered_srt_tables == NULL)
+        registered_srt_tables = wmem_tree_new(wmem_epan_scope());
+
+    wmem_tree_insert_string(registered_srt_tables, proto_get_protocol_filter_name(proto_id), table, 0);
 }
 
-void srt_table_iterate_tables(GFunc func, gpointer user_data)
+void srt_table_iterate_tables(wmem_foreach_func func, void *user_data)
 {
-    g_slist_foreach(registered_srt_tables, func, user_data);
+    wmem_tree_foreach(registered_srt_tables, func, user_data);
 }
 
 srt_stat_table*
 init_srt_table(const char *name, const char *short_name, GArray *srt_array, int num_procs, const char* proc_column_name,
-                const char *filter_string, srt_gui_init_cb gui_callback, void* gui_data, void* table_specific_data)
+                const char *filter_string, void* table_specific_data)
 {
     int i;
     srt_stat_table *table = g_new(srt_stat_table, 1);
 
-    if(filter_string){
-        table->filter_string=g_strdup(filter_string);
-    } else {
-        table->filter_string=NULL;
-    }
+    table->filter_string = g_strdup(filter_string);
 
     table->name = name;
     table->short_name = short_name;
     table->proc_column_name = proc_column_name;
     table->num_procs=num_procs;
-    table->procedures=(srt_procedure_t *)g_malloc(sizeof(srt_procedure_t)*num_procs);
+    table->procedures=g_new(srt_procedure_t, num_procs);
     for(i=0;i<num_procs;i++){
         time_stat_init(&table->procedures[i].stats);
         table->procedures[i].proc_index = 0;
@@ -261,9 +221,6 @@ init_srt_table(const char *name, const char *short_name, GArray *srt_array, int 
     g_array_insert_val(srt_array, srt_array->len, table);
 
     table->table_specific_data = table_specific_data;
-
-    if (gui_callback)
-        gui_callback(table, gui_data);
 
     return table;
 }
@@ -294,7 +251,7 @@ add_srt_table_data(srt_stat_table *rst, int indx, const nstime_t *req_time, pack
     srt_procedure_t *rp;
     nstime_t t, delta;
 
-    g_assert(indx >= 0 && indx < rst->num_procs);
+    ws_assert(indx >= 0 && indx < rst->num_procs);
     rp=&rst->procedures[indx];
 
     /* calculate time delta between request and reply */

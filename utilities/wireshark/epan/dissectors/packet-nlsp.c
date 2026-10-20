@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,116 +15,122 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/to_str.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+
+#include <wsutil/array.h>
 #include "packet-ipx.h"
 
 void proto_register_nlsp(void);
 void proto_reg_handoff_nlsp(void);
 
-/* NLSP base header */
-static int proto_nlsp                    = -1;
+static dissector_handle_t nlsp_handle;
 
-static int hf_nlsp_irpd                  = -1;
-static int hf_nlsp_header_length         = -1;
-static int hf_nlsp_minor_version         = -1;
-static int hf_nlsp_nr                    = -1;
-static int hf_nlsp_type                  = -1;
-static int hf_nlsp_major_version         = -1;
-static int hf_nlsp_packet_length         = -1;
-static int hf_nlsp_hello_state           = -1;
-static int hf_nlsp_hello_multicast       = -1;
-static int hf_nlsp_hello_circuit_type    = -1;
-static int hf_nlsp_hello_holding_timer   = -1;
-static int hf_nlsp_hello_priority        = -1;
-static int hf_nlsp_lsp_sequence_number   = -1;
-static int hf_nlsp_lsp_checksum          = -1;
-static int hf_nlsp_lsp_p                 = -1;
-static int hf_nlsp_lsp_attached_flag     = -1;
-static int hf_nlsp_lsp_lspdbol           = -1;
-static int hf_nlsp_lsp_router_type       = -1;
-static int hf_nlsp_lsp_link_info_clv_flags_cost_present = -1;
-static int hf_nlsp_lsp_link_info_clv_flags_cost_metric = -1;
-static int hf_nlsp_lsp_link_info_clv_flags_cost = -1;
+/* NLSP base header */
+static int proto_nlsp;
+
+static int hf_nlsp_irpd;
+static int hf_nlsp_header_length;
+static int hf_nlsp_minor_version;
+static int hf_nlsp_nr;
+static int hf_nlsp_type;
+static int hf_nlsp_major_version;
+static int hf_nlsp_packet_length;
+static int hf_nlsp_hello_state;
+static int hf_nlsp_hello_multicast;
+static int hf_nlsp_hello_circuit_type;
+static int hf_nlsp_hello_holding_timer;
+static int hf_nlsp_hello_priority;
+static int hf_nlsp_lsp_sequence_number;
+static int hf_nlsp_lsp_checksum;
+static int hf_nlsp_lsp_p;
+static int hf_nlsp_lsp_attached_flag;
+static int hf_nlsp_lsp_lspdbol;
+static int hf_nlsp_lsp_router_type;
+static int hf_nlsp_lsp_link_info_clv_flags_cost_present;
+static int hf_nlsp_lsp_link_info_clv_flags_cost_metric;
+static int hf_nlsp_lsp_link_info_clv_flags_cost;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_nlsp_psnp_lsp_checksum = -1;
-static int hf_nlsp_csnp_start_lsp_id_source_id = -1;
-static int hf_nlsp_svcs_info_node_number = -1;
-static int hf_nlsp_ext_routes_rip_delay = -1;
-static int hf_nlsp_psnp_source_id_system_id = -1;
-static int hf_nlsp_svcs_info_socket = -1;
-static int hf_nlsp_hello_sending_router_system_id = -1;
-static int hf_nlsp_csnp_start_lsp_id_lsp_number = -1;
-static int hf_nlsp_lsp_id_system_id = -1;
-static int hf_nlsp_psnp_lsp_id_pseudonode_id = -1;
-static int hf_nlsp_csnp_end_lsp_id_lsp_number = -1;
-static int hf_nlsp_remaining_lifetime = -1;
-static int hf_nlsp_csnp_remaining_lifetime = -1;
-static int hf_nlsp_psnp_lsp_id_source_id = -1;
-static int hf_nlsp_ext_routes_hops = -1;
-static int hf_nlsp_hello_local_mtu_mtu_size = -1;
-static int hf_nlsp_link_info_throughput = -1;
-static int hf_nlsp_link_info_media_type = -1;
-static int hf_nlsp_mgt_info_name = -1;
-static int hf_nlsp_mgt_info_node_number = -1;
-static int hf_nlsp_csnp_end_lsp_id_source_id = -1;
-static int hf_nlsp_csnp_lsp_id_pseudonode_id = -1;
-static int hf_nlsp_psnp_lsp_sequence_number = -1;
-static int hf_nlsp_link_info_mtu_size = -1;
-static int hf_nlsp_lsp_id_lsp_number = -1;
-static int hf_nlsp_unknown_code = -1;
-static int hf_nlsp_mgt_info_ipx_version_number = -1;
-static int hf_nlsp_link_info_router_pseudonode_id = -1;
-static int hf_nlsp_psnp_source_id_pseudonode_id = -1;
-static int hf_nlsp_csnp_lsp_id_lsp_number = -1;
-static int hf_nlsp_csnp_source_id_pseudonode_id = -1;
-static int hf_nlsp_csnp_end_lsp_id_pseudonode_id = -1;
-static int hf_nlsp_csnp_lsp_sequence_number = -1;
-static int hf_nlsp_link_info_router_system_id = -1;
-static int hf_nlsp_svcs_info_type = -1;
-static int hf_nlsp_csnp_lsp_checksum = -1;
-static int hf_nlsp_hello_local_wan_circuit_id = -1;
-static int hf_nlsp_svcs_info_service_name = -1;
-static int hf_nlsp_mgt_info_name_length = -1;
-static int hf_nlsp_neighbor = -1;
-static int hf_nlsp_area_address_network_number = -1;
-static int hf_nlsp_link_info_delay = -1;
-static int hf_nlsp_csnp_start_lsp_id_pseudonode_id = -1;
-static int hf_nlsp_svcs_info_network_number = -1;
-static int hf_nlsp_csnp_source_id_system_id = -1;
-static int hf_nlsp_mgt_info_network_number = -1;
-static int hf_nlsp_hello_designated_router_pseudonode_id = -1;
-static int hf_nlsp_lsp_id_pseudonode_id = -1;
-static int hf_nlsp_csnp_lsp_id_source_id = -1;
-static int hf_nlsp_psnp_remaining_lifetime = -1;
-static int hf_nlsp_area_address_mask = -1;
-static int hf_nlsp_hello_designated_router_system_id = -1;
-static int hf_nlsp_svcs_info_hops_to_reach_the_service = -1;
-static int hf_nlsp_psnp_lsp_id_lsp_number = -1;
-static int hf_nlsp_ext_routes_network_number = -1;
+static int hf_nlsp_psnp_lsp_checksum;
+static int hf_nlsp_csnp_start_lsp_id_source_id;
+static int hf_nlsp_svcs_info_node_number;
+static int hf_nlsp_ext_routes_rip_delay;
+static int hf_nlsp_psnp_source_id_system_id;
+static int hf_nlsp_svcs_info_socket;
+static int hf_nlsp_hello_sending_router_system_id;
+static int hf_nlsp_csnp_start_lsp_id_lsp_number;
+static int hf_nlsp_lsp_id_system_id;
+static int hf_nlsp_psnp_lsp_id_pseudonode_id;
+static int hf_nlsp_csnp_end_lsp_id_lsp_number;
+static int hf_nlsp_remaining_lifetime;
+static int hf_nlsp_csnp_remaining_lifetime;
+static int hf_nlsp_psnp_lsp_id_source_id;
+static int hf_nlsp_ext_routes_hops;
+static int hf_nlsp_hello_local_mtu_mtu_size;
+static int hf_nlsp_link_info_throughput;
+static int hf_nlsp_link_info_media_type;
+static int hf_nlsp_mgt_info_name;
+static int hf_nlsp_mgt_info_node_number;
+static int hf_nlsp_csnp_end_lsp_id_source_id;
+static int hf_nlsp_csnp_lsp_id_pseudonode_id;
+static int hf_nlsp_psnp_lsp_sequence_number;
+static int hf_nlsp_link_info_mtu_size;
+static int hf_nlsp_lsp_id_lsp_number;
+static int hf_nlsp_unknown_code;
+static int hf_nlsp_mgt_info_ipx_version_number;
+static int hf_nlsp_link_info_router_pseudonode_id;
+static int hf_nlsp_psnp_source_id_pseudonode_id;
+static int hf_nlsp_csnp_lsp_id_lsp_number;
+static int hf_nlsp_csnp_source_id_pseudonode_id;
+static int hf_nlsp_csnp_end_lsp_id_pseudonode_id;
+static int hf_nlsp_csnp_lsp_sequence_number;
+static int hf_nlsp_link_info_router_system_id;
+static int hf_nlsp_svcs_info_type;
+static int hf_nlsp_csnp_lsp_checksum;
+static int hf_nlsp_hello_local_wan_circuit_id;
+static int hf_nlsp_svcs_info_service_name;
+static int hf_nlsp_mgt_info_name_length;
+static int hf_nlsp_neighbor;
+static int hf_nlsp_area_address_network_number;
+static int hf_nlsp_link_info_delay;
+static int hf_nlsp_csnp_start_lsp_id_pseudonode_id;
+static int hf_nlsp_svcs_info_network_number;
+static int hf_nlsp_csnp_source_id_system_id;
+static int hf_nlsp_mgt_info_network_number;
+static int hf_nlsp_hello_designated_router_pseudonode_id;
+static int hf_nlsp_lsp_id_pseudonode_id;
+static int hf_nlsp_csnp_lsp_id_source_id;
+static int hf_nlsp_psnp_remaining_lifetime;
+static int hf_nlsp_area_address_mask;
+static int hf_nlsp_hello_designated_router_system_id;
+static int hf_nlsp_svcs_info_hops_to_reach_the_service;
+static int hf_nlsp_psnp_lsp_id_lsp_number;
+static int hf_nlsp_ext_routes_network_number;
 
-static expert_field ei_nlsp_short_packet = EI_INIT;
-static expert_field ei_nlsp_long_packet = EI_INIT;
-static expert_field ei_nlsp_major_version = EI_INIT;
-static expert_field ei_nlsp_type = EI_INIT;
+static expert_field ei_nlsp_short_packet;
+static expert_field ei_nlsp_long_packet;
+static expert_field ei_nlsp_major_version;
+static expert_field ei_nlsp_type;
 
-static gint ett_nlsp                     = -1;
-static gint ett_nlsp_hello_clv_area_addr = -1;
-static gint ett_nlsp_hello_clv_neighbors = -1;
-static gint ett_nlsp_hello_local_mtu     = -1;
-static gint ett_nlsp_hello_clv_unknown   = -1;
-static gint ett_nlsp_lsp_info            = -1;
-static gint ett_nlsp_lsp_clv_area_addr   = -1;
-static gint ett_nlsp_lsp_clv_mgt_info    = -1;
-static gint ett_nlsp_lsp_clv_link_info   = -1;
-static gint ett_nlsp_lsp_clv_svcs_info   = -1;
-static gint ett_nlsp_lsp_clv_ext_routes  = -1;
-static gint ett_nlsp_lsp_clv_unknown     = -1;
-static gint ett_nlsp_csnp_lsp_entries    = -1;
-static gint ett_nlsp_csnp_lsp_entry      = -1;
-static gint ett_nlsp_csnp_clv_unknown    = -1;
-static gint ett_nlsp_psnp_lsp_entries    = -1;
-static gint ett_nlsp_psnp_lsp_entry      = -1;
-static gint ett_nlsp_psnp_clv_unknown    = -1;
+static int ett_nlsp;
+static int ett_nlsp_hello_clv_area_addr;
+static int ett_nlsp_hello_clv_neighbors;
+static int ett_nlsp_hello_local_mtu;
+static int ett_nlsp_hello_clv_unknown;
+static int ett_nlsp_lsp_info;
+static int ett_nlsp_lsp_clv_area_addr;
+static int ett_nlsp_lsp_clv_mgt_info;
+static int ett_nlsp_lsp_clv_link_info;
+static int ett_nlsp_lsp_clv_svcs_info;
+static int ett_nlsp_lsp_clv_ext_routes;
+static int ett_nlsp_lsp_clv_unknown;
+static int ett_nlsp_csnp_lsp_entries;
+static int ett_nlsp_csnp_lsp_entry;
+static int ett_nlsp_csnp_clv_unknown;
+static int ett_nlsp_psnp_lsp_entries;
+static int ett_nlsp_psnp_lsp_entry;
+static int ett_nlsp_psnp_clv_unknown;
 
 #define PACKET_TYPE_MASK	0x1f
 
@@ -183,7 +177,7 @@ static const true_false_string tfs_internal_external = { "Internal", "External" 
 typedef struct {
 	int		optcode;		/* code for option */
 	const char	*tree_text;		/* text for fold out */
-	gint		*tree_id;		/* id for add_item */
+	int		*tree_id;		/* id for add_item */
 	void		(*dissect)(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree,
 				int offset, int length);
 } nlsp_clv_handle_t;
@@ -221,19 +215,19 @@ static void
 nlsp_dissect_clvs(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int offset,
 	const nlsp_clv_handle_t *opts, int len, int unknown_tree_id _U_)
 {
-	guint8 code;
-	guint8 length;
+	uint8_t code;
+	uint8_t length;
 	int q;
 	proto_tree	*clv_tree;
 
 	while ( len > 0 ) {
-		code = tvb_get_guint8(tvb, offset);
+		code = tvb_get_uint8(tvb, offset);
 		offset += 1;
 		len -= 1;
 		if (len == 0)
 			break;
 
-		length = tvb_get_guint8(tvb, offset);
+		length = tvb_get_uint8(tvb, offset);
 		offset += 1;
 		len -= 1;
 		if (len == 0)
@@ -440,9 +434,8 @@ static void
 nlsp_dissect_nlsp_hello(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 			int offset, int hello_type, int header_length)
 {
-	guint16		packet_length;
+	uint16_t		packet_length;
 	int 		len;
-	guint16		holding_timer;
 
 	if (hello_type == NLSP_TYPE_WAN_HELLO) {
 		proto_tree_add_item(tree, hf_nlsp_hello_state, tvb,
@@ -458,13 +451,11 @@ nlsp_dissect_nlsp_hello(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	proto_tree_add_item(tree, hf_nlsp_hello_sending_router_system_id, tvb, offset, 6, ENC_NA);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, ", System ID: %s",
-		    tvb_ether_to_str(tvb, offset));
+		    tvb_ether_to_str(pinfo->pool, tvb, offset));
 
 	offset += 6;
 
-	holding_timer = tvb_get_ntohs(tvb, offset);
-	proto_tree_add_uint_format_value(tree, hf_nlsp_hello_holding_timer,
-		tvb, offset, 2, holding_timer, "%us", holding_timer);
+	proto_tree_add_item(tree, hf_nlsp_hello_holding_timer, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
 
 	packet_length = tvb_get_ntohs(tvb, offset);
@@ -518,7 +509,7 @@ static void
 dissect_lsp_mgt_info_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int offset,
 			 int length)
 {
-	guint8 name_length;
+	uint8_t name_length;
 
 	if (length < 4) {
 		proto_tree_add_expert_format(tree, pinfo, &ei_nlsp_short_packet, tvb, offset, -1,
@@ -553,7 +544,7 @@ dissect_lsp_mgt_info_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, in
 		    "Short management info entry");
 		return;
 	}
-	name_length = tvb_get_guint8(tvb, offset);
+	name_length = tvb_get_uint8(tvb, offset);
 	proto_tree_add_item(tree, hf_nlsp_mgt_info_name_length, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 	length -= 1;
@@ -564,7 +555,7 @@ dissect_lsp_mgt_info_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, in
 			    "Short management info entry");
 			return;
 		}
-		proto_tree_add_item(tree, hf_nlsp_mgt_info_name, tvb, offset, name_length, ENC_NA|ENC_ASCII);
+		proto_tree_add_item(tree, hf_nlsp_mgt_info_name, tvb, offset, name_length, ENC_ASCII);
 	}
 }
 
@@ -626,7 +617,7 @@ static void
 dissect_lsp_link_info_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int offset,
 			  int length)
 {
-	guint8 flags_cost;
+	uint8_t flags_cost;
 
 	if (length < 1) {
 		proto_tree_add_expert_format(tree, pinfo, &ei_nlsp_short_packet, tvb, offset, -1,
@@ -634,7 +625,7 @@ dissect_lsp_link_info_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, i
 		return;
 	}
 	if (tree) {
-		flags_cost = tvb_get_guint8(tvb, offset);
+		flags_cost = tvb_get_uint8(tvb, offset);
 		proto_tree_add_item(tree, hf_nlsp_lsp_link_info_clv_flags_cost_present, tvb, offset, 1, ENC_BIG_ENDIAN);
 		if (!(flags_cost & 0x80)) {
 			/*
@@ -680,8 +671,7 @@ dissect_lsp_link_info_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, i
 		    "Short link info entry");
 		return;
 	}
-	proto_tree_add_uint_format_value(tree, hf_nlsp_link_info_delay, tvb, offset, 4,
-			tvb_get_ntohl(tvb, offset), "%uus", tvb_get_ntohl(tvb, offset));
+	proto_tree_add_item(tree, hf_nlsp_link_info_delay, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
 	length -= 4;
 
@@ -690,8 +680,7 @@ dissect_lsp_link_info_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, i
 		    "Short link info entry");
 		return;
 	}
-	proto_tree_add_uint_format_value(tree, hf_nlsp_link_info_throughput, tvb, offset, 4,
-			tvb_get_ntohl(tvb, offset), "%u bits/s", tvb_get_ntohl(tvb, offset));
+	proto_tree_add_item(tree, hf_nlsp_link_info_throughput, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
 	length -= 4;
 
@@ -773,7 +762,7 @@ dissect_lsp_svcs_info_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, i
 	length -= 2;
 
 	if (length > 0) {
-		proto_tree_add_item(tree, hf_nlsp_svcs_info_service_name, tvb, offset, length, ENC_NA|ENC_ASCII);
+		proto_tree_add_item(tree, hf_nlsp_svcs_info_service_name, tvb, offset, length, ENC_ASCII);
 	}
 }
 
@@ -798,12 +787,6 @@ dissect_lsp_ext_routes_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, 
 			   int length)
 {
 	while (length > 0) {
-		if (length < 1) {
-			proto_tree_add_expert_format(tree, pinfo, &ei_nlsp_short_packet, tvb, offset, -1,
-			    "Short external routes entry");
-			return;
-		}
-
 		proto_tree_add_item(tree, hf_nlsp_ext_routes_hops, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset += 1;
 		length -= 1;
@@ -824,8 +807,7 @@ dissect_lsp_ext_routes_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, 
 			return;
 		}
 
-		proto_tree_add_uint_format_value(tree, hf_nlsp_ext_routes_rip_delay, tvb, offset, 2,
-				tvb_get_ntohs(tvb, offset), "%u ticks", tvb_get_ntohs(tvb, offset));
+		proto_tree_add_item(tree, hf_nlsp_ext_routes_rip_delay, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 		length -= 2;
 	}
@@ -907,9 +889,9 @@ static void
 nlsp_dissect_nlsp_lsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		      int offset, int header_length)
 {
-	guint16		packet_length;
-	guint16		remaining_lifetime;
-	guint32		sequence_number;
+	uint16_t		packet_length;
+	uint16_t		remaining_lifetime;
+	uint32_t		sequence_number;
 	int		len;
 
 	packet_length = tvb_get_ntohs(tvb, offset);
@@ -918,12 +900,11 @@ nlsp_dissect_nlsp_lsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	offset += 2;
 
 	remaining_lifetime = tvb_get_ntohs(tvb, offset);
-	proto_tree_add_uint_format_value(tree, hf_nlsp_remaining_lifetime, tvb, offset, 2,
-					remaining_lifetime, "%us", remaining_lifetime);
+	proto_tree_add_uint(tree, hf_nlsp_remaining_lifetime, tvb, offset, 2, remaining_lifetime);
 	offset += 2;
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, ", LSP ID: %s",
-		    tvb_ether_to_str(tvb, offset));
+		    tvb_ether_to_str(pinfo->pool, tvb, offset));
 
 	proto_tree_add_item(tree, hf_nlsp_lsp_id_system_id, tvb, offset, 6, ENC_NA);
 
@@ -1011,7 +992,7 @@ dissect_csnp_lsp_entries(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, in
 
 		subtree = proto_tree_add_subtree_format(tree, tvb, offset, 16,
 		    ett_nlsp_csnp_lsp_entry, NULL, "LSP-ID: %s, Sequence: 0x%08x, Lifetime: %5us, Checksum: 0x%04x",
-		    tvb_ether_to_str(tvb, offset+2), /* XXX - rest of system ID */
+		    tvb_ether_to_str(pinfo->pool, tvb, offset+2), /* XXX - rest of system ID */
 		    tvb_get_ntohl(tvb, offset+10),
 		    tvb_get_ntohs(tvb, offset),
 		    tvb_get_ntohs(tvb, offset+14));
@@ -1022,8 +1003,7 @@ dissect_csnp_lsp_entries(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, in
 
 		proto_tree_add_item(subtree, hf_nlsp_csnp_lsp_sequence_number, tvb, offset+10, 4, ENC_BIG_ENDIAN);
 
-		proto_tree_add_uint_format_value(subtree, hf_nlsp_csnp_remaining_lifetime, tvb, offset, 2,
-			tvb_get_ntohs(tvb, offset), "%us", tvb_get_ntohs(tvb, offset));
+		proto_tree_add_item(subtree, hf_nlsp_csnp_remaining_lifetime, tvb, offset, 2, ENC_BIG_ENDIAN);
 
 		proto_tree_add_checksum(subtree, tvb, offset+14, hf_nlsp_csnp_lsp_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
 
@@ -1047,7 +1027,7 @@ dissect_psnp_lsp_entries(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, in
 
 		subtree = proto_tree_add_subtree_format(tree, tvb, offset, 16,
 		    ett_nlsp_psnp_lsp_entry, NULL, "LSP-ID: %s, Sequence: 0x%08x, Lifetime: %5us, Checksum: 0x%04x",
-		    tvb_ether_to_str(tvb, offset+2), /* XXX - rest of system ID */
+		    tvb_ether_to_str(pinfo->pool, tvb, offset+2), /* XXX - rest of system ID */
 		    tvb_get_ntohl(tvb, offset+10),
 		    tvb_get_ntohs(tvb, offset),
 		    tvb_get_ntohs(tvb, offset+14));
@@ -1058,8 +1038,7 @@ dissect_psnp_lsp_entries(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, in
 
 		proto_tree_add_item(subtree, hf_nlsp_psnp_lsp_sequence_number, tvb, offset+10, 4, ENC_BIG_ENDIAN);
 
-		proto_tree_add_uint_format_value(subtree, hf_nlsp_psnp_remaining_lifetime, tvb, offset, 2,
-			tvb_get_ntohs(tvb, offset), "%us", tvb_get_ntohs(tvb, offset));
+		proto_tree_add_item(subtree, hf_nlsp_psnp_remaining_lifetime, tvb, offset, 2, ENC_BIG_ENDIAN);
 
 		proto_tree_add_checksum(subtree, tvb, offset+14, hf_nlsp_psnp_lsp_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
 
@@ -1104,7 +1083,7 @@ static void
 nlsp_dissect_nlsp_csnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		       int offset, int header_length)
 {
-	guint16		packet_length;
+	uint16_t		packet_length;
 	int 		len;
 
 	packet_length = tvb_get_ntohs(tvb, offset);
@@ -1112,14 +1091,14 @@ nlsp_dissect_nlsp_csnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	offset += 2;
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, ", Source ID: %s",
-		    tvb_ether_to_str(tvb, offset));
+		    tvb_ether_to_str(pinfo->pool, tvb, offset));
 	proto_tree_add_item(tree, hf_nlsp_csnp_source_id_system_id, tvb, offset, 6, ENC_NA);
 	offset += 6;
 	proto_tree_add_item(tree, hf_nlsp_csnp_source_id_pseudonode_id, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, ", Start LSP ID: %s",
-		    tvb_ether_to_str(tvb, offset));
+		    tvb_ether_to_str(pinfo->pool, tvb, offset));
 	proto_tree_add_item(tree, hf_nlsp_csnp_start_lsp_id_source_id, tvb, offset, 6, ENC_NA);
 	offset += 6;
 	/* XXX - append the pseudonode ID */
@@ -1130,7 +1109,7 @@ nlsp_dissect_nlsp_csnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	offset += 1;
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, ", End LSP ID: %s",
-		    tvb_ether_to_str(tvb, offset));
+		    tvb_ether_to_str(pinfo->pool, tvb, offset));
 	proto_tree_add_item(tree, hf_nlsp_csnp_end_lsp_id_source_id, tvb, offset, 6, ENC_NA);
 	offset += 6;
 	/* XXX - append the pseudonode ID */
@@ -1184,7 +1163,7 @@ static void
 nlsp_dissect_nlsp_psnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		       int offset, int header_length)
 {
-	guint16		packet_length;
+	uint16_t		packet_length;
 	int 		len;
 
 	packet_length = tvb_get_ntohs(tvb, offset);
@@ -1193,7 +1172,7 @@ nlsp_dissect_nlsp_psnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	offset += 2;
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, ", Source ID: %s",
-		    tvb_ether_to_str(tvb, offset));
+		    tvb_ether_to_str(pinfo->pool, tvb, offset));
 	proto_tree_add_item(tree, hf_nlsp_psnp_source_id_system_id, tvb, offset, 6, ENC_NA);
 	offset += 6;
 	/* XXX - add the pseudonode ID */
@@ -1230,10 +1209,10 @@ dissect_nlsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	proto_item *ti, *type_item;
 	proto_tree *nlsp_tree;
 	int offset = 0;
-	guint8 nlsp_major_version;
-	guint8 nlsp_header_length;
-	guint8 packet_type_flags;
-	guint8 packet_type;
+	uint8_t nlsp_major_version;
+	uint8_t nlsp_header_length;
+	uint8_t packet_type_flags;
+	uint8_t packet_type;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "NLSP");
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -1245,7 +1224,7 @@ dissect_nlsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 			ENC_BIG_ENDIAN );
 	offset += 1;
 
-	nlsp_header_length = tvb_get_guint8(tvb, 1);
+	nlsp_header_length = tvb_get_uint8(tvb, 1);
 	proto_tree_add_uint(nlsp_tree, hf_nlsp_header_length, tvb,
 			offset, 1, nlsp_header_length );
 	offset += 1;
@@ -1256,17 +1235,17 @@ dissect_nlsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 	offset += 1;	/* Reserved */
 
-	packet_type_flags = tvb_get_guint8(tvb, offset);
+	packet_type_flags = tvb_get_uint8(tvb, offset);
 	packet_type = packet_type_flags & PACKET_TYPE_MASK;
 	col_add_str(pinfo->cinfo, COL_INFO,
-		    val_to_str(packet_type, nlsp_packet_type_vals, "Unknown (%u)"));
+		    val_to_str(pinfo->pool, packet_type, nlsp_packet_type_vals, "Unknown (%u)"));
 	if (packet_type == NLSP_TYPE_L1_LSP) {
 		proto_tree_add_boolean(nlsp_tree, hf_nlsp_nr, tvb, offset, 1, packet_type_flags );
 	}
 	type_item = proto_tree_add_uint(nlsp_tree, hf_nlsp_type, tvb, offset, 1, packet_type_flags );
 	offset += 1;
 
-	nlsp_major_version = tvb_get_guint8(tvb, offset);
+	nlsp_major_version = tvb_get_uint8(tvb, offset);
 	ti = proto_tree_add_item(nlsp_tree, hf_nlsp_major_version, tvb,
 			offset, 1, ENC_BIG_ENDIAN );
 	if (nlsp_major_version != 1){
@@ -1389,7 +1368,7 @@ proto_register_nlsp(void)
 
 		{ &hf_nlsp_hello_holding_timer,
 		  { "Holding Timer", "nlsp.hello.holding_timer",
-		    FT_UINT8, BASE_DEC, NULL, 0x0,
+		    FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0x0,
 		    NULL, HFILL }
 		},
 
@@ -1541,12 +1520,12 @@ proto_register_nlsp(void)
 		},
 		{ &hf_nlsp_link_info_delay,
 		  { "Delay", "nlsp.link_info.delay",
-		    FT_UINT32, BASE_DEC, NULL, 0x0,
+		    FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0,
 		    NULL, HFILL }
 		},
 		{ &hf_nlsp_link_info_throughput,
 		  { "Throughput", "nlsp.link_info.throughput",
-		    FT_UINT32, BASE_DEC, NULL, 0x0,
+		    FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0x0,
 		    NULL, HFILL }
 		},
 		{ &hf_nlsp_link_info_media_type,
@@ -1596,12 +1575,12 @@ proto_register_nlsp(void)
 		},
 		{ &hf_nlsp_ext_routes_rip_delay,
 		  { "RIP delay", "nlsp.ext_routes.rip_delay",
-		    FT_UINT16, BASE_DEC, NULL, 0x0,
+		    FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_tick_ticks), 0x0,
 		    NULL, HFILL }
 		},
 		{ &hf_nlsp_remaining_lifetime,
 		  { "Remaining Lifetime", "nlsp.remaining_lifetime",
-		    FT_UINT16, BASE_DEC, NULL, 0x0,
+		    FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0x0,
 		    NULL, HFILL }
 		},
 		{ &hf_nlsp_lsp_id_system_id,
@@ -1641,7 +1620,7 @@ proto_register_nlsp(void)
 		},
 		{ &hf_nlsp_csnp_remaining_lifetime,
 		  { "Remaining Lifetime", "nlsp.csnp.remaining_lifetime",
-		    FT_UINT16, BASE_DEC, NULL, 0x0,
+		    FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0x0,
 		    NULL, HFILL }
 		},
 		{ &hf_nlsp_csnp_lsp_checksum,
@@ -1671,7 +1650,7 @@ proto_register_nlsp(void)
 		},
 		{ &hf_nlsp_psnp_remaining_lifetime,
 		  { "Remaining Lifetime", "nlsp.psnp.remaining_lifetime",
-		    FT_UINT16, BASE_DEC, NULL, 0x0,
+		    FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0x0,
 		    NULL, HFILL }
 		},
 		{ &hf_nlsp_psnp_lsp_checksum,
@@ -1730,7 +1709,7 @@ proto_register_nlsp(void)
 		    NULL, HFILL }
 		},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_nlsp,
 		&ett_nlsp_hello_clv_area_addr,
 		&ett_nlsp_hello_clv_neighbors,
@@ -1766,19 +1745,18 @@ proto_register_nlsp(void)
 	proto_register_subtree_array(ett, array_length(ett));
 	expert_nlsp = expert_register_protocol(proto_nlsp);
 	expert_register_field_array(expert_nlsp, ei, array_length(ei));
+
+	nlsp_handle = register_dissector("nlsp", dissect_nlsp, proto_nlsp);
 }
 
 void
 proto_reg_handoff_nlsp(void)
 {
-	dissector_handle_t nlsp_handle;
-
-	nlsp_handle = create_dissector_handle(dissect_nlsp, proto_nlsp);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_NLSP, nlsp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

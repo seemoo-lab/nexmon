@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * GED125
  * This is Cisco's protocol that runs atop TCP (ged125 is in the payload of TCP).
@@ -48,115 +36,114 @@
 void proto_register_ged125(void);
 void proto_reg_handoff_ged125(void);
 
-static int proto_ged125 = -1;
+static int proto_ged125;
 
-static gint hf_ged125_length = -1;
-static gint hf_ged125_value = -1;
-static gint hf_ged125_service_control_value = -1;
-static gint hf_ged125_DialogueID_num = -1;
-static gint hf_ged125_SendSeqNo_num = -1;
-static gint hf_ged125_CurrentTime_num = -1;
-static gint hf_ged125_TimeZoneDelta = -1;
-static gint hf_ged125_OperationalStatus = -1;
-static gint hf_ged125_StatusVariable = -1;
-static gint hf_ged125_InvokeID = -1;
-static gint hf_ged125_Status = -1;
-static gint hf_ged125_VersionNumber = -1;
-static gint hf_ged125_IdleTimeout = -1;
-static gint hf_ged125_UseEventFeed = -1;
-static gint hf_ged125_UsePolledFeed = -1;
-static gint hf_ged125_UseCallRouting = -1;
-static gint hf_ged125_UseTimeSynch = -1;
-static gint hf_ged125_UseServiceControl = -1;
-static gint hf_ged125_TrunkGroupID = -1;
-static gint hf_ged125_TrunkCount = -1;
-static gint hf_ged125_CallsInToday = -1;
-static gint hf_ged125_CallsOutToday = -1;
-static gint hf_ged125_InServiceTimeToday = -1;
-static gint hf_ged125_InUseInboundTimeToday = -1;
-static gint hf_ged125_InUseOutboundTimeToday = -1;
-static gint hf_ged125_AllTrunksInUseTimeToday = -1;
-static gint hf_ged125_TrunkNumber = -1;
-static gint hf_ged125_TrunkStatus = -1;
-static gint hf_ged125_ServiceID = -1;
-static gint hf_ged125_AvailableNow = -1;
-static gint hf_ged125_CallsInNow = -1;
-static gint hf_ged125_CallsOutNow = -1;
-static gint hf_ged125_CallsHandledToday = -1;
-static gint hf_ged125_HandleTimeToday = -1;
-static gint hf_ged125_DivertedInToday = -1;
-static gint hf_ged125_DivertedOutToday = -1;
-static gint hf_ged125_StartOfDay = -1;
-static gint hf_ged125_InitDataTime = -1;
-static gint hf_ged125_CallID = -1;
-static gint hf_ged125_floating = -1;
-static gint hf_ged125_floating_CauseCode = -1;
-static gint hf_ged125_ServiceFeatures = -1;
-static gint hf_ged125_floating_payload_strg = -1;
-static gint hf_ged125_floating_payload_uint = -1;
-static gint hf_ged125_floating_payload_bool = -1;
-static gint hf_ged125_floating_payload_ECC_tag = -1;
-static gint hf_ged125_ResultCode = -1;
-static gint hf_ged125_LabelType = -1;
-static gint hf_ged125_Cause_just_for_release_message = -1;
-static gint hf_ged125_EventID = -1;
-static gint hf_ged125_ErrorCode = -1;
-static gint hf_ged125_InService = -1;
-static gint hf_ged125_ServiceAvailable = -1;
-static gint hf_ged125_RequestID = -1;
-static gint hf_ged125_ToBeContinued = -1;
-static gint hf_ged125_Barge_In_Allowed = -1;
-static gint hf_ged125_floating_cause_code = -1;
-static gint hf_ged125_DTMF_Termination_Key = -1;
-static gint hf_ged125_No_Entry_Timeout = -1;
-static gint hf_ged125_Interdigit_Timeout = -1;
-static gint hf_ged125_Number_of_No_Entry_Tries = -1;
-static gint hf_ged125_Number_of_Invalid_Entry_Tries = -1;
-static gint hf_ged125_Min_Length = -1;
-static gint hf_ged125_Max_Length = -1;
-static gint hf_ged125_ASR_Allowed = -1;
-static gint hf_ged125_DTMF_Menu_Keys = -1;
-static gint hf_ged125_Microapp_Error_Code = -1;
-static gint hf_ged125_ConferenceCallID = -1;
-static gint hf_ged125_PrimaryCallID = -1;
-static gint hf_ged125_SecondaryCallID = -1;
-static gint hf_ged125_NewServiceID = -1;
-static gint hf_ged125_NewCallID = -1;
-static gint hf_ged125_simulator_reset_event = -1;
-static gint hf_ged125_CrossRefID = -1;
-static gint hf_ged125_VRUTimeLag = -1;
-static gint hf_ged125_CallVarsMask = -1;
-static gint hf_ged125_floating_payload_unspec = -1;
-static gint hf_ged125_floating_uchar_array_index = -1;
-static gint hf_ged125_floating_media_protocol = -1;
-static gint hf_ged125_floating_library_designator = -1;
-static gint hf_ged125_Data_Playback_Type = -1;
-static gint hf_ged125_Data_Playback_Formats = -1;
+static int hf_ged125_length;
+static int hf_ged125_value;
+static int hf_ged125_service_control_value;
+static int hf_ged125_DialogueID_num;
+static int hf_ged125_SendSeqNo_num;
+static int hf_ged125_CurrentTime_num;
+static int hf_ged125_TimeZoneDelta;
+static int hf_ged125_OperationalStatus;
+static int hf_ged125_StatusVariable;
+static int hf_ged125_InvokeID;
+static int hf_ged125_Status;
+static int hf_ged125_VersionNumber;
+static int hf_ged125_IdleTimeout;
+static int hf_ged125_UseEventFeed;
+static int hf_ged125_UsePolledFeed;
+static int hf_ged125_UseCallRouting;
+static int hf_ged125_UseTimeSynch;
+static int hf_ged125_UseServiceControl;
+static int hf_ged125_TrunkGroupID;
+static int hf_ged125_TrunkCount;
+static int hf_ged125_CallsInToday;
+static int hf_ged125_CallsOutToday;
+static int hf_ged125_InServiceTimeToday;
+static int hf_ged125_InUseInboundTimeToday;
+static int hf_ged125_InUseOutboundTimeToday;
+static int hf_ged125_AllTrunksInUseTimeToday;
+static int hf_ged125_TrunkNumber;
+static int hf_ged125_TrunkStatus;
+static int hf_ged125_ServiceID;
+static int hf_ged125_AvailableNow;
+static int hf_ged125_CallsInNow;
+static int hf_ged125_CallsOutNow;
+static int hf_ged125_CallsHandledToday;
+static int hf_ged125_HandleTimeToday;
+static int hf_ged125_DivertedInToday;
+static int hf_ged125_DivertedOutToday;
+static int hf_ged125_StartOfDay;
+static int hf_ged125_InitDataTime;
+static int hf_ged125_CallID;
+static int hf_ged125_floating;
+static int hf_ged125_floating_CauseCode;
+static int hf_ged125_ServiceFeatures;
+static int hf_ged125_floating_payload_strg;
+static int hf_ged125_floating_payload_uint;
+static int hf_ged125_floating_payload_bool;
+static int hf_ged125_floating_payload_ECC_tag;
+static int hf_ged125_ResultCode;
+static int hf_ged125_LabelType;
+static int hf_ged125_Cause_just_for_release_message;
+static int hf_ged125_EventID;
+static int hf_ged125_ErrorCode;
+static int hf_ged125_InService;
+static int hf_ged125_ServiceAvailable;
+static int hf_ged125_RequestID;
+static int hf_ged125_ToBeContinued;
+static int hf_ged125_Barge_In_Allowed;
+static int hf_ged125_floating_cause_code;
+static int hf_ged125_DTMF_Termination_Key;
+static int hf_ged125_No_Entry_Timeout;
+static int hf_ged125_Interdigit_Timeout;
+static int hf_ged125_Number_of_No_Entry_Tries;
+static int hf_ged125_Number_of_Invalid_Entry_Tries;
+static int hf_ged125_Min_Length;
+static int hf_ged125_Max_Length;
+static int hf_ged125_ASR_Allowed;
+static int hf_ged125_DTMF_Menu_Keys;
+static int hf_ged125_Microapp_Error_Code;
+static int hf_ged125_ConferenceCallID;
+static int hf_ged125_PrimaryCallID;
+static int hf_ged125_SecondaryCallID;
+static int hf_ged125_NewServiceID;
+static int hf_ged125_NewCallID;
+static int hf_ged125_simulator_reset_event;
+static int hf_ged125_CrossRefID;
+static int hf_ged125_VRUTimeLag;
+static int hf_ged125_CallVarsMask;
+static int hf_ged125_floating_payload_unspec;
+static int hf_ged125_floating_uchar_array_index;
+static int hf_ged125_floating_media_protocol;
+static int hf_ged125_floating_library_designator;
+static int hf_ged125_Data_Playback_Type;
+static int hf_ged125_Data_Playback_Formats;
 
-static gint ett_ged125 = -1;
-static gint ett_ged125_header = -1;
-static gint ett_ged125_message = -1;
-static gint ett_ged125_floating = -1;
-static gint ett_ged125_float_field = -1;
-static gint ett_ged125_service_control_header = -1;
-static gint ett_ged125_service_control_data = -1;
+static int ett_ged125;
+static int ett_ged125_header;
+static int ett_ged125_message;
+static int ett_ged125_floating;
+static int ett_ged125_float_field;
+static int ett_ged125_service_control_header;
+static int ett_ged125_service_control_data;
 
-static expert_field ei_ged125_OperationalStatus_normal = EI_INIT;
-static expert_field ei_ged125_OperationalStatus_loss_redundant_component = EI_INIT;
-static expert_field ei_ged125_OperationalStatus_degraded_call_processing = EI_INIT;
-static expert_field ei_ged125_OperationalStatus_conditions_prevent_call = EI_INIT;
-static expert_field ei_ged125_OperationalStatus_invalid_message = EI_INIT;
-static expert_field ei_ged125_length_bad = EI_INIT;
-static expert_field ei_ged125_sendseqno_and_dialogueid = EI_INIT;
-static expert_field ei_ged125_service_control_value_unknown = EI_INIT;
-static expert_field ei_ged125_trunk_group_id = EI_INIT;
-static expert_field ei_ged125_TrunkCount_invalid = EI_INIT;
+static expert_field ei_ged125_OperationalStatus_normal;
+static expert_field ei_ged125_OperationalStatus_loss_redundant_component;
+static expert_field ei_ged125_OperationalStatus_degraded_call_processing;
+static expert_field ei_ged125_OperationalStatus_conditions_prevent_call;
+static expert_field ei_ged125_OperationalStatus_invalid_message;
+static expert_field ei_ged125_length_bad;
+static expert_field ei_ged125_sendseqno_and_dialogueid;
+static expert_field ei_ged125_service_control_value_unknown;
+static expert_field ei_ged125_trunk_group_id;
+static expert_field ei_ged125_TrunkCount_invalid;
 
 static dissector_handle_t ged125_handle;
 
 /* Preferences */
-static guint global_tcp_port_ged125 = 0;
-static gboolean ged125_desegment_body = TRUE;
+static bool ged125_desegment_body = true;
 
 #define GED125_FAILURE_CONF_VALUE 1
 #define GED125_FAILURE_EVENT_VALUE 2
@@ -522,9 +509,9 @@ static const value_string floating_media_library_designator_vals[] = {
 };
 
 static void
-OperationalStatus_funk(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, gint* offset)
+OperationalStatus_funk(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, int* offset)
 {
-	guint32 value;
+	uint32_t value;
 	proto_item* ti;
 
 	value = tvb_get_ntohl(tvb, *offset);
@@ -546,7 +533,7 @@ OperationalStatus_funk(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, gint
 
 
 static void
-StatusVariable_funk(tvbuff_t* tvb, proto_tree* tree, gint* offset, const gint size)
+StatusVariable_funk(tvbuff_t* tvb, proto_tree* tree, int* offset, const int size)
 {
 	while(*offset+4 <= size)
 	{
@@ -556,9 +543,9 @@ StatusVariable_funk(tvbuff_t* tvb, proto_tree* tree, gint* offset, const gint si
 }
 
 static void
-trunk_funk_without_status(tvbuff_t* tvb, proto_tree* z_tree, gint* offset, const gint size)
+trunk_funk_without_status(tvbuff_t* tvb, proto_tree* z_tree, int* offset, const int size)
 {
-	gint count = 0;
+	int count = 0;
 
 	while(*offset+2 <= size && count < 1024)
 	{
@@ -569,9 +556,9 @@ trunk_funk_without_status(tvbuff_t* tvb, proto_tree* z_tree, gint* offset, const
 }
 
 static void
-trunk_funk(tvbuff_t* tvb, proto_tree* tree, gint* offset, const gint size)
+trunk_funk(tvbuff_t* tvb, proto_tree* tree, int* offset, const int size)
 {
-	guint16 count = 0;
+	uint16_t count = 0;
 
 	/* 1023 max trunks, the trunk loop(counting from 0 from 1023 is 1024)*/
 	while(*offset+4 <= size && count < 1024) {
@@ -585,12 +572,12 @@ trunk_funk(tvbuff_t* tvb, proto_tree* tree, gint* offset, const gint size)
 }
 
 static void
-Media_Specifier_dissect(tvbuff_t* tvb, proto_tree* tree, gint* offset, guint32 length)
+Media_Specifier_dissect(tvbuff_t* tvb, proto_tree* tree, int* offset, uint32_t length)
 {
-	guint8 media_protocol;
+	uint8_t media_protocol;
 
-	media_protocol = tvb_get_guint8(tvb, *offset);
-	proto_tree_add_item(tree, hf_ged125_floating_media_protocol, tvb, *offset, 1, ENC_BIG_ENDIAN);
+	media_protocol = tvb_get_uint8(tvb, *offset);
+	proto_tree_add_item(tree, hf_ged125_floating_media_protocol, tvb, *offset, 1, ENC_ASCII);
 	*offset += 1;
 
 	switch (media_protocol)
@@ -599,13 +586,13 @@ Media_Specifier_dissect(tvbuff_t* tvb, proto_tree* tree, gint* offset, guint32 l
 	case 'S':
 	case 'O':
 	case 'F':
-		proto_tree_add_item(tree, hf_ged125_floating_library_designator, tvb, *offset, 1, ENC_BIG_ENDIAN);
+		proto_tree_add_item(tree, hf_ged125_floating_library_designator, tvb, *offset, 1, ENC_ASCII);
 		*offset += 1;
-		proto_tree_add_item(tree, hf_ged125_floating_payload_strg, tvb, *offset, length - 2, ENC_NA|ENC_ASCII);
+		proto_tree_add_item(tree, hf_ged125_floating_payload_strg, tvb, *offset, length - 2, ENC_ASCII);
 		break;
 
 	case 'T':
-		proto_tree_add_item(tree, hf_ged125_floating_payload_strg, tvb, *offset, length - 1, ENC_NA|ENC_ASCII);
+		proto_tree_add_item(tree, hf_ged125_floating_payload_strg, tvb, *offset, length - 1, ENC_ASCII);
 		break;
 
 	case 'D':
@@ -613,7 +600,7 @@ Media_Specifier_dissect(tvbuff_t* tvb, proto_tree* tree, gint* offset, guint32 l
 		*offset += 4;
 		proto_tree_add_item(tree, hf_ged125_Data_Playback_Formats, tvb, *offset, 4, ENC_BIG_ENDIAN);
 		*offset += 4;
-		proto_tree_add_item(tree, hf_ged125_floating_payload_strg, tvb, *offset, length - 9, ENC_NA|ENC_ASCII);
+		proto_tree_add_item(tree, hf_ged125_floating_payload_strg, tvb, *offset, length - 9, ENC_ASCII);
 		break;
 	}
 
@@ -621,10 +608,10 @@ Media_Specifier_dissect(tvbuff_t* tvb, proto_tree* tree, gint* offset, guint32 l
 }
 
 static void
-floating_fields(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, gint offset, const gint size)
+floating_fields(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, int offset, const int size)
 {
-	gint32 length = 4;
-	guint32 floating_type;
+	int32_t length = 4;
+	uint32_t floating_type;
 	proto_tree *ged125_tree, *float_tree;
 	proto_item *ti;
 
@@ -636,14 +623,14 @@ floating_fields(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, gint offset
 	/*The Universal Floating-Fields Loop of Fun*/
 	while (offset < size-2)
 	{
-		floating_type = tvb_get_guint8(tvb, offset);
+		floating_type = tvb_get_uint8(tvb, offset);
 		ti = proto_tree_add_uint_format(ged125_tree, hf_ged125_floating, tvb, offset, 1,
-											floating_type, "%s", val_to_str(floating_type,
+											floating_type, "%s", val_to_str(pinfo->pool, floating_type,
 											vals_floating_point_types, "Unknown %d"));
 		float_tree = proto_item_add_subtree(ti, ett_ged125_float_field);
 		offset += 1;
 
-		length = tvb_get_guint8(tvb, offset);
+		length = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint(float_tree, hf_ged125_length, tvb, offset, 1, length);
 		offset += 1;
 
@@ -661,7 +648,7 @@ floating_fields(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, gint offset
 			offset += 4;
 			if (length-4 > 0)
 			{
-				proto_tree_add_item(float_tree, hf_ged125_floating_payload_strg, tvb, offset, length-4, ENC_NA|ENC_ASCII);
+				proto_tree_add_item(float_tree, hf_ged125_floating_payload_strg, tvb, offset, length-4, ENC_ASCII);
 				offset += (length-4);
 			}
 			break;
@@ -673,7 +660,7 @@ floating_fields(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, gint offset
 			offset += 1;
 			if (length-5 > 0)
 			{
-				proto_tree_add_item(float_tree, hf_ged125_floating_payload_strg, tvb, offset, length-4, ENC_NA|ENC_ASCII);
+				proto_tree_add_item(float_tree, hf_ged125_floating_payload_strg, tvb, offset, length-4, ENC_ASCII);
 				offset += (length-5);
 			}
 			break;
@@ -696,7 +683,7 @@ floating_fields(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, gint offset
 		case 28: case 29: case 30: case 31: case 32: case 33: case 34:
 		case 37: case 38: case 39: case 40:
 		case 51: case 52: case 53: case 54: case 55: case 56: case 57: case 58:
-			proto_tree_add_item(float_tree, hf_ged125_floating_payload_strg, tvb, offset, length, ENC_NA|ENC_ASCII);
+			proto_tree_add_item(float_tree, hf_ged125_floating_payload_strg, tvb, offset, length, ENC_ASCII);
 			offset += length;
 			break;
 
@@ -721,11 +708,11 @@ floating_fields(tvbuff_t* tvb, packet_info *pinfo, proto_tree* tree, gint offset
 
 static void
 service_control_dissect(tvbuff_t* tvb,proto_tree* msg_tree, proto_tree* ged125_tree, packet_info* pinfo,
-	gint* offset, const gint size)
+	int* offset, const int size)
 {
 	proto_item *ti;
 	proto_tree *service_tree, *data_tree;
-	guint32 mess_type, DialogueID, SendSeqNo;
+	uint32_t mess_type, DialogueID, SendSeqNo;
 
 	service_tree = proto_tree_add_subtree(msg_tree, tvb, *offset, 12,
 			ett_ged125_service_control_header, NULL, "Service-Control Header");
@@ -739,7 +726,7 @@ service_control_dissect(tvbuff_t* tvb,proto_tree* msg_tree, proto_tree* ged125_t
 	*offset += 4;
 
 	col_add_fstr(pinfo->cinfo, COL_INFO, "Service_Control->%s DIALOGUE_ID=%u LEN=%u",
-			val_to_str(mess_type, vals_service_control_message_subvalues, "Unknown %d"), DialogueID, size);
+			val_to_str(pinfo->pool, mess_type, vals_service_control_message_subvalues, "Unknown %d"), DialogueID, size);
 
 	SendSeqNo = tvb_get_ntohl(tvb, *offset);
 	ti = proto_tree_add_item(service_tree, hf_ged125_SendSeqNo_num, tvb, *offset, 4, ENC_BIG_ENDIAN);
@@ -979,7 +966,7 @@ service_control_dissect(tvbuff_t* tvb,proto_tree* msg_tree, proto_tree* ged125_t
 	}
 }
 
-static guint
+static unsigned
 get_ged125_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                    int offset _U_, void *data _U_)
 {
@@ -990,16 +977,16 @@ get_ged125_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
 static int
 dissect_ged125_base_messages(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
 {
-	gint size = tvb_reported_length(tvb);
+	int size = tvb_reported_length(tvb);
 	proto_item *ti, *message_item;
 	proto_tree *ged125_tree, *ged125_header_tree, *ged125_message_tree;
-	gint offset = 8; /*get to the fixed message, just outside of header*/
-	guint32 value,
+	int offset = 8; /*get to the fixed message, just outside of header*/
+	uint32_t value,
 			message_type = tvb_get_ntohl(tvb, 4);
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "GED125");
 	col_add_fstr(pinfo->cinfo, COL_INFO, "%s %u bytes",
-			val_to_str(message_type, base_message_values, "Unknown %d"), size);
+			val_to_str(pinfo->pool, message_type, base_message_values, "Unknown %d"), size);
 
 	ti = proto_tree_add_item(tree, proto_ged125, tvb, 0, -1, ENC_NA);
 	ged125_tree = proto_item_add_subtree( ti, ett_ged125);
@@ -1283,8 +1270,8 @@ dissect_ged125_base_messages(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree
 static int
 dissect_ged125(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-	gint size;
-	guint32 message_type;
+	int size;
+	uint32_t message_type;
 
 	size = tvb_captured_length(tvb);
 
@@ -1378,29 +1365,29 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_UseEventFeed,
 		  { "Use Event Feed", "ged125.use_event_feed",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"Indicates if the VRU supports the Event Data Feed", HFILL }},
 
 		/* only valid for ICM version 4 or lower*/
 		{ &hf_ged125_UsePolledFeed,
 		  { "Use Polled Feed", "ged125.use_polled_feed",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"Indicates if the VRU supports the Polled Data Feed.", HFILL }},
 
 		{ &hf_ged125_UseCallRouting,
 		  { "Use Call Routing", "ged125.use_call_routing",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"Indicates if the VRU supports the Call Routing Interface", HFILL }},
 
 		{ &hf_ged125_UseTimeSynch,
 		  { "Use Time Synch", "ged125.use_time_synch",
-		  FT_BOOLEAN, 32, NULL, 0x01,
+		  FT_BOOLEAN, 32, NULL, 0x00000001,
 		  "Indicates if the VRU supports the Time Synchronization Interface", HFILL }},
 
 		/*Requires Protocol Version 2 or later*/
 		{ &hf_ged125_UseServiceControl,
 		  { "Use Service Control", "ged125.use_service_control",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"Indicates if the VRU supports the Service Control Interface", HFILL }},
 
 		{ &hf_ged125_TrunkGroupID,
@@ -1449,7 +1436,7 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_TrunkNumber,
 		  { "Trunk Number", "ged125.trunk_number",
-			FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+			FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 
 		{ &hf_ged125_TrunkStatus,
 		  { "Trunk Status", "ged125.trunk_status",
@@ -1462,7 +1449,7 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_AvailableNow,
 		  { "Available Now", "ged125.available_now",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"Current availability of the service", HFILL }},
 
 		{ &hf_ged125_CallsInNow,
@@ -1523,7 +1510,7 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_floating_payload_strg,
 		  { "Floating Payload", "ged125.floating_payload.strg",
-		  FT_STRING, FT_NONE, NULL, 0x0, NULL, HFILL }},
+		  FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 
 		{ &hf_ged125_floating_payload_uint,
 		  { "Floating Payload", "ged125.floating_payload.uint",
@@ -1531,7 +1518,7 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_floating_payload_bool,
 		  { "Floating Payload", "ged125.floating_payload.bool",
-			FT_BOOLEAN, 32, NULL, 0x01, NULL, HFILL }},
+			FT_BOOLEAN, 32, NULL, 0x00000001, NULL, HFILL }},
 
 		{ &hf_ged125_floating_payload_ECC_tag,
 		  { "ECC VAR Tag", "ged125.ecc_var_tag",
@@ -1539,7 +1526,7 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_ResultCode,
 		  { "Errors running script", "ged125.result_code",
-			FT_BOOLEAN, 32, TFS(&tfs_true_false), 0x01, NULL, HFILL }},
+			FT_BOOLEAN, 32, NULL, 0x00000001, NULL, HFILL }},
 
 		{ &hf_ged125_LabelType,
 		  { "Label Type", "ged125.label_type",
@@ -1563,13 +1550,13 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_InService,
 		  { "In Service", "ged125.in_service",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"A flag indicating that the affected trunks have been placed into "
 			"service (True) or removed from service (False)", HFILL }},
 
 		{ &hf_ged125_ServiceAvailable,
 		  { "Service Available", "ged125.service_available",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			NULL, HFILL }},
 
 		{ &hf_ged125_RequestID,
@@ -1579,12 +1566,12 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_ToBeContinued,
 		  { "To Be Continued", "ged125.to_be_continued",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"A flag which indicates whether additional MICROAPP_PLAY_CONTINUE messages will follow",  HFILL }},
 
 		{ &hf_ged125_Barge_In_Allowed,
 		  { "Barge In Allowed", "ged125.barge_in_allowed",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"Indicates whether caller is allowed to interrupt playing", HFILL }},
 
 		{ &hf_ged125_floating_cause_code,/* table 34*/
@@ -1633,7 +1620,7 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_ASR_Allowed,
 		  { "ASR Allowed", "ged125.asr_allowed",
-			FT_BOOLEAN, 32, NULL, 0x01,
+			FT_BOOLEAN, 32, NULL, 0x00000001,
 			"Indicates whether Automatic Speech Recognition should be enabled for this request", HFILL }},
 
 		{ &hf_ged125_DTMF_Menu_Keys,
@@ -1696,12 +1683,12 @@ proto_register_ged125 (void)
 
 		{ &hf_ged125_floating_media_protocol,
 		  { "Media Protocol", "ged125.media_protocol",
-			FT_UINT8, BASE_DEC, VALS(floating_media_protocol_vals), 0x0,
+			FT_CHAR, BASE_HEX, VALS(floating_media_protocol_vals), 0x0,
 			"Type of media", HFILL }},
 
 		{ &hf_ged125_floating_library_designator,
 		  { "Library Designator", "ged125.library_designator",
-			FT_UINT8, BASE_DEC, VALS(floating_media_library_designator_vals), 0x0,
+			FT_CHAR, BASE_HEX, VALS(floating_media_library_designator_vals), 0x0,
 			"System or Application", HFILL }},
 
 		{ &hf_ged125_Data_Playback_Type,
@@ -1720,7 +1707,7 @@ proto_register_ged125 (void)
 			"Array index of an ECC field", HFILL }}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ged125,
 		&ett_ged125_header,
 		&ett_ged125_message,
@@ -1756,10 +1743,6 @@ proto_register_ged125 (void)
 
 	ged125_module = prefs_register_protocol(proto_ged125, NULL);
 
-	prefs_register_uint_preference(ged125_module, "tcp_port","GED125 TCP Port",
-							"Set up the TCP port for GED125",
-							10, &global_tcp_port_ged125);
-
 	prefs_register_bool_preference(ged125_module, "desegment_body",
 		 "Reassemble GED125 bodies spanning multiple TCP segments",
 		 "Whether the GED125 dissector should desegment all messages spanning multiple TCP segments",
@@ -1769,21 +1752,12 @@ proto_register_ged125 (void)
 void
 proto_reg_handoff_ged125(void)
 {
-	static guint old_ged125_tcp_port = 0;
-
 	/* Register TCP port for dissection */
-	if (old_ged125_tcp_port != 0 && old_ged125_tcp_port != global_tcp_port_ged125)
-		dissector_delete_uint("tcp.port", old_ged125_tcp_port, ged125_handle);
-
-
-	if (global_tcp_port_ged125 != 0 && old_ged125_tcp_port != global_tcp_port_ged125)
-		dissector_add_uint("tcp.port", global_tcp_port_ged125, ged125_handle);
-
-	old_ged125_tcp_port = global_tcp_port_ged125;
+	dissector_add_for_decode_as_with_preference("tcp.port", ged125_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

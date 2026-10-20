@@ -22,9 +22,7 @@ EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} -o xg-stbl-1.tmp xg-stbl-1.strings || Exit 1
-# Don't simplify this to "grep ... < xg-stbl-1.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-stbl-1.tmp | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > xg-stbl-1.po
+func_filter_POT_Creation_Date xg-stbl-1.tmp xg-stbl-1.po
 
 cat <<\EOF > xg-stbl-1.ok
 # SOME DESCRIPTIVE TITLE.

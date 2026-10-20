@@ -1,10 +1,12 @@
 /*
  * Copyright © 2011 Canonical Ltd.
  *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * licence, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,27 +23,17 @@
 
 #include "gdbusmenumodel.h"
 
+#include "gmenuexporter.h"
 #include "gmenumodel.h"
 
 /* Prelude {{{1 */
 
 /**
- * SECTION:gdbusmenumodel
- * @title: GDBusMenuModel
- * @short_description: A D-Bus GMenuModel implementation
- * @include: gio/gio.h
- * @see_also: [GMenuModel Exporter][gio-GMenuModel-exporter]
- *
- * #GDBusMenuModel is an implementation of #GMenuModel that can be used
- * as a proxy for a menu model that is exported over D-Bus with
- * g_dbus_connection_export_menu_model().
- */
-
-/**
  * GDBusMenuModel:
  *
- * #GDBusMenuModel is an opaque data structure and can only be accessed
- * using the following functions.
+ * `GDBusMenuModel` is an implementation of [class@Gio.MenuModel] that can be
+ * used as a proxy for a menu model that is exported over D-Bus with
+ * [method@Gio.DBusConnection.export_menu_model].
  */
 
 /*
@@ -203,7 +195,7 @@ path_identifier_equal (gconstpointer a,
   ConstPathIdentifier *id_b = b;
 
   return id_a->connection == id_b->connection &&
-         g_str_equal (id_a->bus_name, id_b->bus_name) &&
+         g_strcmp0 (id_a->bus_name, id_b->bus_name) == 0 &&
          g_str_equal (id_a->object_path, id_b->object_path);
 }
 
@@ -292,7 +284,7 @@ g_dbus_menu_path_signal (GDBusConnection *connection,
     {
       GDBusMenuGroup *group;
 
-      group = g_hash_table_lookup (path->groups, GINT_TO_POINTER (group_id));
+      group = g_hash_table_lookup (path->groups, GUINT_TO_POINTER (group_id));
 
       if (group != NULL)
         g_dbus_menu_group_changed (group, menu_id, position, removes, adds);
@@ -314,7 +306,7 @@ static void
 g_dbus_menu_path_deactivate (GDBusMenuPath *path)
 {
   if (--path->active == 0)
-    g_dbus_connection_signal_unsubscribe (path->id->connection, path->watch_id);
+    g_dbus_connection_signal_unsubscribe (path->id->connection, g_steal_handle_id (&path->watch_id));
 }
 
 static GDBusMenuPath *
@@ -387,7 +379,7 @@ g_dbus_menu_group_unref (GDBusMenuGroup *group)
       g_assert (group->state == GROUP_OFFLINE);
       g_assert (group->active == 0);
 
-      g_hash_table_remove (group->path->groups, GINT_TO_POINTER (group->id));
+      g_hash_table_remove (group->path->groups, GUINT_TO_POINTER (group->id));
       g_hash_table_unref (group->proxies);
       g_hash_table_unref (group->menus);
 
@@ -578,6 +570,8 @@ g_dbus_menu_group_deactivate (GDBusMenuGroup *group)
     }
 }
 
+/* @menu_id, @position, @removed and @added are all untrusted since they can
+ * come from an external process. */
 static void
 g_dbus_menu_group_changed (GDBusMenuGroup *group,
                            guint           menu_id,
@@ -591,6 +585,20 @@ g_dbus_menu_group_changed (GDBusMenuGroup *group,
   GSequence *items;
   GVariant *item;
   gint n_added;
+  gint n_items;
+
+  /* Caller has to check this. */
+  g_assert (g_variant_is_of_type (added, G_VARIANT_TYPE ("aa{sv}")));
+
+  n_added = g_variant_n_children (added);
+
+  if (position < 0 || position >= G_MENU_EXPORTER_MAX_SECTION_SIZE ||
+      removed < 0 || removed >= G_MENU_EXPORTER_MAX_SECTION_SIZE ||
+      n_added >= G_MENU_EXPORTER_MAX_SECTION_SIZE)
+    {
+      g_warning ("invalid arguments");
+      return;
+    }
 
   /* We could have signals coming to us when we're not active (due to
    * some other process having subscribed to this group) or when we're
@@ -601,17 +609,25 @@ g_dbus_menu_group_changed (GDBusMenuGroup *group,
   if (group->state != GROUP_ONLINE)
     return;
 
-  items = g_hash_table_lookup (group->menus, GINT_TO_POINTER (menu_id));
+  items = g_hash_table_lookup (group->menus, GUINT_TO_POINTER (menu_id));
 
   if (items == NULL)
     {
       items = g_sequence_new (g_dbus_menu_model_item_free);
-      g_hash_table_insert (group->menus, GINT_TO_POINTER (menu_id), items);
+      g_hash_table_insert (group->menus, GUINT_TO_POINTER (menu_id), items);
+    }
+
+  /* Don’t need to worry about overflow due to the low value of
+   * %G_MENU_EXPORTER_MAX_SECTION_SIZE. */
+  n_items = g_sequence_get_length (items);
+  if (position + removed > n_items ||
+      n_items - removed + n_added > G_MENU_EXPORTER_MAX_SECTION_SIZE)
+    {
+      g_warning ("invalid arguments");
+      return;
     }
 
   point = g_sequence_get_iter_at_pos (items, position + removed);
-
-  g_return_if_fail (point != NULL);
 
   if (removed)
     {
@@ -621,17 +637,17 @@ g_dbus_menu_group_changed (GDBusMenuGroup *group,
       g_sequence_remove_range (start, point);
     }
 
-  n_added = g_variant_iter_init (&iter, added);
+  g_variant_iter_init (&iter, added);
   while (g_variant_iter_loop (&iter, "@a{sv}", &item))
     g_sequence_insert_before (point, g_dbus_menu_group_create_item (item));
 
   if (g_sequence_is_empty (items))
     {
-      g_hash_table_remove (group->menus, GINT_TO_POINTER (menu_id));
+      g_hash_table_remove (group->menus, GUINT_TO_POINTER (menu_id));
       items = NULL;
     }
 
-  if ((proxy = g_hash_table_lookup (group->proxies, GINT_TO_POINTER (menu_id))))
+  if ((proxy = g_hash_table_lookup (group->proxies, GUINT_TO_POINTER (menu_id))))
     g_dbus_menu_model_changed (proxy, items, position, removed, n_added);
 }
 
@@ -641,7 +657,7 @@ g_dbus_menu_group_get_from_path (GDBusMenuPath *path,
 {
   GDBusMenuGroup *group;
 
-  group = g_hash_table_lookup (path->groups, GINT_TO_POINTER (group_id));
+  group = g_hash_table_lookup (path->groups, GUINT_TO_POINTER (group_id));
 
   if (group == NULL)
     {
@@ -654,7 +670,7 @@ g_dbus_menu_group_get_from_path (GDBusMenuPath *path,
       group->active = 0;
       group->ref_count = 0;
 
-      g_hash_table_insert (path->groups, GINT_TO_POINTER (group->id), group);
+      g_hash_table_insert (path->groups, GUINT_TO_POINTER (group->id), group);
     }
 
   return g_dbus_menu_group_ref (group);
@@ -794,7 +810,7 @@ g_dbus_menu_model_finalize (GObject *object)
   if (proxy->active)
     g_dbus_menu_group_deactivate (proxy->group);
 
-  g_hash_table_remove (proxy->group->proxies, GINT_TO_POINTER (proxy->id));
+  g_hash_table_remove (proxy->group->proxies, GUINT_TO_POINTER (proxy->id));
   g_dbus_menu_group_unref (proxy->group);
 
   G_OBJECT_CLASS (g_dbus_menu_model_parent_class)
@@ -838,15 +854,15 @@ g_dbus_menu_model_get_from_group (GDBusMenuGroup *group,
 {
   GDBusMenuModel *proxy;
 
-  proxy = g_hash_table_lookup (group->proxies, GINT_TO_POINTER (menu_id));
+  proxy = g_hash_table_lookup (group->proxies, GUINT_TO_POINTER (menu_id));
   if (proxy)
     g_object_ref (proxy);
 
   if (proxy == NULL)
     {
       proxy = g_object_new (G_TYPE_DBUS_MENU_MODEL, NULL);
-      proxy->items = g_hash_table_lookup (group->menus, GINT_TO_POINTER (menu_id));
-      g_hash_table_insert (group->proxies, GINT_TO_POINTER (menu_id), proxy);
+      proxy->items = g_hash_table_lookup (group->menus, GUINT_TO_POINTER (menu_id));
+      g_hash_table_insert (group->proxies, GUINT_TO_POINTER (menu_id), proxy);
       proxy->group = g_dbus_menu_group_ref (group);
       proxy->id = menu_id;
     }
@@ -857,7 +873,8 @@ g_dbus_menu_model_get_from_group (GDBusMenuGroup *group,
 /**
  * g_dbus_menu_model_get:
  * @connection: a #GDBusConnection
- * @bus_name: the bus name which exports the menu model
+ * @bus_name: (nullable): the bus name which exports the menu model
+ *     or %NULL if @connection is not a message bus connection
  * @object_path: the object path at which the menu model is exported
  *
  * Obtains a #GDBusMenuModel for the menu model which is exported
@@ -882,6 +899,8 @@ g_dbus_menu_model_get (GDBusConnection *connection,
   GDBusMenuGroup *group;
   GDBusMenuModel *proxy;
   GMainContext *context;
+
+  g_return_val_if_fail (bus_name != NULL || g_dbus_connection_get_unique_name (connection) == NULL, NULL);
 
   context = g_main_context_get_thread_default ();
   if (context == NULL)

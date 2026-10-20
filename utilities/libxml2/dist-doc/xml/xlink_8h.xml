@@ -1,0 +1,560 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xlink_8h" kind="file" language="C++">
+    <compoundname>xlink.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includedby refid="xlink_8c" local="no">/builds/GNOME/libxml2/xlink.c</includedby>
+    <incdepgraph>
+      <node id="4">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>xlink.h</label>
+        <link refid="xlink_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="6">
+        <label>limits.h</label>
+      </node>
+      <node id="8">
+        <label>stdarg.h</label>
+      </node>
+      <node id="5">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xlinkHandler" prot="public">_xlinkHandler</innerclass>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="xlink_8h_1a194352c8d21984eee0cf2028263f7278" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xlinkNodeDetectFunc) (void *ctx, xmlNode *node)</definition>
+        <argsstring>)(void *ctx, xmlNode *node)</argsstring>
+        <name>xlinkNodeDetectFunc</name>
+        <briefdescription>
+<para>This is the prototype for the link detection routine. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It calls the default link detection callbacks upon link detection.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node to check </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="70" column="9" bodyfile="xlink.h" bodystart="70" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xlink_8h_1a43f02925c4afd0ad866d7ada914b7f7d" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xlinkSimpleLinkFunk) (void *ctx, xmlNode *node, const xlinkHRef href, const xlinkRole role, const xlinkTitle title)</definition>
+        <argsstring>)(void *ctx, xmlNode *node, const xlinkHRef href, const xlinkRole role, const xlinkTitle title)</argsstring>
+        <name>xlinkSimpleLinkFunk</name>
+        <briefdescription>
+<para>This is the prototype for a simple link detection callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node carrying the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>href</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target of the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>role</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the role string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>title</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the link title </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="86" column="9" bodyfile="xlink.h" bodystart="87" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xlink_8h_1adba8287ffe8ace14f3869a94592e89da" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xlinkExtendedLinkFunk) (void *ctx, xmlNode *node, int nbLocators, const xlinkHRef *hrefs, const xlinkRole *roles, int nbArcs, const xlinkRole *from, const xlinkRole *to, xlinkShow *show, xlinkActuate *actuate, int nbTitles, const xlinkTitle *titles, const xmlChar **langs)</definition>
+        <argsstring>)(void *ctx, xmlNode *node, int nbLocators, const xlinkHRef *hrefs, const xlinkRole *roles, int nbArcs, const xlinkRole *from, const xlinkRole *to, xlinkShow *show, xlinkActuate *actuate, int nbTitles, const xlinkTitle *titles, const xmlChar **langs)</argsstring>
+        <name>xlinkExtendedLinkFunk</name>
+        <briefdescription>
+<para>This is the prototype for a extended link detection callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node carrying the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nbLocators</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of locators detected on the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>hrefs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array of locator hrefs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>roles</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array of locator roles </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nbArcs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of arcs detected on the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array of source roles found on the arcs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>to</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array of target roles found on the arcs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>show</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>array of values for the show attributes found on the arcs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>actuate</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>array of values for the actuate attributes found on the arcs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nbTitles</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of titles detected on the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>titles</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>array of titles detected on the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>langs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>array of xml:lang values for the titles </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="110" column="9" bodyfile="xlink.h" bodystart="111" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xlink_8h_1aea0a43ed4498f0da7923bca421e5c9d0" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xlinkExtendedLinkSetFunk) (void *ctx, xmlNode *node, int nbLocators, const xlinkHRef *hrefs, const xlinkRole *roles, int nbTitles, const xlinkTitle *titles, const xmlChar **langs)</definition>
+        <argsstring>)(void *ctx, xmlNode *node, int nbLocators, const xlinkHRef *hrefs, const xlinkRole *roles, int nbTitles, const xlinkTitle *titles, const xmlChar **langs)</argsstring>
+        <name>xlinkExtendedLinkSetFunk</name>
+        <briefdescription>
+<para>This is the prototype for a extended link set detection callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node carrying the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nbLocators</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of locators detected on the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>hrefs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array of locator hrefs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>roles</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array of locator roles </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nbTitles</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of titles detected on the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>titles</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>array of titles detected on the link </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>langs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>array of xml:lang values for the titles </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="137" column="9" bodyfile="xlink.h" bodystart="138" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xlink_8h_1a6589f725c001ce3f3b4a637d555cc622" prot="public" static="no">
+        <type>struct <ref refid="struct__xlinkHandler" kindref="compound">_xlinkHandler</ref></type>
+        <definition>typedef struct _xlinkHandler xlinkHandler</definition>
+        <argsstring></argsstring>
+        <name>xlinkHandler</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="147" column="28" bodyfile="xlink.h" bodystart="147" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xlink_8h_1a4d5e89f203ce48b658cda921a0274e4e" prot="public" static="no">
+        <type>xlinkHandler *</type>
+        <definition>typedef xlinkHandler* xlinkHandlerPtr</definition>
+        <argsstring></argsstring>
+        <name>xlinkHandlerPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="148" column="22" bodyfile="xlink.h" bodystart="148" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xlink_8h_1a8c61a5c2fe05b1edf19e96f9d63127f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xlink_8h_1a194352c8d21984eee0cf2028263f7278" kindref="member">xlinkNodeDetectFunc</ref></type>
+        <definition>xlinkNodeDetectFunc xlinkGetDefaultDetect</definition>
+        <argsstring>(void)</argsstring>
+        <name>xlinkGetDefaultDetect</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Get the default xlink detection routine. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000356"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>the current function or NULL; </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="168" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="69" bodyend="71" declfile="xlink.h" declline="168" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xlink_8h_1a951f8c4cb78b6e1d1808669fbc59ce2e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xlinkSetDefaultDetect</definition>
+        <argsstring>(xlinkNodeDetectFunc func)</argsstring>
+        <name>xlinkSetDefaultDetect</name>
+        <param>
+          <type><ref refid="xlink_8h_1a194352c8d21984eee0cf2028263f7278" kindref="member">xlinkNodeDetectFunc</ref></type>
+          <declname>func</declname>
+        </param>
+        <briefdescription>
+<para>Set the default xlink detection routine. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000357"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>func</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the new detection routine. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="171" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="81" bodyend="83" declfile="xlink.h" declline="171" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xlink_8h_1a57b489319e3fccb2ee99df55becd2196" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xlinkHandler *</type>
+        <definition>xlinkHandler * xlinkGetDefaultHandler</definition>
+        <argsstring>(void)</argsstring>
+        <name>xlinkGetDefaultHandler</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Get the default xlink handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000354"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>the current xlinkHandler value. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="178" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="44" bodyend="46" declfile="xlink.h" declline="178" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xlink_8h_1aaea55802a5a635e3cdb6e06c104a6ac3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xlinkSetDefaultHandler</definition>
+        <argsstring>(xlinkHandler *handler)</argsstring>
+        <name>xlinkSetDefaultHandler</name>
+        <param>
+          <type>xlinkHandler *</type>
+          <declname>handler</declname>
+        </param>
+        <briefdescription>
+<para>Set the default xlink handlers. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000355"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new value for the xlink handler block </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="181" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="57" bodyend="59" declfile="xlink.h" declline="181" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xlink_8h_1a192c579bae8a37c3dec9d2535904ff85" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xlinkType</type>
+        <definition>xlinkType xlinkIsLink</definition>
+        <argsstring>(xmlDoc *doc, xmlNode *node)</argsstring>
+        <name>xlinkIsLink</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Check whether the given node carries the attributes needed to be a link element (or is one of the linking elements issued from the (X)HTML DtDs). </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This routine don&apos;t try to do full checking of the link validity but tries to detect and return the appropriate link type.</para>
+<para><xrefsect id="deprecated_1_deprecated000358"><xreftitle>Deprecated</xreftitle><xrefdescription><para>The XLink code was never finished.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document containing the node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node pointer itself </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the xlinkType of the node (XLINK_TYPE_NONE if there is no link detected. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xlink.h" line="188" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="107" bodyend="164" declfile="xlink.h" declline="188" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>unfinished XLink detection module </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This module is deprecated, don&apos;t use.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xlink.h"/>
+  </compounddef>
+</doxygen>

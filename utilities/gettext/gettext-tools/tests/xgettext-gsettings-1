@@ -3,7 +3,7 @@
 
 # Test of GSettings support.
 
-cat <<EOF > xg-gs-1-empty.gschema.xml
+cat <<\EOF > xg-gs-1-empty.gschema.xml
 <?xml version="1.0"?>
 <schemalist/>
 EOF
@@ -15,7 +15,7 @@ test $? = 0 || {
   Exit 77
 }
 
-cat <<EOF > xg-gs-1.gschema.xml
+cat <<\EOF > xg-gs-1.gschema.xml
 <?xml version="1.0"?>
 <schemalist>
   <schema id="org.gnome.example" path="/org/gnome/example/">
@@ -43,9 +43,10 @@ cat <<EOF > xg-gs-1.gschema.xml
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} --add-comments -o - xg-gs-1.gschema.xml | grep -v 'POT-Creation-Date' > xg-gs-1.pot || Exit 1
+${XGETTEXT} --add-comments -o xg-gs-1.tmp xg-gs-1.gschema.xml || Exit 1
+func_filter_POT_Creation_Date xg-gs-1.tmp xg-gs-1.pot
 
-cat <<EOF > xg-gs-1.ok
+cat <<\EOF > xg-gs-1.ok
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.

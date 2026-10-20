@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,7 @@
 #include "strutil.h"
 
 #include <wsutil/str_util.h>
+#include <wsutil/unicode-utils.h>
 #include <epan/proto.h>
 
 #ifdef _WIN32
@@ -36,8 +25,6 @@
 #include <wchar.h>
 #endif
 
-static const char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
-                              '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
 /*
  * Given a pointer into a data buffer, and to the end of the buffer,
@@ -45,12 +32,12 @@ static const char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
  * buffer.
  * Return a pointer to the EOL character(s) in "*eol".
  */
-const guchar *
-find_line_end(const guchar *data, const guchar *dataend, const guchar **eol)
+const unsigned char *
+find_line_end(const unsigned char *data, const unsigned char *dataend, const unsigned char **eol)
 {
-    const guchar *lineend;
+    const unsigned char *lineend;
 
-    lineend = (guchar *)memchr(data, '\n', dataend - data);
+    lineend = (unsigned char *)memchr(data, '\n', dataend - data);
     if (lineend == NULL) {
         /*
          * No LF - line is probably continued in next TCP segment.
@@ -110,10 +97,10 @@ find_line_end(const guchar *data, const guchar *dataend, const guchar **eol)
  * Return 0 if there is no next token.
  */
 int
-get_token_len(const guchar *linep, const guchar *lineend,
-        const guchar **next_token)
+get_token_len(const unsigned char *linep, const unsigned char *lineend,
+        const unsigned char **next_token)
 {
-    const guchar *tokenp;
+    const unsigned char *tokenp;
     int token_len;
 
     tokenp = linep;
@@ -136,308 +123,31 @@ get_token_len(const guchar *linep, const guchar *lineend,
     return token_len;
 }
 
-
-#define    INITIAL_FMTBUF_SIZE    128
-
-/*
- * Given a string, generate a string from it that shows non-printable
- * characters as C-style escapes, and return a pointer to it.
- */
-gchar *
-format_text(const guchar *string, size_t len)
-{
-    static gchar *fmtbuf[3];
-    static int fmtbuf_len[3];
-    static int idx;
-    int column;
-    const guchar *stringend = string + len;
-    guchar c;
-    int i;
-
-    idx = (idx + 1) % 3;
-
-    /*
-     * Allocate the buffer if it's not already allocated.
-     */
-    if (fmtbuf[idx] == NULL) {
-        fmtbuf[idx] = (gchar *)g_malloc(INITIAL_FMTBUF_SIZE);
-        fmtbuf_len[idx] = INITIAL_FMTBUF_SIZE;
-    }
-    column = 0;
-    while (string < stringend) {
-        /*
-         * Is there enough room for this character, if it expands to
-         * a backslash plus 3 octal digits (which is the most it can
-         * expand to), and also enough room for a terminating '\0'?
-         */
-        if (column+3+1 >= fmtbuf_len[idx]) {
-            /*
-             * Double the buffer's size if it's not big enough.
-             * The size of the buffer starts at 128, so doubling its size
-             * adds at least another 128 bytes, which is more than enough
-             * for one more character plus a terminating '\0'.
-             */
-            fmtbuf_len[idx] = fmtbuf_len[idx] * 2;
-            fmtbuf[idx] = (gchar *)g_realloc(fmtbuf[idx], fmtbuf_len[idx]);
-        }
-        c = *string++;
-
-        if (g_ascii_isprint(c)) {
-            fmtbuf[idx][column] = c;
-            column++;
-        } else {
-            fmtbuf[idx][column] =  '\\';
-            column++;
-            switch (c) {
-
-                case '\a':
-                    fmtbuf[idx][column] = 'a';
-                    column++;
-                    break;
-
-                case '\b':
-                    fmtbuf[idx][column] = 'b'; /* BS */
-                    column++;
-                    break;
-
-                case '\f':
-                    fmtbuf[idx][column] = 'f'; /* FF */
-                    column++;
-                    break;
-
-                case '\n':
-                    fmtbuf[idx][column] = 'n'; /* NL */
-                    column++;
-                    break;
-
-                case '\r':
-                    fmtbuf[idx][column] = 'r'; /* CR */
-                    column++;
-                    break;
-
-                case '\t':
-                    fmtbuf[idx][column] = 't'; /* tab */
-                    column++;
-                    break;
-
-                case '\v':
-                    fmtbuf[idx][column] = 'v';
-                    column++;
-                    break;
-
-                default:
-                    i = (c>>6)&03;
-                    fmtbuf[idx][column] = i + '0';
-                    column++;
-                    i = (c>>3)&07;
-                    fmtbuf[idx][column] = i + '0';
-                    column++;
-                    i = (c>>0)&07;
-                    fmtbuf[idx][column] = i + '0';
-                    column++;
-                    break;
-            }
-        }
-    }
-    fmtbuf[idx][column] = '\0';
-    return fmtbuf[idx];
-}
-
-/*
- * Given a string, generate a string from it that shows non-printable
- * characters as C-style escapes except a whitespace character
- * (space, tab, carriage return, new line, vertical tab, or formfeed)
- * which will be replaced by a space, and return a pointer to it.
- */
-gchar *
-format_text_wsp(const guchar *string, size_t len)
-{
-    static gchar *fmtbuf[3];
-    static int fmtbuf_len[3];
-    static int idx;
-    int column;
-    const guchar *stringend = string + len;
-    guchar c;
-    int i;
-
-    idx = (idx + 1) % 3;
-
-    /*
-     * Allocate the buffer if it's not already allocated.
-     */
-    if (fmtbuf[idx] == NULL) {
-        fmtbuf[idx] = (gchar *)g_malloc(INITIAL_FMTBUF_SIZE);
-        fmtbuf_len[idx] = INITIAL_FMTBUF_SIZE;
-    }
-    column = 0;
-    while (string < stringend) {
-        /*
-         * Is there enough room for this character, if it expands to
-         * a backslash plus 3 octal digits (which is the most it can
-         * expand to), and also enough room for a terminating '\0'?
-         */
-        if (column+3+1 >= fmtbuf_len[idx]) {
-            /*
-             * Double the buffer's size if it's not big enough.
-             * The size of the buffer starts at 128, so doubling its size
-             * adds at least another 128 bytes, which is more than enough
-             * for one more character plus a terminating '\0'.
-             */
-            fmtbuf_len[idx] = fmtbuf_len[idx] * 2;
-            fmtbuf[idx] = (gchar *)g_realloc(fmtbuf[idx], fmtbuf_len[idx]);
-        }
-        c = *string++;
-
-        if (g_ascii_isprint(c)) {
-            fmtbuf[idx][column] = c;
-            column++;
-        } else if (g_ascii_isspace(c)) {
-            fmtbuf[idx][column] = ' ';
-            column++;
-        } else {
-            fmtbuf[idx][column] =  '\\';
-            column++;
-            switch (c) {
-
-                case '\a':
-                    fmtbuf[idx][column] = 'a';
-                    column++;
-                    break;
-
-                case '\b':
-                    fmtbuf[idx][column] = 'b'; /* BS */
-                    column++;
-                    break;
-
-                case '\f':
-                    fmtbuf[idx][column] = 'f'; /* FF */
-                    column++;
-                    break;
-
-                case '\n':
-                    fmtbuf[idx][column] = 'n'; /* NL */
-                    column++;
-                    break;
-
-                case '\r':
-                    fmtbuf[idx][column] = 'r'; /* CR */
-                    column++;
-                    break;
-
-                case '\t':
-                    fmtbuf[idx][column] = 't'; /* tab */
-                    column++;
-                    break;
-
-                case '\v':
-                    fmtbuf[idx][column] = 'v';
-                    column++;
-                    break;
-
-                default:
-                    i = (c>>6)&03;
-                    fmtbuf[idx][column] = i + '0';
-                    column++;
-                    i = (c>>3)&07;
-                    fmtbuf[idx][column] = i + '0';
-                    column++;
-                    i = (c>>0)&07;
-                    fmtbuf[idx][column] = i + '0';
-                    column++;
-                    break;
-            }
-        }
-    }
-    fmtbuf[idx][column] = '\0';
-    return fmtbuf[idx];
-}
-
-/*
- * Given a string, generate a string from it that shows non-printable
- * characters as the chr parameter passed, except a whitespace character
- * (space, tab, carriage return, new line, vertical tab, or formfeed)
- * which will be replaced by a space, and return a pointer to it.
- */
-gchar *
-format_text_chr(const guchar *string, const size_t len, const guchar chr)
-{
-    static gchar *fmtbuf[3];
-    static int fmtbuf_len[3];
-    static int idx;
-    int column;
-    const guchar *stringend = string + len;
-    guchar c;
-
-    idx = (idx + 1) % 3;
-
-    /*
-     * Allocate the buffer if it's not already allocated.
-     */
-    if (fmtbuf[idx] == NULL) {
-        fmtbuf[idx] = (gchar *)g_malloc(INITIAL_FMTBUF_SIZE);
-        fmtbuf_len[idx] = INITIAL_FMTBUF_SIZE;
-    }
-    column = 0;
-    while (string < stringend)
-    {
-        /*
-         * Is there enough room for this character,
-         * and also enough room for a terminating '\0'?
-         */
-        if (column+1 >= fmtbuf_len[idx])
-        {
-            /*
-             * Double the buffer's size if it's not big enough.
-             * The size of the buffer starts at 128, so doubling its size
-             * adds at least another 128 bytes, which is more than enough
-             * for one more character plus a terminating '\0'.
-             */
-            fmtbuf_len[idx] = fmtbuf_len[idx] * 2;
-            fmtbuf[idx] = (gchar *)g_realloc(fmtbuf[idx], fmtbuf_len[idx]);
-        }
-        c = *string++;
-
-        if (g_ascii_isprint(c))
-        {
-            fmtbuf[idx][column] = c;
-            column++;
-        }
-        else if (g_ascii_isspace(c))
-        {
-            fmtbuf[idx][column] = ' ';
-            column++;
-        }
-        else
-        {
-            fmtbuf[idx][column] =  chr;
-            column++;
-        }
-    }
-    fmtbuf[idx][column] = '\0';
-    return fmtbuf[idx];
-}
-
-static gboolean
-is_byte_sep(guint8 c)
+static bool
+is_byte_sep(uint8_t c)
 {
     return (c == '-' || c == ':' || c == '.');
 }
 
 /* Turn a string of hex digits with optional separators (defined by
  * is_byte_sep() into a byte array.
+ *
+ * XXX - This function is perhaps too generous in what it accepts.
+ * It allows the separator to change from one character to another,
+ * or to and from no separator if force_separators is false.
  */
-gboolean
-hex_str_to_bytes(const char *hex_str, GByteArray *bytes, gboolean force_separators)
+bool
+hex_str_to_bytes(const char *hex_str, GByteArray *bytes, bool force_separators)
 {
-    guint8        val;
-    const gchar    *p, *q, *r, *s, *punct;
+    uint8_t       val;
+    const char     *p, *q, *r, *s, *punct;
     char        four_digits_first_half[3];
     char        four_digits_second_half[3];
     char        two_digits[3];
     char        one_digit[2];
 
     if (! hex_str || ! bytes) {
-        return FALSE;
+        return false;
     }
     g_byte_array_set_size(bytes, 0);
     p = hex_str;
@@ -446,9 +156,19 @@ hex_str_to_bytes(const char *hex_str, GByteArray *bytes, gboolean force_separato
         r = p+2;
         s = p+3;
 
-        if (*q && *r && *s
+        if (*q && *r
                 && g_ascii_isxdigit(*p) && g_ascii_isxdigit(*q) &&
-                g_ascii_isxdigit(*r) && g_ascii_isxdigit(*s)) {
+                g_ascii_isxdigit(*r)) {
+
+            /*
+             * Three hex bytes in a row, followed by a non hex byte
+             * (possibly the end of the string). We don't accept an
+             * odd number of hex digits except for single digits
+             * by themselves or after a separator.
+             */
+            if (!g_ascii_isxdigit(*s)) {
+                return false;
+            }
             four_digits_first_half[0] = *p;
             four_digits_first_half[1] = *q;
             four_digits_first_half[2] = '\0';
@@ -459,16 +179,16 @@ hex_str_to_bytes(const char *hex_str, GByteArray *bytes, gboolean force_separato
             /*
              * Four or more hex digits in a row.
              */
-            val = (guint8) strtoul(four_digits_first_half, NULL, 16);
+            val = (uint8_t) strtoul(four_digits_first_half, NULL, 16);
             g_byte_array_append(bytes, &val, 1);
-            val = (guint8) strtoul(four_digits_second_half, NULL, 16);
+            val = (uint8_t) strtoul(four_digits_second_half, NULL, 16);
             g_byte_array_append(bytes, &val, 1);
 
             punct = s + 1;
             if (*punct) {
                 /*
                  * Make sure the character after
-                 * the forth hex digit is a byte
+                 * the fourth hex digit is a byte
                  * separator, i.e. that we don't have
                  * more than four hex digits, or a
                  * bogus character.
@@ -478,7 +198,7 @@ hex_str_to_bytes(const char *hex_str, GByteArray *bytes, gboolean force_separato
                     continue;
                 }
                 else if (force_separators) {
-                    return FALSE;
+                    return false;
                 }
             }
             p = punct;
@@ -492,7 +212,7 @@ hex_str_to_bytes(const char *hex_str, GByteArray *bytes, gboolean force_separato
             /*
              * Two hex digits in a row.
              */
-            val = (guint8) strtoul(two_digits, NULL, 16);
+            val = (uint8_t) strtoul(two_digits, NULL, 16);
             g_byte_array_append(bytes, &val, 1);
             punct = q + 1;
             if (*punct) {
@@ -508,7 +228,7 @@ hex_str_to_bytes(const char *hex_str, GByteArray *bytes, gboolean force_separato
                     continue;
                 }
                 else if (force_separators) {
-                    return FALSE;
+                    return false;
                 }
             }
             p = punct;
@@ -521,7 +241,7 @@ hex_str_to_bytes(const char *hex_str, GByteArray *bytes, gboolean force_separato
             /*
              * Only one hex digit (not at the end of the string)
              */
-            val = (guint8) strtoul(one_digit, NULL, 16);
+            val = (uint8_t) strtoul(one_digit, NULL, 16);
             g_byte_array_append(bytes, &val, 1);
             p = q + 1;
             continue;
@@ -533,22 +253,22 @@ hex_str_to_bytes(const char *hex_str, GByteArray *bytes, gboolean force_separato
             /*
              * Only one hex digit (at the end of the string)
              */
-            val = (guint8) strtoul(one_digit, NULL, 16);
+            val = (uint8_t) strtoul(one_digit, NULL, 16);
             g_byte_array_append(bytes, &val, 1);
             p = q;
             continue;
         }
         else {
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
-static inline gchar
-get_valid_byte_sep(gchar c, const guint encoding)
+static inline char
+get_valid_byte_sep(char c, const unsigned encoding)
 {
-    gchar retval = -1; /* -1 means failure */
+    char retval = -1; /* -1 means failure */
 
     switch (c) {
         case ':':
@@ -584,22 +304,22 @@ get_valid_byte_sep(gchar c, const guint encoding)
 /* Turn a string of hex digits with optional separators (defined by is_byte_sep())
  * into a byte array. Unlike hex_str_to_bytes(), this will read as many hex-char
  * pairs as possible and not error if it hits a non-hex-char; instead it just ends
- * there. (i.e., like strtol()/atoi()/etc.) Unless fail_if_partial is TRUE.
+ * there. (i.e., like strtol()/atoi()/etc.) Unless fail_if_partial is true.
  *
  * The **endptr, if not NULL, is set to the char after the last hex character.
  */
-gboolean
-hex_str_to_bytes_encoding(const gchar *hex_str, GByteArray *bytes, const gchar **endptr,
-                          const guint encoding, const gboolean fail_if_partial)
+bool
+hex_str_to_bytes_encoding(const char *hex_str, GByteArray *bytes, const char **endptr,
+                          const unsigned encoding, const bool fail_if_partial)
 {
-    gint8 c, d;
-    guint8 val;
-    const gchar *end = hex_str;
-    gboolean retval = FALSE;
-    gchar sep = -1;
+    int8_t c, d;
+    uint8_t val;
+    const char *end = hex_str;
+    bool retval = false;
+    char sep = -1;
 
     /* a map from ASCII hex chars to their value */
-    static const gint8 str_to_nibble[256] = {
+    static const int8_t str_to_nibble[256] = {
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -620,7 +340,7 @@ hex_str_to_bytes_encoding(const gchar *hex_str, GByteArray *bytes, const gchar *
 
     /* we must see two hex chars at the beginning, or fail */
     if (bytes && *end && g_ascii_isxdigit(*end) && g_ascii_isxdigit(*(end+1))) {
-        retval = TRUE;
+        retval = true;
 
         /* set the separator character we'll allow; if this returns a -1, it means something's
          * invalid after the hex, but we'll let the while-loop grab the first hex-pair anyway
@@ -628,30 +348,29 @@ hex_str_to_bytes_encoding(const gchar *hex_str, GByteArray *bytes, const gchar *
         sep = get_valid_byte_sep(*(end+2), encoding);
 
         while (*end) {
-            c = str_to_nibble[(guchar)*end];
+            c = str_to_nibble[(unsigned char)*end];
             if (c < 0) {
-                if (fail_if_partial) retval = FALSE;
+                if (fail_if_partial) retval = false;
                 break;
             }
-            ++end;
 
-            d = str_to_nibble[(guchar)*end];
+            d = str_to_nibble[(unsigned char)*(end+1)];
             if (d < 0) {
-                if (fail_if_partial) retval = FALSE;
+                if (fail_if_partial) retval = false;
                 break;
             }
-            val = ((guint8)c * 16) + d;
+            val = ((uint8_t)c * 16) + d;
             g_byte_array_append(bytes, &val, 1);
-            ++end;
+            end += 2;
 
             /* check for separator and peek at next char to make sure we should keep going */
-            if (sep > 0 && *end == sep && str_to_nibble[(guchar)*(end+1)] > -1) {
+            if (sep > 0 && *end == sep && str_to_nibble[(unsigned char)*(end+1)] > -1) {
                 /* yes, it's the right sep and followed by more hex, so skip the sep */
                 ++end;
             } else if (sep != 0 && *end) {
                 /* we either need a separator, but we don't see one; or the get_valid_byte_sep()
                    earlier didn't find a valid one to begin with */
-                if (fail_if_partial) retval = FALSE;
+                if (fail_if_partial) retval = false;
                 break;
             }
             /* otherwise, either no separator allowed, or *end is null, or *end is an invalid
@@ -672,117 +391,61 @@ hex_str_to_bytes_encoding(const gchar *hex_str, GByteArray *bytes, const gchar *
 }
 
 /*
- * Turn an RFC 3986 percent-encoded string into a byte array.
+ * Turn an RFC 3986 percent-encoded array of characters, not
+ * necessarily null-terminated, into a byte array.
  * XXX - We don't check for reserved characters.
+ * XXX - g_uri_unescape_bytes is superior, but limited to
+ * glib >= 2.66
  */
 #define HEX_DIGIT_BUF_LEN 3
-gboolean
-uri_str_to_bytes(const char *uri_str, GByteArray *bytes)
+bool
+uri_to_bytes(const char *uri_str, GByteArray *bytes, size_t len)
 {
-    guint8        val;
-    const gchar    *p;
-    gchar         hex_digit[HEX_DIGIT_BUF_LEN];
+    uint8_t       val;
+    const char   *p;
+    const char   *uri_end = uri_str + len;
+    char          hex_digit[HEX_DIGIT_BUF_LEN];
 
     g_byte_array_set_size(bytes, 0);
     if (! uri_str) {
-        return FALSE;
+        return false;
     }
 
     p = uri_str;
 
-    while (*p) {
+    while (p < uri_end) {
         if (!g_ascii_isprint(*p))
-            return FALSE;
+            return false;
         if (*p == '%') {
             p++;
-            if (*p == '\0') return FALSE;
+            if (*p == '\0') return false;
             hex_digit[0] = *p;
             p++;
-            if (*p == '\0') return FALSE;
+            if (*p == '\0') return false;
             hex_digit[1] = *p;
             hex_digit[2] = '\0';
             if (! g_ascii_isxdigit(hex_digit[0]) || ! g_ascii_isxdigit(hex_digit[1]))
-                return FALSE;
-            val = (guint8) strtoul(hex_digit, NULL, 16);
+                return false;
+            val = (uint8_t) strtoul(hex_digit, NULL, 16);
             g_byte_array_append(bytes, &val, 1);
         } else {
-            g_byte_array_append(bytes, (const guint8 *) p, 1);
+            g_byte_array_append(bytes, (const uint8_t *) p, 1);
         }
         p++;
 
     }
-    return TRUE;
+    return true;
 }
 
 /*
- * Given a GByteArray, generate a string from it that shows non-printable
- * characters as percent-style escapes, and return a pointer to it.
+ * Turn an RFC 3986 percent-encoded string into a byte array.
+ * XXX - We don't check for reserved characters.
+ * XXX - Just use g_uri_unescape_string instead?
  */
-const gchar *
-format_uri(const GByteArray *bytes, const gchar *reserved_chars)
+bool
+uri_str_to_bytes(const char *uri_str, GByteArray *bytes)
 {
-    static gchar *fmtbuf[3];
-    static guint fmtbuf_len[3];
-    static guint idx;
-    static const guchar *reserved_def = ":/?#[]@!$&'()*+,;= ";
-    const guchar *reserved = reserved_def;
-    guint8 c;
-    guint column, i;
-    gboolean is_reserved = FALSE;
-
-    if (! bytes)
-        return "";
-
-    idx = (idx + 1) % 3;
-    if (reserved_chars)
-        reserved = reserved_chars;
-
-    /*
-     * Allocate the buffer if it's not already allocated.
-     */
-    if (fmtbuf[idx] == NULL) {
-        fmtbuf[idx] = (gchar *)g_malloc(INITIAL_FMTBUF_SIZE);
-        fmtbuf_len[idx] = INITIAL_FMTBUF_SIZE;
-    }
-    for (column = 0; column < bytes->len; column++) {
-        /*
-         * Is there enough room for this character, if it expands to
-         * a percent plus 2 hex digits (which is the most it can
-         * expand to), and also enough room for a terminating '\0'?
-         */
-        if (column+2+1 >= fmtbuf_len[idx]) {
-            /*
-             * Double the buffer's size if it's not big enough.
-             * The size of the buffer starts at 128, so doubling its size
-             * adds at least another 128 bytes, which is more than enough
-             * for one more character plus a terminating '\0'.
-             */
-            fmtbuf_len[idx] = fmtbuf_len[idx] * 2;
-            fmtbuf[idx] = (gchar *)g_realloc(fmtbuf[idx], fmtbuf_len[idx]);
-        }
-        c = bytes->data[column];
-
-        if (!g_ascii_isprint(c) || c == '%') {
-            is_reserved = TRUE;
-        }
-
-        for (i = 0; reserved[i]; i++) {
-            if (c == reserved[i])
-                is_reserved = TRUE;
-        }
-
-        if (!is_reserved) {
-            fmtbuf[idx][column] = c;
-        } else {
-            fmtbuf[idx][column] = '%';
-            column++;
-            fmtbuf[idx][column] = hex[c >> 4];
-            column++;
-            fmtbuf[idx][column] = hex[c & 0xF];
-        }
-    }
-    fmtbuf[idx][column] = '\0';
-    return fmtbuf[idx];
+    return uri_to_bytes(uri_str, bytes, strlen(uri_str));
 }
 
 /**
@@ -806,17 +469,17 @@ byte_array_dup(const GByteArray *ba)
 }
 
 #define SUBID_BUF_LEN 5
-gboolean
+bool
 oid_str_to_bytes(const char *oid_str, GByteArray *bytes)
 {
-    return rel_oid_str_to_bytes(oid_str, bytes, TRUE);
+    return rel_oid_str_to_bytes(oid_str, bytes, true);
 }
-gboolean
-rel_oid_str_to_bytes(const char *oid_str, GByteArray *bytes, gboolean is_absolute)
+bool
+rel_oid_str_to_bytes(const char *oid_str, GByteArray *bytes, bool is_absolute)
 {
-    guint32 subid0, subid, sicnt, i;
+    uint32_t subid0, subid, sicnt, i;
     const char *p, *dot;
-    guint8 buf[SUBID_BUF_LEN];
+    uint8_t buf[SUBID_BUF_LEN];
 
     g_byte_array_set_size(bytes, 0);
 
@@ -824,16 +487,16 @@ rel_oid_str_to_bytes(const char *oid_str, GByteArray *bytes, gboolean is_absolut
     p = oid_str;
     dot = NULL;
     while (*p) {
-        if (!g_ascii_isdigit(*p) && (*p != '.')) return FALSE;
+        if (!g_ascii_isdigit(*p) && (*p != '.')) return false;
         if (*p == '.') {
-            if (p == oid_str && is_absolute) return FALSE;
-            if (!*(p+1)) return FALSE;
-            if ((p-1) == dot) return FALSE;
+            if (p == oid_str && is_absolute) return false;
+            if (!*(p+1)) return false;
+            if ((p-1) == dot) return false;
             dot = p;
         }
         p++;
     }
-    if (!dot) return FALSE;
+    if (!dot) return false;
 
     p = oid_str;
     sicnt = is_absolute ? 0 : 2;
@@ -848,9 +511,9 @@ rel_oid_str_to_bytes(const char *oid_str, GByteArray *bytes, gboolean is_absolut
         }
         if (sicnt == 0) {
             subid0 = subid;
-            if (subid0 > 2) return FALSE;
+            if (subid0 > 2) return false;
         } else if (sicnt == 1) {
-            if ((subid0 < 2) && (subid > 39)) return FALSE;
+            if ((subid0 < 2) && (subid > 39)) return false;
             subid += 40 * subid0;
         }
         if (sicnt) {
@@ -867,7 +530,7 @@ rel_oid_str_to_bytes(const char *oid_str, GByteArray *bytes, gboolean is_absolut
         if (*p) p++;
     }
 
-    return TRUE;
+    return true;
 }
 
 /**
@@ -876,35 +539,35 @@ rel_oid_str_to_bytes(const char *oid_str, GByteArray *bytes, gboolean is_absolut
  * @param ba1 A byte array
  * @param ba2 A byte array
  * @return If both arrays are non-NULL and their lengths are equal and
- *         their contents are equal, returns TRUE.  Otherwise, returns
- *         FALSE.
+ *         their contents are equal, returns true.  Otherwise, returns
+ *         false.
  *
  * XXX - Should this be in strutil.c?
  */
-gboolean
+bool
 byte_array_equal(GByteArray *ba1, GByteArray *ba2)
 {
     if (!ba1 || !ba2)
-        return FALSE;
+        return false;
 
     if (ba1->len != ba2->len)
-        return FALSE;
+        return false;
 
     if (memcmp(ba1->data, ba2->data, ba1->len) != 0)
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 
 /* Return a XML escaped representation of the unescaped string.
  * The returned string must be freed when no longer in use. */
-gchar *
-xml_escape(const gchar *unescaped)
+char *
+xml_escape(const char *unescaped)
 {
     GString *buffer = g_string_sized_new(128);
-    const gchar *p;
-    gchar c;
+    const char *p;
+    char c;
 
     p = unescaped;
     while ( (c = *p++) ) {
@@ -924,8 +587,22 @@ xml_escape(const gchar *unescaped)
             case '"':
                 g_string_append(buffer, "&quot;");
                 break;
-            default:
+            case '\t':
+            case '\n':
+            case '\r':
                 g_string_append_c(buffer, c);
+                break;
+            default:
+                /* XML 1.0 doesn't allow ASCII control characters, except
+                 * for the three whitespace ones above (which do *not*
+                 * include '\v' and '\f', so not the same group as isspace),
+                 * even as character references.
+                 * There's no official way to escape them, so we'll do this. */
+                if (g_ascii_iscntrl(c)) {
+                    g_string_append_printf(buffer, "\\x%x", c);
+                } else {
+                    g_string_append_c(buffer, c);
+                }
                 break;
         }
     }
@@ -935,48 +612,17 @@ xml_escape(const gchar *unescaped)
     return g_string_free(buffer, FALSE);
 }
 
-
-/* Return the first occurrence of needle in haystack.
- * If not found, return NULL.
- * If either haystack or needle has 0 length, return NULL.
- * Algorithm copied from GNU's glibc 2.3.2 memmem() under LGPL 2.1+ */
-const guint8 *
-epan_memmem(const guint8 *haystack, guint haystack_len,
-        const guint8 *needle, guint needle_len)
-{
-    const guint8 *begin;
-    const guint8 *const last_possible = haystack + haystack_len - needle_len;
-
-    if (needle_len == 0) {
-        return NULL;
-    }
-
-    if (needle_len > haystack_len) {
-        return NULL;
-    }
-
-    for (begin = haystack ; begin <= last_possible; ++begin) {
-        if (begin[0] == needle[0] &&
-                !memcmp(&begin[1], needle + 1,
-                    needle_len - 1)) {
-            return begin;
-        }
-    }
-
-    return NULL;
-}
-
 /*
  * Scan the search string to make sure it's valid hex.  Return the
  * number of bytes in nbytes.
  */
-guint8 *
+uint8_t *
 convert_string_to_hex(const char *string, size_t *nbytes)
 {
     size_t n_bytes;
     const char *p;
-    gchar c;
-    guint8 *bytes, *q, byte_val;
+    char c;
+    uint8_t *bytes, *q, byte_val;
 
     n_bytes = 0;
     p = &string[0];
@@ -1017,7 +663,7 @@ convert_string_to_hex(const char *string, size_t *nbytes)
      * OK, it's valid, and it generates "n_bytes" bytes; generate the
      * raw byte array.
      */
-    bytes = (guint8 *)g_malloc(n_bytes);
+    bytes = (uint8_t *)g_malloc(n_bytes);
     p = &string[0];
     q = &bytes[0];
     for (;;) {
@@ -1043,11 +689,11 @@ convert_string_to_hex(const char *string, size_t *nbytes)
 }
 
 /*
- * Copy if if it's a case-sensitive search; uppercase it if it's
+ * Copy if it's a case-sensitive search; uppercase it if it's
  * a case-insensitive search.
  */
 char *
-convert_string_case(const char *string, gboolean case_insensitive)
+convert_string_case(const char *string, bool case_insensitive)
 {
 
     if (case_insensitive) {
@@ -1055,93 +701,6 @@ convert_string_case(const char *string, gboolean case_insensitive)
     } else {
         return g_strdup(string);
     }
-}
-
-const char *
-epan_strcasestr(const char *haystack, const char *needle)
-{
-    gsize hlen = strlen(haystack);
-    gsize nlen = strlen(needle);
-
-    while (hlen-- >= nlen) {
-        if (!g_ascii_strncasecmp(haystack, needle, nlen))
-            return haystack;
-        haystack++;
-    }
-    return NULL;
-}
-
-const char *
-string_or_null(const char *string)
-{
-    if (string)
-        return string;
-    return "[NULL]";
-}
-
-int
-escape_string_len(const char *string)
-{
-    const char *p;
-    gchar c;
-    int repr_len;
-
-    repr_len = 0;
-    for (p = string; (c = *p) != '\0'; p++) {
-        /* Backslashes and double-quotes must
-         * be escaped */
-        if (c == '\\' || c == '"') {
-            repr_len += 2;
-        }
-        /* Values that can't nicely be represented
-         * in ASCII need to be escaped. */
-        else if (!g_ascii_isprint(c)) {
-            /* c --> \xNN */
-            repr_len += 4;
-        }
-        /* Other characters are just passed through. */
-        else {
-            repr_len++;
-        }
-    }
-    return repr_len + 2;    /* string plus leading and trailing quotes */
-}
-
-char *
-escape_string(char *buf, const char *string)
-{
-    const gchar *p;
-    gchar c;
-    char *bufp;
-    char hexbuf[3];
-
-    bufp = buf;
-    *bufp++ = '"';
-    for (p = string; (c = *p) != '\0'; p++) {
-        /* Backslashes and double-quotes must
-         * be escaped. */
-        if (c == '\\' || c == '"') {
-            *bufp++ = '\\';
-            *bufp++ = c;
-        }
-        /* Values that can't nicely be represented
-         * in ASCII need to be escaped. */
-        else if (!g_ascii_isprint(c)) {
-            /* c --> \xNN */
-            g_snprintf(hexbuf,sizeof(hexbuf), "%02x", (unsigned char) c);
-            *bufp++ = '\\';
-            *bufp++ = 'x';
-            *bufp++ = hexbuf[0];
-            *bufp++ = hexbuf[1];
-        }
-        /* Other characters are just passed through. */
-        else {
-            *bufp++ = c;
-        }
-    }
-    *bufp++ = '"';
-    *bufp = '\0';
-    return buf;
 }
 
 #define GN_CHAR_ALPHABET_SIZE 128
@@ -1190,86 +749,220 @@ IA5_7BIT_decode(unsigned char * dest, const unsigned char* src, int len)
         i += g_unichar_to_utf8(buf,&(dest[i]));
     }
     dest[i]=0;
-    return;
 }
 
+/* chars allowed: lower case letters, digits, '-', "_", and ".". */
+static
+const uint8_t module_valid_chars_lower_case[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 0x00-0x0F */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 0x10-0x1F */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, /* 0x20-0x2F '-', '.'      */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, /* 0x30-0x3F '0'-'9'       */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 0x40-0x4F */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, /* 0x50-0x5F '_' */
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* 0x60-0x6F 'a'-'o'       */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, /* 0x70-0x7F 'p'-'z'       */
+    /* upper 128 empty-initialized to 0 */
+};
+
+/* chars allowed: alphanumerics, '-', "_", and ".". */
+static
+const uint8_t module_valid_chars[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 0x00-0x0F */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 0x10-0x1F */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, /* 0x20-0x2F '-', '.'      */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, /* 0x30-0x3F '0'-'9'       */
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* 0x40-0x4F 'A'-'O'       */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /* 0x50-0x5F 'P'-'Z', '_' */
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* 0x60-0x6F 'a'-'o'       */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, /* 0x70-0x7F 'p'-'z'       */
+    /* upper 128 empty-initialized to 0 */
+};
+
+unsigned char
+module_check_valid_name(const char *name, bool lower_only)
+{
+    const char *p = name;
+    unsigned char c = '.', lastc;
+    const uint8_t *chars;
+
+    /* First character cannot be '-'. */
+    if (name[0] == '-')
+        return '-';
+
+    if (lower_only)
+        chars = module_valid_chars_lower_case;
+    else
+        chars = module_valid_chars;
+
+    do {
+        lastc = c;
+        c = *(p++);
+        /* Leading '.' or substring ".." are disallowed. */
+        if (c == '.' && lastc == '.') {
+            break;
+        }
+    } while (chars[c]);
+
+    /* Trailing '.' is disallowed. */
+    if (lastc == '.') {
+        return '.';
+    }
+    return c;
+}
+
+static const char _hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                              '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
 /*
- * This function takes a string and copies it, inserting a 'chr' before
- * every 'chr' in it.
+ * Copy byte by byte without UTF-8 truncation (assume valid UTF-8 input).
+ * Return byte size written, or that would have been
+ * written with enough space.
  */
-gchar*
-ws_strdup_escape_char (const gchar *str, const gchar chr)
+size_t
+ws_label_strcpy(char *label_str, size_t buf_size, size_t pos,
+                const uint8_t *str, int flags)
 {
-    const gchar *p;
-    gchar *q, *new_str;
+    if (pos >= buf_size)
+        return pos;
 
-    if(!str)
-        return NULL;
+    uint8_t r = 0;
+    ssize_t chlen;
+    ssize_t idx, src_len;
+    ssize_t free_len;
 
-    p = str;
-    /* Worst case: A string that is full of 'chr' */
-    q = new_str = (gchar *)g_malloc (strlen(str) * 2 + 1);
+    label_str[pos] = '\0';
 
-    while(*p != 0) {
-        if(*p == chr)
-            *q++ = chr;
+    ws_return_val_if(str == NULL, pos);
+    idx = 0;
+    src_len = strlen(str);
+    free_len = buf_size - pos - 1;
 
-        *q++ = *p++;
+    while (idx < src_len) {
+        chlen = ws_utf8_char_len(str[idx]);
+        if (chlen <= 0) {
+            /* We were passed invalid UTF-8. This is an error. Complain and do... something. */
+            ws_log_utf8(str, -1, NULL);
+            /*
+             * XXX If we are going to return here instead of trying to recover maybe the log level should
+             * be higher than DEBUG.
+             */
+            return pos;
+        }
+
+        /* ASCII */
+        if (chlen == 1) {
+            if (flags & FORMAT_LABEL_REPLACE_SPACE && g_ascii_isspace(str[idx])) {
+                if (free_len >= 1) {
+                    label_str[pos] = ' ';
+                    label_str[pos+1] = '\0';
+                }
+                pos++;
+                idx++;
+                free_len--;
+                continue;
+            }
+
+            r = 0;
+            switch (str[idx]) {
+                case '\a': r = 'a'; break;
+                case '\b': r = 'b'; break;
+                case '\f': r = 'f'; break;
+                case '\n': r = 'n'; break;
+                case '\r': r = 'r'; break;
+                case '\t': r = 't'; break;
+                case '\v': r = 'v'; break;
+            }
+            if (r != 0) {
+                if (free_len >= 2) {
+                    label_str[pos] = '\\';
+                    label_str[pos+1] = r;
+                    label_str[pos+2] = '\0';
+                }
+                pos += 2;
+                idx += 1;
+                free_len -= 2;
+                continue;
+            }
+
+            if (g_ascii_isprint(str[idx])) {
+                if (free_len >= 1) {
+                    label_str[pos] = str[idx];
+                    label_str[pos+1] = '\0';
+                }
+                pos++;
+                idx++;
+                free_len--;
+                continue;
+            }
+
+            if (free_len >= 4) {
+                label_str[pos+0] = '\\';
+                label_str[pos+1] = 'x';
+
+                uint8_t ch = str[idx];
+                label_str[pos+2] = _hex[ch >> 4];
+                label_str[pos+3] = _hex[ch & 0x0F];
+                label_str[pos+4] = '\0';
+            }
+            pos += 4;
+            idx += chlen;
+            free_len -= 4;
+            continue;
+        }
+
+        /* UTF-8 multibyte */
+        if (chlen == 2 && str[idx] == 0xC2 &&
+                                str[idx+1] >= 0x80 && str[idx+1] <= 0x9F) {
+            /*
+             * Escape the C1 control codes. C0 (covered above) and C1 are
+             * inband signalling and transparent to Unicode.
+             * Anything else probably has text semantics should not be removed.
+             */
+            /*
+             * Special case: The second UTF-8 byte is the same as the Unicode
+             * code point for range U+0080 - U+009F.
+             */
+            if (free_len >= 6) {
+                label_str[pos+0] = '\\';
+                label_str[pos+1] = 'u';
+                label_str[pos+2] = '0';
+                label_str[pos+3] = '0';
+
+                uint8_t ch = str[idx+1];
+                label_str[pos+4] = _hex[ch >> 4];
+                label_str[pos+5] = _hex[ch & 0x0F];
+                label_str[pos+6] = '\0';
+            }
+            pos += 6;
+            idx += chlen;
+            free_len -= 6;
+            continue;
+        }
+
+        /* Just copy */
+        if (free_len >= chlen) {
+            for (ssize_t j = 0; j < chlen; j++) {
+                label_str[pos+j] = str[idx+j];
+            }
+            label_str[pos+chlen] = '\0';
+        }
+        pos += chlen;
+        idx += chlen;
+        free_len -= chlen;
     }
-    *q = '\0';
 
-    return new_str;
+    return pos;
+}
+
+size_t
+ws_label_strcat(char *label_str, size_t bufsize, const uint8_t *str, int flags)
+{
+    return ws_label_strcpy(label_str, bufsize, strlen(label_str), str, flags);
 }
 
 /*
- * This function takes a string and copies it, removing any occurences of double
- * 'chr' with a single 'chr'.
- */
-gchar*
-ws_strdup_unescape_char (const gchar *str, const char chr)
-{
-    const gchar *p;
-    gchar *q, *new_str;
-
-    if(!str)
-        return NULL;
-
-    p = str;
-    /* Worst case: A string that contains no 'chr' */
-    q = new_str = (gchar *)g_malloc (strlen(str) + 1);
-
-    while(*p != 0) {
-        *q++ = *p;
-        if ((*p == chr) && (*(p+1) == chr))
-            p += 2;
-        else
-            p++;
-    }
-    *q = '\0';
-
-    return new_str;
-}
-
-/* Create a newly-allocated string with replacement values. */
-gchar *
-string_replace(const gchar* str, const gchar *old_val, const gchar *new_val)
-{
-    gchar **str_parts;
-    gchar *new_str;
-
-    if (!str || !old_val) {
-        return NULL;
-    }
-
-    str_parts = g_strsplit(str, old_val, 0);
-    new_str = g_strjoinv(new_val, str_parts);
-    g_strfreev(str_parts);
-
-    return new_str;
-}
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

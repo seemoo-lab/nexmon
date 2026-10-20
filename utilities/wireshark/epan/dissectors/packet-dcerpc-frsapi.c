@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -31,11 +19,11 @@
 void proto_register_dcerpc_frsapi(void);
 void proto_reg_handoff_dcerpc_frsapi(void);
 
-static int proto_dcerpc_frsapi = -1;
+static int proto_dcerpc_frsapi;
 
-static int hf_frsapi_opnum = -1;
+static int hf_frsapi_opnum;
 
-static gint ett_dcerpc_frsapi = -1;
+static int ett_dcerpc_frsapi;
 
 /*
 IDL [ uuid(d049b186-814f-11d1-9a3c-00c04fc9b232),
@@ -49,10 +37,10 @@ static e_guid_t uuid_dcerpc_frsapi = {
 	{ 0x9a, 0x3c, 0x00, 0xc0, 0x4f, 0xc9, 0xb2, 0x32 }
 };
 
-static guint16 ver_dcerpc_frsapi = 1;
+static uint16_t ver_dcerpc_frsapi = 1;
 
 
-static dcerpc_sub_dissector dcerpc_frsapi_dissectors[] = {
+static const dcerpc_sub_dissector dcerpc_frsapi_dissectors[] = {
 	{  FRSAPI_VERIFY_PROMOTION,          "VerifyPromotion",        NULL, NULL },
 	{  FRSAPI_PROMOTION_STATUS,          "PromotionStatus",        NULL, NULL },
 	{  FRSAPI_START_DEMOTION,            "StartDemotion",          NULL, NULL },
@@ -78,13 +66,12 @@ proto_register_dcerpc_frsapi(void)
 	};
 
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dcerpc_frsapi,
 	};
 
 
-	proto_dcerpc_frsapi = proto_register_protocol(
-		"Microsoft File Replication Service API", "FRSAPI", "frsapi");
+	proto_dcerpc_frsapi = proto_register_protocol("Microsoft File Replication Service API", "FRSAPI", "frsapi");
 
 	proto_register_field_array(proto_dcerpc_frsapi, hf, array_length(hf));
 
@@ -104,7 +91,7 @@ proto_reg_handoff_dcerpc_frsapi(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

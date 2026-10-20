@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025 Marco Trevisan (Treviño)
+
+import argparse
+import os
+import gitlab
+import subprocess
+import sys
+
+
+def run_diff(baseline_path, current_path):
+    cmd = [
+        "diff",
+        "-u",
+        '--ignore-matching-lines=line="[0-9]\\+"',
+        baseline_path,
+        current_path,
+    ]
+
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+    return result
+
+
+def diffstat(diff):
+    stats = {}  # path -> [add, del]
+    current = None
+
+    for line in diff.splitlines():
+        if line.startswith("+++ "):
+            path = line[4:].strip()
+            if path == "/dev/null":
+                current = None
+                continue
+            [current, _] = path.split("\t", 1)
+            stats.setdefault(current, [0, 0])
+            continue
+        if (
+            line.startswith("--- ")
+            or line.startswith("@@ ")
+            or line.startswith("diff ")
+            or line.startswith("Index: ")
+        ):
+            continue
+        if current is None:
+            continue
+        if line.startswith("+") and not line.startswith("+++"):
+            stats[current][0] += 1
+        elif line.startswith("-") and not line.startswith("---"):
+            stats[current][1] += 1
+
+    total_add = sum(v[0] for v in stats.values())
+    total_del = sum(v[1] for v in stats.values())
+
+    files_changed = len(stats)
+    summary = (
+        f"{files_changed} file changed, "
+        + f"{total_add} insertions(+), {total_del} deletions(-)"
+    )
+
+    max_file_len = max((len(f) for f in stats.keys()), default=0)
+    max_add_w = max((len(str(v[0])) for v in stats.values()), default=1)
+    max_del_w = max((len(str(v[1])) for v in stats.values()), default=1)
+
+    lines = []
+    max_bar_len = 20
+    for path, (a, d) in stats.items():
+        if (a + d) > max_bar_len:
+            add_ratio = a / (a + d)
+            a = int(add_ratio * max_bar_len)
+            d = int((1 - add_ratio) * max_bar_len)
+
+        bar = "+" * a + "-" * d
+        lines.append(
+            f"{path.ljust(max_file_len)} | "
+            + f"+{a:<{max_add_w}} -{d:<{max_del_w}} {bar}"
+        )
+
+    return summary, lines
+
+
+if __name__ == "__main__":
+    server_uri = os.environ["CI_SERVER_URL"]
+    project_path = os.environ["CI_PROJECT_PATH"]
+    current_job = os.environ["CI_JOB_ID"]
+    token_file = os.environ["GIR_CHECK_TOKEN_FILE"]
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("baseline_path", help="Path containing baseline gir files")
+    parser.add_argument("current_path", help="Path containing current gir files")
+    parser.add_argument("--mr", default=os.environ.get("CI_MERGE_REQUEST_IID"))
+    parser.add_argument("--job", default=os.environ.get("CI_JOB_NAME"))
+    parser.add_argument("--sha", default=os.environ.get("CI_COMMIT_SHA"))
+    parser.add_argument("--comment-stamp", default="")
+    args = parser.parse_args()
+
+    if not os.path.exists(args.baseline_path):
+        print(f"{args.baseline_path} does not exist, skipping check")
+        sys.exit(77)
+
+    res = run_diff(args.baseline_path, args.current_path)
+
+    if res.returncode == 0:
+        print("No diff found")
+        sys.exit(0)
+
+    if res.returncode != 1:
+        print("diff failed")
+        if res.stdout:
+            print(res.stdout)
+        if res.stderr:
+            print(res.stderr)
+        sys.exit(res.returncode)
+
+    if res.stderr:
+        print(f"stderr: {res.stderr}")
+
+    diff = res.stdout
+    print(f"{args.baseline_path} and ${args.current_path} files do not match")
+    print(diff)
+    print("=======================")
+
+    with open(token_file, mode="rt", encoding="utf-8") as tf:
+        token = tf.read().strip()
+
+    gl = gitlab.Gitlab(server_uri, private_token=token)
+    current_user_id = gl.http_get("/user")["id"]
+
+    project = gl.projects.get(project_path)
+
+    [mr] = project.mergerequests.list(iids=[args.mr])
+
+    comment_id = f"comment-{current_user_id}-{args.job}-{args.mr}"
+
+    diff_note = None
+    for note in mr.notes.list(get_all=True):
+        if note.author["id"] == current_user_id and comment_id in note.body:
+            diff_note = note
+            break
+
+    diff_summary, diff_stat_lines = diffstat(diff)
+
+    # TODO: Move this inside the f-string when we've a newer enough python
+    # that does not fail with
+    # E999 SyntaxError: f-string expression part cannot include a backslash
+    diff_stat = "\n".join(diff_stat_lines)
+
+    print(diff_summary)
+    print(diff_stat)
+
+    body = f"""### Diff found in generated `*.gir` files for `{args.job}`
+
+When comparing generated GIR files in commit {mr.sha}
+with the ones in `{mr.target_branch}` branch:
+
+{diff_summary}
+
+```
+{diff_stat}
+```
+
+<details>
+<summary>GIR files diff</summary>
+
+```diff
+{diff}
+```
+
+`comment-stamp: {args.comment_stamp}`
+
+`comment-id: {comment_id}`
+
+Generated by job [`#{current_job}`]({server_uri}/{project_path}/-/jobs/{current_job})
+
+</details>
+"""
+
+    contents = {"body": body}
+    if diff_note:
+        mr.notes.update(diff_note.id, contents)
+    else:
+        diff_note = mr.notes.create(contents)
+
+    print(
+        f"MR Comment updated: {server_uri}/{project_path}/-/"
+        + f"merge_requests/{mr.iid}/#note_{diff_note.id}"
+    )

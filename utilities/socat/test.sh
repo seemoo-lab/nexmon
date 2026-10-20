@@ -2289,8 +2289,8 @@ gentestdsacert () {
 #set -vx
     local name="$1"
     if [ -s $name.key -a -s $name.crt -a -s $name.pem ]; then return; fi
-    openssl dsaparam -out $name-dsa.pem 512 >/dev/null 2>&1
-    openssl dhparam -dsaparam -out $name-dh.pem 512 >/dev/null 2>&1
+    openssl dsaparam -out $name-dsa.pem 1024 >/dev/null 2>&1
+    openssl dhparam -dsaparam -out $name-dh.pem 1024 >/dev/null 2>&1
     openssl req -newkey dsa:$name-dsa.pem -keyout $name.key -nodes -x509 -days 3653 -config $TESTCERT_CONF -out $name.crt >/dev/null 2>&1
     cat $name-dsa.pem $name-dh.pem $name.key $name.crt >$name.pem
 }
@@ -11384,6 +11384,42 @@ tdiff="$td/test$N.diff"
 da="test$N $(date) $RANDOM"
 i=0; while [ $i -lt 64 ]; do  echo -n "AAAAAAAAAAAAAAAA" >>"$td/test$N.dat"; i=$((i+1)); done
 CMD0="$TRACE $SOCAT $opts OPENSSL:localhost:$PORT,key=$(cat "$td/test$N.dat") STDIO"
+printf "test $F_n $TEST... " $N
+$CMD0 </dev/null 1>&0 2>"${te}0"
+rc0=$?
+if [ $rc0 -lt 128 ] || [ $rc0 -eq 255 ]; then
+    $PRINTF "$OK\n"
+    numOK=$((numOK+1))
+else
+    $PRINTF "$FAILED\n"
+    echo "$CMD0"
+    cat "${te}0"
+    numFAIL=$((numFAIL+1))
+    listFAIL="$listFAIL $N"
+fi
+fi # NUMCOND
+ ;;
+esac
+PORT=$((PORT+1))
+N=$((N+1))
+
+# socat up to 1.7.3.0 and to 2.0.0-b8 had a stack overflow vulnerability that occurred when
+# command line arguments (whole addresses, host names, file names) were longer
+# than 512 bytes and specially crafted.
+NAME=NESTEDOVFL
+case "$TESTS" in
+*%$N%*|*%functions%*|*%bugs%*|*%security%*|*%exec%*|*%$NAME%*)
+TEST="$NAME: stack overflow on overly long nested arg"
+# provide a long host name to TCP-CONNECT and check socats exit code
+if ! eval $NUMCOND; then :; else
+tf="$td/test$N.stdout"
+te="$td/test$N.stderr"
+tdiff="$td/test$N.diff"
+da="test$N $(date) $RANDOM"
+# prepare long data - perl might not be installed
+rm -f "$td/test$N.dat"
+i=0; while [ $i -lt 64 ]; do  echo -n "AAAAAAAAAAAAAAAA" >>"$td/test$N.dat"; i=$((i+1)); done
+CMD0="$TRACE $SOCAT $opts EXEC:[$(cat "$td/test$N.dat")] STDIO"
 printf "test $F_n $TEST... " $N
 $CMD0 </dev/null 1>&0 2>"${te}0"
 rc0=$?

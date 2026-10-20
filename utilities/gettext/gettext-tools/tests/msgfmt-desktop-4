@@ -1,0 +1,93 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of *.desktop files with non-default keywords (used by KDE).
+
+cat <<\EOF > hello.desktop
+[Desktop Entry]
+Name=Hello
+Description=A friendly greeting program
+TryExec=hello
+Exec=hello
+Icon=handshake.jpg
+Type=Application
+Keywords=Utility;
+EOF
+
+cat <<\EOF > th.po
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-08-18 12:45+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Thai <th@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: hello.desktop:2
+msgid "Hello"
+msgstr "สวัสดี"
+
+#: hello.desktop:3
+msgid "A friendly greeting program"
+msgstr "โปรแกรมทักทายแบบเป็นกันเอง"
+
+#: hello.desktop:8
+msgid "Utility;"
+msgstr "ประโยชน์;"
+EOF
+
+# Generate the merged .desktop file.
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} --desktop --keyword=Description \
+          --template=hello.desktop -l th th.po -o hello.desktop-1.tmp \
+  || Exit 1
+LC_ALL=C tr -d '\r' < hello.desktop-1.tmp > hello.desktop-1.out || Exit 1
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} --desktop --keyword= --keyword=Description \
+          --template=hello.desktop -l th th.po -o hello.desktop-2.tmp \
+  || Exit 1
+LC_ALL=C tr -d '\r' < hello.desktop-2.tmp > hello.desktop-2.out || Exit 1
+
+cat <<\EOF > hello.desktop-1.ok
+[Desktop Entry]
+Name[th]=สวัสดี
+Name=Hello
+Description[th]=โปรแกรมทักทายแบบเป็นกันเอง
+Description=A friendly greeting program
+TryExec=hello
+Exec=hello
+Icon=handshake.jpg
+Type=Application
+Keywords[th]=ประโยชน์;
+Keywords=Utility;
+EOF
+
+cat <<\EOF > hello.desktop-2.ok
+[Desktop Entry]
+Name=Hello
+Description[th]=โปรแกรมทักทายแบบเป็นกันเอง
+Description=A friendly greeting program
+TryExec=hello
+Exec=hello
+Icon=handshake.jpg
+Type=Application
+Keywords=Utility;
+EOF
+
+: ${DIFF=diff}
+${DIFF} hello.desktop-1.ok hello.desktop-1.out || Exit 1
+
+: ${DIFF=diff}
+${DIFF} hello.desktop-2.ok hello.desktop-2.out || Exit 1

@@ -3,7 +3,7 @@
 
 # Test extraction of non-ASCII msgids.
 
-cat <<EOF > xg-test5.c
+cat <<\EOF > xg-test5.c
 void foo (int option)
 {
   printf (_("%s: neznámý pøepínaè -- %c\n"), option);
@@ -19,7 +19,7 @@ LC_ALL=C tr -d '\r' < xg-test5.tmp > xg-test5.po || Exit 1
 
 sed -e '/POT-Creation-Date/d' < xg-test5.po > xg-test5.pot
 
-cat <<EOF > xg-test5.ok
+cat <<\EOF > xg-test5.ok
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.

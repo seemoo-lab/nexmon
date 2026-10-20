@@ -1,0 +1,168 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlCharEncodingHandler" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlCharEncodingHandler</compoundname>
+    <includes local="no">encoding.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1a5ac083a645d964373f022d03df4849c8" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlCharEncodingHandler::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="200" column="10" bodyfile="encoding.h" bodystart="200" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1af77cac82a0d7e18c9e06cf9a2bdf9af6" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1a49f186c3f41a935815d9fcebc9e02e92" kindref="member">xmlCharEncConvFunc</ref></type>
+        <definition>xmlCharEncConvFunc func</definition>
+        <argsstring></argsstring>
+        <name>func</name>
+        <qualifiedname>_xmlCharEncodingHandler::func</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="202" column="28" bodyfile="encoding.h" bodystart="202" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1aa68753840e53e4335fee1fee8f9b0354" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1ad3c1740abcc2cbbaa74bc5936c5b4840" kindref="member">xmlCharEncodingInputFunc</ref></type>
+        <definition>xmlCharEncodingInputFunc legacyFunc</definition>
+        <argsstring></argsstring>
+        <name>legacyFunc</name>
+        <qualifiedname>_xmlCharEncodingHandler::legacyFunc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="203" column="34" bodyfile="encoding.h" bodystart="203" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1a2b1403f3a51c151b1caa095bdf87e040" prot="public" static="no" mutable="no">
+        <type>union <ref refid="struct__xmlCharEncodingHandler" kindref="compound">_xmlCharEncodingHandler</ref></type>
+        <definition>union _xmlCharEncodingHandler input</definition>
+        <argsstring></argsstring>
+        <name>input</name>
+        <qualifiedname>_xmlCharEncodingHandler::input</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="204" column="13"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1a7fd0bb53e8270a2f7f124288f1820e38" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref></type>
+        <definition>xmlCharEncodingOutputFunc legacyFunc</definition>
+        <argsstring></argsstring>
+        <name>legacyFunc</name>
+        <qualifiedname>_xmlCharEncodingHandler::legacyFunc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="207" column="35" bodyfile="encoding.h" bodystart="207" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1aeafb950d783a09268d55f2f50c2ae215" prot="public" static="no" mutable="no">
+        <type>union <ref refid="struct__xmlCharEncodingHandler" kindref="compound">_xmlCharEncodingHandler</ref></type>
+        <definition>union _xmlCharEncodingHandler output</definition>
+        <argsstring></argsstring>
+        <name>output</name>
+        <qualifiedname>_xmlCharEncodingHandler::output</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="208" column="14"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1a3861a22085dd8d2ef13500e199f86145" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* inputCtxt</definition>
+        <argsstring></argsstring>
+        <name>inputCtxt</name>
+        <qualifiedname>_xmlCharEncodingHandler::inputCtxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="209" column="10" bodyfile="encoding.h" bodystart="209" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1af2e80ed02c6235e2e55adb2bfd62b612" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* outputCtxt</definition>
+        <argsstring></argsstring>
+        <name>outputCtxt</name>
+        <qualifiedname>_xmlCharEncodingHandler::outputCtxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="210" column="10" bodyfile="encoding.h" bodystart="210" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1a2d527f7bfa560fc129325e2f755e47ab" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1af9e9e7f799971762707fcff3bfe04017" kindref="member">xmlCharEncConvCtxtDtor</ref></type>
+        <definition>xmlCharEncConvCtxtDtor ctxtDtor</definition>
+        <argsstring></argsstring>
+        <name>ctxtDtor</name>
+        <qualifiedname>_xmlCharEncodingHandler::ctxtDtor</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="211" column="28" bodyfile="encoding.h" bodystart="211" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingHandler_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlCharEncodingHandler::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="encoding.h" line="212" column="9" bodyfile="encoding.h" bodystart="212" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A character encoding conversion handler for non UTF-8 encodings. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This structure will be made private. </para>
+    </detaileddescription>
+    <location file="encoding.h" line="199" column="1" bodyfile="encoding.h" bodystart="199" bodyend="213"/>
+    <listofallmembers>
+      <member refid="struct__xmlCharEncodingHandler_1a2d527f7bfa560fc129325e2f755e47ab" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>ctxtDtor</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>flags</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1af77cac82a0d7e18c9e06cf9a2bdf9af6" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>func</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1a2b1403f3a51c151b1caa095bdf87e040" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>input</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1a3861a22085dd8d2ef13500e199f86145" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>inputCtxt</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1aa68753840e53e4335fee1fee8f9b0354" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>legacyFunc</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1a7fd0bb53e8270a2f7f124288f1820e38" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>legacyFunc</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1a5ac083a645d964373f022d03df4849c8" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>name</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1aeafb950d783a09268d55f2f50c2ae215" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>output</name></member>
+      <member refid="struct__xmlCharEncodingHandler_1af2e80ed02c6235e2e55adb2bfd62b612" prot="public" virt="non-virtual"><scope>_xmlCharEncodingHandler</scope><name>outputCtxt</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

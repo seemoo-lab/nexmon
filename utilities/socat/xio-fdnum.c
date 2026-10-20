@@ -29,7 +29,7 @@ static int xioopen_fdnum(int argc, const char *argv[], struct opt *opts,
 			 int dummy1, int dummy2, int dummy3) {
    char *a1;
    int rw = (xioflags&XIO_ACCMODE);
-   int numfd1, numfd2 = -1;
+   int numfd1;
    int numrfd, numwfd;
    int result;
 

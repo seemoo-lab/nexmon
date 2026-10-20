@@ -1,9 +1,40 @@
 <?xml version="1.0"?>
+<!--
+  Copyright (C) 2015-2026 Free Software Foundation, Inc.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  Written by Daiki Ueno.
+-->
 <its:rules xmlns:its="http://www.w3.org/2005/11/its"
            xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0"
            version="2.0">
+
+  <!-- Documentation of the GtkBuilder XML file format:
+       https://docs.gtk.org/gtk3/class.Builder.html
+       https://docs.gtk.org/gtk4/class.Builder.html
+       A better documentation does not exist; see
+       https://gitlab.gnome.org/GNOME/gtk/-/issues/4039 .
+  -->
+
   <its:translateRule selector="/interface" translate="no"/>
-  <its:translateRule selector="/interface//*[@translatable = 'yes']"
+  <!-- https://docs.gtk.org/gtk4/class.Builder.html says about
+       boolean attribute values:
+       "strings like “TRUE”, “t”, “yes”, “y”, “1” are interpreted as TRUE,
+        strings like “FALSE”, “f”, “no”, “n”, “0” are interpreted as FALSE"
+  -->
+  <its:translateRule selector="/interface//*[@translatable = 'TRUE' or @translatable = 't' or @translatable = 'yes' or @translatable = 'y' or @translatable = '1']"
                      translate="yes"/>
   <its:locNoteRule selector="/interface//*[@comments]"
                    locNotePointer="@comments"
@@ -13,5 +44,7 @@
   <gt:contextRule selector="/interface//*[@context]" contextPointer="@context"/>
 
   <its:preserveSpaceRule selector="/interface" space="preserve"/>
+
+  <!-- This rule is redundant since gettext 0.23.  -->
   <gt:escapeRule selector="/interface" escape="no"/>
 </its:rules>

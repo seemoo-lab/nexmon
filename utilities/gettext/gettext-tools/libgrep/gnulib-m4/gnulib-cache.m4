@@ -1,8 +1,8 @@
-# Copyright (C) 2002-2016 Free Software Foundation, Inc.
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This file is distributed in the hope that it will be useful,
@@ -11,7 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this file.  If not, see <http://www.gnu.org/licenses/>.
+# along with this file.  If not, see <https://www.gnu.org/licenses/>.
 #
 # As a special exception to the GNU General Public License,
 # this file may be distributed as part of a program that
@@ -27,21 +27,136 @@
 
 
 # Specification in the form of a command-line invocation:
-#   gnulib-tool --import --local-dir=gnulib-local --lib=libgrep --source-base=libgrep --m4-base=libgrep/gnulib-m4 --doc-base=doc --tests-base=tests --aux-dir=../build-aux --avoid=alloca-opt --avoid=extensions --avoid=gettext-h --avoid=include_next --avoid=locale --avoid=localcharset --avoid=malloc-posix --avoid=mbrtowc --avoid=mbsinit --avoid=multiarch --avoid=ssize_t --avoid=stdbool --avoid=stddef --avoid=stdint --avoid=stdlib --avoid=streq --avoid=unistd --avoid=verify --avoid=wchar --avoid=wctype-h --makefile-name=Makefile.gnulib --no-conditional-dependencies --no-libtool --macro-prefix=grgl --witness-c-macro=IN_GETTEXT_TOOLS_LIBGREP mbrlen regex
+# gnulib-tool --import \
+#  --local-dir=gnulib-local \
+#  --lib=libgnu \
+#  --source-base=libgrep/gnulib-lib \
+#  --m4-base=libgrep/gnulib-m4 \
+#  --doc-base=doc \
+#  --tests-base=tests \
+#  --aux-dir=../build-aux \
+#  --makefile-name=Makefile.gnulib \
+#  --no-conditional-dependencies \
+#  --no-libtool \
+#  --macro-prefix=grgl \
+#  --witness-c-macro=IN_GETTEXT_TOOLS_LIBGREP \
+#  --avoid=absolute-header \
+#  --avoid=alignasof \
+#  --avoid=alloca-opt \
+#  --avoid=assert-h \
+#  --avoid=attribute \
+#  --avoid=basename-lgpl \
+#  --avoid=btowc \
+#  --avoid=builtin-expect \
+#  --avoid=c99 \
+#  --avoid=calloc-gnu \
+#  --avoid=calloc-posix \
+#  --avoid=cloexec \
+#  --avoid=close \
+#  --avoid=double-slash-root \
+#  --avoid=dup2 \
+#  --avoid=errno-h \
+#  --avoid=error \
+#  --avoid=error-h \
+#  --avoid=exitfail \
+#  --avoid=extensions \
+#  --avoid=extensions-aix \
+#  --avoid=extern-inline \
+#  --avoid=fcntl \
+#  --avoid=fcntl-h \
+#  --avoid=fd-hook \
+#  --avoid=filename \
+#  --avoid=flexmember \
+#  --avoid=fstat \
+#  --avoid=getdtablesize \
+#  --avoid=getprogname \
+#  --avoid=gettext-h \
+#  --avoid=gnulib-i18n \
+#  --avoid=hard-locale \
+#  --avoid=ialloc \
+#  --avoid=idx \
+#  --avoid=include_next \
+#  --avoid=intprops \
+#  --avoid=inttypes-h-incomplete \
+#  --avoid=iswblank \
+#  --avoid=iswctype \
+#  --avoid=iswdigit \
+#  --avoid=iswpunct \
+#  --avoid=iswxdigit \
+#  --avoid=largefile \
+#  --avoid=libc-config \
+#  --avoid=limits-h \
+#  --avoid=localcharset \
+#  --avoid=localeconv \
+#  --avoid=lock \
+#  --avoid=lstat \
+#  --avoid=malloca \
+#  --avoid=malloc-gnu \
+#  --avoid=malloc-posix \
+#  --avoid=mbrtowc \
+#  --avoid=mbsinit \
+#  --avoid=mbszero \
+#  --avoid=mbtowc \
+#  --avoid=memchr \
+#  --avoid=memcmp \
+#  --avoid=memmove \
+#  --avoid=minmax \
+#  --avoid=msvc-inval \
+#  --avoid=msvc-nothrow \
+#  --avoid=multiarch \
+#  --avoid=obstack \
+#  --avoid=once \
+#  --avoid=open \
+#  --avoid=pathmax \
+#  --avoid=pthread-h \
+#  --avoid=pthread-once \
+#  --avoid=reallocarray \
+#  --avoid=realloc-posix \
+#  --avoid=sched-h \
+#  --avoid=setlocale-null \
+#  --avoid=setlocale-null-unlocked \
+#  --avoid=ssize_t \
+#  --avoid=stat \
+#  --avoid=stat-time \
+#  --avoid=stdckdint-h \
+#  --avoid=std-gnu11 \
+#  --avoid=stdio-h \
+#  --avoid=streq \
+#  --avoid=strerror \
+#  --avoid=strerror-override \
+#  --avoid=string-h \
+#  --avoid=sys_stat-h \
+#  --avoid=sys_types-h \
+#  --avoid=threadlib \
+#  --avoid=time-h \
+#  --avoid=vararrays \
+#  --avoid=verify \
+#  --avoid=wctype \
+#  --avoid=windows-mutex \
+#  --avoid=windows-once \
+#  --avoid=windows-recmutex \
+#  --avoid=windows-rwlock \
+#  --avoid=xalloc \
+#  --avoid=xalloc-die \
+#  --avoid=xalloc-oversized \
+#  kwset \
+#  mbrlen \
+#  regex
 
 # Specification in the form of a few gnulib-tool.m4 macro invocations:
 gl_LOCAL_DIR([../gnulib-local])
 gl_MODULES([
+  kwset
   mbrlen
   regex
 ])
-gl_AVOID([ alloca-opt extensions gettext-h include_next locale localcharset malloc-posix mbrtowc mbsinit multiarch ssize_t stdbool stddef stdint stdlib streq unistd verify wchar wctype-h])
-gl_SOURCE_BASE([libgrep])
+gl_AVOID([absolute-header alignasof alloca-opt assert-h attribute basename-lgpl btowc builtin-expect c99 calloc-gnu calloc-posix cloexec close double-slash-root dup2 errno-h error error-h exitfail extensions extensions-aix extern-inline fcntl fcntl-h fd-hook filename flexmember fstat getdtablesize getprogname gettext-h gnulib-i18n hard-locale ialloc idx include_next intprops inttypes-h-incomplete iswblank iswctype iswdigit iswpunct iswxdigit largefile libc-config limits-h localcharset localeconv lock lstat malloca malloc-gnu malloc-posix mbrtowc mbsinit mbszero mbtowc memchr memcmp memmove minmax msvc-inval msvc-nothrow multiarch obstack once open pathmax pthread-h pthread-once reallocarray realloc-posix sched-h setlocale-null setlocale-null-unlocked ssize_t stat stat-time stdckdint-h std-gnu11 stdio-h streq strerror strerror-override string-h sys_stat-h sys_types-h threadlib time-h vararrays verify wctype windows-mutex windows-once windows-recmutex windows-rwlock xalloc xalloc-die xalloc-oversized])
+gl_SOURCE_BASE([libgrep/gnulib-lib])
 gl_M4_BASE([libgrep/gnulib-m4])
 gl_PO_BASE([])
 gl_DOC_BASE([doc])
 gl_TESTS_BASE([tests])
-gl_LIB([libgrep])
+gl_LIB([libgnu])
 gl_MAKEFILE_NAME([Makefile.gnulib])
 gl_MACRO_PREFIX([grgl])
 gl_PO_DOMAIN([])

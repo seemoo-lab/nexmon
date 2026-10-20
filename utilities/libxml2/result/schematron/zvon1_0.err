@@ -1,0 +1,5 @@
+./test/schematron/zvon1_0.xml:1: element AAA: schematron error : /AAA line 1: BBB element is present.
+./test/schematron/zvon1_0.xml:1: element AAA: schematron error : /AAA line 1: AAA misses attribute name.
+./test/schematron/zvon1_0.xml:1: element AAA: schematron error : /AAA line 1: BBB element is present.
+./test/schematron/zvon1_0.xml:1: element AAA: schematron error : /AAA line 1: AAA misses attribute name.
+./test/schematron/zvon1_0.xml fails to validate

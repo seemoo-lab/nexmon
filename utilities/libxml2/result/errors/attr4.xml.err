@@ -1,0 +1,3 @@
+./test/errors/attr4.xml:1: parser error : invalid character in attribute value
+<ROOT attr="XY"/>
+              ^

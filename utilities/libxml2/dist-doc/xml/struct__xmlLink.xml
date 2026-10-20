@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlLink" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlLink</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlLink_1a136842350560027f418dfba4e11cb223" prot="public" static="no" mutable="no">
+        <type>struct _xmlLink *</type>
+        <definition>struct _xmlLink* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlLink::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/list.c" line="33" column="19" bodyfile="/builds/GNOME/libxml2/list.c" bodystart="33" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlLink_1ace9887e966a7e8ce3a5b7072a9b89cd1" prot="public" static="no" mutable="no">
+        <type>struct _xmlLink *</type>
+        <definition>struct _xmlLink* prev</definition>
+        <argsstring></argsstring>
+        <name>prev</name>
+        <qualifiedname>_xmlLink::prev</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/list.c" line="34" column="19" bodyfile="/builds/GNOME/libxml2/list.c" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlLink_1a735984d41155bc1032e09bece8f8d66d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* data</definition>
+        <argsstring></argsstring>
+        <name>data</name>
+        <qualifiedname>_xmlLink::data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/list.c" line="35" column="10" bodyfile="/builds/GNOME/libxml2/list.c" bodystart="35" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlLink</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/list.c" line="31" column="1" bodyfile="/builds/GNOME/libxml2/list.c" bodystart="32" bodyend="36"/>
+    <listofallmembers>
+      <member refid="struct__xmlLink_1a735984d41155bc1032e09bece8f8d66d" prot="public" virt="non-virtual"><scope>_xmlLink</scope><name>data</name></member>
+      <member refid="struct__xmlLink_1a136842350560027f418dfba4e11cb223" prot="public" virt="non-virtual"><scope>_xmlLink</scope><name>next</name></member>
+      <member refid="struct__xmlLink_1ace9887e966a7e8ce3a5b7072a9b89cd1" prot="public" virt="non-virtual"><scope>_xmlLink</scope><name>prev</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

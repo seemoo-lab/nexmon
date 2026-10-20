@@ -1,9 +1,5 @@
-# Variable needed by LTLIBINTL.
-top_builddir=../..
-
-# Variable needed by xgettext.
-GETTEXTDATADIR="$abs_top_srcdir"
-export GETTEXTDATADIR
+# Note: LTLIBINTL uses the variable ${top_builddir}, whose value is set
+# as an environment variable by the 'test-framework-sh' module.
 
 OBJEXT="@OBJEXT@"
 EXEEXT="@EXEEXT@"
@@ -11,22 +7,55 @@ CC="@CC@"
 CFLAGS="@CFLAGS@"
 CXX="@CXX@"
 CXXFLAGS="@CXXFLAGS@"
+OBJC="@OBJC@"
+OBJCFLAGS="@OBJCFLAGS@"
 CPPFLAGS="@CPPFLAGS@"
 LDFLAGS="@LDFLAGS@"
 LTLIBINTL="@LTLIBINTL@"
 JAVA_CHOICE="@JAVA_CHOICE@"
 BUILDJAVA="@BUILDJAVA@"
 TESTJAVA="@TESTJAVA@"
+CLASSPATH_SEPARATOR="@CLASSPATH_SEPARATOR@"
 CSHARP_CHOICE="@CSHARP_CHOICE@"
 BUILDCSHARP="@BUILDCSHARP@"
 TESTCSHARP="@TESTCSHARP@"
+GO_CHOICE="@GO_CHOICE@"
+GO="@GO@"
+D_CHOICE="@D_CHOICE@"
+BUILDD="@BUILDD@"
+MODULA2_CHOICE="@MODULA2_CHOICE@"
+BUILDMODULA2="@BUILDMODULA2@"
+M2C="@M2C@"
+M2FLAGS="@M2FLAGS@"
 TESTLIBASPRINTF="@TESTLIBASPRINTF@"
 GLIBC2="@GLIBC2@"
 LOCALE_FR="@LOCALE_FR@"
 LOCALE_FR_UTF8="@LOCALE_FR_UTF8@"
 LOCALE_JA="@LOCALE_JA@"
+LOCALE_DE_UTF8="@LOCALE_DE_UTF8@"
 host_os="@host_os@"
 ARCHIVE_VERSION="@ARCHIVE_VERSION@"
+
+# For specific filename variables, define a variant that - in mingw builds
+# in a Cygwin environment - has the Windows filename syntax.
+wabs_srcdir="$abs_srcdir"
+wabs_top_srcdir="$abs_top_srcdir"
+case "$host_os" in
+  mingw* | windows*)
+    if (cygpath --version) >/dev/null 2>/dev/null; then
+      wabs_srcdir=`cygpath -w "$abs_srcdir"`
+      wabs_top_srcdir=`cygpath -w "$abs_top_srcdir"`
+    fi
+    ;;
+esac
+
+# Variable needed by xgettext.
+GETTEXTDATADIR="$wabs_top_srcdir"
+export GETTEXTDATADIR
+
+# Variable needed for checking output with --color.
+GETTEXTSTYLESDIR="$GETTEXTDATADIR/styles"
+export GETTEXTSTYLESDIR
 
 : ${GETTEXT=tstgettext}
 : ${NGETTEXT=tstngettext}

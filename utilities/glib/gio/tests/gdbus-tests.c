@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,9 +21,13 @@
  */
 
 #include <gio/gio.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #include "gdbus-tests.h"
+
+#include "gdbusprivate.h"
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -46,7 +52,7 @@ on_property_notify_timeout (gpointer user_data)
   PropertyNotifyData *data = user_data;
   data->timed_out = TRUE;
   g_main_loop_quit (data->loop);
-  return TRUE;
+  return G_SOURCE_CONTINUE;
 }
 
 gboolean
@@ -81,52 +87,108 @@ static gboolean
 _give_up (gpointer data)
 {
   g_error ("%s", (const gchar *) data);
-  g_return_val_if_reached (TRUE);
+  g_return_val_if_reached (G_SOURCE_CONTINUE);
+}
+
+typedef struct
+{
+  GMainContext *context;
+  gboolean name_appeared;
+  gboolean unwatch_complete;
+} WatchData;
+
+static void
+name_appeared_cb (GDBusConnection *connection,
+                  const gchar     *name,
+                  const gchar     *name_owner,
+                  gpointer         user_data)
+{
+  WatchData *data = user_data;
+
+  g_assert (name_owner != NULL);
+  data->name_appeared = TRUE;
+  g_main_context_wakeup (data->context);
+}
+
+static void
+watch_free_cb (gpointer user_data)
+{
+  WatchData *data = user_data;
+
+  data->unwatch_complete = TRUE;
+  g_main_context_wakeup (data->context);
 }
 
 void
-ensure_gdbus_testserver_up (void)
+ensure_gdbus_testserver_up (GDBusConnection *connection,
+                            GMainContext    *context)
 {
-  guint id;
-  gchar *name_owner;
-  GDBusConnection *connection;
-  GDBusProxy *proxy;
+  GSource *timeout_source = NULL;
+  guint watch_id;
+  WatchData data = { context, FALSE, FALSE };
+
+  g_main_context_push_thread_default (context);
+
+  watch_id = g_bus_watch_name_on_connection (connection,
+                                             "com.example.TestService",
+                                             G_BUS_NAME_WATCHER_FLAGS_NONE,
+                                             name_appeared_cb,
+                                             NULL,
+                                             &data,
+                                             watch_free_cb);
+
+  timeout_source = g_timeout_source_new_seconds (60);
+  g_source_set_callback (timeout_source, _give_up,
+                         "waited more than ~ 60s for gdbus-testserver to take its bus name",
+                         NULL);
+  g_source_attach (timeout_source, context);
+
+  while (!data.name_appeared)
+    g_main_context_iteration (context, TRUE);
+
+  g_bus_unwatch_name (watch_id);
+
+  while (!data.unwatch_complete)
+    g_main_context_iteration (context, TRUE);
+
+  g_source_destroy (timeout_source);
+  g_source_unref (timeout_source);
+
+  g_main_context_pop_thread_default (context);
+}
+
+/*
+ * connection_wait_for_bus:
+ * @conn: A connection
+ *
+ * Wait for asynchronous messages from @conn to have been processed
+ * by the message bus, as a sequence point so that we can make
+ * "happens before" and "happens after" assertions relative to this.
+ * The easiest way to achieve this is to call a message bus method that has
+ * no arguments and wait for it to return: because the message bus processes
+ * messages in-order, anything we sent before this must have been processed
+ * by the time this call arrives.
+ */
+void
+connection_wait_for_bus (GDBusConnection *conn)
+{
   GError *error = NULL;
+  GVariant *call_result;
 
-  connection = g_bus_get_sync (G_BUS_TYPE_SESSION,
-                               NULL,
-                               &error);
-
+  call_result = g_dbus_connection_call_sync (conn,
+                                             DBUS_SERVICE_DBUS,
+                                             DBUS_PATH_DBUS,
+                                             DBUS_INTERFACE_DBUS,
+                                             "GetId",
+                                             NULL,   /* arguments */
+                                             NULL,   /* result type */
+                                             G_DBUS_CALL_FLAGS_NONE,
+                                             -1,
+                                             NULL,
+                                             &error);
   g_assert_no_error (error);
-  error = NULL;
-
-  proxy = g_dbus_proxy_new_sync (connection,
-                                 G_DBUS_PROXY_FLAGS_NONE,
-                                 NULL,                      /* GDBusInterfaceInfo */
-                                 "com.example.TestService", /* name */
-                                 "/com/example/TestObject", /* object path */
-                                 "com.example.Frob",        /* interface */
-                                 NULL, /* GCancellable */
-                                 &error);
-  g_assert_no_error (error);
-
-  id = g_timeout_add_seconds (60, _give_up,
-      "waited more than ~ 60s for gdbus-testserver to take its bus name");
-
-  while (TRUE)
-    {
-      name_owner = g_dbus_proxy_get_name_owner (proxy);
-
-      if (name_owner != NULL)
-        break;
-
-      g_main_context_iteration (NULL, TRUE);
-    }
-
-  g_source_remove (id);
-  g_free (name_owner);
-  g_object_unref (proxy);
-  g_object_unref (connection);
+  g_assert_nonnull (call_result);
+  g_variant_unref (call_result);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -150,7 +212,7 @@ on_signal_received_timeout (gpointer user_data)
   SignalReceivedData *data = user_data;
   data->timed_out = TRUE;
   g_main_loop_quit (data->loop);
-  return TRUE;
+  return G_SOURCE_CONTINUE;
 }
 
 gboolean

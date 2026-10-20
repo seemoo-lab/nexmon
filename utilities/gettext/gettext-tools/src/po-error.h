@@ -1,6 +1,5 @@
 /* Error handling during reading and writing of PO files.
-   Copyright (C) 2004, 2006, 2012, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2004.
+   Copyright (C) 2004-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,19 +12,21 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #ifndef _PO_ERROR_H
 #define _PO_ERROR_H
 
 #ifndef __attribute__
-/* This feature is available in gcc versions 2.5 and later.  */
-# if __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5) || __STRICT_ANSI__
+/* This feature is available in gcc versions 2.5 and later and in clang.  */
+# if !((__GNUC__ >= 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || defined __clang__) && !__STRICT_ANSI__)
 #  define __attribute__(Spec) /* empty */
 # endif
-/* The __-protected variants of 'format' and 'printf' attributes
-   are accepted by gcc versions 2.6.4 (effectively 2.7) and later.  */
-# if __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7)
+/* The __-protected variants of 'format' and 'printf' attributes are
+   accepted by gcc versions 2.6.4 (effectively 2.7) and later and in clang.  */
+# if !(__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7) || defined __clang__)
 #  define __format__ format
 #  define __printf__ printf
 # endif
@@ -42,18 +43,18 @@ extern "C" {
      - The functions must increment the error_message_count variable declared
        in error.h.  */
 
-extern DLL_VARIABLE
+extern LIBGETTEXTSRC_DLL_VARIABLE
        void (*po_error) (int status, int errnum,
                          const char *format, ...)
-#if (__GNUC__ == 3 && __GNUC_MINOR__ >= 1) || __GNUC__ > 3
+#if ((__GNUC__ == 3 && __GNUC_MINOR__ >= 1) || __GNUC__ > 3) || defined __clang__
        __attribute__ ((__format__ (__printf__, 3, 4)))
 #endif
        ;
-extern DLL_VARIABLE
+extern LIBGETTEXTSRC_DLL_VARIABLE
        void (*po_error_at_line) (int status, int errnum,
                                  const char *filename, unsigned int lineno,
                                  const char *format, ...)
-#if (__GNUC__ == 3 && __GNUC_MINOR__ >= 1) || __GNUC__ > 3
+#if ((__GNUC__ == 3 && __GNUC_MINOR__ >= 1) || __GNUC__ > 3) || defined __clang__
        __attribute__ ((__format__ (__printf__, 5, 6)))
 #endif
        ;
@@ -63,9 +64,9 @@ extern DLL_VARIABLE
      - multiline_error must increment the error_message_count variable declared
        in error.h if prefix != NULL.  */
 
-extern DLL_VARIABLE
+extern LIBGETTEXTSRC_DLL_VARIABLE
        void (*po_multiline_warning) (char *prefix, char *message);
-extern DLL_VARIABLE
+extern LIBGETTEXTSRC_DLL_VARIABLE
        void (*po_multiline_error) (char *prefix, char *message);
 
 

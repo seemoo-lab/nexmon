@@ -1,9 +1,9 @@
 /* Test of character handling in C locale.
-   Copyright (C) 2005, 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2005.  */
 
@@ -23,17 +23,15 @@
 #include <ctype.h>
 #include <limits.h>
 #include <locale.h>
+#include <stdlib.h>
 
 #include "macros.h"
 
 static void
 test_agree_with_C_locale (void)
 {
-  int c;
-
-  for (c = 0; c <= UCHAR_MAX; c++)
+  for (int c = 0; c <= UCHAR_MAX; c++)
     {
-      ASSERT (c_isascii (c) == (isascii (c) != 0));
       if (c_isascii (c))
         {
           ASSERT (c_isalnum (c) == (isalnum (c) != 0));
@@ -57,10 +55,9 @@ test_agree_with_C_locale (void)
 static void
 test_all (void)
 {
-  int c;
   int n_isascii = 0;
 
-  for (c = CHAR_MIN; c <= UCHAR_MAX; c++)
+  for (int c = CHAR_MIN; c <= UCHAR_MAX; c++)
     {
       if (! (0 <= c && c <= CHAR_MAX))
         {
@@ -218,11 +215,16 @@ main ()
 
   test_all ();
 
-  setlocale (LC_ALL, "de_DE");
-  test_all ();
+  /* Run the tests in a German unibyte locale.  */
+  if ((setlocale (LC_ALL, "de_DE") != NULL
+       || setlocale (LC_ALL, "de_DE.ISO-8859-1") != NULL)
+      && MB_CUR_MAX == 1)
+    test_all ();
 
-  setlocale (LC_ALL, "ja_JP.EUC-JP");
-  test_all ();
+  /* Run the tests in a traditional Japanese locale.  */
+  if (setlocale (LC_ALL, "ja_JP.EUC-JP") != NULL
+      && MB_CUR_MAX == 2)
+    test_all ();
 
-  return 0;
+  return test_exit_status;
 }

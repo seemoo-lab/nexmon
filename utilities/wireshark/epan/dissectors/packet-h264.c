@@ -6,26 +6,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * References:
- * http://www.ietf.org/rfc/rfc3984.txt?number=3984      Obsolete
- * http://www.ietf.org/rfc/rfc6184.txt?number=6184
- * http://www.ietf.org/rfc/rfc6190.txt?number=6190
- * http://www.itu.int/rec/T-REC-H.264/en
- * MS-H264PF http://msdn.microsoft.com/en-us/library/hh659565.aspx
+ * https://tools.ietf.org/html/rfc3984      Obsolete
+ * https://tools.ietf.org/html/rfc6184
+ * https://tools.ietf.org/html/rfc6190
+ * https://www.itu.int/rec/T-REC-H.264/en
+ * MS-H264PF https://docs.microsoft.com/en-us/openspecs/office_protocols/ms-h264pf
  */
 
 #include "config.h"
@@ -35,235 +23,237 @@
 #include <epan/asn1.h>
 #include <epan/expert.h>
 #include <epan/prefs.h>
+#include <epan/tfs.h>
 #include "packet-h264.h"
 
 void proto_register_h264(void);
 void proto_reg_handoff_h264(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_h264                                      = -1;
-static int hf_h264_type                                    = -1;
-static int hf_h264_nal_f_bit                               = -1;
-static int hf_h264_nal_nri                                 = -1;
-static int hf_h264_start_bit                               = -1;
-static int hf_h264_forbidden_bit                           = -1;
-static int hf_h264_end_bit                                 = -1;
-static int hf_h264_profile                                 = -1;
-static int hf_h264_profile_idc                             = -1;
-static int hf_h264_rbsp_stop_bit                           = -1;
-static int hf_h264_rbsp_trailing_bits                      = -1;
-static int hf_h264_constraint_set0_flag                    = -1;
-static int hf_h264_constraint_set1_flag                    = -1;
-static int hf_h264_constraint_set2_flag                    = -1;
-static int hf_h264_constraint_set3_flag                    = -1;
-static int hf_h264_constraint_set4_flag                    = -1;
-static int hf_h264_constraint_set5_flag                    = -1;
-static int hf_h264_reserved_zero_2bits                     = -1;
-static int hf_h264_level_idc                               = -1;
-static int hf_h264_nal_unit                                = -1;
-static int hf_h264_forbidden_zero_bit                      = -1;
-static int hf_h264_nal_ref_idc                             = -1;
-static int hf_h264_nal_unit_type                           = -1;
-static int hf_h264_seq_parameter_set_id                    = -1;
-static int hf_h264_chroma_format_idc                       = -1;
-static int hf_h264_residual_colour_transform_flag          = -1;
-static int hf_h264_bit_depth_luma_minus8                   = -1;
-static int hf_h264_bit_depth_chroma_minus8                 = -1;
-static int hf_h264_qpprime_y_zero_transform_bypass_flag    = -1;
-static int hf_h264_seq_scaling_matrix_present_flag         = -1;
-static int hf_h264_log2_max_frame_num_minus4               = -1;
-static int hf_h264_pic_order_cnt_type                      = -1;
-static int hf_h264_log2_max_pic_order_cnt_lsb_minus4       = -1;
-static int hf_h264_delta_pic_order_always_zero_flag        = -1;
-static int hf_h264_offset_for_non_ref_pic                  = -1;
-static int hf_h264_offset_for_top_to_bottom_field          = -1;
-static int hf_h264_num_ref_frames_in_pic_order_cnt_cycle   = -1;
-static int hf_h264_offset_for_ref_frame                    = -1;
-static int hf_h264_num_ref_frames                          = -1;
-static int hf_h264_gaps_in_frame_num_value_allowed_flag    = -1;
-static int hf_h264_pic_width_in_mbs_minus1                 = -1;
-static int hf_h264_pic_height_in_map_units_minus1          = -1;
-static int hf_h264_frame_mbs_only_flag                     = -1;
-static int hf_h264_mb_adaptive_frame_field_flag            = -1;
-static int hf_h264_direct_8x8_inference_flag               = -1;
-static int hf_h264_frame_cropping_flag                     = -1;
-static int hf_h264_frame_crop_left_offset                  = -1;
-static int hf_h264_frame_crop_right_offset                 = -1;
-static int hf_h264_frame_crop_top_offset                   = -1;
-static int hf_h264_frame_crop_bottom_offset                = -1;
-static int hf_h264_vui_parameters_present_flag             = -1;
-static int hf_h264_pic_parameter_set_id                    = -1;
-static int hf_h264_entropy_coding_mode_flag                = -1;
-static int hf_h264_pic_order_present_flag                  = -1;
-static int hf_h264_num_slice_groups_minus1                 = -1;
-static int hf_h264_slice_group_map_type                    = -1;
-static int hf_h264_num_ref_idx_l0_active_minus1            = -1;
-static int hf_h264_num_ref_idx_l1_active_minus1            = -1;
-static int hf_h264_weighted_pred_flag                      = -1;
-static int hf_h264_weighted_bipred_idc                     = -1;
-static int hf_h264_pic_init_qp_minus26                     = -1;
-static int hf_h264_pic_init_qs_minus26                     = -1;
-static int hf_h264_chroma_qp_index_offset                  = -1;
-static int hf_h264_deblocking_filter_control_present_flag  = -1;
-static int hf_h264_constrained_intra_pred_flag             = -1;
-static int hf_h264_redundant_pic_cnt_present_flag          = -1;
-static int hf_h264_transform_8x8_mode_flag                 = -1;
-static int hf_h264_pic_scaling_matrix_present_flag         = -1;
-static int hf_h264_second_chroma_qp_index_offset           = -1;
-static int hf_h264_par_profile                             = -1;
-static int hf_h264_par_profile_b                           = -1;
-static int hf_h264_par_profile_m                           = -1;
-static int hf_h264_par_profile_e                           = -1;
-static int hf_h264_par_profile_h                           = -1;
-static int hf_h264_par_profile_h10                         = -1;
-static int hf_h264_par_profile_h4_2_2                      = -1;
-static int hf_h264_par_profile_h4_4_4                      = -1;
-/* static int hf_h264_par_add_mode_sup                        = -1; */
-static int hf_h264_par_AdditionalModesSupported            = -1;
-static int hf_h264_par_add_mode_sup_rcdo                   = -1;
-static int hf_h264_par_ProfileIOP                          = -1;
-static int hf_h264_par_constraint_set0_flag                = -1;
-static int hf_h264_par_constraint_set1_flag                = -1;
-static int hf_h264_par_constraint_set2_flag                = -1;
+static int proto_h264;
+static int hf_h264_type;
+static int hf_h264_nal_f_bit;
+static int hf_h264_nal_nri;
+static int hf_h264_start_bit;
+static int hf_h264_forbidden_bit;
+static int hf_h264_end_bit;
+static int hf_h264_profile;
+static int hf_h264_profile_idc;
+static int hf_h264_rbsp_stop_bit;
+static int hf_h264_rbsp_trailing_bits;
+static int hf_h264_constraint_set0_flag;
+static int hf_h264_constraint_set1_flag;
+static int hf_h264_constraint_set2_flag;
+static int hf_h264_constraint_set3_flag;
+static int hf_h264_constraint_set4_flag;
+static int hf_h264_constraint_set5_flag;
+static int hf_h264_reserved_zero_2bits;
+static int hf_h264_level_idc;
+static int hf_h264_nal_unit;
+static int hf_h264_forbidden_zero_bit;
+static int hf_h264_nal_ref_idc;
+static int hf_h264_nal_unit_type;
+static int hf_h264_seq_parameter_set_id;
+static int hf_h264_chroma_format_idc;
+static int hf_h264_residual_colour_transform_flag;
+static int hf_h264_bit_depth_luma_minus8;
+static int hf_h264_bit_depth_chroma_minus8;
+static int hf_h264_qpprime_y_zero_transform_bypass_flag;
+static int hf_h264_seq_scaling_matrix_present_flag;
+static int hf_h264_seq_scaling_list_present_flag;
+static int hf_h264_delta_scale;
+static int hf_h264_log2_max_frame_num_minus4;
+static int hf_h264_pic_order_cnt_type;
+static int hf_h264_log2_max_pic_order_cnt_lsb_minus4;
+static int hf_h264_delta_pic_order_always_zero_flag;
+static int hf_h264_offset_for_non_ref_pic;
+static int hf_h264_offset_for_top_to_bottom_field;
+static int hf_h264_num_ref_frames_in_pic_order_cnt_cycle;
+static int hf_h264_offset_for_ref_frame;
+static int hf_h264_num_ref_frames;
+static int hf_h264_gaps_in_frame_num_value_allowed_flag;
+static int hf_h264_pic_width_in_mbs_minus1;
+static int hf_h264_pic_height_in_map_units_minus1;
+static int hf_h264_frame_mbs_only_flag;
+static int hf_h264_mb_adaptive_frame_field_flag;
+static int hf_h264_direct_8x8_inference_flag;
+static int hf_h264_frame_cropping_flag;
+static int hf_h264_frame_crop_left_offset;
+static int hf_h264_frame_crop_right_offset;
+static int hf_h264_frame_crop_top_offset;
+static int hf_h264_frame_crop_bottom_offset;
+static int hf_h264_vui_parameters_present_flag;
+static int hf_h264_pic_parameter_set_id;
+static int hf_h264_entropy_coding_mode_flag;
+static int hf_h264_pic_order_present_flag;
+static int hf_h264_num_slice_groups_minus1;
+static int hf_h264_slice_group_map_type;
+static int hf_h264_num_ref_idx_l0_active_minus1;
+static int hf_h264_num_ref_idx_l1_active_minus1;
+static int hf_h264_weighted_pred_flag;
+static int hf_h264_weighted_bipred_idc;
+static int hf_h264_pic_init_qp_minus26;
+static int hf_h264_pic_init_qs_minus26;
+static int hf_h264_chroma_qp_index_offset;
+static int hf_h264_deblocking_filter_control_present_flag;
+static int hf_h264_constrained_intra_pred_flag;
+static int hf_h264_redundant_pic_cnt_present_flag;
+static int hf_h264_transform_8x8_mode_flag;
+static int hf_h264_pic_scaling_matrix_present_flag;
+static int hf_h264_second_chroma_qp_index_offset;
+static int hf_h264_primary_pic_type;
+static int hf_h264_par_profile;
+static int hf_h264_par_profile_b;
+static int hf_h264_par_profile_m;
+static int hf_h264_par_profile_e;
+static int hf_h264_par_profile_h;
+static int hf_h264_par_profile_h10;
+static int hf_h264_par_profile_h4_2_2;
+static int hf_h264_par_profile_h4_4_4;
+/* static int hf_h264_par_add_mode_sup; */
+static int hf_h264_par_AdditionalModesSupported;
+static int hf_h264_par_add_mode_sup_rcdo;
+static int hf_h264_par_ProfileIOP;
+static int hf_h264_par_constraint_set0_flag;
+static int hf_h264_par_constraint_set1_flag;
+static int hf_h264_par_constraint_set2_flag;
 /* Packetization Values */
-static int hf_h264_nalu_size                               = -1;
-static int hf_h264_don                                     = -1;
-static int hf_h264_dond                                    = -1;
-static int hf_h264_ts_offset16                             = -1;
-static int hf_h264_ts_offset24                             = -1;
+static int hf_h264_nalu_size;
+static int hf_h264_don;
+static int hf_h264_dond;
+static int hf_h264_ts_offset16;
+static int hf_h264_ts_offset24;
 /* Extension Header */
-static int hf_h264_nal_extension_subtype                   = -1;
-static int hf_h264_nal_extension_j                         = -1;
-static int hf_h264_nal_extension_k                         = -1;
-static int hf_h264_nal_extension_l                         = -1;
+static int hf_h264_nal_extension_subtype;
+static int hf_h264_nal_extension_j;
+static int hf_h264_nal_extension_k;
+static int hf_h264_nal_extension_l;
 
 /* SEI Decoding Information */
-static int hf_h264_sei_uuid                                = -1;
+static int hf_h264_sei_uuid;
 /* Microsoft Layout SEI */
-static int hf_h264_sei_ms_lpb                              = -1;
-static int hf_h264_sei_ms_layout_p                         = -1;
-static int hf_h264_sei_ms_layout_ldsize                    = -1;
-static int hf_h264_sei_ms_layer_desc_coded_width           = -1;
-static int hf_h264_sei_ms_layer_desc_coded_height          = -1;
-static int hf_h264_sei_ms_layer_desc_display_width         = -1;
-static int hf_h264_sei_ms_layer_desc_display_height        = -1;
-static int hf_h264_sei_ms_layer_desc_bitrate               = -1;
-static int hf_h264_sei_ms_layer_desc_frame_rate            = -1;
-static int hf_h264_sei_ms_layer_desc_layer_type            = -1;
-static int hf_h264_sei_ms_layer_desc_prid                  = -1;
-static int hf_h264_sei_ms_layer_desc_cb                    = -1;
+static int hf_h264_sei_ms_lpb;
+static int hf_h264_sei_ms_layout_p;
+static int hf_h264_sei_ms_layout_ldsize;
+static int hf_h264_sei_ms_layer_desc_coded_width;
+static int hf_h264_sei_ms_layer_desc_coded_height;
+static int hf_h264_sei_ms_layer_desc_display_width;
+static int hf_h264_sei_ms_layer_desc_display_height;
+static int hf_h264_sei_ms_layer_desc_bitrate;
+static int hf_h264_sei_ms_layer_desc_frame_rate;
+static int hf_h264_sei_ms_layer_desc_layer_type;
+static int hf_h264_sei_ms_layer_desc_prid;
+static int hf_h264_sei_ms_layer_desc_cb;
 /* Microsoft Bitstream SEI */
-static int hf_h264_sei_ms_bitstream_ref_frame_cnt          = -1;
-static int hf_h264_sei_ms_bitstream_num_nalus              = -1;
-static int hf_h264_sei_iso_sec_info                        = -1;
+static int hf_h264_sei_ms_bitstream_ref_frame_cnt;
+static int hf_h264_sei_ms_bitstream_num_nalus;
+static int hf_h264_sei_iso_sec_info;
 /* Microsoft Crop SEI */
-static int hf_h264_sei_ms_crop_num_data                    = -1;
-static int hf_h264_sei_ms_crop_info_type                   = -1;
-static int hf_h264_sei_ms_crop_confidence_level            = -1;
-static int hf_h264_sei_ms_crop_frame_left_offset           = -1;
-static int hf_h264_sei_ms_crop_frame_right_offset          = -1;
-static int hf_h264_sei_ms_crop_frame_top_offset            = -1;
-static int hf_h264_sei_ms_crop_frame_bottom_offset         = -1;
+static int hf_h264_sei_ms_crop_num_data;
+static int hf_h264_sei_ms_crop_info_type;
+static int hf_h264_sei_ms_crop_confidence_level;
+static int hf_h264_sei_ms_crop_frame_left_offset;
+static int hf_h264_sei_ms_crop_frame_right_offset;
+static int hf_h264_sei_ms_crop_frame_top_offset;
+static int hf_h264_sei_ms_crop_frame_bottom_offset;
 /* SVC NAL Header Extension Values Annex G.7.3.1.1 */
-static int hf_h264_nal_hdr_ext_svc                         = -1;
-static int hf_h264_nal_hdr_ext_i                           = -1;
-static int hf_h264_nal_hdr_ext_prid                        = -1;
-static int hf_h264_nal_hdr_ext_n                           = -1;
-static int hf_h264_nal_hdr_ext_did                         = -1;
-static int hf_h264_nal_hdr_ext_qid                         = -1;
-static int hf_h264_nal_hdr_ext_tid                         = -1;
-static int hf_h264_nal_hdr_ext_u                           = -1;
-static int hf_h264_nal_hdr_ext_d                           = -1;
-static int hf_h264_nal_hdr_ext_o                           = -1;
-static int hf_h264_nal_hdr_ext_rr                          = -1;
+static int hf_h264_nal_hdr_ext_svc;
+static int hf_h264_nal_hdr_ext_i;
+static int hf_h264_nal_hdr_ext_prid;
+static int hf_h264_nal_hdr_ext_n;
+static int hf_h264_nal_hdr_ext_did;
+static int hf_h264_nal_hdr_ext_qid;
+static int hf_h264_nal_hdr_ext_tid;
+static int hf_h264_nal_hdr_ext_u;
+static int hf_h264_nal_hdr_ext_d;
+static int hf_h264_nal_hdr_ext_o;
+static int hf_h264_nal_hdr_ext_rr;
 /* PACSI Values */
-static int hf_h264_pacsi_x                                 = -1;
-static int hf_h264_pacsi_y                                 = -1;
-static int hf_h264_pacsi_t                                 = -1;
-static int hf_h264_pacsi_a                                 = -1;
-static int hf_h264_pacsi_p                                 = -1;
-static int hf_h264_pacsi_c                                 = -1;
-static int hf_h264_pacsi_s                                 = -1;
-static int hf_h264_pacsi_e                                 = -1;
-static int hf_h264_pacsi_tl0picidx                         = -1;
-static int hf_h264_pacsi_idrpicid                          = -1;
-static int hf_h264_pacsi_donc                              = -1;
+static int hf_h264_pacsi_x;
+static int hf_h264_pacsi_y;
+static int hf_h264_pacsi_t;
+static int hf_h264_pacsi_a;
+static int hf_h264_pacsi_p;
+static int hf_h264_pacsi_c;
+static int hf_h264_pacsi_s;
+static int hf_h264_pacsi_e;
+static int hf_h264_pacsi_tl0picidx;
+static int hf_h264_pacsi_idrpicid;
+static int hf_h264_pacsi_donc;
 
 /* VUI parameters */
-static int hf_h264_aspect_ratio_info_present_flag          = -1;
-static int hf_h264_aspect_ratio_idc                        = -1;
-static int hf_h264_sar_width                               = -1;
-static int hf_h264_sar_height                              = -1;
-static int hf_h264_overscan_info_present_flag              = -1;
-static int hf_h264_overscan_appropriate_flag               = -1;
-static int hf_h264_video_signal_type_present_flag          = -1;
-static int hf_h264_video_format                            = -1;
-static int hf_h264_video_full_range_flag                   = -1;
-static int hf_h264_colour_description_present_flag         = -1;
-static int hf_h264_colour_primaries                        = -1;
-static int hf_h264_transfer_characteristics                = -1;
-static int hf_h264_matrix_coefficients                     = -1;
-static int hf_h264_chroma_loc_info_present_flag            = -1;
-static int hf_h264_chroma_sample_loc_type_top_field        = -1;
-static int hf_h264_chroma_sample_loc_type_bottom_field     = -1;
-static int hf_h264_timing_info_present_flag                = -1;
-static int hf_h264_num_units_in_tick                       = -1;
-static int hf_h264_time_scale                              = -1;
-static int hf_h264_fixed_frame_rate_flag                   = -1;
-static int hf_h264_nal_hrd_parameters_present_flag         = -1;
-static int hf_h264_vcl_hrd_parameters_present_flag         = -1;
-static int hf_h264_low_delay_hrd_flag                      = -1;
-static int hf_h264_pic_struct_present_flag                 = -1;
-static int hf_h264_bitstream_restriction_flag              = -1;
-static int hf_h264_motion_vectors_over_pic_boundaries_flag = -1;
-static int hf_h264_max_bytes_per_pic_denom                 = -1;
-static int hf_h264_max_bits_per_mb_denom                   = -1;
-static int hf_h264_log2_max_mv_length_horizontal           = -1;
-static int hf_h264_log2_max_mv_length_vertical             = -1;
-static int hf_h264_num_reorder_frames                      = -1;
-static int hf_h264_max_dec_frame_buffering                 = -1;
-static int hf_h264_cpb_cnt_minus1                          = -1;
-static int hf_h264_bit_rate_scale                          = -1;
-static int hf_h264_cpb_size_scale                          = -1;
-static int hf_h264_bit_rate_value_minus1                   = -1;
-static int hf_h264_cpb_size_value_minus1                   = -1;
-static int hf_h264_cbr_flag                                = -1;
-static int hf_h264_initial_cpb_removal_delay_length_minus1 = -1;
-static int hf_h264_cpb_removal_delay_length_minus1         = -1;
-static int hf_h264_dpb_output_delay_length_minus11         = -1;
-static int hf_h264_time_offset_length                      = -1;
+static int hf_h264_aspect_ratio_info_present_flag;
+static int hf_h264_aspect_ratio_idc;
+static int hf_h264_sar_width;
+static int hf_h264_sar_height;
+static int hf_h264_overscan_info_present_flag;
+static int hf_h264_overscan_appropriate_flag;
+static int hf_h264_video_signal_type_present_flag;
+static int hf_h264_video_format;
+static int hf_h264_video_full_range_flag;
+static int hf_h264_colour_description_present_flag;
+static int hf_h264_colour_primaries;
+static int hf_h264_transfer_characteristics;
+static int hf_h264_matrix_coefficients;
+static int hf_h264_chroma_loc_info_present_flag;
+static int hf_h264_chroma_sample_loc_type_top_field;
+static int hf_h264_chroma_sample_loc_type_bottom_field;
+static int hf_h264_timing_info_present_flag;
+static int hf_h264_num_units_in_tick;
+static int hf_h264_time_scale;
+static int hf_h264_fixed_frame_rate_flag;
+static int hf_h264_nal_hrd_parameters_present_flag;
+static int hf_h264_vcl_hrd_parameters_present_flag;
+static int hf_h264_low_delay_hrd_flag;
+static int hf_h264_pic_struct_present_flag;
+static int hf_h264_bitstream_restriction_flag;
+static int hf_h264_motion_vectors_over_pic_boundaries_flag;
+static int hf_h264_max_bytes_per_pic_denom;
+static int hf_h264_max_bits_per_mb_denom;
+static int hf_h264_log2_max_mv_length_horizontal;
+static int hf_h264_log2_max_mv_length_vertical;
+static int hf_h264_num_reorder_frames;
+static int hf_h264_max_dec_frame_buffering;
+static int hf_h264_cpb_cnt_minus1;
+static int hf_h264_bit_rate_scale;
+static int hf_h264_cpb_size_scale;
+static int hf_h264_bit_rate_value_minus1;
+static int hf_h264_cpb_size_value_minus1;
+static int hf_h264_cbr_flag;
+static int hf_h264_initial_cpb_removal_delay_length_minus1;
+static int hf_h264_cpb_removal_delay_length_minus1;
+static int hf_h264_dpb_output_delay_length_minus11;
+static int hf_h264_time_offset_length;
 
-static int hf_h264_first_mb_in_slice                       = -1;
-static int hf_h264_slice_type                              = -1;
-static int hf_h264_slice_id                                = -1;
-static int hf_h264_payloadsize                             = -1;
-static int hf_h264_payloadtype                             = -1;
-/* static int hf_h264_frame_num                               = -1; */
+static int hf_h264_first_mb_in_slice;
+static int hf_h264_slice_type;
+static int hf_h264_slice_id;
+static int hf_h264_payloadsize;
+static int hf_h264_payloadtype;
+/* static int hf_h264_frame_num; */
 
 /* Initialize the subtree pointers */
-static int ett_h264                                        = -1;
-static int ett_h264_profile                                = -1;
-static int ett_h264_nal                                    = -1;
-static int ett_h264_fua                                    = -1;
-static int ett_h264_stream                                 = -1;
-static int ett_h264_nal_unit                               = -1;
-static int ett_h264_par_profile                            = -1;
-static int ett_h264_par_AdditionalModesSupported           = -1;
-static int ett_h264_par_ProfileIOP                         = -1;
-static int ett_h264_ms_layer_description                   = -1;
-static int ett_h264_ms_crop_data                           = -1;
-static int ett_h264_ni_mtap                                = -1;
+static int ett_h264;
+static int ett_h264_profile;
+static int ett_h264_nal;
+static int ett_h264_fua;
+static int ett_h264_stream;
+static int ett_h264_nal_unit;
+static int ett_h264_par_profile;
+static int ett_h264_par_AdditionalModesSupported;
+static int ett_h264_par_ProfileIOP;
+static int ett_h264_ms_layer_description;
+static int ett_h264_ms_crop_data;
+static int ett_h264_ni_mtap;
 
-static expert_field ei_h264_undecoded = EI_INIT;
-static expert_field ei_h264_ms_layout_wrong_length = EI_INIT;
-static expert_field ei_h264_bad_nal_length = EI_INIT;
-static expert_field ei_h264_nal_unit_type_reserved = EI_INIT;
-static expert_field ei_h264_nal_unit_type_unspecified = EI_INIT;
+static expert_field ei_h264_undecoded;
+static expert_field ei_h264_ms_layout_wrong_length;
+static expert_field ei_h264_oversized_exp_golomb_code;
+static expert_field ei_h264_bad_nal_length;
+static expert_field ei_h264_nal_unit_type_reserved;
+static expert_field ei_h264_nal_unit_type_unspecified;
 
-/* The dynamic payload type range which will be dissected as H.264 */
-
-#define RTP_PT_DEFAULT_RANGE "0"
-static range_t *temp_dynamic_payload_type_range = NULL;
+static dissector_handle_t h264_name_handle;
 
 static dissector_handle_t h264_handle;
 
@@ -481,6 +471,19 @@ static const value_string h264_slice_group_map_type_vals[] = {
     { 0,    NULL }
 };
 
+/* Table 7-5 Meaning of primary_pic_type */
+static const value_string h264_primary_pic_type_vals[] = {
+    { 0,    "2, 7" },
+    { 1,    "0, 2, 5, 7" },
+    { 2,    "0, 1, 2, 5, 6, 7" },
+    { 3,    "4, 9" },
+    { 4,    "3, 4, 8, 9" },
+    { 5,    "2, 4, 7, 9" },
+    { 6,    "0, 2, 3, 4, 5, 7, 8, 9" },
+    { 7,    "0, 1, 2, 3, 4, 5, 6, 7, 8, 9" },
+    { 0,    NULL }
+};
+
 /* Table 7-6 Name association to slice_type */
 static const value_string h264_slice_type_vals[] = {
     { 0,    "P (P slice)" },
@@ -524,16 +527,16 @@ dissect_h264(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 /* byte_aligned( ) is specified as follows.
  * - If the current position in the bitstream is on a byte boundary, i.e.,
  *   the next bit in the bitstream is the first bit in a byte,
- *   the return value of byte_aligned( ) is equal to TRUE.
- * - Otherwise, the return value of byte_aligned( ) is equal to FALSE.
+ *   the return value of byte_aligned( ) is equal to true.
+ * - Otherwise, the return value of byte_aligned( ) is equal to false.
  */
-static gboolean
+static bool
 h264_byte_aligned(int bit_offset)
 {
     if (bit_offset&0x3)
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 /* Expect a tvb and a bit offset into the tvb
@@ -541,67 +544,85 @@ h264_byte_aligned(int bit_offset)
  */
 #define cVALS(x) (const value_string*)(x)
 
-static guint32
-dissect_h264_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, gint *start_bit_offset, h264_golomb_descriptors descriptor)
-/*(tvbuff_t *tvb, gint *start_bit_offset) */
+static uint32_t
+dissect_h264_exp_golomb_code(proto_tree *tree, packet_info *pinfo, int hf_index, tvbuff_t *tvb, int *start_bit_offset, h264_golomb_descriptors descriptor)
+/*(tvbuff_t *tvb, int *start_bit_offset) */
 {
-    gint     leading_zero_bits, bit_offset, start_offset;
-    guint32  codenum, mask, value, tmp;
-    gint32   se_value = 0;
-    gint     b;
+    proto_item *ti;
+
+    int      leading_zero_bits, bit_offset, start_offset;
+    uint32_t codenum, mask, value, tmp;
+    int32_t  se_value = 0;
+    int      b;
     char    *str;
     int      bit;
     int      i;
+    bool overflow = false;
     header_field_info *hf_field = NULL;
 
     start_offset = *start_bit_offset>>3;
 
-    if (hf_index > -1)
+    if (hf_index > 0) {
         hf_field = proto_registrar_get_nth(hf_index);
+    }
+
+    if (hf_field) {
+        switch (descriptor) {
+        case H264_SE_V:
+            DISSECTOR_ASSERT_FIELD_TYPE(hf_field, FT_INT32);
+            break;
+
+        default:
+            DISSECTOR_ASSERT_FIELD_TYPE(hf_field, FT_UINT32);
+            break;
+        }
+    }
 
     bit_offset = *start_bit_offset;
 
     /* prepare the string */
-    str = (char *)wmem_alloc(wmem_packet_scope(), 256);
+    str = (char *)wmem_alloc(pinfo->pool, 256);
     str[0] = '\0';
     for (bit=0; bit<((int)(bit_offset&0x07)); bit++) {
         if (bit && (!(bit%4))) {
-            g_strlcat(str, " ", 256);
+            (void) g_strlcat(str, " ", 256);
         }
-        g_strlcat(str,".", 256);
+        (void) g_strlcat(str,".", 256);
     }
 
 
     leading_zero_bits = -1;
     for (b = 0; !b; leading_zero_bits++) {
         if (bit && (!(bit%4))) {
-            g_strlcat(str, " ", 256);
+            (void) g_strlcat(str, " ", 256);
         }
         if (bit && (!(bit%8))) {
-            g_strlcat(str, " ", 256);
+            (void) g_strlcat(str, " ", 256);
         }
         b = tvb_get_bits8(tvb, bit_offset, 1);
         if (b != 0) {
-            g_strlcat(str, "1", 256);
+            (void) g_strlcat(str, "1", 256);
         } else {
-            g_strlcat(str, "0", 256);
+            (void) g_strlcat(str, "0", 256);
         }
         bit++;
         bit_offset++;
     }
 
+    /* XXX: This could be handled in the general case and reduce code
+     * duplication. */
     if (leading_zero_bits == 0) {
         codenum = 0;
         *start_bit_offset = bit_offset;
         for (; bit%8; bit++) {
             if (bit && (!(bit%4))) {
-                g_strlcat(str, " ", 256);
+                (void) g_strlcat(str, " ", 256);
             }
-        g_strlcat(str,".", 256);
+        (void) g_strlcat(str,".", 256);
         }
         if (hf_field) {
-            g_strlcat(str," = ", 256);
-            g_strlcat(str, hf_field->name, 256);
+            (void) g_strlcat(str," = ", 256);
+            (void) g_strlcat(str, hf_field->name, 256);
             switch (descriptor) {
             case H264_SE_V:
                 /* if the syntax element is coded as se(v),
@@ -661,7 +682,7 @@ dissect_h264_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, gint
                     }
                 }
             } else {
-                /* Only allow guint32 */
+                /* Only allow uint32_t */
                 DISSECTOR_ASSERT_NOT_REACHED();
             }
         }
@@ -681,68 +702,113 @@ dissect_h264_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, gint
     where the value returned from read_bits( leadingZeroBits ) is interpreted as a binary representation of an unsigned
     integer with most significant bit written first.
     */
-    codenum = 1;
-    codenum = codenum << leading_zero_bits;
-    mask = codenum>>1;
-    if (leading_zero_bits > 32)
-        DISSECTOR_ASSERT_NOT_REACHED();
-    else if (leading_zero_bits > 16)
+    if (leading_zero_bits > 32) {
+        overflow = true;
+        codenum = UINT32_MAX;
+        if (descriptor == H264_SE_V) {
+            value = tvb_get_bits32(tvb, bit_offset + 32*(leading_zero_bits / 32), leading_zero_bits % 32, ENC_BIG_ENDIAN);
+            if (value % 2) {
+                se_value = INT32_MIN;
+            } else {
+                se_value = INT32_MAX;
+            }
+        }
+    } else if (leading_zero_bits == 32) {
         value = tvb_get_bits32(tvb, bit_offset, leading_zero_bits, ENC_BIG_ENDIAN);
-    else if (leading_zero_bits > 8)
-        value = tvb_get_bits16(tvb, bit_offset, leading_zero_bits, ENC_BIG_ENDIAN);
-    else
-        value = tvb_get_bits8(tvb, bit_offset, leading_zero_bits);
-    codenum = (codenum-1) + value;
+        codenum = UINT32_MAX;
+        /* Only one value doesn't overflow a 32 bit integer, but they're
+         * different for unsigned and signed (because codenum UINT32_MAX maps
+         * to INT32_MAX + 1 and UINT32_MAX + 1 maps to INT32_MIN.) */
+        if (descriptor == H264_SE_V) {
+            if (value != 1) {
+                overflow = true;
+            }
+            if (value % 2) {
+                se_value = INT32_MIN;
+            } else {
+                se_value = INT32_MAX;
+            }
+        } else {
+            if (value != 0) {
+                overflow = true;
+            }
+        }
+        mask = 1U << 31;
+    } else {
+        if (leading_zero_bits > 16)
+            value = tvb_get_bits32(tvb, bit_offset, leading_zero_bits, ENC_BIG_ENDIAN);
+        else if (leading_zero_bits > 8)
+            value = tvb_get_bits16(tvb, bit_offset, leading_zero_bits, ENC_BIG_ENDIAN);
+        else
+            value = tvb_get_bits8(tvb, bit_offset, leading_zero_bits);
+
+        codenum = 1;
+        codenum = codenum << leading_zero_bits;
+        mask = codenum>>1;
+        codenum = (codenum-1) + value;
+
+        if (descriptor == H264_SE_V) {
+            /* if the syntax element is coded as se(v),
+             * the value of the syntax element is derived by invoking the
+             * mapping process for signed Exp-Golomb codes as specified in
+             * subclause 9.1.1 with codeNum as the input.
+             *      k+1
+             * (-1)    Ceil( k/2 )
+             */
+            if (codenum & 1) {
+                se_value = (codenum + 1) >> 1;
+            } else {
+                se_value = 0 - (codenum >> 1);
+            }
+        }
+    }
+
     bit_offset = bit_offset + leading_zero_bits;
+
+    if (overflow) {
+        *start_bit_offset = bit_offset;
+        /* We will probably get a BoundsError later in the packet. */
+        if (descriptor == H264_SE_V) {
+            ti = proto_tree_add_int_format_value(tree, hf_index, tvb, start_offset, (bit_offset >> 3) - start_offset + 1, codenum, "Invalid value (%d leading zero bits), clamped to %" PRId32, leading_zero_bits, se_value);
+            expert_add_info(NULL, ti, &ei_h264_oversized_exp_golomb_code);
+            return se_value;
+        } else {
+            ti = proto_tree_add_uint_format_value(tree, hf_index, tvb, start_offset, (bit_offset >> 3) - start_offset + 1, codenum, "Invalid value (%d leading zero bits), clamped to %" PRIu32, leading_zero_bits, codenum);
+            expert_add_info(NULL, ti, &ei_h264_oversized_exp_golomb_code);
+            return codenum;
+        }
+    }
 
     /* read the bits for the int */
     for (i=0; i<leading_zero_bits; i++) {
         if (bit && (!(bit%4))) {
-            g_strlcat(str, " ", 256);
+            (void) g_strlcat(str, " ", 256);
         }
         if (bit && (!(bit%8))) {
-            g_strlcat(str, " ", 256);
+            (void) g_strlcat(str, " ", 256);
         }
         bit++;
         tmp = value & mask;
         if (tmp != 0) {
-            g_strlcat(str, "1", 256);
+            (void) g_strlcat(str, "1", 256);
         } else {
-            g_strlcat(str, "0", 256);
+            (void) g_strlcat(str, "0", 256);
         }
         mask = mask>>1;
     }
     for ( ; bit%8; bit++) {
         if (bit && (!(bit%4))) {
-            g_strlcat(str, " ", 256);
+            (void) g_strlcat(str, " ", 256);
         }
-        g_strlcat(str,".", 256);
-    }
-
-    switch (descriptor) {
-    case H264_SE_V:
-        /* if the syntax element is coded as se(v),
-         * the value of the syntax element is derived by invoking the
-         * mapping process for signed Exp-Golomb codes as specified in
-         * subclause 9.1.1 with codeNum as the input.
-         *      k+1
-         * (-1)    Ceil( k/2 )
-         */
-        se_value = (codenum + 1) >> 1;
-        if (!(se_value & 1)) {
-            se_value =  - se_value;
-        }
-        break;
-    default:
-        break;
+        (void) g_strlcat(str,".", 256);
     }
 
     if (hf_field) {
-        g_strlcat(str," = ", 256);
-        g_strlcat(str, hf_field->name, 256);
+        (void) g_strlcat(str," = ", 256);
+        (void) g_strlcat(str, hf_field->name, 256);
         switch (descriptor) {
         case H264_SE_V:
-            g_strlcat(str,"(se(v))", 256);
+            (void) g_strlcat(str,"(se(v))", 256);
             /* if the syntax element is coded as se(v),
              * the value of the syntax element is derived by invoking the
              * mapping process for signed Exp-Golomb codes as specified in
@@ -752,7 +818,7 @@ dissect_h264_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, gint
         default:
         break;
         }
-        if ((hf_field->type == FT_UINT32) && (descriptor == H264_UE_V)) {
+        if (descriptor == H264_UE_V) {
             if (hf_field->strings) {
                 proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, 1, codenum,
                           "%s: %s (%u)",
@@ -778,7 +844,7 @@ dissect_h264_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, gint
                         break;
                 }
             }
-        } else if ((hf_field->type == FT_INT32) && (descriptor == H264_SE_V)) {
+        } else if (descriptor == H264_SE_V) {
             if (hf_field->strings) {
                 proto_tree_add_int_format(tree, hf_index, tvb, start_offset, 1, codenum,
                           "%s: %s (%d)",
@@ -802,7 +868,6 @@ dissect_h264_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, gint
             return se_value;
 
         } else {
-            /* Only allow guint32 */
             DISSECTOR_ASSERT_NOT_REACHED();
         }
     }
@@ -813,47 +878,55 @@ dissect_h264_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, gint
 
 /* This function is adapted to parsing NAL units from SDP data where the
  * base64 coding may add extra padding
+ * Returns true if there is a non-zero bit in remaining of tvb (skipping the current bit)
+ *         false if the rest of the tvb is zeros
  */
 
-static gboolean
-more_rbsp_data(proto_tree *tree _U_, tvbuff_t *tvb, packet_info *pinfo _U_, gint bit_offset)
+static bool
+more_rbsp_data(proto_tree *tree _U_, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset)
 {
-    int    offset;
-    int    remaining_length;
-    int    last_one_bit;
-    guint8 b = 0;
+    int    current_bit_offset;
+    int    byte_offset;
+    int    tvb_length;
+    int    significant_bits_mask;
+    int    i;
+    uint8_t current_byte;
 
     /* XXX might not be the best way of doing things but:
-     * Serch from the end of the tvb for the first '1' bit
-     * assuming that it's the RTBSP stop bit
+     * Search in the tvb for the first '1' bit
+     * assuming that it's the RTBSP stop bit or
+     * some data representation
      */
 
+    /*Skip current treating bit*/
+    current_bit_offset = bit_offset + 1;
+
+    /*Mask for non processed bits of the current byte*/
+    significant_bits_mask = (1 << (8 - (current_bit_offset & 0x07))) - 1;
+
     /* Set offset to the byte we are treating */
-    offset = bit_offset>>3;
-    remaining_length = tvb_reported_length_remaining(tvb, offset);
-    /* If there is more then 2 bytes left there *should* be more data */
-    if (remaining_length>2) {
-        return TRUE;
-    }
-    /* Start from last bit */
-    last_one_bit = (tvb_reported_length(tvb) << 3);
+    byte_offset = current_bit_offset >> 3;
 
-    for (b = 0; !b; ) {
-        last_one_bit--;
-        b = tvb_get_bits8(tvb, last_one_bit, 1);
-    }
+    tvb_length = tvb_reported_length(tvb);
 
-    if (last_one_bit == bit_offset) {
-        return FALSE;
+    for (i = byte_offset; i < tvb_length; i++) {
+        current_byte = tvb_get_uint8(tvb, i);
+
+        if ((current_byte & significant_bits_mask) != 0) {
+            return true;
+        }
+
+        /* For the rest of bytes every bits are significant*/
+        significant_bits_mask = 0xFF;
     }
 
-    return TRUE;
+    return false;
 }
 
 static int
-dissect_h264_rbsp_trailing_bits(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint bit_offset)
+dissect_h264_rbsp_trailing_bits(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset)
 {
-    gint remaining_bits=0;
+    int remaining_bits=0;
 
     proto_tree_add_bits_item(tree, hf_h264_rbsp_stop_bit, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
     bit_offset++;
@@ -872,16 +945,16 @@ dissect_h264_rbsp_trailing_bits(proto_tree *tree, tvbuff_t *tvb, packet_info *pi
  * XXX Just parse a few bytes
  */
 static int
-dissect_h264_slice_header(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint bit_offset)
+dissect_h264_slice_header(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int bit_offset)
 {
     /* first_mb_in_slice 2 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_first_mb_in_slice, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_first_mb_in_slice, tvb, &bit_offset, H264_UE_V);
 
     /* slice_type 2 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_slice_type, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_slice_type, tvb, &bit_offset, H264_UE_V);
 
     /* pic_parameter_set_id 2 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_pic_parameter_set_id, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_pic_parameter_set_id, tvb, &bit_offset, H264_UE_V);
 
     /* frame_num 2 u(v) */
     /*
@@ -897,38 +970,39 @@ dissect_h264_slice_header(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U
  *
  * scaling_list( scalingList, sizeOfScalingList, useDefaultScalingMatrixFlag )
  */
-/*
 static int
-dissect_h264_scaling_list(proto_tree *tree, tvbuff_t *tvb, gint bit_offset, int hf_index_scalinglist,
-                          guint8 sizeOfScalingList, int hf_index_usedefaultscalingmatrixflag)
+dissect_h264_scaling_list(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int bit_offset, int* hf_index_scalinglist,
+                          uint8_t sizeOfScalingList)
 {
-
-    guint8 lastScale = 8;
-    guint8 nextScale = 8:
-    guint8 delta_scale;
+    uint8_t j;
+    int32_t lastScale = 8;
+    int32_t nextScale = 8;
+    int32_t delta_scale;
 
     for (j = 0; j < sizeOfScalingList; j++) {
       if (nextScale != 0) {
-          / delta_scale 0 | 1 se(v) /
-          delta_scale = dissect_h264_exp_golomb_code(tree, hf_h264_delta_scale, tvb, &bit_offset);
+          /* delta_scale 0 | 1 se(v) */
+          delta_scale = dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_delta_scale, tvb, &bit_offset, H264_SE_V);
           nextScale = ( lastScale + delta_scale + 256 ) % 256;
-          useDefaultScalingMatrixFlag = ( j == 0 && nextScale == 0 );
+          /* hf_index_usedefaultscalingmatrixflag = ( j == 0 && nextScale == 0 ); */
+      }
+      hf_index_scalinglist[ j ] = ( nextScale == 0 ) ? lastScale : nextScale;
+      lastScale = hf_index_scalinglist[ j ];
     }
-    scalingList[ j ] = ( nextScale == 0 ) ? lastScale : nextScale
-    lastScale = scalingList[ j ]
-    }
+
+    return bit_offset;
 }
-*/
+
 /* E.1.2 HRD parameters syntax */
 static int
-dissect_h264_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint bit_offset)
+dissect_h264_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int bit_offset)
 {
-    guint8 cpb_cnt_minus1;
+    uint8_t cpb_cnt_minus1;
     int    SchedSelIdx;
 
 
     /* cpb_cnt_minus1 0 ue(v) */
-    cpb_cnt_minus1 = dissect_h264_exp_golomb_code(tree, hf_h264_cpb_cnt_minus1, tvb, &bit_offset, H264_UE_V);
+    cpb_cnt_minus1 = dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_cpb_cnt_minus1, tvb, &bit_offset, H264_UE_V);
 
     /* bit_rate_scale 0 u(4) */
     proto_tree_add_bits_item(tree, hf_h264_bit_rate_scale, tvb, bit_offset, 4, ENC_BIG_ENDIAN);
@@ -941,10 +1015,10 @@ dissect_h264_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo 
     for (SchedSelIdx = 0; SchedSelIdx <= cpb_cnt_minus1; SchedSelIdx++) {
 
         /* bit_rate_value_minus1[ SchedSelIdx ] 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_bit_rate_value_minus1, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_bit_rate_value_minus1, tvb, &bit_offset, H264_UE_V);
 
         /* cpb_size_value_minus1[ SchedSelIdx ] 0 ue(v)*/
-        dissect_h264_exp_golomb_code(tree, hf_h264_cpb_size_value_minus1, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_cpb_size_value_minus1, tvb, &bit_offset, H264_UE_V);
 
         /* cbr_flag[ SchedSelIdx ] 0 u(1) */
         proto_tree_add_bits_item(tree, hf_h264_cbr_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
@@ -988,13 +1062,13 @@ static const value_string h264_video_format_vals[] = {
 };
 
 static int
-dissect_h264_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint bit_offset)
+dissect_h264_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int bit_offset)
 {
 
-    guint8 aspect_ratio_info_present_flag, aspect_ratio_idc, overscan_info_present_flag;
-    guint8 video_signal_type_present_flag, colour_description_present_flag, chroma_loc_info_present_flag;
-    guint8 timing_info_present_flag, nal_hrd_parameters_present_flag, vcl_hrd_parameters_present_flag;
-    guint8 bitstream_restriction_flag;
+    uint8_t aspect_ratio_info_present_flag, aspect_ratio_idc, overscan_info_present_flag;
+    uint8_t video_signal_type_present_flag, colour_description_present_flag, chroma_loc_info_present_flag;
+    uint8_t timing_info_present_flag, nal_hrd_parameters_present_flag, vcl_hrd_parameters_present_flag;
+    uint8_t bitstream_restriction_flag;
 
     /* vui_parameters( ) {
      * aspect_ratio_info_present_flag 0 u(1)
@@ -1071,10 +1145,10 @@ dissect_h264_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
 
     if (chroma_loc_info_present_flag) {
         /* chroma_sample_loc_type_top_field 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_chroma_sample_loc_type_top_field, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_chroma_sample_loc_type_top_field, tvb, &bit_offset, H264_UE_V);
 
         /* chroma_sample_loc_type_bottom_field 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_chroma_sample_loc_type_bottom_field, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_chroma_sample_loc_type_bottom_field, tvb, &bit_offset, H264_UE_V);
     }
 
     /* timing_info_present_flag 0 u(1) */
@@ -1134,22 +1208,22 @@ dissect_h264_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
         bit_offset++;
 
         /* max_bytes_per_pic_denom 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_max_bytes_per_pic_denom, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_max_bytes_per_pic_denom, tvb, &bit_offset, H264_UE_V);
 
         /* max_bits_per_mb_denom 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_max_bits_per_mb_denom, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_max_bits_per_mb_denom, tvb, &bit_offset, H264_UE_V);
 
         /* log2_max_mv_length_horizontal 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_log2_max_mv_length_horizontal, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_log2_max_mv_length_horizontal, tvb, &bit_offset, H264_UE_V);
 
         /* log2_max_mv_length_vertical 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_log2_max_mv_length_vertical, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_log2_max_mv_length_vertical, tvb, &bit_offset, H264_UE_V);
 
         /* num_reorder_frames 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_num_reorder_frames, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_num_reorder_frames, tvb, &bit_offset, H264_UE_V);
 
         /* max_dec_frame_buffering 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_max_dec_frame_buffering, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_max_dec_frame_buffering, tvb, &bit_offset, H264_UE_V);
     }
 
     return bit_offset;
@@ -1161,9 +1235,9 @@ dissect_h264_profile(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
     proto_item *item, *level_item;
     proto_tree *h264_profile_tree;
-    gint        offset = 0;
-    guint8      constraint_set3_flag;
-    guint32     level_idc;
+    int         offset = 0;
+    uint8_t     constraint_set3_flag;
+    uint32_t    level_idc;
 
     item = proto_tree_add_item(tree, hf_h264_profile, tvb, offset, -1, ENC_NA);
     h264_profile_tree = proto_item_add_subtree(item, ett_h264_profile);
@@ -1171,7 +1245,7 @@ dissect_h264_profile(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
     proto_tree_add_item(h264_profile_tree, hf_h264_profile_idc, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
-    constraint_set3_flag = (tvb_get_guint8(tvb, offset)&0x10)>>4;
+    constraint_set3_flag = (tvb_get_uint8(tvb, offset)&0x10)>>4;
     proto_tree_add_item(h264_profile_tree, hf_h264_constraint_set0_flag, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(h264_profile_tree, hf_h264_constraint_set1_flag, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(h264_profile_tree, hf_h264_constraint_set2_flag, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1188,7 +1262,7 @@ dissect_h264_profile(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
      *    shall be set equal to 0.
      */
 
-    level_idc = tvb_get_guint8(tvb, offset);
+    level_idc = tvb_get_uint8(tvb, offset);
     level_item = proto_tree_add_item(h264_profile_tree, hf_h264_level_idc, tvb, offset, 1, ENC_BIG_ENDIAN);
     if ((level_idc == 11) && (constraint_set3_flag == 1)) {
         proto_item_append_text(level_item," [Level 1b (128kb/s)]");
@@ -1226,17 +1300,17 @@ dissect_h265_unescap_nal_unit(tvbuff_t *tvb, packet_info *pinfo, int offset)
     int       length         = tvb_reported_length_remaining(tvb, offset);
     int       NumBytesInRBSP = 0;
     int       i;
-    gchar    *buff;
+    char     *buff;
 
-    buff = (gchar *)wmem_alloc(pinfo->pool, length);
+    buff = (char *)wmem_alloc(pinfo->pool, length);
     for (i = 0; i < length; i++) {
         if ((i + 2 < length) && (tvb_get_ntoh24(tvb, offset) == 0x000003)) {
-            buff[NumBytesInRBSP++] = tvb_get_guint8(tvb, offset);
-            buff[NumBytesInRBSP++] = tvb_get_guint8(tvb, offset+1);
+            buff[NumBytesInRBSP++] = tvb_get_uint8(tvb, offset);
+            buff[NumBytesInRBSP++] = tvb_get_uint8(tvb, offset+1);
             i += 2;
             offset+=3;
         } else {
-            buff[ NumBytesInRBSP++] = tvb_get_guint8(tvb, offset);
+            buff[ NumBytesInRBSP++] = tvb_get_uint8(tvb, offset);
             offset++;
         }
     }
@@ -1253,9 +1327,9 @@ dissect_h265_unescap_nal_unit(tvbuff_t *tvb, packet_info *pinfo, int offset)
  */
 
 static void
-dissect_h264_slice_layer_without_partitioning_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint offset)
+dissect_h264_slice_layer_without_partitioning_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
-    gint bit_offset;
+    int bit_offset;
 
     bit_offset = offset <<3;
 
@@ -1272,9 +1346,9 @@ dissect_h264_slice_layer_without_partitioning_rbsp(proto_tree *tree, tvbuff_t *t
  * slice_data_partition_a_layer_rbsp( )
  */
 static void
-dissect_h264_slice_data_partition_a_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_slice_data_partition_a_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
-    gint bit_offset;
+    int bit_offset;
 
     bit_offset = offset <<3;
 
@@ -1282,7 +1356,7 @@ dissect_h264_slice_data_partition_a_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, 
     bit_offset = dissect_h264_slice_header(tree, tvb, pinfo, bit_offset);
 
     /* slice_id All ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_slice_id, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_slice_id, tvb, &bit_offset, H264_UE_V);
     proto_tree_add_expert(tree, pinfo, &ei_h264_undecoded, tvb, bit_offset>>3, -1);
     return;
     /* slice_data( ) * only category 2 parts of slice_data( ) syntax * 2*/
@@ -1294,14 +1368,14 @@ dissect_h264_slice_data_partition_a_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, 
  * slice_data_partition_b_layer_rbsp(
  */
 static void
-dissect_h264_slice_data_partition_b_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_slice_data_partition_b_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
-    gint bit_offset;
+    int bit_offset;
 
     bit_offset = offset <<3;
 
     /* slice_id All ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_slice_id, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_slice_id, tvb, &bit_offset, H264_UE_V);
     /* if (redundant_pic_cnt_present_flag) */
     /* redundant_pic_cnt All ue(v) */
     /* slice_data( ) * only category 3 parts of slice_data( ) syntax * 3 */
@@ -1315,14 +1389,14 @@ dissect_h264_slice_data_partition_b_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, 
  * slice_data_partition_c_layer_rbsp( )
  */
 static void
-dissect_h264_slice_data_partition_c_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_slice_data_partition_c_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
-    gint bit_offset;
+    int bit_offset;
 
     bit_offset = offset <<3;
 
     /* slice_id All ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_slice_id, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_slice_id, tvb, &bit_offset, H264_UE_V);
     /* if (redundant_pic_cnt_present_flag) */
     /* redundant_pic_cnt All ue(v) */
     /* slice_data( ) * only category 4 parts of slice_data( ) syntax * 4 */
@@ -1333,14 +1407,14 @@ dissect_h264_slice_data_partition_c_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, 
 /* D.1.6 User data unregistered SEI message syntax */
 
 static int
-h264_user_data_unregistered(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint bit_offset, guint32 payloadSize)
+h264_user_data_unregistered(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset, uint32_t payloadSize)
 {
-    guint8  i;
-    guint8  ld_size;
-    guint8  p_flag;
-    guint8  desc =0;
-    guint8  num_crops;
-    gint offset = bit_offset >> 3;
+    uint8_t i;
+    uint8_t ld_size;
+    uint8_t p_flag;
+    uint8_t desc =0;
+    uint8_t num_crops;
+    int offset = bit_offset >> 3;
     proto_item *item;
     proto_item *uuid_item;
     proto_tree *h264_ms_layer_desc_tree;
@@ -1362,7 +1436,7 @@ h264_user_data_unregistered(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo 
     /* Microsoft MS-H264PF Specification */
     if ( memcmp(&guid, &(ms_guids[MS_LAYOUT]), sizeof(e_guid_t)) == 0)
     {
-        col_append_fstr(pinfo->cinfo, COL_INFO, ":MS_Layout");
+        col_append_str(pinfo->cinfo, COL_INFO, ":MS_Layout");
         proto_item_append_text(uuid_item,"  - Microsoft Stream Layout SEI Message");
         /* Loop through the layer presence bytes 0-7 */
         for (i = 0; i < 8 ; i++)
@@ -1371,12 +1445,12 @@ h264_user_data_unregistered(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo 
             proto_item_append_text (item, "  PRID %2d - %2d", (i+1)*8-1, i*8);
             offset++;
         }
-        p_flag = tvb_get_guint8 (tvb, offset);
+        p_flag = tvb_get_uint8 (tvb, offset);
         proto_tree_add_item (tree, hf_h264_sei_ms_layout_p, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset++;
         if (p_flag == 1)
         {
-            ld_size = tvb_get_guint8 (tvb, offset);
+            ld_size = tvb_get_uint8 (tvb, offset);
             proto_tree_add_item (tree, hf_h264_sei_ms_layout_ldsize, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
             /* MS Errata - Microsoft seems to be setting the LD size to 16 but then including 2 layer descriptions which should be 32
@@ -1408,9 +1482,9 @@ h264_user_data_unregistered(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo 
     }
     else if ( memcmp(&guid, &(ms_guids[MS_CROPPING]), sizeof(e_guid_t)) == 0)
     {
-        col_append_fstr(pinfo->cinfo, COL_INFO, ":MS_Cropping");
+        col_append_str(pinfo->cinfo, COL_INFO, ":MS_Cropping");
         proto_item_append_text(uuid_item,"  - Microsoft Cropping Info SEI Message");
-        num_crops = tvb_get_guint8 (tvb, offset);
+        num_crops = tvb_get_uint8 (tvb, offset);
         proto_tree_add_item (tree, hf_h264_sei_ms_crop_num_data, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset++;
         proto_tree_add_item (tree, hf_h264_sei_ms_crop_info_type, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1429,7 +1503,7 @@ h264_user_data_unregistered(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo 
     }
     else if ( memcmp(&guid, &(ms_guids[MS_BITSTREAM]), sizeof(e_guid_t)) == 0)
     {
-        col_append_fstr(pinfo->cinfo, COL_INFO, ":MS_Bitstream");
+        col_append_str(pinfo->cinfo, COL_INFO, ":MS_Bitstream");
         proto_item_append_text(uuid_item,"  - Microsoft Bitstream Info SEI Message");
         proto_tree_add_item (tree, hf_h264_sei_ms_bitstream_ref_frame_cnt, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset++;
@@ -1497,7 +1571,7 @@ static const value_string h264_sei_payload_vals[] = {
 };
 
 static int
-h264_sei_payload(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint bit_offset, guint32 payloadType, guint32 payloadSize)
+h264_sei_payload(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset, uint32_t payloadType, uint32_t payloadSize)
 {
     /* sei_payload( payloadType, payloadSize ) { C Descriptor */
     if (payloadType == 0) {
@@ -1572,12 +1646,12 @@ reserved_sei_message( payloadSize ) 5
 /*
  * 7.3.2.3.1 Supplemental enhancement information message syntax
  */
-static gint
-dissect_h264_sei_message(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint bit_offset)
+static int
+dissect_h264_sei_message(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int bit_offset)
 {
     /* sei_message( ) { C Descriptor */
-    guint32 payloadType = 0, payloadSize;
-    gint    start_bit_offset, length;
+    uint32_t payloadType = 0, payloadSize;
+    int     start_bit_offset, length;
 
     start_bit_offset = bit_offset;
 
@@ -1619,9 +1693,9 @@ dissect_h264_sei_message(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gi
  * sei_rbsp( )
  */
 static int
-dissect_h264_sei_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_sei_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset)
 {
-    gint bit_offset;
+    int bit_offset;
 
     bit_offset = offset <<3;
     /* do */
@@ -1630,7 +1704,7 @@ dissect_h264_sei_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, g
 
     /* while (more_rbsp_data( ))
      * If there is more data in an RBSP before rbsp_trailing_bits( ),
-     * the return value of more_rbsp_data( ) is equal to TRUE.
+     * the return value of more_rbsp_data( ) is equal to true.
      */
     /* rbsp_trailing_bits( ) 5 */
     if (tvb_reported_length_remaining (tvb, bit_offset >> 3) != 0 || (bit_offset & 0x7) != 0)
@@ -1643,24 +1717,25 @@ dissect_h264_sei_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, g
 
 /* Ref 7.3.2.1 Sequence parameter set RBSP syntax */
 static int
-dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint offset)
+dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
     proto_item *level_item;
-    gint        bit_offset;
-    guint8      constraint_set3_flag;
-    guint32     level_idc;
+    int         bit_offset;
+    uint8_t     constraint_set3_flag;
+    uint32_t    level_idc;
 
-    gint        i;
-    guint8      profile_idc, chroma_format_idc, frame_mbs_only_flag, frame_cropping_flag;
-    guint8      pic_order_cnt_type, vui_parameters_present_flag, num_ref_frames_in_pic_order_cnt_cycle;
-    guint8      seq_scaling_matrix_present_flag; /* seq_scaling_list_present_flag */
+    int         i;
+    uint8_t     profile_idc, chroma_format_idc, frame_mbs_only_flag, frame_cropping_flag;
+    uint8_t     pic_order_cnt_type, vui_parameters_present_flag, num_ref_frames_in_pic_order_cnt_cycle;
+    uint8_t     seq_scaling_matrix_present_flag, seq_scaling_list_present_flag;
+    int         ScalingList4x4[6][16], ScalingList8x8[2][64];
 
     /* profile_idc 0 u(8) */
-    profile_idc = tvb_get_guint8(tvb, offset);
+    profile_idc = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_h264_profile_idc, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
-    constraint_set3_flag = (tvb_get_guint8(tvb, offset)&0x10)>>4;
+    constraint_set3_flag = (tvb_get_uint8(tvb, offset)&0x10)>>4;
     /* constraint_set0_flag 0 u(1) */
     proto_tree_add_item(tree, hf_h264_constraint_set0_flag, tvb, offset, 1, ENC_BIG_ENDIAN);
 
@@ -1684,7 +1759,7 @@ dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
     offset++;
 
     /* level_idc 0 u(8) */
-    level_idc = tvb_get_guint8(tvb, offset);
+    level_idc = tvb_get_uint8(tvb, offset);
     level_item = proto_tree_add_item(tree, hf_h264_level_idc, tvb, offset, 1, ENC_BIG_ENDIAN);
     if ((level_idc == 11) && (constraint_set3_flag == 1)) {
         proto_item_append_text(level_item,"[Level 1b]");
@@ -1697,7 +1772,7 @@ dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
      * The parsing process for this descriptor is specified in subclause 9.1.
      */
     bit_offset = offset<<3;
-    dissect_h264_exp_golomb_code(tree, hf_h264_seq_parameter_set_id, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_seq_parameter_set_id, tvb, &bit_offset, H264_UE_V);
 
 
     if ((profile_idc == 100) || (profile_idc == 110) ||
@@ -1708,7 +1783,7 @@ dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
     {
 
         /* chroma_format_idc 0 ue(v) */
-        chroma_format_idc = dissect_h264_exp_golomb_code(tree, hf_h264_chroma_format_idc, tvb, &bit_offset, H264_UE_V);
+        chroma_format_idc = dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_chroma_format_idc, tvb, &bit_offset, H264_UE_V);
         if (chroma_format_idc == 3) {
             /* residual_colour_transform_flag 0 u(1) */
             proto_tree_add_bits_item(tree, hf_h264_residual_colour_transform_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
@@ -1716,10 +1791,10 @@ dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
         }
 
         /* bit_depth_luma_minus8 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_bit_depth_luma_minus8, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_bit_depth_luma_minus8, tvb, &bit_offset, H264_UE_V);
 
         /* bit_depth_chroma_minus8 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_bit_depth_chroma_minus8, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_bit_depth_chroma_minus8, tvb, &bit_offset, H264_UE_V);
 
         /* qpprime_y_zero_transform_bypass_flag 0 u(1) */
         proto_tree_add_bits_item(tree, hf_h264_qpprime_y_zero_transform_bypass_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
@@ -1731,65 +1806,61 @@ dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
         bit_offset++;
 
         if (seq_scaling_matrix_present_flag) {
-            /*
             for (i = 0; i < 8; i++) {
-                / seq_scaling_list_present_flag[ i ] 0 u(1) /
+                /* seq_scaling_list_present_flag[ i ] 0 u(1) */
                 seq_scaling_list_present_flag = tvb_get_bits8(tvb, bit_offset, 1);
+                proto_tree_add_bits_item(tree, hf_h264_seq_scaling_list_present_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
                 bit_offset++;
                 if (seq_scaling_list_present_flag) {
                     if (i < 6)
-                        scaling_list( ScalingList4x4[ i ], 16, UseDefaultScalingMatrix4x4Flag[ i ])0
-                        dissect_h264_scaling_list()
+                        bit_offset = dissect_h264_scaling_list(tree, pinfo, tvb, bit_offset, ScalingList4x4[ i ], 16);
                     else
-                        scaling_list( ScalingList8x8[ i - 6 ], 64, UseDefaultScalingMatrix8x8Flag[ i - 6 ] )0
+                        bit_offset = dissect_h264_scaling_list(tree, pinfo, tvb, bit_offset, ScalingList8x8[ i - 6 ], 64);
                 }
             }
-            */
-            proto_tree_add_expert(tree, pinfo, &ei_h264_undecoded, tvb, bit_offset>>3, -1);
-            return -1;
         }
 
     }
 
     /* log2_max_frame_num_minus4 0 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_log2_max_frame_num_minus4, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_log2_max_frame_num_minus4, tvb, &bit_offset, H264_UE_V);
 
     /* pic_order_cnt_type 0 ue(v) */
-    pic_order_cnt_type = dissect_h264_exp_golomb_code(tree, hf_h264_pic_order_cnt_type, tvb, &bit_offset, H264_UE_V);
+    pic_order_cnt_type = dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_pic_order_cnt_type, tvb, &bit_offset, H264_UE_V);
 
     if (pic_order_cnt_type == 0) {
         /* log2_max_pic_order_cnt_lsb_minus4 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_log2_max_pic_order_cnt_lsb_minus4, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_log2_max_pic_order_cnt_lsb_minus4, tvb, &bit_offset, H264_UE_V);
     } else if (pic_order_cnt_type == 1) {
         /* delta_pic_order_always_zero_flag 0 u(1) */
         proto_tree_add_bits_item(tree, hf_h264_delta_pic_order_always_zero_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
         bit_offset++;
 
         /* offset_for_non_ref_pic 0 se(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_offset_for_non_ref_pic, tvb, &bit_offset, H264_SE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_offset_for_non_ref_pic, tvb, &bit_offset, H264_SE_V);
 
         /* offset_for_top_to_bottom_field 0 se(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_offset_for_top_to_bottom_field, tvb, &bit_offset, H264_SE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_offset_for_top_to_bottom_field, tvb, &bit_offset, H264_SE_V);
 
         /* num_ref_frames_in_pic_order_cnt_cycle 0 ue(v) */
-        num_ref_frames_in_pic_order_cnt_cycle = dissect_h264_exp_golomb_code(tree, hf_h264_num_ref_frames_in_pic_order_cnt_cycle, tvb, &bit_offset, H264_UE_V);
+        num_ref_frames_in_pic_order_cnt_cycle = dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_num_ref_frames_in_pic_order_cnt_cycle, tvb, &bit_offset, H264_UE_V);
         for (i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++) {
             /*offset_for_ref_frame[ i ] 0 se(v)*/
-            dissect_h264_exp_golomb_code(tree, hf_h264_offset_for_ref_frame, tvb, &bit_offset, H264_SE_V);
+            dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_offset_for_ref_frame, tvb, &bit_offset, H264_SE_V);
         }
     }
     /* num_ref_frames 0 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_num_ref_frames, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_num_ref_frames, tvb, &bit_offset, H264_UE_V);
 
     /*  gaps_in_frame_num_value_allowed_flag 0 u(1) */
     proto_tree_add_bits_item(tree, hf_h264_gaps_in_frame_num_value_allowed_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
     bit_offset++;
 
     /*  pic_width_in_mbs_minus1 0 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_pic_width_in_mbs_minus1, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_pic_width_in_mbs_minus1, tvb, &bit_offset, H264_UE_V);
 
     /* pic_height_in_map_units_minus1 0 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_pic_height_in_map_units_minus1, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_pic_height_in_map_units_minus1, tvb, &bit_offset, H264_UE_V);
 
     /* frame_mbs_only_flag 0 u(1) */
     frame_mbs_only_flag = tvb_get_bits8(tvb, bit_offset, 1);
@@ -1812,10 +1883,10 @@ dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
 
     if (frame_cropping_flag) {
         /* frame_crop_left_offset 0 ue(v) */
-        dissect_h264_exp_golomb_code(tree, hf_h264_frame_crop_left_offset, tvb, &bit_offset, H264_UE_V);
-        dissect_h264_exp_golomb_code(tree, hf_h264_frame_crop_right_offset, tvb, &bit_offset, H264_UE_V);
-        dissect_h264_exp_golomb_code(tree, hf_h264_frame_crop_top_offset, tvb, &bit_offset, H264_UE_V);
-        dissect_h264_exp_golomb_code(tree, hf_h264_frame_crop_bottom_offset, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_frame_crop_left_offset, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_frame_crop_right_offset, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_frame_crop_top_offset, tvb, &bit_offset, H264_UE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_frame_crop_bottom_offset, tvb, &bit_offset, H264_UE_V);
 
     }
 
@@ -1839,18 +1910,18 @@ dissect_h264_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
 /* 7.3.2.2 Picture parameter set RBSP syntax */
 
 static void
-dissect_h264_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint offset)
+dissect_h264_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
-    gint    bit_offset;
-    guint32 num_slice_groups_minus1, pic_scaling_matrix_present_flag;
+    int     bit_offset;
+    uint32_t num_slice_groups_minus1, pic_scaling_matrix_present_flag;
 
     bit_offset = offset<<3;
 
     /* pic_parameter_set_id 1 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_pic_parameter_set_id, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_pic_parameter_set_id, tvb, &bit_offset, H264_UE_V);
 
     /* seq_parameter_set_id 1 ue(v) */
-    dissect_h264_exp_golomb_code(tree, hf_h264_seq_parameter_set_id, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_seq_parameter_set_id, tvb, &bit_offset, H264_UE_V);
 
     /* entropy_coding_mode_flag 1 u(1) */
     proto_tree_add_bits_item(tree, hf_h264_entropy_coding_mode_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
@@ -1861,11 +1932,11 @@ dissect_h264_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
     bit_offset++;
 
     /* num_slice_groups_minus1 1 ue(v)*/
-    num_slice_groups_minus1 = dissect_h264_exp_golomb_code(tree, hf_h264_num_slice_groups_minus1, tvb, &bit_offset, H264_UE_V);
+    num_slice_groups_minus1 = dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_num_slice_groups_minus1, tvb, &bit_offset, H264_UE_V);
     if (num_slice_groups_minus1 > 0) {
         /* slice_group_map_type 1 ue(v)*/
-        dissect_h264_exp_golomb_code(tree, hf_h264_slice_group_map_type, tvb, &bit_offset, H264_UE_V);
-    /*  slice_group_map_type = dissect_h264_exp_golomb_code(tree, hf_h264_slice_group_map_type, tvb, &bit_offset, H264_UE_V);*/
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_slice_group_map_type, tvb, &bit_offset, H264_UE_V);
+    /*  slice_group_map_type = dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_slice_group_map_type, tvb, &bit_offset, H264_UE_V);*/
     /* if (slice_group_map_type == 0)*/
     /* for (iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++)*/
     /* run_length_minus1[ iGroup ] 1 ue(v)*/
@@ -1889,10 +1960,10 @@ dissect_h264_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
         return;
     }
     /* num_ref_idx_l0_active_minus1 1 ue(v)*/
-    dissect_h264_exp_golomb_code(tree, hf_h264_num_ref_idx_l0_active_minus1, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_num_ref_idx_l0_active_minus1, tvb, &bit_offset, H264_UE_V);
 
     /* num_ref_idx_l1_active_minus1 1 ue(v)*/
-    dissect_h264_exp_golomb_code(tree, hf_h264_num_ref_idx_l1_active_minus1, tvb, &bit_offset, H264_UE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_num_ref_idx_l1_active_minus1, tvb, &bit_offset, H264_UE_V);
 
     /* weighted_pred_flag 1 u(1)*/
     proto_tree_add_bits_item(tree, hf_h264_weighted_pred_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
@@ -1903,13 +1974,13 @@ dissect_h264_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
     bit_offset= bit_offset+2;
 
     /* pic_init_qp_minus26  * relative to 26 * 1 se(v)*/
-    dissect_h264_exp_golomb_code(tree, hf_h264_pic_init_qp_minus26, tvb, &bit_offset, H264_SE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_pic_init_qp_minus26, tvb, &bit_offset, H264_SE_V);
 
     /* pic_init_qs_minus26  * relative to 26 *  1 se(v)*/
-    dissect_h264_exp_golomb_code(tree, hf_h264_pic_init_qs_minus26, tvb, &bit_offset, H264_SE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_pic_init_qs_minus26, tvb, &bit_offset, H264_SE_V);
 
     /* chroma_qp_index_offset 1 se(v)*/
-    dissect_h264_exp_golomb_code(tree, hf_h264_chroma_qp_index_offset, tvb, &bit_offset, H264_SE_V);
+    dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_chroma_qp_index_offset, tvb, &bit_offset, H264_SE_V);
 
     /* deblocking_filter_control_present_flag 1 u(1)*/
     proto_tree_add_bits_item(tree, hf_h264_deblocking_filter_control_present_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
@@ -1947,9 +2018,9 @@ dissect_h264_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
             }
 
         /* second_chroma_qp_index_offset 1 se(v)*/
-        dissect_h264_exp_golomb_code(tree, hf_h264_second_chroma_qp_index_offset, tvb, &bit_offset, H264_SE_V);
+        dissect_h264_exp_golomb_code(tree, pinfo, hf_h264_second_chroma_qp_index_offset, tvb, &bit_offset, H264_SE_V);
     }
-    bit_offset = dissect_h264_rbsp_trailing_bits(tree, tvb, pinfo, bit_offset);
+    dissect_h264_rbsp_trailing_bits(tree, tvb, pinfo, bit_offset);
 }
 
 /*
@@ -1957,11 +2028,15 @@ dissect_h264_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
  * access_unit_delimiter_rbsp( )
  */
 static void
-dissect_h264_access_unit_delimiter_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_access_unit_delimiter_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset)
 {
+    int bit_offset = offset << 3;
     /* primary_pic_type 6 u(3) */
+    proto_tree_add_bits_item(tree, hf_h264_primary_pic_type, tvb, bit_offset, 3, ENC_BIG_ENDIAN);
+    bit_offset += 3;
+
     /* rbsp_trailing_bits( ) 6 */
-    proto_tree_add_expert(tree, pinfo, &ei_h264_undecoded, tvb, offset, -1);
+    dissect_h264_rbsp_trailing_bits(tree, tvb, pinfo, bit_offset);
 }
 
 /*
@@ -1969,7 +2044,7 @@ dissect_h264_access_unit_delimiter_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_
  * end_of_seq_rbsp( ) {}
  */
 static void
-dissect_h264_end_of_seq_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_end_of_seq_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset)
 {
     proto_tree_add_expert(tree, pinfo, &ei_h264_undecoded, tvb, offset, -1);
 }
@@ -1979,7 +2054,7 @@ dissect_h264_end_of_seq_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo
  * end_of_stream_rbsp( ) {}
  */
 static void
-dissect_h264_end_of_stream_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_end_of_stream_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset)
 {
     proto_tree_add_expert(tree, pinfo, &ei_h264_undecoded, tvb, offset, -1);
 }
@@ -1989,7 +2064,7 @@ dissect_h264_end_of_stream_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pi
  * filler_data_rbsp( )
  */
 static void
-dissect_h264_filler_data_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_filler_data_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset)
 {
     /* while (next_bits( 8 ) == 0xFF) */
     /* ff_byte * equal to 0xFF * 9 f(8) */
@@ -2002,7 +2077,7 @@ dissect_h264_filler_data_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinf
  * seq_parameter_set_extension_rbsp( )
  */
 static void
-dissect_h264_seq_parameter_set_extension_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+dissect_h264_seq_parameter_set_extension_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset)
 {
     /* seq_parameter_set_id 10 ue(v) */
     /* aux_format_idc 10 ue(v) */
@@ -2018,8 +2093,8 @@ dissect_h264_seq_parameter_set_extension_rbsp(proto_tree *tree, tvbuff_t *tvb, p
 }
 
 /* RFC 6190 Section: 1.1.3 - NAL Unit Header Extension - H.264 Annex G*/
-static gint
-dissect_h264_svc_nal_header_extension(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+static int
+dissect_h264_svc_nal_header_extension(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset)
 {
     proto_tree_add_item(tree, hf_h264_nal_hdr_ext_svc,  tvb, offset,     1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_h264_nal_hdr_ext_i,    tvb, offset,     1, ENC_BIG_ENDIAN);
@@ -2039,9 +2114,9 @@ dissect_h264_svc_nal_header_extension(proto_tree *tree, tvbuff_t *tvb, packet_in
 }
 /* H.264 Annex G Prefix NAL Unit */
 
-static int dissect_h264_prefix(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint offset)
+static int dissect_h264_prefix(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
-    guint8  svc_extension_flag;
+    uint8_t svc_extension_flag;
 
     svc_extension_flag = tvb_get_bits8(tvb, offset << 3, 1);
     if (svc_extension_flag)
@@ -2060,17 +2135,18 @@ static int dissect_h264_prefix(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
 
 /* RFC 6190 Section: 4.9 - Payload Content Scalability Information (PACSI) */
 static void
-dissect_h264_pacsi(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint offset)
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_h264_pacsi(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
 {
-    gint8       pacsi_flags;
-    guint16     nal_unit_size;
+    int8_t      pacsi_flags;
+    uint16_t    nal_unit_size;
     tvbuff_t    *nalu_tvb;
-    gboolean    error = FALSE;
-    gboolean    contains_sei = FALSE;
+    bool        error = false;
+    bool        contains_sei = false;
 
     offset = dissect_h264_svc_nal_header_extension(tree, tvb, pinfo, offset);
 
-    pacsi_flags = tvb_get_guint8(tvb, offset);
+    pacsi_flags = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_h264_pacsi_x, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_h264_pacsi_y, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_h264_pacsi_t, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2095,8 +2171,8 @@ dissect_h264_pacsi(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint off
     }
     if (tvb_reported_length_remaining(tvb, offset) > 0)
     {
-        contains_sei = TRUE;
-        col_append_fstr(pinfo->cinfo, COL_INFO, "(");
+        contains_sei = true;
+        col_append_str(pinfo->cinfo, COL_INFO, "(");
     }
 
     /* Decode the SEI units that are in the packet. */
@@ -2109,20 +2185,20 @@ dissect_h264_pacsi(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint off
         if (nal_unit_size == 0 || nal_unit_size > tvb_reported_length_remaining(tvb, offset))
         {
             proto_tree_add_expert(tree, pinfo, &ei_h264_bad_nal_length, tvb, offset-2, 2);
-            error = TRUE;
+            error = true;
         }
         else
         {
             /* Make a new subset of the existing buffer for the NAL unit */
-            nalu_tvb = tvb_new_subset(tvb, offset, tvb_captured_length_remaining(tvb,offset), nal_unit_size);
+            nalu_tvb = tvb_new_subset_length_caplen(tvb, offset, tvb_captured_length_remaining(tvb,offset), nal_unit_size);
             /* Decode the NAL unit */
             dissect_h264(nalu_tvb, pinfo, tree, NULL);
             offset += nal_unit_size;
         }
     }
-    if (contains_sei == TRUE)
+    if (contains_sei == true)
     {
-        col_append_fstr(pinfo->cinfo, COL_INFO, ")");
+        col_append_str(pinfo->cinfo, COL_INFO, ")");
     }
 }
 
@@ -2130,9 +2206,10 @@ dissect_h264_pacsi(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, gint off
  * RFC 3984 Section 5.7.1 - Single-Time Aggregation Packet (STAP)
  */
 static void
-dissect_h264_stap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset, gint8 nal_type)
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_h264_stap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset, int8_t nal_type)
 {
-    guint16     nal_unit_size;
+    uint16_t    nal_unit_size;
     tvbuff_t    *nalu_tvb;
     proto_item  *item;
 
@@ -2154,7 +2231,7 @@ dissect_h264_stap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint 
         if (nal_unit_size == 0 || tvb_reported_length_remaining(tvb, offset) < nal_unit_size)
         {
             /* Throw an exception if the size is wrong and don't try to decode the rest of the packet. */
-            col_append_fstr(pinfo->cinfo, COL_INFO, "  [Bad NAL Length]");
+            col_append_str(pinfo->cinfo, COL_INFO, "  [Bad NAL Length]");
             item = proto_tree_add_expert (tree, pinfo, &ei_h264_bad_nal_length, tvb, offset-2, 2);
             proto_item_append_text(item, " Size of %d, Remaining %d",
                     nal_unit_size, tvb_reported_length_remaining(tvb, offset));
@@ -2163,7 +2240,7 @@ dissect_h264_stap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint 
         else
         {
             /* Make a new subset of the existing buffer for the NAL unit */
-            nalu_tvb = tvb_new_subset(tvb, offset, tvb_captured_length_remaining(tvb, offset), nal_unit_size);
+            nalu_tvb = tvb_new_subset_length_caplen(tvb, offset, tvb_captured_length_remaining(tvb, offset), nal_unit_size);
             /* Decode the NAL unit */
             dissect_h264(nalu_tvb, pinfo, tree, NULL);
             offset += nal_unit_size;
@@ -2175,10 +2252,11 @@ dissect_h264_stap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint 
  * RFC 3984 Section 5.7.2 Multi-Time Aggregation Packet (MTAP)
  */
 static void
-dissect_h264_mtap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset, gint8 nal_type)
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_h264_mtap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset, int8_t nal_type)
 {
-    gint        size_offset;
-    guint16     nal_unit_size;
+    int         size_offset;
+    uint16_t    nal_unit_size;
     tvbuff_t    *nalu_tvb;
     proto_item  *item;
 
@@ -2211,7 +2289,7 @@ dissect_h264_mtap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint 
         if (nal_unit_size == 0 || tvb_reported_length_remaining(tvb, offset) < nal_unit_size)
         {
             /* Throw an exception if the size is wrong and don't try to decode the rest of the packet. */
-            col_append_fstr(pinfo->cinfo, COL_INFO, "  [Bad NAL Length]");
+            col_append_str(pinfo->cinfo, COL_INFO, "  [Bad NAL Length]");
             item = proto_tree_add_expert (tree, pinfo, &ei_h264_bad_nal_length, tvb, size_offset, 2);
             proto_item_append_text(item, " Size of %d, Remaining %d",
                     nal_unit_size, tvb_reported_length_remaining(tvb, offset));
@@ -2220,7 +2298,7 @@ dissect_h264_mtap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint 
         else
         {
             /* Make a new subset of the existing buffer for the NAL unit */
-            nalu_tvb = tvb_new_subset(tvb, offset, tvb_captured_length_remaining(tvb, offset), nal_unit_size);
+            nalu_tvb = tvb_new_subset_length_caplen(tvb, offset, tvb_captured_length_remaining(tvb, offset), nal_unit_size);
             /* Decode the NAL unit */
             dissect_h264(nalu_tvb, pinfo, tree, NULL);
             offset += nal_unit_size;
@@ -2232,15 +2310,16 @@ dissect_h264_mtap(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint 
  * Dissect NAL Header extension and NI-MTAP Subtype defined in RFC 6190
  */
 static void
-dissect_h264_nalu_extension (proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, gint offset)
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_h264_nalu_extension (proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int offset)
 {
-    gint        size_offset;
-    guint16     nal_unit_size;
+    int         size_offset;
+    uint16_t    nal_unit_size;
     tvbuff_t    *nalu_tvb;
-    guint8      subtype;
-    guint8      j_flag;
-    guint8      bit_offset = offset << 3;
-    guint8      unit = 1;
+    uint8_t     subtype;
+    uint8_t     j_flag;
+    uint8_t     bit_offset = offset << 3;
+    uint8_t     unit = 1;
     proto_item  *item;
     proto_tree  *nimtap_tree;
 
@@ -2253,7 +2332,7 @@ dissect_h264_nalu_extension (proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo
     proto_tree_add_item(tree, hf_h264_nal_extension_k, tvb, offset, 1, ENC_NA);
     proto_tree_add_item(tree, hf_h264_nal_extension_l, tvb, offset, 1, ENC_NA);
     col_append_fstr(pinfo->cinfo, COL_INFO, "  %s",
-                    val_to_str(subtype, h264_subtype_summary_values, "Unknown Subtype (%u)"));
+                    val_to_str(pinfo->pool, subtype, h264_subtype_summary_values, "Unknown Subtype (%u)"));
     offset++;
 
     if (subtype == 2)
@@ -2277,7 +2356,7 @@ dissect_h264_nalu_extension (proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo
             if (nal_unit_size == 0 || tvb_reported_length_remaining(tvb, offset) < nal_unit_size)
             {
                 /* Throw an exception if the size is wrong and don't try to decode the rest of the packet. */
-                col_append_fstr(pinfo->cinfo, COL_INFO, "  [Bad NAL Length]");
+                col_append_str(pinfo->cinfo, COL_INFO, "  [Bad NAL Length]");
                 item = proto_tree_add_expert (nimtap_tree, pinfo, &ei_h264_bad_nal_length, tvb, size_offset, 2);
                 proto_item_append_text(item, " Size of %d, Remaining %d",
                         nal_unit_size, tvb_reported_length_remaining(tvb, offset));
@@ -2286,7 +2365,7 @@ dissect_h264_nalu_extension (proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo
             else
             {
                 /* Make a new subset of the existing buffer for the NAL unit */
-                nalu_tvb = tvb_new_subset(tvb, offset, tvb_captured_length_remaining(tvb, offset), nal_unit_size);
+                nalu_tvb = tvb_new_subset_length_caplen(tvb, offset, tvb_captured_length_remaining(tvb, offset), nal_unit_size);
                 /* Decode the NAL unit */
                 dissect_h264(nalu_tvb, pinfo, nimtap_tree, NULL);
                 offset += nal_unit_size;
@@ -2304,9 +2383,9 @@ dissect_h264_nal_unit(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
     proto_item *item, *nal_item;
     proto_tree *h264_nal_tree;
-    gint        offset = 0;
-    guint8      nal_unit_type;
-    guint32     dword;
+    int         offset = 0;
+    uint8_t     nal_unit_type;
+    uint32_t    dword;
 
     item          = proto_tree_add_item(tree, hf_h264_nal_unit, tvb, offset, -1, ENC_NA);
     h264_nal_tree = proto_item_add_subtree(item, ett_h264_nal_unit);
@@ -2315,16 +2394,18 @@ startover:
     /* In decoder configuration start code may be pressent
      * B.1.1 Byte stream NAL unit syntax
      */
-    dword = tvb_get_bits32(tvb, offset<<3, 32, ENC_BIG_ENDIAN);
-    if (dword == 1) {
-        /* zero_byte + start_code_prefix_one_3bytes */
-        offset+=4;
-    } else if ((dword >> 8) == 1) {
-        /* start_code_prefix_one_3bytes */
-        offset+= 3;
+    if (tvb_reported_length_remaining(tvb, offset<<3) >= 4) {
+        dword = tvb_get_bits32(tvb, offset<<3, 32, ENC_BIG_ENDIAN);
+        if (dword == 1) {
+            /* zero_byte + start_code_prefix_one_3bytes */
+            offset+=4;
+        } else if ((dword >> 8) == 1) {
+            /* start_code_prefix_one_3bytes */
+            offset+= 3;
+        }
     }
     /* Ref: 7.3.1 NAL unit syntax */
-    nal_unit_type = tvb_get_guint8(tvb, offset) & 0x1f;
+    nal_unit_type = tvb_get_uint8(tvb, offset) & 0x1f;
 
     /* forbidden_zero_bit All f(1) */
     proto_tree_add_item(h264_nal_tree, hf_h264_forbidden_zero_bit, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2403,24 +2484,92 @@ startover:
     }
 }
 
+/* Annex B "Byte stream format" */
+static int
+dissect_h264_bytestream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+{
+    proto_tree *h264_tree;
+    proto_item *item;
+
+    tvbuff_t *next_tvb, *rbsp_tvb;
+    int offset = 0, end_offset;
+    uint32_t dword;
+
+    /* Look for the first start word. Assume byte aligned. */
+    while (1) {
+        if (tvb_reported_length(tvb) < 4) {
+            return 0;
+        }
+        dword = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
+        if ((dword >> 8) == 1 || dword == 1) {
+            break;
+        } else if (dword != 0) {
+            return 0;
+        }
+        offset += 2;
+    }
+
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "H.264");
+    item = proto_tree_add_item(tree, proto_h264, tvb, 0, -1, ENC_NA);
+    h264_tree = proto_item_add_subtree(item, ett_h264);
+
+    while (tvb_reported_length_remaining(tvb, offset)) {
+        dword = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
+        if ((dword >> 8) != 1) {
+            /* zero_byte */
+            offset++;
+        }
+        /* start_code_prefix_one_3bytes */
+        offset += 3;
+        int nal_length = tvb_reported_length_remaining(tvb, offset);
+        /* Search for either \0\0\1 or \0\0\0\1:
+         * Find \0\0 and then check if \0\1 is in the next offset or
+         * the one after that. (Note none of this throws exceptions.)
+         */
+        end_offset = tvb_find_uint16(tvb, offset, -1, 0);
+        while (end_offset != -1) {
+            if (tvb_find_uint16(tvb, end_offset + 1, 3, 1) != -1) {
+                nal_length = end_offset - offset;
+                break;
+            }
+            end_offset = tvb_find_uint16(tvb, end_offset + 1, -1, 0);
+        }
+
+        /* If end_offset is -1, we got to the end; assume this is the end
+         * of the NAL. To handle a bytestream that fragments NALs across
+         * lower level packets (does any implementation do this?), we would
+         * need to use epan/stream.h
+         */
+
+        /* Unescape NAL unit */
+        next_tvb = tvb_new_subset_length(tvb, offset, nal_length);
+        rbsp_tvb = dissect_h265_unescap_nal_unit(next_tvb, pinfo, 0);
+
+        dissect_h264_nal_unit(rbsp_tvb, pinfo, h264_tree);
+        offset += nal_length;
+    }
+    return tvb_reported_length(tvb);
+}
+
 /* Code to actually dissect the packets */
 static int
+// NOLINTNEXTLINE(misc-no-recursion)
 dissect_h264(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int         offset = 0;
     proto_item *item;
     proto_tree *h264_tree, *h264_nal_tree, *stream_tree, *fua_tree;
-    guint8      type;
+    uint8_t     type;
     tvbuff_t   *rbsp_tvb;
 
 
     /* Make entries in Protocol column and Info column on summary display */
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "H264");
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "H.264");
 
-    type = tvb_get_guint8(tvb, offset)&0x1f;
+    type = tvb_get_uint8(tvb, offset)&0x1f;
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " %s",
-                    val_to_str(type, h264_type_summary_values, "Unknown Type (%u)"));
+                    val_to_str(pinfo->pool, type, h264_type_summary_values, "Unknown Type (%u)"));
 
     /* if (tree) */ {
         item = proto_tree_add_item(tree, proto_h264, tvb, 0, -1, ENC_NA);
@@ -2456,16 +2605,16 @@ dissect_h264(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
             proto_tree_add_item(fua_tree, hf_h264_end_bit,       tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(fua_tree, hf_h264_forbidden_bit, tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(fua_tree, hf_h264_nal_unit_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-            if ((tvb_get_guint8(tvb, offset)&0x80) == 0x80) {
-                type = tvb_get_guint8(tvb, offset)&0x1f;
+            if ((tvb_get_uint8(tvb, offset)&0x80) == 0x80) {
+                type = tvb_get_uint8(tvb, offset)&0x1f;
                 col_append_fstr(pinfo->cinfo, COL_INFO, " Start:%s",
-                                val_to_str(type, h264_type_summary_values, "Unknown Type (%u)"));
+                                val_to_str(pinfo->pool, type, h264_type_summary_values, "Unknown Type (%u)"));
                 offset++;
             }
             else
             {
-                if ((tvb_get_guint8(tvb, offset)&0x40) == 0x40) {
-                    col_append_fstr(pinfo->cinfo, COL_INFO, " End");
+                if ((tvb_get_uint8(tvb, offset)&0x40) == 0x40) {
+                    col_append_str(pinfo->cinfo, COL_INFO, " End");
                 }
                 return offset;
             }
@@ -2475,15 +2624,16 @@ dissect_h264(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         rbsp_tvb = dissect_h265_unescap_nal_unit(tvb, pinfo, offset);
 
         stream_tree = proto_tree_add_subtree(h264_tree, tvb, offset, -1, ett_h264_stream, NULL, "H264 NAL Unit Payload");
+        increment_dissection_depth(pinfo);
         switch (type) {
         case 1:             /* 1 Coded slice of a non-IDR picture */
             dissect_h264_slice_layer_without_partitioning_rbsp(stream_tree, rbsp_tvb, pinfo, 0);
             break;
         case 3: /* Coded slice data partition B */
-            dissect_h264_slice_data_partition_b_layer_rbsp(h264_nal_tree, rbsp_tvb, pinfo, 0);
+            dissect_h264_slice_data_partition_b_layer_rbsp(stream_tree, rbsp_tvb, pinfo, 0);
             break;
         case 4: /* Coded slice data partition C */
-            dissect_h264_slice_data_partition_c_layer_rbsp(h264_nal_tree, rbsp_tvb, pinfo, 0);
+            dissect_h264_slice_data_partition_c_layer_rbsp(stream_tree, rbsp_tvb, pinfo, 0);
             break;
         case 5: /* Coded slice of an IDR picture */
             dissect_h264_slice_layer_without_partitioning_rbsp(stream_tree, rbsp_tvb, pinfo, 0);
@@ -2520,6 +2670,7 @@ dissect_h264(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         default:
             break;
         }
+        decrement_dissection_depth(pinfo);
     } /* if (tree) */
     return tvb_captured_length(tvb);
 }
@@ -2527,7 +2678,7 @@ dissect_h264(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 /* Capability */
 
-static const int *profile_fields[] = {
+static int * const profile_fields[] = {
     &hf_h264_par_profile_b,
     &hf_h264_par_profile_m,
     &hf_h264_par_profile_e,
@@ -2550,7 +2701,7 @@ dissect_h264_par_profile(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree
     return offset;
 }
 
-static const int *AdditionalModesSupported_fields[] = {
+static int * const AdditionalModesSupported_fields[] = {
     &hf_h264_par_add_mode_sup_rcdo,
     NULL
 };
@@ -2568,7 +2719,7 @@ dissect_h264_par_AdditionalModesSupported(tvbuff_t *tvb, packet_info *pinfo _U_,
 }
 
 
-static const int *ProfileIOP_fields[] = {
+static int * const ProfileIOP_fields[] = {
     &hf_h264_par_constraint_set0_flag,
     &hf_h264_par_constraint_set1_flag,
     &hf_h264_par_constraint_set2_flag,
@@ -2612,8 +2763,8 @@ static int
 dissect_h264_par_level(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data)
 {
     int          offset = 0;
-    guint16      lvl;
-    const gchar *p;
+    uint16_t     lvl;
+    const char *p;
     asn1_ctx_t  *actx;
 
     /* Reject the packet if data is NULL */
@@ -2648,8 +2799,8 @@ dissect_h264_par_DecoderConfigurationInformation(tvbuff_t *tvb, packet_info *pin
 }
 
 typedef struct _h264_capability_t {
-    const gchar *id;
-    const gchar *name;
+    const char *id;
+    const char *name;
     dissector_t content_pdu;
 } h264_capability_t;
 
@@ -2676,7 +2827,7 @@ static h264_capability_t h264_capability_tab[] = {
     { NULL, NULL, NULL },
 };
 
-static h264_capability_t *find_cap(const gchar *id) {
+static h264_capability_t *find_cap(const char *id) {
     h264_capability_t *ftr = NULL;
     h264_capability_t *f;
 
@@ -2711,16 +2862,6 @@ dissect_h264_name(tvbuff_t *tvb _U_, packet_info *pinfo, proto_tree *tree, void*
     return tvb_reported_length(tvb);
 }
 
-
-static void range_delete_h264_rtp_pt_callback(guint32 rtp_pt) {
-    if (rtp_pt >= 96 && rtp_pt <= 127)
-        dissector_delete_uint("rtp.pt", rtp_pt, h264_handle);
-}
-
-static void range_add_h264_rtp_pt_callback(guint32 rtp_pt) {
-    if (rtp_pt >= 96 && rtp_pt <= 127)
-        dissector_add_uint("rtp.pt", rtp_pt, h264_handle);
-}
 
 void
 proto_register_h264(void)
@@ -2767,7 +2908,7 @@ proto_register_h264(void)
         },
         { &hf_h264_profile_idc,
             { "Profile_idc",           "h264.profile_idc",
-            FT_UINT8, BASE_DEC, VALS(h264_profile_idc_values), 0xff,
+            FT_UINT8, BASE_DEC, VALS(h264_profile_idc_values), 0x0,
             NULL, HFILL }
         },
         { &hf_h264_rbsp_stop_bit,
@@ -2817,7 +2958,7 @@ proto_register_h264(void)
         },
         { &hf_h264_level_idc,
             { "Level_id",           "h264.level_id",
-            FT_UINT8, BASE_DEC, NULL, 0xff,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_h264_nal_unit,
@@ -2873,6 +3014,16 @@ proto_register_h264(void)
         { &hf_h264_seq_scaling_matrix_present_flag,
             { "seq_scaling_matrix_present_flag",           "h264.seq_scaling_matrix_present_flag",
             FT_UINT32, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_h264_seq_scaling_list_present_flag,
+            { "seq_scaling_list_present_flag",           "h264.seq_scaling_list_present_flag",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_h264_delta_scale,
+            { "delta_scale",           "h264.delta_scale",
+            FT_INT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_h264_log2_max_frame_num_minus4,
@@ -2961,7 +3112,7 @@ proto_register_h264(void)
             NULL, HFILL }
         },
         { &hf_h264_frame_crop_right_offset,
-            { "frame_crop_left_offset",           "h264.frame_crop_right_offset",
+            { "frame_crop_right_offset",           "h264.frame_crop_right_offset",
             FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
@@ -3069,6 +3220,12 @@ proto_register_h264(void)
             { "second_chroma_qp_index_offset",           "h264.second_chroma_qp_index_offset",
             FT_INT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
+        },
+
+        { &hf_h264_primary_pic_type,
+            { "primary_pic_type",           "h264.primary_pic_type",
+            FT_INT8, BASE_DEC, VALS(h264_primary_pic_type_vals), 0x0,
+            "slice_type values that may be present in the primary coded picture", HFILL }
         },
 
         { &hf_h264_aspect_ratio_info_present_flag,
@@ -3445,22 +3602,22 @@ proto_register_h264(void)
         },
         { &hf_h264_sei_ms_layer_desc_coded_width,
             { "Coded Width", "h264.sei.ms.layout.desc.coded_width",
-            FT_UINT8, BASE_DEC, NULL, 0x0,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_h264_sei_ms_layer_desc_coded_height,
             { "Coded Height", "h264.sei.ms.layout.desc.coded_height",
-            FT_UINT8, BASE_DEC, NULL, 0x0,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_h264_sei_ms_layer_desc_display_width,
             { "Display Width", "h264.sei.ms.layout.desc.display_width",
-            FT_UINT8, BASE_DEC, NULL, 0x0,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_h264_sei_ms_layer_desc_display_height,
             { "Display Height", "h264.sei.ms.layout.desc.display_height",
-            FT_UINT8, BASE_DEC, NULL, 0x0,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_h264_sei_ms_layer_desc_bitrate,
@@ -3640,7 +3797,7 @@ proto_register_h264(void)
         },
         { &hf_h264_pacsi_tl0picidx,
             { "TL0PICIDX", "h264.pacsi.tl0picidx",
-            FT_UINT8, BASE_DEC, NULL, 0xFF,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_h264_pacsi_idrpicid,
@@ -3657,7 +3814,7 @@ proto_register_h264(void)
     };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_h264,
         &ett_h264_profile,
         &ett_h264_nal,
@@ -3675,13 +3832,14 @@ proto_register_h264(void)
     static ei_register_info ei[] = {
         { &ei_h264_undecoded, { "h264.undecoded", PI_UNDECODED, PI_WARN, "[Not decoded yet]", EXPFILL }},
         { &ei_h264_ms_layout_wrong_length, { "h264.ms_layout.wrong_length", PI_PROTOCOL, PI_WARN, "[Wrong Layer Description Table Length]", EXPFILL }},
+        { &ei_h264_oversized_exp_golomb_code, {"h264.oversized_exp_golomb_code", PI_MALFORMED, PI_ERROR, "Exponential Golomb encoded value greater than 32 bit integer, clamped", EXPFILL }},
         { &ei_h264_bad_nal_length, { "h264.bad_nalu_length", PI_MALFORMED, PI_ERROR, "[Bad NAL Unit Length]", EXPFILL }},
         { &ei_h264_nal_unit_type_reserved, { "h264.nal_unit_type.reserved", PI_PROTOCOL, PI_WARN, "Reserved NAL unit type", EXPFILL }},
         { &ei_h264_nal_unit_type_unspecified, { "h264.nal_unit_type.unspecified", PI_PROTOCOL, PI_WARN, "Unspecified NAL unit type", EXPFILL }},
     };
 
 /* Register the protocol name and description */
-    proto_h264 = proto_register_protocol("H.264","H264", "h264");
+    proto_h264 = proto_register_protocol("H.264", "H.264", "h264");
 
 /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_h264, hf, array_length(hf));
@@ -3691,16 +3849,12 @@ proto_register_h264(void)
     /* Register a configuration option for port */
 
 
-    h264_module = prefs_register_protocol(proto_h264, proto_reg_handoff_h264);
+    h264_module = prefs_register_protocol(proto_h264, NULL);
 
+    prefs_register_obsolete_preference(h264_module, "dynamic.payload.type");
 
-    prefs_register_range_preference(h264_module, "dynamic.payload.type",
-                            "H264 dynamic payload types",
-                            "Dynamic payload types which will be interpreted as H264"
-                            "; Values must be in the range 96 - 127",
-                            &temp_dynamic_payload_type_range, 127);
-
-    register_dissector("h264", dissect_h264, proto_h264);
+    h264_handle = register_dissector("h264", dissect_h264, proto_h264);
+    register_dissector_with_description("h264_bytestream", "H.264 Annex B Byte stream format", dissect_h264_bytestream, proto_h264);
 }
 
 
@@ -3708,37 +3862,26 @@ proto_register_h264(void)
 void
 proto_reg_handoff_h264(void)
 {
-    static range_t  *dynamic_payload_type_range = NULL;
-    static gboolean  h264_prefs_initialized     = FALSE;
+    h264_capability_t *ftr;
 
-    if (!h264_prefs_initialized) {
-        dissector_handle_t h264_name_handle;
-        h264_capability_t *ftr;
+    dissector_add_string("rtp_dyn_payload_type","H264", h264_handle);
+    dissector_add_string("rtp_dyn_payload_type","H264-SVC", h264_handle);
+    dissector_add_string("rtp_dyn_payload_type","X-H264UC", h264_handle);
 
-        h264_handle = find_dissector("h264");
-        dissector_add_string("rtp_dyn_payload_type","H264", h264_handle);
-        dissector_add_string("rtp_dyn_payload_type","H264-SVC", h264_handle);
-        dissector_add_string("rtp_dyn_payload_type","X-H264UC", h264_handle);
-
-        h264_name_handle = create_dissector_handle(dissect_h264_name, proto_h264);
-        for (ftr=h264_capability_tab; ftr->id; ftr++) {
-            if (ftr->name)
-                dissector_add_string("h245.gef.name", ftr->id, h264_name_handle);
-            if (ftr->content_pdu)
-                dissector_add_string("h245.gef.content", ftr->id, create_dissector_handle(ftr->content_pdu, proto_h264));
-        }
-        h264_prefs_initialized = TRUE;
-    } else {
-        range_foreach(dynamic_payload_type_range, range_delete_h264_rtp_pt_callback);
-        g_free(dynamic_payload_type_range);
+    h264_name_handle = create_dissector_handle(dissect_h264_name, proto_h264);
+    for (ftr=h264_capability_tab; ftr->id; ftr++) {
+        if (ftr->name)
+            dissector_add_string("h245.gef.name", ftr->id, h264_name_handle);
+        if (ftr->content_pdu)
+            dissector_add_string("h245.gef.content", ftr->id, create_dissector_handle(ftr->content_pdu, proto_h264));
     }
 
-    dynamic_payload_type_range = range_copy(temp_dynamic_payload_type_range);
-    range_foreach(dynamic_payload_type_range, range_add_h264_rtp_pt_callback);
+    dissector_add_uint_range_with_preference("rtp.pt", "", h264_handle);
+
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

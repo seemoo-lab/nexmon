@@ -1,33 +1,21 @@
-/* type_util.h
+/** @file
  * Types utility definitions
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __TYPE_UTIL_H__
 #define __TYPE_UTIL_H__
 
-#include <glib.h>
+#include <inttypes.h>
 #include "ws_symbol_export.h"
 
 /*
- * guint64 to gdouble conversions taken from gstutils.h of GStreamer project
+ * uint64_t to double conversions taken from gstutils.h of GStreamer project
  *
  * GStreamer
  * Copyright (C) 1999,2000 Erik Walthinsen <omega@cse.ogi.edu>
@@ -41,16 +29,16 @@
  */
 
 WS_DLL_PUBLIC
-guint64         type_util_gdouble_to_guint64(gdouble value);
+uint64_t        type_util_double_to_uint64(double value);
 WS_DLL_PUBLIC
-gdouble         type_util_guint64_to_gdouble(guint64 value);
+double          type_util_uint64_to_double(uint64_t value);
 
 #ifdef _WIN32
-#define         gdouble_to_guint64(value)   type_util_gdouble_to_guint64(value)
-#define         guint64_to_gdouble(value)   type_util_guint64_to_gdouble(value)
+#define         double_to_uint64(value)   type_util_double_to_uint64(value)
+#define         uint64_to_double(value)   type_util_uint64_to_double(value)
 #else
-#define         gdouble_to_guint64(value)   ((guint64)(value))
-#define         guint64_to_gdouble(value)   ((gdouble)(value))
+#define         double_to_uint64(value)   ((uint64_t)(value))
+#define         uint64_to_double(value)   ((double)(value))
 #endif
 
 #endif /* __TYPE_UTIL_H__ */

@@ -1,6 +1,8 @@
 #include <gio/gio.h>
 #include <stdlib.h>
 
+#define DBUS_INTERFACE_PROPERTIES "org.freedesktop.DBus.Properties"
+
 /* ---------------------------------------------------------------------------------------------------- */
 
 /* The object we want to export */
@@ -28,7 +30,7 @@ enum
 };
 
 static GType my_object_get_type (void);
-G_DEFINE_TYPE (MyObject, my_object, G_TYPE_OBJECT);
+G_DEFINE_TYPE (MyObject, my_object, G_TYPE_OBJECT)
 
 static void
 my_object_finalize (GObject *object)
@@ -225,7 +227,8 @@ static const GDBusInterfaceVTable interface_vtable =
 {
   handle_method_call,
   handle_get_property,
-  handle_set_property
+  handle_set_property,
+  { 0 }
 };
 
 static void
@@ -252,7 +255,7 @@ send_property_change (GObject         *obj,
   g_dbus_connection_emit_signal (connection,
                                  NULL,
                                  "/org/myorg/MyObject",
-                                 "org.freedesktop.DBus.Properties",
+                                 DBUS_INTERFACE_PROPERTIES,
                                  "PropertiesChanged",
                                  g_variant_new ("(sa{sv}as)",
                                                 "org.myorg.MyObject",

@@ -1,3 +1,4 @@
+Jun  3 2018  Integrated man page from @samueloph, change license to BSD 3-clause.
 Jul  3 2009  Compatibility with modern gcc, fixed buffer overflow due to growth
              of OpenSSL SHA1_CTX variable from 64 to 96 bytes.
 Jun  4 2009  Lots of cool stuff including reading hashfiles from stdin,

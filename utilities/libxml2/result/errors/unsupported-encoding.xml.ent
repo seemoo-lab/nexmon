@@ -1,0 +1,3 @@
+./test/errors/unsupported-encoding.xml:1: parser error : Unsupported encoding: unsupported-encoding
+<?xml version="1.0" encoding="unsupported-encoding"?>
+                                                   ^

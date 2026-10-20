@@ -1,22 +1,10 @@
-/* filter_action.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* Derived from gtk/filter_utils.h */
@@ -27,6 +15,7 @@
 #include <wsutil/utf8_entities.h>
 
 #include <QAction>
+#include <QActionGroup>
 
 class FilterAction : public QAction
 {
@@ -41,6 +30,7 @@ public:
         ActionPrepare,
         ActionWebLookup
     };
+    Q_ENUM(Action)
 
     /* Action type - says what to do with the filter */
     enum ActionType {
@@ -51,6 +41,7 @@ public:
         ActionTypeAndNot,
         ActionTypeOrNot
     };
+    Q_ENUM(ActionType)
 
     /* Action direction */
     enum ActionDirection {
@@ -65,6 +56,7 @@ public:
         ActionDirectionAnyFromB
     };
 
+    explicit FilterAction(QObject *parent, Action action, ActionType type, QString actionName);
     explicit FilterAction(QObject *parent, Action action, ActionType type, ActionDirection direction);
     explicit FilterAction(QObject *parent, Action action, ActionType type);
     explicit FilterAction(QObject *parent, Action action);
@@ -81,6 +73,10 @@ public:
     static const QList<ActionDirection> actionDirections();
     static const QString actionDirectionName(ActionDirection direction);
 
+    static QActionGroup * createFilterGroup(QString filter, bool prepare, bool enabled, QWidget * parent);
+    static QMenu * createFilterMenu(FilterAction::Action act, QString filter, bool enabled, QWidget * parent);
+    static QAction * copyFilterAction(QString filter, QWidget *par);
+
 signals:
 
 public slots:
@@ -90,19 +86,12 @@ private:
     ActionType type_;
     ActionDirection direction_;
 
+    QString actionName_;
+
+private slots:
+    void groupTriggered(QAction *);
+    void copyActionTriggered();
+
 };
 
 #endif // FILTER_ACTION_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

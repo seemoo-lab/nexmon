@@ -4,39 +4,29 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_BTHCI_ACL_H__
 #define __PACKET_BTHCI_ACL_H__
 
 typedef struct _bthci_acl_data_t {
-    guint32   interface_id;
-    guint32   adapter_id;
-    guint32  *adapter_disconnect_in_frame;
-    guint16   chandle;  /* only low 12 bits used */
-    guint32  *disconnect_in_frame;
+    uint32_t  interface_id;
+    uint32_t  adapter_id;
+    uint32_t *adapter_disconnect_in_frame;
+    uint16_t  chandle;  /* only low 12 bits used */
+    uint32_t *disconnect_in_frame;
 
-    guint32 remote_bd_addr_oui;
-    guint32 remote_bd_addr_id;
+    uint32_t remote_bd_addr_oui;
+    uint32_t remote_bd_addr_id;
+    bool is_btle;
+    bool is_btle_retransmit;
 } bthci_acl_data_t;
 
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

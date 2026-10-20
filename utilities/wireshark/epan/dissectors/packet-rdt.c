@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* Information sources:
@@ -41,155 +29,153 @@
 
 static dissector_handle_t rdt_handle;
 
-static gint    proto_rdt                        = -1;
+static int     proto_rdt;
 
 /* Packet fields */
-static gint    hf_rdt_packet                    = -1;
+static int     hf_rdt_packet;
 
 /* flags1: shared */
-static gint    hf_rdt_len_included              = -1;
+static int     hf_rdt_len_included;
 
 /* flags1: data packet */
-static gint    hf_rdt_data_flags1               = -1;
-static gint    hf_rdt_data_need_reliable        = -1;
-static gint    hf_rdt_data_stream_id            = -1;
-static gint    hf_rdt_data_is_reliable          = -1;
+static int     hf_rdt_data_flags1;
+static int     hf_rdt_data_need_reliable;
+static int     hf_rdt_data_stream_id;
+static int     hf_rdt_data_is_reliable;
 
 /* flags2: data packet */
-static gint    hf_rdt_data_flags2               = -1;
-static gint    hf_rdt_data_backtoback           = -1;
-static gint    hf_rdt_data_slowdata             = -1;
-static gint    hf_rdt_data_asmrule              = -1;
+static int     hf_rdt_data_flags2;
+static int     hf_rdt_data_backtoback;
+static int     hf_rdt_data_slowdata;
+static int     hf_rdt_data_asmrule;
 
 /* flags1: asm action packet */
-static gint    hf_rdt_aact_flags                = -1;
-static gint    hf_rdt_aact_stream_id            = -1;
+static int     hf_rdt_aact_flags;
+static int     hf_rdt_aact_stream_id;
 
 /* flags1: ack packet */
-static gint    hf_rdt_ack_flags                 = -1;
-static gint    hf_rdt_ack_lost_high             = -1;
+static int     hf_rdt_ack_flags;
+static int     hf_rdt_ack_lost_high;
 
 /* flags1: latency report packet */
-static gint    hf_rdt_latency_report_flags      = -1;
+static int     hf_rdt_latency_report_flags;
 
 /* flags1: bandwidth report packet */
-static gint    hf_rdt_bandwidth_report_flags    = -1;
+static int     hf_rdt_bandwidth_report_flags;
 
 /* flags1: stream end packet */
-static gint    hf_rdt_stre_flags                = -1;
-static gint    hf_rdt_stre_need_reliable        = -1;
-static gint    hf_rdt_stre_stream_id            = -1;
-static gint    hf_rdt_stre_packet_sent          = -1;
-static gint    hf_rdt_stre_ext_flag             = -1;
+static int     hf_rdt_stre_flags;
+static int     hf_rdt_stre_need_reliable;
+static int     hf_rdt_stre_stream_id;
+static int     hf_rdt_stre_packet_sent;
+static int     hf_rdt_stre_ext_flag;
 
-/* static gint    hf_rdt_rtt_request_flags         = -1; */
-/* static gint    hf_rdt_rtt_response_flags        = -1; */
-/* static gint    hf_rdt_congestion_flags          = -1; */
-static gint    hf_rdt_report_flags              = -1;
-/* static gint    hf_rdt_tirq_flags                = -1; */
-static gint    hf_rdt_tirp_flags                = -1;
-static gint    hf_rdt_bw_probing_flags          = -1;
+/* static int     hf_rdt_rtt_request_flags; */
+/* static int     hf_rdt_rtt_response_flags; */
+/* static int     hf_rdt_congestion_flags; */
+static int     hf_rdt_report_flags;
+/* static int     hf_rdt_tirq_flags; */
+static int     hf_rdt_tirp_flags;
+static int     hf_rdt_bw_probing_flags;
 
 /* Octets 1-2: sequence number or packet type */
-static gint    hf_rdt_sequence_number           = -1;
-static gint    hf_rdt_packet_type               = -1;
+static int     hf_rdt_sequence_number;
+static int     hf_rdt_packet_type;
 
 /* Only present if length_included */
-static gint    hf_rdt_packet_length             = -1;
+static int     hf_rdt_packet_length;
 
 /* General shared fields */
-static gint    hf_rdt_timestamp                 = -1;
-static gint    hf_rdt_stream_id_ex              = -1;
-static gint    hf_rdt_asmrule_ex                = -1;
-static gint    hf_rdt_total_reliable            = -1;
-static gint    hf_rdt_data                      = -1;
+static int     hf_rdt_timestamp;
+static int     hf_rdt_stream_id_ex;
+static int     hf_rdt_asmrule_ex;
+static int     hf_rdt_total_reliable;
+static int     hf_rdt_data;
 
 /* Special use fields */
-static gint    hf_rdt_aact_reliable_seqno       = -1;
-static gint    hf_rdt_brpt_interval             = -1;
-static gint    hf_rdt_brpt_bandwidth            = -1;
-static gint    hf_rdt_brpt_sequence             = -1;
-static gint    hf_rdt_rtrp_ts_sec               = -1;
-static gint    hf_rdt_rtrp_ts_usec              = -1;
-static gint    hf_rdt_cong_xmit_mult            = -1;
-static gint    hf_rdt_cong_recv_mult            = -1;
-static gint    hf_rdt_stre_seqno                = -1;
-static gint    hf_rdt_stre_dummy_flags1         = -1;
-static gint    hf_rdt_stre_dummy_type           = -1;
-static gint    hf_rdt_stre_reason_code          = -1;
-static gint    hf_rdt_lrpt_server_out_time      = -1;
-static gint    hf_rdt_tirq_request_rtt_info     = -1;
-static gint    hf_rdt_tirq_request_buffer_info  = -1;
-static gint    hf_rdt_tirq_request_time_msec    = -1;
-static gint    hf_rdt_tirp_has_rtt_info         = -1;
-static gint    hf_rdt_tirp_is_delayed           = -1;
-static gint    hf_rdt_tirp_has_buffer_info      = -1;
-static gint    hf_rdt_tirp_request_time_msec    = -1;
-static gint    hf_rdt_tirp_response_time_msec   = -1;
-static gint    hf_rdt_tirp_buffer_info          = -1;
-static gint    hf_rdt_tirp_buffer_info_count    = -1;
-static gint    hf_rdt_tirp_buffer_info_stream_id         = -1;
-static gint    hf_rdt_tirp_buffer_info_lowest_timestamp  = -1;
-static gint    hf_rdt_tirp_buffer_info_highest_timestamp = -1;
-static gint    hf_rdt_tirp_buffer_info_bytes_buffered    = -1;
-static gint    hf_rdt_bwpp_seqno                = -1;
-static gint    hf_rdt_unk_flags1                = -1;
+static int     hf_rdt_aact_reliable_seqno;
+static int     hf_rdt_brpt_interval;
+static int     hf_rdt_brpt_bandwidth;
+static int     hf_rdt_brpt_sequence;
+static int     hf_rdt_rtrp_ts_sec;
+static int     hf_rdt_rtrp_ts_usec;
+static int     hf_rdt_cong_xmit_mult;
+static int     hf_rdt_cong_recv_mult;
+static int     hf_rdt_stre_seqno;
+static int     hf_rdt_stre_dummy_flags1;
+static int     hf_rdt_stre_dummy_type;
+static int     hf_rdt_stre_reason_code;
+static int     hf_rdt_lrpt_server_out_time;
+static int     hf_rdt_tirq_request_rtt_info;
+static int     hf_rdt_tirq_request_buffer_info;
+static int     hf_rdt_tirq_request_time_msec;
+static int     hf_rdt_tirp_has_rtt_info;
+static int     hf_rdt_tirp_is_delayed;
+static int     hf_rdt_tirp_has_buffer_info;
+static int     hf_rdt_tirp_request_time_msec;
+static int     hf_rdt_tirp_response_time_msec;
+static int     hf_rdt_tirp_buffer_info;
+static int     hf_rdt_tirp_buffer_info_count;
+static int     hf_rdt_tirp_buffer_info_stream_id;
+static int     hf_rdt_tirp_buffer_info_lowest_timestamp;
+static int     hf_rdt_tirp_buffer_info_highest_timestamp;
+static int     hf_rdt_tirp_buffer_info_bytes_buffered;
+static int     hf_rdt_bwpp_seqno;
+static int     hf_rdt_unk_flags1;
 
 /* RDT setup fields */
-static gint    hf_rdt_setup                     = -1;
-static gint    hf_rdt_setup_frame               = -1;
-static gint    hf_rdt_setup_method              = -1;
-static gint    hf_rdt_feature_level             = -1;
+static int     hf_rdt_setup;
+static int     hf_rdt_setup_frame;
+static int     hf_rdt_setup_method;
+static int     hf_rdt_feature_level;
 
 /* RDT fields defining a sub tree */
-static gint    ett_rdt                          = -1;
-static gint    ett_rdt_packet                   = -1;
-static gint    ett_rdt_setup                    = -1;
-static gint    ett_rdt_data_flags1              = -1;
-static gint    ett_rdt_data_flags2              = -1;
-static gint    ett_rdt_aact_flags               = -1;
-static gint    ett_rdt_ack_flags                = -1;
-static gint    ett_rdt_latency_report_flags     = -1;
-static gint    ett_rdt_bandwidth_report_flags   = -1;
-static gint    ett_rdt_stre_flags               = -1;
-static gint    ett_rdt_rtt_request_flags        = -1;
-static gint    ett_rdt_rtt_response_flags       = -1;
-static gint    ett_rdt_congestion_flags         = -1;
-static gint    ett_rdt_report_flags             = -1;
-static gint    ett_rdt_tirq_flags               = -1;
-static gint    ett_rdt_tirp_flags               = -1;
-static gint    ett_rdt_tirp_buffer_info         = -1;
-static gint    ett_rdt_bw_probing_flags         = -1;
+static int     ett_rdt;
+static int     ett_rdt_packet;
+static int     ett_rdt_setup;
+static int     ett_rdt_data_flags1;
+static int     ett_rdt_data_flags2;
+static int     ett_rdt_aact_flags;
+static int     ett_rdt_ack_flags;
+static int     ett_rdt_latency_report_flags;
+static int     ett_rdt_bandwidth_report_flags;
+static int     ett_rdt_stre_flags;
+static int     ett_rdt_rtt_request_flags;
+static int     ett_rdt_rtt_response_flags;
+static int     ett_rdt_congestion_flags;
+static int     ett_rdt_report_flags;
+static int     ett_rdt_tirq_flags;
+static int     ett_rdt_tirp_flags;
+static int     ett_rdt_tirp_buffer_info;
+static int     ett_rdt_bw_probing_flags;
 
-static expert_field ei_rdt_packet_length = EI_INIT;
+static expert_field ei_rdt_packet_length;
 
-/* Port preference settings */
-static gboolean global_rdt_register_udp_port = FALSE;
-static guint    global_rdt_udp_port = 6970;
+#define RDT_UDP_PORT        6970
 
 void proto_register_rdt(void);
 void proto_reg_handoff_rdt(void);
 
 /* Parse individual packet types */
-static guint dissect_rdt_data_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_asm_action_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_bandwidth_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_ack_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_rtt_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_rtt_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_congestion_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_stream_end_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_latency_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_transport_info_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_transport_info_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_bw_probing_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
-static guint dissect_rdt_unknown_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset);
+static unsigned dissect_rdt_data_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_asm_action_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_bandwidth_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_ack_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_rtt_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_rtt_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_congestion_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_stream_end_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_latency_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_transport_info_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_transport_info_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_bw_probing_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
+static unsigned dissect_rdt_unknown_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset);
 
 static void show_setup_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 
 /* Preferences bool to control whether or not setup info should be shown */
-static gboolean global_rdt_show_setup_info = TRUE;
+static bool global_rdt_show_setup_info = true;
 
 /* Packet types */
 #define RDT_ASMACTIION_PACKET               0xff00
@@ -227,8 +213,8 @@ static const value_string packet_type_vals[] =
 void rdt_add_address(packet_info *pinfo,
                      address *addr, int port,
                      int other_port,
-                     const gchar *setup_method,
-                     gint  rdt_feature_level)
+                     const char *setup_method,
+                     int   rdt_feature_level)
 {
     address null_addr;
     conversation_t* p_conv;
@@ -237,7 +223,7 @@ void rdt_add_address(packet_info *pinfo,
     /* If this isn't the first time this packet has been processed,
        we've already done this work, so we don't need to do it
       again. */
-    if (pinfo->fd->flags.visited)
+    if (pinfo->fd->visited)
     {
         return;
     }
@@ -246,14 +232,14 @@ void rdt_add_address(packet_info *pinfo,
 
     /* Check if the ip address and port combination is not already registered
        as a conversation. */
-    p_conv = find_conversation(pinfo->num, addr, &null_addr, PT_UDP, port, other_port,
+    p_conv = find_conversation(pinfo->num, addr, &null_addr, CONVERSATION_UDP, port, other_port,
                                NO_ADDR_B | (!other_port ? NO_PORT_B : 0));
 
     /* If not, create a new conversation. */
     if ( !p_conv || p_conv->setup_frame != pinfo->num)
     {
-        p_conv = conversation_new(pinfo->num, addr, &null_addr, PT_UDP,
-                                  (guint32)port, (guint32)other_port,
+        p_conv = conversation_new(pinfo->num, addr, &null_addr, CONVERSATION_UDP,
+                                  (uint32_t)port, (uint32_t)other_port,
                                   NO_ADDR2 | (!other_port ? NO_PORT2 : 0));
     }
 
@@ -272,7 +258,7 @@ void rdt_add_address(packet_info *pinfo,
     }
 
     /* Update the conversation data. */
-    g_strlcpy(p_conv_data->method, setup_method, MAX_RDT_SETUP_METHOD_SIZE);
+    (void) g_strlcpy(p_conv_data->method, setup_method, MAX_RDT_SETUP_METHOD_SIZE);
     p_conv_data->frame_number = pinfo->num;
     p_conv_data->feature_level = rdt_feature_level;
 }
@@ -284,23 +270,20 @@ void rdt_add_address(packet_info *pinfo,
 /****************************************************************************/
 static int dissect_rdt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint       previous_offset = 0;
-    gint        offset = 0;
+    unsigned    previous_offset = 0;
+    int         offset = 0;
     proto_item  *ti;
     proto_tree  *rdt_tree = NULL;
     proto_tree  *rdt_packet_tree;
-    guint16     packet_type;
+    uint16_t    packet_type;
 
     /* Set/clear columns */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "RDT");
     col_clear(pinfo->cinfo, COL_INFO);
 
     /* Create RDT protocol tree */
-    if (tree)
-    {
-        ti = proto_tree_add_item(tree, proto_rdt, tvb, offset, -1, ENC_NA);
-        rdt_tree = proto_item_add_subtree(ti, ett_rdt);
-    }
+    ti = proto_tree_add_item(tree, proto_rdt, tvb, offset, -1, ENC_NA);
+    rdt_tree = proto_item_add_subtree(ti, ett_rdt);
 
     /* Conversation setup info */
     if (global_rdt_show_setup_info)
@@ -396,50 +379,46 @@ static int dissect_rdt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 /************************************************/
 
 /* Dissect a data packet */
-guint dissect_rdt_data_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_data_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint       start_offset = offset;
-    guint16     packet_length;
-    guint8      flags1;
-    guint8      length_included_flag;
-    guint8      need_reliable_flag;
-    guint16     stream_id;
-    guint16     sequence_number;
-    guint8      is_reliable_flag;
-    guint8      flags2;
-    guint32     timestamp;
-    guint16     asm_rule_number;
-    guint8      back_to_back;
-    guint8      slow_data;
+    unsigned    start_offset = offset;
+    uint16_t    packet_length;
+    uint8_t     flags1;
+    uint8_t     length_included_flag;
+    uint8_t     need_reliable_flag;
+    uint16_t    stream_id;
+    uint16_t    sequence_number;
+    uint8_t     is_reliable_flag;
+    uint8_t     flags2;
+    uint32_t    timestamp;
+    uint16_t    asm_rule_number;
+    uint8_t     back_to_back;
+    uint8_t     slow_data;
     proto_tree  *flags_tree1;
     proto_tree  *flags_tree2;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     length_included_flag = (flags1 & 0x80) >> 7;
     need_reliable_flag = (flags1 & 0x40) >> 6;
     stream_id = (flags1 & 0x3e) >> 1;
     is_reliable_flag = flags1 & 0x01;
 
     /* Create subtree for flags1 fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_data_flags1, tvb, offset, 1,
-                                           "",
-                                           "Length-included=%u, need-reliable=%u, stream-id=%u, is-reliable=%u",
-                                           length_included_flag,
-                                           need_reliable_flag,
-                                           stream_id,
-                                           is_reliable_flag);
-        flags_tree1 = proto_item_add_subtree(ti, ett_rdt_data_flags1);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_data_flags1, tvb, offset, 1,
+            "",
+            "Length-included=%u, need-reliable=%u, stream-id=%u, is-reliable=%u",
+            length_included_flag,
+            need_reliable_flag,
+            stream_id,
+            is_reliable_flag);
+    flags_tree1 = proto_item_add_subtree(ti, ett_rdt_data_flags1);
 
-        proto_tree_add_item(flags_tree1, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree1, hf_rdt_data_need_reliable, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree1, hf_rdt_data_stream_id, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree1, hf_rdt_data_is_reliable, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
-
+    proto_tree_add_item(flags_tree1, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree1, hf_rdt_data_need_reliable, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree1, hf_rdt_data_stream_id, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree1, hf_rdt_data_is_reliable, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Sequence number */
@@ -463,29 +442,26 @@ guint dissect_rdt_data_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     }
 
     /* More flags */
-    flags2 = tvb_get_guint8(tvb, offset);
+    flags2 = tvb_get_uint8(tvb, offset);
     back_to_back = (flags2 & 0x80) >> 7;
     slow_data = (flags2 & 0x40) >> 6;
     asm_rule_number = flags2 & 0x3f;
 
 
     /* Create subtree for flags2 fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_data_flags2, tvb, offset, 1,
-                                           "",
-                                           "Back-to-back=%u, slow-data=%u, asm-rule=%u",
-                                           back_to_back,
-                                           slow_data,
-                                           asm_rule_number);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_data_flags2, tvb, offset, 1,
+            "",
+            "Back-to-back=%u, slow-data=%u, asm-rule=%u",
+            back_to_back,
+            slow_data,
+            asm_rule_number);
 
-        /* Create subtree for flags and add fields */
-        flags_tree2 = proto_item_add_subtree(ti, ett_rdt_data_flags2);
+    /* Create subtree for flags and add fields */
+    flags_tree2 = proto_item_add_subtree(ti, ett_rdt_data_flags2);
 
-        proto_tree_add_item(flags_tree2, hf_rdt_data_backtoback, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree2, hf_rdt_data_slowdata, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree2, hf_rdt_data_asmrule, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree2, hf_rdt_data_backtoback, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree2, hf_rdt_data_slowdata, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree2, hf_rdt_data_asmrule, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Timestamp */
@@ -535,36 +511,33 @@ guint dissect_rdt_data_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 }
 
 /* Dissect an asm-action packet */
-guint dissect_rdt_asm_action_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_asm_action_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint       start_offset = offset;
-    guint16     packet_length;
-    guint8      flags1;
-    guint8      length_included_flag;
-    guint16     stream_id;
-    guint16     rel_seqno;
+    unsigned    start_offset = offset;
+    uint16_t    packet_length;
+    uint8_t     flags1;
+    uint8_t     length_included_flag;
+    uint16_t    stream_id;
+    uint16_t    rel_seqno;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     length_included_flag = (flags1 & 0x80) >> 7;
     stream_id = (flags1 & 0x7c) >> 2;
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        proto_tree_add_item(tree, proto_rdt, tvb, offset, -1, ENC_NA);
-        ti =  proto_tree_add_string_format(tree, hf_rdt_aact_flags, tvb, offset, 1,
-                                           "",
-                                           "Length-included=%u, stream_id=%u",
-                                           length_included_flag,
-                                           stream_id);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_aact_flags);
+    proto_tree_add_item(tree, proto_rdt, tvb, offset, -1, ENC_NA);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_aact_flags, tvb, offset, 1,
+            "",
+            "Length-included=%u, stream_id=%u",
+            length_included_flag,
+            stream_id);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_aact_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree, hf_rdt_aact_stream_id, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree, hf_rdt_aact_stream_id, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -616,30 +589,27 @@ guint dissect_rdt_asm_action_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 }
 
 /* Dissect an bandwidth-report packet */
-guint dissect_rdt_bandwidth_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_bandwidth_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint       start_offset = offset;
-    guint16     packet_length;
-    guint8      flags1;
-    guint8      length_included_flag;
+    unsigned    start_offset = offset;
+    uint16_t    packet_length;
+    uint8_t     flags1;
+    uint8_t     length_included_flag;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     length_included_flag = (flags1 & 0x80) >> 7;
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_bandwidth_report_flags, tvb, offset, 1,
-                                           "",
-                                           "Length-included=%u",
-                                           length_included_flag);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_bandwidth_report_flags);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_bandwidth_report_flags, tvb, offset, 1,
+            "",
+            "Length-included=%u",
+            length_included_flag);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_bandwidth_report_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -681,34 +651,31 @@ guint dissect_rdt_bandwidth_report_packet(tvbuff_t *tvb, packet_info *pinfo, pro
 }
 
 /* Dissect an ack packet */
-guint dissect_rdt_ack_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_ack_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint       start_offset = offset;
-    guint16     packet_length;
-    guint8      flags1;
-    guint8      length_included_flag;
-    guint8      lost_high_flag;
+    unsigned    start_offset = offset;
+    uint16_t    packet_length;
+    uint8_t     flags1;
+    uint8_t     length_included_flag;
+    uint8_t     lost_high_flag;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     length_included_flag = (flags1 & 0x80) >> 7;
     lost_high_flag = (flags1 & 0x40) >> 6;
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_ack_flags, tvb, offset, 1,
-                                           "",
-                                           "Length-included=%u, lost-high=%u",
-                                           length_included_flag,
-                                           lost_high_flag);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_ack_flags);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_ack_flags, tvb, offset, 1,
+            "",
+            "Length-included=%u, lost-high=%u",
+            length_included_flag,
+            lost_high_flag);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_ack_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree, hf_rdt_ack_lost_high, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree, hf_rdt_ack_lost_high, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -746,7 +713,7 @@ guint dissect_rdt_ack_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 }
 
 /* Dissect an att-request packet */
-guint dissect_rdt_rtt_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_rtt_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
     /* Flags in first byte */
     offset++;
@@ -761,7 +728,7 @@ guint dissect_rdt_rtt_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 }
 
 /* Dissect an att-response packet */
-guint dissect_rdt_rtt_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_rtt_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
     /* Flags in first byte */
     offset++;
@@ -781,7 +748,7 @@ guint dissect_rdt_rtt_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_t
 }
 
 /* Dissect an congestion packet */
-guint dissect_rdt_congestion_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_congestion_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
     /* Flags in first byte */
     offset++;
@@ -801,40 +768,37 @@ guint dissect_rdt_congestion_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 }
 
 /* Dissect an stream-end packet */
-guint dissect_rdt_stream_end_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_stream_end_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint8      flags1;
-    guint8      need_reliable;
-    guint16     stream_id;
-    guint8      packet_sent;
-    guint8      ext_flag;
+    uint8_t     flags1;
+    uint8_t     need_reliable;
+    uint16_t    stream_id;
+    uint8_t     packet_sent;
+    uint8_t     ext_flag;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     need_reliable = (flags1 & 0x80) >> 7;
     stream_id = (flags1 & 0x7c) >> 2;
     packet_sent = (flags1 & 0x2) >> 1;
     ext_flag = flags1 & 0x1;
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_stre_flags, tvb, offset, 1,
-                                           "",
-                                           "Need-reliable=%u, stream-id=%u, packet-sent=%u, ext-flag=%u",
-                                           need_reliable,
-                                           stream_id,
-                                           packet_sent,
-                                           ext_flag);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_stre_flags);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_stre_flags, tvb, offset, 1,
+            "",
+            "Need-reliable=%u, stream-id=%u, packet-sent=%u, ext-flag=%u",
+            need_reliable,
+            stream_id,
+            packet_sent,
+            ext_flag);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_stre_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_stre_need_reliable, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree, hf_rdt_stre_stream_id, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree, hf_rdt_stre_packet_sent, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree, hf_rdt_stre_ext_flag, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_stre_need_reliable, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree, hf_rdt_stre_stream_id, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree, hf_rdt_stre_packet_sent, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree, hf_rdt_stre_ext_flag, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -879,30 +843,27 @@ guint dissect_rdt_stream_end_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 }
 
 /* Dissect an report packet */
-guint dissect_rdt_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint       start_offset = offset;
-    guint16     packet_length;
-    guint8      flags1;
-    guint8      length_included_flag;
+    unsigned    start_offset = offset;
+    uint16_t    packet_length;
+    uint8_t     flags1;
+    uint8_t     length_included_flag;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     length_included_flag = (flags1 & 0x80) >> 7;
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_report_flags, tvb, offset, 1,
-                                           "",
-                                           "Length-included=%u",
-                                           length_included_flag);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_report_flags);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_report_flags, tvb, offset, 1,
+            "",
+            "Length-included=%u",
+            length_included_flag);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_report_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -940,31 +901,28 @@ guint dissect_rdt_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 }
 
 /* Dissect an latency-report packet */
-guint dissect_rdt_latency_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_latency_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint       start_offset = offset;
-    guint16     packet_length;
-    guint8      flags1;
-    guint8      length_included_flag;
-    guint32     server_out_time;
+    unsigned    start_offset = offset;
+    uint16_t    packet_length;
+    uint8_t     flags1;
+    uint8_t     length_included_flag;
+    uint32_t    server_out_time;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     length_included_flag = (flags1 & 0x80) >> 7;
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_latency_report_flags, tvb, offset, 1,
-                                           "",
-                                           "Length-included=%u",
-                                           length_included_flag);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_latency_report_flags);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_latency_report_flags, tvb, offset, 1,
+            "",
+            "Length-included=%u",
+            length_included_flag);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_latency_report_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -1003,32 +961,29 @@ guint dissect_rdt_latency_report_packet(tvbuff_t *tvb, packet_info *pinfo, proto
 }
 
 /* Dissect a transport-info packet */
-guint dissect_rdt_transport_info_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_transport_info_request_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint8      flags1;
-    guint8      request_rtt_info_flag;
-    guint8      request_buffer_info_flag;
+    uint8_t     flags1;
+    uint8_t     request_rtt_info_flag;
+    uint8_t     request_buffer_info_flag;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     request_rtt_info_flag = (flags1 & 0x2) >> 1;
     request_buffer_info_flag = (flags1 & 0x01);
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_ack_flags, tvb, offset, 1,
-                                           "",
-                                           "Request-rtt-info=%u, request-buffer-info=%u",
-                                           request_rtt_info_flag,
-                                           request_buffer_info_flag);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_tirq_flags);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_ack_flags, tvb, offset, 1,
+            "",
+            "Request-rtt-info=%u, request-buffer-info=%u",
+            request_rtt_info_flag,
+            request_buffer_info_flag);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_tirq_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_tirq_request_rtt_info, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree, hf_rdt_tirq_request_buffer_info, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_tirq_request_rtt_info, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree, hf_rdt_tirq_request_buffer_info, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -1047,36 +1002,33 @@ guint dissect_rdt_transport_info_request_packet(tvbuff_t *tvb, packet_info *pinf
 }
 
 /* Dissect an transport-info-response packet */
-guint dissect_rdt_transport_info_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_transport_info_response_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint8      flags1;
-    guint8      has_rtt_info;
-    guint8      is_delayed;
-    guint8      has_buffer_info;
+    uint8_t     flags1;
+    uint8_t     has_rtt_info;
+    uint8_t     is_delayed;
+    uint8_t     has_buffer_info;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     has_rtt_info = (flags1 & 0x4) >> 2;
     is_delayed = (flags1 & 0x2) >> 1;
     has_buffer_info = (flags1 & 0x1);
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_tirp_flags, tvb, offset, 1,
-                                           "",
-                                           "Has-rtt-info=%u, is-delayed=%u, has-buffer-info=%u",
-                                           has_rtt_info,
-                                           is_delayed,
-                                           has_buffer_info);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_tirp_flags);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_tirp_flags, tvb, offset, 1,
+            "",
+            "Has-rtt-info=%u, is-delayed=%u, has-buffer-info=%u",
+            has_rtt_info,
+            is_delayed,
+            has_buffer_info);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_tirp_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_tirp_has_rtt_info, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree, hf_rdt_tirp_is_delayed, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(flags_tree, hf_rdt_tirp_has_buffer_info, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_tirp_has_rtt_info, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree, hf_rdt_tirp_is_delayed, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item(flags_tree, hf_rdt_tirp_has_buffer_info, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -1099,10 +1051,10 @@ guint dissect_rdt_transport_info_response_packet(tvbuff_t *tvb, packet_info *pin
     /* Buffer info */
     if (has_buffer_info)
     {
-        guint16 n;
+        uint16_t n;
 
         /* Read number of buffers */
-        guint16 buffer_info_count = tvb_get_ntohs(tvb, offset);
+        uint16_t buffer_info_count = tvb_get_ntohs(tvb, offset);
         proto_tree_add_item(tree, hf_rdt_tirp_buffer_info_count, tvb, offset, 2, ENC_BIG_ENDIAN);
         offset += 2;
 
@@ -1139,30 +1091,27 @@ guint dissect_rdt_transport_info_response_packet(tvbuff_t *tvb, packet_info *pin
 }
 
 /* Dissect a bw-probing packet */
-guint dissect_rdt_bw_probing_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_bw_probing_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint       start_offset = offset;
-    guint16     packet_length;
-    guint8      flags1;
-    guint8      length_included_flag;
+    unsigned    start_offset = offset;
+    uint16_t    packet_length;
+    uint8_t     flags1;
+    uint8_t     length_included_flag;
     proto_tree  *flags_tree;
     proto_item  *ti;
 
     /* Flags in first byte */
-    flags1 = tvb_get_guint8(tvb, offset);
+    flags1 = tvb_get_uint8(tvb, offset);
     length_included_flag = (flags1 & 0x80) >> 7;
 
     /* Create subtree for flags fields */
-    if (tree)
-    {
-        ti =  proto_tree_add_string_format(tree, hf_rdt_bw_probing_flags, tvb, offset, 1,
-                                           "",
-                                           "Length-included=%u",
-                                           length_included_flag);
-        flags_tree = proto_item_add_subtree(ti, ett_rdt_bw_probing_flags);
+    ti =  proto_tree_add_string_format(tree, hf_rdt_bw_probing_flags, tvb, offset, 1,
+            "",
+            "Length-included=%u",
+            length_included_flag);
+    flags_tree = proto_item_add_subtree(ti, ett_rdt_bw_probing_flags);
 
-        proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
-    }
+    proto_tree_add_item(flags_tree, hf_rdt_len_included, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     /* Packet type */
@@ -1202,7 +1151,7 @@ guint dissect_rdt_bw_probing_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 }
 
 /* Dissect an unknown control packet */
-guint dissect_rdt_unknown_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+unsigned dissect_rdt_unknown_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
     /* Flags in first byte */
     proto_tree_add_item(tree, hf_rdt_unk_flags1, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1235,7 +1184,7 @@ static void show_setup_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     {
         /* First time, get info from conversation */
         p_conv = find_conversation(pinfo->num, &pinfo->net_dst, &pinfo->net_src,
-                                   pinfo->ptype,
+                                   conversation_pt_to_conversation_type(pinfo->ptype),
                                    pinfo->destport, pinfo->srcport, NO_ADDR_B);
         if (p_conv)
         {
@@ -1247,7 +1196,7 @@ static void show_setup_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             {
                 /* Save this conversation info into packet info */
                 p_conv_packet_data = wmem_new(wmem_file_scope(), struct _rdt_conversation_info);
-                g_strlcpy(p_conv_packet_data->method, p_conv_data->method, MAX_RDT_SETUP_METHOD_SIZE);
+                (void) g_strlcpy(p_conv_packet_data->method, p_conv_data->method, MAX_RDT_SETUP_METHOD_SIZE);
                 p_conv_packet_data->frame_number = p_conv_data->frame_number;
                 p_conv_packet_data->feature_level = p_conv_data->feature_level;
                 p_add_proto_data(wmem_file_scope(), pinfo, proto_rdt, 0, p_conv_packet_data);
@@ -1265,20 +1214,20 @@ static void show_setup_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                                                        p_conv_data->method,
                                                        p_conv_data->frame_number,
                                                        p_conv_data->feature_level);
-        PROTO_ITEM_SET_GENERATED(ti);
+        proto_item_set_generated(ti);
         rdt_setup_tree = proto_item_add_subtree(ti, ett_rdt_setup);
         if (rdt_setup_tree)
         {
             /* Add details into subtree */
             proto_item* item = proto_tree_add_uint(rdt_setup_tree, hf_rdt_setup_frame,
                                                    tvb, 0, 0, p_conv_data->frame_number);
-            PROTO_ITEM_SET_GENERATED(item);
+            proto_item_set_generated(item);
             item = proto_tree_add_string(rdt_setup_tree, hf_rdt_setup_method,
                                          tvb, 0, 0, p_conv_data->method);
-            PROTO_ITEM_SET_GENERATED(item);
+            proto_item_set_generated(item);
             item = proto_tree_add_int(rdt_setup_tree, hf_rdt_feature_level,
                                       tvb, 0, 0, p_conv_data->feature_level);
-            PROTO_ITEM_SET_GENERATED(item);
+            proto_item_set_generated(item);
         }
     }
 }
@@ -2127,7 +2076,7 @@ void proto_register_rdt(void)
         },
     };
 
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_rdt,
         &ett_rdt_packet,
@@ -2162,69 +2111,26 @@ void proto_register_rdt(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_rdt = expert_register_protocol(proto_rdt);
     expert_register_field_array(expert_rdt, ei, array_length(ei));
-    register_dissector("rdt", dissect_rdt, proto_rdt);
+    rdt_handle = register_dissector("rdt", dissect_rdt, proto_rdt);
 
     /* Preference settings */
-    rdt_module = prefs_register_protocol(proto_rdt, proto_reg_handoff_rdt);
+    rdt_module = prefs_register_protocol(proto_rdt, NULL);
     prefs_register_bool_preference(rdt_module, "show_setup_info",
                                    "Show stream setup information",
                                    "Where available, show which protocol and frame caused "
                                    "this RDT stream to be created",
                                    &global_rdt_show_setup_info);
 
-    prefs_register_bool_preference(rdt_module, "register_udp_port",
-                                   "Register default UDP client port",
-                                   "Register a client UDP port for RDT traffic",
-                                   &global_rdt_register_udp_port);
-
-    /* TODO: better to specify a range of ports instead? */
-    prefs_register_uint_preference(rdt_module, "default_udp_port",
-                                   "Default UDP client port",
-                                   "Set the UDP port for clients",
-                                   10, &global_rdt_udp_port);
-
+    prefs_register_obsolete_preference(rdt_module, "register_udp_port");
 }
 
 void proto_reg_handoff_rdt(void)
 {
-    static gboolean rdt_prefs_initialized = FALSE;
-    /* Also store this so can delete registered setting properly */
-    static gboolean  rdt_register_udp_port;
-    static guint     rdt_udp_port;
-
-    if (!rdt_prefs_initialized)
-    {
-        /* Register this dissector as one that can be selected by a
-           UDP port number. */
-        rdt_handle = find_dissector("rdt");
-        dissector_add_for_decode_as("udp.port", rdt_handle);
-        rdt_prefs_initialized = TRUE;
-    }
-    else
-    {
-        /* Undo any current port registrations */
-        if (rdt_register_udp_port)
-        {
-            dissector_delete_uint("udp.port", rdt_udp_port, rdt_handle);
-        }
-    }
-
-    /* Remember whether a port is set for next time */
-    rdt_register_udp_port = global_rdt_register_udp_port;
-
-    /* Add any new port registration */
-    if (global_rdt_register_udp_port)
-    {
-        /* Set our port number for future use */
-        rdt_udp_port = global_rdt_udp_port;
-
-        /* And register with this port */
-        dissector_add_uint("udp.port", global_rdt_udp_port, rdt_handle);
-    }
+    dissector_add_uint_with_preference("udp.port", RDT_UDP_PORT, rdt_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

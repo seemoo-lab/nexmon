@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,7 @@
 #include <epan/packet.h>
 #include <epan/addr_resolv.h>
 #include <epan/oui.h>
+#include <epan/addr_resolv.h>
 
 #include <wsutil/str_util.h>
 
@@ -54,27 +43,29 @@ void proto_reg_handoff_ecp(void);
 #define TLV_INFO_LEN_MASK	0x01FF
 #define TLV_INFO_LEN(value)	((value) & TLV_INFO_LEN_MASK)
 
-static gint proto_ecp = -1;
-static gint hf_ecp_pid = -1;
-static gint hf_ecp_tlv_type = -1;
-static gint hf_ecp_tlv_len = -1;
-static gint hf_ecp_subtype = -1;
-static gint hf_ecp_mode = -1;
-static gint hf_ecp_sequence = -1;
-/* static gint hf_ecp_vdp_oui = -1; */
-static gint hf_ecp_vdp_mode = -1;
-static gint hf_ecp_vdp_response = -1;
-static gint hf_ecp_vdp_mgrid = -1;
-static gint hf_ecp_vdp_vsitypeid = -1;
-static gint hf_ecp_vdp_vsitypeidversion = -1;
-static gint hf_ecp_vdp_instanceid = -1;
-static gint hf_ecp_vdp_format = -1;
-static gint hf_ecp_vdp_mac = -1;
-static gint hf_ecp_vdp_vlan = -1;
+static int proto_ecp;
+static int hf_ecp_pid;
+static int hf_ecp_tlv_type;
+static int hf_ecp_tlv_len;
+static int hf_ecp_subtype;
+static int hf_ecp_mode;
+static int hf_ecp_sequence;
+/* static int hf_ecp_vdp_oui; */
+static int hf_ecp_vdp_mode;
+static int hf_ecp_vdp_response;
+static int hf_ecp_vdp_mgrid;
+static int hf_ecp_vdp_vsitypeid;
+static int hf_ecp_vdp_vsitypeidversion;
+static int hf_ecp_vdp_instanceid;
+static int hf_ecp_vdp_format;
+static int hf_ecp_vdp_mac;
+static int hf_ecp_vdp_vlan;
 
-static gint ett_ecp = -1;
-static gint ett_end_of_vdpdu = -1;
-static gint ett_802_1qbg_capabilities_flags = -1;
+static int ett_ecp;
+static int ett_end_of_vdpdu;
+static int ett_802_1qbg_capabilities_flags;
+
+static dissector_handle_t ecp_handle;
 
 static const value_string ecp_pid_vals[] = {
 	{ 0x0000,	"ECP draft 0" },
@@ -133,11 +124,11 @@ static const value_string ieee_802_1qbg_subtypes[] = {
 };
 
 /* Dissect Unknown TLV */
-static gint32
-dissect_ecp_unknown_tlv(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, guint32 offset)
+static int32_t
+dissect_ecp_unknown_tlv(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uint32_t offset)
 {
-	guint16 tempLen;
-	guint16 tempShort;
+	uint16_t tempLen;
+	uint16_t tempShort;
 
 	proto_tree *ecp_unknown_tlv_tree;
 
@@ -149,18 +140,18 @@ dissect_ecp_unknown_tlv(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 	ecp_unknown_tlv_tree = proto_tree_add_subtree(tree, tvb, offset, (tempLen + 2), ett_ecp, NULL, "Unknown TLV");
 
-	proto_tree_add_item(ecp_unknown_tlv_tree, hf_ecp_subtype, tvb, offset, 2, ENC_BIG_ENDIAN);
+	proto_tree_add_item(ecp_unknown_tlv_tree, hf_ecp_subtype, tvb, offset, 1, ENC_BIG_ENDIAN);
 
 	return -1;
 }
 
 /* Dissect mac/vid pairs in VDP TLVs */
-static gint32
-dissect_vdp_fi_macvid(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, guint32 offset)
+static int32_t
+dissect_vdp_fi_macvid(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uint32_t offset)
 {
-	gint i;
-	guint16 entries;
-	guint32 tempOffset = offset;
+	int i;
+	uint16_t entries;
+	uint32_t tempOffset = offset;
 
 	proto_tree *ecp_vdp_tlv_fi_subtree;
 
@@ -185,16 +176,16 @@ dissect_vdp_fi_macvid(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, g
 }
 
 /* Dissect Organizationally Defined TLVs */
-static gint32
-dissect_vdp_org_specific_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offset)
+static int32_t
+dissect_vdp_org_specific_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset)
 {
-	guint16 tempLen;
-	guint16 len;
-	guint16 tempShort;
-	guint32 tempOffset = offset;
-	guint32 oui;
+	uint16_t tempLen;
+	uint16_t len;
+	uint16_t tempShort;
+	uint32_t tempOffset = offset;
+	uint32_t oui;
 	const char *ouiStr;
-	guint8 subType, format;
+	uint8_t subType, format;
 	const char *subTypeStr;
 
 	proto_tree	*ecp_vdp_tlv_subtree;
@@ -206,21 +197,18 @@ dissect_vdp_org_specific_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	tempOffset += 2;
 
 	oui = tvb_get_ntoh24(tvb, (tempOffset));
-	/* maintain previous OUI names.  If not included, look in manuf database for OUI */
-	ouiStr = val_to_str_const(oui, oui_vals, "Unknown");
-	if (strcmp(ouiStr, "Unknown")==0) {
-		ouiStr = uint_get_manuf_name_if_known(oui);
-		if(ouiStr==NULL) ouiStr="Unknown";
-	}
+	/* Look in manuf database for OUI */
+	ouiStr = uint_get_manuf_name_if_known(oui);
+	if(ouiStr==NULL) ouiStr="Unknown";
 
 	tempOffset += 3;
 
-	subType = tvb_get_guint8(tvb, tempOffset);
+	subType = tvb_get_uint8(tvb, tempOffset);
 	tempOffset++;
 
 	switch(oui) {
 	case OUI_IEEE_802_1QBG:
-		subTypeStr = val_to_str(subType, ieee_802_1qbg_subtypes, "Unknown subtype 0x%x");
+		subTypeStr = val_to_str(pinfo->pool, subType, ieee_802_1qbg_subtypes, "Unknown subtype 0x%x");
 		break;
 	default:
 		subTypeStr = "Unknown";
@@ -248,7 +236,7 @@ dissect_vdp_org_specific_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	proto_tree_add_item(ecp_vdp_tlv_subtree, hf_ecp_vdp_instanceid, tvb, tempOffset, 16, ENC_NA);
 	tempOffset += 16;
 
-	format = tvb_get_guint8(tvb, tempOffset);
+	format = tvb_get_uint8(tvb, tempOffset);
 	proto_tree_add_item(ecp_vdp_tlv_subtree, hf_ecp_vdp_format, tvb, tempOffset, 1, ENC_BIG_ENDIAN);
 	tempOffset++;
 
@@ -275,11 +263,11 @@ dissect_vdp_org_specific_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 }
 
 /* Dissect End of VDP TLV (Mandatory) */
-static gint32
-dissect_vdp_end_of_vdpdu_tlv(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, guint32 offset)
+static int32_t
+dissect_vdp_end_of_vdpdu_tlv(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uint32_t offset)
 {
-	guint16 tempLen;
-	guint16 tempShort;
+	uint16_t tempLen;
+	uint16_t tempShort;
 
 	proto_tree	*end_of_vdpdu_tree;
 
@@ -307,11 +295,11 @@ dissect_ecp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_tree *ecp_tree;
 	proto_item *ti;
-	gint32 tempLen = 0;
-	guint32 offset = 0;
-	guint16 tempShort;
-	guint8 tempType;
-	gboolean end = FALSE;
+	int32_t tempLen = 0;
+	uint32_t offset = 0;
+	uint16_t tempShort;
+	uint8_t tempType;
+	bool end = false;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "ECP");
 
@@ -346,7 +334,7 @@ dissect_ecp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		offset += tempLen;
 
 		if (tempLen < 0)
-			end = TRUE;
+			end = true;
 	}
 	return tvb_captured_length(tvb);
 }
@@ -383,8 +371,8 @@ void proto_register_ecp_oui(void)
 		},
 #if 0
 		{ &hf_ecp_vdp_oui,
-			{ "Organization Unique Code",	"ecp.vdp.oui", FT_UINT24, BASE_HEX,
-			VALS(oui_vals), 0x0, NULL, HFILL }
+			{ "Organization Unique Code",	"ecp.vdp.oui", FT_UINT24, BASE_OUI,
+			NULL, 0x0, NULL, HFILL }
 		},
 #endif
 		{ &hf_ecp_vdp_mode,
@@ -425,7 +413,7 @@ void proto_register_ecp_oui(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ecp,
 		&ett_end_of_vdpdu,
 		&ett_802_1qbg_capabilities_flags,
@@ -438,19 +426,16 @@ void proto_register_ecp_oui(void)
 	ieee802a_add_oui(OUI_IEEE_802_1QBG, "ieee802a.ecp_pid",
 		"IEEE802a ECP PID", &hf_reg, proto_ecp);
 
-	register_dissector("ecp", dissect_ecp, proto_ecp);
+	ecp_handle = register_dissector("ecp", dissect_ecp, proto_ecp);
 }
 
 void proto_reg_handoff_ecp(void)
 {
-	static dissector_handle_t ecp_handle;
-
-	ecp_handle = find_dissector("ecp");
 	dissector_add_uint("ieee802a.ecp_pid", 0x0000, ecp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

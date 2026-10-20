@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,16 +35,16 @@ G_BEGIN_DECLS
 #define G_DBUS_AUTH_OBSERVER(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), G_TYPE_DBUS_AUTH_OBSERVER, GDBusAuthObserver))
 #define G_IS_DBUS_AUTH_OBSERVER(o)        (G_TYPE_CHECK_INSTANCE_TYPE ((o), G_TYPE_DBUS_AUTH_OBSERVER))
 
-GLIB_AVAILABLE_IN_ALL
-GType              g_dbus_auth_observer_get_type                     (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
+GType              g_dbus_auth_observer_get_type                     (void);
+GIO_AVAILABLE_IN_ALL
 GDBusAuthObserver *g_dbus_auth_observer_new                          (void);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean           g_dbus_auth_observer_authorize_authenticated_peer (GDBusAuthObserver  *observer,
                                                                       GIOStream          *stream,
                                                                       GCredentials       *credentials);
 
-GLIB_AVAILABLE_IN_2_34
+GIO_AVAILABLE_IN_2_34
 gboolean           g_dbus_auth_observer_allow_mechanism (GDBusAuthObserver  *observer,
                                                          const gchar        *mechanism);
 

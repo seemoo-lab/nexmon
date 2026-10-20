@@ -25,7 +25,7 @@ EOF
 ${XGETTEXT} -o prog.tmp --omit-header -k_ program.tcl || Exit 1
 LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
 
-cat <<EOF > prog.ok
+cat <<\EOF > prog.ok
 #: program.tcl:5
 msgid "'Your command, please?', asked the waiter."
 msgstr ""
@@ -64,7 +64,7 @@ ${DIFF} fr.po fr.po.new || Exit 1
 test -d msgs || mkdir msgs
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} --tcl -d msgs -l fr fr.po || Exit 1
+${MSGFMT} -c --tcl -d msgs -l fr fr.po || Exit 1
 
 # Test for presence of tclsh with msgcat extension.
 cat <<\EOF > version.tcl
@@ -86,17 +86,31 @@ cat <<\EOF > prog.oku
 EUR remplace FF.
 EOF
 
+# Unset environment variables, so that LANG becomes effective.
+# (tclsh on native Windows complains if we set LC_MESSAGES or LC_CTYPE
+# to the empty string.)
+unset LC_ALL
+unset LC_MESSAGES
+unset LC_CTYPE
+
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+# tclsh on native Windows does not want the native Windows locale name
+# (French_France.1252 or French_France.65001), but the Unix locale name (fr_FR).
+# See https://www.tcl.tk/man/tcl8.6/TclCmd/msgcat.htm#M19 .
+case "$host_os" in
+  mingw* | windows*)
+    LOCALE_FR=fr_FR.ISO-8859-1
+    LOCALE_FR_UTF8=none
+    ;;
+esac
 if test $LOCALE_FR != none; then
-  prepare_locale_ fr $LOCALE_FR
-  LANGUAGE= LANG=$LOCALE_FR LC_MESSAGES= LC_CTYPE= LC_ALL= tclsh program.tcl > prog.tmp || Exit 1
+  LANGUAGE= LANG=$LOCALE_FR tclsh program.tcl > prog.tmp || Exit 1
   LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1
   ${DIFF} prog.ok prog.out || Exit 1
 fi
 if test $LOCALE_FR_UTF8 != none; then
-  prepare_locale_ fr $LOCALE_FR_UTF8
-  LANGUAGE= LANG=$LOCALE_FR_UTF8 LC_MESSAGES= LC_CTYPE= LC_ALL= tclsh program.tcl > prog.tmp || Exit 1
+  LANGUAGE= LANG=$LOCALE_FR_UTF8 tclsh program.tcl > prog.tmp || Exit 1
   LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1
   ${DIFF} prog.oku prog.out || Exit 1
 fi

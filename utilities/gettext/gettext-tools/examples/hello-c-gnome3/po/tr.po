@@ -1,55 +1,61 @@
-# Turkish translations for Gnu Gettext Package.
+# Turkish translation for hello-c-gnome3.
+# This file is distributed under the same license as the gettext package.
+# Copyright (C) 2017 Yoyodyne, Inc. (msgids)
 # Copyright (C) 2004 Free Software Foundation, Inc.
 # Nilgün Belma Bugüner <nilgun@superonline.com>, 2003,2004
-#
+# Mehmet Kececi <mkececi@mehmetkececi.com>, 2017, 2019, 2020.
 msgid ""
 msgstr ""
-"Project-Id-Version: hello-c-gnome3 0.14-pre1\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"PO-Revision-Date: 2004-01-21 06:17+0300\n"
-"Last-Translator: Nilgün Belma Bugüner <nilgun@superonline.com>\n"
+"Project-Id-Version: hello-c-gnome3 0.20.2\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2020-04-17 13:10+0300\n"
+"Last-Translator: Mehmet Kececi <mkececi@mehmetkececi.com>\n"
 "Language-Team: Turkish <gnu-tr-u12a@lists.sourceforge.net>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.0\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 2.3\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 
-#: hello.c:79
-#, fuzzy, c-format
-msgid ""
-"<big>Hello world!</big>\n"
-"This program is running as process number <b>%d</b>."
-msgstr "Bu yazılım, %d süreç kimliği ile çalışıyor."
-
-#: hello.c:84
-msgid "<big><u>This is another text</u></big>"
+#: hello.c:78 hello2.c:86
+msgid "Hello world!"
 msgstr ""
 
-#: hello.c:86
-msgid "<big><i>This is yet another text</i></big>"
+#: hello.c:80 hello2.c:88
+#, c-format
+msgid "This program is running as process number %s."
 msgstr ""
 
-#: hello.desktop.in.in:4
+#: hello.c:84 hello2.c:92
+msgid "This is another text"
+msgstr ""
+
+#: hello.c:86 hello2.c:94
+msgid "This is yet another text"
+msgstr ""
+
+#: hello.desktop.in.in:3 hello2.desktop.in.in:3
 msgid "Hello"
-msgstr ""
+msgstr "Merhaba"
 
-#: hello.desktop.in.in:5
+#: hello.desktop.in.in:4 hello2.desktop.in.in:4
 msgid "Hello, world!"
-msgstr "Merhaba Dünyalı!"
+msgstr "Merhaba, dünya!"
 
-#: hello.ui:5
+#: hello.ui:6 hello2.ui:6
 msgid "Example Application"
-msgstr ""
+msgstr "Örnek Uygulama"
 
-#: hello.ui:33
+#: hello.ui:34 hello2.ui:34
 msgid "Update text"
-msgstr ""
+msgstr "Metni güncelleştir"
 
-#: hello.gschema.xml:7
+#: hello2.gschema.xml:8
 msgid "Use XML markup"
-msgstr ""
+msgstr "XML betiğini kullan"
 
-#: hello.gschema.xml:8
+#: hello2.gschema.xml:9
 msgid "Whether to use XML markup in the text."
-msgstr ""
+msgstr "XML betiğinde kullanılıp kullanılmayacağını belirtir."

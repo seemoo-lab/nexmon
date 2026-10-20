@@ -1,6 +1,8 @@
 /* GLib testing framework examples and tests
  * Copyright (C) 2008 Red Hat, Inc
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -40,7 +42,8 @@ static gpointer
 writer_thread (gpointer user_data)
 {
   GOutputStream *out;
-  gssize nwrote, offset;
+  gssize nwrote;
+  size_t offset;
   GError *err = NULL;
   HANDLE out_handle;
 
@@ -58,7 +61,7 @@ writer_thread (gpointer user_data)
       g_usleep (10);
 
       offset = 0;
-      while (offset < (gssize) sizeof (DATA))
+      while (offset < sizeof (DATA))
 	{
 	  nwrote = g_output_stream_write (out, DATA + offset,
 					  sizeof (DATA) - offset,
@@ -337,17 +340,21 @@ test_pipe_io_overlap (void)
   PipeIOOverlapReader rs, rc;
   HANDLE server, client;
   gchar name[256];
+  wchar_t *name_utf16;
 
   g_snprintf (name, sizeof (name),
               "\\\\.\\pipe\\gtest-io-overlap-%u", (guint) GetCurrentProcessId ());
 
-  server = CreateNamedPipe (name,
+  name_utf16 = g_utf8_to_utf16 (name, -1, NULL, NULL, NULL);
+  g_assert_nonnull (name_utf16);
+
+  server = CreateNamedPipe (name_utf16,
                             PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
                             PIPE_READMODE_BYTE | PIPE_WAIT,
                             1, 0, 0, 0, NULL);
   g_assert (server != INVALID_HANDLE_VALUE);
 
-  client = CreateFile (name, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+  client = CreateFile (name_utf16, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
   g_assert (client != INVALID_HANDLE_VALUE);
 
   out_server = g_win32_output_stream_new (server, TRUE);
@@ -369,6 +376,8 @@ test_pipe_io_overlap (void)
   g_object_unref (rc.in);
   g_object_unref (out_server);
   g_object_unref (out_client);
+
+  g_free (name_utf16);
 }
 
 static gpointer
@@ -416,18 +425,22 @@ test_pipe_io_concurrent (void)
   PipeIOOverlapReader rc1, rc2;
   HANDLE server, client;
   gchar name[256], c;
+  wchar_t *name_utf16;
 
   g_snprintf (name, sizeof (name),
               "\\\\.\\pipe\\gtest-io-concurrent-%u", (guint) GetCurrentProcessId ());
 
-  server = CreateNamedPipe (name,
+  name_utf16 = g_utf8_to_utf16 (name, -1, NULL, NULL, NULL);
+  g_assert_nonnull (name_utf16);
+
+  server = CreateNamedPipe (name_utf16,
                             PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
                             PIPE_READMODE_BYTE | PIPE_WAIT,
                             1, 0, 0, 0, NULL);
   g_assert (server != INVALID_HANDLE_VALUE);
   g_assert (_pipe (writer_pipe, 10, _O_BINARY) == 0);
 
-  client = CreateFile (name, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+  client = CreateFile (name_utf16, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
   g_assert (client != INVALID_HANDLE_VALUE);
 
   rc1.in = g_win32_input_stream_new (client, TRUE);
@@ -464,6 +477,8 @@ test_pipe_io_concurrent (void)
 
   close (writer_pipe[0]);
   close (writer_pipe[1]);
+
+  g_free (name_utf16);
 }
 
 static void
@@ -488,17 +503,21 @@ test_pipe_io_cancel (void)
   GOutputStream *out;
   HANDLE in_handle, out_handle;
   gchar name[256];
+  wchar_t *name_utf16;
 
   g_snprintf (name, sizeof (name),
               "\\\\.\\pipe\\gtest-io-cancel-%u", (guint) GetCurrentProcessId ());
 
-  in_handle = CreateNamedPipe (name,
+  name_utf16 = g_utf8_to_utf16 (name, -1, NULL, NULL, NULL);
+  g_assert_nonnull (name_utf16);
+
+  in_handle = CreateNamedPipe (name_utf16,
                                PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
                                PIPE_READMODE_BYTE | PIPE_WAIT,
                                1, 0, 0, 0, NULL);
   g_assert (in_handle != INVALID_HANDLE_VALUE);
 
-  out_handle = CreateFile (name, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+  out_handle = CreateFile (name_utf16, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
   g_assert (out_handle != INVALID_HANDLE_VALUE);
 
   in = g_win32_input_stream_new (in_handle, TRUE);
@@ -518,6 +537,8 @@ test_pipe_io_cancel (void)
   g_object_unref (reader_cancel);
   g_object_unref (in);
   g_object_unref (out);
+
+  g_free (name_utf16);
 }
 
 int

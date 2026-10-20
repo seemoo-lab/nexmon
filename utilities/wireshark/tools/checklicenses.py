@@ -1,32 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2013 The Chromium Authors. All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# SPDX-License-Identifier: BSD-3-Clause
 #
-#    * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#    * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#    * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Makes sure that all files contain proper licensing information."""
 
 
@@ -42,8 +18,10 @@ def PrintUsage():
            to the script file. This will be correct given the normal location
            of the script in "<root>/tools".
 
-  --ignore-suppressions  Ignores path-specific license whitelist. Useful when
-                         trying to remove a suppression/whitelist entry.
+  --ignore-suppressions  Ignores path-specific allowed license. Useful when
+                         trying to remove a suppression/allowed entry.
+
+  --list-allowed  Print a list of allowed licenses and exit.
 
   tocheck  Specifies the directory, relative to root, to check. This defaults
            to "." so it checks everything.
@@ -53,13 +31,13 @@ Examples:
   python checklicenses.py --root ~/chromium/src third_party""")
 
 
-WHITELISTED_LICENSES = [
-    'BSD',
+ALLOWED_LICENSES = [
+    'BSD (1 clause)',
     'BSD (2 clause)',
     'BSD (2 clause) GPL (v2 or later)',
     'BSD (3 clause)',
+    'BSD (4 clause (University of California-Specific))',
     'GPL (v2 or later)',
-    'GPL (v3 or later) (with Bison parser exception)',
     'ISC',
     'ISC GPL (v2 or later)',
     'LGPL (v2 or later)',
@@ -73,27 +51,39 @@ WHITELISTED_LICENSES = [
 ]
 
 
-PATH_SPECIFIC_WHITELISTED_LICENSES = {
-    'dtds': [
+PATH_SPECIFIC_ALLOWED_LICENSES = {
+    # Some of the libpcap include files (including pcap.h) have the
+    # 4-clause BSD license with an advertising clause for the Computer
+    # Systems Engineering Group at Lawrence Berkeley Laboratory.
+    # We have always distributed packages including the headers,
+    # so if this is a problem it's one even if these files aren't
+    # copied into our repository.
+    'libpcap/pcap': [
+        'BSD (4 clause)',
+    ],
+    'wsutil/strnatcmp.c': [
+        'Zlib',
+    ],
+    'wsutil/strnatcmp.h': [
+        'Zlib',
+    ],
+    'resources/protocols/dtds': [
         'UNKNOWN',
     ],
-    'diameter/dictionary.dtd': [
+    'resources/protocols/diameter/dictionary.dtd': [
         'UNKNOWN',
     ],
-    'wimaxasncp/dictionary.dtd': [
+    'resources/protocols/wimaxasncp/dictionary.dtd': [
         'UNKNOWN',
     ],
     'doc/': [
         'UNKNOWN',
     ],
-    'docbook/custom_layer_pdf.xsl': [
+    'doc/custom_layer_chm.xsl': [
         'UNKNOWN',
     ],
-    'docbook/custom_layer_chm.xsl': [
+    'doc/custom_layer_single_html.xsl': [
         'UNKNOWN',
-    ],
-    'docbook/ws.css' : [
-        'UNKNOWN'
     ],
     'fix': [
         'UNKNOWN',
@@ -110,13 +100,7 @@ PATH_SPECIFIC_WHITELISTED_LICENSES = {
     'epan/except.h': [
         'UNKNOWN',
     ],
-    'cmake/TestFileOffsetBits.c': [
-        'UNKNOWN',
-    ],
-    'cmake/TestWindowsFSeek.c': [
-        'UNKNOWN',
-    ],
-    # Generated header files by lex/yacc/whatever
+    # Generated header files by lex/lemon/whatever
     'epan/dtd_grammar.h': [
         'UNKNOWN',
     ],
@@ -126,34 +110,23 @@ PATH_SPECIFIC_WHITELISTED_LICENSES = {
     'epan/dfilter/grammar.c': [
         'UNKNOWN',
     ],
-    'epan/dissectors/packet-dtn.c': [
-        'GPL (v2 or later) GPL (v2 or later)' # TODO: make licensecheck handle this better
-    ],
     'epan/dissectors/packet-ieee80211-radiotap-iter.': [ # Using ISC license only
          'ISC GPL (v2)'
     ],
-    'epan/dissectors/packet-ppi.c': [ # Using BSD (3 clause) license
-        'BSD (3 clause) GPL (v2)'
+     # Mentions BSD-3-clause twice due to embedding of code:
+    'epan/dissectors/packet-communityid.c': [
+         'BSD (3 clause) BSD (3 clause)',
     ],
     'plugins/mate/mate_grammar.h': [
         'UNKNOWN',
     ],
-    'version.h': [
+    'vcs_version.h': [
         'UNKNOWN',
     ],
     # Special IDL license that appears to be compatible as far as I (not a
     # lawyer) can tell. See
-    # https://www.wireshark.org/lists/wireshark-dev/201310/msg00234.html
+    # https://lists.wireshark.org/archives/wireshark-dev/201310/msg00234.html
     'epan/dissectors/pidl/idl_types.h': [
-        'UNKNOWN',
-    ],
-    # Written by Ronnie Sahlberg and correctly licensed, but cannot include
-    # a license header despite the file extension as they need to be
-    # parsed by the pidl tool
-    'epan/dissectors/pidl/mapi/request.cnf.c': [
-        'UNKNOWN',
-    ],
-    'epan/dissectors/pidl/mapi/response.cnf.c': [
         'UNKNOWN',
     ],
     # The following tools are under incompatible licenses (mostly GPLv3 or
@@ -167,50 +140,25 @@ PATH_SPECIFIC_WHITELISTED_LICENSES = {
     'tools/licensecheck.pl': [
         'GPL (v2)'
     ],
-    # Generated files for GTK pixbuf binary bundling
-    'ui/gtk/wireshark-gresources.h': [
+    '.gitlab/': [
         'UNKNOWN',
     ],
-    'ui/gtk/wireshark-gresources.c': [
+    'wsutil/dtoa.c': [
+        'dtoa',
+    ],
+    'wsutil/dtoa.h': [
+        'dtoa',
+    ],
+    'wsutil/safe-math.h': [ # Public domain (CC0)
         'UNKNOWN',
-    ],
-    # The airpcap code is using BSD (3 clause)
-    'epan/crypt/airpdcap_interop.h': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/airpdcap_tkip.c': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/airpdcap_ws.h': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/wep-wpadefs.h': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/airpdcap_system.h': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/airpdcap_user.h': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/airpdcap_ccmp.c': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/airpdcap_int.h': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/airpdcap.c': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'epan/crypt/airpdcap_debug.h': [
-        'BSD (3 clause) GPL (v2)'
-    ],
-    'wsutil/airpdcap_wep.c': [
-        'BSD (3 clause) GPL (v2)'
     ],
 }
 
 def check_licenses(options, args):
+  if options.list_allowed:
+    print('\n'.join(ALLOWED_LICENSES))
+    sys.exit(0)
+
   # Figure out which directory we have to check.
   if len(args) == 0:
     # No directory to check specified, use the repository root.
@@ -233,14 +181,13 @@ def check_licenses(options, args):
                                                     'licensecheck.pl'))
 
   licensecheck = subprocess.Popen([licensecheck_path,
-                                   '-l', '150',
+                                   '-l', '160',
                                    '-r', start_dir],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
   stdout, stderr = licensecheck.communicate()
-  if sys.version_info[0] >= 3:
-      stdout = stdout.decode('utf-8')
-      stderr = stderr.decode('utf-8')
+  stdout = stdout.decode('utf-8')
+  stderr = stderr.decode('utf-8')
   if options.verbose:
     print('----------- licensecheck stdout -----------')
     print(stdout)
@@ -260,7 +207,7 @@ def check_licenses(options, args):
 
     # All files in the build output directory are generated one way or another.
     # There's no need to check them.
-    if filename.startswith('out/') or filename.startswith('sconsbuild/'):
+    if os.path.dirname(filename).startswith('build'):
       continue
 
     # For now we're just interested in the license.
@@ -270,20 +217,21 @@ def check_licenses(options, args):
     if 'GENERATED FILE' in license:
       continue
 
-    if license in WHITELISTED_LICENSES:
+    # Support files which provide a choice between licenses.
+    if any(item in ALLOWED_LICENSES for item in license.split(';')):
       continue
 
     if not options.ignore_suppressions:
       found_path_specific = False
-      for prefix in PATH_SPECIFIC_WHITELISTED_LICENSES:
+      for prefix in PATH_SPECIFIC_ALLOWED_LICENSES:
         if (filename.startswith(prefix) and
-            license in PATH_SPECIFIC_WHITELISTED_LICENSES[prefix]):
+            license in PATH_SPECIFIC_ALLOWED_LICENSES[prefix]):
           found_path_specific = True
           break
       if found_path_specific:
         continue
 
-    reason = "'%s' has non-whitelisted license '%s'" % (filename, license)
+    reason = "License '%s' for '%s' is not allowed." % (license, filename)
     success = False
     print(reason)
     exit_status = 1
@@ -307,10 +255,14 @@ def main():
                            'will normally be the repository root.')
   option_parser.add_option('-v', '--verbose', action='store_true',
                            default=False, help='Print debug logging')
+  option_parser.add_option('--list-allowed',
+                           action='store_true',
+                           default=False,
+                           help='Print a list of allowed licenses and exit.')
   option_parser.add_option('--ignore-suppressions',
                            action='store_true',
                            default=False,
-                           help='Ignore path-specific license whitelist.')
+                           help='Ignore path-specific allowed license.')
   options, args = option_parser.parse_args()
   return check_licenses(options, args)
 

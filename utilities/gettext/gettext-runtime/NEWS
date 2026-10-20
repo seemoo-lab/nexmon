@@ -1,3 +1,76 @@
+Version 0.26 - July 2025
+
+* Two new programs 'printf_gettext' and 'printf_ngettext' are provided,
+  that do formatted output with a localized format string in a more
+  efficient way (without spawning a subshell).
+
+Version 0.25 - April 2025
+
+* New library: libintl_d.a contains the runtime for using GNU gettext
+  message catalogs in the D programming language.
+* New library: libintl_m2.so contains the runtime for using GNU gettext
+  message catalogs in the Modula-2 programming language.
+
+Version 0.23 - December 2023
+
+* In the C.UTF-8 locale, like in the C locale, the *gettext() functions
+  now return the msgid untranslated. This is relevant for GNU systems,
+  Linux with musl libc, FreeBSD, NetBSD, OpenBSD, Cygwin, and Android.
+
+Version 0.22.5 - February 2024
+
+* The replacements for the printf()/fprintf()/... functions that are
+  provided through <libintl.h> on native Windows and NetBSD now enable
+  GCC's format string analysis (-Wformat).
+
+Version 0.22.3 - October 2023
+
+* Portability:
+  - The libintl library now works on macOS 14.  (Older versions of libintl
+    crash on macOS 14, due to an incompatible change in macOS.)
+
+Version 0.22.2 - September 2023
+
+* Bug fix:
+  - The libintl shared library now exports again some symbols that were
+    accidentally missing.
+    <https://savannah.gnu.org/bugs/index.php?64323>
+    This bug was introduced in version 0.22.
+
+Version 0.21.1 - October 2022
+
+* On AIX, locale names with a script or with an uppercase language are now
+  supported.
+  For example, sr_Cyrl_RS.UTF-8 is treated like sr_RS.UTF-8@cyrillic, and
+  EN_US.UTF-8 is treated like en_US.UTF-8.
+
+Version 0.21 - July 2020
+
+* On native Windows platforms, the directory that contains the message
+  catalogs may now contain arbitrary Unicode characters. To make use of
+  this feature, use the new function 'wbindtextdomain' instead of
+  'bindtextdomain'. It allows to pass a directory name in wchar_t[] encoding.
+  Note: 'wbindtextdomain' exists only on native Windows platforms.
+
+Version 0.20.2 - April 2020
+
+* The interpretation of the language preferences on macOS has been improved,
+  especially in the case where a system locale does not exist for the
+  combination of the selected primary language and the selected territory.
+
+* Fixed a multithread-safety bug on Cygwin and native Windows.
+
+Version 0.20 - April 2019
+
+* The interpretation of the language preferences on macOS has been fixed.
+
+* Per-thread locales are now also supported on Solaris 11.4.
+
+* The replacements for the printf()/fprintf()/... functions that are
+  provided through <libintl.h> on native Windows and NetBSD are now POSIX
+  compliant.  There is no conflict any more between these replacements
+  and other possible replacements provided by gnulib or mingw.
+
 Version 0.18.3 - July 2013
 
 * On Mac OS X systems, the setlocale() function now properly

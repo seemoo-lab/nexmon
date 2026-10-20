@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,89 +37,10 @@
 #include "gtestutils.h"
 
 /**
- * SECTION:linked_lists_double
- * @title: Doubly-Linked Lists
- * @short_description: linked lists that can be iterated over in both directions
- *
- * The #GList structure and its associated functions provide a standard
- * doubly-linked list data structure.
- *
- * Each element in the list contains a piece of data, together with
- * pointers which link to the previous and next elements in the list.
- * Using these pointers it is possible to move through the list in both
- * directions (unlike the singly-linked [GSList][glib-Singly-Linked-Lists],
- * which only allows movement through the list in the forward direction).
- *
- * The double linked list does not keep track of the number of items 
- * and does not keep track of both the start and end of the list. If
- * you want fast access to both the start and the end of the list, 
- * and/or the number of items in the list, use a
- * [GQueue][glib-Double-ended-Queues] instead.
- *
- * The data contained in each element can be either integer values, by
- * using one of the [Type Conversion Macros][glib-Type-Conversion-Macros],
- * or simply pointers to any type of data.
- *
- * List elements are allocated from the [slice allocator][glib-Memory-Slices],
- * which is more efficient than allocating elements individually.
- *
- * Note that most of the #GList functions expect to be passed a pointer
- * to the first element in the list. The functions which insert
- * elements return the new start of the list, which may have changed.
- *
- * There is no function to create a #GList. %NULL is considered to be
- * a valid, empty list so you simply set a #GList* to %NULL to initialize
- * it.
- *
- * To add elements, use g_list_append(), g_list_prepend(),
- * g_list_insert() and g_list_insert_sorted().
- *
- * To visit all elements in the list, use a loop over the list:
- * |[<!-- language="C" -->
- * GList *l;
- * for (l = list; l != NULL; l = l->next)
- *   {
- *     // do something with l->data
- *   }
- * ]|
- *
- * To call a function for each element in the list, use g_list_foreach().
- *
- * To loop over the list and modify it (e.g. remove a certain element)
- * a while loop is more appropriate, for example:
- * |[<!-- language="C" -->
- * GList *l = list;
- * while (l != NULL)
- *   {
- *     GList *next = l->next;
- *     if (should_be_removed (l))
- *       {
- *         // possibly free l->data
- *         list = g_list_delete_link (list, l);
- *       }
- *     l = next;
- *   }
- * ]|
- *
- * To remove elements, use g_list_remove().
- *
- * To navigate in a list, use g_list_first(), g_list_last(),
- * g_list_next(), g_list_previous().
- *
- * To find elements in the list use g_list_nth(), g_list_nth_data(),
- * g_list_find() and g_list_find_custom().
- *
- * To find the index of an element use g_list_position() and
- * g_list_index().
- *
- * To free the entire list, use g_list_free() or g_list_free_full().
- */
-
-/**
  * GList:
  * @data: holds the element's data, which can be a pointer to any kind
- *        of data, or any integer value using the 
- *        [Type Conversion Macros][glib-Type-Conversion-Macros]
+ *        of data, or any integer value using the
+ *        [Type Conversion Macros](conversion-macros.html#conversion-macros)
  * @next: contains the link to the next element in the list
  * @prev: contains the link to the previous element in the list
  *
@@ -130,7 +53,7 @@
  *
  * A convenience macro to get the previous element in a #GList.
  * Note that it is considered perfectly acceptable to access
- * @list->previous directly.
+ * @list->prev directly.
  *
  * Returns: the previous element, or %NULL if there are no previous
  *          elements
@@ -168,13 +91,20 @@ g_list_alloc (void)
 
 /**
  * g_list_free: 
- * @list: a #GList
+ * @list: the first link of a #GList
  *
  * Frees all of the memory used by a #GList.
  * The freed elements are returned to the slice allocator.
  *
  * If list elements contain dynamically-allocated memory, you should
  * either use g_list_free_full() or free them manually first.
+ *
+ * It can be combined with g_steal_pointer() to ensure the list head pointer
+ * is not left dangling:
+ * |[<!-- language="C" -->
+ * GList *list_of_borrowed_things = …;  /<!-- -->* (transfer container) *<!-- -->/
+ * g_list_free (g_steal_pointer (&list_of_borrowed_things));
+ * ]|
  */
 void
 g_list_free (GList *list)
@@ -205,11 +135,23 @@ g_list_free_1 (GList *list)
 
 /**
  * g_list_free_full:
- * @list: a pointer to a #GList
+ * @list: the first link of a #GList
  * @free_func: the function to be called to free each element's data
  *
  * Convenience method, which frees all the memory used by a #GList,
  * and calls @free_func on every element's data.
+ *
+ * @free_func must not modify the list (eg, by removing the freed
+ * element from it).
+ *
+ * It can be combined with g_steal_pointer() to ensure the list head pointer
+ * is not left dangling ­— this also has the nice property that the head pointer
+ * is cleared before any of the list elements are freed, to prevent double frees
+ * from @free_func:
+ * |[<!-- language="C" -->
+ * GList *list_of_owned_things = …;  /<!-- -->* (transfer full) (element-type GObject) *<!-- -->/
+ * g_list_free_full (g_steal_pointer (&list_of_owned_things), g_object_unref);
+ * ]|
  *
  * Since: 2.28
  */
@@ -223,7 +165,7 @@ g_list_free_full (GList          *list,
 
 /**
  * g_list_append:
- * @list: a pointer to a #GList
+ * @list: (nullable): a pointer to a #GList
  * @data: the data for the new element
  *
  * Adds a new element on to the end of the list.
@@ -280,7 +222,7 @@ g_list_append (GList    *list,
 
 /**
  * g_list_prepend:
- * @list: a pointer to a #GList, this must point to the top of the list
+ * @list: (nullable): a pointer to a #GList, this must point to the top of the list
  * @data: the data for the new element
  *
  * Prepends a new element on to the start of the list.
@@ -327,7 +269,7 @@ g_list_prepend (GList    *list,
 
 /**
  * g_list_insert:
- * @list: a pointer to a #GList, this must point to the top of the list
+ * @list: (nullable): a pointer to a #GList, this must point to the top of the list
  * @data: the data for the new element
  * @position: the position to insert the element. If this is 
  *     negative, or is larger than the number of elements in the 
@@ -365,8 +307,66 @@ g_list_insert (GList    *list,
 }
 
 /**
- * g_list_insert_before:
+ * g_list_insert_before_link:
  * @list: a pointer to a #GList, this must point to the top of the list
+ * @sibling: (nullable): the list element before which the new element
+ *     is inserted or %NULL to insert at the end of the list
+ * @link_: the list element to be added, which must not be part of
+ *     any other list
+ *
+ * Inserts @link_ into the list before the given position.
+ *
+ * Returns: the (possibly changed) start of the #GList
+ *
+ * Since: 2.62
+ */
+GList *
+g_list_insert_before_link (GList *list,
+                           GList *sibling,
+                           GList *link_)
+{
+  g_return_val_if_fail (link_ != NULL, list);
+  g_return_val_if_fail (link_->prev == NULL, list);
+  g_return_val_if_fail (link_->next == NULL, list);
+
+  if (list == NULL)
+    {
+      g_return_val_if_fail (sibling == NULL, list);
+      return link_;
+    }
+  else if (sibling != NULL)
+    {
+      link_->prev = sibling->prev;
+      link_->next = sibling;
+      sibling->prev = link_;
+      if (link_->prev != NULL)
+        {
+          link_->prev->next = link_;
+          return list;
+        }
+      else
+        {
+          g_return_val_if_fail (sibling == list, link_);
+          return link_;
+        }
+    }
+  else
+    {
+      GList *last;
+
+      for (last = list; last->next != NULL; last = last->next) {}
+
+      last->next = link_;
+      last->next->prev = last;
+      last->next->next = NULL;
+
+      return list;
+    }
+}
+
+/**
+ * g_list_insert_before:
+ * @list: (nullable): a pointer to a #GList, this must point to the top of the list
  * @sibling: the list element before which the new element 
  *     is inserted or %NULL to insert at the end of the list
  * @data: the data for the new element
@@ -380,14 +380,14 @@ g_list_insert_before (GList    *list,
                       GList    *sibling,
                       gpointer  data)
 {
-  if (!list)
+  if (list == NULL)
     {
       list = g_list_alloc ();
       list->data = data;
       g_return_val_if_fail (sibling == NULL, list);
       return list;
     }
-  else if (sibling)
+  else if (sibling != NULL)
     {
       GList *node;
 
@@ -396,7 +396,7 @@ g_list_insert_before (GList    *list,
       node->prev = sibling->prev;
       node->next = sibling;
       sibling->prev = node;
-      if (node->prev)
+      if (node->prev != NULL)
         {
           node->prev->next = node;
           return list;
@@ -411,9 +411,7 @@ g_list_insert_before (GList    *list,
     {
       GList *last;
 
-      last = list;
-      while (last->next)
-        last = last->next;
+      for (last = list; last->next != NULL; last = last->next) {}
 
       last->next = _g_list_alloc ();
       last->next->data = data;
@@ -636,7 +634,7 @@ g_list_copy (GList *list)
 /**
  * g_list_copy_deep:
  * @list: a #GList, this must point to the top of the list
- * @func: a copy function used to copy every element in the list
+ * @func: (scope call): a copy function used to copy every element in the list
  * @user_data: user data passed to the copy function @func, or %NULL
  *
  * Makes a full (deep) copy of a #GList.
@@ -646,8 +644,10 @@ g_list_copy (GList *list)
  * container itself.
  *
  * @func, as a #GCopyFunc, takes two arguments, the data to be copied
- * and a @user_data pointer. It's safe to pass %NULL as user_data,
- * if the copy function takes only one argument.
+ * and a @user_data pointer. On common processor architectures, it's safe to
+ * pass %NULL as @user_data if the copy function takes only one argument. You
+ * may get compiler warnings from this though if compiling with GCC’s
+ * `-Wcast-function-type` warning.
  *
  * For instance, if @list holds a list of GObjects, you can do:
  * |[<!-- language="C" -->   
@@ -821,7 +821,7 @@ g_list_find (GList         *list,
  * g_list_find_custom:
  * @list: a #GList, this must point to the top of the list
  * @data: user data passed to the function
- * @func: the function to call for each element. 
+ * @func: (scope call): the function to call for each element.
  *     It should return 0 when the desired element is found
  *
  * Finds an element in a #GList, using a supplied function to 
@@ -981,10 +981,13 @@ g_list_length (GList *list)
 /**
  * g_list_foreach:
  * @list: a #GList, this must point to the top of the list
- * @func: the function to call with each element's data
+ * @func: (scope call): the function to call with each element's data
  * @user_data: user data to pass to the function
  *
  * Calls a function for each element of a #GList.
+ *
+ * It is safe for @func to remove the element from @list, but it must
+ * not modify any part of the list after that element.
  */
 /**
  * GFunc:
@@ -1064,7 +1067,7 @@ g_list_insert_sorted_real (GList    *list,
  * @list: a pointer to a #GList, this must point to the top of the
  *     already sorted list
  * @data: the data for the new element
- * @func: the function to compare elements in the list. It should 
+ * @func: (scope call): the function to compare elements in the list. It should
  *     return a number > 0 if the first parameter comes after the 
  *     second parameter in the sort order.
  *
@@ -1091,7 +1094,7 @@ g_list_insert_sorted (GList        *list,
  * @list: a pointer to a #GList, this must point to the top of the
  *     already sorted list
  * @data: the data for the new element
- * @func: the function to compare elements in the list. It should
+ * @func: (scope call): the function to compare elements in the list. It should
  *     return a number > 0 if the first parameter  comes after the
  *     second parameter in the sort order.
  * @user_data: user data to pass to comparison function
@@ -1186,7 +1189,7 @@ g_list_sort_real (GList    *list,
 /**
  * g_list_sort:
  * @list: a #GList, this must point to the top of the list
- * @compare_func: the comparison function used to sort the #GList.
+ * @compare_func: (scope call): the comparison function used to sort the #GList.
  *     This function is passed the data from 2 elements of the #GList 
  *     and should return 0 if they are equal, a negative value if the 
  *     first element comes before the second, or a positive value if 
@@ -1220,7 +1223,7 @@ g_list_sort (GList        *list,
 /**
  * g_list_sort_with_data:
  * @list: a #GList, this must point to the top of the list
- * @compare_func: comparison function
+ * @compare_func: (scope call): comparison function
  * @user_data: user data to pass to comparison function
  *
  * Like g_list_sort(), but the comparison function accepts 
@@ -1248,4 +1251,33 @@ g_list_sort_with_data (GList            *list,
                        gpointer          user_data)
 {
   return g_list_sort_real (list, (GFunc) compare_func, user_data);
+}
+
+/**
+ * g_clear_list: (skip)
+ * @list_ptr: (not nullable): a #GList return location
+ * @destroy: (nullable): the function to pass to g_list_free_full() or %NULL to not free elements
+ *
+ * Clears a pointer to a #GList, freeing it and, optionally, freeing its elements using @destroy.
+ *
+ * @list_ptr must be a valid pointer. If @list_ptr points to a null #GList, this does nothing.
+ *
+ * Since: 2.64
+ */
+void
+(g_clear_list) (GList          **list_ptr,
+                GDestroyNotify   destroy)
+{
+  GList *list;
+
+  list = *list_ptr;
+  if (list)
+    {
+      *list_ptr = NULL;
+
+      if (destroy)
+        g_list_free_full (list, destroy);
+      else
+        g_list_free (list);
+    }
 }

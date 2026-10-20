@@ -1,0 +1,89 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: types of expressions.
+
+cat <<\EOF > xg-go-18.go
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"github.com/leonelquinteros/gotext"
+)
+
+var NL1 = func () *gotext.Locale {
+	return gotext.NewLocale(".", "fr_FR")
+} ()
+
+
+type NotLocale2 struct {
+	a int
+	l *gotext.Locale
+}
+
+func (nl NotLocale2) Get (s string) string {
+	return s + strconv.Itoa(nl.a)
+}
+
+var NL2 = func () NotLocale2 {
+	return NotLocale2{}
+} ()
+
+
+func main () {
+	x1, x2 := NL1, NL2
+	fmt.Println(x1.Get("Test 1"))
+	fmt.Println(x2.Get("Test 2"))
+
+	x3 := *NL1
+	fmt.Println(x3.Get("Test 3"))
+
+	x4 := &NL2
+	fmt.Println(x4.Get("Test 4"))
+
+	x5 := NL2.l
+	fmt.Println(x5.Get("Test 5"))
+
+	var x6 []NotLocale2
+	fmt.Println(x6[2].Get("Test 6a"))
+	fmt.Println(x6[2].l.Get("Test 6b"))
+
+	var x7 []NotLocale2
+	fmt.Println(x7[1:5][2].Get("Test 7a"))
+	fmt.Println(x7[1:5][2].l.Get("Test 7b"))
+
+	var x8 map[string]NotLocale2
+	fmt.Println(x8["+"].Get("Test 8a"))
+	fmt.Println(x8["+"].l.Get("Test 8b"))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-18.tmp xg-go-18.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-18.tmp.po > xg-go-18.po || Exit 1
+
+cat <<\EOF > xg-go-18.ok
+msgid "Test 1"
+msgstr ""
+
+msgid "Test 3"
+msgstr ""
+
+msgid "Test 5"
+msgstr ""
+
+msgid "Test 6b"
+msgstr ""
+
+msgid "Test 7b"
+msgstr ""
+
+msgid "Test 8b"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-18.ok xg-go-18.po || Exit 1
+
+exit 0

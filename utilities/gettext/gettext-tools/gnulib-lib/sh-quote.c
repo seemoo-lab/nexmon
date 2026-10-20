@@ -1,10 +1,10 @@
 /* Shell quoting.
-   Copyright (C) 2001-2004, 2006, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2004, 2006, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -30,7 +30,7 @@ static struct quoting_options *sh_quoting_options;
 
 /* Initializes the sh_quoting_options variable.  */
 static void
-init_sh_quoting_options ()
+init_sh_quoting_options (void)
 {
   sh_quoting_options = clone_quoting_options (NULL);
   set_quoting_style (sh_quoting_options, shell_quoting_style);
@@ -69,17 +69,12 @@ shell_quote (const char *string)
 /* Returns a freshly allocated string containing all argument strings, quoted,
    separated through spaces.  */
 char *
-shell_quote_argv (char * const *argv)
+shell_quote_argv (const char * const *argv)
 {
   if (*argv != NULL)
     {
-      char * const *argp;
-      size_t length;
-      char *command;
-      char *p;
-
-      length = 0;
-      for (argp = argv; ; )
+      size_t length = 0;
+      for (const char * const *argp = argv; ; )
         {
           length += shell_quote_length (*argp) + 1;
           argp++;
@@ -87,18 +82,20 @@ shell_quote_argv (char * const *argv)
             break;
         }
 
-      command = XNMALLOC (length, char);
+      char *command = XNMALLOC (length, char);
 
-      p = command;
-      for (argp = argv; ; )
-        {
-          p = shell_quote_copy (p, *argp);
-          argp++;
-          if (*argp == NULL)
-            break;
-          *p++ = ' ';
-        }
-      *p = '\0';
+      {
+        char *p = command;
+        for (const char * const *argp = argv; ; )
+          {
+            p = shell_quote_copy (p, *argp);
+            argp++;
+            if (*argp == NULL)
+              break;
+            *p++ = ' ';
+          }
+        *p = '\0';
+      }
 
       return command;
     }

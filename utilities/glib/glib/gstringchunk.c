@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -37,42 +39,36 @@
 #include "gmessages.h"
 
 #include "gutils.h"
-
-/**
- * SECTION:string_chunks
- * @title: String Chunks
- * @short_description: efficient storage of groups of strings
- *
- * String chunks are used to store groups of strings. Memory is
- * allocated in blocks, and as strings are added to the #GStringChunk
- * they are copied into the next free position in a block. When a block
- * is full a new block is allocated.
- *
- * When storing a large number of strings, string chunks are more
- * efficient than using g_strdup() since fewer calls to malloc() are
- * needed, and less memory is wasted in memory allocation overheads.
- *
- * By adding strings with g_string_chunk_insert_const() it is also
- * possible to remove duplicates.
- *
- * To create a new #GStringChunk use g_string_chunk_new().
- *
- * To add strings to a #GStringChunk use g_string_chunk_insert().
- *
- * To add strings to a #GStringChunk, but without duplicating strings
- * which are already in the #GStringChunk, use
- * g_string_chunk_insert_const().
- *
- * To free the entire #GStringChunk use g_string_chunk_free(). It is
- * not possible to free individual strings.
- */
+#include "gutilsprivate.h"
 
 /**
  * GStringChunk:
  *
- * An opaque data structure representing String Chunks.
- * It should only be accessed by using the following functions.
+ * `GStringChunk` provides efficient storage of groups of strings
+ *
+ * String chunks are used to store groups of strings. Memory is
+ * allocated in blocks, and as strings are added to the `GStringChunk`
+ * they are copied into the next free position in a block. When a block
+ * is full a new block is allocated.
+ *
+ * When storing a large number of strings, string chunks are more
+ * efficient than using [func@GLib.strdup] since fewer calls to `malloc()`
+ * are needed, and less memory is wasted in memory allocation overheads.
+ *
+ * By adding strings with [method@GLib.StringChunk.insert_const] it is also
+ * possible to remove duplicates.
+ *
+ * To create a new `GStringChunk` use [func@GLib.StringChunk.new].
+ *
+ * To add strings to a `GStringChunk` use [method@GLib.StringChunk.insert].
+ *
+ * To add strings to a `GStringChunk`, but without duplicating strings
+ * which are already in the `GStringChunk`, use [method@GLib.StringChunk.insert_const].
+ *
+ * To free the entire `GStringChunk` use [method@GLib.StringChunk.free].
+ * It is not possible to free individual strings.
  */
+
 struct _GStringChunk
 {
   GHashTable *const_table;
@@ -82,29 +78,8 @@ struct _GStringChunk
   gsize       default_size;
 };
 
-#define MY_MAXSIZE ((gsize)-1)
-
-static inline gsize
-nearest_power (gsize base,
-               gsize num)
-{
-  if (num > MY_MAXSIZE / 2)
-    {
-      return MY_MAXSIZE;
-    }
-  else
-    {
-      gsize n = base;
-
-      while (n < num)
-        n <<= 1;
-
-      return n;
-    }
-}
-
 /**
- * g_string_chunk_new:
+ * g_string_chunk_new: (constructor)
  * @size: the default size of the blocks of memory which are
  *     allocated to store the strings. If a particular string
  *     is larger than this default size, a larger block of
@@ -112,7 +87,7 @@ nearest_power (gsize base,
  *
  * Creates a new #GStringChunk.
  *
- * Returns: a new #GStringChunk
+ * Returns: (transfer full): a new #GStringChunk
  */
 GStringChunk *
 g_string_chunk_new (gsize size)
@@ -120,7 +95,7 @@ g_string_chunk_new (gsize size)
   GStringChunk *new_chunk = g_new (GStringChunk, 1);
   gsize actual_size = 1;
 
-  actual_size = nearest_power (1, size);
+  actual_size = g_nearest_pow (MAX (1, size));
 
   new_chunk->const_table  = NULL;
   new_chunk->storage_list = NULL;
@@ -133,7 +108,7 @@ g_string_chunk_new (gsize size)
 
 /**
  * g_string_chunk_free:
- * @chunk: a #GStringChunk
+ * @chunk: (transfer full): a #GStringChunk
  *
  * Frees all memory allocated by the #GStringChunk.
  * After calling g_string_chunk_free() it is not safe to
@@ -248,7 +223,7 @@ g_string_chunk_insert_const (GStringChunk *chunk,
   if (!lookup)
     {
       lookup = g_string_chunk_insert (chunk, string);
-      g_hash_table_insert (chunk->const_table, lookup, lookup);
+      g_hash_table_add (chunk->const_table, lookup);
     }
 
   return lookup;
@@ -280,7 +255,7 @@ g_string_chunk_insert_len (GStringChunk *chunk,
                            const gchar  *string,
                            gssize        len)
 {
-  gssize size;
+  gsize size;
   gchar* pos;
 
   g_return_val_if_fail (chunk != NULL, NULL);
@@ -288,11 +263,16 @@ g_string_chunk_insert_len (GStringChunk *chunk,
   if (len < 0)
     size = strlen (string);
   else
-    size = len;
+    size = (gsize) len;
 
-  if ((chunk->storage_next + size + 1) > chunk->this_size)
+  if ((G_MAXSIZE - chunk->storage_next < size + 1) || (chunk->storage_next + size + 1) > chunk->this_size)
     {
-      gsize new_size = nearest_power (chunk->default_size, size + 1);
+      gsize new_size = g_nearest_pow (MAX (chunk->default_size, size + 1));
+
+      /* If size is bigger than G_MAXSIZE / 2 then store it in its own
+       * allocation instead of failing here */
+      if (new_size == 0)
+        new_size = size + 1;
 
       chunk->storage_list = g_slist_prepend (chunk->storage_list,
                                              g_new (gchar, new_size));

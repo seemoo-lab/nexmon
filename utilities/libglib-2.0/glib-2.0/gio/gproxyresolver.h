@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2010 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,7 +40,7 @@ G_BEGIN_DECLS
  * G_PROXY_RESOLVER_EXTENSION_POINT_NAME:
  *
  * Extension point for proxy resolving functionality.
- * See [Extending GIO][extending-gio].
+ * See [Extending GIO](overview.html#extending-gio).
  */
 #define G_PROXY_RESOLVER_EXTENSION_POINT_NAME "gio-proxy-resolver"
 
@@ -66,25 +68,25 @@ struct _GProxyResolverInterface {
 			      GError              **error);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType		g_proxy_resolver_get_type       (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
+GType		g_proxy_resolver_get_type       (void);
+GIO_AVAILABLE_IN_ALL
 GProxyResolver *g_proxy_resolver_get_default    (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean        g_proxy_resolver_is_supported   (GProxyResolver       *resolver);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gchar	      **g_proxy_resolver_lookup		(GProxyResolver       *resolver,
 						 const gchar          *uri,
 						 GCancellable         *cancellable,
 						 GError              **error);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void		g_proxy_resolver_lookup_async   (GProxyResolver       *resolver,
 						 const gchar          *uri,
 						 GCancellable         *cancellable,
 						 GAsyncReadyCallback   callback,
 						 gpointer              user_data);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gchar	      **g_proxy_resolver_lookup_finish  (GProxyResolver       *resolver,
 						 GAsyncResult         *result,
 						 GError              **error);

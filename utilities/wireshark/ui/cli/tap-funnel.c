@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,16 +18,20 @@
 #include <epan/funnel.h>
 #include <stdio.h>
 
+#include "ws_attributes.h"
+
+#include <wsutil/wslog.h>
+
 void register_tap_listener_funnel(void);
 
 struct _funnel_text_window_t {
-    gchar *title;
+    char *title;
     GString *text;
 };
 
-static GPtrArray *text_windows = NULL;
+static GPtrArray *text_windows;
 
-static funnel_text_window_t *new_text_window(const gchar *title) {
+static funnel_text_window_t *new_text_window(funnel_ops_id_t *ops_id _U_, const char *title) {
     funnel_text_window_t *tw = g_new(funnel_text_window_t, 1);
     tw->title = g_strdup(title);
     tw->text = g_string_new("");
@@ -70,18 +62,9 @@ static void text_window_prepend(funnel_text_window_t *tw, const char *text) {
     g_string_prepend(tw->text, text);
 }
 
-static const gchar *text_window_get_text(funnel_text_window_t *tw) {
+static const char *text_window_get_text(funnel_text_window_t *tw) {
     return tw->text->str;
 }
-
-/* XXX: finish this */
-static void funnel_logger(const gchar *log_domain _U_,
-                          GLogLevelFlags log_level _U_,
-                          const gchar *message,
-                          gpointer user_data _U_) {
-    fputs(message, stderr);
-}
-
 
 
 static const funnel_ops_t funnel_ops = {
@@ -99,7 +82,8 @@ static const funnel_ops_t funnel_ops = {
     /*...,*/
     NULL,
     NULL,
-    funnel_logger,
+    NULL,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -123,7 +107,7 @@ void initialize_funnel_ops(void) {
 
 
 void funnel_dump_all_text_windows(void) {
-    guint i;
+    unsigned i;
 
     if (!text_windows) return;
 
@@ -141,16 +125,16 @@ void funnel_dump_all_text_windows(void) {
 
 #if 0
 
-GHashTable *menus = NULL;
+GHashTable *menus;
 typedef struct _menu_cb_t {
-    void (*callback)(gpointer);
+    void (*callback)(void *);
     void *callback_data;
 } menu_cb_t;
 
 
 static void  init_funnel_cmd(const char *opt_arg, void *data ) {
-    gchar **args = g_strsplit(opt_arg, ",", 0);
-    gchar **arg;
+    char **args = g_strsplit(opt_arg, ",", 0);
+    char **arg;
     menu_cb_t *mcb = data;
 
     for (arg = args; *arg ; arg++) {
@@ -165,10 +149,10 @@ static void  init_funnel_cmd(const char *opt_arg, void *data ) {
 
 static void register_menu_cb(const char *name,
                              register_stat_group_t group _U_,
-                             void (*callback)(gpointer),
-                             gpointer callback_data,
-                             gboolean retap _U_) {
-    menu_cb_t *mcb = g_malloc(sizeof(menu_cb_t));
+                             void (*callback)(void *),
+                             void *callback_data,
+                             bool retap _U_) {
+    menu_cb_t* mcb = g_new(menu_cb_t, 1);
     stat_tap_ui ui_info;
 
     mcb->callback = callback;
@@ -201,16 +185,3 @@ register_tap_listener_funnel(void)
     funnel_register_all_menus(register_menu_cb);
 #endif
 }
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

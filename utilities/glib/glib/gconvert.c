@@ -4,10 +4,12 @@
  * Copyright Red Hat Inc., 2000
  * Authors: Havoc Pennington <hp@redhat.com>, Owen Taylor <otaylor@redhat.com>
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,135 +32,24 @@
 #include <stdlib.h>
 
 #ifdef G_OS_WIN32
+#include <windows.h>
 #include "win_iconv.c"
 #endif
 
-#ifdef G_PLATFORM_WIN32
-#define STRICT
-#include <windows.h>
-#undef STRICT
-#endif
-
 #include "gconvert.h"
+#include "gconvertprivate.h"
 
 #include "gcharsetprivate.h"
 #include "gslist.h"
 #include "gstrfuncs.h"
 #include "gtestutils.h"
 #include "gthread.h"
+#include "gthreadprivate.h"
 #include "gunicode.h"
 #include "gfileutils.h"
+#include "genviron.h"
 
 #include "glibintl.h"
-
-#if defined(USE_LIBICONV_GNU) && !defined (_LIBICONV_H)
-#error GNU libiconv in use but included iconv.h not from libiconv
-#endif
-#if !defined(USE_LIBICONV_GNU) && defined (_LIBICONV_H) \
-     && !defined (__APPLE_CC__) && !defined (__LP_64__)
-#error GNU libiconv not in use but included iconv.h is from libiconv
-#endif
-
-
-/**
- * SECTION:conversions
- * @title: Character Set Conversion
- * @short_description: convert strings between different character sets
- *
- * The g_convert() family of function wraps the functionality of iconv().
- * In addition to pure character set conversions, GLib has functions to
- * deal with the extra complications of encodings for file names.
- *
- * ## File Name Encodings
- *
- * Historically, UNIX has not had a defined encoding for file names:
- * a file name is valid as long as it does not have path separators
- * in it ("/"). However, displaying file names may require conversion:
- * from the character set in which they were created, to the character
- * set in which the application operates. Consider the Spanish file name
- * "Presentaci&oacute;n.sxi". If the application which created it uses
- * ISO-8859-1 for its encoding,
- * |[
- * Character:  P  r  e  s  e  n  t  a  c  i  ó  n  .  s  x  i
- * Hex code:   50 72 65 73 65 6e 74 61 63 69 f3 6e 2e 73 78 69
- * ]|
- * However, if the application use UTF-8, the actual file name on
- * disk would look like this:
- * |[
- * Character:  P  r  e  s  e  n  t  a  c  i  ó     n  .  s  x  i
- * Hex code:   50 72 65 73 65 6e 74 61 63 69 c3 b3 6e 2e 73 78 69
- * ]|
- * Glib uses UTF-8 for its strings, and GUI toolkits like GTK+ that use
- * Glib do the same thing. If you get a file name from the file system,
- * for example, from readdir() or from g_dir_read_name(), and you wish
- * to display the file name to the user, you  will need to convert it
- * into UTF-8. The opposite case is when the user types the name of a
- * file he wishes to save: the toolkit will give you that string in
- * UTF-8 encoding, and you will need to convert it to the character
- * set used for file names before you can create the file with open()
- * or fopen().
- *
- * By default, Glib assumes that file names on disk are in UTF-8
- * encoding. This is a valid assumption for file systems which
- * were created relatively recently: most applications use UTF-8
- * encoding for their strings, and that is also what they use for
- * the file names they create. However, older file systems may
- * still contain file names created in "older" encodings, such as
- * ISO-8859-1. In this case, for compatibility reasons, you may want
- * to instruct Glib to use that particular encoding for file names
- * rather than UTF-8. You can do this by specifying the encoding for
- * file names in the [`G_FILENAME_ENCODING`][G_FILENAME_ENCODING]
- * environment variable. For example, if your installation uses
- * ISO-8859-1 for file names, you can put this in your `~/.profile`
- * |[
- * export G_FILENAME_ENCODING=ISO-8859-1
- * ]|
- * Glib provides the functions g_filename_to_utf8() and
- * g_filename_from_utf8() to perform the necessary conversions.
- * These functions convert file names from the encoding specified
- * in `G_FILENAME_ENCODING` to UTF-8 and vice-versa. This
- * [diagram][file-name-encodings-diagram] illustrates how
- * these functions are used to convert between UTF-8 and the
- * encoding for file names in the file system.
- *
- * ## Conversion between file name encodings # {#file-name-encodings-diagram)
- *
- * ![](file-name-encodings.png)
- *
- * ## Checklist for Application Writers
- *
- * This section is a practical summary of the detailed
- 
- * things to do to make sure your applications process file
- * name encodings correctly.
- * 
- * 1. If you get a file name from the file system from a function
- *    such as readdir() or gtk_file_chooser_get_filename(), you do
- *    not need to do any conversion to pass that file name to
- *    functions like open(), rename(), or fopen() -- those are "raw"
- *    file names which the file system understands.
- *
- * 2. If you need to display a file name, convert it to UTF-8 first
- *    by using g_filename_to_utf8(). If conversion fails, display a
- *    string like "Unknown file name". Do not convert this string back
- *    into the encoding used for file names if you wish to pass it to
- *    the file system; use the original file name instead.
- *
- *    For example, the document window of a word processor could display
- *    "Unknown file name" in its title bar but still let the user save
- *    the file, as it would keep the raw file name internally. This
- *    can happen if the user has not set the `G_FILENAME_ENCODING`
- *    environment variable even though he has files whose names are
- *    not encoded in UTF-8.
- *
- * 3. If your user interface lets the user type a file name for saving
- *    or renaming, convert it to the encoding used for file names in
- *    the file system by using g_filename_from_utf8(). Pass the converted
- *    file name to functions like fopen(). If conversion fails, ask the
- *    user to enter a different file name. This can happen if the user
- *    types Japanese characters when `G_FILENAME_ENCODING` is set to
- *    `ISO-8859-1`, for example.
- */
 
 /* We try to terminate strings in unknown charsets with this many zero bytes
  * to ensure that multibyte strings really are nul-terminated when we return
@@ -177,8 +68,17 @@ try_conversion (const char *to_codeset,
 
   if (*cd == (iconv_t)-1 && errno == EINVAL)
     return FALSE;
-  else
-    return TRUE;
+
+#if defined(__FreeBSD__) && defined(ICONV_SET_ILSEQ_INVALID)
+  /* On FreeBSD request GNU iconv compatible handling of characters that cannot
+   * be represented in the destination character set.
+   * See https://cgit.freebsd.org/src/commit/?id=7c5b23111c5fd1992047922d4247c4a1ce1bb6c3
+   */
+  int value = 1;
+  if (iconvctl (*cd, ICONV_SET_ILSEQ_INVALID, &value) != 0)
+    return FALSE;
+#endif
+  return TRUE;
 }
 
 static gboolean
@@ -202,7 +102,7 @@ try_to_aliases (const char **to_aliases,
 }
 
 /**
- * g_iconv_open:
+ * g_iconv_open: (skip)
  * @to_codeset: destination codeset
  * @from_codeset: source codeset
  * 
@@ -251,12 +151,12 @@ g_iconv_open (const gchar  *to_codeset,
 }
 
 /**
- * g_iconv:
+ * g_iconv: (skip)
  * @converter: conversion descriptor from g_iconv_open()
  * @inbuf: bytes to convert
- * @inbytes_left: inout parameter, bytes remaining to convert in @inbuf
+ * @inbytes_left: (inout): inout parameter, bytes remaining to convert in @inbuf
  * @outbuf: converted output bytes
- * @outbytes_left: inout parameter, bytes available to fill in @outbuf
+ * @outbytes_left: (inout): inout parameter, bytes available to fill in @outbuf
  * 
  * Same as the standard UNIX routine iconv(), but
  * may be implemented via libiconv on UNIX flavors that lack
@@ -265,6 +165,16 @@ g_iconv_open (const gchar  *to_codeset,
  * GLib provides g_convert() and g_locale_to_utf8() which are likely
  * more convenient than the raw iconv wrappers.
  * 
+ * Note that the behaviour of iconv() for characters which are valid in the
+ * input character set, but which have no representation in the output character
+ * set, is implementation defined. This function may return success (with a
+ * positive number of non-reversible conversions as replacement characters were
+ * used), or it may return -1 and set an error such as %EILSEQ, in such a
+ * situation.
+ *
+ * See [`iconv(3posix)`](man:iconv(3posix)) and [`iconv(3)`](man:iconv(3)) for more details about behavior when an
+ * error occurs.
+ *
  * Returns: count of non-reversible conversions, or -1 on error
  **/
 gsize 
@@ -280,7 +190,7 @@ g_iconv (GIConv   converter,
 }
 
 /**
- * g_iconv_close:
+ * g_iconv_close: (skip)
  * @converter: a conversion descriptor from g_iconv_open()
  *
  * Same as the standard UNIX routine iconv_close(), but
@@ -318,11 +228,11 @@ open_converter (const gchar *to_codeset,
 	{
 	  if (errno == EINVAL)
 	    g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_NO_CONVERSION,
-			 _("Conversion from character set '%s' to '%s' is not supported"),
+			 _("Conversion from character set “%s” to “%s” is not supported"),
 			 from_codeset, to_codeset);
 	  else
 	    g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_FAILED,
-			 _("Could not open converter from '%s' to '%s'"),
+			 _("Could not open converter from “%s” to “%s”"),
 			 from_codeset, to_codeset);
 	}
     }
@@ -340,30 +250,31 @@ close_converter (GIConv cd)
 }
 
 /**
- * g_convert_with_iconv:
- * @str:           the string to convert
+ * g_convert_with_iconv: (skip)
+ * @str:           (array length=len) (element-type guint8):
+ *                 the string to convert.
  * @len:           the length of the string in bytes, or -1 if the string is
  *                 nul-terminated (Note that some encodings may allow nul
  *                 bytes to occur inside strings. In that case, using -1
  *                 for the @len parameter is unsafe)
  * @converter:     conversion descriptor from g_iconv_open()
- * @bytes_read:    location to store the number of bytes in the
- *                 input string that were successfully converted, or %NULL.
+ * @bytes_read:    (out) (optional): location to store the number of bytes in
+ *                 the input string that were successfully converted, or %NULL.
  *                 Even if the conversion was successful, this may be 
  *                 less than @len if there were partial characters
  *                 at the end of the input. If the error
- *                 #G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
- *                 stored will the byte offset after the last valid
+ *                 %G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
+ *                 stored will be the byte offset after the last valid
  *                 input sequence.
- * @bytes_written: the number of bytes stored in the output buffer (not 
- *                 including the terminating nul).
+ * @bytes_written: (out) (optional): the number of bytes stored in
+ *                 the output buffer (not including the terminating nul).
  * @error:         location to store the error occurring, or %NULL to ignore
  *                 errors. Any of the errors in #GConvertError may occur.
  *
  * Converts a string from one character set to another. 
  * 
  * Note that you should use g_iconv() for streaming conversions. 
- * Despite the fact that @byes_read can return information about partial 
+ * Despite the fact that @bytes_read can return information about partial
  * characters, the g_convert_... functions are not generally suitable
  * for streaming. If the underlying converter maintains internal state,
  * then this won't be preserved across successive calls to g_convert(),
@@ -372,8 +283,17 @@ close_converter (GIConv cd)
  * character until it knows that the next character is not a mark that
  * could combine with the base character.)
  *
- * Returns: If the conversion was successful, a newly allocated
- *               nul-terminated string, which must be freed with
+ * Characters which are valid in the input character set, but which have no
+ * representation in the output character set will result in a
+ * %G_CONVERT_ERROR_ILLEGAL_SEQUENCE error. This is in contrast to the iconv()
+ * specification, which leaves this behaviour implementation defined. Note that
+ * this is the same error code as is returned for an invalid byte sequence in
+ * the input character set. To get defined behaviour for conversion of
+ * unrepresentable characters, use g_convert_with_fallback().
+ *
+ * Returns: (array length=bytes_written) (element-type guint8) (transfer full):
+ *               If the conversion was successful, a newly allocated buffer
+ *               containing the converted string, which must be freed with
  *               g_free(). Otherwise %NULL and @error will be set.
  **/
 gchar*
@@ -450,6 +370,13 @@ g_convert_with_iconv (const gchar *str,
 	      break;
 	    }
 	}
+      else if (err > 0)
+        {
+          /* @err gives the number of replacement characters used. */
+          g_set_error_literal (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                               _("Unrepresentable character in conversion input"));
+          have_error = TRUE;
+        }
       else 
 	{
 	  if (!reset)
@@ -494,30 +421,31 @@ g_convert_with_iconv (const gchar *str,
 
 /**
  * g_convert:
- * @str:           the string to convert
+ * @str:           (array length=len) (element-type guint8):
+ *                 the string to convert.
  * @len:           the length of the string in bytes, or -1 if the string is
  *                 nul-terminated (Note that some encodings may allow nul
  *                 bytes to occur inside strings. In that case, using -1
  *                 for the @len parameter is unsafe)
  * @to_codeset:    name of character set into which to convert @str
  * @from_codeset:  character set of @str.
- * @bytes_read: (out):   location to store the number of bytes in the
- *                 input string that were successfully converted, or %NULL.
+ * @bytes_read:    (out) (optional): location to store the number of bytes in
+ *                 the input string that were successfully converted, or %NULL.
  *                 Even if the conversion was successful, this may be 
  *                 less than @len if there were partial characters
  *                 at the end of the input. If the error
- *                 #G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
- *                 stored will the byte offset after the last valid
+ *                 %G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
+ *                 stored will be the byte offset after the last valid
  *                 input sequence.
- * @bytes_written: (out): the number of bytes stored in the output buffer (not 
- *                 including the terminating nul).
+ * @bytes_written: (out) (optional): the number of bytes stored in
+ *                 the output buffer (not including the terminating nul).
  * @error:         location to store the error occurring, or %NULL to ignore
  *                 errors. Any of the errors in #GConvertError may occur.
  *
  * Converts a string from one character set to another.
  *
  * Note that you should use g_iconv() for streaming conversions. 
- * Despite the fact that @byes_read can return information about partial 
+ * Despite the fact that @bytes_read can return information about partial
  * characters, the g_convert_... functions are not generally suitable
  * for streaming. If the underlying converter maintains internal state,
  * then this won't be preserved across successive calls to g_convert(),
@@ -529,9 +457,10 @@ g_convert_with_iconv (const gchar *str,
  * Using extensions such as "//TRANSLIT" may not work (or may not work
  * well) on many platforms.  Consider using g_str_to_ascii() instead.
  *
- * Returns: If the conversion was successful, a newly allocated
- *               nul-terminated string, which must be freed with
- *               g_free(). Otherwise %NULL and @error will be set.
+ * Returns: (array length=bytes_written) (element-type guint8) (transfer full):
+ *          If the conversion was successful, a newly allocated buffer
+ *          containing the converted string, which must be freed with g_free().
+ *          Otherwise %NULL and @error will be set.
  **/
 gchar*
 g_convert (const gchar *str,
@@ -573,25 +502,26 @@ g_convert (const gchar *str,
 
 /**
  * g_convert_with_fallback:
- * @str:          the string to convert
+ * @str:          (array length=len) (element-type guint8):
+ *                the string to convert.
  * @len:          the length of the string in bytes, or -1 if the string is
  *                 nul-terminated (Note that some encodings may allow nul
  *                 bytes to occur inside strings. In that case, using -1
  *                 for the @len parameter is unsafe)
  * @to_codeset:   name of character set into which to convert @str
  * @from_codeset: character set of @str.
- * @fallback:     UTF-8 string to use in place of character not
+ * @fallback:     UTF-8 string to use in place of characters not
  *                present in the target encoding. (The string must be
  *                representable in the target encoding). 
-                  If %NULL, characters not in the target encoding will 
-                  be represented as Unicode escapes \uxxxx or \Uxxxxyyyy.
- * @bytes_read:   location to store the number of bytes in the
- *                input string that were successfully converted, or %NULL.
+ *                If %NULL, characters not in the target encoding will 
+ *                be represented as Unicode escapes \uxxxx or \Uxxxxyyyy.
+ * @bytes_read:   (out) (optional): location to store the number of bytes in
+ *                the input string that were successfully converted, or %NULL.
  *                Even if the conversion was successful, this may be 
  *                less than @len if there were partial characters
  *                at the end of the input.
- * @bytes_written: the number of bytes stored in the output buffer (not 
- *                including the terminating nul).
+ * @bytes_written: (out) (optional): the number of bytes stored in
+ *                 the output buffer (not including the terminating nul).
  * @error:        location to store the error occurring, or %NULL to ignore
  *                errors. Any of the errors in #GConvertError may occur.
  *
@@ -604,7 +534,7 @@ g_convert (const gchar *str,
  * in which case GLib will simply return that approximate conversion.
  *
  * Note that you should use g_iconv() for streaming conversions. 
- * Despite the fact that @byes_read can return information about partial 
+ * Despite the fact that @bytes_read can return information about partial
  * characters, the g_convert_... functions are not generally suitable
  * for streaming. If the underlying converter maintains internal state,
  * then this won't be preserved across successive calls to g_convert(),
@@ -613,9 +543,10 @@ g_convert (const gchar *str,
  * character until it knows that the next character is not a mark that
  * could combine with the base character.)
  *
- * Returns: If the conversion was successful, a newly allocated
- *               nul-terminated string, which must be freed with
- *               g_free(). Otherwise %NULL and @error will be set.
+ * Returns: (array length=bytes_written) (element-type guint8) (transfer full):
+ *          If the conversion was successful, a newly allocated buffer
+ *          containing the converted string, which must be freed with g_free().
+ *          Otherwise %NULL and @error will be set.
  **/
 gchar*
 g_convert_with_fallback (const gchar *str,
@@ -658,6 +589,8 @@ g_convert_with_fallback (const gchar *str,
 		    bytes_read, bytes_written, &local_error);
   if (!local_error)
     return dest;
+
+  g_assert (dest == NULL);
 
   if (!g_error_matches (local_error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE))
     {
@@ -739,7 +672,7 @@ g_convert_with_fallback (const gchar *str,
 		  /* Error converting fallback string - fatal
 		   */
 		  g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
-			       _("Cannot convert fallback '%s' to codeset '%s'"),
+			       _("Cannot convert fallback “%s” to codeset “%s”"),
 			       insert_str, to_codeset);
 		  have_error = TRUE;
 		  break;
@@ -761,7 +694,8 @@ g_convert_with_fallback (const gchar *str,
 		  inbytes_remaining = strlen (p);
 		  break;
 		}
-	      /* fall thru if p is NULL */
+              /* if p is null */
+              G_GNUC_FALLTHROUGH;
 	    default:
               {
                 int errsv = errno;
@@ -824,20 +758,31 @@ g_convert_with_fallback (const gchar *str,
  * 
  */
 
+/*
+ * Validate @string as UTF-8. @len can be negative if @string is
+ * nul-terminated, or a non-negative value in bytes. If @string ends in an
+ * incomplete sequence, or contains any illegal sequences or nul codepoints,
+ * %NULL will be returned and the error set to
+ * %G_CONVERT_ERROR_ILLEGAL_SEQUENCE.
+ * On success, @bytes_read and @bytes_written, if provided, will be set to
+ * the number of bytes in @string up to @len or the terminating nul byte.
+ * On error, @bytes_read will be set to the byte offset after the last valid
+ * and non-nul UTF-8 sequence in @string, and @bytes_written will be set to 0.
+ */
 static gchar *
 strdup_len (const gchar *string,
 	    gssize       len,
-	    gsize       *bytes_written,
 	    gsize       *bytes_read,
-	    GError      **error)
-	 
+	    gsize       *bytes_written,
+	    GError     **error)
 {
   gsize real_len;
+  const gchar *end_valid;
 
-  if (!g_utf8_validate (string, len, NULL))
+  if (!g_utf8_validate (string, len, &end_valid))
     {
       if (bytes_read)
-	*bytes_read = 0;
+	*bytes_read = end_valid - string;
       if (bytes_written)
 	*bytes_written = 0;
 
@@ -845,17 +790,9 @@ strdup_len (const gchar *string,
                            _("Invalid byte sequence in conversion input"));
       return NULL;
     }
-  
-  if (len < 0)
-    real_len = strlen (string);
-  else
-    {
-      real_len = 0;
-      
-      while (real_len < len && string[real_len])
-	real_len++;
-    }
-  
+
+  real_len = end_valid - string;
+
   if (bytes_read)
     *bytes_read = real_len;
   if (bytes_written)
@@ -864,9 +801,83 @@ strdup_len (const gchar *string,
   return g_strndup (string, real_len);
 }
 
+typedef enum
+{
+  CONVERT_CHECK_NO_NULS_IN_INPUT  = 1 << 0,
+  CONVERT_CHECK_NO_NULS_IN_OUTPUT = 1 << 1
+} G_GNUC_FLAG_ENUM ConvertCheckFlags;
+
+/*
+ * Convert from @string in the encoding identified by @from_codeset,
+ * returning a string in the encoding identified by @to_codeset.
+ * @len can be negative if @string is nul-terminated, or a non-negative
+ * value in bytes. Flags defined in #ConvertCheckFlags can be set in @flags
+ * to check the input, the output, or both, for embedded nul bytes.
+ * On success, @bytes_read, if provided, will be set to the number of bytes
+ * in @string up to @len or the terminating nul byte, and @bytes_written, if
+ * provided, will be set to the number of output bytes written into the
+ * returned buffer, excluding the terminating nul sequence.
+ * On error, @bytes_read will be set to the byte offset after the last valid
+ * sequence in @string, and @bytes_written will be set to 0.
+ */
+static gchar *
+convert_checked (const gchar      *string,
+                 gssize            len,
+                 const gchar      *to_codeset,
+                 const gchar      *from_codeset,
+                 ConvertCheckFlags flags,
+                 gsize            *bytes_read,
+                 gsize            *bytes_written,
+                 GError          **error)
+{
+  gchar *out;
+  gsize outbytes;
+
+  if ((flags & CONVERT_CHECK_NO_NULS_IN_INPUT) && len > 0)
+    {
+      const gchar *early_nul = memchr (string, '\0', len);
+      if (early_nul != NULL)
+        {
+          if (bytes_read)
+            *bytes_read = early_nul - string;
+          if (bytes_written)
+            *bytes_written = 0;
+
+          g_set_error_literal (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                               _("Embedded NUL byte in conversion input"));
+          return NULL;
+        }
+    }
+
+  out = g_convert (string, len, to_codeset, from_codeset,
+                   bytes_read, &outbytes, error);
+  if (out == NULL)
+    {
+      if (bytes_written)
+        *bytes_written = 0;
+      return NULL;
+    }
+
+  if ((flags & CONVERT_CHECK_NO_NULS_IN_OUTPUT)
+      && memchr (out, '\0', outbytes) != NULL)
+    {
+      g_free (out);
+      if (bytes_written)
+        *bytes_written = 0;
+      g_set_error_literal (error, G_CONVERT_ERROR, G_CONVERT_ERROR_EMBEDDED_NUL,
+                           _("Embedded NUL byte in conversion output"));
+      return NULL;
+    }
+
+  if (bytes_written)
+    *bytes_written = outbytes;
+  return out;
+}
+
 /**
  * g_locale_to_utf8:
- * @opsysstring:   a string in the encoding of the current locale. On Windows
+ * @opsysstring:   (array length=len) (element-type guint8): a string in the
+ *                 encoding of the current locale. On Windows
  *                 this means the system codepage.
  * @len:           the length of the string, or -1 if the string is
  *                 nul-terminated (Note that some encodings may allow nul
@@ -877,8 +888,8 @@ strdup_len (const gchar *string,
  *                 Even if the conversion was successful, this may be 
  *                 less than @len if there were partial characters
  *                 at the end of the input. If the error
- *                 #G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
- *                 stored will the byte offset after the last valid
+ *                 %G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
+ *                 stored will be the byte offset after the last valid
  *                 input sequence.
  * @bytes_written: (out) (optional): the number of bytes stored in the output
  *                 buffer (not including the terminating nul).
@@ -887,10 +898,17 @@ strdup_len (const gchar *string,
  * 
  * Converts a string which is in the encoding used for strings by
  * the C runtime (usually the same as that used by the operating
- * system) in the [current locale][setlocale] into a UTF-8 string.
+ * system) in the [current locale](running.html#locale) into a UTF-8 string.
+ *
+ * If the source encoding is not UTF-8 and the conversion output contains a
+ * nul character, the error %G_CONVERT_ERROR_EMBEDDED_NUL is set and the
+ * function returns %NULL.
+ * If the source encoding is UTF-8, an embedded nul character is treated with
+ * the %G_CONVERT_ERROR_ILLEGAL_SEQUENCE error for backward compatibility with
+ * earlier versions of this library. Use g_convert() to produce output that
+ * may contain embedded nul characters.
  * 
- * Returns: A newly-allocated buffer containing the converted string,
- *               or %NULL on an error, and error will be set.
+ * Returns: (type utf8): The converted string, or %NULL on an error.
  **/
 gchar *
 g_locale_to_utf8 (const gchar  *opsysstring,
@@ -904,24 +922,69 @@ g_locale_to_utf8 (const gchar  *opsysstring,
   if (g_get_charset (&charset))
     return strdup_len (opsysstring, len, bytes_read, bytes_written, error);
   else
-    return g_convert (opsysstring, len, 
-		      "UTF-8", charset, bytes_read, bytes_written, error);
+    return convert_checked (opsysstring, len, "UTF-8", charset,
+                            CONVERT_CHECK_NO_NULS_IN_OUTPUT,
+                            bytes_read, bytes_written, error);
+}
+
+/*
+ * Do the exact same as g_locale_to_utf8 except that the charset would
+ * be retrieved from _g_get_time_charset (which uses LC_TIME)
+ *
+ * Returns: The converted string, or %NULL on an error.
+ */
+gchar *
+_g_time_locale_to_utf8 (const gchar *opsysstring,
+                        gssize       len,
+                        gsize       *bytes_read,
+                        gsize       *bytes_written,
+                        GError     **error)
+{
+  const char *charset;
+
+  if (_g_get_time_charset (&charset))
+    return strdup_len (opsysstring, len, bytes_read, bytes_written, error);
+  else
+    return convert_checked (opsysstring, len, "UTF-8", charset,
+                            CONVERT_CHECK_NO_NULS_IN_OUTPUT,
+                            bytes_read, bytes_written, error);
+}
+
+/*
+ * Do the exact same as g_locale_to_utf8 except that the charset would
+ * be retrieved from _g_get_ctype_charset (which uses LC_CTYPE)
+ *
+ * Returns: The converted string, or %NULL on an error.
+ */
+gchar *
+_g_ctype_locale_to_utf8 (const gchar *opsysstring,
+                         gssize       len,
+                         gsize       *bytes_read,
+                         gsize       *bytes_written,
+                         GError     **error)
+{
+  const char *charset;
+
+  if (_g_get_ctype_charset (&charset))
+    return strdup_len (opsysstring, len, bytes_read, bytes_written, error);
+  else
+    return convert_checked (opsysstring, len, "UTF-8", charset,
+                            CONVERT_CHECK_NO_NULS_IN_OUTPUT,
+                            bytes_read, bytes_written, error);
 }
 
 /**
  * g_locale_from_utf8:
  * @utf8string:    a UTF-8 encoded string 
  * @len:           the length of the string, or -1 if the string is
- *                 nul-terminated (Note that some encodings may allow nul
- *                 bytes to occur inside strings. In that case, using -1
- *                 for the @len parameter is unsafe)
+ *                 nul-terminated.
  * @bytes_read: (out) (optional): location to store the number of bytes in the
  *                 input string that were successfully converted, or %NULL.
  *                 Even if the conversion was successful, this may be 
  *                 less than @len if there were partial characters
  *                 at the end of the input. If the error
- *                 #G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
- *                 stored will the byte offset after the last valid
+ *                 %G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
+ *                 stored will be the byte offset after the last valid
  *                 input sequence.
  * @bytes_written: (out) (optional): the number of bytes stored in the output
  *                 buffer (not including the terminating nul).
@@ -930,11 +993,17 @@ g_locale_to_utf8 (const gchar  *opsysstring,
  * 
  * Converts a string from UTF-8 to the encoding used for strings by
  * the C runtime (usually the same as that used by the operating
- * system) in the [current locale][setlocale]. On Windows this means
- * the system codepage.
- * 
- * Returns: A newly-allocated buffer containing the converted string,
- *               or %NULL on an error, and error will be set.
+ * system) in the [current locale](running.html#locale).
+ * On Windows this means the system codepage.
+ *
+ * The input string shall not contain nul characters even if the @len
+ * argument is positive. A nul character found inside the string will result
+ * in error %G_CONVERT_ERROR_ILLEGAL_SEQUENCE. Use g_convert() to convert
+ * input that may contain embedded nul characters.
+ *
+ * Returns: (array length=bytes_written) (element-type guint8) (transfer full):
+ *          A newly-allocated buffer containing the converted string,
+ *          or %NULL on an error, and error will be set.
  **/
 gchar *
 g_locale_from_utf8 (const gchar *utf8string,
@@ -948,8 +1017,9 @@ g_locale_from_utf8 (const gchar *utf8string,
   if (g_get_charset (&charset))
     return strdup_len (utf8string, len, bytes_read, bytes_written, error);
   else
-    return g_convert (utf8string, len,
-		      charset, "UTF-8", bytes_read, bytes_written, error);
+    return convert_checked (utf8string, len, charset, "UTF-8",
+                            CONVERT_CHECK_NO_NULS_IN_INPUT,
+                            bytes_read, bytes_written, error);
 }
 
 #ifndef G_PLATFORM_WIN32
@@ -973,7 +1043,8 @@ filename_charset_cache_free (gpointer data)
 
 /**
  * g_get_filename_charsets:
- * @charsets: return location for the %NULL-terminated list of encoding names
+ * @filename_charsets: (out) (transfer none) (array zero-terminated=1):
+ *    return location for the %NULL-terminated list of encoding names
  *
  * Determines the preferred character sets used for filenames.
  * The first character set from the @charsets is the filename encoding, the
@@ -986,8 +1057,8 @@ filename_charset_cache_free (gpointer data)
  * and said environment variables have no effect.
  *
  * `G_FILENAME_ENCODING` may be set to a comma-separated list of
- * character set names. The special token "\@locale" is taken
- * to  mean the character set for the [current locale][setlocale].
+ * character set names. The special token `@locale` is taken to mean the
+ * character set for the [current locale](running.html#locale).
  * If `G_FILENAME_ENCODING` is not set, but `G_BROKEN_FILENAMES` is,
  * the character set of the current locale is taken as the filename
  * encoding. If neither environment variable  is set, UTF-8 is taken
@@ -1012,24 +1083,21 @@ g_get_filename_charsets (const gchar ***filename_charsets)
   const gchar *charset;
 
   if (!cache)
-    {
-      cache = g_new0 (GFilenameCharsetCache, 1);
-      g_private_set (&cache_private, cache);
-    }
+    cache = g_private_set_alloc0 (&cache_private, sizeof (GFilenameCharsetCache));
 
   g_get_charset (&charset);
 
   if (!(cache->charset && strcmp (cache->charset, charset) == 0))
     {
       const gchar *new_charset;
-      gchar *p;
+      const gchar *p;
       gint i;
 
       g_free (cache->charset);
       g_strfreev (cache->filename_charsets);
       cache->charset = g_strdup (charset);
       
-      p = getenv ("G_FILENAME_ENCODING");
+      p = g_getenv ("G_FILENAME_ENCODING");
       if (p != NULL && p[0] != '\0') 
 	{
 	  cache->filename_charsets = g_strsplit (p, ",", 0);
@@ -1045,7 +1113,7 @@ g_get_filename_charsets (const gchar ***filename_charsets)
 		}
 	    }
 	}
-      else if (getenv ("G_BROKEN_FILENAMES") != NULL)
+      else if (g_getenv ("G_BROKEN_FILENAMES") != NULL)
 	{
 	  cache->filename_charsets = g_new0 (gchar *, 2);
 	  cache->is_utf8 = g_get_charset (&new_charset);
@@ -1114,7 +1182,7 @@ get_filename_charset (const gchar **filename_charset)
 
 /**
  * g_filename_to_utf8:
- * @opsysstring:   a string in the encoding for filenames
+ * @opsysstring: (type filename): a string in the encoding for filenames
  * @len:           the length of the string, or -1 if the string is
  *                 nul-terminated (Note that some encodings may allow nul
  *                 bytes to occur inside strings. In that case, using -1
@@ -1124,8 +1192,8 @@ get_filename_charset (const gchar **filename_charset)
  *                 Even if the conversion was successful, this may be 
  *                 less than @len if there were partial characters
  *                 at the end of the input. If the error
- *                 #G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
- *                 stored will the byte offset after the last valid
+ *                 %G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
+ *                 stored will be the byte offset after the last valid
  *                 input sequence.
  * @bytes_written: (out) (optional): the number of bytes stored in the output
  *                 buffer (not including the terminating nul).
@@ -1135,9 +1203,17 @@ get_filename_charset (const gchar **filename_charset)
  * Converts a string which is in the encoding used by GLib for
  * filenames into a UTF-8 string. Note that on Windows GLib uses UTF-8
  * for filenames; on other platforms, this function indirectly depends on 
- * the [current locale][setlocale].
+ * the [current locale](running.html#locale).
+ *
+ * The input string shall not contain nul characters even if the @len
+ * argument is positive. A nul character found inside the string will result
+ * in error %G_CONVERT_ERROR_ILLEGAL_SEQUENCE.
+ * If the source encoding is not UTF-8 and the conversion output contains a
+ * nul character, the error %G_CONVERT_ERROR_EMBEDDED_NUL is set and the
+ * function returns %NULL. Use g_convert() to produce output that
+ * may contain embedded nul characters.
  * 
- * Returns: The converted string, or %NULL on an error.
+ * Returns: (type utf8): The converted string, or %NULL on an error.
  **/
 gchar*
 g_filename_to_utf8 (const gchar *opsysstring, 
@@ -1153,42 +1229,15 @@ g_filename_to_utf8 (const gchar *opsysstring,
   if (get_filename_charset (&charset))
     return strdup_len (opsysstring, len, bytes_read, bytes_written, error);
   else
-    return g_convert (opsysstring, len, 
-		      "UTF-8", charset, bytes_read, bytes_written, error);
+    return convert_checked (opsysstring, len, "UTF-8", charset,
+                            CONVERT_CHECK_NO_NULS_IN_INPUT |
+                            CONVERT_CHECK_NO_NULS_IN_OUTPUT,
+                            bytes_read, bytes_written, error);
 }
-
-#if defined (G_OS_WIN32) && !defined (_WIN64)
-
-#undef g_filename_to_utf8
-
-/* Binary compatibility version. Not for newly compiled code. Also not needed for
- * 64-bit versions as there should be no old deployed binaries that would use
- * the old versions.
- */
-
-gchar*
-g_filename_to_utf8 (const gchar *opsysstring, 
-		    gssize       len,           
-		    gsize       *bytes_read,   
-		    gsize       *bytes_written,
-		    GError     **error)
-{
-  const gchar *charset;
-
-  g_return_val_if_fail (opsysstring != NULL, NULL);
-
-  if (g_get_charset (&charset))
-    return strdup_len (opsysstring, len, bytes_read, bytes_written, error);
-  else
-    return g_convert (opsysstring, len, 
-		      "UTF-8", charset, bytes_read, bytes_written, error);
-}
-
-#endif
 
 /**
  * g_filename_from_utf8:
- * @utf8string:    a UTF-8 encoded string.
+ * @utf8string:    (type utf8): a UTF-8 encoded string.
  * @len:           the length of the string, or -1 if the string is
  *                 nul-terminated.
  * @bytes_read:    (out) (optional): location to store the number of bytes in
@@ -1196,20 +1245,26 @@ g_filename_to_utf8 (const gchar *opsysstring,
  *                 Even if the conversion was successful, this may be 
  *                 less than @len if there were partial characters
  *                 at the end of the input. If the error
- *                 #G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
- *                 stored will the byte offset after the last valid
+ *                 %G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
+ *                 stored will be the byte offset after the last valid
  *                 input sequence.
- * @bytes_written: (out): the number of bytes stored in the output buffer (not 
- *                 including the terminating nul).
+ * @bytes_written: (out) (optional): the number of bytes stored in
+ *                 the output buffer (not including the terminating nul).
  * @error:         location to store the error occurring, or %NULL to ignore
  *                 errors. Any of the errors in #GConvertError may occur.
  * 
  * Converts a string from UTF-8 to the encoding GLib uses for
  * filenames. Note that on Windows GLib uses UTF-8 for filenames;
  * on other platforms, this function indirectly depends on the 
- * [current locale][setlocale].
- * 
- * Returns: (array length=bytes_written) (element-type guint8) (transfer full):
+ * [current locale](running.html#locale).
+ *
+ * The input string shall not contain nul characters even if the @len
+ * argument is positive. A nul character found inside the string will result
+ * in error %G_CONVERT_ERROR_ILLEGAL_SEQUENCE. If the filename encoding is
+ * not UTF-8 and the conversion output contains a nul character, the error
+ * %G_CONVERT_ERROR_EMBEDDED_NUL is set and the function returns %NULL.
+ *
+ * Returns: (type filename):
  *               The converted string, or %NULL on an error.
  **/
 gchar*
@@ -1224,33 +1279,11 @@ g_filename_from_utf8 (const gchar *utf8string,
   if (get_filename_charset (&charset))
     return strdup_len (utf8string, len, bytes_read, bytes_written, error);
   else
-    return g_convert (utf8string, len,
-		      charset, "UTF-8", bytes_read, bytes_written, error);
+    return convert_checked (utf8string, len, charset, "UTF-8",
+                            CONVERT_CHECK_NO_NULS_IN_INPUT |
+                            CONVERT_CHECK_NO_NULS_IN_OUTPUT,
+                            bytes_read, bytes_written, error);
 }
-
-#if defined (G_OS_WIN32) && !defined (_WIN64)
-
-#undef g_filename_from_utf8
-
-/* Binary compatibility version. Not for newly compiled code. */
-
-gchar*
-g_filename_from_utf8 (const gchar *utf8string,
-		      gssize       len,            
-		      gsize       *bytes_read,    
-		      gsize       *bytes_written,
-		      GError     **error)
-{
-  const gchar *charset;
-
-  if (g_get_charset (&charset))
-    return strdup_len (utf8string, len, bytes_read, bytes_written, error);
-  else
-    return g_convert (utf8string, len,
-		      charset, "UTF-8", bytes_read, bytes_written, error);
-}
-
-#endif
 
 /* Test of haystack has the needle prefix, comparing case
  * insensitive. haystack may be UTF-8, but needle must
@@ -1298,13 +1331,14 @@ static const guchar acceptable[96] = {
   0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x20,0x20,0x20,0x3F,0x20
 };
 
-static const gchar hex[16] = "0123456789ABCDEF";
+static const gchar hex[] = "0123456789ABCDEF";
 
 /* Note: This escape function works on file: URIs, but if you want to
  * escape something else, please read RFC-2396 */
 static gchar *
-g_escape_uri_string (const gchar *string, 
-		     UnsafeCharacterSet mask)
+g_escape_uri_string (const gchar         *string,
+                     UnsafeCharacterSet   mask,
+                     GError             **error)
 {
 #define ACCEPTABLE(a) ((a)>=32 && (a)<128 && (acceptable[(a)-32] & use_mask))
 
@@ -1312,7 +1346,7 @@ g_escape_uri_string (const gchar *string,
   gchar *q;
   gchar *result;
   int c;
-  gint unacceptable;
+  size_t unacceptable;
   UnsafeCharacterSet use_mask;
   
   g_return_val_if_fail (mask == UNSAFE_ALL
@@ -1329,7 +1363,14 @@ g_escape_uri_string (const gchar *string,
       if (!ACCEPTABLE (c)) 
 	unacceptable++;
     }
-  
+
+  if (unacceptable >= (G_MAXSIZE - (p - string)) / 2)
+    {
+      g_set_error_literal (error, G_CONVERT_ERROR, G_CONVERT_ERROR_BAD_URI,
+                           _("The URI is too long"));
+      return NULL;
+    }
+
   result = g_malloc (p - string + unacceptable * 2 + 1);
   
   use_mask = mask;
@@ -1354,12 +1395,13 @@ g_escape_uri_string (const gchar *string,
 
 
 static gchar *
-g_escape_file_uri (const gchar *hostname,
-		   const gchar *pathname)
+g_escape_file_uri (const gchar  *hostname,
+                   const gchar  *pathname,
+                   GError      **error)
 {
   char *escaped_hostname = NULL;
-  char *escaped_path;
-  char *res;
+  char *escaped_path = NULL;
+  char *res = NULL;
 
 #ifdef G_OS_WIN32
   char *p, *backslash;
@@ -1380,10 +1422,14 @@ g_escape_file_uri (const gchar *hostname,
 
   if (hostname && *hostname != '\0')
     {
-      escaped_hostname = g_escape_uri_string (hostname, UNSAFE_HOST);
+      escaped_hostname = g_escape_uri_string (hostname, UNSAFE_HOST, error);
+      if (escaped_hostname == NULL)
+        goto out;
     }
 
-  escaped_path = g_escape_uri_string (pathname, UNSAFE_PATH);
+  escaped_path = g_escape_uri_string (pathname, UNSAFE_PATH, error);
+  if (escaped_path == NULL)
+    goto out;
 
   res = g_strconcat ("file://",
 		     (escaped_hostname) ? escaped_hostname : "",
@@ -1391,6 +1437,7 @@ g_escape_file_uri (const gchar *hostname,
 		     escaped_path,
 		     NULL);
 
+out:
 #ifdef G_OS_WIN32
   g_free ((char *) pathname);
 #endif
@@ -1420,7 +1467,7 @@ unescape_character (const char *scanner)
 
 static gchar *
 g_unescape_uri_string (const char *escaped,
-		       int         len,
+		       size_t      len,
 		       const char *illegal_escaped_characters,
 		       gboolean    ascii_must_not_be_escaped)
 {
@@ -1430,9 +1477,6 @@ g_unescape_uri_string (const char *escaped,
   
   if (escaped == NULL)
     return NULL;
-
-  if (len < 0)
-    len = strlen (escaped);
 
   result = g_malloc (len + 1);
   
@@ -1467,7 +1511,7 @@ g_unescape_uri_string (const char *escaped,
       *out++ = c;
     }
   
-  g_assert (out - result <= len);
+  g_assert (out >= result && (size_t) (out - result) <= len);
   *out = '\0';
 
   if (in != in_end)
@@ -1485,18 +1529,13 @@ is_asciialphanum (gunichar c)
   return c <= 0x7F && g_ascii_isalnum (c);
 }
 
-static gboolean
-is_asciialpha (gunichar c)
-{
-  return c <= 0x7F && g_ascii_isalpha (c);
-}
-
 /* allows an empty string */
 static gboolean
 hostname_validate (const char *hostname)
 {
   const char *p;
   gunichar c, first_char, last_char;
+  gboolean no_domain = TRUE;
 
   p = hostname;
   if (*p == '\0')
@@ -1521,7 +1560,8 @@ hostname_validate (const char *hostname)
       
       /* if that was the last label, check that it was a toplabel */
       if (c == '\0' || (c == '.' && *p == '\0'))
-	return is_asciialpha (first_char);
+	return no_domain || is_asciialphanum (first_char);
+      no_domain = FALSE;
     }
   while (c == '.');
   return FALSE;
@@ -1530,15 +1570,19 @@ hostname_validate (const char *hostname)
 /**
  * g_filename_from_uri:
  * @uri: a uri describing a filename (escaped, encoded in ASCII).
- * @hostname: (out) (optional) (nullable): Location to store hostname for the
- *            URI.
+ * @hostname: (out) (optional) (nullable): Location to store hostname for the URI.
  *            If there is no hostname in the URI, %NULL will be
  *            stored in this location.
  * @error: location to store the error occurring, or %NULL to ignore
  *         errors. Any of the errors in #GConvertError may occur.
  * 
  * Converts an escaped ASCII-encoded URI to a local filename in the
- * encoding used for filenames. 
+ * encoding used for filenames.
+ *
+ * Since GLib 2.78, the query string and fragment can be present in the URI,
+ * but are not part of the resulting filename.
+ * We take inspiration from https://url.spec.whatwg.org/#file-state,
+ * but we don't support the entire standard.
  * 
  * Returns: (type filename): a newly-allocated string holding
  *               the resulting filename, or %NULL on an error.
@@ -1548,11 +1592,13 @@ g_filename_from_uri (const gchar *uri,
 		     gchar      **hostname,
 		     GError     **error)
 {
-  const char *path_part;
   const char *host_part;
   char *unescaped_hostname;
   char *result;
   char *filename;
+  char *past_path;
+  char *past_scheme;
+  char *temp_uri;
   int offs;
 #ifdef G_OS_WIN32
   char *p, *slash;
@@ -1564,46 +1610,50 @@ g_filename_from_uri (const gchar *uri,
   if (!has_case_prefix (uri, "file:/"))
     {
       g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_BAD_URI,
-		   _("The URI '%s' is not an absolute URI using the \"file\" scheme"),
+		   _("The URI “%s” is not an absolute URI using the “file” scheme"),
 		   uri);
       return NULL;
     }
-  
-  path_part = uri + strlen ("file:");
-  
-  if (strchr (path_part, '#') != NULL)
-    {
-      g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_BAD_URI,
-		   _("The local file URI '%s' may not include a '#'"),
-		   uri);
-      return NULL;
-    }
-	
-  if (has_case_prefix (path_part, "///")) 
-    path_part += 2;
-  else if (has_case_prefix (path_part, "//"))
-    {
-      path_part += 2;
-      host_part = path_part;
 
-      path_part = strchr (path_part, '/');
+  temp_uri = g_strdup (uri);
 
-      if (path_part == NULL)
+  past_scheme = temp_uri + strlen ("file:");
+  
+  past_path = strchr (past_scheme, '?');
+  if (past_path != NULL)
+    *past_path = '\0';
+
+  past_path = strchr (past_scheme, '#');
+  if (past_path != NULL)
+    *past_path = '\0';
+
+  if (has_case_prefix (past_scheme, "///"))
+    past_scheme += 2;
+  else if (has_case_prefix (past_scheme, "//"))
+    {
+      past_scheme += 2;
+      host_part = past_scheme;
+
+      past_scheme = strchr (past_scheme, '/');
+
+      if (past_scheme == NULL)
 	{
+          g_free (temp_uri);
 	  g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_BAD_URI,
-		       _("The URI '%s' is invalid"),
+		       _("The URI “%s” is invalid"),
 		       uri);
 	  return NULL;
 	}
 
-      unescaped_hostname = g_unescape_uri_string (host_part, path_part - host_part, "", TRUE);
+      unescaped_hostname = g_unescape_uri_string (host_part, past_scheme - host_part, "", TRUE);
 
       if (unescaped_hostname == NULL ||
 	  !hostname_validate (unescaped_hostname))
 	{
 	  g_free (unescaped_hostname);
+          g_free (temp_uri);
 	  g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_BAD_URI,
-		       _("The hostname of the URI '%s' is invalid"),
+		       _("The hostname of the URI “%s” is invalid"),
 		       uri);
 	  return NULL;
 	}
@@ -1614,12 +1664,13 @@ g_filename_from_uri (const gchar *uri,
 	g_free (unescaped_hostname);
     }
 
-  filename = g_unescape_uri_string (path_part, -1, "/", FALSE);
+  filename = g_unescape_uri_string (past_scheme, strlen (past_scheme), "/", FALSE);
 
   if (filename == NULL)
     {
+      g_free (temp_uri);
       g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_BAD_URI,
-		   _("The URI '%s' contains invalidly escaped characters"),
+		   _("The URI “%s” contains invalidly escaped characters"),
 		   uri);
       return NULL;
     }
@@ -1661,38 +1712,17 @@ g_filename_from_uri (const gchar *uri,
   result = g_strdup (filename + offs);
   g_free (filename);
 
+  g_free (temp_uri);
+
   return result;
 }
 
-#if defined (G_OS_WIN32) && !defined (_WIN64)
-
-#undef g_filename_from_uri
-
-gchar *
-g_filename_from_uri (const gchar *uri,
-		     gchar      **hostname,
-		     GError     **error)
-{
-  gchar *utf8_filename;
-  gchar *retval = NULL;
-
-  utf8_filename = g_filename_from_uri_utf8 (uri, hostname, error);
-  if (utf8_filename)
-    {
-      retval = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, error);
-      g_free (utf8_filename);
-    }
-  return retval;
-}
-
-#endif
-
 /**
  * g_filename_to_uri:
- * @filename: an absolute filename specified in the GLib file name encoding,
- *            which is the on-disk file name bytes on Unix, and UTF-8 on 
- *            Windows
- * @hostname: (allow-none): A UTF-8 encoded hostname, or %NULL for none.
+ * @filename: (type filename): an absolute filename specified in the GLib file
+ *     name encoding, which is the on-disk file name bytes on Unix, and UTF-8
+ *     on Windows
+ * @hostname: (nullable): A UTF-8 encoded hostname, or %NULL for none.
  * @error: location to store the error occurring, or %NULL to ignore
  *         errors. Any of the errors in #GConvertError may occur.
  * 
@@ -1714,7 +1744,7 @@ g_filename_to_uri (const gchar *filename,
   if (!g_path_is_absolute (filename))
     {
       g_set_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_NOT_ABSOLUTE_PATH,
-		   _("The pathname '%s' is not an absolute path"),
+		   _("The pathname “%s” is not an absolute path"),
 		   filename);
       return NULL;
     }
@@ -1734,35 +1764,10 @@ g_filename_to_uri (const gchar *filename,
     hostname = NULL;
 #endif
 
-  escaped_uri = g_escape_file_uri (hostname, filename);
+  escaped_uri = g_escape_file_uri (hostname, filename, error);
 
   return escaped_uri;
 }
-
-#if defined (G_OS_WIN32) && !defined (_WIN64)
-
-#undef g_filename_to_uri
-
-gchar *
-g_filename_to_uri (const gchar *filename,
-		   const gchar *hostname,
-		   GError     **error)
-{
-  gchar *utf8_filename;
-  gchar *retval = NULL;
-
-  utf8_filename = g_locale_to_utf8 (filename, -1, NULL, NULL, error);
-
-  if (utf8_filename)
-    {
-      retval = g_filename_to_uri_utf8 (utf8_filename, hostname, error);
-      g_free (utf8_filename);
-    }
-
-  return retval;
-}
-
-#endif
 
 /**
  * g_uri_list_extract_uris:
@@ -1781,12 +1786,10 @@ g_filename_to_uri (const gchar *filename,
 gchar **
 g_uri_list_extract_uris (const gchar *uri_list)
 {
-  GSList *uris, *u;
+  GPtrArray *uris;
   const gchar *p, *q;
-  gchar **result;
-  gint n_uris = 0;
 
-  uris = NULL;
+  uris = g_ptr_array_new ();
 
   p = uri_list;
 
@@ -1815,31 +1818,23 @@ g_uri_list_extract_uris (const gchar *uri_list)
 		q--;
 
 	      if (q > p)
-		{
-		  uris = g_slist_prepend (uris, g_strndup (p, q - p + 1));
-		  n_uris++;
-		}
-	    }
-	}
+                g_ptr_array_add (uris, g_strndup (p, q - p + 1));
+            }
+        }
       p = strchr (p, '\n');
       if (p)
 	p++;
     }
 
-  result = g_new (gchar *, n_uris + 1);
+  g_ptr_array_add (uris, NULL);
 
-  result[n_uris--] = NULL;
-  for (u = uris; u; u = u->next)
-    result[n_uris--] = u->data;
-
-  g_slist_free (uris);
-
-  return result;
+  return (gchar **) g_ptr_array_free (uris, FALSE);
 }
 
 /**
  * g_filename_display_basename:
- * @filename: an absolute pathname in the GLib file name encoding
+ * @filename: (type filename): an absolute pathname in the
+ *     GLib file name encoding
  *
  * Returns the display basename for the particular filename, guaranteed
  * to be valid UTF-8. The display name might not be identical to the filename,
@@ -1879,7 +1874,8 @@ g_filename_display_basename (const gchar *filename)
 
 /**
  * g_filename_display_name:
- * @filename: a pathname hopefully in the GLib file name encoding
+ * @filename: (type filename): a pathname hopefully in the
+ *     GLib file name encoding
  * 
  * Converts a filename into a valid UTF-8 string. The conversion is 
  * not necessarily reversible, so you should keep the original around 
@@ -1937,7 +1933,66 @@ g_filename_display_name (const gchar *filename)
    * by a question mark
    */
   if (!display_name) 
-    display_name = _g_utf8_make_valid (filename);
+    display_name = g_utf8_make_valid (filename, -1);
 
   return display_name;
 }
+
+#ifdef G_OS_WIN32
+
+/* Binary compatibility versions. Not for newly compiled code. */
+
+_GLIB_EXTERN gchar *g_filename_to_utf8_utf8   (const gchar  *opsysstring,
+                                               gssize        len,
+                                               gsize        *bytes_read,
+                                               gsize        *bytes_written,
+                                               GError      **error) G_GNUC_MALLOC;
+_GLIB_EXTERN gchar *g_filename_from_utf8_utf8 (const gchar  *utf8string,
+                                               gssize        len,
+                                               gsize        *bytes_read,
+                                               gsize        *bytes_written,
+                                               GError      **error) G_GNUC_MALLOC;
+_GLIB_EXTERN gchar *g_filename_from_uri_utf8  (const gchar  *uri,
+                                               gchar       **hostname,
+                                               GError      **error) G_GNUC_MALLOC;
+_GLIB_EXTERN gchar *g_filename_to_uri_utf8    (const gchar  *filename,
+                                               const gchar  *hostname,
+                                               GError      **error) G_GNUC_MALLOC;
+
+gchar *
+g_filename_to_utf8_utf8 (const gchar *opsysstring,
+                         gssize       len,
+                         gsize       *bytes_read,
+                         gsize       *bytes_written,
+                         GError     **error)
+{
+  return g_filename_to_utf8 (opsysstring, len, bytes_read, bytes_written, error);
+}
+
+gchar *
+g_filename_from_utf8_utf8 (const gchar *utf8string,
+                           gssize       len,
+                           gsize       *bytes_read,
+                           gsize       *bytes_written,
+                           GError     **error)
+{
+  return g_filename_from_utf8 (utf8string, len, bytes_read, bytes_written, error);
+}
+
+gchar *
+g_filename_from_uri_utf8 (const gchar *uri,
+                          gchar      **hostname,
+                          GError     **error)
+{
+  return g_filename_from_uri (uri, hostname, error);
+}
+
+gchar *
+g_filename_to_uri_utf8 (const gchar *filename,
+                        const gchar *hostname,
+                        GError     **error)
+{
+  return g_filename_to_uri (filename, hostname, error);
+}
+
+#endif

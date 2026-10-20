@@ -1,0 +1,304 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to enable AVX-512F buffers. */
+#undef AVX512F_FOUND
+
+/* Define to set the specific CPU L1 cache-line size, in bytes. */
+#undef CACHELINE_SIZE
+
+/* Define this if you have any supported netlink library required */
+#undef CONFIG_LIBNL
+
+/* Define this if libnl-tiny is present on your system */
+#undef CONFIG_LIBNL20
+
+/* Define this if libnl-3.0 is present on your system */
+#undef CONFIG_LIBNL30
+
+/* Algorithm AES in gcrypt library */
+#undef GCRYPT_WITH_AES
+
+/* Algorithm ARCFOUR in gcrypt library */
+#undef GCRYPT_WITH_ARCFOUR
+
+/* Algorithm BLOWFISH in gcrypt library */
+#undef GCRYPT_WITH_BLOWFISH
+
+/* Algorithm CAST5 in gcrypt library */
+#undef GCRYPT_WITH_CAST5
+
+/* Algorithm CMAC_AES in gcrypt library */
+#undef GCRYPT_WITH_CMAC_AES
+
+/* Algorithm CRC in gcrypt library */
+#undef GCRYPT_WITH_CRC
+
+/* Algorithm DES in gcrypt library */
+#undef GCRYPT_WITH_DES
+
+/* Algorithm DSA in gcrypt library */
+#undef GCRYPT_WITH_DSA
+
+/* Algorithm ELGAMAL in gcrypt library */
+#undef GCRYPT_WITH_ELGAMAL
+
+/* Algorithm HAVAL in gcrypt library */
+#undef GCRYPT_WITH_HAVAL
+
+/* Algorithm IDEA in gcrypt library */
+#undef GCRYPT_WITH_IDEA
+
+/* Algorithm MD2 in gcrypt library */
+#undef GCRYPT_WITH_MD2
+
+/* Algorithm MD4 in gcrypt library */
+#undef GCRYPT_WITH_MD4
+
+/* Algorithm MD5 in gcrypt library */
+#undef GCRYPT_WITH_MD5
+
+/* Algorithm RFC2268 in gcrypt library */
+#undef GCRYPT_WITH_RFC2268
+
+/* Algorithm RMD160 in gcrypt library */
+#undef GCRYPT_WITH_RMD160
+
+/* Algorithm RSA in gcrypt library */
+#undef GCRYPT_WITH_RSA
+
+/* Algorithm SERPENT in gcrypt library */
+#undef GCRYPT_WITH_SERPENT
+
+/* Algorithm SHA0 in gcrypt library */
+#undef GCRYPT_WITH_SHA0
+
+/* Algorithm SHA1 in gcrypt library */
+#undef GCRYPT_WITH_SHA1
+
+/* Algorithm SHA224 in gcrypt library */
+#undef GCRYPT_WITH_SHA224
+
+/* Algorithm SHA256 in gcrypt library */
+#undef GCRYPT_WITH_SHA256
+
+/* Algorithm SHA384 in gcrypt library */
+#undef GCRYPT_WITH_SHA384
+
+/* Algorithm SHA512 in gcrypt library */
+#undef GCRYPT_WITH_SHA512
+
+/* Algorithm TIGER in gcrypt library */
+#undef GCRYPT_WITH_TIGER
+
+/* Algorithm TWOFISH in gcrypt library */
+#undef GCRYPT_WITH_TWOFISH
+
+/* Algorithm WHIRLPOOL in gcrypt library */
+#undef GCRYPT_WITH_WHIRLPOOL
+
+/* Define if your system has sys/auxv.h header */
+#undef HAS_AUXV
+
+/* Define if you have AirPcap. */
+#undef HAVE_AIRPCAP
+
+/* Define to 1 if you have the 'aligned_alloc' function. */
+#undef HAVE_ALIGNED_ALLOC
+
+/* Define to 1 if you have the <bsd/string.h> header file. */
+#undef HAVE_BSD_STRING_H
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
+
+/* define if the compiler supports basic C++14 syntax */
+#undef HAVE_CXX14
+
+/* define if the compiler supports basic C++17 syntax */
+#undef HAVE_CXX17
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define to 1 if fseeko (and ftello) are declared in stdio.h. */
+#undef HAVE_FSEEKO
+
+/* Gcrypt library is available */
+#undef HAVE_GCRYPT
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
+/* Define if you have hwloc library. */
+#undef HAVE_HWLOC
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <locale.h> header file. */
+#undef HAVE_LOCALE_H
+
+/* Define to 1 if you support file names longer than 14 characters. */
+#undef HAVE_LONG_FILE_NAMES
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* Define to 1 if you have the 'memalign' function. */
+#undef HAVE_MEMALIGN
+
+/* Define if you have openssl/cmac.h header present. */
+#undef HAVE_OPENSSL_CMAC_H
+
+/* Define to 1 if you have the <openssl/crypto.h> header file. */
+#undef HAVE_OPENSSL_CRYPTO_H
+
+/* Define this if you have libpcap on your system */
+#undef HAVE_PCAP
+
+/* Define to 1 if you have the <pcap.h> header file. */
+#undef HAVE_PCAP_H
+
+/* Define this if you have libpcre on your system */
+#undef HAVE_PCRE
+
+/* Define to 1 if you have the 'posix_memalign' function. */
+#undef HAVE_POSIX_MEMALIGN
+
+/* Define if pthread_{,attr_}{g,s}etaffinity_np is supported. */
+#undef HAVE_PTHREAD_AFFINITY_NP
+
+/* Have PTHREAD_PRIO_INHERIT. */
+#undef HAVE_PTHREAD_PRIO_INHERIT
+
+/* Define if you have sqlite3 */
+#undef HAVE_SQLITE
+
+/* Have the SQLITE3 library */
+#undef HAVE_SQLITE3
+
+/* Define to 1 if you have the <sqlite3.h> header file. */
+#undef HAVE_SQLITE3_H
+
+/* Define to 1 if you have the <stdarg.h> header file. */
+#undef HAVE_STDARG_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the 'strlcat' function. */
+#undef HAVE_STRLCAT
+
+/* Define to 1 if you have the 'strlcpy' function. */
+#undef HAVE_STRLCPY
+
+/* Define to 1 if you have the <sys/auxv.h> header file. */
+#undef HAVE_SYS_AUXV_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define if you have zlib */
+#undef HAVE_ZLIB
+
+/* Define to 1 if you have the '_aligned_malloc' function. */
+#undef HAVE__ALIGNED_MALLOC
+
+/* Define to 1 if you have the '__mingw_aligned_malloc' function. */
+#undef HAVE___MINGW_ALIGNED_MALLOC
+
+/* The Cygwin DLL version string suffix */
+#undef LT_CYGWIN_VER
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+#undef PTHREAD_CREATE_JOINABLE
+
+/* The size of 'off_t', as computed by sizeof. */
+#undef SIZEOF_OFF_T
+
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
+
+/* Define if portable WIN32 is supported */
+#undef WIN32_PORTABLE
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define this if 64-bit file access requires this define to be present */
+#undef _LARGEFILE64_SOURCE
+
+/* Define to 1 if necessary to make fseeko visible. */
+#undef _LARGEFILE_SOURCE
+
+/* Define to 1 on platforms where this makes off_t a 64-bit type. */
+#undef _LARGE_FILES
+
+/* The version information of the project */
+#undef _REVISION
+
+/* Number of bits in time_t, on hosts where this is settable. */
+#undef _TIME_BITS
+
+/* Define to 1 on platforms where this makes time_t a 64-bit type. */
+#undef __MINGW_USE_VC2005_COMPAT
+
+/* Define to empty if 'const' does not conform to ANSI C. */
+#undef const

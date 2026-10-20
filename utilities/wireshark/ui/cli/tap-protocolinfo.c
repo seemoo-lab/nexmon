@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This module provides Protocol Column Info tap for tshark */
@@ -33,20 +21,21 @@
 #include <epan/tap.h>
 #include <epan/stat_tap_ui.h>
 
+#include <wsutil/cmdarg_err.h>
+
 void register_tap_listener_protocolinfo(void);
 
 typedef struct _pci_t {
-	char *filter;
 	int hf_index;
 } pci_t;
 
 
-static int
-protocolinfo_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const void *dummy _U_)
+static tap_packet_status
+protocolinfo_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const void *dummy _U_, tap_flags_t flags _U_)
 {
 	pci_t *rs = (pci_t *)prs;
 	GPtrArray *gp;
-	guint i;
+	unsigned i;
 	char *str;
 
 	/*
@@ -56,16 +45,16 @@ protocolinfo_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const vo
 	 * is to modify the columns, and if the columns aren't being
 	 * displayed, that makes this tap somewhat pointless.
 	 *
-	 * To prevent a crash, we check whether INFO column is writable
-	 * and, if not, we report that error and exit.
+	 * To prevent a crash, check whether INFO column is writable
+	 * and, if not, report that error to prevent further tap use.
 	 */
 	if (!col_get_writable(pinfo->cinfo, COL_INFO)) {
-		fprintf(stderr, "tshark: the proto,colinfo tap doesn't work if the INFO column isn't being printed.\n");
-		exit(1);
+		cmdarg_err("the proto,colinfo tap doesn't work if the INFO column isn't being printed.");
+		return TAP_PACKET_FAILED;
 	}
 	gp = proto_get_finfo_ptr_array(edt->tree, rs->hf_index);
 	if (!gp) {
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 
 	for (i=0; i<gp->len; i++) {
@@ -75,18 +64,26 @@ protocolinfo_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const vo
 			wmem_free(NULL, str);
 		}
 	}
-	return 0;
+	return TAP_PACKET_DONT_REDRAW;
 }
 
 
-
 static void
+protocolinfo_finish(void *prs)
+{
+	pci_t *rs = (pci_t *)prs;
+	g_free(rs);
+}
+
+
+static bool
 protocolinfo_init(const char *opt_arg, void *userdata _U_)
 {
 	pci_t *rs;
 	const char *field = NULL;
 	const char *filter = NULL;
 	header_field_info *hfi;
+	char* rs_filter = NULL;
 	GString *error_string;
 
 	if (!strncmp("proto,colinfo,", opt_arg, 14)) {
@@ -97,36 +94,38 @@ protocolinfo_init(const char *opt_arg, void *userdata _U_)
 		}
 	}
 	if (!field) {
-		fprintf(stderr, "tshark: invalid \"-z proto,colinfo,<filter>,<field>\" argument\n");
-		exit(1);
+		cmdarg_err("invalid \"-z proto,colinfo,<filter>,<field>\" argument");
+		return false;
 	}
 
 	hfi = proto_registrar_get_byname(field);
 	if (!hfi) {
-		fprintf(stderr, "tshark: Field \"%s\" doesn't exist.\n", field);
-		exit(1);
+		cmdarg_err("Field \"%s\" doesn't exist.", field);
+		return false;
 	}
 
 	rs = g_new(pci_t, 1);
 	rs->hf_index = hfi->id;
 	if ((field-filter) > 1) {
-		rs->filter = (char *)g_malloc(field-filter);
-		g_strlcpy(rs->filter, filter, (field-filter));
-	} else {
-		rs->filter = NULL;
+		rs_filter = (char *)g_strndup(filter, field-filter-1);
 	}
 
-	error_string = register_tap_listener("frame", rs, rs->filter, TL_REQUIRES_PROTO_TREE, NULL, protocolinfo_packet, NULL);
+	error_string = register_tap_listener("frame", rs, rs_filter, TL_REQUIRES_PROTO_TREE, NULL, protocolinfo_packet, NULL, protocolinfo_finish);
 	if (error_string) {
 		/* error, we failed to attach to the tap. complain and clean up */
-		fprintf(stderr, "tshark: Couldn't register proto,colinfo tap: %s\n",
+		cmdarg_err("Couldn't register proto,colinfo tap: %s",
 		    error_string->str);
 		g_string_free(error_string, TRUE);
-		g_free(rs->filter);
+		g_free(rs_filter);
 		g_free(rs);
 
-		exit(1);
+		return false;
 	}
+
+	/* register_tap_listener() copies the filter string, we need to free our version */
+	g_free(rs_filter);
+
+	return true;
 }
 
 static stat_tap_ui protocolinfo_ui = {
@@ -145,7 +144,7 @@ register_tap_listener_protocolinfo(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

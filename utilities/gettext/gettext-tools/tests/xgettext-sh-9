@@ -1,0 +1,73 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of Shell support: non-ASCII dollar-single-quote strings.
+
+cat <<\EOF > xg-sh-9.sh
+gettext $'depth_0_dollar_posix_\xc1mn\301op'
+gettext $'depth_0_dollar_bash_\u20accd\U1f603kl'
+
+echo `gettext $'depth_1_dollar_posix_\xc1mn\301op'`
+echo `gettext $'depth_1_dollar_bash_\u20accd\U1f603kl'`
+
+echo `echo \`gettext $'depth_2_dollar_posix_\xc1mn\301op'\``
+echo `echo \`gettext $'depth_2_dollar_bash_\u20accd\U1f603kl'\``
+
+gettext $'high surrogate \udada'
+gettext $'low surrogate \udddd'
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --from-code=ISO-8859-1 --no-location -d xg-sh-9.tmp xg-sh-9.sh \
+  || Exit 1
+func_filter_POT_Creation_Date xg-sh-9.tmp.po xg-sh-9.po
+
+cat <<\EOF > xg-sh-9.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "depth_0_dollar_posix_ÁmnÁop"
+msgstr ""
+
+msgid "depth_0_dollar_bash_€cd😃kl"
+msgstr ""
+
+msgid "depth_1_dollar_posix_ÁmnÁop"
+msgstr ""
+
+msgid "depth_1_dollar_bash_€cd😃kl"
+msgstr ""
+
+msgid "depth_2_dollar_posix_ÁmnÁop"
+msgstr ""
+
+msgid "depth_2_dollar_bash_€cd😃kl"
+msgstr ""
+
+msgid "high surrogate \\udada"
+msgstr ""
+
+msgid "low surrogate \\udddd"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-sh-9.ok xg-sh-9.po
+result=$?
+
+exit $result

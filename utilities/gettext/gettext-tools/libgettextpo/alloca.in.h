@@ -1,6 +1,5 @@
 /* Memory allocation on the stack.
-   Copyright (C) 1995, 1999, 2001-2007, 2015-2016 Free Software Foundation,
-   Inc.
+   Copyright (C) 1995, 1999, 2001-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* When this file is included, it may be preceded only by preprocessor
    declarations.  Thanks to AIX.  Therefore we include it right after
@@ -36,32 +35,47 @@
  */
 
 #ifndef alloca
+  /* Some version of mingw have an <alloca.h> that causes trouble when
+     included after 'alloca' gets defined as a macro.  As a workaround,
+     include this <alloca.h> first and define 'alloca' as a macro afterwards
+     if needed.  */
+# if defined __GNUC__ && (defined _WIN32 && ! defined __CYGWIN__) && @HAVE_ALLOCA_H@
+#  include_next <alloca.h>
+# endif
+#endif
+#ifndef alloca
 # ifdef __GNUC__
-#   define alloca __builtin_alloca
+#  define alloca __builtin_alloca
 # else
-#  ifdef _MSC_VER
+#  if defined _AIX
+ #pragma alloca
+    /* Alternatively: #define alloca __alloca, works as well.  */
+#  elif defined _MSC_VER
 #   include <malloc.h>
 #   define alloca _alloca
-#  else
-#   if HAVE_ALLOCA_H
-#    include <alloca.h>
-#   else
-#    ifdef _AIX
- #pragma alloca
-#    else
-#     ifdef __hpux /* This section must match that of bison generated files. */
-#      ifdef __cplusplus
-extern "C" void *alloca (unsigned int);
-#      else /* not __cplusplus */
-extern void *alloca ();
-#      endif /* not __cplusplus */
-#     else /* not __hpux */
-#      ifndef alloca
-extern char *alloca ();
-#      endif
-#     endif /* __hpux */
-#    endif
+#  elif defined __DECC && defined __VMS
+#   define alloca __ALLOCA
+#  elif defined __TANDEM && defined _TNS_E_TARGET
+#   ifdef  __cplusplus
+extern "C"
 #   endif
+void *_alloca (unsigned short);
+#   pragma intrinsic (_alloca)
+#   define alloca _alloca
+#  elif defined __MVS__
+#   include <stdlib.h>
+#  else
+#   ifdef __hpux /* This section must match that of bison generated files. */
+#    ifdef __cplusplus
+extern "C" void *alloca (unsigned int);
+#    else /* not __cplusplus */
+extern void *alloca ();
+#    endif /* not __cplusplus */
+#   else /* not __hpux */
+#    ifndef alloca
+extern char *alloca ();
+#    endif
+#   endif /* __hpux */
 #  endif
 # endif
 #endif

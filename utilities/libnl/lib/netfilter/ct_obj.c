@@ -1,24 +1,25 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/ct_obj.c	Conntrack Object
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
  */
 
+#include "nl-default.h"
+
 #include <sys/types.h>
+
 #include <linux/netfilter/nfnetlink_conntrack.h>
 #include <linux/netfilter/nf_conntrack_common.h>
+
 #include <linux/netfilter/nf_conntrack_tcp.h>
 
-#include <netlink-local.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/ct.h>
+
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-netfilter.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /** @cond SKIP */
 #define CT_ATTR_FAMILY		(1UL << 0)
@@ -51,6 +52,8 @@
 #define CT_ATTR_REPL_ICMP_CODE	(1UL << 23)
 #define CT_ATTR_REPL_PACKETS	(1UL << 24)
 #define CT_ATTR_REPL_BYTES	(1UL << 25)
+#define CT_ATTR_TIMESTAMP	(1UL << 26)
+#define CT_ATTR_ZONE	(1UL << 27)
 /** @endcond */
 
 static void ct_free_data(struct nl_object *c)
@@ -71,6 +74,11 @@ static int ct_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct nfnl_ct *dst = (struct nfnl_ct *) _dst;
 	struct nfnl_ct *src = (struct nfnl_ct *) _src;
 	struct nl_addr *addr;
+
+	dst->ct_orig.src = NULL;
+	dst->ct_orig.dst = NULL;
+	dst->ct_repl.src = NULL;
+	dst->ct_repl.dst = NULL;
 
 	if (src->ct_orig.src) {
 		addr = nl_addr_clone(src->ct_orig.src);
@@ -121,10 +129,10 @@ static void dump_icmp(struct nl_dump_params *p, struct nfnl_ct *ct, int reply)
 	if (nfnl_ct_test_icmp_type(ct, reply))
 		nl_dump(p, "icmp type %d ", nfnl_ct_get_icmp_type(ct, reply));
 
-	if (nfnl_ct_test_icmp_type(ct, reply))
+	if (nfnl_ct_test_icmp_code(ct, reply))
 		nl_dump(p, "code %d ", nfnl_ct_get_icmp_code(ct, reply));
 
-	if (nfnl_ct_test_icmp_type(ct, reply))
+	if (nfnl_ct_test_icmp_id(ct, reply))
 		nl_dump(p, "id %d ", nfnl_ct_get_icmp_id(ct, reply));
 }
 
@@ -192,6 +200,20 @@ static void ct_dump_line(struct nl_object *a, struct nl_dump_params *p)
 	if (nfnl_ct_test_mark(ct) && nfnl_ct_get_mark(ct))
 		nl_dump(p, "mark %u ", nfnl_ct_get_mark(ct));
 
+	if (nfnl_ct_test_zone(ct))
+		nl_dump(p, "zone %hu ", nfnl_ct_get_zone(ct));
+
+	if (nfnl_ct_test_timestamp(ct)) {
+		const struct nfnl_ct_timestamp *tstamp = nfnl_ct_get_timestamp(ct);
+		int64_t delta_time = tstamp->stop - tstamp->start;
+
+		if (delta_time > 0)
+			delta_time /= NSEC_PER_SEC;
+		else
+			delta_time = 0;
+		nl_dump(p, "delta-time %llu ", (long long unsigned)delta_time);
+	}
+
 	nl_dump(p, "\n");
 }
 
@@ -204,8 +226,9 @@ static void ct_dump_details(struct nl_object *a, struct nl_dump_params *p)
 	ct_dump_line(a, p);
 
 	nl_dump(p, "    id 0x%x ", ct->ct_id);
-	nl_dump_line(p, "family %s ",
-		nl_af2str(ct->ct_family, buf, sizeof(buf)));
+	if (ct->ce_mask & CT_ATTR_FAMILY)
+		nl_dump_line(p, "family %s ",
+			nl_af2str(ct->ct_family, buf, sizeof(buf)));
 
 	if (nfnl_ct_test_use(ct))
 		nl_dump(p, "refcnt %u ", nfnl_ct_get_use(ct));
@@ -256,100 +279,109 @@ static void ct_dump_stats(struct nl_object *a, struct nl_dump_params *p)
 	struct nfnl_ct *ct = (struct nfnl_ct *) a;
 	double res;
 	char *unit;
+	uint64_t packets;
+	const char * const names[] = {"rx", "tx"};
+	int i;
 
 	ct_dump_details(a, p);
 
+	if (!nfnl_ct_test_bytes(ct, 0) ||
+	    !nfnl_ct_test_packets(ct, 0) ||
+	    !nfnl_ct_test_bytes(ct, 1) ||
+	    !nfnl_ct_test_packets(ct, 1))
+	    {
+		nl_dump_line(p, "    Statistics are not available.\n");
+		nl_dump_line(p, "    Please set sysctl net.netfilter.nf_conntrack_acct=1\n");
+		nl_dump_line(p, "    (Require kernel 2.6.27)\n");
+		return;
+	    }
+
 	nl_dump_line(p, "        # packets      volume\n");
-
-	res = nl_cancel_down_bytes(nfnl_ct_get_bytes(ct, 1), &unit);
-	nl_dump_line(p, "    rx %10llu %7.2f %s\n",
-		nfnl_ct_get_packets(ct, 1), res, unit);
-
-	res = nl_cancel_down_bytes(nfnl_ct_get_bytes(ct, 0), &unit);
-	nl_dump_line(p, "    tx %10llu %7.2f %s\n",
-		nfnl_ct_get_packets(ct, 0), res, unit);
+	for (i=0; i<=1; i++) {
+		res = nl_cancel_down_bytes(nfnl_ct_get_bytes(ct, i), &unit);
+		packets = nfnl_ct_get_packets(ct, i);
+		nl_dump_line(p, "    %s %10" PRIu64  " %7.2f %s\n", names[i], packets, res, unit);
+	}
 }
 
-static int ct_compare(struct nl_object *_a, struct nl_object *_b,
-			uint32_t attrs, int flags)
+static uint64_t ct_compare(struct nl_object *_a, struct nl_object *_b,
+			   uint64_t attrs, int flags)
 {
 	struct nfnl_ct *a = (struct nfnl_ct *) _a;
 	struct nfnl_ct *b = (struct nfnl_ct *) _b;
-	int diff = 0;
+	uint64_t diff = 0;
 
-#define CT_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, CT_ATTR_##ATTR, a, b, EXPR)
-#define CT_DIFF_VAL(ATTR, FIELD) CT_DIFF(ATTR, a->FIELD != b->FIELD)
-#define CT_DIFF_ADDR(ATTR, FIELD) \
-	((flags & LOOSE_COMPARISON) \
-		? CT_DIFF(ATTR, nl_addr_cmp_prefix(a->FIELD, b->FIELD)) \
-		: CT_DIFF(ATTR, nl_addr_cmp(a->FIELD, b->FIELD)))
-
-	diff |= CT_DIFF_VAL(FAMILY,		ct_family);
-	diff |= CT_DIFF_VAL(PROTO,		ct_proto);
-	diff |= CT_DIFF_VAL(TCP_STATE,		ct_protoinfo.tcp.state);
-	diff |= CT_DIFF_VAL(TIMEOUT,		ct_timeout);
-	diff |= CT_DIFF_VAL(MARK,		ct_mark);
-	diff |= CT_DIFF_VAL(USE,		ct_use);
-	diff |= CT_DIFF_VAL(ID,			ct_id);
-	diff |= CT_DIFF_ADDR(ORIG_SRC,		ct_orig.src);
-	diff |= CT_DIFF_ADDR(ORIG_DST,		ct_orig.dst);
-	diff |= CT_DIFF_VAL(ORIG_SRC_PORT,	ct_orig.proto.port.src);
-	diff |= CT_DIFF_VAL(ORIG_DST_PORT,	ct_orig.proto.port.dst);
-	diff |= CT_DIFF_VAL(ORIG_ICMP_ID,	ct_orig.proto.icmp.id);
-	diff |= CT_DIFF_VAL(ORIG_ICMP_TYPE,	ct_orig.proto.icmp.type);
-	diff |= CT_DIFF_VAL(ORIG_ICMP_CODE,	ct_orig.proto.icmp.code);
-	diff |= CT_DIFF_VAL(ORIG_PACKETS,	ct_orig.packets);
-	diff |= CT_DIFF_VAL(ORIG_BYTES,		ct_orig.bytes);
-	diff |= CT_DIFF_ADDR(REPL_SRC,		ct_repl.src);
-	diff |= CT_DIFF_ADDR(REPL_DST,		ct_repl.dst);
-	diff |= CT_DIFF_VAL(REPL_SRC_PORT,	ct_repl.proto.port.src);
-	diff |= CT_DIFF_VAL(REPL_DST_PORT,	ct_repl.proto.port.dst);
-	diff |= CT_DIFF_VAL(REPL_ICMP_ID,	ct_repl.proto.icmp.id);
-	diff |= CT_DIFF_VAL(REPL_ICMP_TYPE,	ct_repl.proto.icmp.type);
-	diff |= CT_DIFF_VAL(REPL_ICMP_CODE,	ct_repl.proto.icmp.code);
-	diff |= CT_DIFF_VAL(REPL_PACKETS,	ct_repl.packets);
-	diff |= CT_DIFF_VAL(REPL_BYTES,		ct_repl.bytes);
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+#define _DIFF_VAL(ATTR, FIELD) _DIFF(ATTR, a->FIELD != b->FIELD)
+#define _DIFF_ADDR(ATTR, FIELD)                                                \
+	((flags & LOOSE_COMPARISON) ?                                          \
+		 _DIFF(ATTR, nl_addr_cmp_prefix(a->FIELD, b->FIELD)) :         \
+		 _DIFF(ATTR, nl_addr_cmp(a->FIELD, b->FIELD)))
+	diff |= _DIFF_VAL(CT_ATTR_FAMILY, ct_family);
+	diff |= _DIFF_VAL(CT_ATTR_PROTO, ct_proto);
+	diff |= _DIFF_VAL(CT_ATTR_TCP_STATE, ct_protoinfo.tcp.state);
+	diff |= _DIFF_VAL(CT_ATTR_TIMEOUT, ct_timeout);
+	diff |= _DIFF_VAL(CT_ATTR_MARK, ct_mark);
+	diff |= _DIFF_VAL(CT_ATTR_USE, ct_use);
+	diff |= _DIFF_VAL(CT_ATTR_ID, ct_id);
+	diff |= _DIFF_ADDR(CT_ATTR_ORIG_SRC, ct_orig.src);
+	diff |= _DIFF_ADDR(CT_ATTR_ORIG_DST, ct_orig.dst);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_SRC_PORT, ct_orig.proto.port.src);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_DST_PORT, ct_orig.proto.port.dst);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_ICMP_ID, ct_orig.proto.icmp.id);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_ICMP_TYPE, ct_orig.proto.icmp.type);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_ICMP_CODE, ct_orig.proto.icmp.code);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_PACKETS, ct_orig.packets);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_BYTES, ct_orig.bytes);
+	diff |= _DIFF_ADDR(CT_ATTR_REPL_SRC, ct_repl.src);
+	diff |= _DIFF_ADDR(CT_ATTR_REPL_DST, ct_repl.dst);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_SRC_PORT, ct_repl.proto.port.src);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_DST_PORT, ct_repl.proto.port.dst);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_ICMP_ID, ct_repl.proto.icmp.id);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_ICMP_TYPE, ct_repl.proto.icmp.type);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_ICMP_CODE, ct_repl.proto.icmp.code);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_PACKETS, ct_repl.packets);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_BYTES, ct_repl.bytes);
 
 	if (flags & LOOSE_COMPARISON)
-		diff |= CT_DIFF(STATUS, (a->ct_status ^ b->ct_status) &
-					b->ct_status_mask);
+		diff |= _DIFF(CT_ATTR_STATUS, (a->ct_status ^ b->ct_status) &
+						      b->ct_status_mask);
 	else
-		diff |= CT_DIFF(STATUS, a->ct_status != b->ct_status);
-
-#undef CT_DIFF
-#undef CT_DIFF_VAL
-#undef CT_DIFF_ADDR
+		diff |= _DIFF(CT_ATTR_STATUS, a->ct_status != b->ct_status);
+#undef _DIFF
+#undef _DIFF_VAL
+#undef _DIFF_ADDR
 
 	return diff;
 }
 
-static struct trans_tbl ct_attrs[] = {
-	__ADD(CT_ATTR_FAMILY,		family)
-	__ADD(CT_ATTR_PROTO,		proto)
-	__ADD(CT_ATTR_TCP_STATE,	tcpstate)
-	__ADD(CT_ATTR_STATUS,		status)
-	__ADD(CT_ATTR_TIMEOUT,		timeout)
-	__ADD(CT_ATTR_MARK,		mark)
-	__ADD(CT_ATTR_USE,		use)
-	__ADD(CT_ATTR_ID,		id)
-	__ADD(CT_ATTR_ORIG_SRC,		origsrc)
-	__ADD(CT_ATTR_ORIG_DST,		origdst)
-	__ADD(CT_ATTR_ORIG_SRC_PORT,	origsrcport)
-	__ADD(CT_ATTR_ORIG_DST_PORT,	origdstport)
-	__ADD(CT_ATTR_ORIG_ICMP_ID,	origicmpid)
-	__ADD(CT_ATTR_ORIG_ICMP_TYPE,	origicmptype)
-	__ADD(CT_ATTR_ORIG_ICMP_CODE,	origicmpcode)
-	__ADD(CT_ATTR_ORIG_PACKETS,	origpackets)
-	__ADD(CT_ATTR_ORIG_BYTES,	origbytes)
-	__ADD(CT_ATTR_REPL_SRC,		replysrc)
-	__ADD(CT_ATTR_REPL_DST,		replydst)
-	__ADD(CT_ATTR_REPL_SRC_PORT,	replysrcport)
-	__ADD(CT_ATTR_REPL_DST_PORT,	replydstport)
-	__ADD(CT_ATTR_REPL_ICMP_ID,	replyicmpid)
-	__ADD(CT_ATTR_REPL_ICMP_TYPE,	replyicmptype)
-	__ADD(CT_ATTR_REPL_ICMP_CODE,	replyicmpcode)
-	__ADD(CT_ATTR_REPL_PACKETS,	replypackets)
-	__ADD(CT_ATTR_REPL_BYTES,	replybytes)
+static const struct trans_tbl ct_attrs[] = {
+	__ADD(CT_ATTR_FAMILY,		family),
+	__ADD(CT_ATTR_PROTO,		proto),
+	__ADD(CT_ATTR_TCP_STATE,	tcpstate),
+	__ADD(CT_ATTR_STATUS,		status),
+	__ADD(CT_ATTR_TIMEOUT,		timeout),
+	__ADD(CT_ATTR_MARK,		mark),
+	__ADD(CT_ATTR_USE,		use),
+	__ADD(CT_ATTR_ID,		id),
+	__ADD(CT_ATTR_ORIG_SRC,		origsrc),
+	__ADD(CT_ATTR_ORIG_DST,		origdst),
+	__ADD(CT_ATTR_ORIG_SRC_PORT,	origsrcport),
+	__ADD(CT_ATTR_ORIG_DST_PORT,	origdstport),
+	__ADD(CT_ATTR_ORIG_ICMP_ID,	origicmpid),
+	__ADD(CT_ATTR_ORIG_ICMP_TYPE,	origicmptype),
+	__ADD(CT_ATTR_ORIG_ICMP_CODE,	origicmpcode),
+	__ADD(CT_ATTR_ORIG_PACKETS,	origpackets),
+	__ADD(CT_ATTR_ORIG_BYTES,	origbytes),
+	__ADD(CT_ATTR_REPL_SRC,		replysrc),
+	__ADD(CT_ATTR_REPL_DST,		replydst),
+	__ADD(CT_ATTR_REPL_SRC_PORT,	replysrcport),
+	__ADD(CT_ATTR_REPL_DST_PORT,	replydstport),
+	__ADD(CT_ATTR_REPL_ICMP_ID,	replyicmpid),
+	__ADD(CT_ATTR_REPL_ICMP_TYPE,	replyicmptype),
+	__ADD(CT_ATTR_REPL_ICMP_CODE,	replyicmpcode),
+	__ADD(CT_ATTR_REPL_PACKETS,	replypackets),
+	__ADD(CT_ATTR_REPL_BYTES,	replybytes),
 };
 
 static char *ct_attrs2str(int attrs, char *buf, size_t len)
@@ -430,17 +462,17 @@ uint8_t nfnl_ct_get_tcp_state(const struct nfnl_ct *ct)
 	return ct->ct_protoinfo.tcp.state;
 }
 
-static struct trans_tbl tcp_states[] = {
-	__ADD(TCP_CONNTRACK_NONE,NONE)
-	__ADD(TCP_CONNTRACK_SYN_SENT,SYN_SENT)
-	__ADD(TCP_CONNTRACK_SYN_RECV,SYN_RECV)
-	__ADD(TCP_CONNTRACK_ESTABLISHED,ESTABLISHED)
-	__ADD(TCP_CONNTRACK_FIN_WAIT,FIN_WAIT)
-	__ADD(TCP_CONNTRACK_CLOSE_WAIT,CLOSE_WAIT)
-	__ADD(TCP_CONNTRACK_LAST_ACK,LAST_ACK)
-	__ADD(TCP_CONNTRACK_TIME_WAIT,TIME_WAIT)
-	__ADD(TCP_CONNTRACK_CLOSE,CLOSE)
-	__ADD(TCP_CONNTRACK_LISTEN,LISTEN)
+static const struct trans_tbl tcp_states[] = {
+	__ADD(TCP_CONNTRACK_NONE,NONE),
+	__ADD(TCP_CONNTRACK_SYN_SENT,SYN_SENT),
+	__ADD(TCP_CONNTRACK_SYN_RECV,SYN_RECV),
+	__ADD(TCP_CONNTRACK_ESTABLISHED,ESTABLISHED),
+	__ADD(TCP_CONNTRACK_FIN_WAIT,FIN_WAIT),
+	__ADD(TCP_CONNTRACK_CLOSE_WAIT,CLOSE_WAIT),
+	__ADD(TCP_CONNTRACK_LAST_ACK,LAST_ACK),
+	__ADD(TCP_CONNTRACK_TIME_WAIT,TIME_WAIT),
+	__ADD(TCP_CONNTRACK_CLOSE,CLOSE),
+	__ADD(TCP_CONNTRACK_LISTEN,LISTEN),
 };
 
 char *nfnl_ct_tcp_state2str(uint8_t state, char *buf, size_t len)
@@ -450,7 +482,7 @@ char *nfnl_ct_tcp_state2str(uint8_t state, char *buf, size_t len)
 
 int nfnl_ct_str2tcp_state(const char *name)
 {
-        return __str2type(name, tcp_states, ARRAY_SIZE(tcp_states));
+	return __str2type(name, tcp_states, ARRAY_SIZE(tcp_states));
 }
 
 void nfnl_ct_set_status(struct nfnl_ct *ct, uint32_t status)
@@ -467,23 +499,28 @@ void nfnl_ct_unset_status(struct nfnl_ct *ct, uint32_t status)
 	ct->ce_mask |= CT_ATTR_STATUS;
 }
 
+int nfnl_ct_test_status(const struct nfnl_ct *ct)
+{
+	return !!(ct->ce_mask & CT_ATTR_STATUS);
+}
+
 uint32_t nfnl_ct_get_status(const struct nfnl_ct *ct)
 {
 	return ct->ct_status;
 }
 
-static struct trans_tbl status_flags[] = {
-	__ADD(IPS_EXPECTED, expected)
-	__ADD(IPS_SEEN_REPLY, seen_reply)
-	__ADD(IPS_ASSURED, assured)
-	__ADD(IPS_CONFIRMED, confirmed)
-	__ADD(IPS_SRC_NAT, snat)
-	__ADD(IPS_DST_NAT, dnat)
-	__ADD(IPS_SEQ_ADJUST, seqadjust)
-	__ADD(IPS_SRC_NAT_DONE, snat_done)
-	__ADD(IPS_DST_NAT_DONE, dnat_done)
-	__ADD(IPS_DYING, dying)
-	__ADD(IPS_FIXED_TIMEOUT, fixed_timeout)
+static const struct trans_tbl status_flags[] = {
+	__ADD(IPS_EXPECTED, expected),
+	__ADD(IPS_SEEN_REPLY, seen_reply),
+	__ADD(IPS_ASSURED, assured),
+	__ADD(IPS_CONFIRMED, confirmed),
+	__ADD(IPS_SRC_NAT, snat),
+	__ADD(IPS_DST_NAT, dnat),
+	__ADD(IPS_SEQ_ADJUST, seqadjust),
+	__ADD(IPS_SRC_NAT_DONE, snat_done),
+	__ADD(IPS_DST_NAT_DONE, dnat_done),
+	__ADD(IPS_DYING, dying),
+	__ADD(IPS_FIXED_TIMEOUT, fixed_timeout),
 };
 
 char * nfnl_ct_status2str(int flags, char *buf, size_t len)
@@ -559,6 +596,22 @@ int nfnl_ct_test_id(const struct nfnl_ct *ct)
 uint32_t nfnl_ct_get_id(const struct nfnl_ct *ct)
 {
 	return ct->ct_id;
+}
+
+void nfnl_ct_set_zone(struct nfnl_ct *ct, uint16_t zone)
+{
+	ct->ct_zone = zone;
+	ct->ce_mask |= CT_ATTR_ZONE;
+}
+
+int nfnl_ct_test_zone(const struct nfnl_ct *ct)
+{
+	return !!(ct->ce_mask & CT_ATTR_ZONE);
+}
+
+uint16_t nfnl_ct_get_zone(const struct nfnl_ct *ct)
+{
+	return ct->ct_zone;
 }
 
 static int ct_set_addr(struct nfnl_ct *ct, struct nl_addr *addr,
@@ -764,6 +817,23 @@ uint64_t nfnl_ct_get_bytes(const struct nfnl_ct *ct, int repl)
 	const struct nfnl_ct_dir *dir = repl ? &ct->ct_repl : &ct->ct_orig;
 
 	return dir->bytes;
+}
+
+void nfnl_ct_set_timestamp(struct nfnl_ct *ct, uint64_t start, uint64_t stop)
+{
+	ct->ct_tstamp.start = start;
+	ct->ct_tstamp.stop = stop;
+	ct->ce_mask |= CT_ATTR_TIMESTAMP;
+}
+
+int nfnl_ct_test_timestamp(const struct nfnl_ct *ct)
+{
+	return !!(ct->ce_mask & CT_ATTR_TIMESTAMP);
+}
+
+const struct nfnl_ct_timestamp *nfnl_ct_get_timestamp(const struct nfnl_ct *ct)
+{
+	return &ct->ct_tstamp;
 }
 
 /** @} */

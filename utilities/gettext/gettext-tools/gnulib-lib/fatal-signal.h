@@ -1,20 +1,30 @@
 /* Emergency actions in case of a fatal signal.
-   Copyright (C) 2003-2004, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2003-2004, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
+
+#ifndef _FATAL_SIGNAL_H
+#define _FATAL_SIGNAL_H
+
+/* This file uses _GL_ASYNC_SAFE.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
+#include <signal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +46,8 @@ extern "C" {
    occurs.
 
    Restrictions for the cleanup function:
-     - The cleanup function can do all kinds of system calls.
+     - The cleanup function can do all kinds of system calls.  It may also
+       modify (clobber) errno.
      - It can also access application dependent memory locations and data
        structures provided they are in a consistent state. One way to ensure
        this is through block_fatal_signals()/unblock_fatal_signals(), see
@@ -50,8 +61,10 @@ extern "C" {
 
    The cleanup function is executed asynchronously.  It is unspecified
    whether during its execution the catchable fatal signals are blocked
-   or not.  */
-extern void at_fatal_signal (void (*function) (void));
+   or not.
+
+   Return 0 upon success, or -1 if there was a memory allocation problem.  */
+extern int at_fatal_signal (_GL_ASYNC_SAFE void (*function) (int sig));
 
 
 /* Sometimes it is necessary to block the usually fatal signals while the
@@ -71,6 +84,18 @@ extern void block_fatal_signals (void);
 extern void unblock_fatal_signals (void);
 
 
+/* Return the list of signals that block_fatal_signals/unblock_fatal_signals
+   would block or unblock.
+   Fills signals[0..count-1] and returns count.  */
+extern unsigned int get_fatal_signals (int signals[64]);
+
+/* Return the list of signals that block_fatal_signals/unblock_fatal_signals
+   would block or unblock.  */
+extern const sigset_t * get_fatal_signal_set (void);
+
+
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _FATAL_SIGNAL_H */

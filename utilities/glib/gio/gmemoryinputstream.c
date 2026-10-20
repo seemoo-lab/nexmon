@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,16 +32,13 @@
 
 
 /**
- * SECTION:gmemoryinputstream
- * @short_description: Streaming input operations on memory chunks
- * @include: gio/gio.h
- * @see_also: #GMemoryOutputStream
+ * GMemoryInputStream:
  *
- * #GMemoryInputStream is a class for using arbitrary
+ * `GMemoryInputStream` is a class for using arbitrary
  * memory chunks as input for GIO streaming input operations.
  *
- * As of GLib 2.34, #GMemoryInputStream implements
- * #GPollableInputStream.
+ * As of GLib 2.34, `GMemoryInputStream` implements
+ * [iface@Gio.PollableInputStream].
  */
 
 struct _GMemoryInputStreamPrivate {
@@ -186,7 +185,7 @@ g_memory_input_stream_new (void)
  * g_memory_input_stream_new_from_data:
  * @data: (array length=len) (element-type guint8) (transfer full): input data
  * @len: length of the data, may be -1 if @data is a nul-terminated string
- * @destroy: (allow-none): function that is called to free @data, or %NULL
+ * @destroy: (nullable): function that is called to free @data, or %NULL
  *
  * Creates a new #GMemoryInputStream with data in memory of a given size.
  * 
@@ -236,7 +235,7 @@ g_memory_input_stream_new_from_bytes (GBytes  *bytes)
  * @stream: a #GMemoryInputStream
  * @data: (array length=len) (element-type guint8) (transfer full): input data
  * @len: length of the data, may be -1 if @data is a nul-terminated string
- * @destroy: (allow-none): function that is called to free @data, or %NULL
+ * @destroy: (nullable): function that is called to free @data, or %NULL
  *
  * Appends @data to data that can be read from the input stream
  */
@@ -379,6 +378,8 @@ g_memory_input_stream_skip_async (GInputStream        *stream,
 
   nskipped = G_INPUT_STREAM_GET_CLASS (stream)->skip (stream, count, cancellable, &error);
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_memory_input_stream_skip_async);
+
   if (error)
     g_task_return_error (task, error);
   else
@@ -406,6 +407,7 @@ g_memory_input_stream_close_async (GInputStream        *stream,
   GTask *task;
 
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_memory_input_stream_close_async);
   g_task_return_boolean (task, TRUE);
   g_object_unref (task);
 }
@@ -473,7 +475,7 @@ g_memory_input_stream_seek (GSeekable     *seekable,
       return FALSE;
     }
 
-  if (absolute < 0 || absolute > priv->len)
+  if (absolute < 0 || (gsize) absolute > priv->len)
     {
       g_set_error_literal (error,
                            G_IO_ERROR,

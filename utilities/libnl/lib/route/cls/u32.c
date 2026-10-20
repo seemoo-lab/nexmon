@@ -1,34 +1,44 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/u32.c		u32 classifier
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2009 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2005-2006 Petr Gotthard <petr.gotthard@siemens.com>
  * Copyright (c) 2005-2006 Siemens AG Oesterreich
  */
 
 /**
- * @ingroup cls_api
- * @defgroup u32 Universal 32-bit Classifier
+ * @ingroup cls
+ * @defgroup cls_u32 Universal 32-bit Classifier
  *
  * @{
  */
 
-#include <netlink-local.h>
-#include <netlink-tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
-#include <netlink/route/tc.h>
 #include <netlink/route/classifier.h>
-#include <netlink/route/classifier-modules.h>
 #include <netlink/route/cls/u32.h>
+#include <netlink/route/action.h>
+
+#include "tc-api.h"
+#include "nl-aux-route/nl-route.h"
 
 /** @cond SKIP */
+struct rtnl_u32 {
+	uint32_t cu_divisor;
+	uint32_t cu_hash;
+	uint32_t cu_classid;
+	uint32_t cu_link;
+	struct nl_data *cu_pcnt;
+	struct nl_data *cu_selector;
+	struct nl_data *cu_mark;
+	struct rtnl_act *cu_act;
+	struct nl_data *cu_police;
+	char cu_indev[IFNAMSIZ];
+	int cu_mask;
+};
+
 #define U32_ATTR_DIVISOR      0x001
 #define U32_ATTR_HASH         0x002
 #define U32_ATTR_CLASSID      0x004
@@ -38,6 +48,7 @@
 #define U32_ATTR_ACTION       0x040
 #define U32_ATTR_POLICE       0x080
 #define U32_ATTR_INDEV        0x100
+#define U32_ATTR_MARK	      0x200
 /** @endcond */
 
 static inline struct tc_u32_sel *u32_selector(struct rtnl_u32 *u)
@@ -53,6 +64,14 @@ static inline struct tc_u32_sel *u32_selector_alloc(struct rtnl_u32 *u)
 	return u32_selector(u);
 }
 
+static inline struct tc_u32_mark *u32_mark_alloc(struct rtnl_u32 *u)
+{
+	if (!u->cu_mark)
+		u->cu_mark = nl_data_alloc(NULL, sizeof(struct tc_u32_mark));
+
+	return (struct tc_u32_mark *) u->cu_mark->d_data;
+}
+
 static struct nla_policy u32_policy[TCA_U32_MAX+1] = {
 	[TCA_U32_DIVISOR]	= { .type = NLA_U32 },
 	[TCA_U32_HASH]		= { .type = NLA_U32 },
@@ -62,15 +81,16 @@ static struct nla_policy u32_policy[TCA_U32_MAX+1] = {
 				    .maxlen = IFNAMSIZ },
 	[TCA_U32_SEL]		= { .minlen = sizeof(struct tc_u32_sel) },
 	[TCA_U32_PCNT]		= { .minlen = sizeof(struct tc_u32_pcnt) },
+	[TCA_U32_MARK]		= { .minlen = sizeof(struct tc_u32_mark) }
 };
 
-static int u32_msg_parser(struct rtnl_cls *cls)
+static int u32_msg_parser(struct rtnl_tc *tc, void *data)
 {
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
+	struct rtnl_u32 *u = data;
 	struct nlattr *tb[TCA_U32_MAX + 1];
 	int err;
 
-	err = tca_parse(tb, TCA_U32_MAX, (struct rtnl_tca *) cls, u32_policy);
+	err = tca_parse(tb, TCA_U32_MAX, tc, u32_policy);
 	if (err < 0)
 		return err;
 
@@ -84,6 +104,13 @@ static int u32_msg_parser(struct rtnl_cls *cls)
 		if (!u->cu_selector)
 			goto errout_nomem;
 		u->cu_mask |= U32_ATTR_SELECTOR;
+	}
+
+	if (tb[TCA_U32_MARK]) {
+		u->cu_mark = nl_data_alloc_attr(tb[TCA_U32_MARK]);
+		if (!u->cu_mark)
+			goto errout_nomem;
+		u->cu_mask |= U32_ATTR_MARK;
 	}
 
 	if (tb[TCA_U32_HASH]) {
@@ -102,10 +129,10 @@ static int u32_msg_parser(struct rtnl_cls *cls)
 	}
 
 	if (tb[TCA_U32_ACT]) {
-		u->cu_act = nl_data_alloc_attr(tb[TCA_U32_ACT]);
-		if (!u->cu_act)
-			goto errout_nomem;
 		u->cu_mask |= U32_ATTR_ACTION;
+		err = rtnl_act_parse(&u->cu_act, tb[TCA_U32_ACT]);
+		if (err < 0)
+			return err;
 	}
 
 	if (tb[TCA_U32_POLICE]) {
@@ -117,17 +144,17 @@ static int u32_msg_parser(struct rtnl_cls *cls)
 
 	if (tb[TCA_U32_PCNT]) {
 		struct tc_u32_sel *sel;
-		int pcnt_size;
+		size_t pcnt_size;
 
 		if (!tb[TCA_U32_SEL]) {
 			err = -NLE_MISSING_ATTR;
 			goto errout;
 		}
-		
+
 		sel = u->cu_selector->d_data;
 		pcnt_size = sizeof(struct tc_u32_pcnt) +
 				(sel->nkeys * sizeof(uint64_t));
-		if (nla_len(tb[TCA_U32_PCNT]) < pcnt_size) {
+		if (_nla_len(tb[TCA_U32_PCNT]) < pcnt_size) {
 			err = -NLE_INVAL;
 			goto errout;
 		}
@@ -151,41 +178,123 @@ errout:
 	return err;
 }
 
-static void u32_free_data(struct rtnl_cls *cls)
+static void u32_free_data(struct rtnl_tc *tc, void *data)
 {
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
+	struct rtnl_u32 *u = data;
 
+	if (u->cu_act)
+		rtnl_act_put_all(&u->cu_act);
+	nl_data_free(u->cu_mark);
 	nl_data_free(u->cu_selector);
-	nl_data_free(u->cu_act);
 	nl_data_free(u->cu_police);
 	nl_data_free(u->cu_pcnt);
 }
 
-static int u32_clone(struct rtnl_cls *_dst, struct rtnl_cls *_src)
+static int u32_clone(void *_dst, void *_src)
 {
-	struct rtnl_u32 *dst = rtnl_cls_data(_dst);
-	struct rtnl_u32 *src = rtnl_cls_data(_src);
+	struct rtnl_u32 *dst = _dst, *src = _src;
+	_nl_auto_nl_data struct nl_data *selector = NULL;
+	_nl_auto_nl_data struct nl_data *mark = NULL;
+	_nl_auto_nl_data struct nl_data *police = NULL;
+	_nl_auto_nl_data struct nl_data *pcnt = NULL;
+	_nl_auto_nl_data struct nl_data *opts = NULL;
+	_nl_auto_nl_data struct nl_data *xstats = NULL;
+	_nl_auto_nl_data struct nl_data *subdata = NULL;
+	_nl_auto_rtnl_act struct rtnl_act *act = NULL;
 
-	if (src->cu_selector &&
-	    !(dst->cu_selector = nl_data_clone(src->cu_selector)))
-		return -NLE_NOMEM;
+	dst->cu_pcnt = NULL;
+	dst->cu_selector = NULL;
+	dst->cu_mark = NULL;
+	dst->cu_act = NULL;
+	dst->cu_police = NULL;
 
-	if (src->cu_act && !(dst->cu_act = nl_data_clone(src->cu_act)))
-		return -NLE_NOMEM;
+	if (src->cu_selector) {
+		if (!(selector = nl_data_clone(src->cu_selector)))
+			return -NLE_NOMEM;
+	}
 
-	if (src->cu_police && !(dst->cu_police = nl_data_clone(src->cu_police)))
-		return -NLE_NOMEM;
+	if (src->cu_mark) {
+		if (!(mark = nl_data_clone(src->cu_mark)))
+			return -NLE_NOMEM;
+	}
 
-	if (src->cu_pcnt && !(dst->cu_pcnt = nl_data_clone(src->cu_pcnt)))
-		return -NLE_NOMEM;
+	if (src->cu_act) {
+		if (!(act = rtnl_act_alloc()))
+			return -NLE_NOMEM;
+
+		if (src->cu_act->c_opts) {
+			if (!(opts = nl_data_clone(src->cu_act->c_opts)))
+				return -NLE_NOMEM;
+		}
+
+		if (src->cu_act->c_xstats) {
+			if (!(xstats = nl_data_clone(src->cu_act->c_xstats)))
+				return -NLE_NOMEM;
+		}
+
+		if (src->cu_act->c_subdata) {
+			if (!(subdata = nl_data_clone(src->cu_act->c_subdata)))
+				return -NLE_NOMEM;
+		}
+	}
+
+	if (src->cu_police) {
+		if (!(police = nl_data_clone(src->cu_police)))
+			return -NLE_NOMEM;
+	}
+
+	if (src->cu_pcnt) {
+		if (!(pcnt = nl_data_clone(src->cu_pcnt)))
+			return -NLE_NOMEM;
+	}
+
+	/* we've passed the critical point and its safe to proceed */
+
+	if (selector)
+		dst->cu_selector = _nl_steal_pointer(&selector);
+
+	if (mark)
+		dst->cu_mark = _nl_steal_pointer(&mark);
+
+	if (police)
+		dst->cu_police = _nl_steal_pointer(&police);
+
+	if (pcnt)
+		dst->cu_pcnt = _nl_steal_pointer(&pcnt);
+
+	if (act) {
+		dst->cu_act = _nl_steal_pointer(&act);
+
+		/* action nl list next and prev pointers must be updated */
+		nl_init_list_head(&dst->cu_act->ce_list);
+
+		if (opts)
+			dst->cu_act->c_opts = _nl_steal_pointer(&opts);
+
+		if (xstats)
+			dst->cu_act->c_xstats = _nl_steal_pointer(&xstats);
+
+		if (subdata)
+			dst->cu_act->c_subdata = _nl_steal_pointer(&subdata);
+
+		if (dst->cu_act->c_link) {
+			nl_object_get(OBJ_CAST(dst->cu_act->c_link));
+		}
+
+		dst->cu_act->a_next = NULL;   /* Only clone first in chain */
+	}
 
 	return 0;
 }
 
-static void u32_dump_line(struct rtnl_cls *cls, struct nl_dump_params *p)
+static void u32_dump_line(struct rtnl_tc *tc, void *data,
+			  struct nl_dump_params *p)
 {
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
+	struct rtnl_u32 *u = data;
 	char buf[32];
+
+	if (!u)
+		return;
 
 	if (u->cu_mask & U32_ATTR_DIVISOR)
 		nl_dump(p, " divisor %u", u->cu_divisor);
@@ -195,7 +304,7 @@ static void u32_dump_line(struct rtnl_cls *cls, struct nl_dump_params *p)
 }
 
 static void print_selector(struct nl_dump_params *p, struct tc_u32_sel *sel,
-			   struct rtnl_cls *cls, struct rtnl_u32 *u)
+			   struct rtnl_u32 *u)
 {
 	int i;
 	struct tc_u32_key *key;
@@ -231,10 +340,10 @@ static void print_selector(struct nl_dump_params *p, struct tc_u32_sel *sel,
 
 		nl_dump(p, ">");
 	}
-		
-	
+
+
 	for (i = 0; i < sel->nkeys; i++) {
-		key = (struct tc_u32_key *) ((char *) sel + sizeof(*sel)) + i;
+		key = &sel->keys[i];
 
 		nl_dump(p, "\n");
 		nl_dump_line(p, "      match key at %s%u ",
@@ -248,63 +357,78 @@ static void print_selector(struct nl_dump_params *p, struct tc_u32_sel *sel,
 		if (p->dp_type == NL_DUMP_STATS &&
 		    (u->cu_mask & U32_ATTR_PCNT)) {
 			struct tc_u32_pcnt *pcnt = u->cu_pcnt->d_data;
-			nl_dump(p, " successful %" PRIu64, pcnt->kcnts[i]);
+
+			nl_dump(p, " successful %llu",
+				(long long unsigned)pcnt->kcnts[i]);
 		}
 	}
 }
 
-static void u32_dump_details(struct rtnl_cls *cls, struct nl_dump_params *p)
+static void u32_dump_details(struct rtnl_tc *tc, void *data,
+			     struct nl_dump_params *p)
 {
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
-	struct tc_u32_sel *s;
+	struct rtnl_u32 *u = data;
+	struct tc_u32_sel *s = NULL;
+	struct tc_u32_mark *m;
+
+	if (!u)
+		return;
 
 	if (!(u->cu_mask & U32_ATTR_SELECTOR)) {
-		nl_dump(p, "no-selector\n");
-		return;
+		nl_dump(p, "no-selector");
+	} else {
+		s = u->cu_selector->d_data;
+		nl_dump(p, "nkeys %u", s->nkeys);
 	}
-	
-	s = u->cu_selector->d_data;
 
-	nl_dump(p, "nkeys %u ", s->nkeys);
+	if (!(u->cu_mask & U32_ATTR_MARK)) {
+		nl_dump(p, " no-mark");
+	} else {
+		m = u->cu_mark->d_data;
+		nl_dump(p, " mark 0x%u 0x%u", m->val, m->mask);
+	}
 
 	if (u->cu_mask & U32_ATTR_HASH)
-		nl_dump(p, "ht key 0x%x hash 0x%u",
+		nl_dump(p, " ht key 0x%x hash 0x%u",
 			TC_U32_USERHTID(u->cu_hash), TC_U32_HASH(u->cu_hash));
 
 	if (u->cu_mask & U32_ATTR_LINK)
-		nl_dump(p, "link %u ", u->cu_link);
+		nl_dump(p, " link %u", u->cu_link);
 
 	if (u->cu_mask & U32_ATTR_INDEV)
-		nl_dump(p, "indev %s ", u->cu_indev);
+		nl_dump(p, " indev %s", u->cu_indev);
 
-	print_selector(p, s, cls, u);
+	if (u->cu_mask & U32_ATTR_SELECTOR)
+		print_selector(p, s, u);
+
 	nl_dump(p, "\n");
-
-#if 0	
-#define U32_ATTR_ACTION       0x040
-#define U32_ATTR_POLICE       0x080
-
-	struct nl_data   act;
-	struct nl_data   police;
-#endif
 }
 
-static void u32_dump_stats(struct rtnl_cls *cls, struct nl_dump_params *p)
+static void u32_dump_stats(struct rtnl_tc *tc, void *data,
+			   struct nl_dump_params *p)
 {
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
+	struct rtnl_u32 *u = data;
+
+	if (!u)
+		return;
 
 	if (u->cu_mask & U32_ATTR_PCNT) {
 		struct tc_u32_pcnt *pc = u->cu_pcnt->d_data;
+
 		nl_dump(p, "\n");
 		nl_dump_line(p, "    hit %8llu count %8llu\n",
-			     pc->rhit, pc->rcnt);
+			     (long long unsigned)pc->rhit,
+			     (long long unsigned)pc->rcnt);
 	}
 }
 
-static int u32_get_opts(struct rtnl_cls *cls, struct nl_msg *msg)
+static int u32_msg_fill(struct rtnl_tc *tc, void *data, struct nl_msg *msg)
 {
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
-	
+	struct rtnl_u32 *u = data;
+
+	if (!u)
+		return 0;
+
 	if (u->cu_mask & U32_ATTR_DIVISOR)
 		NLA_PUT_U32(msg, TCA_U32_DIVISOR, u->cu_divisor);
 
@@ -320,8 +444,16 @@ static int u32_get_opts(struct rtnl_cls *cls, struct nl_msg *msg)
 	if (u->cu_mask & U32_ATTR_SELECTOR)
 		NLA_PUT_DATA(msg, TCA_U32_SEL, u->cu_selector);
 
-	if (u->cu_mask & U32_ATTR_ACTION)
-		NLA_PUT_DATA(msg, TCA_U32_ACT, u->cu_act);
+	if (u->cu_mask & U32_ATTR_MARK)
+		NLA_PUT_DATA(msg, TCA_U32_MARK, u->cu_mark);
+
+	if (u->cu_mask & U32_ATTR_ACTION) {
+		int err;
+
+		err = rtnl_act_fill(msg, TCA_U32_ACT, u->cu_act);
+		if (err < 0)
+			return err;
+	}
 
 	if (u->cu_mask & U32_ATTR_POLICE)
 		NLA_PUT_DATA(msg, TCA_U32_POLICE, u->cu_police);
@@ -345,19 +477,184 @@ void rtnl_u32_set_handle(struct rtnl_cls *cls, int htid, int hash,
 {
 	uint32_t handle = (htid << 20) | (hash << 12) | nodeid;
 
-	tca_set_handle((struct rtnl_tca *) cls, handle );
+	rtnl_tc_set_handle((struct rtnl_tc *) cls, handle );
 }
- 
+
 int rtnl_u32_set_classid(struct rtnl_cls *cls, uint32_t classid)
 {
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
-	
+	struct rtnl_u32 *u;
+
+	if (!(u = rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
 	u->cu_classid = classid;
 	u->cu_mask |= U32_ATTR_CLASSID;
 
 	return 0;
 }
 
+int rtnl_u32_get_classid(struct rtnl_cls *cls, uint32_t *classid)
+{
+	struct rtnl_u32 *u;
+
+	if (!(u = rtnl_tc_data_peek(TC_CAST(cls))))
+		return -NLE_INVAL;
+
+	if (!(u->cu_mask & U32_ATTR_CLASSID))
+		return -NLE_INVAL;
+
+	*classid = u->cu_classid;
+	return 0;
+}
+
+int rtnl_u32_set_divisor(struct rtnl_cls *cls, uint32_t divisor)
+{
+	struct rtnl_u32 *u;
+
+	if (!(u = (struct rtnl_u32 *) rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	u->cu_divisor = divisor;
+	u->cu_mask |= U32_ATTR_DIVISOR;
+	return 0;
+}
+
+int rtnl_u32_set_link(struct rtnl_cls *cls, uint32_t link)
+{
+	struct rtnl_u32 *u;
+
+	if (!(u = (struct rtnl_u32 *) rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	u->cu_link = link;
+	u->cu_mask |= U32_ATTR_LINK;
+	return 0;
+}
+
+int rtnl_u32_set_hashtable(struct rtnl_cls *cls, uint32_t ht)
+{
+	struct rtnl_u32 *u;
+
+	if (!(u = (struct rtnl_u32 *) rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	u->cu_hash = ht;
+	u->cu_mask |= U32_ATTR_HASH;
+	return 0;
+}
+
+int rtnl_u32_set_hashmask(struct rtnl_cls *cls, uint32_t hashmask, uint32_t offset)
+{
+	struct rtnl_u32 *u;
+	struct tc_u32_sel *sel;
+
+	hashmask = htonl(hashmask);
+
+	if (!(u = (struct rtnl_u32 *) rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	sel = u32_selector_alloc(u);
+	if (!sel)
+		return -NLE_NOMEM;
+
+	sel->hmask = hashmask;
+	sel->hoff = offset;
+	return 0;
+}
+
+int rtnl_u32_set_selector(struct rtnl_cls *cls, int offoff, uint32_t offmask, char offshift, uint16_t off, char flags)
+{
+	struct rtnl_u32 *u;
+	struct tc_u32_sel *sel;
+
+	offmask = ntohs(offmask);
+
+	if (!(u = (struct rtnl_u32 *) rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	sel = u32_selector_alloc(u);
+	if (!sel)
+		return -NLE_NOMEM;
+
+	sel->offoff = offoff;
+	sel->offmask = offmask;
+	sel->offshift = offshift;
+	sel->flags |= TC_U32_VAROFFSET;
+	sel->off = off;
+	sel->flags |= flags;
+	return 0;
+}
+
+int rtnl_u32_set_cls_terminal(struct rtnl_cls *cls)
+{
+	struct rtnl_u32 *u;
+	struct tc_u32_sel *sel;
+
+	if (!(u = (struct rtnl_u32 *) rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	sel = u32_selector_alloc(u);
+	if (!sel)
+		return -NLE_NOMEM;
+
+	sel->flags |= TC_U32_TERMINAL;
+	return 0;
+}
+
+int rtnl_u32_add_action(struct rtnl_cls *cls, struct rtnl_act *act)
+{
+	struct rtnl_u32 *u;
+	int err;
+
+	if (!act)
+		return 0;
+
+	if (!(u = rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	if ((err = _rtnl_act_append_get(&u->cu_act, act)) < 0)
+		return err;
+
+	u->cu_mask |= U32_ATTR_ACTION;
+	return 0;
+}
+
+struct rtnl_act* rtnl_u32_get_action(struct rtnl_cls *cls)
+{
+    struct rtnl_u32 *u;
+
+    if (!(u = rtnl_tc_data_peek(TC_CAST(cls))))
+        return NULL;
+
+    if (!(u->cu_mask & U32_ATTR_ACTION))
+        return NULL;
+
+    return u->cu_act;
+}
+
+int rtnl_u32_del_action(struct rtnl_cls *cls, struct rtnl_act *act)
+{
+	struct rtnl_u32 *u;
+	int ret;
+
+	if (!act)
+		return 0;
+
+	if (!(u = rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	if (!(u->cu_mask & U32_ATTR_ACTION))
+		return -NLE_INVAL;
+
+	ret = rtnl_act_remove(&u->cu_act, act);
+	if (ret)
+		return ret;
+
+	if (!u->cu_act)
+		u->cu_mask &= ~U32_ATTR_ACTION;
+	rtnl_act_put(act);
+	return 0;
+}
 /** @} */
 
 /**
@@ -368,7 +665,10 @@ int rtnl_u32_set_classid(struct rtnl_cls *cls, uint32_t classid)
 int rtnl_u32_set_flags(struct rtnl_cls *cls, int flags)
 {
 	struct tc_u32_sel *sel;
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
+	struct rtnl_u32 *u;
+
+	if (!(u = rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
 
 	sel = u32_selector_alloc(u);
 	if (!sel)
@@ -398,11 +698,17 @@ int rtnl_u32_add_key(struct rtnl_cls *cls, uint32_t val, uint32_t mask,
 		     int off, int offmask)
 {
 	struct tc_u32_sel *sel;
-	struct rtnl_u32 *u = rtnl_cls_data(cls);
+	struct rtnl_u32 *u;
 	int err;
+
+	if (!(u = rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
 
 	sel = u32_selector_alloc(u);
 	if (!sel)
+		return -NLE_NOMEM;
+
+	if (sel->nkeys == UCHAR_MAX)
 		return -NLE_NOMEM;
 
 	err = nl_data_append(u->cu_selector, NULL, sizeof(struct tc_u32_key));
@@ -421,6 +727,81 @@ int rtnl_u32_add_key(struct rtnl_cls *cls, uint32_t val, uint32_t mask,
 
 	return 0;
 }
+
+int rtnl_u32_add_mark(struct rtnl_cls *cls, uint32_t val, uint32_t mask)
+{
+	struct tc_u32_mark *mark;
+	struct rtnl_u32 *u;
+
+	if (!(u = rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	mark = u32_mark_alloc(u);
+	if (!mark)
+		return -NLE_NOMEM;
+
+	mark->mask = mask;
+	mark->val = val;
+
+	u->cu_mask |= U32_ATTR_MARK;
+
+	return 0;
+}
+
+int rtnl_u32_del_mark(struct rtnl_cls *cls)
+{
+	struct rtnl_u32 *u;
+
+	if (!(u = rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	if (!(u->cu_mask))
+		return -NLE_INVAL;
+
+	if (!(u->cu_mask & U32_ATTR_MARK))
+		return -NLE_INVAL;
+
+	nl_data_free(u->cu_mark);
+	u->cu_mark = NULL;
+	u->cu_mask &= ~U32_ATTR_MARK;
+
+	return 0;
+}
+
+/**
+ * Get the 32-bit key from the selector
+ *
+ * @arg cls	classifier to be retrieve
+ * @arg index	the index of the array of keys, start with 0
+ * @arg val	pointer to store value after masked (network byte-order)
+ * @arg mask	pointer to store the mask (network byte-order)
+ * @arg off	pointer to store the offset
+ * @arg offmask	pointer to store offset mask
+ *
+*/
+int rtnl_u32_get_key(struct rtnl_cls *cls, uint8_t index,
+		     uint32_t *val, uint32_t *mask, int *off, int *offmask)
+{
+	struct tc_u32_sel *sel;
+	struct rtnl_u32 *u;
+
+	if (!(u = rtnl_tc_data(TC_CAST(cls))))
+		return -NLE_NOMEM;
+
+	if (!(u->cu_mask & U32_ATTR_SELECTOR))
+		return -NLE_INVAL;
+
+	sel = u32_selector(u);
+	if (index >= sel->nkeys)
+		return -NLE_RANGE;
+
+	*mask = sel->keys[index].mask;
+	*val = sel->keys[index].val;
+	*off = sel->keys[index].off;
+	*offmask = sel->keys[index].offmask;
+	return 0;
+}
+
 
 int rtnl_u32_add_key_uint8(struct rtnl_cls *cls, uint8_t val, uint8_t mask,
 			   int off, int offmask)
@@ -469,14 +850,14 @@ int rtnl_u32_add_key_uint32(struct rtnl_cls *cls, uint32_t val, uint32_t mask,
 				off & ~3, offmask);
 }
 
-int rtnl_u32_add_key_in_addr(struct rtnl_cls *cls, struct in_addr *addr,
+int rtnl_u32_add_key_in_addr(struct rtnl_cls *cls, const struct in_addr *addr,
 			     uint8_t bitmask, int off, int offmask)
 {
 	uint32_t mask = 0xFFFFFFFF << (32 - bitmask);
 	return rtnl_u32_add_key(cls, addr->s_addr, htonl(mask), off, offmask);
 }
 
-int rtnl_u32_add_key_in6_addr(struct rtnl_cls *cls, struct in6_addr *addr,
+int rtnl_u32_add_key_in6_addr(struct rtnl_cls *cls, const struct in6_addr *addr,
 			      uint8_t bitmask, int off, int offmask)
 {
 	int i, err;
@@ -501,28 +882,29 @@ int rtnl_u32_add_key_in6_addr(struct rtnl_cls *cls, struct in6_addr *addr,
 
 /** @} */
 
-static struct rtnl_cls_ops u32_ops = {
-	.co_kind		= "u32",
-	.co_size		= sizeof(struct rtnl_u32),
-	.co_msg_parser		= u32_msg_parser,
-	.co_free_data		= u32_free_data,
-	.co_clone		= u32_clone,
-	.co_get_opts		= u32_get_opts,
-	.co_dump = {
+static struct rtnl_tc_ops u32_ops = {
+	.to_kind		= "u32",
+	.to_type		= RTNL_TC_TYPE_CLS,
+	.to_size		= sizeof(struct rtnl_u32),
+	.to_msg_parser		= u32_msg_parser,
+	.to_free_data		= u32_free_data,
+	.to_clone		= u32_clone,
+	.to_msg_fill		= u32_msg_fill,
+	.to_dump = {
 	    [NL_DUMP_LINE]	= u32_dump_line,
 	    [NL_DUMP_DETAILS]	= u32_dump_details,
 	    [NL_DUMP_STATS]	= u32_dump_stats,
 	},
 };
 
-static void __init u32_init(void)
+static void _nl_init u32_init(void)
 {
-	rtnl_cls_register(&u32_ops);
+	rtnl_tc_register(&u32_ops);
 }
 
-static void __exit u32_exit(void)
+static void _nl_exit u32_exit(void)
 {
-	rtnl_cls_unregister(&u32_ops);
+	rtnl_tc_unregister(&u32_ops);
 }
 
 /** @} */

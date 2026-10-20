@@ -1,6 +1,5 @@
 /* Library functions for class autosprintf.
-   Copyright (C) 2002-2003, 2006, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2002.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -13,26 +12,30 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #include <config.h>
 
 #if !(HAVE_VASPRINTF && HAVE_POSIX_PRINTF)
 
-#define STATIC static
-
-/* Define auxiliary functions declared in "printf-args.h".  */
-#include "printf-args.c"
-
-/* Define auxiliary functions declared in "printf-parse.h".  */
-#include "printf-parse.c"
-
-/* Define functions declared in "vasnprintf.h".  */
-#include "vasnprintf.c"
-#include "asnprintf.c"
+/* Define to the same symbols as in lib-asprintf.h.  */
+#define asprintf libasprintf_asprintf
+#define vasprintf libasprintf_vasprintf
 
 /* Define functions declared in "vasprintf.h".  */
 #include "vasprintf.c"
 #include "asprintf.c"
+
+/* Define the same functions also without the 'libasprintf_' prefix,
+   for binary backward-compatibility.
+   But don't redefine functions already defined by mingw.  */
+#if !(defined __MINGW32__ && __USE_MINGW_ANSI_STDIO)
+#undef asprintf
+#undef vasprintf
+#include "vasprintf.c"
+#include "asprintf.c"
+#endif
 
 #endif

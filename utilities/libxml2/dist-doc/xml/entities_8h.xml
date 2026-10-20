@@ -1,0 +1,1116 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="entities_8h" kind="file" language="C++">
+    <compoundname>entities.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includedby refid="HTMLparser_8c" local="no">/builds/GNOME/libxml2/HTMLparser.c</includedby>
+    <includedby refid="HTMLtree_8c" local="no">/builds/GNOME/libxml2/HTMLtree.c</includedby>
+    <includedby refid="SAX2_8c" local="no">/builds/GNOME/libxml2/SAX2.c</includedby>
+    <includedby refid="entities_8c" local="no">/builds/GNOME/libxml2/entities.c</includedby>
+    <includedby refid="parser_8c" local="no">/builds/GNOME/libxml2/parser.c</includedby>
+    <includedby refid="parserInternals_8c" local="no">/builds/GNOME/libxml2/parserInternals.c</includedby>
+    <includedby refid="tree_8c" local="no">/builds/GNOME/libxml2/tree.c</includedby>
+    <includedby refid="parser_8h" local="no">parser.h</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="6">
+        <label>limits.h</label>
+      </node>
+      <node id="8">
+        <label>stdarg.h</label>
+      </node>
+      <node id="5">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="3">
+        <label>HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>HTMLtree.h</label>
+        <link refid="HTMLtree_8h"/>
+      </node>
+      <node id="6">
+        <label>SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+      </node>
+      <node id="7">
+        <label>relaxng.h</label>
+        <link refid="relaxng_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>xinclude.h</label>
+        <link refid="xinclude_8h"/>
+      </node>
+      <node id="8">
+        <label>xmlreader.h</label>
+        <link refid="xmlreader_8h"/>
+      </node>
+      <node id="10">
+        <label>xmlschemas.h</label>
+        <link refid="xmlschemas_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>xmlschemastypes.h</label>
+        <link refid="xmlschemastypes_8h"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="struct__xmlEntity" prot="public">_xmlEntity</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="entities_8h_1a09456d31b0481df8e18f62a002d863f3" prot="public" static="no">
+        <name>XML_TREE_INTERNALS</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="17" column="10" bodyfile="entities.h" bodystart="17" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="entities_8h_1a64131e2e263dff72c78d311eff342f3a" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlEntityType</name>
+        <enumvalue id="entities_8h_1a64131e2e263dff72c78d311eff342f3aa2654dd5f0be8b42242a8d3277b113733" prot="public">
+          <name>XML_INTERNAL_GENERAL_ENTITY</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+<para>internal general entity </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="entities_8h_1a64131e2e263dff72c78d311eff342f3aa1a49e6afecf51ab290c9738a8f12002b" prot="public">
+          <name>XML_EXTERNAL_GENERAL_PARSED_ENTITY</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+<para>external general parsed entity </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="entities_8h_1a64131e2e263dff72c78d311eff342f3aa1e5f87ace9c3f5527397e478f5593f72" prot="public">
+          <name>XML_EXTERNAL_GENERAL_UNPARSED_ENTITY</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+<para>external general unparsed entity </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="entities_8h_1a64131e2e263dff72c78d311eff342f3aa50d15142122d54bae419cb0e0060c4f5" prot="public">
+          <name>XML_INTERNAL_PARAMETER_ENTITY</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+<para>internal parameter entity </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="entities_8h_1a64131e2e263dff72c78d311eff342f3aa758d194d1de36f8da47f4535dcb82c62" prot="public">
+          <name>XML_EXTERNAL_PARAMETER_ENTITY</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+<para>external parameter entity </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="entities_8h_1a64131e2e263dff72c78d311eff342f3aa1c4c38566da907f4b479191c31fb181e" prot="public">
+          <name>XML_INTERNAL_PREDEFINED_ENTITY</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+<para>internal predefined entity </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>The different entity types. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="28" column="1" bodyfile="entities.h" bodystart="28" bodyend="41"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="entities_8h_1ac84314955e11b459d70eaad8bb3da56c" prot="public" static="no">
+        <type>struct _xmlHashTable</type>
+        <definition>typedef struct _xmlHashTable xmlEntitiesTable</definition>
+        <argsstring></argsstring>
+        <name>xmlEntitiesTable</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="91" column="28" bodyfile="entities.h" bodystart="91" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="entities_8h_1abef54d4a1f4f16db0101286e8ee6d98c" prot="public" static="no">
+        <type>xmlEntitiesTable *</type>
+        <definition>typedef xmlEntitiesTable* xmlEntitiesTablePtr</definition>
+        <argsstring></argsstring>
+        <name>xmlEntitiesTablePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="92" column="26" bodyfile="entities.h" bodystart="92" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="entities_8h_1a0411b950c6002a1b26d5624edd412171" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlNewEntity</definition>
+        <argsstring>(xmlDoc *doc, const xmlChar *name, int type, const xmlChar *publicId, const xmlChar *systemId, const xmlChar *content)</argsstring>
+        <name>xmlNewEntity</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Create a new entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Like <ref refid="entities_8h_1a639b25facc829da206ffbbd2ca3483dc" kindref="member">xmlAddDocEntity</ref>, but if <computeroutput>doc</computeroutput> is NULL or has no internal subset defined, an unlinked entity will be returned. It is then the responsibility of the caller to link it to the document later or free it when not needed anymore.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="entities_8h_1a64131e2e263dff72c78d311eff342f3a" kindref="member">xmlEntityType</ref> value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the publid identifier (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier (URL) (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the entity or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="95" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="396" bodyend="405" declfile="entities.h" declline="95" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a2145b9797206e62c2bc26559aab936be" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeEntity</definition>
+        <argsstring>(xmlEntity *entity)</argsstring>
+        <name>xmlFreeEntity</name>
+        <param>
+          <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+          <declname>entity</declname>
+        </param>
+        <briefdescription>
+<para>Frees the entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>entity</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an entity </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="102" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="84" bodyend="112" declfile="entities.h" declline="102" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a17c6a4404cc87ad3c67e32e6a802c006" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlAddEntity</definition>
+        <argsstring>(xmlDoc *doc, int extSubset, const xmlChar *name, int type, const xmlChar *publicId, const xmlChar *systemId, const xmlChar *content, xmlEntity **out)</argsstring>
+        <name>xmlAddEntity</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>extSubset</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Register a new entity for this document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>extSubset</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>add to the external or internal subset </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="entities_8h_1a64131e2e263dff72c78d311eff342f3a" kindref="member">xmlEntityType</ref> value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the publid identifier (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier (URL) (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity content </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to resulting entity (optional) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> error code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="104" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="186" bodyend="297" declfile="entities.h" declline="104" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a639b25facc829da206ffbbd2ca3483dc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlAddDocEntity</definition>
+        <argsstring>(xmlDoc *doc, const xmlChar *name, int type, const xmlChar *publicId, const xmlChar *systemId, const xmlChar *content)</argsstring>
+        <name>xmlAddDocEntity</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Add a new entity to the document&apos;s internal subset. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><ref refid="entities_8h_1a17c6a4404cc87ad3c67e32e6a802c006" kindref="member">xmlAddEntity</ref> offers better error handling.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="entities_8h_1a64131e2e263dff72c78d311eff342f3a" kindref="member">xmlEntityType</ref> value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the publid identifier (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier (URL) (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the entity or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="113" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="370" bodyend="377" declfile="entities.h" declline="113" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a0cd74abd66f109516f4d4e404d182855" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlAddDtdEntity</definition>
+        <argsstring>(xmlDoc *doc, const xmlChar *name, int type, const xmlChar *publicId, const xmlChar *systemId, const xmlChar *content)</argsstring>
+        <name>xmlAddDtdEntity</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>Add a new entity to the document&apos;s external subset. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><ref refid="entities_8h_1a17c6a4404cc87ad3c67e32e6a802c006" kindref="member">xmlAddEntity</ref> offers better error handling.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="entities_8h_1a64131e2e263dff72c78d311eff342f3a" kindref="member">xmlEntityType</ref> value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the publid identifier (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system identifier (URL) (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the entity or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="120" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="347" bodyend="354" declfile="entities.h" declline="120" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a320221bf5687fcbc1312506f683da4cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlGetPredefinedEntity</definition>
+        <argsstring>(const xmlChar *name)</argsstring>
+        <name>xmlGetPredefinedEntity</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Look up a predefined entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the entity, or NULL if not found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="127" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="306" bodyend="331" declfile="entities.h" declline="127" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a760d2cd546579b907b8ac796c8f13bb5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlGetDocEntity</definition>
+        <argsstring>(const xmlDoc *doc, const xmlChar *name)</argsstring>
+        <name>xmlGetDocEntity</name>
+        <param>
+          <type>const <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Look up a general entity in the internal and external subset of <computeroutput>doc</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Also checks for predefined entities.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document referencing the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the entity or NULL if not found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="129" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="476" bodyend="498" declfile="entities.h" declline="129" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a1756f175977abf71c5cd00cb12745f23" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlGetDtdEntity</definition>
+        <argsstring>(xmlDoc *doc, const xmlChar *name)</argsstring>
+        <name>xmlGetDtdEntity</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Look up a general entity in the external subset of <computeroutput>doc</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the entity or NULL if not found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="132" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="455" bodyend="465" declfile="entities.h" declline="132" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a03c2f237301ac789dd5b3fcc2addf90f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlGetParameterEntity</definition>
+        <argsstring>(xmlDoc *doc, const xmlChar *name)</argsstring>
+        <name>xmlGetParameterEntity</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Look up a paramater entity in the internal and external subset of <computeroutput>doc</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the entity or NULL if not found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="135" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="428" bodyend="445" declfile="entities.h" declline="135" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a29754c1db1ddbea5677a28f66822ab8c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlEncodeEntitiesReentrant</definition>
+        <argsstring>(xmlDoc *doc, const xmlChar *input)</argsstring>
+        <name>xmlEncodeEntitiesReentrant</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <briefdescription>
+<para>Replace special characters with predefined entities or numeric character references. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>doc</computeroutput> is NULL or an XML document, replaces <computeroutput>&lt;</computeroutput>, <computeroutput>&gt;</computeroutput> and <computeroutput>&amp;</computeroutput> with predefined entities. Carriage return is replaced with <computeroutput>&amp;#13;</computeroutput>. If <computeroutput>doc</computeroutput> or its encoding are NULL, non-ASCII characters are replaced with a hexadecimal character reference.</para>
+<para>If <computeroutput>doc</computeroutput> is an HTML document, follows the HTML serialization rules.</para>
+<para>Silently removes some invalid characters like ASCII control codes.</para>
+<para>See <ref refid="entities_8h_1ac1c6e5ab272e7a6043c786a6e4ba3536" kindref="member">xmlEncodeSpecialChars</ref> for an alternative.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document containing the string (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A string to convert to XML. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a newly allocated string with substitutions. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="138" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="522" bodyend="534" declfile="entities.h" declline="138" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1ac1c6e5ab272e7a6043c786a6e4ba3536" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlEncodeSpecialChars</definition>
+        <argsstring>(const xmlDoc *doc, const xmlChar *input)</argsstring>
+        <name>xmlEncodeSpecialChars</name>
+        <param>
+          <type>const <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <briefdescription>
+<para>Replace special characters with predefined entities or numeric character references. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Replaces <computeroutput>&lt;</computeroutput>, <computeroutput>&gt;</computeroutput>, <computeroutput>&amp;</computeroutput> and <computeroutput>"</computeroutput> with predefined entities. Carriage return is replaced with <computeroutput>&amp;#13;</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>unused </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A string to convert to XML. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a newly allocated string with substitutions. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="141" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="548" bodyend="554" declfile="entities.h" declline="141" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1acecff49b8c2ba6328acb642c4d21552f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlEntitiesTable *</type>
+        <definition>xmlEntitiesTable * xmlCreateEntitiesTable</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCreateEntitiesTable</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Create and initialize an empty entities hash table. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000124"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>the xmlEntitiesTable just created or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="145" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="564" bodyend="566" declfile="entities.h" declline="145" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a229644c65f3d5f752aa63da6bd8da322" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlEntitiesTable *</type>
+        <definition>xmlEntitiesTable * xmlCopyEntitiesTable</definition>
+        <argsstring>(xmlEntitiesTable *table)</argsstring>
+        <name>xmlCopyEntitiesTable</name>
+        <param>
+          <type>xmlEntitiesTable *</type>
+          <declname>table</declname>
+        </param>
+        <briefdescription>
+<para>Build a copy of an entity table. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000126"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>table</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>An entity table </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new xmlEntitiesTable or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="148" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="665" bodyend="667" declfile="entities.h" declline="148" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a8b8af1a6881107f0a85f81fde8ad2c87" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeEntitiesTable</definition>
+        <argsstring>(xmlEntitiesTable *table)</argsstring>
+        <name>xmlFreeEntitiesTable</name>
+        <param>
+          <type>xmlEntitiesTable *</type>
+          <declname>table</declname>
+        </param>
+        <briefdescription>
+<para>Deallocate the memory used by an entities hash table. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000125"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>table</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>An entity table </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="151" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="588" bodyend="590" declfile="entities.h" declline="151" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a7bc59a18fda9d1c2e7a9980aa48a24ba" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDumpEntitiesTable</definition>
+        <argsstring>(xmlBuffer *buf, xmlEntitiesTable *table)</argsstring>
+        <name>xmlDumpEntitiesTable</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>xmlEntitiesTable *</type>
+          <declname>table</declname>
+        </param>
+        <briefdescription>
+<para>This will dump the content of the entity table as an XML DTD definition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000128"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>An XML buffer. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>table</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>An entity table </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="155" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="717" bodyend="727" declfile="entities.h" declline="155" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="entities_8h_1a634e88fc46e883310abc44b9a32a4cb0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDumpEntityDecl</definition>
+        <argsstring>(xmlBuffer *buf, xmlEntity *ent)</argsstring>
+        <name>xmlDumpEntityDecl</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+          <declname>ent</declname>
+        </param>
+        <briefdescription>
+<para>This will dump the content of the entity table as an XML DTD definition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000127"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>An XML buffer. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ent</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>An entity table </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="entities.h" line="159" column="1" bodyfile="/builds/GNOME/libxml2/entities.c" bodystart="681" bodyend="691" declfile="entities.h" declline="159" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>XML entities. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This module provides an API to work with XML entities.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="entities.h"/>
+  </compounddef>
+</doxygen>

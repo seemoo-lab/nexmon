@@ -6,7 +6,7 @@
 # no unique msg in input files.
 # without --force-po don't create any PO file; cf. msgcomm-15
 
-cat <<EOF > mcomm-test14.in1
+cat <<\EOF > mcomm-test14.in1
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -24,7 +24,7 @@ msgid "1"
 msgstr "1x"
 EOF
 
-cat <<EOF > mcomm-test14.in2
+cat <<\EOF > mcomm-test14.in2
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -41,7 +41,7 @@ msgid "1"
 msgstr ""
 EOF
 
-cat <<EOF > mcomm-test14.in3
+cat <<\EOF > mcomm-test14.in3
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"

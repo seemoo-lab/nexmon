@@ -1,8 +1,13 @@
-all: libs/armeabi/libwireshark.so
+# libwireshark (epan) for wireshark 4.x is cross-compiled with CMake by
+# ../wireshark/build-android.sh; this target makes sure that shared build
+# has published local/$(APP_ABI)/libwireshark.a.
+APP_ABI ?= arm64-v8a
 
-libs/armeabi/libwireshark.so: Android.mk
-	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21
+all:
+	../wireshark/build-android.sh $(APP_ABI)
+
+install:
+	@echo "nothing to install ..."
 
 clean:
-	rm -Rf libs
-	rm -Rf local
+	rm -Rf libs local

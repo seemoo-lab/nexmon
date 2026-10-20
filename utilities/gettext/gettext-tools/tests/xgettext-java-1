@@ -4,7 +4,7 @@
 # Some tests for java support
 #
 
-cat <<EOF > xg-j-1.java
+cat <<\EOF > xg-j-1.java
 class TestCase {
     public TestCase() {
         ResourceBundle b = ResourceBundle.getBundle("test");
@@ -24,15 +24,35 @@ class TestCase {
 
         // empty string
         String test5 = b.getString("");
+
+        // An inner class.
+        addActionListener(new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            System.out.println(translate("Click!"));
+          }
+        });
+
+        // An anonymous inner class (Java 8 or newer).
+        Collections.emptySet().stream().filter(item -> {
+          return item != null;
+        });
+  }
     }
 }
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} --omit-header --no-location -c -d xg-j-1.tmp xg-j-1.java || Exit 1
+${XGETTEXT} --omit-header --no-location -c -d xg-j-1.tmp xg-j-1.java 2>xg-j-1.tmq || Exit 1
+grep -v '^==' xg-j-1.tmq > xg-j-1.err
+# Expect no warning here.
+if test -s xg-j-1.err; then
+  cat xg-j-1.err
+  Exit 1
+fi
 LC_ALL=C tr -d '\r' < xg-j-1.tmp.po > xg-j-1.po || Exit 1
 
-cat <<EOF > xg-j-1.ok
+cat <<\EOF > xg-j-1.ok
 #. standard usage
 msgid "Test String 1"
 msgstr ""

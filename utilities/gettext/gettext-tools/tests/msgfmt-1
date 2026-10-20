@@ -6,7 +6,7 @@
 test -d mf-1 || mkdir mf-1
 test -d mf-1/LC_MESSAGES || mkdir mf-1/LC_MESSAGES
 
-cat <<EOF > mf-1-module1.po
+cat <<\EOF > mf-1-module1.po
 #default domain "messages.mo"
 msgid	"SYS_(C)\n"
 msgstr "MSGFMT(3) portable message object file compiler\n"
@@ -24,7 +24,7 @@ msgid	"error 3"
 msgstr	"error 3 translation"
 EOF
 
-cat <<EOF > mf-1-module2.po
+cat <<\EOF > mf-1-module2.po
 # ---
 #default domain "messages.mo"
 msgid	"mesg 4"
@@ -57,7 +57,7 @@ TEXTDOMAINDIR=. LANGUAGE=mf-1 \
 ${GETTEXT} --env LC_ALL=en gen 'SYS_(C)
 ' | LC_ALL=C tr -d '\r' > mf-test1.out
 
-cat <<EOF > gtmf-test1.ok
+cat <<\EOF > gtmf-test1.ok
 MSGFMT(3) portable message object file compiler
 Copyright (C) 1995 Free Software Foundation
 Report bugs to <bug-gnu-utils@gnu.org>

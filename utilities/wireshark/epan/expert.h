@@ -1,33 +1,22 @@
-/* expert.h
+/** @file
  * Collecting of Expert information.
  *
- * For further info, see: https://wiki.wireshark.org/Development/ExpertInfo
+ * For further info, see WSDG: 9.3. How to add an expert item:
+ *    https://www.wireshark.org/docs/wsdg_html/#ChDissectExpertInfo
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __EXPERT_H__
 #define __EXPERT_H__
 
-#include <epan/packet_info.h>
 #include <epan/proto.h>
-#include "value_string.h"
+#include <epan/packet_info.h>
+#include <wsutil/value_string.h>
 #include "ws_symbol_export.h"
 
 #ifdef __cplusplus
@@ -36,12 +25,12 @@ extern "C" {
 
 /** only for internal and display use. */
 typedef struct expert_info_s {
-	guint32      packet_num;
-	int          group;
-	int          severity;
+	uint32_t     packet_num;
+	int          group;    /* from a bitfield, should probably be unsigned */
+	int          severity; /* from a bitfield, should probably be unsigned */
 	int          hf_index; /* hf_index of the expert item. Might be -1. */
-	const gchar *protocol;
-	gchar       *summary;
+	const char *protocol;
+	char        *summary;
 	proto_item  *pitem;
 } expert_info_t;
 
@@ -52,8 +41,8 @@ typedef struct expert_field
 	int hf;
 } expert_field;
 
-#define EI_INIT_EI -1
-#define EI_INIT_HF -1
+#define EI_INIT_EI 0
+#define EI_INIT_HF 0
 #define EI_INIT {EI_INIT_EI, EI_INIT_HF}
 
 typedef struct expert_field_info {
@@ -61,11 +50,11 @@ typedef struct expert_field_info {
 	const char       *name;
 	int               group;
 	int               severity;
-	const gchar      *summary;
+	const char       *summary;
 
 	/* ------- set by register routines (prefilled by EXPFILL macro, see below) ------ */
 	int               id;
-	const gchar      *protocol;
+	const char       *protocol;
 	int               orig_severity; /* Matches severity when registered, used to restore original severity
 					  * if UAT severity entry is removed */
 	hf_register_info  hf_info;
@@ -73,7 +62,7 @@ typedef struct expert_field_info {
 } expert_field_info;
 
 #define EXPFILL 0, NULL, 0, \
-        {0, {"Expert Info", NULL, FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL}}
+        {0, {NULL, NULL, FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL}}
 
 typedef struct ei_register_info {
 	expert_field      *ids;         /**< written to by register() function */
@@ -105,7 +94,7 @@ WS_DLL_PUBLIC int
 expert_get_highest_severity(void);
 
 WS_DLL_PUBLIC void
-expert_update_comment_count(guint64 count);
+expert_update_comment_count(uint64_t count);
 
 /** Add an expert info.
  Add an expert info tree to a protocol item using registered expert info item
@@ -113,8 +102,9 @@ expert_update_comment_count(guint64 count);
         pi is supplied
  @param pi Current protocol item (or NULL)
  @param eiindex The registered expert info item
+ @return the newly created expert info tree
  */
-WS_DLL_PUBLIC void
+WS_DLL_PUBLIC proto_item *
 expert_add_info(packet_info *pinfo, proto_item *pi, expert_field *eiindex);
 
 /** Add an expert info.
@@ -125,8 +115,9 @@ expert_add_info(packet_info *pinfo, proto_item *pi, expert_field *eiindex);
  @param pi Current protocol item (or NULL)
  @param eiindex The registered expert info item
  @param format Printf-style format string for additional arguments
+ @return the newly created expert info tree
  */
-WS_DLL_PUBLIC void
+WS_DLL_PUBLIC proto_item *
 expert_add_info_format(packet_info *pinfo, proto_item *pi, expert_field *eiindex,
                        const char *format, ...) G_GNUC_PRINTF(4, 5);
 
@@ -144,7 +135,7 @@ expert_add_info_format(packet_info *pinfo, proto_item *pi, expert_field *eiindex
  */
 WS_DLL_PUBLIC proto_item *
 proto_tree_add_expert(proto_tree *tree, packet_info *pinfo, expert_field *eiindex,
-        tvbuff_t *tvb, gint start, gint length);
+        tvbuff_t *tvb, int start, int length);
 
 /** Add an expert info associated with some byte data
  Add an expert info tree to a protocol item, using registered expert info item,
@@ -164,7 +155,7 @@ proto_tree_add_expert(proto_tree *tree, packet_info *pinfo, expert_field *eiinde
  */
 WS_DLL_PUBLIC proto_item *
 proto_tree_add_expert_format(proto_tree *tree, packet_info *pinfo, expert_field *eiindex,
-        tvbuff_t *tvb, gint start, gint length, const char *format, ...) G_GNUC_PRINTF(7, 8);
+        tvbuff_t *tvb, int start, int length, const char *format, ...) G_GNUC_PRINTF(7, 8);
 
 /*
  * Register that a protocol has expert info.
@@ -191,7 +182,7 @@ void expert_free_deregistered_expertinfos (void);
  * This is intended for use in expert_add_info_format or proto_tree_add_expert_format
  * to get the "base" string to then append additional information
  */
-WS_DLL_PUBLIC const gchar* expert_get_summary(expert_field *eiindex);
+WS_DLL_PUBLIC const char* expert_get_summary(expert_field *eiindex);
 
 /** Register a expert field array.
  @param module the protocol handle from expert_register_protocol()

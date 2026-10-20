@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,19 +31,17 @@
 #include "gioerror.h"
 #include "string.h"
 #include "glibintl.h"
+#include "gutilsprivate.h"
 
 
 /**
- * SECTION:gmemoryoutputstream
- * @short_description: Streaming output operations on memory chunks
- * @include: gio/gio.h
- * @see_also: #GMemoryInputStream
+ * GMemoryOutputStream:
  *
- * #GMemoryOutputStream is a class for using arbitrary
+ * `GMemoryOutputStream` is a class for using arbitrary
  * memory chunks as output for GIO streaming output operations.
  *
- * As of GLib 2.34, #GMemoryOutputStream trivially implements
- * #GPollableOutputStream: it always polls as ready.
+ * As of GLib 2.34, `GMemoryOutputStream` trivially implements
+ * [iface@Gio.PollableOutputStream]: it always polls as ready.
  */
 
 #define MIN_ARRAY_SIZE  16
@@ -151,9 +151,7 @@ g_memory_output_stream_class_init (GMemoryOutputStreamClass *klass)
    **/
   g_object_class_install_property (gobject_class,
                                    PROP_DATA,
-                                   g_param_spec_pointer ("data",
-                                                         P_("Data Buffer"),
-                                                         P_("Pointer to buffer where data will be written."),
+                                   g_param_spec_pointer ("data", NULL, NULL,
                                                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
                                                          G_PARAM_STATIC_STRINGS));
 
@@ -166,9 +164,7 @@ g_memory_output_stream_class_init (GMemoryOutputStreamClass *klass)
    **/
   g_object_class_install_property (gobject_class,
                                    PROP_SIZE,
-                                   g_param_spec_ulong ("size",
-                                                       P_("Data Buffer Size"),
-                                                       P_("Current size of the data buffer."),
+                                   g_param_spec_ulong ("size", NULL, NULL,
                                                        0, G_MAXULONG, 0,
                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
                                                        G_PARAM_STATIC_STRINGS));
@@ -182,9 +178,7 @@ g_memory_output_stream_class_init (GMemoryOutputStreamClass *klass)
    **/
   g_object_class_install_property (gobject_class,
                                    PROP_DATA_SIZE,
-                                   g_param_spec_ulong ("data-size",
-                                                       P_("Data Size"),
-                                                       P_("Size of data written to the buffer."),
+                                   g_param_spec_ulong ("data-size", NULL, NULL,
                                                        0, G_MAXULONG, 0,
                                                        G_PARAM_READABLE |
                                                        G_PARAM_STATIC_STRINGS));
@@ -198,9 +192,7 @@ g_memory_output_stream_class_init (GMemoryOutputStreamClass *klass)
    **/
   g_object_class_install_property (gobject_class,
                                    PROP_REALLOC_FUNCTION,
-                                   g_param_spec_pointer ("realloc-function",
-                                                         P_("Memory Reallocation Function"),
-                                                         P_("Function with realloc semantics called to enlarge the buffer."),
+                                   g_param_spec_pointer ("realloc-function", NULL, NULL,
                                                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
                                                          G_PARAM_STATIC_STRINGS));
 
@@ -213,9 +205,7 @@ g_memory_output_stream_class_init (GMemoryOutputStreamClass *klass)
    **/
   g_object_class_install_property (gobject_class,
                                    PROP_DESTROY_FUNCTION,
-                                   g_param_spec_pointer ("destroy-function",
-                                                         P_("Destroy Notification Function"),
-                                                         P_("Function called with the buffer as argument when the stream is destroyed."),
+                                   g_param_spec_pointer ("destroy-function", NULL, NULL,
                                                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
                                                          G_PARAM_STATIC_STRINGS));
 }
@@ -330,11 +320,11 @@ g_memory_output_stream_init (GMemoryOutputStream *stream)
 
 /**
  * g_memory_output_stream_new: (skip)
- * @data: (allow-none): pointer to a chunk of memory to use, or %NULL
+ * @data: (nullable): pointer to a chunk of memory to use, or %NULL
  * @size: the size of @data
- * @realloc_function: (allow-none): a function with realloc() semantics (like g_realloc())
+ * @realloc_function: (nullable): a function with realloc() semantics (like g_realloc())
  *     to be called when @data needs to be grown, or %NULL
- * @destroy_function: (allow-none): a function to be called on @data when the stream is
+ * @destroy_function: (nullable): a function to be called on @data when the stream is
  *     finalized, or %NULL
  *
  * Creates a new #GMemoryOutputStream.
@@ -596,17 +586,6 @@ array_resize (GMemoryOutputStream  *ostream,
   return TRUE;
 }
 
-static gsize
-g_nearest_pow (gsize num)
-{
-  gsize n = 1;
-
-  while (n < num && n > 0)
-    n <<= 1;
-
-  return n;
-}
-
 static gssize
 g_memory_output_stream_write (GOutputStream  *stream,
                               const void     *buffer,
@@ -693,6 +672,7 @@ g_memory_output_stream_close_async (GOutputStream       *stream,
   GTask *task;
 
   task = g_task_new (stream, cancellable, callback, data);
+  g_task_set_source_tag (task, g_memory_output_stream_close_async);
 
   /* will always return TRUE */
   g_memory_output_stream_close (stream, cancellable, NULL);
@@ -788,7 +768,7 @@ g_memory_output_stream_seek (GSeekable    *seekable,
    * stream is valid (eg: a 1-byte fixed sized stream can have position
    * 0 or 1).  Therefore '>' is what we want.
    * */
-  if (priv->realloc_fn == NULL && absolute > priv->len)
+  if (priv->realloc_fn == NULL && (gsize) absolute > priv->len)
     {
       g_set_error_literal (error,
                            G_IO_ERROR,

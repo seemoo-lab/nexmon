@@ -1,0 +1,64 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: github.com/leonelquinteros/gotext package,
+# with single-locale API.
+
+cat <<\EOF > xg-go-1.go
+package main
+
+import (
+	// Documentation: https://pkg.go.dev/fmt
+	"fmt"
+	// Documentation: https://pkg.go.dev/github.com/leonelquinteros/gotext
+	"github.com/leonelquinteros/gotext"
+	// Documentation: https://pkg.go.dev/os
+	"os"
+)
+
+// Returns the language in the form "ll_CC".
+// Alternatives:
+// - https://pkg.go.dev/github.com/Xuanwo/go-locale
+// - https://pkg.go.dev/github.com/jeandeaual/go-locale
+func getUserLanguage() string {
+	// Look at the POSIX environment variables.
+	for _, variable := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
+		if value := os.Getenv(variable); value != "" {
+			return gotext.SimplifiedLocale(value)
+		}
+	}
+	// The "C" locale is essentially the same as the en-US locale.
+	return "en_US"
+}
+
+func main () {
+	// Specify locale.
+	//language := "fr_FR"
+	language := getUserLanguage()
+
+	// Specify localedir, domain.
+	gotext.Configure("@localedir@", language, "hello")
+
+	fmt.Println(gotext.Get("Hello, world!"))
+	fmt.Println(gotext.Get("This program is running as process number %d.",
+	                       os.Getpid()))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-1.tmp xg-go-1.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-1.tmp.po > xg-go-1.po || Exit 1
+
+cat <<\EOF > xg-go-1.ok
+msgid "Hello, world!"
+msgstr ""
+
+#, go-format
+msgid "This program is running as process number %d."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-1.ok xg-go-1.po || Exit 1
+
+exit 0

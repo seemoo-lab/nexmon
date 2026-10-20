@@ -1,19 +1,19 @@
 /* POSIX compatible write() function.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2008.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -25,7 +25,7 @@
    GetLastError() = ERROR_NO_DATA, and write() in consequence fails with
    error EINVAL.  */
 
-#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
+#if defined _WIN32 && ! defined __CYGWIN__
 
 # include <errno.h>
 # include <signal.h>
@@ -34,8 +34,18 @@
 # define WIN32_LEAN_AND_MEAN  /* avoid including junk */
 # include <windows.h>
 
-# include "msvc-inval.h"
-# include "msvc-nothrow.h"
+# if HAVE_MSVC_INVALID_PARAMETER_HANDLER
+#  include "msvc-inval.h"
+# endif
+# if GNULIB_MSVC_NOTHROW
+#  include "msvc-nothrow.h"
+# else
+#  include <io.h>
+# endif
+
+/* Don't assume that UNICODE is not defined.  */
+# undef GetNamedPipeHandleState
+# define GetNamedPipeHandleState GetNamedPipeHandleStateA
 
 # undef write
 
@@ -47,7 +57,7 @@ write_nothrow (int fd, const void *buf, size_t count)
 
   TRY_MSVC_INVAL
     {
-      result = write (fd, buf, count);
+      result = _write (fd, buf, count);
     }
   CATCH_MSVC_INVAL
     {
@@ -59,7 +69,7 @@ write_nothrow (int fd, const void *buf, size_t count)
   return result;
 }
 # else
-#  define write_nothrow write
+#  define write_nothrow _write
 # endif
 
 ssize_t

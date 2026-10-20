@@ -1,0 +1,121 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of AppData support: escaping of XML entities.
+
+cat <<\EOF > xg-gs-2-empty.appdata.xml
+<?xml version="1.0"?>
+<component type="desktop"/>
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -o xg-gs-2.pot xg-gs-2-empty.appdata.xml 2>/dev/null
+test $? = 0 || {
+  echo "Skipping test: xgettext was built without AppData support"
+  Exit 77
+}
+
+cat <<\EOF > xg-gs-2.appdata.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE component PUBLIC "" "" [
+<!ENTITY author1 "Giovanni Campagna">
+<!ENTITY author2 "Daiki Ueno">
+<!ENTITY author3 "Bilal Elmoussaoui">
+]>
+<component type="desktop">
+  <id>org.gnome.Characters.desktop</id>
+  <name>GNOME Characters</name>
+  <summary>Character map application</summary>
+  <licence>CC0</licence>
+  <description>
+    <p>
+      Characters is a simple utility application to find and insert
+      unusual characters.  It allows you to quickly find the character
+      you are looking for by searching for keywords.
+    </p>
+    <p>
+      You can also browse characters by categories, such as
+      Punctuation, Pictures, etc.
+    </p>
+    <p>
+      Did you know that the copyright sign (©, U+00A9) can be written in HTML
+      as &amp;#xa9;,
+      as &amp;#169;,
+      or as &amp;copy;?
+    </p>
+    <p>Written by &author1;, &author2;, and &author3;.</p>
+    <p>Escape gallery: operator x&amp;y, standard XML entities &amp; &quot; &apos; &amp; &lt; &gt;, character reference &#xa9;, escaped character reference &amp;#xa9;, entity references &copy; &author1;, escaped entity reference &amp;copy;</p>
+    <p>Escape gallery: operator x&amp;y, standard XML entities &amp; &quot; &apos; &amp; &lt; &gt;, character reference &#xa9;, escaped character reference &amp;#xa9;, entity references &copy; &author1;, escaped entity reference &amp;copy;</p>
+  </description>
+  <url type="homepage">https://wiki.gnome.org/Design/Apps/CharacterMap</url>
+  <updatecontact>dueno_at_src.gnome.org</updatecontact>
+</component>
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --add-comments -o xg-gs-2.tmp xg-gs-2.appdata.xml || Exit 1
+func_filter_POT_Creation_Date xg-gs-2.tmp xg-gs-2.pot
+
+cat <<\EOF > xg-gs-2.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: xg-gs-2.appdata.xml:9
+msgid "GNOME Characters"
+msgstr ""
+
+#: xg-gs-2.appdata.xml:10
+msgid "Character map application"
+msgstr ""
+
+#: xg-gs-2.appdata.xml:13
+msgid ""
+"Characters is a simple utility application to find and insert unusual "
+"characters. It allows you to quickly find the character you are looking for "
+"by searching for keywords."
+msgstr ""
+
+#: xg-gs-2.appdata.xml:18
+msgid ""
+"You can also browse characters by categories, such as Punctuation, Pictures, "
+"etc."
+msgstr ""
+
+#: xg-gs-2.appdata.xml:22
+msgid ""
+"Did you know that the copyright sign (©, U+00A9) can be written in HTML as "
+"&#xa9;, as &#169;, or as &copy;?"
+msgstr ""
+
+#: xg-gs-2.appdata.xml:28
+msgid "Written by &author1;, &author2;, and &author3;."
+msgstr ""
+
+#: xg-gs-2.appdata.xml:29 xg-gs-2.appdata.xml:30
+msgid ""
+"Escape gallery: operator x&y, standard XML entities & \" ' & < >, character "
+"reference ©, escaped character reference &#xa9;, entity references &copy; "
+"&author1;, escaped entity reference &copy;"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gs-2.ok xg-gs-2.pot
+result=$?
+
+exit $result

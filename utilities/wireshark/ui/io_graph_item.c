@@ -1,5 +1,5 @@
 /* io_graph_item.h
- * Definitions and functions for IO graph items
+ * Definitions and functions for I/O graph items
  *
  * Copied from gtk/io_stat.c, (c) 2002 Ronnie Sahlberg
  *
@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,10 +15,17 @@
 
 #include <epan/epan_dissect.h>
 
+#include <wsutil/application_flavor.h>
+
 #include "ui/io_graph_item.h"
 
-int get_io_graph_index(packet_info *pinfo, int interval) {
+// XXX - constant defined elsewhere, any benefit to store it in a global .h ?
+#define MICROSECS_PER_SEC 1000000
+
+int64_t get_io_graph_index(packet_info *pinfo, int interval) {
     nstime_t time_delta;
+
+    ws_return_val_if(interval <= 0, -1);
 
     /*
      * Find in which interval this is supposed to go and store the interval index as idx
@@ -43,7 +38,7 @@ int get_io_graph_index(packet_info *pinfo, int interval) {
     if (time_delta.secs<0) {
         return -1;
     }
-    return (int) ((time_delta.secs*1000 + time_delta.nsecs/1000000) / interval);
+    return ((time_delta.secs*INT64_C(1000000) + time_delta.nsecs/1000) / interval);
 }
 
 GString *check_field_unit(const char *field_name, int *hf_index, io_graph_item_unit_t item_unit)
@@ -52,7 +47,7 @@ GString *check_field_unit(const char *field_name, int *hf_index, io_graph_item_u
     if (item_unit >= IOG_ITEM_UNIT_CALC_SUM) {
         header_field_info *hfi;
 
-        const char *item_unit_names[NUM_IOG_ITEM_UNITS] = {
+        const char *item_unit_names[NUM_IOG_ITEM_UNITS+1] = {
             "Packets",
             "Bytes",
             "Bits",
@@ -62,8 +57,14 @@ GString *check_field_unit(const char *field_name, int *hf_index, io_graph_item_u
             "MAX",
             "MIN",
             "AVG",
-            "LOAD"
+            "THROUGHPUT",
+            "LOAD",
+            NULL
         };
+
+        if (application_flavor_is_stratoshark()) {
+            item_unit_names[0] = "Events";
+        }
 
         /* There was no field specified */
         if ((field_name == NULL) || (field_name[0] == 0)) {
@@ -113,9 +114,11 @@ GString *check_field_unit(const char *field_name, int *hf_index, io_graph_item_u
             case IOG_ITEM_UNIT_CALC_MAX:
             case IOG_ITEM_UNIT_CALC_MIN:
             case IOG_ITEM_UNIT_CALC_AVERAGE:
+            case IOG_ITEM_UNIT_CALC_THROUGHPUT:
             case IOG_ITEM_UNIT_CALC_LOAD:
                 break;
             default:
+                ws_assert(item_unit < NUM_IOG_ITEM_UNITS);
                 err_str = g_string_new("");
                 g_string_printf(err_str, "\"%s\" is a relative-time field. %s calculations are not supported on it.",
                     field_name,
@@ -136,15 +139,176 @@ GString *check_field_unit(const char *field_name, int *hf_index, io_graph_item_u
     return err_str;
 }
 
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */
+// Adapted from get_it_value in gtk/io_stat.c.
+double get_io_graph_item(const io_graph_item_t *items_, io_graph_item_unit_t val_units_, int idx, int hf_index_, const capture_file *cap_file, int interval_, int cur_idx_, bool asAOT)
+{
+    double     value = 0;          /* FIXME: loss of precision, visible on the graph for small values */
+    int        adv_type;
+    const io_graph_item_t *item;
+    uint32_t   interval;
+
+    ws_return_val_if(idx < 0, 0);
+
+    item = &items_[idx];
+
+    // Basic units
+    // XXX - Should we divide these counted values by the interval
+    // so that they measure rates (as done with LOAD)? That might be
+    // more meaningful and consistent.
+    switch (val_units_) {
+    case IOG_ITEM_UNIT_PACKETS:
+        return asAOT ? MICROSECS_PER_SEC*item->frames/interval_ : item->frames;
+    case IOG_ITEM_UNIT_BYTES:
+        return (double)(asAOT ? MICROSECS_PER_SEC*item->bytes/interval_ : item->bytes);
+    case IOG_ITEM_UNIT_BITS:
+        return (double)(asAOT ? MICROSECS_PER_SEC*item->bytes*8/interval_ : item->bytes*8);
+    case IOG_ITEM_UNIT_CALC_FRAMES:
+        return item->frames;
+    case IOG_ITEM_UNIT_CALC_FIELDS:
+        return (double) item->fields;
+    default:
+        /* If it's COUNT_TYPE_ADVANCED but not one of the
+         * generic ones we'll get it when we switch on the
+         * adv_type below. */
+        break;
+    }
+
+    if (hf_index_ < 0) {
+        return 0;
+    }
+    // Advanced units
+    adv_type = proto_registrar_get_ftype(hf_index_);
+    switch (adv_type) {
+
+    case FT_INT8:
+    case FT_INT16:
+    case FT_INT24:
+    case FT_INT32:
+    case FT_INT40:
+    case FT_INT48:
+    case FT_INT56:
+    case FT_INT64:
+        switch (val_units_) {
+        case IOG_ITEM_UNIT_CALC_SUM:
+            value = item->double_tot;
+            break;
+        case IOG_ITEM_UNIT_CALC_MAX:
+            value = (double)item->int_max;
+            break;
+        case IOG_ITEM_UNIT_CALC_MIN:
+            value = (double)item->int_min;
+            break;
+        case IOG_ITEM_UNIT_CALC_THROUGHPUT:
+            value = item->double_tot*MICROSECS_PER_SEC/interval_;
+            break;
+        case IOG_ITEM_UNIT_CALC_AVERAGE:
+            if (item->fields) {
+                value = item->double_tot / item->fields;
+            } else {
+                value = 0;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case FT_UINT8:
+    case FT_UINT16:
+    case FT_UINT24:
+    case FT_UINT32:
+    case FT_UINT40:
+    case FT_UINT48:
+    case FT_UINT56:
+    case FT_UINT64:
+        switch (val_units_) {
+        case IOG_ITEM_UNIT_CALC_SUM:
+            value = item->double_tot;
+            break;
+        case IOG_ITEM_UNIT_CALC_MAX:
+            value = (double)item->uint_max;
+            break;
+        case IOG_ITEM_UNIT_CALC_MIN:
+            value = (double)item->uint_min;
+            break;
+        case IOG_ITEM_UNIT_CALC_THROUGHPUT:
+            value = item->double_tot*MICROSECS_PER_SEC/interval_;
+            break;
+        case IOG_ITEM_UNIT_CALC_AVERAGE:
+            if (item->fields) {
+                value = item->double_tot / item->fields;
+            } else {
+                value = 0;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case FT_DOUBLE:
+    case FT_FLOAT:
+        switch (val_units_) {
+        case IOG_ITEM_UNIT_CALC_SUM:
+            value = item->double_tot;
+            break;
+        case IOG_ITEM_UNIT_CALC_MAX:
+            value = item->double_max;
+            break;
+        case IOG_ITEM_UNIT_CALC_MIN:
+            value = item->double_min;
+            break;
+        case IOG_ITEM_UNIT_CALC_AVERAGE:
+            if (item->fields) {
+                value = item->double_tot / item->fields;
+            } else {
+                value = 0;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case FT_RELATIVE_TIME:
+        switch (val_units_) {
+        case IOG_ITEM_UNIT_CALC_MAX:
+            value = nstime_to_sec(&item->time_max);
+            break;
+        case IOG_ITEM_UNIT_CALC_MIN:
+            value = nstime_to_sec(&item->time_min);
+            break;
+        case IOG_ITEM_UNIT_CALC_SUM:
+            value = nstime_to_sec(&item->time_tot);
+            break;
+        case IOG_ITEM_UNIT_CALC_AVERAGE:
+            if (item->fields) {
+                value = nstime_to_sec(&item->time_tot) / item->fields;
+            } else {
+                value = 0;
+            }
+            break;
+        case IOG_ITEM_UNIT_CALC_LOAD:
+            // "LOAD graphs plot the QUEUE-depth of the connection over time"
+            // (for response time fields such as smb.time, rpc.time, etc.)
+            // This interval is expressed in microseconds.
+            if (idx == cur_idx_ && cap_file) {
+                // If this is the last interval, it may not be full width.
+                uint64_t start_us = (uint64_t)interval_ * idx;
+                nstime_t timediff = NSTIME_INIT_SECS_USECS(start_us / 1000000, start_us % 1000000);
+                nstime_delta(&timediff, &cap_file->elapsed_time, &timediff);
+                interval = (uint32_t)(1000*nstime_to_msec(&timediff) + 0.5);
+            } else {
+                interval = interval_;
+            }
+            value = (1000 * nstime_to_msec(&item->time_tot)) / interval;
+            break;
+        default:
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+    return value;
+}

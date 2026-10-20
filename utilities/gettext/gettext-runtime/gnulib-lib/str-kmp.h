@@ -1,20 +1,28 @@
 /* Substring search in a NUL terminated string of UNIT elements,
    using the Knuth-Morris-Pratt algorithm.
-   Copyright (C) 2005-2016 Free Software Foundation, Inc.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2005.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software.
+   It is dual-licensed under "the GNU LGPLv3+ or the GNU GPLv2+".
+   You can redistribute it and/or modify it under either
+     - the terms of the GNU Lesser General Public License as published
+       by the Free Software Foundation, either version 3, or (at your
+       option) any later version, or
+     - the terms of the GNU General Public License as published by the
+       Free Software Foundation; either version 2, or (at your option)
+       any later version, or
+     - the same dual license "the GNU LGPLv3+ or the GNU GPLv2+".
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License and the GNU General Public License
+   for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public
+   License and of the GNU General Public License along with this
+   program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Before including this file, you need to define:
      UNIT                    The element type of the needle and haystack.
@@ -24,7 +32,7 @@
                              of type UNIT as well.  */
 
 /* Knuth-Morris-Pratt algorithm.
-   See http://en.wikipedia.org/wiki/Knuth-Morris-Pratt_algorithm
+   See https://en.wikipedia.org/wiki/Knuth-Morris-Pratt_algorithm
    HAYSTACK is the NUL terminated string in which to search for.
    NEEDLE is the string to search for in HAYSTACK, consisting of NEEDLE_LEN
    units.
@@ -58,13 +66,13 @@ knuth_morris_pratt (const UNIT *haystack,
           forall 0 <= x < table[i]: rhaystack[x..x+m-1] != needle[0..m-1].
      table[0] remains uninitialized.  */
   {
-    size_t i, j;
+    size_t j;
 
     /* i = 1: Nothing to verify for x = 0.  */
     table[1] = 1;
     j = 0;
 
-    for (i = 2; i < m; i++)
+    for (size_t i = 2; i < m; i++)
       {
         /* Here: j = i-1 - table[i-1].
            The inequality needle[x..i-1] != needle[0..i-1-x] is known to hold
@@ -111,14 +119,10 @@ knuth_morris_pratt (const UNIT *haystack,
 
   /* Search, using the table to accelerate the processing.  */
   {
-    size_t j;
-    const UNIT *rhaystack;
-    const UNIT *phaystack;
-
     *resultp = NULL;
-    j = 0;
-    rhaystack = haystack;
-    phaystack = haystack;
+    size_t j = 0;
+    const UNIT *rhaystack = haystack;
+    const UNIT *phaystack = haystack;
     /* Invariant: phaystack = rhaystack + j.  */
     while (*phaystack != 0)
       if (CANON_ELEMENT (needle[j]) == CANON_ELEMENT (*phaystack))

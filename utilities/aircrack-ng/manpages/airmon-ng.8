@@ -1,4 +1,4 @@
-.TH AIRMON-NG 8 "February 2016" "Version 1.2-rc4"
+.TH AIRMON-NG 8 "May 2022" "Version 1.7.0"
 
 .SH NAME
 airmon-ng - POSIX sh script designed to turn wireless cards into monitor mode.
@@ -17,6 +17,9 @@ It can also list/kill programs that can interfere with the wireless card operati
 .I start <interface> [channel]
 Enable monitor mode on an interface (and specify a channel). Note: Madwifi-ng is a special case, \(aqstart\(aq has to be used on wifi interfaces and \(aqstop\(aq on ath interfaces.
 .TP
+.I start <interface> [frequency]
+Enable monitor mode on an interface (and specify a frequency in MHz). Note: Madwifi-ng is a special case, \(aqstart\(aq has to be used on wifi interfaces and \(aqstop\(aq on ath interfaces.
+.TP
 .I stop <interface>
 Disable monitor mode and go back to managed mode (except for madwifi-ng where it kills the ath VAP).
 .TP
@@ -24,11 +27,11 @@ Disable monitor mode and go back to managed mode (except for madwifi-ng where it
 List all possible programs that could interfere with the wireless card. If \(aqkill\(aq is specified, it will try to kill all of them.
 .TP
 .I --verbose
-This flag must precede start/stop/check and can be combined with with other parameters or used alone. 
+This flag must precede start/stop/check and can be combined with other parameters or used alone. 
 This flag will increase the verbosity to provide additional useful information which may not be needed for normal operation.
 .TP
 .I --debug
-This flag must precede start/stop/check and can be combined with with other parameters or used alone. 
+This flag must precede start/stop/check and can be combined with other parameters or used alone. 
 This flag will increase the verbosity to debug level to assist in troubleshooting errors in airmon-ng. Use this flag when opening a bug, but only use --verbose when requesting support in irc.
 .TP
 .I --elite

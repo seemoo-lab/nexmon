@@ -3,12 +3,11 @@ dnl This file is in the public domain.
 dnl
 dnl Configuration file - processed by autoconf.
 
-AC_INIT
-AC_CONFIG_SRCDIR(hello.cc)
-AM_INIT_AUTOMAKE(hello-c++-wxwidgets, 0)
+AC_INIT([hello-c++-wxwidgets], [0], , [hello-c++-wxwidgets])
+AC_CONFIG_SRCDIR([hello.cc])
+AM_INIT_AUTOMAKE([1.11])
 
 AC_PROG_CXX
-AC_CHECK_HEADERS([unistd.h])
 
 AM_OPTIONS_WXCONFIG
 AM_PATH_WXCONFIG([2.6.0], [], [AC_MSG_ERROR([wxWidgets not found])])

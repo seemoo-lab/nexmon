@@ -3,19 +3,20 @@
  *  Copyright 2000, 2003 Red Hat, Inc.
  *  Copyright 2007, 2008 Ryan Lortie <desrt@desrt.ca>
  *
- * GLib is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  *
- * GLib is distributed in the hope that it will be useful,
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GLib; see the file COPYING.LIB.  If not,
- * see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -37,58 +38,13 @@
 #include "glibintl.h"
 #include "gthread.h"
 
-/**
- * SECTION:markup
- * @Title: Simple XML Subset Parser
- * @Short_description: parses a subset of XML
- * @See_also: [XML Specification](http://www.w3.org/TR/REC-xml/)
- *
- * The "GMarkup" parser is intended to parse a simple markup format
- * that's a subset of XML. This is a small, efficient, easy-to-use
- * parser. It should not be used if you expect to interoperate with
- * other applications generating full-scale XML. However, it's very
- * useful for application data files, config files, etc. where you
- * know your application will be the only one writing the file.
- * Full-scale XML parsers should be able to parse the subset used by
- * GMarkup, so you can easily migrate to full-scale XML at a later
- * time if the need arises.
- *
- * GMarkup is not guaranteed to signal an error on all invalid XML;
- * the parser may accept documents that an XML parser would not.
- * However, XML documents which are not well-formed (which is a
- * weaker condition than being valid. See the
- * [XML specification](http://www.w3.org/TR/REC-xml/)
- * for definitions of these terms.) are not considered valid GMarkup
- * documents.
- *
- * Simplifications to XML include:
- *
- * - Only UTF-8 encoding is allowed
- *
- * - No user-defined entities
- *
- * - Processing instructions, comments and the doctype declaration
- *   are "passed through" but are not interpreted in any way
- *
- * - No DTD or validation
- *
- * The markup format does support:
- *
- * - Elements
- *
- * - Attributes
- *
- * - 5 standard entities: &amp; &lt; &gt; &quot; &apos;
- *
- * - Character references
- *
- * - Sections marked as CDATA
- */
-
 G_DEFINE_QUARK (g-markup-error-quark, g_markup_error)
 
 typedef enum
 {
+  STATE_INITIAL,
+  STATE_AFTER_BOM1,
+  STATE_AFTER_BOM2,
   STATE_START,
   STATE_AFTER_OPEN_ANGLE,
   STATE_AFTER_CLOSE_ANGLE,
@@ -115,16 +71,24 @@ typedef struct
   gpointer prev_user_data;
 } GMarkupRecursionTracker;
 
+typedef struct
+{
+  size_t lines; /* 1-based, in characters */
+  size_t chars; /* 1-based, in characters */
+  size_t offset; /* 0-based, in bytes */
+} MarkupLocation;
+
 struct _GMarkupParseContext
 {
   const GMarkupParser *parser;
 
-  volatile gint ref_count;
+  gint ref_count;  /* (atomic) */
 
   GMarkupParseFlags flags;
 
-  gint line_number;
-  gint char_number;
+  MarkupLocation pos;
+  MarkupLocation tag_start;
+  MarkupLocation attr_start;
 
   GMarkupParseState state;
 
@@ -144,6 +108,8 @@ struct _GMarkupParseContext
 
   GString **attr_names;
   GString **attr_values;
+  MarkupLocation *attr_pos; /* nullable, owned */
+  MarkupLocation *attr_end; /* nullable, owned */
   gint cur_attr;
   gint alloc_attrs;
 
@@ -193,13 +159,6 @@ free_list_node (GMarkupParseContext *context, GSList *node)
   context->spare_list_nodes = g_slist_concat (node, context->spare_list_nodes);
 }
 
-static inline void
-string_blank (GString *string)
-{
-  string->str[0] = '\0';
-  string->len = 0;
-}
-
 /**
  * g_markup_parse_context_new:
  * @parser: a #GMarkupParser
@@ -234,18 +193,25 @@ g_markup_parse_context_new (const GMarkupParser *parser,
   context->user_data = user_data;
   context->dnotify = user_data_dnotify;
 
-  context->line_number = 1;
-  context->char_number = 1;
+  context->pos.lines = 1;
+  context->pos.chars = 1;
+  context->pos.offset = 0;
+
+  context->tag_start.lines = 1;
+  context->tag_start.chars = 1;
+  context->tag_start.offset = 0;
 
   context->partial_chunk = NULL;
   context->spare_chunks = NULL;
   context->spare_list_nodes = NULL;
 
-  context->state = STATE_START;
+  context->state = STATE_INITIAL;
   context->tag_stack = NULL;
   context->tag_stack_gstr = NULL;
   context->attr_names = NULL;
   context->attr_values = NULL;
+  context->attr_pos = NULL;
+  context->attr_end = NULL;
   context->cur_attr = -1;
   context->alloc_attrs = 0;
 
@@ -342,6 +308,8 @@ g_markup_parse_context_free (GMarkupParseContext *context)
   clear_attributes (context);
   g_free (context->attr_names);
   g_free (context->attr_values);
+  g_free (context->attr_pos);
+  g_free (context->attr_end);
 
   g_slist_free_full (context->tag_stack_gstr, string_full_free);
   g_slist_free (context->tag_stack);
@@ -395,9 +363,9 @@ set_error_literal (GMarkupParseContext  *context,
   tmp_error = g_error_new_literal (G_MARKUP_ERROR, code, message);
 
   g_prefix_error (&tmp_error,
-                  _("Error on line %d char %d: "),
-                  context->line_number,
-                  context->char_number);
+                  _("Error on line %" G_GSIZE_FORMAT " char %" G_GSIZE_FORMAT ": "),
+                  context->pos.lines,
+                  context->pos.chars);
 
   mark_error (context, tmp_error);
 
@@ -423,7 +391,7 @@ set_error (GMarkupParseContext  *context,
   /* Make sure that the GError message is valid UTF-8
    * even if it is complaining about invalid UTF-8 in the markup
    */
-  s_valid = _g_utf8_make_valid (s);
+  s_valid = g_utf8_make_valid (s, -1);
   set_error_literal (context, error, code, s);
 
   g_free (s);
@@ -437,9 +405,9 @@ propagate_error (GMarkupParseContext  *context,
 {
   if (context->flags & G_MARKUP_PREFIX_ERROR_POSITION)
     g_prefix_error (&src,
-                    _("Error on line %d char %d: "),
-                    context->line_number,
-                    context->char_number);
+                    _("Error on line %" G_GSIZE_FORMAT " char %" G_GSIZE_FORMAT ": "),
+                    context->pos.lines,
+                    context->pos.chars);
 
   mark_error (context, src);
 
@@ -456,10 +424,10 @@ slow_name_validate (GMarkupParseContext  *context,
 {
   const gchar *p = name;
 
-  if (!g_utf8_validate (name, strlen (name), NULL))
+  if (!g_utf8_validate (name, -1, NULL))
     {
       set_error (context, error, G_MARKUP_ERROR_BAD_UTF8,
-                 _("Invalid UTF-8 encoded text in name - not valid '%s'"), name);
+                 _("Invalid UTF-8 encoded text in name — not valid “%s”"), name);
       return FALSE;
     }
 
@@ -470,7 +438,7 @@ slow_name_validate (GMarkupParseContext  *context,
           g_unichar_isalpha (g_utf8_get_char (p))))))
     {
       set_error (context, error, G_MARKUP_ERROR_PARSE,
-                 _("'%s' is not a valid name"), name);
+                 _("“%s” is not a valid name"), name);
       return FALSE;
     }
 
@@ -486,7 +454,7 @@ slow_name_validate (GMarkupParseContext  *context,
               g_unichar_isalpha (g_utf8_get_char (p))))))
         {
           set_error (context, error, G_MARKUP_ERROR_PARSE,
-                     _("'%s' is not a valid name: '%c'"), name, *p);
+                     _("“%s” is not a valid name: “%c”"), name, *p);
           return FALSE;
         }
     }
@@ -536,13 +504,13 @@ name_validate (GMarkupParseContext  *context,
 static gboolean
 text_validate (GMarkupParseContext  *context,
                const gchar          *p,
-               gint                  len,
+               gsize                 len,
                GError              **error)
 {
-  if (!g_utf8_validate (p, len, NULL))
+  if (!g_utf8_validate_len (p, len, NULL))
     {
       set_error (context, error, G_MARKUP_ERROR_BAD_UTF8,
-                 _("Invalid UTF-8 encoded text in name - not valid '%s'"), p);
+                 _("Invalid UTF-8 encoded text in name — not valid “%s”"), p);
       return FALSE;
     }
   else
@@ -558,11 +526,25 @@ char_str (gunichar c,
   return buf;
 }
 
+/* Format the next UTF-8 character as a gchar* for printing in error output
+ * when we encounter a syntax error. This correctly handles invalid UTF-8,
+ * emitting it as hex escapes. */
 static gchar*
 utf8_str (const gchar *utf8,
+          gsize        max_len,
           gchar       *buf)
 {
-  char_str (g_utf8_get_char (utf8), buf);
+  gunichar c = g_utf8_get_char_validated (utf8, max_len);
+  if (c == (gunichar) -1 || c == (gunichar) -2)
+    {
+      guchar ch = (max_len > 0) ? (guchar) *utf8 : 0;
+      gchar *temp = g_strdup_printf ("\\x%02x", (guint) ch);
+      memset (buf, 0, 8);
+      memcpy (buf, temp, strlen (temp));
+      g_free (temp);
+    }
+  else
+    char_str (c, buf);
   return buf;
 }
 
@@ -596,8 +578,8 @@ set_unescape_error (GMarkupParseContext  *context,
 
   tmp_error = g_error_new (G_MARKUP_ERROR,
                            code,
-                           _("Error on line %d: %s"),
-                           context->line_number - remaining_newlines,
+                           _("Error on line %" G_GSIZE_FORMAT ": %s"),
+                           context->pos.lines - remaining_newlines,
                            s);
 
   g_free (s);
@@ -673,10 +655,10 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
                 {
                   set_unescape_error (context, error,
                                       from, G_MARKUP_ERROR_PARSE,
-                                      _("Failed to parse '%-.*s', which "
+                                      _("Failed to parse “%-.*s”, which "
                                         "should have been a digit "
                                         "inside a character reference "
-                                        "(&#234; for example) - perhaps "
+                                        "(&#234; for example) — perhaps "
                                         "the digit is too large"),
                                       (int)(end - from), from);
                   return FALSE;
@@ -689,7 +671,7 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
                                         "semicolon; "
                                         "most likely you used an ampersand "
                                         "character without intending to start "
-                                        "an entity - escape ampersand as &amp;"));
+                                        "an entity — escape ampersand as &amp;"));
                   return FALSE;
                 }
               else
@@ -711,7 +693,7 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
                     {
                       set_unescape_error (context, error,
                                           from, G_MARKUP_ERROR_PARSE,
-                                          _("Character reference '%-.*s' does not "
+                                          _("Character reference “%-.*s” does not "
                                             "encode a permitted character"),
                                           (int)(end - from), from);
                       return FALSE;
@@ -749,7 +731,7 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
               if (*from == ';')
                 set_unescape_error (context, error,
                                     from, G_MARKUP_ERROR_PARSE,
-                                    _("Empty entity '&;' seen; valid "
+                                    _("Empty entity “&;” seen; valid "
                                       "entities are: &amp; &quot; &lt; &gt; &apos;"));
               else
                 {
@@ -757,7 +739,7 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
                   if (end)
                     set_unescape_error (context, error,
                                         from, G_MARKUP_ERROR_PARSE,
-                                        _("Entity name '%-.*s' is not known"),
+                                        _("Entity name “%-.*s” is not known"),
                                         (int)(end - from), from);
                   else
                     set_unescape_error (context, error,
@@ -765,15 +747,15 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
                                         _("Entity did not end with a semicolon; "
                                           "most likely you used an ampersand "
                                           "character without intending to start "
-                                          "an entity - escape ampersand as &amp;"));
+                                          "an entity — escape ampersand as &amp;"));
                 }
               return FALSE;
             }
         }
     }
 
-  g_assert (to - string->str <= string->len);
-  if (to - string->str != string->len)
+  g_assert (to - string->str <= (gssize) string->len);
+  if (to - string->str != (gssize) string->len)
     g_string_truncate (string, to - string->str);
 
   *is_ascii = !(mask & 0x80);
@@ -785,15 +767,16 @@ static inline gboolean
 advance_char (GMarkupParseContext *context)
 {
   context->iter++;
-  context->char_number++;
+  context->pos.chars++;
+  context->pos.offset++;
 
   if (G_UNLIKELY (context->iter == context->current_text_end))
       return FALSE;
 
   else if (G_UNLIKELY (*context->iter == '\n'))
     {
-      context->line_number++;
-      context->char_number = 1;
+      context->pos.lines++;
+      context->pos.chars = 1;
     }
 
   return TRUE;
@@ -840,7 +823,7 @@ release_chunk (GMarkupParseContext *context, GString *str)
       g_string_free (str, TRUE);
       return;
     }
-  string_blank (str);
+  g_string_truncate (str, 0);
   node = get_list_node (context, str);
   context->spare_chunks = g_slist_concat (node, context->spare_chunks);
 }
@@ -865,7 +848,7 @@ add_to_partial (GMarkupParseContext *context,
     }
 
   if (text_start != text_end)
-    g_string_insert_len (context->partial_chunk, -1,
+    g_string_append_len (context->partial_chunk,
                          text_start, text_end - text_start);
 }
 
@@ -873,7 +856,7 @@ static inline void
 truncate_partial (GMarkupParseContext *context)
 {
   if (context->partial_chunk != NULL)
-    string_blank (context->partial_chunk);
+    g_string_truncate (context->partial_chunk, 0);
 }
 
 static inline const gchar*
@@ -907,9 +890,11 @@ static void
 push_partial_as_tag (GMarkupParseContext *context)
 {
   GString *str = context->partial_chunk;
+
   /* sadly, this is exported by gmarkup_get_element_stack as-is */
   context->tag_stack = g_slist_concat (get_list_node (context, str->str), context->tag_stack);
   context->tag_stack_gstr = g_slist_concat (get_list_node (context, str), context->tag_stack_gstr);
+
   context->partial_chunk = NULL;
 }
 
@@ -956,20 +941,30 @@ current_attribute (GMarkupParseContext *context)
   return context->attr_names[context->cur_attr]->str;
 }
 
-static void
+static gboolean
 add_attribute (GMarkupParseContext *context, GString *str)
 {
+  /* Sanity check on the number of attributes. */
+  if (context->cur_attr >= 1000)
+    return FALSE;
+
   if (context->cur_attr + 2 >= context->alloc_attrs)
     {
       context->alloc_attrs += 5; /* silly magic number */
-      context->attr_names = g_realloc (context->attr_names, sizeof(GString*)*context->alloc_attrs);
-      context->attr_values = g_realloc (context->attr_values, sizeof(GString*)*context->alloc_attrs);
+      context->attr_names = g_realloc_n (context->attr_names, context->alloc_attrs, sizeof (GString*));
+      context->attr_values = g_realloc_n (context->attr_values, context->alloc_attrs, sizeof (GString*));
+      context->attr_pos = g_realloc_n (context->attr_pos, context->alloc_attrs, sizeof (MarkupLocation));
+      context->attr_end = g_realloc_n (context->attr_end, context->alloc_attrs, sizeof (MarkupLocation));
     }
   context->cur_attr++;
   context->attr_names[context->cur_attr] = str;
   context->attr_values[context->cur_attr] = NULL;
   context->attr_names[context->cur_attr+1] = NULL;
   context->attr_values[context->cur_attr+1] = NULL;
+  context->attr_pos[context->cur_attr] = context->attr_start;
+  context->attr_end[context->cur_attr] = context->pos; /* Will be overwritten later */
+
+  return TRUE;
 }
 
 static void
@@ -1012,7 +1007,7 @@ emit_start_element (GMarkupParseContext  *context,
    */
   if ((context->flags & G_MARKUP_IGNORE_QUALIFIED) && strchr (current_element (context), ':'))
     {
-      static const GMarkupParser ignore_parser;
+      static const GMarkupParser ignore_parser = { 0 };
       g_markup_parse_context_push (context, &ignore_parser, NULL);
       clear_attributes (context);
       return;
@@ -1028,6 +1023,8 @@ emit_start_element (GMarkupParseContext  *context,
 
       attr_names[j] = context->attr_names[i]->str;
       attr_values[j] = context->attr_values[i]->str;
+      context->attr_pos[j] = context->attr_pos[i];
+      context->attr_end[j] = context->attr_end[i];
       j++;
     }
   attr_names[j] = NULL;
@@ -1037,14 +1034,17 @@ emit_start_element (GMarkupParseContext  *context,
   tmp_error = NULL;
   start_name = current_element (context);
 
-  if (context->parser->start_element &&
-      name_validate (context, start_name, error))
+  if (!name_validate (context, start_name, error))
+    return;
+
+  if (context->parser->start_element)
     (* context->parser->start_element) (context,
                                         start_name,
                                         (const gchar **)attr_names,
                                         (const gchar **)attr_values,
                                         context->user_data,
                                         &tmp_error);
+
   clear_attributes (context);
 
   if (tmp_error != NULL)
@@ -1129,7 +1129,6 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
 
   context->parsing = TRUE;
 
-
   context->current_text = text;
   context->current_text_len = text_len;
   context->current_text_end = context->current_text + text_len;
@@ -1140,6 +1139,48 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
     {
       switch (context->state)
         {
+        case STATE_INITIAL:
+          if ((guchar) *context->iter == 0xef)
+            {
+              advance_char (context);
+              context->state = STATE_AFTER_BOM1;
+            }
+          else
+            {
+              context->state = STATE_START;
+            }
+          break;
+
+        case STATE_AFTER_BOM1:
+          if ((guchar) *context->iter == 0xbb)
+            {
+              advance_char (context);
+              context->state = STATE_AFTER_BOM2;
+            }
+          else
+            {
+              set_error_literal (context,
+                                 error,
+                                 G_MARKUP_ERROR_PARSE,
+                                 _("Invalid byte order mark"));
+            }
+          break;
+
+        case STATE_AFTER_BOM2:
+          if ((guchar) *context->iter == 0xbf)
+            {
+              advance_char (context);
+              context->state = STATE_START;
+            }
+          else
+            {
+              set_error_literal (context,
+                                 error,
+                                 G_MARKUP_ERROR_PARSE,
+                                 _("Invalid byte order mark"));
+            }
+          break;
+
         case STATE_START:
           /* Possible next state: AFTER_OPEN_ANGLE */
 
@@ -1177,6 +1218,10 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
           /* Possible next states: INSIDE_OPEN_TAG_NAME,
            *  AFTER_CLOSE_TAG_SLASH, INSIDE_PASSTHROUGH
            */
+          context->tag_start.lines = context->pos.lines;
+          context->tag_start.chars = context->pos.chars - 1;
+          context->tag_start.offset = context->pos.offset - 1;
+
           if (*context->iter == '?' ||
               *context->iter == '!')
             {
@@ -1208,10 +1253,11 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
               set_error (context,
                          error,
                          G_MARKUP_ERROR_PARSE,
-                         _("'%s' is not a valid character following "
-                           "a '<' character; it may not begin an "
+                         _("“%s” is not a valid character following "
+                           "a “<” character; it may not begin an "
                            "element name"),
-                         utf8_str (context->iter, buf));
+                         utf8_str (context->iter,
+                                   context->current_text_end - context->iter, buf));
             }
           break;
 
@@ -1250,9 +1296,10 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
               set_error (context,
                          error,
                          G_MARKUP_ERROR_PARSE,
-                         _("Odd character '%s', expected a '>' character "
-                           "to end the empty-element tag '%s'"),
-                         utf8_str (context->iter, buf),
+                         _("Odd character “%s”, expected a “>” character "
+                           "to end the empty-element tag “%s”"),
+                         utf8_str (context->iter,
+                                   context->current_text_end - context->iter, buf),
                          current_element (context));
             }
           break;
@@ -1290,6 +1337,9 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
         case STATE_INSIDE_ATTRIBUTE_NAME:
           /* Possible next states: AFTER_ATTRIBUTE_NAME */
 
+          if (!context->partial_chunk || context->partial_chunk->len == 0)
+            context->attr_start = context->pos;
+
           advance_to_name_end (context);
           add_to_partial (context, context->start, context->iter);
 
@@ -1314,7 +1364,15 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
               if (!name_validate (context, context->partial_chunk->str, error))
                 break;
 
-              add_attribute (context, context->partial_chunk);
+              if (!add_attribute (context, context->partial_chunk))
+                {
+                  set_error (context,
+                             error,
+                             G_MARKUP_ERROR_PARSE,
+                             _("Too many attributes in element “%s”"),
+                             current_element (context));
+                  break;
+                }
 
               context->partial_chunk = NULL;
               context->start = NULL;
@@ -1331,9 +1389,10 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
                   set_error (context,
                              error,
                              G_MARKUP_ERROR_PARSE,
-                             _("Odd character '%s', expected a '=' after "
-                               "attribute name '%s' of element '%s'"),
-                             utf8_str (context->iter, buf),
+                             _("Odd character “%s”, expected a “=” after "
+                               "attribute name “%s” of element “%s”"),
+                             utf8_str (context->iter,
+                                       context->current_text_end - context->iter, buf),
                              current_attribute (context),
                              current_element (context));
 
@@ -1372,12 +1431,13 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
                   set_error (context,
                              error,
                              G_MARKUP_ERROR_PARSE,
-                             _("Odd character '%s', expected a '>' or '/' "
+                             _("Odd character “%s”, expected a “>” or “/” "
                                "character to end the start tag of "
-                               "element '%s', or optionally an attribute; "
+                               "element “%s”, or optionally an attribute; "
                                "perhaps you used an invalid character in "
                                "an attribute name"),
-                             utf8_str (context->iter, buf),
+                             utf8_str (context->iter,
+                                       context->current_text_end - context->iter, buf),
                              current_element (context));
                 }
 
@@ -1416,10 +1476,11 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
                   set_error (context,
                              error,
                              G_MARKUP_ERROR_PARSE,
-                             _("Odd character '%s', expected an open quote mark "
+                             _("Odd character “%s”, expected an open quote mark "
                                "after the equals sign when giving value for "
-                               "attribute '%s' of element '%s'"),
-                             utf8_str (context->iter, buf),
+                               "attribute “%s” of element “%s”"),
+                             utf8_str (context->iter,
+                                       context->current_text_end - context->iter, buf),
                              current_attribute (context),
                              current_element (context));
                 }
@@ -1474,6 +1535,7 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
                   context->attr_values[context->cur_attr] = context->partial_chunk;
                   context->partial_chunk = NULL;
                   advance_char (context);
+                  context->attr_end[context->cur_attr] = context->pos;
                   context->state = STATE_BETWEEN_ATTRIBUTES;
                   context->start = NULL;
                 }
@@ -1549,11 +1611,13 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
               set_error (context,
                          error,
                          G_MARKUP_ERROR_PARSE,
-                         _("'%s' is not a valid character following "
-                           "the characters '</'; '%s' may not begin an "
+                         _("“%s” is not a valid character following "
+                           "the characters “</”; “%s” may not begin an "
                            "element name"),
-                         utf8_str (context->iter, buf),
-                         utf8_str (context->iter, buf));
+                         utf8_str (context->iter,
+                                   context->current_text_end - context->iter, buf),
+                         utf8_str (context->iter,
+                                   context->current_text_end - context->iter, buf));
             }
           break;
 
@@ -1585,10 +1649,11 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
                   set_error (context,
                              error,
                              G_MARKUP_ERROR_PARSE,
-                             _("'%s' is not a valid character following "
-                               "the close element name '%s'; the allowed "
-                               "character is '>'"),
-                             utf8_str (context->iter, buf),
+                             _("“%s” is not a valid character following "
+                               "the close element name “%s”; the allowed "
+                               "character is “>”"),
+                             utf8_str (context->iter,
+                                       context->current_text_end - context->iter, buf),
                              close_name->str);
                 }
               else if (context->tag_stack == NULL)
@@ -1596,7 +1661,7 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
                   set_error (context,
                              error,
                              G_MARKUP_ERROR_PARSE,
-                             _("Element '%s' was closed, no element "
+                             _("Element “%s” was closed, no element "
                                "is currently open"),
                              close_name->str);
                 }
@@ -1605,8 +1670,8 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
                   set_error (context,
                              error,
                              G_MARKUP_ERROR_PARSE,
-                             _("Element '%s' was closed, but the currently "
-                               "open element is '%s'"),
+                             _("Element “%s” was closed, but the currently "
+                               "open element is “%s”"),
                              close_name->str,
                              current_element (context));
                 }
@@ -1772,7 +1837,7 @@ g_markup_parse_context_end_parse (GMarkupParseContext  *context,
 
     case STATE_AFTER_OPEN_ANGLE:
       set_error_literal (context, error, G_MARKUP_ERROR_PARSE,
-                         _("Document ended unexpectedly just after an open angle bracket '<'"));
+                         _("Document ended unexpectedly just after an open angle bracket “<”"));
       break;
 
     case STATE_AFTER_CLOSE_ANGLE:
@@ -1780,8 +1845,8 @@ g_markup_parse_context_end_parse (GMarkupParseContext  *context,
         {
           /* Error message the same as for INSIDE_TEXT */
           set_error (context, error, G_MARKUP_ERROR_PARSE,
-                     _("Document ended unexpectedly with elements still open - "
-                       "'%s' was the last element opened"),
+                     _("Document ended unexpectedly with elements still open — "
+                       "“%s” was the last element opened"),
                      current_element (context));
         }
       break;
@@ -1825,17 +1890,22 @@ g_markup_parse_context_end_parse (GMarkupParseContext  *context,
     case STATE_INSIDE_TEXT:
       g_assert (context->tag_stack != NULL);
       set_error (context, error, G_MARKUP_ERROR_PARSE,
-                 _("Document ended unexpectedly with elements still open - "
-                   "'%s' was the last element opened"),
+                 _("Document ended unexpectedly with elements still open — "
+                   "“%s” was the last element opened"),
                  current_element (context));
       break;
 
     case STATE_AFTER_CLOSE_TAG_SLASH:
     case STATE_INSIDE_CLOSE_TAG_NAME:
     case STATE_AFTER_CLOSE_TAG_NAME:
-      set_error (context, error, G_MARKUP_ERROR_PARSE,
-                 _("Document ended unexpectedly inside the close tag for "
-                   "element '%s'"), current_element (context));
+      if (context->tag_stack != NULL)
+        set_error (context, error, G_MARKUP_ERROR_PARSE,
+                   _("Document ended unexpectedly inside the close tag for "
+                     "element “%s”"), current_element (context));
+      else
+        set_error (context, error, G_MARKUP_ERROR_PARSE,
+                   _("Document ended unexpectedly inside the close tag for an "
+                     "unopened element"));
       break;
 
     case STATE_INSIDE_PASSTHROUGH:
@@ -1896,7 +1966,7 @@ g_markup_parse_context_get_element (GMarkupParseContext *context)
  * would merely return the name of the element that is being
  * processed.
  *
- * Returns: the element stack, which must not be modified
+ * Returns: (element-type utf8): the element stack, which must not be modified
  *
  * Since: 2.16
  */
@@ -1910,8 +1980,8 @@ g_markup_parse_context_get_element_stack (GMarkupParseContext *context)
 /**
  * g_markup_parse_context_get_position:
  * @context: a #GMarkupParseContext
- * @line_number: (allow-none): return location for a line number, or %NULL
- * @char_number: (allow-none): return location for a char-on-line number, or %NULL
+ * @line_number: (out) (optional): return location for a line number, or %NULL
+ * @char_number: (out) (optional): return location for a char-on-line number, or %NULL
  *
  * Retrieves the current line number and the number of the character on
  * that line. Intended for use in error messages; there are no strict
@@ -1926,10 +1996,132 @@ g_markup_parse_context_get_position (GMarkupParseContext *context,
   g_return_if_fail (context != NULL);
 
   if (line_number)
-    *line_number = context->line_number;
+    *line_number = context->pos.lines;
 
   if (char_number)
-    *char_number = context->char_number;
+    *char_number = context->pos.chars;
+}
+
+/**
+ * g_markup_parse_context_get_offset:
+ * @context: a #GMarkupParseContext
+ *
+ * Retrieves the current offset from the beginning of the document,
+ * in bytes.
+ *
+ * The information is meant to accompany the values returned by
+ * [method@GLib.MarkupParseContext.get_position], and comes with the
+ * same accuracy guarantees.
+ *
+ * Returns: the offset
+ *
+ * Since: 2.88
+ */
+gsize
+g_markup_parse_context_get_offset (GMarkupParseContext *context)
+{
+  g_return_val_if_fail (context != NULL, 0);
+
+  return context->pos.offset;
+}
+
+/**
+ * g_markup_parse_context_get_tag_start:
+ * @context: a #GMarkupParseContext
+ * @line_number: (out): return location for the line number
+ * @char_number: (out): return location for the character number
+ * @offset: (out): return location for offset from the beginning of the document
+ *
+ * Retrieves the start position of the current start or end tag.
+ *
+ * This function can be used in the `start_element` or `end_element`
+ * callbacks to obtain location information for error reporting.
+ *
+ * Calling it outside of these callbacks has undefined results.
+ *
+ * Note that @line_number and @char_number are intended for human
+ * readable error messages and are therefore 1-based and in Unicode
+ * characters. @offset on the other hand is meant for programmatic
+ * use, and thus is 0-based and in bytes.
+ *
+ * The information is meant to accompany the values returned by
+ * [method@GLib.MarkupParseContext.get_position], and comes with the
+ * same accuracy guarantees.
+ *
+ * Since: 2.88
+ */
+void
+g_markup_parse_context_get_tag_start (GMarkupParseContext *context,
+                                      gsize               *line_number,
+                                      gsize               *char_number,
+                                      gsize               *offset)
+{
+  g_return_if_fail (context != NULL);
+  g_return_if_fail (line_number != NULL);
+  g_return_if_fail (char_number != NULL);
+  g_return_if_fail (offset != NULL);
+
+  *line_number = context->tag_start.lines;
+  *char_number = context->tag_start.chars;
+  *offset = context->tag_start.offset;
+}
+
+/**
+ * g_markup_parse_context_get_attribute_position:
+ * @context: a #GMarkupParseContext
+ * @attr: the index of the attribute to query
+ * @start_lines: (out) (optional): return location for the line number of the attribute assignment start
+ * @start_chars: (out) (optional): return location for the character number of the attribute assignment start
+ * @start_offset: (out) (optional): return location for offset of the attribute assignment
+ * @end_lines: (out) (optional): return location for the line number of the attribute assignment end
+ * @end_chars: (out) (optional): return location for the character number of the attribute assignment end
+ * @end_offset: (out) (optional): return location for offset of the attribute assignment end
+ *
+ * Retrieves the start and end positions of an attribute assignment
+ * in a start tag.
+ *
+ * This function can be used in the `start_element` callback to
+ * obtain location information for error reporting.
+ *
+ * Calling it outside of the `start_element` callback
+ * has undefined results.
+ *
+ * Note that @line_number and @char_number are intended for human
+ * readable error messages and are therefore 1-based and in Unicode
+ * characters. @offset on the other hand is meant for programmatic
+ * use, and thus is 0-based and in bytes.
+ *
+ * The information is meant to accompany the values returned by
+ * [method@GLib.MarkupParseContext.get_position], and comes with the
+ * same accuracy guarantees.
+ *
+ * Since: 2.90
+ */
+void
+g_markup_parse_context_get_attribute_position (GMarkupParseContext *context,
+                                               unsigned int         attr,
+                                               size_t              *start_lines,
+                                               size_t              *start_chars,
+                                               size_t              *start_offset,
+                                               size_t              *end_lines,
+                                               size_t              *end_chars,
+                                               size_t              *end_offset)
+{
+  g_return_if_fail (context != NULL);
+  g_return_if_fail (context->cur_attr >= 0 && attr <= (unsigned int) context->cur_attr);
+
+  if (start_lines)
+    *start_lines = context->attr_pos[attr].lines;
+  if (start_chars)
+    *start_chars = context->attr_pos[attr].chars;
+  if (start_offset)
+    *start_offset = context->attr_pos[attr].offset;
+  if (end_lines)
+    *end_lines = context->attr_end[attr].lines;
+  if (end_chars)
+    *end_chars = context->attr_end[attr].chars;
+  if (end_offset)
+    *end_offset = context->attr_end[attr].offset;
 }
 
 /**
@@ -2138,61 +2330,112 @@ g_markup_parse_context_pop (GMarkupParseContext *context)
   return user_data;
 }
 
+#define APPEND_TEXT_AND_SEEK(_str, _start, _end)          \
+  G_STMT_START {                                          \
+    if (_end > _start)                                    \
+      g_string_append_len (_str, _start, _end - _start);  \
+    _start = ++_end;                                      \
+  } G_STMT_END
+
+/*
+ * https://www.w3.org/TR/REC-xml/ defines the set of valid
+ * characters as:
+ *   #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+ *
+ * That is, from non-ASCII UTF-8 character set, only 0xC27F - 0xC284 and
+ * 0xC286 - 0xC29F have to be escaped (excluding the surrogate blocks).
+ * Corresponding Unicode code points are [0x7F-0x84] and [0x86-0x9F].
+ *
+ * So instead of using costly g_utf8_next_char or similar UTF8 functions, it's
+ * better to read each byte, and make an exception for 0xC2XX.
+ */
 static void
 append_escaped_text (GString     *str,
                      const gchar *text,
                      gssize       length)
 {
-  const gchar *p;
+  const gchar *p, *pending;
   const gchar *end;
-  gunichar c;
 
-  p = text;
+  p = pending = text;
   end = text + length;
 
-  while (p < end)
+  while (p < end && pending < end)
     {
-      const gchar *next;
-      next = g_utf8_next_char (p);
+      guchar c = (guchar) *pending;
 
-      switch (*p)
+      switch (c)
         {
         case '&':
+          APPEND_TEXT_AND_SEEK (str, p, pending);
           g_string_append (str, "&amp;");
           break;
 
         case '<':
+          APPEND_TEXT_AND_SEEK (str, p, pending);
           g_string_append (str, "&lt;");
           break;
 
         case '>':
+          APPEND_TEXT_AND_SEEK (str, p, pending);
           g_string_append (str, "&gt;");
           break;
 
         case '\'':
+          APPEND_TEXT_AND_SEEK (str, p, pending);
           g_string_append (str, "&apos;");
           break;
 
         case '"':
+          APPEND_TEXT_AND_SEEK (str, p, pending);
           g_string_append (str, "&quot;");
           break;
 
         default:
-          c = g_utf8_get_char (p);
           if ((0x1 <= c && c <= 0x8) ||
               (0xb <= c && c  <= 0xc) ||
               (0xe <= c && c <= 0x1f) ||
-              (0x7f <= c && c <= 0x84) ||
-              (0x86 <= c && c <= 0x9f))
-            g_string_append_printf (str, "&#x%x;", c);
+              (c == 0x7f))
+            {
+              APPEND_TEXT_AND_SEEK (str, p, pending);
+              g_string_append_printf (str, "&#x%x;", c);
+            }
+          /* The utf-8 control characters to escape begins with 0xc2 byte */
+          else if (c == 0xc2)
+            {
+              gunichar u = g_utf8_get_char_validated (pending, end - pending);
+
+              if ((0x7f < u && u <= 0x84) ||
+                  (0x86 <= u && u <= 0x9f))
+                {
+                  APPEND_TEXT_AND_SEEK (str, p, pending);
+                  g_string_append_printf (str, "&#x%x;", u);
+
+                  /*
+                   * We have appended a two byte character above, which
+                   * is one byte ahead of what we read on every loop.
+                   * Increment to skip 0xc2 and point to the right location.
+                   */
+                  p++;
+                }
+              else
+                {
+                  /* Not the UTF-8 control characters we’re looking for, or an
+                   * invalid or partial encoding. Pass it through. */
+                  pending++;
+                }
+            }
           else
-            g_string_append_len (str, p, next - p);
+            pending++;
           break;
         }
-
-      p = next;
     }
+
+  if (pending > p)
+    g_string_append_len (str, p, pending - p);
 }
+
+#undef APPEND_TEXT_AND_SEEK
 
 /**
  * g_markup_escape_text:
@@ -2438,7 +2681,7 @@ g_markup_vprintf_escaped (const gchar *format,
 
   /* Use them to format the arguments
    */
-  G_VA_COPY (args2, args);
+  va_copy (args2, args);
 
   output1 = g_strdup_vprintf (format1->str, args);
 
@@ -2553,7 +2796,7 @@ g_markup_parse_boolean (const char  *string,
 {
   char const * const falses[] = { "false", "f", "no", "n", "0" };
   char const * const trues[] = { "true", "t", "yes", "y", "1" };
-  int i;
+  gsize i;
 
   for (i = 0; i < G_N_ELEMENTS (falses); i++)
     {
@@ -2591,14 +2834,14 @@ g_markup_parse_boolean (const char  *string,
  * @G_MARKUP_COLLECT_STRDUP: as with %G_MARKUP_COLLECT_STRING, but
  *     expects a parameter of type (char **) and g_strdup()s the
  *     returned pointer. The pointer must be freed with g_free()
- * @G_MARKUP_COLLECT_BOOLEAN: expects a parameter of type (gboolean *)
+ * @G_MARKUP_COLLECT_BOOLEAN: expects a parameter of type (`gboolean *`)
  *     and parses the attribute value as a boolean. Sets %FALSE if the
  *     attribute isn't present. Valid boolean values consist of
  *     (case-insensitive) "false", "f", "no", "n", "0" and "true", "t",
  *     "yes", "y", "1"
  * @G_MARKUP_COLLECT_TRISTATE: as with %G_MARKUP_COLLECT_BOOLEAN, but
  *     in the case of a missing attribute a value is set that compares
- *     equal to neither %FALSE nor %TRUE G_MARKUP_COLLECT_OPTIONAL is
+ *     equal to neither %FALSE nor %TRUE %G_MARKUP_COLLECT_OPTIONAL is
  *     implied
  * @G_MARKUP_COLLECT_OPTIONAL: can be bitwise ORed with the other fields.
  *     If present, allows the attribute not to appear. A default value
@@ -2796,9 +3039,10 @@ g_markup_collect_attributes (const gchar         *element_name,
           g_assert_not_reached ();
         }
 
-      type = va_arg (ap, GMarkupCollectType);
-      attr = va_arg (ap, const char *);
       written++;
+      type = va_arg (ap, GMarkupCollectType);
+      if (type != G_MARKUP_COLLECT_INVALID)
+        attr = va_arg (ap, const char *);
     }
   va_end (ap);
 
@@ -2840,7 +3084,6 @@ g_markup_collect_attributes (const gchar         *element_name,
 failure:
   /* replay the above to free allocations */
   type = first_type;
-  attr = first_attr;
 
   va_start (ap, first_attr);
   while (type != G_MARKUP_COLLECT_INVALID)
@@ -2856,6 +3099,8 @@ failure:
             case G_MARKUP_COLLECT_STRDUP:
               if (written)
                 g_free (*(char **) ptr);
+              *(char **) ptr = NULL;
+              break;
 
             case G_MARKUP_COLLECT_STRING:
               *(char **) ptr = NULL;
@@ -2872,7 +3117,11 @@ failure:
         }
 
       type = va_arg (ap, GMarkupCollectType);
-      attr = va_arg (ap, const char *);
+      if (type != G_MARKUP_COLLECT_INVALID)
+        {
+          attr = va_arg (ap, const char *);
+          (void) attr;
+        }
     }
   va_end (ap);
 

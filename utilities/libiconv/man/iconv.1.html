@@ -1,5 +1,4 @@
-<!-- Creator     : groff version 1.20.1 -->
-<!-- CreationDate: Sun Aug  7 19:49:14 2011 -->
+<!-- Creator     : groff version 1.22.3 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -23,6 +22,7 @@
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
 <a href="#EXAMPLES">EXAMPLES</a><br>
 <a href="#CONFORMING TO">CONFORMING TO</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
@@ -156,6 +156,17 @@ are printed in upper case, separated by whitespace, and
 alias names of an encoding are listed on the same line as
 the encoding itself.</p>
 
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Conversion
+from/to EBCDIC encodings can be modified in a specific way:
+If the environment variable <b>ICONV_EBCDIC_ZOS_UNIX</b> is
+set to a non-empty value, the EBCDIC newline 0x15 will get
+mapped to LF instead of NEL.</p>
+
 <h2>EXAMPLES
 <a name="EXAMPLES"></a>
 </h2>
@@ -191,7 +202,7 @@ encodings.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">POSIX:2001</p>
+<p style="margin-left:11%; margin-top: 1em">POSIX:2024</p>
 
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>

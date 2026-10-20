@@ -4441,6 +4441,102 @@ msgstr[1] "%s bæti"
 msgid "%.1f KB"
 msgstr "%.1f KB"
 
+msgctxt "full month name with day"
+msgid "January"
+msgstr "janúar"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "febrúar"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "mars"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "apríl"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "maí"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "júní"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "júlí"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "ágúst"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "september"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "október"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "nóvember"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "desember"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "jan"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "feb"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "mar"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "apr"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "maí"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "jún"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "júl"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "ágú"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "sep"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "okt"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "nóv"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "des"
+
 #, fuzzy
 #~ msgid "Failed to open file '%s' for writing: fdopen() failed: %s"
 #~ msgstr "Gat ekki opnað skrána '%s': fdopen() brást: %s"

@@ -5,24 +5,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <wsutil/array.h>
 
 #include <epan/asn1.h>
 #include "packet-ber.h"
@@ -30,7 +19,7 @@
 #include "packet-pkix1explicit.h"
 #include "packet-x509ce.h"
 
-#define PNAME  "PKIX1Implitit"
+#define PNAME  "PKIX1Implicit"
 #define PSNAME "PKIX1IMPLICIT"
 #define PFNAME "pkix1implicit"
 
@@ -38,7 +27,7 @@ void proto_register_pkix1implicit(void);
 void proto_reg_handoff_pkix1implicit(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_pkix1implicit = -1;
+static int proto_pkix1implicit;
 #include "packet-pkix1implicit-hf.c"
 
 /* Initialize the subtree pointers */
@@ -46,13 +35,13 @@ static int proto_pkix1implicit = -1;
 
 
 int
-dissect_pkix1implicit_ReasonFlags(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
+dissect_pkix1implicit_ReasonFlags(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
   offset = dissect_x509ce_ReasonFlags(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
 }
 int
-dissect_pkix1implicit_GeneralName(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
+dissect_pkix1implicit_GeneralName(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
   offset = dissect_x509ce_GeneralName(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -70,7 +59,7 @@ void proto_register_pkix1implicit(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 #include "packet-pkix1implicit-ettarr.c"
   };
 

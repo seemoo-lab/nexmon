@@ -1,0 +1,26 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test that gettext(), in the C and C.UTF-8 locales, does no translation.
+
+test -d in-0 || mkdir in-0
+test -d in-0/C || mkdir in-0/C
+test -d in-0/C/LC_MESSAGES || mkdir in-0/C/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -o in-0/C/LC_MESSAGES/tstprog.mo "$wabs_srcdir"/intl-1.po
+
+: ${DIFF=diff}
+cat <<\EOF > in-0.ok
+cheese
+EOF
+
+../intl-1-prg in-0 C > in-0.tmp || Exit 1
+LC_ALL=C tr -d '\r' < in-0.tmp > in-0-1.out || Exit 1
+${DIFF} in-0.ok in-0-1.out || Exit 1
+
+../intl-1-prg in-0 C.UTF-8 > in-0.tmp || Exit 1
+LC_ALL=C tr -d '\r' < in-0.tmp > in-0-2.out || Exit 1
+${DIFF} in-0.ok in-0-2.out || Exit 1
+
+Exit 0

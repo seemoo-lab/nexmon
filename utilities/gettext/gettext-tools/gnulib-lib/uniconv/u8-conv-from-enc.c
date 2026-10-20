@@ -1,18 +1,18 @@
 /* Conversion to UTF-8 from legacy encodings.
-   Copyright (C) 2002, 2006-2007, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2006-2007, 2009-2026 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published
-   by the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>.  */
 
@@ -39,7 +39,6 @@ u8_conv_from_encoding (const char *fromcode,
   if (STRCASEEQ (fromcode, "UTF-8", 'U','T','F','-','8',0,0,0,0))
     {
       /* Conversion from UTF-8 to UTF-8.  No need to go through iconv().  */
-      uint8_t *result;
 
       if (u8_check ((const uint8_t *) src, srclen))
         {
@@ -48,23 +47,20 @@ u8_conv_from_encoding (const char *fromcode,
         }
 
       if (offsets != NULL)
-        {
-          size_t i;
-
-          for (i = 0; i < srclen; )
-            {
-              int count = u8_mblen ((const uint8_t *) src + i, srclen - i);
-              /* We can rely on count > 0 because of the previous u8_check.  */
-              if (count <= 0)
-                abort ();
-              offsets[i] = i;
-              i++;
-              while (--count > 0)
-                offsets[i++] = (size_t)(-1);
-            }
-        }
+        for (size_t i = 0; i < srclen; )
+          {
+            int count = u8_mblen ((const uint8_t *) src + i, srclen - i);
+            /* We can rely on count > 0 because of the previous u8_check.  */
+            if (count <= 0)
+              abort ();
+            offsets[i] = i;
+            i++;
+            while (--count > 0)
+              offsets[i++] = (size_t)(-1);
+          }
 
       /* Memory allocation.  */
+      uint8_t *result;
       if (resultbuf != NULL && *lengthp >= srclen)
         result = resultbuf;
       else
@@ -77,7 +73,8 @@ u8_conv_from_encoding (const char *fromcode,
             }
         }
 
-      memcpy ((char *) result, src, srclen);
+      if (srclen > 0)
+        memcpy ((char *) result, src, srclen);
       *lengthp = srclen;
       return result;
     }

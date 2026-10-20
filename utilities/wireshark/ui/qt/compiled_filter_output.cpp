@@ -4,69 +4,64 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+#include "config.h"
 
 #include <ui_compiled_filter_output.h>
 #include "compiled_filter_output.h"
 
-#include <pcap.h>
+#ifdef HAVE_LIBPCAP
+#include <pcap/pcap.h>
+#endif
 
-#include "capture_opts.h"
 #include <wiretap/wtap.h>
-#include "ui/capture_globals.h"
+#include <capture/capture_sync.h>
+#include <ui/qt/utils/qt_ui_utils.h>
+#include <ui/qt/utils/stock_icon.h>
 
-#include "wireshark_application.h"
+#include "main_application.h"
 
 #include <QClipboard>
+#include <QMutexLocker>
 #include <QPushButton>
 
-CompiledFilterOutput::CompiledFilterOutput(QWidget *parent, QStringList &intList, QString &compile_filter) :
+// We use a global mutex to protect pcap_compile since it calls gethostbyname,
+// at least before libpcap 1.8.0. (pcap_compile(3PCAP) says as of libpcap 1.8.0,
+// it is thread-safe.)
+// This probably isn't needed on Windows (where pcap_compile calls
+// EnterCriticalSection + LeaveCriticalSection) or *BSD or macOS where
+// gethostbyname(3) claims that it's thread safe.
+static QMutex pcap_compile_mtx_;
+
+CompiledFilterOutput::CompiledFilterOutput(QWidget *parent, QList<InterfaceFilter> &intList) :
     GeometryStateDialog(parent),
     intList_(intList),
-    compile_filter_(compile_filter),
     ui(new Ui::CompiledFilterOutput)
 {
     ui->setupUi(this);
     loadGeometry();
     setAttribute(Qt::WA_DeleteOnClose, true);
-    ui->filterList->setCurrentFont(wsApp->monospaceFont());
+    ui->filterList->setCurrentFont(mainApp->monospaceFont());
 
     copy_bt_ = ui->buttonBox->addButton(tr("Copy"), QDialogButtonBox::ActionRole);
     copy_bt_->setToolTip(tr("Copy filter text to the clipboard."));
-    connect(copy_bt_, SIGNAL(clicked()), this, SLOT(copyFilterText()));
+    connect(copy_bt_, &QPushButton::clicked, this, &CompiledFilterOutput::copyFilterText);
 
     QPushButton *close_bt = ui->buttonBox->button(QDialogButtonBox::Close);
     close_bt->setDefault(true);
 
-    interface_list_ = ui->interfaceList;
-#if GLIB_CHECK_VERSION(2,31,0)
-    pcap_compile_mtx = g_new(GMutex,1);
-    g_mutex_init(pcap_compile_mtx);
-#else
-    pcap_compile_mtx = g_mutex_new();
+#ifdef HAVE_LIBPCAP
+    compileFilters();
 #endif
-    compileFilter();
 }
 
 CompiledFilterOutput::~CompiledFilterOutput()
 {
-    // For some reason closing this dialog either lowers the Capture Interfaces dialog
+    // For some reason closing this dialog either lowers the Capture Options dialog
     // or raises the main window. Work around the problem for now by manually raising
-    // and activating our parent (presumably the Capture Interfaces dialog).
+    // and activating our parent (presumably the Capture Options dialog).
     if (parentWidget()) {
         parentWidget()->raise();
         parentWidget()->activateWindow();
@@ -74,42 +69,79 @@ CompiledFilterOutput::~CompiledFilterOutput()
     delete ui;
 }
 
-void CompiledFilterOutput::compileFilter()
+#ifdef HAVE_LIBPCAP
+bool CompiledFilterOutput::compileFilter(const InterfaceFilter& filter)
 {
     struct bpf_program fcode;
 
-    foreach (QString interfaces, intList_) {
-        for (guint i = 0; i < global_capture_opts.all_ifaces->len; i++) {
-            interface_t device = g_array_index(global_capture_opts.all_ifaces, interface_t, i);
+    pcap_t *pd = pcap_open_dead(filter.linktype, WTAP_MAX_PACKET_SIZE_STANDARD);
+    if (pd == NULL) {
+        return false;
+    }
+    QMutexLocker locker(&pcap_compile_mtx_);
+    int err = pcap_compile(pd, &fcode, filter.filter.toUtf8().constData(), 1, 0);
+    if (err < 0) {
+        compile_results.insert(filter.display_name, QString(pcap_geterr(pd)));
+        pcap_close(pd);
+        return false;
+    }
 
-            if (interfaces.compare(device.display_name)) {
-                continue;
+    QStringList bpf_code_dump;
+    struct bpf_insn *insn = fcode.bf_insns;
+    for (u_int i = 0; i < fcode.bf_len; ++insn, ++i) {
+        bpf_code_dump << QString::fromUtf8(bpf_image(insn, i));
+    }
+    pcap_freecode(&fcode);
+    compile_results.insert(filter.display_name, bpf_code_dump.join('\n'));
+    return true;
+}
+
+void CompiledFilterOutput::compileFilters()
+{
+    char *data, *primary_msg, *secondary_msg;
+    bool success;
+
+    foreach (InterfaceFilter current, intList_) {
+        switch (current.iftype) {
+
+        case IF_EXTCAP:
+            // Extcaps should perhaps have a method to compile a filter
+            // (Cf. extcap_verify_capture_filter())
+            success = compileFilter(current);
+            break;
+
+        case IF_STDIN:
+            success = false;
+            compile_results.insert(current.display_name, tr("Capture filters cannot be compiled for standard input."));
+            break;
+
+        case IF_PIPE:
+            success = false;
+            compile_results.insert(current.display_name, tr("Capture filters cannot be compiled for pipes."));
+            break;
+
+        default:
+            // See if dumpcap can compile the filter. This is more accurate
+            // because BPF extensions might need to be used for a particular
+            // device.
+            if (sync_if_bpf_filter_open(current.device_name.toUtf8().constData(), current.filter.toUtf8().constData(), current.linktype, &data, &primary_msg, &secondary_msg, NULL)) {
+                compile_results.insert(current.display_name, gchar_free_to_qstring(primary_msg));
+                g_free(secondary_msg);
+                success = false;
             } else {
-                pcap_t *pd = pcap_open_dead(device.active_dlt, WTAP_MAX_PACKET_SIZE);
-                g_mutex_lock(pcap_compile_mtx);
-                if (pcap_compile(pd, &fcode, compile_filter_.toUtf8().constData(), 1, 0) < 0) {
-                    compile_results.insert(interfaces, QString("%1").arg(g_strdup(pcap_geterr(pd))));
-                    g_mutex_unlock(pcap_compile_mtx);
-                    ui->interfaceList->addItem(new QListWidgetItem(QIcon(":expert/expert_error.png"),interfaces));
-                } else {
-                    GString *bpf_code_dump = g_string_new("");
-                    struct bpf_insn *insn = fcode.bf_insns;
-                    int ii, n = fcode.bf_len;
-                    gchar *bpf_code_str;
-                    for (ii = 0; ii < n; ++insn, ++ii) {
-                        g_string_append(bpf_code_dump, bpf_image(insn, ii));
-                        g_string_append(bpf_code_dump, "\n");
-                    }
-                    bpf_code_str = g_string_free(bpf_code_dump, FALSE);
-                    g_mutex_unlock(pcap_compile_mtx);
-                    compile_results.insert(interfaces, QString("%1").arg(g_strdup(bpf_code_str)));
-                    ui->interfaceList->addItem(new QListWidgetItem(interfaces));
-                }
-                break;
+                compile_results.insert(current.display_name, gchar_free_to_qstring(data));
+                success = true;
             }
+            break;
+        }
+        if (success) {
+            ui->interfaceList->addItem(new QListWidgetItem(current.display_name));
+        } else {
+            ui->interfaceList->addItem(new QListWidgetItem(StockIcon("x-expert-error"), current.display_name));
         }
     }
 }
+#endif
 
 void CompiledFilterOutput::on_interfaceList_currentItemChanged(QListWidgetItem *current, QListWidgetItem *)
 {
@@ -121,18 +153,5 @@ void CompiledFilterOutput::on_interfaceList_currentItemChanged(QListWidgetItem *
 
 void CompiledFilterOutput::copyFilterText()
 {
-    wsApp->clipboard()->setText(ui->filterList->toPlainText());
+    mainApp->clipboard()->setText(ui->filterList->toPlainText());
 }
-
-//
-// Editor modelines  -  http://www.wireshark.org/tools/modelines.html
-//
-// Local variables:
-// c-basic-offset: 4
-// tab-width: 8
-// indent-tabs-mode: nil
-// End:
-//
-// vi: set shiftwidth=4 tabstop=8 expandtab:
-// :indentSize=4:tabSize=8:noTabs=true:
-//

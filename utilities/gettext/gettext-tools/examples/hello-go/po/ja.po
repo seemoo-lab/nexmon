@@ -1,0 +1,28 @@
+# Translation of `hello-go' messages to Japanese.
+# Copyright (C) 2005, 2006, 2014, 2015, 2023, 2025 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Masahito Yamaga <ma@yama-ga.com>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GNU hello-go 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2025-07-05 08:24+0900\n"
+"Last-Translator: Masahito Yamaga <ma@yama-ga.com>\n"
+"Language-Team: Japanese <translation-team-ja@lists.sourceforge.net>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: example1/hello1ml.go.in:42 example1/hello1sl.go.in:40
+#: example2/hello2sl.go.in:28 example3/hello3ml.go.in:44
+msgid "Hello, world!"
+msgstr "世界よ, こんにちは!"
+
+#: example1/hello1ml.go.in:43 example1/hello1sl.go.in:41
+#: example2/hello2sl.go.in:29 example3/hello3ml.go.in:45
+#, go-format
+msgid "This program is running as process number %d."
+msgstr "このプログラムはプロセス番号 %d で動いています."

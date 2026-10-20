@@ -1,12 +1,12 @@
 #!/bin/sh
 # Print a version string.
-scriptversion=2016-05-08.18; # UTC
+scriptversion=2025-06-10.02; # UTC
 
-# Copyright (C) 2007-2016 Free Software Foundation, Inc.
+# Copyright (C) 2007-2026 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -15,69 +15,78 @@ scriptversion=2016-05-08.18; # UTC
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# This script is derived from GIT-VERSION-GEN from GIT: http://git.or.cz/.
-# It may be run two ways:
+# This script is derived from GIT-VERSION-GEN from GIT: https://git-scm.com/.
+
+# It may be run in the following ways, presuming the script is invoked
+# like "./git-version-gen .tarball-version":
+#
 # - from a git repository in which the "git describe" command below
 #   produces useful output (thus requiring at least one signed tag)
-# - from a non-git-repo directory containing a .tarball-version file, which
-#   presumes this script is invoked like "./git-version-gen .tarball-version".
+#
+# - from a "make dist" non-git-repo directory containing a
+#   .tarball-version file
+#
+# - from a "git archive" non-git-repo directory containing a
+#   .tarball-version-git file
 
-# In order to use intra-version strings in your project, you will need two
+# In order to use intra-version strings in your project, you will need some
 # separate generated version string files:
 #
-# .tarball-version - present only in a distribution tarball, and not in
-#   a checked-out repository.  Created with contents that were learned at
-#   the last time autoconf was run, and used by git-version-gen.  Must not
-#   be present in either $(srcdir) or $(builddir) for git-version-gen to
-#   give accurate answers during normal development with a checked out tree,
-#   but must be present in a tarball when there is no version control system.
-#   Therefore, it cannot be used in any dependencies.  GNUmakefile has
-#   hooks to force a reconfigure at distribution time to get the value
-#   correct, without penalizing normal development with extra reconfigures.
+# .tarball-version - contains the version number assigned by the maintainer.
+#   Present or missing in a checked-out repository, at the discretion of the
+#   maintainer/contributor.  Present in a distribution tarball, because the
+#   tarball does not include the version control history.
+#   Used by git-version-gen as an override.
+#   Cannot be used in any dependencies (since it may be absent).
+#   GNUmakefile has hooks to force a reconfigure at "make dist" time to get
+#   the value correct, without penalizing normal development with extra
+#   reconfigures.
 #
-# .version - present in a checked-out repository and in a distribution
-#   tarball.  Usable in dependencies, particularly for files that don't
-#   want to depend on config.h but do want to track version changes.
-#   Delete this file prior to any autoconf run where you want to rebuild
-#   files to pick up a version string change; and leave it stale to
-#   minimize rebuild time after unrelated changes to configure sources.
+# .tarball-version-git - a file committed to git containing a single
+#   line with the string $Format:%(describe)$ and that the file is
+#   marked in .gitattributes with ".tarball-version-git export-subst".
+#   If the file doesn't exist or the export-subst keyword wasn't
+#   effective, the file is ignored.
 #
-# As with any generated file in a VC'd directory, you should add
-# /.version to .gitignore, so that you don't accidentally commit it.
-# .tarball-version is never generated in a VC'd directory, so needn't
-# be listed there.
-#
-# Use the following line in your configure.ac, so that $(VERSION) will
+# Use the following snippet in your configure.ac, so that $(VERSION) will
 # automatically be up-to-date each time configure is run (and note that
 # since configure.ac no longer includes a version string, Makefile rules
 # should not depend on configure.ac for version updates).
 #
-# AC_INIT([GNU project],
-#         m4_esyscmd([build-aux/git-version-gen .tarball-version]),
-#         [bug-project@example])
+# AC_INIT([@var{package}], [package])
+# AC_CONFIG_SRCDIR([@var{unique-file-in-source-dir}])
+# AC_CONFIG_AUX_DIR([build-aux])
+# VERSION_NUMBER=`cd $srcdir \
+#                 && build-aux/git-version-gen .tarball-version`
+# gl_INIT_PACKAGE_VERSION([$VERSION_NUMBER])
+# AM_INIT_AUTOMAKE([@var{options}])
 #
-# Then use the following lines in your Makefile.am, so that .version
-# will be present for dependencies, and so that .version and
+# Then use the following lines in your Makefile.am, so that
 # .tarball-version will exist in distribution tarballs.
 #
-# EXTRA_DIST = $(top_srcdir)/.version
-# BUILT_SOURCES = $(top_srcdir)/.version
-# $(top_srcdir)/.version:
-#	echo $(VERSION) > $@-t && mv $@-t $@
-# dist-hook:
-#	echo $(VERSION) > $(distdir)/.tarball-version
-
+# dist-hook: dist-tarball-version
+# .PHONY: dist-tarball-version
+# dist-tarball-version:
+#	echo '$(VERSION)' > $(distdir)/.tarball-version
+#
+# To setup support for "git archive" tarballs, use the following:
+#
+# echo '$Format:%(describe)$' > .tarball-version-git
+# echo '.tarball-version-git export-subst' >> .gitattributes
+# git add .tarball-version-git .gitattributes
+# git commit -m "Add .tarball-version-git for git-version-gen."
 
 me=$0
 
+year=`expr "$scriptversion" : '\([^-]*\)'`
 version="git-version-gen $scriptversion
 
-Copyright 2011 Free Software Foundation, Inc.
-There is NO warranty.  You may redistribute this software
-under the terms of the GNU General Public License.
-For more information about these matters, see the files named COPYING."
+Copyright (C) ${year} Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."
 
 usage="\
 Usage: $me [OPTION]... \$srcdir/.tarball-version [TAG-NORMALIZATION-SED-SCRIPT]
@@ -92,7 +101,7 @@ Options:
    --help             display this help and exit
    --version          output version information and exit
 
-Running without arguments will suffice in most cases."
+Send patches and bug reports to <bug-gnulib@gnu.org>."
 
 prefix=v
 fallback=
@@ -136,16 +145,14 @@ v_from_git=
 
 # First see if there is a tarball-only version file.
 # then try "git describe", then default.
-if test -f $tarball_version_file
+if test -f "$tarball_version_file"
 then
-    v=`cat $tarball_version_file` || v=
+    v=`cat "$tarball_version_file"` || v=
     case $v in
         *$nl*) v= ;; # reject multi-line output
-        [0-9]*) ;;
-        *) v= ;;
     esac
     test "x$v" = x \
-        && echo "$0: WARNING: $tarball_version_file is missing or damaged" 1>&2
+        && echo "$0: WARNING: $tarball_version_file is damaged" 1>&2
 fi
 
 if test "x$v" != x
@@ -167,9 +174,10 @@ then
     # tag or the previous older version that did not?
     #   Newer: v6.10-77-g0f8faeb
     #   Older: v6.10-g0f8faeb
-    case $v in
-        *-*-*) : git describe is okay three part flavor ;;
-        *-*)
+    vprefix=`expr "X$v" : 'X\(.*\)-g[^-]*$'` || vprefix=$v
+    case $vprefix in
+        *-*) : git describe is probably okay three part flavor ;;
+        *)
             : git describe is older two part flavor
             # Recreate the number of commits and rewrite such that the
             # result is the same as if we were using the newer version
@@ -183,10 +191,6 @@ then
             test "$commit_list" = failed && v=UNKNOWN
             ;;
     esac
-
-    # Change the first '-' to a '.', so version-comparing tools work properly.
-    # Remove the "g" in git describe's output string, to save a byte.
-    v=`echo "$v" | sed 's/-/./;s/\(.*\)-g/\1-/'`;
     v_from_git=1
 elif test "x$fallback" = x || git --version >/dev/null 2>&1; then
     v=UNKNOWN
@@ -194,22 +198,43 @@ else
     v=$fallback
 fi
 
+if test "x$v" = xUNKNOWN \
+        && test -f "$tarball_version_file"-git \
+        && v=$(head -1 "$tarball_version_file"-git); then
+    case $v in
+        *Format*) v=UNKNOWN ;;
+    esac
+fi
+
+# Change the penultimate "-" to ".", for version-comparing tools.
+# Remove the "g" to save a byte.
+v=`echo "$v" | sed 's/-\([^-]*\)-g\([^-]*\)$/.\1-\2/'`;
+
 v=`echo "$v" |sed "s/^$prefix//"`
 
-# Test whether to append the "-dirty" suffix only if the version
+# The "-modified" suffix was previously called "-dirty".  While this term
+# was invented by the git people to designate a checkout that is not "clean",
+# it has a negative connotation that is not in line with the fact that
+# a Free Software developer routinely works with modified source code.
+# In fact, modifying source code is the *essence* of Free Software.
+# What we need here is a term that is suitable for naming tarballs, without
+# shaming the developer.  Giving a name to a tarball is something else than
+# describing the state of a git checkout.
+#
+# Test whether to append the "-modified" suffix only if the version
 # string we're using came from git.  I.e., skip the test if it's "UNKNOWN"
 # or if it came from .tarball-version.
 if test "x$v_from_git" != x; then
-  # Don't declare a version "dirty" merely because a time stamp has changed.
+  # Don't declare a version "modified" merely because a timestamp has changed.
   git update-index --refresh > /dev/null 2>&1
 
-  dirty=`exec 2>/dev/null;git diff-index --name-only HEAD` || dirty=
-  case "$dirty" in
+  modified=`exec 2>/dev/null;git diff-index --name-only HEAD` || modified=
+  case "$modified" in
       '') ;;
       *) # Append the suffix only if there isn't one already.
           case $v in
-            *-dirty) ;;
-            *) v="$v-dirty" ;;
+            *-dirty | *-modified) ;;
+            *) v="$v-modified" ;;
           esac ;;
   esac
 fi
@@ -218,9 +243,9 @@ fi
 printf %s "$v"
 
 # Local variables:
-# eval: (add-hook 'write-file-hooks 'time-stamp)
+# eval: (add-hook 'before-save-hook 'time-stamp nil t)
 # time-stamp-start: "scriptversion="
-# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-format: "%Y-%02m-%02d.%02H"
 # time-stamp-time-zone: "UTC0"
 # time-stamp-end: "; # UTC"
 # End:

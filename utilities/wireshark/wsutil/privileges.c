@@ -5,30 +5,19 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2006 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
+#define WS_LOG_DOMAIN LOG_DOMAIN_WSUTIL
 
 #if defined(HAVE_SETRESUID) || defined(HAVE_SETREGUID)
 #define _GNU_SOURCE /* Otherwise [sg]etres[gu]id won't be defined on Linux */
 #endif
-
-#include <glib.h>
-
 #include "privileges.h"
+
+#include <wsutil/ws_assert.h>
+#include <wsutil/wslog.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -43,14 +32,6 @@
 void
 init_process_policies(void)
 {
-	HMODULE kernel32Handle;
-	typedef BOOL (WINAPI *SetProcessDEPPolicyHandler)(DWORD);
-	SetProcessDEPPolicyHandler PSetProcessDEPPolicy;
-
-#ifndef PROCESS_DEP_ENABLE
-#define PROCESS_DEP_ENABLE 1
-#endif
-
 	/*
 	 * If we have SetProcessDEPPolicy(), turn "data execution
 	 * prevention" on - i.e., if the MMU lets you set execute
@@ -60,17 +41,8 @@ init_process_policies(void)
 	 * we don't care (we did our best), so we don't check for
 	 * errors.
 	 *
-	 * XXX - if the GetModuleHandle() call fails, should we report
-	 * an error?  That "shouldn't happen" - it's the equivalent
-	 * of libc.{so,sl,a} or libSystem.dylib being missing on UN*X.
 	 */
-	kernel32Handle = GetModuleHandle(_T("kernel32.dll"));
-	if (kernel32Handle != NULL) {
-		PSetProcessDEPPolicy = (SetProcessDEPPolicyHandler) GetProcAddress(kernel32Handle, "SetProcessDEPPolicy");
-		if (PSetProcessDEPPolicy) {
-			PSetProcessDEPPolicy(PROCESS_DEP_ENABLE);
-		}
-	}
+	SetProcessDEPPolicy(PROCESS_DEP_ENABLE);
 }
 
 /*
@@ -79,10 +51,10 @@ init_process_policies(void)
  * for the session in which it's run, but I don't know whether that'd be
  * done with Wireshark/TShark or not.
  */
-gboolean
+bool
 started_with_special_privs(void)
 {
-	return FALSE;
+	return false;
 }
 
 /*
@@ -91,10 +63,10 @@ started_with_special_privs(void)
  * for the session in which it's run, but I don't know whether that'd be
  * done with Wireshark/TShark or not.
  */
-gboolean
+bool
 running_with_special_privs(void)
 {
-	return FALSE;
+	return false;
 }
 
 /*
@@ -108,9 +80,9 @@ relinquish_special_privs_perm(void)
 /*
  * Get the current username.  String must be g_free()d after use.
  */
-gchar *
+char *
 get_cur_username(void) {
-	gchar *username;
+	char *username;
 	username = g_strdup("UNKNOWN");
 	return username;
 }
@@ -118,18 +90,16 @@ get_cur_username(void) {
 /*
  * Get the current group.  String must be g_free()d after use.
  */
-gchar *
+char *
 get_cur_groupname(void) {
-	gchar *groupname;
+	char *groupname;
 	groupname = g_strdup("UNKNOWN");
 	return groupname;
 }
 
 #else /* _WIN32 */
 
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
+#include <sys/types.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -148,7 +118,7 @@ get_cur_groupname(void) {
 
 static uid_t ruid, euid;
 static gid_t rgid, egid;
-static gboolean init_process_policies_called = FALSE;
+static bool init_process_policies_called;
 
 /*
  * Called when the program starts, to save whatever credential information
@@ -169,17 +139,17 @@ init_process_policies(void)
 	rgid = getgid();
 	egid = getegid();
 
-	init_process_policies_called = TRUE;
+	init_process_policies_called = true;
 }
 
 /*
  * "Started with special privileges" means "started out set-UID or set-GID",
  * or run as the root user or group.
  */
-gboolean
+bool
 started_with_special_privs(void)
 {
-	g_assert(init_process_policies_called);
+	ws_assert(init_process_policies_called);
 #ifdef HAVE_ISSETUGID
 	return issetugid();
 #else
@@ -188,10 +158,10 @@ started_with_special_privs(void)
 }
 
 /*
- * Return TRUE if the real, effective, or saved (if we can check it) user
+ * Return true if the real, effective, or saved (if we can check it) user
  * ID or group are 0.
  */
-gboolean
+bool
 running_with_special_privs(void)
 {
 #ifdef HAVE_SETRESUID
@@ -204,20 +174,20 @@ running_with_special_privs(void)
 #ifdef HAVE_SETRESUID
 	getresuid(&ru, &eu, &su);
 	if (ru == 0 || eu == 0 || su == 0)
-		return TRUE;
+		return true;
 #else
 	if (getuid() == 0 || geteuid() == 0)
-		return TRUE;
+		return true;
 #endif
 #ifdef HAVE_SETRESGID
 	getresgid(&rg, &eg, &sg);
 	if (rg == 0 || eg == 0 || sg == 0)
-		return TRUE;
+		return true;
 #else
 	if (getgid() == 0 || getegid() == 0)
-		return TRUE;
+		return true;
 #endif
-	return FALSE;
+	return false;
 }
 
 /*
@@ -232,9 +202,9 @@ running_with_special_privs(void)
  */
 
 static void
-setxid_fail(const gchar *str)
+setxid_fail(const char *str)
 {
-	g_error("Attempt to relinguish privileges failed [%s()] - aborting: %s\n",
+	ws_error("Attempt to relinquish privileges failed [%s()] - aborting: %s\n",
 		str, g_strerror(errno));
 }
 
@@ -246,7 +216,7 @@ relinquish_special_privs_perm(void)
 	 * real and effective group and user IDs to the original
 	 * values of the real and effective group and user IDs.
 	 * If we're not, don't bother - doing so seems to mung
-	 * our group set, at least in OS X 10.5.
+	 * our group set, at least in Mac OS X 10.5.
 	 *
 	 * (Set the effective UID last - that takes away our
 	 * rights to set anything else.)
@@ -271,9 +241,9 @@ relinquish_special_privs_perm(void)
 /*
  * Get the current username.  String must be g_free()d after use.
  */
-gchar *
+char *
 get_cur_username(void) {
-	gchar *username;
+	char *username;
 	struct passwd *pw = getpwuid(getuid());
 
 	if (pw) {
@@ -288,9 +258,9 @@ get_cur_username(void) {
 /*
  * Get the current group.  String must be g_free()d after use.
  */
-gchar *
+char *
 get_cur_groupname(void) {
-	gchar *groupname;
+	char *groupname;
 	struct group *gr = getgrgid(getgid());
 
 	if (gr) {

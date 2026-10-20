@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>708</width>
-    <height>400</height>
+    <width>750</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>RTP Player</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0,0">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
@@ -21,6 +21,9 @@
      </property>
      <widget class="QCustomPlot" name="audioPlot" native="true"/>
      <widget class="QTreeWidget" name="streamTreeWidget">
+      <property name="selectionMode">
+       <enum>QAbstractItemView::ExtendedSelection</enum>
+      </property>
       <property name="rootIsDecorated">
        <bool>false</bool>
       </property>
@@ -30,6 +33,20 @@
       <property name="itemsExpandable">
        <bool>false</bool>
       </property>
+      <property name="sortingEnabled">
+       <bool>true</bool>
+      </property>
+      <property name="expandsOnDoubleClick">
+       <bool>false</bool>
+      </property>
+      <column>
+       <property name="text">
+        <string>Play</string>
+       </property>
+       <property name="toolTip">
+        <string>Double click to change audio routing</string>
+       </property>
+      </column>
       <column>
        <property name="text">
         <string>Source Address</string>
@@ -72,7 +89,18 @@
       </column>
       <column>
        <property name="text">
-        <string>Sample Rate (Hz)</string>
+        <string>SR (Hz)</string>
+       </property>
+       <property name="toolTip">
+        <string>Sample rate of codec</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>PR (Hz)</string>
+       </property>
+       <property name="toolTip">
+        <string>Play rate of decoded audio (depends e. g. on selected sound card)</string>
        </property>
       </column>
       <column>
@@ -85,30 +113,6 @@
    </item>
    <item>
     <widget class="QLabel" name="hintLabel">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;
-
-&lt;h3&gt;Valuable and amazing time-saving keyboard shortcuts&lt;/h3&gt;
-&lt;table&gt;&lt;tbody&gt;
-
-&lt;tr&gt;&lt;th&gt;+&lt;/th&gt;&lt;td&gt;Zoom in&lt;/td&gt;&lt;/th&gt;
-&lt;tr&gt;&lt;th&gt;-&lt;/th&gt;&lt;td&gt;Zoom out&lt;/td&gt;&lt;/th&gt;
-&lt;tr&gt;&lt;th&gt;0&lt;/th&gt;&lt;td&gt;Reset graph to its initial state&lt;/td&gt;&lt;/th&gt;
-
-&lt;tr&gt;&lt;th&gt;→&lt;/th&gt;&lt;td&gt;Move right 10 pixels&lt;/td&gt;&lt;/th&gt;
-&lt;tr&gt;&lt;th&gt;←&lt;/th&gt;&lt;td&gt;Move left 10 pixels&lt;/td&gt;&lt;/th&gt;
-&lt;tr&gt;&lt;th&gt;&lt;i&gt;Shift+&lt;/i&gt;→&lt;/th&gt;&lt;td&gt;Move right 1 pixel&lt;/td&gt;&lt;/th&gt;
-&lt;tr&gt;&lt;th&gt;&lt;i&gt;Shift+&lt;/i&gt;←&lt;/th&gt;&lt;td&gt;Move left 1 pixel&lt;/td&gt;&lt;/th&gt;
-
-&lt;tr&gt;&lt;th&gt;g&lt;/th&gt;&lt;td&gt;Go to packet under cursor&lt;/td&gt;&lt;/th&gt;
-
-&lt;tr&gt;&lt;th&gt;z&lt;/th&gt;&lt;td&gt;Toggle mouse drag / zoom&lt;/td&gt;&lt;/th&gt;
-&lt;tr&gt;&lt;th&gt;t&lt;/th&gt;&lt;td&gt;Toggle capture / session time origin&lt;/td&gt;&lt;/th&gt;
-&lt;tr&gt;&lt;th&gt;Space&lt;/th&gt;&lt;td&gt;Toggle crosshairs&lt;/td&gt;&lt;/th&gt;
-
-&lt;/tbody&gt;&lt;/table&gt;
-&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
      <property name="text">
       <string>&lt;small&gt;&lt;i&gt;No audio&lt;/i&gt;&lt;/small&gt;</string>
      </property>
@@ -118,11 +122,24 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0,0,0,0,1,0">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,1,0,0">
      <item>
       <widget class="QToolButton" name="playButton">
        <property name="text">
         <string/>
+       </property>
+       <property name="toolTip">
+        <string>Start playback of all unmuted streams</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="pauseButton">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="toolTip">
+        <string>Pause/unpause playback</string>
        </property>
       </widget>
      </item>
@@ -130,6 +147,9 @@
       <spacer name="horizontalSpacer_4">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -144,6 +164,9 @@
        <property name="text">
         <string/>
        </property>
+       <property name="toolTip">
+        <string>Stop playback</string>
+       </property>
       </widget>
      </item>
      <item>
@@ -151,9 +174,38 @@
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>40</width>
+         <width>20</width>
+         <height>10</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QToolButton" name="skipSilenceButton">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="toolTip">
+        <string>Enable/disable skipping of silence during playback</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_7">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
          <height>10</height>
         </size>
        </property>
@@ -161,9 +213,88 @@
      </item>
      <item>
       <widget class="QLabel" name="label">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <property name="text">
+        <string>Min silence:</string>
        </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="minSilenceSpinBox">
+       <property name="toolTip">
+        <string>Minimum silence duration to skip in seconds</string>
+       </property>
+       <property name="decimals">
+        <number>0</number>
+       </property>
+       <property name="minimum">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>2.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_8">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>10</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Output Device:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="outputDeviceComboBox"/>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_6">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>10</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Output Audio Rate:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="outputAudioRate"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,1">
+     <item>
+      <widget class="QLabel" name="label_1">
        <property name="text">
         <string>Jitter Buffer:</string>
        </property>
@@ -178,7 +309,7 @@
         <number>0</number>
        </property>
        <property name="maximum">
-        <double>500.000000000000000</double>
+        <double>2000.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>5.000000000000000</double>
@@ -241,8 +372,8 @@
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>40</width>
-         <height>20</height>
+         <width>20</width>
+         <height>10</height>
         </size>
        </property>
       </spacer>
@@ -254,6 +385,48 @@
        </property>
        <property name="text">
         <string>Time of Day</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>48</width>
+         <height>24</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="visualSRLabel">
+       <property name="text">
+        <string>Visual Sample Rate:</string>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Adjust the sampling rate used for the waveform display. Higher values display higher frequency harmonics but take additional processing time. Values between 1 kHz and 48 kHz are supported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="visualSRSpinBox">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Adjust the sampling rate used for the waveform display. Higher values display higher frequency harmonics but take additional processing time. Values between 1 kHz and 48 kHz are supported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="minimum">
+        <number>1000</number>
+       </property>
+       <property name="maximum">
+        <number>48000</number>
+       </property>
+       <property name="suffix">
+        <string> Hz</string>
+       </property>
+       <property name="stepType">
+        <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
        </property>
       </widget>
      </item>
@@ -270,6 +443,59 @@
     </widget>
    </item>
   </layout>
+  <action name="actionExportButton">
+   <property name="text">
+    <string>&amp;Export</string>
+   </property>
+   <property name="toolTip">
+    <string>Export audio of all unmuted selected channels or export payload of one channel.</string>
+   </property>
+  </action>
+  <widget class="QMenu" name="menuExport">
+   <property name="title">
+    <string>&amp;Export</string>
+   </property>
+   <property name="toolTipsVisible">
+    <bool>true</bool>
+   </property>
+   <addaction name="actionSaveAudioFromCursor"/>
+   <addaction name="actionSaveAudioSyncStream"/>
+   <addaction name="actionSaveAudioSyncFile"/>
+   <addaction name="separator"/>
+   <addaction name="actionSavePayload"/>
+  </widget>
+  <action name="actionSaveAudioFromCursor">
+   <property name="text">
+    <string>From &amp;cursor</string>
+   </property>
+   <property name="toolTip">
+    <string>Save audio data started at the cursor</string>
+   </property>
+  </action>
+  <action name="actionSaveAudioSyncStream">
+   <property name="text">
+    <string>&amp;Stream Synchronized Audio</string>
+   </property>
+   <property name="toolTip">
+    <string>Save audio data synchronized to start of the earliest stream.</string>
+   </property>
+  </action>
+  <action name="actionSaveAudioSyncFile">
+   <property name="text">
+    <string>&amp;File Synchronized Audio</string>
+   </property>
+   <property name="toolTip">
+    <string>Save audio data synchronized to start of the capture file.</string>
+   </property>
+  </action>
+  <action name="actionSavePayload">
+   <property name="text">
+    <string>&amp;Payload</string>
+   </property>
+   <property name="toolTip">
+    <string>Save RTP payload of selected stream.</string>
+   </property>
+  </action>
   <action name="actionReset">
    <property name="text">
     <string>Reset Graph</string>
@@ -278,7 +504,7 @@
     <string>Reset the graph to its initial state.</string>
    </property>
    <property name="shortcut">
-    <string>0</string>
+    <string notr="true">0</string>
    </property>
   </action>
   <action name="actionZoomIn">
@@ -289,7 +515,7 @@
     <string>Zoom In</string>
    </property>
    <property name="shortcut">
-    <string>+</string>
+    <string notr="true">+</string>
    </property>
   </action>
   <action name="actionZoomOut">
@@ -300,7 +526,7 @@
     <string>Zoom Out</string>
    </property>
    <property name="shortcut">
-    <string>-</string>
+    <string notr="true">-</string>
    </property>
   </action>
   <action name="actionMoveLeft10">
@@ -311,7 +537,7 @@
     <string>Move Left 10 Pixels</string>
    </property>
    <property name="shortcut">
-    <string>Left</string>
+    <string notr="true">Left</string>
    </property>
   </action>
   <action name="actionMoveRight10">
@@ -322,7 +548,7 @@
     <string>Move Right 10 Pixels</string>
    </property>
    <property name="shortcut">
-    <string>Right</string>
+    <string notr="true">Right</string>
    </property>
   </action>
   <action name="actionMoveLeft1">
@@ -333,7 +559,7 @@
     <string>Move Left 1 Pixels</string>
    </property>
    <property name="shortcut">
-    <string>Shift+Left</string>
+    <string notr="true">Shift+Left</string>
    </property>
   </action>
   <action name="actionMoveRight1">
@@ -344,7 +570,7 @@
     <string>Move Right 1 Pixels</string>
    </property>
    <property name="shortcut">
-    <string>Shift+Right</string>
+    <string notr="true">Shift+Right</string>
    </property>
   </action>
   <action name="actionGoToPacket">
@@ -355,40 +581,242 @@
     <string>Go to packet currently under the cursor</string>
    </property>
    <property name="shortcut">
-    <string>G</string>
+    <string notr="true">G</string>
    </property>
   </action>
-  <action name="actionDragZoom">
+  <action name="actionGoToSetupPacketPlot">
    <property name="text">
-    <string>Drag / Zoom</string>
+    <string>Go To Setup Packet</string>
    </property>
    <property name="toolTip">
-    <string>Toggle mouse drag / zoom behavior</string>
+    <string>Go to setup packet of stream currently under the cursor</string>
    </property>
    <property name="shortcut">
-    <string>Z</string>
+    <string notr="true">Shift+G</string>
    </property>
   </action>
-  <action name="actionToggleTimeOrigin">
+  <action name="actionGoToSetupPacketTree">
    <property name="text">
-    <string>Capture / Session Time Origin</string>
+    <string>Go To Setup Packet</string>
    </property>
    <property name="toolTip">
-    <string>Toggle capture / session time origin</string>
+    <string>Go to setup packet of stream currently under the cursor</string>
    </property>
    <property name="shortcut">
-    <string>T</string>
+    <string notr="true">Shift+G</string>
    </property>
   </action>
-  <action name="actionCrosshairs">
+  <widget class="QMenu" name="menuAudioRouting">
+   <property name="title">
+    <string>Audio Routing</string>
+   </property>
+   <property name="toolTipsVisible">
+    <bool>true</bool>
+   </property>
+   <addaction name="actionAudioRoutingMute"/>
+   <addaction name="actionAudioRoutingUnmute"/>
+   <addaction name="actionAudioRoutingMuteInvert"/>
+   <addaction name="actionAudioRoutingP"/>
+   <addaction name="actionAudioRoutingL"/>
+   <addaction name="actionAudioRoutingLR"/>
+   <addaction name="actionAudioRoutingR"/>
+  </widget>
+  <action name="actionAudioRoutingMute">
    <property name="text">
-    <string>Crosshairs</string>
+    <string>Mute</string>
    </property>
    <property name="toolTip">
-    <string>Toggle crosshairs</string>
+    <string>Mute selected streams</string>
    </property>
    <property name="shortcut">
-    <string>Space</string>
+    <string notr="true">M</string>
+   </property>
+  </action>
+  <action name="actionAudioRoutingUnmute">
+   <property name="text">
+    <string>Unmute</string>
+   </property>
+   <property name="toolTip">
+    <string>Unmute selected streams</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Shift+M</string>
+   </property>
+  </action>
+  <action name="actionAudioRoutingMuteInvert">
+   <property name="text">
+    <string>Invert Muting</string>
+   </property>
+   <property name="toolTip">
+    <string>Invert muting of selected streams</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+M</string>
+   </property>
+  </action>
+  <action name="actionAudioRoutingP">
+   <property name="text">
+    <string>Play</string>
+   </property>
+   <property name="toolTip">
+    <string>Play the stream</string>
+   </property>
+  </action>
+  <action name="actionAudioRoutingL">
+   <property name="text">
+    <string>To Left</string>
+   </property>
+   <property name="toolTip">
+    <string>Route audio to left channel of selected streams</string>
+   </property>
+  </action>
+  <action name="actionAudioRoutingLR">
+   <property name="text">
+    <string>Left + Right</string>
+   </property>
+   <property name="toolTip">
+    <string>Route audio to left and right channel of selected streams</string>
+   </property>
+  </action>
+  <action name="actionAudioRoutingR">
+   <property name="text">
+    <string>To Right</string>
+   </property>
+   <property name="toolTip">
+    <string>Route audio to right channel of selected streams</string>
+   </property>
+  </action>
+  <action name="actionRemoveStream">
+   <property name="text">
+    <string>Remove Streams</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove selected streams from the list</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Delete</string>
+   </property>
+  </action>
+  <widget class="QMenu" name="menuSelect">
+   <property name="title">
+    <string>Select</string>
+   </property>
+   <property name="toolTipsVisible">
+    <bool>true</bool>
+   </property>
+   <addaction name="actionSelectAll"/>
+   <addaction name="actionSelectNone"/>
+   <addaction name="actionSelectInvert"/>
+  </widget>
+  <action name="actionSelectAll">
+   <property name="text">
+    <string>All</string>
+   </property>
+   <property name="toolTip">
+    <string>Select all</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+A</string>
+   </property>
+  </action>
+  <action name="actionSelectNone">
+   <property name="text">
+    <string>None</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear selection</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+Shift+A</string>
+   </property>
+  </action>
+  <action name="actionSelectInvert">
+   <property name="text">
+    <string>Invert</string>
+   </property>
+   <property name="toolTip">
+    <string>Invert selection</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+I</string>
+   </property>
+  </action>
+  <action name="actionPlay">
+   <property name="text">
+    <string>Play/Pause</string>
+   </property>
+   <property name="toolTip">
+    <string>Start playing or pause playing</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">P</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop playing</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">S</string>
+   </property>
+  </action>
+  <action name="actionInaudibleButton">
+   <property name="text">
+    <string>I&amp;naudible streams</string>
+   </property>
+   <property name="toolTip">
+    <string>Select/Deselect inaudible streams</string>
+   </property>
+  </action>
+  <widget class="QMenu" name="menuInaudible">
+   <property name="title">
+    <string>Inaudible streams</string>
+   </property>
+   <property name="toolTipsVisible">
+    <bool>true</bool>
+   </property>
+   <addaction name="actionSelectInaudible"/>
+   <addaction name="actionDeselectInaudible"/>
+  </widget>
+  <action name="actionSelectInaudible">
+   <property name="text">
+    <string>&amp;Select</string>
+   </property>
+   <property name="toolTip">
+    <string>Select inaudible streams</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">N</string>
+   </property>
+  </action>
+  <action name="actionDeselectInaudible">
+   <property name="text">
+    <string>&amp;Deselect</string>
+   </property>
+   <property name="toolTip">
+    <string>Deselect inaudible streams</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Shift+N</string>
+   </property>
+  </action>
+  <action name="actionPrepareFilter">
+   <property name="text">
+    <string>Prepare &amp;Filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Prepare a filter matching the selected streams.</string>
+   </property>
+  </action>
+  <action name="actionReadCapture">
+   <property name="text">
+    <string>R&amp;efresh streams</string>
+   </property>
+   <property name="toolTip">
+    <string>Read captured packets from capture in progress to player</string>
    </property>
   </action>
  </widget>
@@ -396,7 +824,7 @@
   <customwidget>
    <class>QCustomPlot</class>
    <extends>QWidget</extends>
-   <header>qcustomplot.h</header>
+   <header>widgets/qcustomplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

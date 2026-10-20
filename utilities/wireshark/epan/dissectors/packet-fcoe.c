@@ -9,19 +9,7 @@
  *
  * Based on packet-fcip.c, Copyright 2001, Dinesh G Dutt (ddutt@cisco.com)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -33,7 +21,6 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/crc32-tvb.h>
-#include <epan/etypes.h>
 #include <epan/expert.h>
 #include "packet-fc.h"
 
@@ -89,42 +76,70 @@ static const value_string fcoe_sof_vals[] = {
     {0, NULL}
 };
 
-static int proto_fcoe          = -1;
-static int hf_fcoe_ver         = -1;
-static int hf_fcoe_len         = -1;
-static int hf_fcoe_sof         = -1;
-static int hf_fcoe_eof         = -1;
-static int hf_fcoe_crc         = -1;
-static int hf_fcoe_crc_status  = -1;
+static int proto_fcoe;
+static int hf_fcoe_ver;
+static int hf_fcoe_len;
+static int hf_fcoe_sof;
+static int hf_fcoe_eof;
+static int hf_fcoe_crc;
+static int hf_fcoe_crc_status;
 
-static int ett_fcoe            = -1;
+static int ett_fcoe;
 
-static expert_field ei_fcoe_crc = EI_INIT;
+static expert_field ei_fcoe_crc;
 
 static dissector_handle_t fc_handle;
+static dissector_handle_t fcoe_handle;
+
+
+/* Looks for the EOF at a given offset. Returns NULL if the EOF is not
+ * present, is not one of the known values, or if the next three bytes, if
+ * present, are not padding. Otherwise returns the entry from the EOF
+ * value_string. Intended for use with the newer T11 version, where the frame
+ * length is not explicitly set (and padding is used). */
+static const char *
+fcoe_get_eof(tvbuff_t *tvb, int eof_offset)
+{
+    uint8_t     eof          = 0;
+    const char *eof_str;
+    int         padding_remaining;
+
+    if (!tvb_bytes_exist(tvb, eof_offset, 1)) {
+        return NULL;
+    }
+
+    padding_remaining = MIN(tvb_captured_length_remaining(tvb, eof_offset+1),3);
+    if (tvb_memeql(tvb, eof_offset+1, (const uint8_t*)"\x00\x00\x00", padding_remaining)) {
+        return NULL;
+    }
+
+    eof = tvb_get_uint8(tvb, eof_offset);
+    eof_str = try_val_to_str(eof, fcoe_eof_vals);
+    return eof_str;
+}
 
 static int
 dissect_fcoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    gint        crc_offset;
-    gint        eof_offset;
-    gint        frame_len    = 0;
-    gint        header_len   = FCOE_HEADER_LEN;
-    guint       version;
+    int         crc_offset;
+    int         eof_offset;
+    int         frame_len    = 0;
+    int         header_len   = FCOE_HEADER_LEN;
+    unsigned    version;
     const char *ver;
-    guint16     len_sof;
-    gint        bytes_remaining;
-    guint8      sof          = 0;
-    guint8      eof          = 0;
+    uint16_t    len_sof;
+    int         bytes_remaining;
+    uint8_t     sof          = 0;
+    uint8_t     eof          = 0;
     const char *eof_str;
     const char *crc_msg;
     const char *len_msg;
     proto_item *ti;
     proto_tree *fcoe_tree;
     tvbuff_t   *next_tvb;
-    gboolean    crc_exists;
-    guint32     crc_computed = 0;
-    guint32     crc          = 0;
+    bool        crc_exists;
+    uint32_t    crc_computed = 0;
+    uint32_t    crc          = 0;
     fc_data_t fc_data;
 
     /*
@@ -132,7 +147,7 @@ dissect_fcoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
      * In the newer version, byte 1 is reserved and always zero.  In the old
      * version, it'll never be zero.
      */
-    if (tvb_get_guint8(tvb, 1)) {
+    if (tvb_get_uint8(tvb, 1)) {
         header_len = 2;
         len_sof = tvb_get_ntohs(tvb, 0);
         frame_len = ((len_sof & 0x3ff0) >> 2) - 4;
@@ -141,34 +156,59 @@ dissect_fcoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         version = len_sof >> 14;
         ver = "pre-T11 ";
         if (version != 0)
-            ver = wmem_strdup_printf(wmem_packet_scope(), ver, "pre-T11 ver %d ", version);
+            ver = wmem_strdup_printf(pinfo->pool, ver, "pre-T11 ver %d ", version);
+        eof_offset = header_len + frame_len + 4;
+        eof_str = "none";
+        if (tvb_bytes_exist(tvb, eof_offset, 1)) {
+            eof = tvb_get_uint8(tvb, eof_offset);
+            eof_str = val_to_str(pinfo->pool, eof, fcoe_eof_vals, "0x%x");
+        }
+        /* Old format has a length field, so we can help the Ethernet dissector
+         * guess about the FCS; note this format does not pad after the EOF */
+        set_actual_length(tvb, eof_offset+1);
     } else {
         frame_len = tvb_reported_length_remaining(tvb, 0) -
           FCOE_HEADER_LEN - FCOE_TRAILER_LEN;
-        sof = tvb_get_guint8(tvb, FCOE_HEADER_LEN - 1);
+        sof = tvb_get_uint8(tvb, FCOE_HEADER_LEN - 1);
 
         /*
          * Only version 0 is defined at this point.
          * Don't print the version in the short summary if it is zero.
          */
         ver = "";
-        version = tvb_get_guint8(tvb, 0) >> 4;
+        version = tvb_get_uint8(tvb, 0) >> 4;
         if (version != 0)
-            ver = wmem_strdup_printf(wmem_packet_scope(), ver, "ver %d ", version);
+            ver = wmem_strdup_printf(pinfo->pool, ver, "ver %d ", version);
+
+        eof_offset = header_len + frame_len + 4;
+        if (NULL == (eof_str = fcoe_get_eof(tvb, eof_offset))) {
+            /* We didn't find the EOF, look 4 bytes earlier */
+            if (NULL != (eof_str = fcoe_get_eof(tvb, eof_offset-4))) {
+                /* Found it, so it seems there's an Ethernet FCS. */
+                frame_len -= 4;
+                set_actual_length(tvb, eof_offset);
+                eof_offset -= 4;
+            } else {
+                if (tvb_bytes_exist(tvb, eof_offset, 1)) {
+                    /* Hmm, we have enough bytes to look for the EOF
+                     * but it's an unexpected value. */
+                    eof = tvb_get_uint8(tvb, eof_offset);
+                    eof_str = wmem_strdup_printf(pinfo->pool, "0x%x", eof);
+                } else {
+                    /* We just didn't capture enough to get the EOF */
+                    eof_str = "none";
+                }
+            }
+        }
+
     }
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FCoE");
     crc_offset = header_len + frame_len;
-    eof_offset = crc_offset + 4;
+
     bytes_remaining = tvb_captured_length_remaining(tvb, header_len);
     if (bytes_remaining > frame_len)
         bytes_remaining = frame_len;        /* backing length */
-    next_tvb = tvb_new_subset(tvb, header_len, bytes_remaining, frame_len);
-
-    eof_str = "none";
-    if (tvb_bytes_exist(tvb, eof_offset, 1)) {
-        eof = tvb_get_guint8(tvb, eof_offset);
-        eof_str = val_to_str(eof, fcoe_eof_vals, "0x%x");
-    }
+    next_tvb = tvb_new_subset_length_caplen(tvb, header_len, bytes_remaining, frame_len);
 
     /*
      * Check the CRC.
@@ -190,7 +230,7 @@ dissect_fcoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     ti = proto_tree_add_protocol_format(tree, proto_fcoe, tvb, 0,
                                         header_len,
                                         "FCoE %s(%s/%s) %d bytes%s%s", ver,
-                                        val_to_str(sof, fcoe_sof_vals,
+                                        val_to_str(pinfo->pool, sof, fcoe_sof_vals,
                                                    "0x%x"),
                                         eof_str, frame_len, crc_msg,
                                         len_msg);
@@ -199,7 +239,7 @@ dissect_fcoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     fcoe_tree = proto_item_add_subtree(ti, ett_fcoe);
     proto_tree_add_uint(fcoe_tree, hf_fcoe_ver, tvb, 0, 1, version);
-    if (tvb_get_guint8(tvb, 1)) {
+    if (tvb_get_uint8(tvb, 1)) {
         proto_tree_add_uint(fcoe_tree, hf_fcoe_len, tvb, 0, 2, frame_len);
     }
     proto_tree_add_uint(fcoe_tree, hf_fcoe_sof, tvb,
@@ -238,7 +278,7 @@ dissect_fcoe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     }
 
     /* Call the FC Dissector if this is carrying an FC frame */
-    fc_data.ethertype = 0;
+    fc_data.ethertype = ETHERTYPE_UNK;
 
     if (fc_handle) {
         call_dissector_with_data(fc_handle, next_tvb, pinfo, tree, &fc_data);
@@ -272,7 +312,7 @@ proto_register_fcoe(void)
           {"CRC Status", "fcoe.crc.status", FT_UINT8, BASE_NONE, VALS(proto_checksum_vals), 0x0,
             NULL, HFILL }}
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_fcoe,
     };
 
@@ -285,6 +325,7 @@ proto_register_fcoe(void)
     /* Register the protocol name and description */
     proto_fcoe = proto_register_protocol("Fibre Channel over Ethernet",
         "FCoE", "fcoe");
+    fcoe_handle = register_dissector("fcoe", dissect_fcoe, proto_fcoe);
 
     /* Required function calls to register the header fields and
      * subtrees used */
@@ -293,7 +334,7 @@ proto_register_fcoe(void)
     expert_fcoe = expert_register_protocol(proto_fcoe);
     expert_register_field_array(expert_fcoe, ei, array_length(ei));
 
-    fcoe_module = prefs_register_protocol(proto_fcoe, NULL);
+    fcoe_module = prefs_register_protocol_obsolete(proto_fcoe);
 
     prefs_register_obsolete_preference(fcoe_module, "ethertype");
 }
@@ -301,15 +342,12 @@ proto_register_fcoe(void)
 void
 proto_reg_handoff_fcoe(void)
 {
-    dissector_handle_t fcoe_handle;
-
-    fcoe_handle = create_dissector_handle(dissect_fcoe, proto_fcoe);
     dissector_add_uint("ethertype", ETHERTYPE_FCOE, fcoe_handle);
     fc_handle   = find_dissector_add_dependency("fc", proto_fcoe);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

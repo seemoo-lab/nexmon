@@ -1,0 +1,19 @@
+*** gl_hash_map.h.orig
+--- gl_hash_map.h
+***************
+*** 24,30 ****
+  extern "C" {
+  #endif
+
+! extern const struct gl_map_implementation gl_hash_map_implementation;
+  #define GL_HASH_MAP &gl_hash_map_implementation
+
+  #ifdef __cplusplus
+--- 24,30 ----
+  extern "C" {
+  #endif
+
+! extern DLL_VARIABLE const struct gl_map_implementation gl_hash_map_implementation;
+  #define GL_HASH_MAP &gl_hash_map_implementation
+
+  #ifdef __cplusplus

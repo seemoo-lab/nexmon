@@ -47,16 +47,16 @@ InvokeProblem        VAL_PTR = &problem_val
 ReturnResultProblem  VAL_PTR = &problem_val
 ReturnErrorProblem   VAL_PTR = &problem_val
 #.FN_FTR GeneralProblem
-  g_strlcpy(problem_str, val_to_str_const(problem_val, VALS(h450_ros_GeneralProblem_vals), ""), 64);
+  (void) g_strlcpy(problem_str, val_to_str_const(problem_val, VALS(h450_ros_GeneralProblem_vals), ""), 64);
   problem_str[64-1] = '\0';
 #.FN_FTR InvokeProblem
-  g_strlcpy(problem_str, val_to_str_const(problem_val, VALS(h450_ros_InvokeProblem_vals), ""), 64);
+  (void) g_strlcpy(problem_str, val_to_str_const(problem_val, VALS(h450_ros_InvokeProblem_vals), ""), 64);
   problem_str[64-1] = '\0';
 #.FN_FTR ReturnResultProblem
-  g_strlcpy(problem_str, val_to_str_const(problem_val, VALS(h450_ros_ReturnResultProblem_vals), ""), 64);
+  (void) g_strlcpy(problem_str, val_to_str_const(problem_val, VALS(h450_ros_ReturnResultProblem_vals), ""), 64);
   problem_str[64-1] = '\0';
 #.FN_FTR ReturnErrorProblem
-  g_strlcpy(problem_str, val_to_str_const(problem_val, VALS(h450_ros_ReturnErrorProblem_vals), ""), 64);
+  (void) g_strlcpy(problem_str, val_to_str_const(problem_val, VALS(h450_ros_ReturnErrorProblem_vals), ""), 64);
   problem_str[64-1] = '\0';
 #.END
 
@@ -65,7 +65,7 @@ ReturnErrorProblem   VAL_PTR = &problem_val
 # body is implemented manually as asn2wrs is not able to handle subtype constraint event passed through parameter
 #.FN_BODY Invoke/invokeId
   offset = dissect_per_constrained_integer(%(TVB)s, %(OFFSET)s, %(ACTX)s, %(TREE)s, %(HF_INDEX)s,
-                                           0U, 65535U, %(VAL_PTR)s, TRUE);
+                                           0U, 65535U, %(VAL_PTR)s, true);
 #.END
 
 #.FIELD_ATTR

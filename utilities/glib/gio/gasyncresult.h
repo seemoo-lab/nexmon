@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,12 +36,6 @@ G_BEGIN_DECLS
 #define G_IS_ASYNC_RESULT(obj)	       (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_ASYNC_RESULT))
 #define G_ASYNC_RESULT_GET_IFACE(obj)  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), G_TYPE_ASYNC_RESULT, GAsyncResultIface))
 
-/**
- * GAsyncResult:
- *
- * Holds results information for an asynchronous operation,
- * usually passed directly to a asynchronous _finish() operation.
- **/
 typedef struct _GAsyncResultIface    GAsyncResultIface;
 
 
@@ -50,7 +46,7 @@ typedef struct _GAsyncResultIface    GAsyncResultIface;
  * @get_source_object: Gets the source object that issued the asynchronous operation.
  * @is_tagged: Checks if a result is tagged with a particular source.
  *
- * Interface definition for #GAsyncResult.
+ * Interface definition for [iface@Gio.AsyncResult].
  **/
 struct _GAsyncResultIface
 {
@@ -65,18 +61,18 @@ struct _GAsyncResultIface
 				   gpointer      source_tag);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType    g_async_result_get_type          (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType    g_async_result_get_type          (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gpointer g_async_result_get_user_data     (GAsyncResult *res);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GObject *g_async_result_get_source_object (GAsyncResult *res);
 
-GLIB_AVAILABLE_IN_2_34
+GIO_AVAILABLE_IN_2_34
 gboolean g_async_result_legacy_propagate_error (GAsyncResult  *res,
 						GError       **error);
-GLIB_AVAILABLE_IN_2_34
+GIO_AVAILABLE_IN_2_34
 gboolean g_async_result_is_tagged              (GAsyncResult  *res,
 						gpointer       source_tag);
 

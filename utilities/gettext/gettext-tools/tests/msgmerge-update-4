@@ -30,7 +30,7 @@ msgstr "weiß"
 #~ msgstr "grün"
 EOF
 
-cat <<EOF > mm-u-4.pot
+cat <<\EOF > mm-u-4.pot
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.

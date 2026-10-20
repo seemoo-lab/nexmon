@@ -1,0 +1,178 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of JavaScript support: tagged template literals.
+
+cat <<\EOF > xg-js-13.js
+var s0 = _`A template literal without substitutions`;
+var s1 = _ `A template literal with
+embedded
+newlines`);
+var s2 = _ /* XYZZY */ `A template literal with ${n} substitutions`;
+var s3 = _`A template literal with several substitutions: ${a} and ${b} and ${c} and so on`;
+var s4 = `/${looks_like_regex}`;
+var s5 = _('not part of a regex');
+var s6 = _`that's a valid string. ` + _('This too');
+var s7 = _ tag`A template literal with two tags`;
+var s8 = _`a${_`b${_`c`+d}`}e`;
+var s9 = _("a normal string");
+var s10 = _`abc${foo({},_('should be extracted'))}xyz`;
+var f1 = function () {
+  return _("first normal string") + _`${foo}` + _("second normal string");
+};
+var s11 = _("another normal string");
+var s12 = { property: _`A template literal with ${n} substitution` };
+var s13 = _("yet another normal string");
+// Mixing JSX with template literals.
+var s14 = 0;
+var s15 = (
+  <div>
+    _("Expected translation string #10");
+    {_`pre11${ _("Expected translation string #11") }post11`}
+    _("Expected translation string #12");
+  </div>
+);
+var s16 = _("Expected translation string #13");
+var s17 = <div className={_`pre14${ _("Expected translation string #14") }post14`} /> ;
+var s18 = _("Expected translation string #15");
+var s19 = { a: 1, b: <div className={_`pre16${ _("Expected translation string #16") }post16`} /> };
+var s20 = _("Expected translation string #17");
+var s21 = _`begin${ <div> _("Expected translation string #18") </div> }end`;
+var s22 = _("Expected translation string #19");
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --add-comments --no-location --tag=_:javascript-gnome-format \
+            -o xg-js-13.tmp xg-js-13.js 2>xg-js-13.err
+test $? = 0 || { cat xg-js-13.err; Exit 1; }
+func_filter_POT_Creation_Date xg-js-13.tmp xg-js-13.pot
+
+cat <<\EOF > xg-js-13.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "A template literal without substitutions"
+msgstr ""
+
+msgid ""
+"A template literal with\n"
+"embedded\n"
+"newlines"
+msgstr ""
+
+#. XYZZY
+msgid "A template literal with {0} substitutions"
+msgstr ""
+
+msgid ""
+"A template literal with several substitutions: {0} and {1} and {2} and so on"
+msgstr ""
+
+msgid "not part of a regex"
+msgstr ""
+
+msgid "that's a valid string. "
+msgstr ""
+
+msgid "This too"
+msgstr ""
+
+msgid "c"
+msgstr ""
+
+msgid "b{0}"
+msgstr ""
+
+msgid "a{0}e"
+msgstr ""
+
+msgid "a normal string"
+msgstr ""
+
+msgid "should be extracted"
+msgstr ""
+
+msgid "abc{0}xyz"
+msgstr ""
+
+msgid "first normal string"
+msgstr ""
+
+msgid "{0}"
+msgstr ""
+
+msgid "second normal string"
+msgstr ""
+
+msgid "another normal string"
+msgstr ""
+
+msgid "A template literal with {0} substitution"
+msgstr ""
+
+msgid "yet another normal string"
+msgstr ""
+
+msgid "Expected translation string #10"
+msgstr ""
+
+msgid "Expected translation string #11"
+msgstr ""
+
+msgid "pre11{0}post11"
+msgstr ""
+
+msgid "Expected translation string #12"
+msgstr ""
+
+msgid "Expected translation string #13"
+msgstr ""
+
+msgid "Expected translation string #14"
+msgstr ""
+
+msgid "pre14{0}post14"
+msgstr ""
+
+msgid "Expected translation string #15"
+msgstr ""
+
+msgid "Expected translation string #16"
+msgstr ""
+
+msgid "pre16{0}post16"
+msgstr ""
+
+msgid "Expected translation string #17"
+msgstr ""
+
+msgid "Expected translation string #18"
+msgstr ""
+
+msgid "begin{0}end"
+msgstr ""
+
+msgid "Expected translation string #19"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-js-13.ok xg-js-13.pot
+result=$?
+
+exit $result

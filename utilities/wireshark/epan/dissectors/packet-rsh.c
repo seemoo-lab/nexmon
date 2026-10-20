@@ -11,19 +11,7 @@
  * by Robert Tsai <rtsai@netapp.com>.  It is further based on BSD's
  * rshd code and man page.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -39,23 +27,25 @@
 void proto_register_rsh(void);
 void proto_reg_handoff_rsh(void);
 
+static dissector_handle_t rsh_handle;
+
 /* Variables for our preferences */
-static gboolean preference_info_show_client_username = FALSE;
-static gboolean preference_info_show_server_username = TRUE;
-static gboolean preference_info_show_command = FALSE;
+static bool preference_info_show_client_username;
+static bool preference_info_show_server_username = true;
+static bool preference_info_show_command;
 
 /* Initialize the protocol and registered fields */
-static int proto_rsh = -1;
+static int proto_rsh;
 
-static int hf_rsh_stderr_port     = -1;
-static int hf_rsh_client_username = -1;
-static int hf_rsh_server_username = -1;
-static int hf_rsh_command         = -1;
-static int hf_rsh_client_server_data = -1;
-static int hf_rsh_server_client_data = -1;
+static int hf_rsh_stderr_port;
+static int hf_rsh_client_username;
+static int hf_rsh_server_username;
+static int hf_rsh_command;
+static int hf_rsh_client_server_data;
+static int hf_rsh_server_client_data;
 
 /* Initialize the subtree pointers */
-static gint ett_rsh = -1;
+static int ett_rsh;
 
 #define RSH_STDERR_PORT_LEN 5
 #define RSH_CLIENT_USERNAME_LEN 16
@@ -78,8 +68,8 @@ typedef enum {
 
 typedef struct {
     /* Packet number within the conversation */
-    guint first_packet_number, second_packet_number;
-    guint third_packet_number, fourth_packet_number;
+    unsigned first_packet_number, second_packet_number;
+    unsigned third_packet_number, fourth_packet_number;
 
     /* The following variables are given values from session_state_t
      * above to keep track of where we are in the beginning of the session
@@ -93,9 +83,9 @@ typedef struct {
     rsh_session_state_t first_packet_state, second_packet_state;
     rsh_session_state_t third_packet_state, fourth_packet_state;
 
-    gchar *client_username;
-    gchar *server_username;
-    gchar *command;
+    char *client_username;
+    char *server_username;
+    char *command;
 } rsh_hash_entry_t;
 
 
@@ -107,10 +97,10 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     proto_tree *rsh_tree=NULL;
 
     /* Variables for extracting and displaying data from the packet */
-    guchar *field_stringz; /* Temporary storage for each field we extract */
+    unsigned char *field_stringz; /* Temporary storage for each field we extract */
 
-    gint length;
-    guint offset = 0;
+    int length;
+    unsigned offset = 0;
     conversation_t *conversation;
     rsh_hash_entry_t *hash_info;
 
@@ -206,17 +196,17 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     col_clear(pinfo->cinfo, COL_INFO);
 
     /* Client username */
-    if(hash_info->client_username && preference_info_show_client_username == TRUE){
+    if(hash_info->client_username && preference_info_show_client_username == true){
         col_append_fstr(pinfo->cinfo, COL_INFO, "Client username:%s ", hash_info->client_username);
     }
 
     /* Server username */
-    if(hash_info->server_username && preference_info_show_server_username == TRUE){
+    if(hash_info->server_username && preference_info_show_server_username == true){
         col_append_fstr(pinfo->cinfo, COL_INFO, "Server username:%s ", hash_info->server_username);
     }
 
     /* Command */
-    if(hash_info->command && preference_info_show_command == TRUE){
+    if(hash_info->command && preference_info_show_command == true){
         col_append_fstr(pinfo->cinfo, COL_INFO, "Command:%s ", hash_info->command);
     }
 
@@ -228,13 +218,13 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
      * then it must be session data only and we can skip looking
      * for the other fields.
      */
-    if(tvb_find_guint8(tvb, tvb_captured_length(tvb)-1, 1, '\0') == -1){
+    if(tvb_find_uint8(tvb, tvb_captured_length(tvb)-1, 1, '\0') == -1){
         hash_info->state = WAIT_FOR_DATA;
     }
 
     if(hash_info->state == WAIT_FOR_STDERR_PORT
             && tvb_reported_length_remaining(tvb, offset)){
-        field_stringz = tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &length, ENC_ASCII);
+        field_stringz = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
 
         /* Check if this looks like the stderr_port field.
          * It is optional, so it may only be 1 character long
@@ -242,7 +232,7 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
          */
         if(length == 1 || (isdigit_string(field_stringz)
                     && length <= RSH_STDERR_PORT_LEN)){
-            proto_tree_add_string(rsh_tree, hf_rsh_stderr_port, tvb, offset, length, (gchar*)field_stringz);
+            proto_tree_add_string(rsh_tree, hf_rsh_stderr_port, tvb, offset, length, (char*)field_stringz);
             /* Next field we need */
             hash_info->state = WAIT_FOR_CLIENT_USERNAME;
         } else {
@@ -257,18 +247,18 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     if(hash_info->state == WAIT_FOR_CLIENT_USERNAME
             && tvb_reported_length_remaining(tvb, offset)){
-        field_stringz = tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &length, ENC_ASCII);
+        field_stringz = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
 
         /* Check if this looks like the username field */
         if(length != 1 && length <= RSH_CLIENT_USERNAME_LEN
                 && isprint_string(field_stringz)){
-            proto_tree_add_string(rsh_tree, hf_rsh_client_username, tvb, offset, length, (gchar*)field_stringz);
+            proto_tree_add_string(rsh_tree, hf_rsh_client_username, tvb, offset, length, (char*)field_stringz);
 
             /* Store the client username so we can display it in the
              * info column of the entire conversation
              */
             if(!hash_info->client_username){
-                hash_info->client_username=wmem_strdup(wmem_file_scope(), (gchar*)field_stringz);
+                hash_info->client_username=wmem_strdup(wmem_file_scope(), (char*)field_stringz);
             }
 
             /* Next field we need */
@@ -285,25 +275,20 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     if(hash_info->state == WAIT_FOR_SERVER_USERNAME
             && tvb_reported_length_remaining(tvb, offset)){
-        field_stringz = tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &length, ENC_ASCII);
+        field_stringz = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
 
         /* Check if this looks like the password field */
         if(length != 1 && length <= RSH_SERVER_USERNAME_LEN
                 && isprint_string(field_stringz)){
-            proto_tree_add_string(rsh_tree, hf_rsh_server_username, tvb, offset, length, (gchar*)field_stringz);
+            proto_tree_add_string(rsh_tree, hf_rsh_server_username, tvb, offset, length, (char*)field_stringz);
 
             /* Store the server username so we can display it in the
              * info column of the entire conversation
              */
             if(!hash_info->server_username){
-                hash_info->server_username=wmem_strdup(wmem_file_scope(), (gchar*)field_stringz);
+                hash_info->server_username=wmem_strdup(wmem_file_scope(), (char*)field_stringz);
             }
 
-            /* Next field we need */
-            hash_info->state = WAIT_FOR_COMMAND;
-        } else {
-            /* Since the data doesn't match this field, it must be data only */
-            hash_info->state = WAIT_FOR_DATA;
         }
 
         /* Used if the next field is in the same packet */
@@ -315,18 +300,18 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     if(hash_info->state == WAIT_FOR_COMMAND
             && tvb_reported_length_remaining(tvb, offset)){
-        field_stringz = tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &length, ENC_ASCII);
+        field_stringz = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
 
         /* Check if this looks like the command field */
         if(length != 1 && length <= RSH_COMMAND_LEN
                 && isprint_string(field_stringz)){
-            proto_tree_add_string(rsh_tree, hf_rsh_command, tvb, offset, length, (gchar*)field_stringz);
+            proto_tree_add_string(rsh_tree, hf_rsh_command, tvb, offset, length, (char*)field_stringz);
 
             /* Store the command so we can display it in the
              * info column of the entire conversation
              */
             if(!hash_info->command){
-                hash_info->command=wmem_strdup(wmem_file_scope(), (gchar*)field_stringz);
+                hash_info->command=wmem_strdup(wmem_file_scope(), (char*)field_stringz);
             }
 
         } else {
@@ -390,7 +375,7 @@ proto_register_rsh(void)
 
     };
 
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_rsh
     };
@@ -403,6 +388,9 @@ proto_register_rsh(void)
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_rsh, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    /* Register the dissector handle */
+    rsh_handle = register_dissector("rsh", dissect_rsh, proto_rsh);
 
     /* Register preferences module */
     rsh_module = prefs_register_protocol(proto_rsh, NULL);
@@ -429,14 +417,11 @@ proto_register_rsh(void)
 void
 proto_reg_handoff_rsh(void)
 {
-    dissector_handle_t rsh_handle;
-
-    rsh_handle = create_dissector_handle(dissect_rsh, proto_rsh);
-    dissector_add_uint("tcp.port", RSH_PORT, rsh_handle);
+    dissector_add_uint_with_preference("tcp.port", RSH_PORT, rsh_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

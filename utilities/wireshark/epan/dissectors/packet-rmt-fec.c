@@ -21,19 +21,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -44,32 +32,31 @@
 #include "packet-rmt-common.h"
 
 void proto_register_rmt_fec(void);
-void proto_reg_handoff_rmt_fec(void);
 
-static int proto_rmt_fec = -1;
+static int proto_rmt_fec;
 
-static int hf_encoding_id = -1;
-static int hf_instance_id = -1;
-static int hf_sbn = -1;
-static int hf_sbn_with_mask = -1;
-static int hf_sbl = -1;
-static int hf_esi = -1;
-static int hf_esi_with_mask = -1;
-static int hf_fti_transfer_length = -1;
-static int hf_fti_encoding_symbol_length = -1;
-static int hf_fti_max_source_block_length = -1;
-static int hf_fti_max_number_encoding_symbols = -1;
-static int hf_fti_num_blocks = -1;
-static int hf_fti_num_subblocks = -1;
-static int hf_fti_alignment = -1;
+static int hf_encoding_id;
+static int hf_instance_id;
+static int hf_sbn;
+static int hf_sbn_with_mask;
+static int hf_sbl;
+static int hf_esi;
+static int hf_esi_with_mask;
+static int hf_fti_transfer_length;
+static int hf_fti_encoding_symbol_length;
+static int hf_fti_max_source_block_length;
+static int hf_fti_max_number_encoding_symbols;
+static int hf_fti_num_blocks;
+static int hf_fti_num_subblocks;
+static int hf_fti_alignment;
 
-static int ett_main = -1;
+static int ett_main;
 
-static expert_field ei_fec_encoding_id = EI_INIT;
+static expert_field ei_fec_encoding_id;
 
 typedef struct fec_packet_data
 {
-    guint8 instance_id;
+    uint8_t instance_id;
 
 } fec_packet_data_t;
 
@@ -96,11 +83,11 @@ const value_string string_fec_encoding_id[] =
 /* ---------- */
 
 /* Decode an EXT_FTI extension and fill FEC array */
-void fec_decode_ext_fti(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, guint8 encoding_id)
+void fec_decode_ext_fti(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint8_t encoding_id)
 {
-    guint64            transfer_length;
+    uint64_t           transfer_length;
     fec_packet_data_t *fec_data;
-    guint8             instance_id = 0;
+    uint8_t            instance_id = 0;
     proto_item        *ti;
 
     if (encoding_id == 6){
@@ -114,7 +101,7 @@ void fec_decode_ext_fti(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int
 
     if (encoding_id >= 128)
     {
-        instance_id = (guint8) tvb_get_ntohs(tvb, offset+8);
+        instance_id = (uint8_t) tvb_get_ntohs(tvb, offset+8);
 
         /* Decode FEC Instance ID */
         fec_data = wmem_new0(wmem_file_scope(), fec_packet_data_t);
@@ -188,9 +175,9 @@ dissect_fec(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item          *ti;
     proto_tree          *fec_tree;
-    guint                offset      = 0;
+    unsigned             offset      = 0;
     fec_data_exchange_t *fec         = (fec_data_exchange_t*)data;
-    guint8               encoding_id = 0;
+    uint8_t              encoding_id = 0;
     fec_packet_data_t   *packet_data = (fec_packet_data_t*)p_get_proto_data(wmem_file_scope(), pinfo, proto_rmt_fec, 0);
 
     if (fec != NULL)
@@ -248,7 +235,7 @@ dissect_fec(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         proto_tree_add_item(fec_tree, hf_sbn, tvb, offset,   1, ENC_BIG_ENDIAN);
         proto_tree_add_item(fec_tree, hf_esi, tvb, offset+1, 3, ENC_BIG_ENDIAN);
 
-        col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "SBN: %u", tvb_get_guint8(tvb, offset));
+        col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "SBN: %u", tvb_get_uint8(tvb, offset));
         col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "ESI: 0x%X", tvb_get_ntoh24(tvb, offset+1));
 
         offset += 4;
@@ -279,7 +266,7 @@ void proto_register_rmt_fec(void)
         },
         { &hf_instance_id,
           { "FEC Instance ID", "rmt-fec.instance_id",
-            FT_UINT8, BASE_DEC, NULL, 0x0,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_sbn,
@@ -345,7 +332,7 @@ void proto_register_rmt_fec(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_main,
     };
 
@@ -367,7 +354,7 @@ void proto_register_rmt_fec(void)
 }
 
 /*
- * Editor modelines - http://www.wireshark.org/tools/modelines.html
+ * Editor modelines - https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

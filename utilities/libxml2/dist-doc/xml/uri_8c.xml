@@ -1,0 +1,2196 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="uri_8c" kind="file" language="C++">
+    <compoundname>uri.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">limits.h</includes>
+    <includes local="no">string.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="uri_8h" local="no">libxml/uri.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/memory.h</includes>
+    <incdepgraph>
+      <node id="9">
+        <label>libxml/uri.h</label>
+        <link refid="uri_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/uri.c</label>
+        <link refid="uri_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="8">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="3">
+        <label>limits.h</label>
+      </node>
+      <node id="13">
+        <label>private/error.h</label>
+      </node>
+      <node id="14">
+        <label>private/memory.h</label>
+      </node>
+      <node id="11">
+        <label>stdarg.h</label>
+      </node>
+      <node id="6">
+        <label>stdio.h</label>
+      </node>
+      <node id="4">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="uri_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+<para>uri.c: set of generic URI related routines </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Reference: RFCs 3986, 2732 and 2373</para>
+<para>See Copyright for the status of this software.</para>
+<para>Author: Daniel Veillard </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="11" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="11" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1ac45c1ef901e114b2cdc10c5d1f25a57a" prot="public" static="no">
+        <name>MAX_URI_LENGTH</name>
+        <initializer>1024 * 1024</initializer>
+        <briefdescription>
+<para>The definition of the URI regexp in the above RFC has no size limit In practice they are usually relatively short except for the data URI scheme as defined in RFC 2397. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Even for data URI the usual maximum size before hitting random practical limits is around 64 KB and 4KB is usually a maximum admitted limit for proper operations. The value below is more a security limit than anything else and really should never be hit by &apos;normal&apos; operations Set to 1 MByte in 2012, this is only enforced on output </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="34" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1af40f018988822f504763d4d5b371d356" prot="public" static="no">
+        <name>PORT_EMPTY</name>
+        <initializer>0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="36" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="36" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a61fbaa08a63ea7a055a46ecb8869aefd" prot="public" static="no">
+        <name>PORT_EMPTY_SERVER</name>
+        <initializer>-1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="37" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1ac729ee11ad757c720839bf8095508d10" prot="public" static="no">
+        <name>IS_ALPHA</name>
+        <param><defname>x</defname></param>
+        <initializer>(IS_LOWALPHA(x) || IS_UPALPHA(x))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="45" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a3525f0caed4e96f761fa4b1b479e8676" prot="public" static="no">
+        <name>IS_LOWALPHA</name>
+        <param><defname>x</defname></param>
+        <initializer>(((x) &gt;= &apos;a&apos;) &amp;&amp; ((x) &lt;= &apos;z&apos;))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="53" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="53" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a344d8990a026419970bbc0126e6e9a5b" prot="public" static="no">
+        <name>IS_UPALPHA</name>
+        <param><defname>x</defname></param>
+        <initializer>(((x) &gt;= &apos;A&apos;) &amp;&amp; ((x) &lt;= &apos;Z&apos;))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="60" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="60" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a4300e50732f2afc145ffee1fe391d899" prot="public" static="no">
+        <name>IS_DIGIT</name>
+        <param><defname>x</defname></param>
+        <initializer>(((x) &gt;= &apos;0&apos;) &amp;&amp; ((x) &lt;= &apos;9&apos;))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="68" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="68" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1ac56b6aee93116c519fbccea80aaa6fd6" prot="public" static="no">
+        <name>IS_ALPHANUM</name>
+        <param><defname>x</defname></param>
+        <initializer>(IS_ALPHA(x) || <ref refid="parserInternals_8h_1a307c9de47db5ab41e0731cfd21c51e1d" kindref="member">IS_DIGIT</ref>(x))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="73" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="73" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a338b2cc4b7a706d183f9bdfea4ed02c4" prot="public" static="no">
+        <name>IS_MARK</name>
+        <param><defname>x</defname></param>
+        <initializer>    (((x) == &apos;-&apos;) || ((x) == &apos;_&apos;) || ((x) == &apos;.&apos;) ||     \
+    ((x) == &apos;!&apos;) || ((x) == &apos;~&apos;) || ((x) == &apos;*&apos;) || ((x) == &apos;\&apos;&apos;) ||    \
+    ((x) == &apos;(&apos;) || ((x) == &apos;)&apos;))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="79" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="79" bodyend="81"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a723b9e55eb0a95f6d89764cec66f1311" prot="public" static="no">
+        <name>IS_UNWISE</name>
+        <param><defname>p</defname></param>
+        <initializer>      (((*(p) == &apos;{&apos;)) || ((*(p) == &apos;}&apos;)) || ((*(p) == &apos;|&apos;)) ||         \
+       ((*(p) == &apos;\\&apos;)) || ((*(p) == &apos;^&apos;)) || ((*(p) == &apos;[&apos;)) ||        \
+       ((*(p) == &apos;]&apos;)) || ((*(p) == &apos;`&apos;)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="86" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="86" bodyend="89"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a528b06075025e6621f9572305c36968a" prot="public" static="no">
+        <name>IS_RESERVED</name>
+        <param><defname>x</defname></param>
+        <initializer>        (((x) == &apos;;&apos;) || ((x) == &apos;/&apos;) || ((x) == &apos;?&apos;) || \
+        ((x) == &apos;:&apos;) || ((x) == &apos;@&apos;) || ((x) == &apos;&amp;&apos;) || ((x) == &apos;=&apos;) || \
+        ((x) == &apos;+&apos;) || ((x) == &apos;$&apos;) || ((x) == &apos;,&apos;) || ((x) == &apos;[&apos;) || \
+        ((x) == &apos;]&apos;))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="95" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="95" bodyend="98"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1aee44d459392229fb2e3a387f577f0cec" prot="public" static="no">
+        <name>IS_UNRESERVED</name>
+        <param><defname>x</defname></param>
+        <initializer>(IS_ALPHANUM(x) || IS_MARK(x))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="103" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="103" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1ace34a013c79732dd536c0ef9667cd25f" prot="public" static="no">
+        <name>NEXT</name>
+        <param><defname>p</defname></param>
+        <initializer>((*p == &apos;%&apos;)? p += 3 : p++)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="108" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="108" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a073a5dd8b0f6a60e00259fb040a5d769" prot="public" static="no">
+        <name>STRNDUP</name>
+        <param><defname>s</defname></param>
+        <param><defname>n</defname></param>
+        <initializer>(char *) <ref refid="xmlstring_8h_1a51d8478afd1eda7e1c9e65c67074aa82" kindref="member">xmlStrndup</ref>((const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *)(s), (n))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="119" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="119" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a6d2564ff6f9ffe2b1b83d227a69b8f78" prot="public" static="no">
+        <name>ISA_DIGIT</name>
+        <param><defname>p</defname></param>
+        <initializer>((*(p) &gt;= &apos;0&apos;) &amp;&amp; (*(p) &lt;= &apos;9&apos;))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="127" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="127" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a5625c25d2e95905d16b5382472bf0459" prot="public" static="no">
+        <name>ISA_ALPHA</name>
+        <param><defname>p</defname></param>
+        <initializer>                      (((*(p) &gt;= &apos;a&apos;) &amp;&amp; (*(p) &lt;= &apos;z&apos;)) ||      \
+                      ((*(p) &gt;= &apos;A&apos;) &amp;&amp; (*(p) &lt;= &apos;Z&apos;)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="128" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="128" bodyend="129"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a503abf61b98a3a634662f2b79b6e986d" prot="public" static="no">
+        <name>ISA_HEXDIG</name>
+        <param><defname>p</defname></param>
+        <initializer>       (ISA_DIGIT(p) || ((*(p) &gt;= &apos;a&apos;) &amp;&amp; (*(p) &lt;= &apos;f&apos;)) ||     \
+        ((*(p) &gt;= &apos;A&apos;) &amp;&amp; (*(p) &lt;= &apos;F&apos;)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="130" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="130" bodyend="132"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a520bfdacadb16f759d1cad6fa31ee8ab" prot="public" static="no">
+        <name>ISA_SUB_DELIM</name>
+        <param><defname>p</defname></param>
+        <initializer>      (((*(p) == &apos;!&apos;)) || ((*(p) == &apos;$&apos;)) || ((*(p) == &apos;&amp;&apos;)) ||     \
+       ((*(p) == &apos;(&apos;)) || ((*(p) == &apos;)&apos;)) || ((*(p) == &apos;*&apos;)) ||     \
+       ((*(p) == &apos;+&apos;)) || ((*(p) == &apos;,&apos;)) || ((*(p) == &apos;;&apos;)) ||     \
+       ((*(p) == &apos;=&apos;)) || ((*(p) == &apos;\&apos;&apos;)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="138" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="138" bodyend="142"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a50c18ad3ec7bfb9795839538eb71f3d1" prot="public" static="no">
+        <name>ISA_GEN_DELIM</name>
+        <param><defname>p</defname></param>
+        <initializer>      (((*(p) == &apos;:&apos;)) || ((*(p) == &apos;/&apos;)) || ((*(p) == &apos;?&apos;)) ||         \
+       ((*(p) == &apos;#&apos;)) || ((*(p) == &apos;[&apos;)) || ((*(p) == &apos;]&apos;)) ||         \
+       ((*(p) == &apos;@&apos;)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="147" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="147" bodyend="150"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a9ef922214bcf7ae6bc3b3c772d26be1e" prot="public" static="no">
+        <name>ISA_RESERVED</name>
+        <param><defname>p</defname></param>
+        <initializer>(ISA_GEN_DELIM(p) || (ISA_SUB_DELIM(p)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="155" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="155" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1aeaecaef60408bea9abb1aa77e2e7109e" prot="public" static="no">
+        <name>ISA_STRICTLY_UNRESERVED</name>
+        <param><defname>p</defname></param>
+        <initializer>      ((ISA_ALPHA(p)) || (ISA_DIGIT(p)) || ((*(p) == &apos;-&apos;)) ||       \
+       ((*(p) == &apos;.&apos;)) || ((*(p) == &apos;_&apos;)) || ((*(p) == &apos;~&apos;)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="160" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="160" bodyend="162"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a705c88b9eafa8688c57498cf11fb802e" prot="public" static="no">
+        <name>ISA_PCT_ENCODED</name>
+        <param><defname>p</defname></param>
+        <initializer>     ((*(p) == &apos;%&apos;) &amp;&amp; (ISA_HEXDIG(p + 1)) &amp;&amp; (ISA_HEXDIG(p + 2)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="167" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="167" bodyend="168"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a3125f623b6852b531cc94f7bc68dbe88" prot="public" static="no">
+        <name>ISA_PCHAR</name>
+        <param><defname>u</defname></param>
+        <param><defname>p</defname></param>
+        <initializer>     (ISA_UNRESERVED(u, p) || ISA_PCT_ENCODED(p) || ISA_SUB_DELIM(p) || \
+      ((*(p) == &apos;:&apos;)) || ((*(p) == &apos;@&apos;)))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="173" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="173" bodyend="175"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a14c80c0675711cb8da7b34d362f85beb" prot="public" static="no">
+        <name>ISA_UCSCHAR</name>
+        <param><defname>p</defname></param>
+        <initializer>    ((*(p) &lt;= 0x20) || (*(p) &gt;= 0x7F) || (*(p) == &apos;&lt;&apos;) || (*(p) == &apos;&gt;&apos;) || \
+     (*(p) == &apos;&quot;&apos;)  || (*(p) == &apos;{&apos;)  || (*(p) == &apos;}&apos;) || (*(p) == &apos;|&apos;) || \
+     (*(p) == &apos;\\&apos;) || (*(p) == &apos;^&apos;)  || (*(p) == &apos;`&apos;))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="184" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="184" bodyend="187"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a8a8bf65e98a7ef1863f3c944c1ce8089" prot="public" static="no">
+        <name>ISA_UNRESERVED</name>
+        <param><defname>u</defname></param>
+        <param><defname>p</defname></param>
+        <initializer>(xmlIsUnreserved(u, p))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="189" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="189" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1aa5053d79bfaa2bf384477f4546ca08ac" prot="public" static="no">
+        <name>XML_URI_ALLOW_UNWISE</name>
+        <initializer>1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="191" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="191" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a895e06f043e339040530a21c5735fdf2" prot="public" static="no">
+        <name>XML_URI_NO_UNESCAPE</name>
+        <initializer>2</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="192" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="192" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a9f11e0d98b2eeb6872ba1e9b87289575" prot="public" static="no">
+        <name>XML_URI_ALLOW_UCSCHAR</name>
+        <initializer>4</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="193" column="9" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="193" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="uri_8c_1a90d027d18db4f507582e5457bc673507" prot="public" static="no">
+        <name>NULLCHK</name>
+        <param><defname>p</defname></param>
+        <initializer>         if(!p) { \
+         <ref refid="uri_8h_1a37180976cc2330cadea9932b5fd42024" kindref="member">xmlFreeURI</ref>(uri); \
+         <ref refid="xmlmemory_8h_1a30231cbab46e8d659a5262c3b781164b" kindref="member">xmlFree</ref>(ret); \
+         return NULL; } \</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1740" column="9"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="uri_8c_1ae0605ac9432d163bb184b565a497e420" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCleanURI</definition>
+        <argsstring>(xmlURIPtr uri)</argsstring>
+        <name>xmlCleanURI</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <briefdescription>
+<para>Make sure the <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> struct is free of content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1383" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1383" bodyend="1404" declfile="/builds/GNOME/libxml2/uri.c" declline="39" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1ac965439ceb0bf81c5ff928e2288c9272" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlIsUnreserved</definition>
+        <argsstring>(xmlURIPtr uri, const char *cur)</argsstring>
+        <name>xmlIsUnreserved</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="196" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="196" bodyend="212"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1af546b994eb21db84a740d000e4c1d16b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986Scheme</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986Scheme</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an URI scheme. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>ALPHA *( ALPHA / DIGIT / &quot;+&quot; / &quot;-&quot; / &quot;.&quot; )</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="224" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="224" bodyend="250"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1ae3d233c6a1f936bb27e0e728a3f68157" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986Fragment</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986Fragment</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse the query part of an URI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>fragment = *( pchar / &quot;/&quot; / &quot;?&quot; ) NOTE: the strict syntax as defined by 3986 does not allow &apos;[&apos; and &apos;]&apos; in the fragment identifier but this is used very broadly for xpointer scheme selection, so we are allowing it here to not break for example all the DocBook processing chains.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="266" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="266" bodyend="287"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a16fa37cef3236f3f685ed220b957dad2" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986Query</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986Query</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse the query part of an URI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>query = *uric</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="299" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="299" bodyend="328"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1af1842e578eb97ee754ac1484ef0ee708" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986Port</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986Port</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse a port part and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>port = *DIGIT</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="341" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="341" bodyend="365"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1acf6043365cb43394aaf650b050f11f7c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986Userinfo</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986Userinfo</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an user information part and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>userinfo = *( unreserved / pct-encoded / sub-delims / &quot;:&quot; )</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="378" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="378" bodyend="400"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1af94eefbdf2d80b19a305d44abf5ef85a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986DecOctet</definition>
+        <argsstring>(const char **str)</argsstring>
+        <name>xmlParse3986DecOctet</name>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>dec-octet = DIGIT ; 0-9 / x31-39 DIGIT ; 10-99 / &quot;1&quot; 2DIGIT ; 100-199 / &quot;2&quot; x30-34 DIGIT ; 200-249 / &quot;25&quot; x30-35 ; 250-255 </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Skip a dec-octet.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if found and skipped, 1 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="415" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="415" bodyend="436"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a8c0e20c4352d600e38e0def93c5f007e" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986Host</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986Host</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an host part and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>host = IP-literal / IPv4address / reg-name IP-literal = &quot;[&quot; ( IPv6address / IPvFuture ) &quot;]&quot; IPv4address = dec-octet &quot;.&quot; dec-octet &quot;.&quot; dec-octet &quot;.&quot; dec-octet reg-name = *( unreserved / pct-encoded / sub-delims )</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="451" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="451" bodyend="515"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a2af5c1bd400dd5fa07fdea3495f006a2" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986Authority</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986Authority</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an authority part and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>authority = [ userinfo &quot;@&quot; ] host [ &quot;:&quot; port ]</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="528" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="528" bodyend="553"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a5cfb7c41d1ccd3e779d93f0474eec8aa" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986Segment</definition>
+        <argsstring>(xmlURIPtr uri, const char **str, char forbid, int empty)</argsstring>
+        <name>xmlParse3986Segment</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>char</type>
+          <declname>forbid</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>empty</declname>
+        </param>
+        <briefdescription>
+<para>Parse a segment and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>segment = <emphasis>pchar segment-nz = 1*pchar segment-nz-nc = 1</emphasis>( unreserved / pct-encoded / sub-delims / &quot;@&quot; ) ; non-zero-length segment without any colon &quot;:&quot;</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>forbid</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an optional forbidden character </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>empty</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>allow an empty segment </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="571" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="571" bodyend="595"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a67fab9816fc757286cf29e9de77342e7" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986PathAbEmpty</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986PathAbEmpty</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an path absolute or empty and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>path-abempty = *( &quot;/&quot; segment )</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="608" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="608" bodyend="635"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a1e09e8e7bc90061d898937f6036b0736" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986PathAbsolute</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986PathAbsolute</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an path absolute and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>path-absolute = &quot;/&quot; [ segment-nz *( &quot;/&quot; segment ) ]</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="648" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="648" bodyend="681"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1ab141daf6fa2cf7906690d1ed6241b59b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986PathRootless</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986PathRootless</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an path without root and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>path-rootless = segment-nz *( &quot;/&quot; segment )</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="694" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="694" bodyend="723"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a3ad880ea3bb97c40f8397184dbed6d96" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986PathNoScheme</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986PathNoScheme</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an path which is not a scheme and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>path-noscheme = segment-nz-nc *( &quot;/&quot; segment )</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="736" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="736" bodyend="765"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a11a4d961103f498f1505b056be7f978c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986HierPart</definition>
+        <argsstring>(xmlURIPtr uri, const char **str)</argsstring>
+        <name>xmlParse3986HierPart</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an hierarchical part and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>hier-part = &quot;//&quot; authority path-abempty / path-absolute / path-rootless / path-empty</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="781" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="781" bodyend="816"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1addeb871dfa1746e2ca306db5304d0fb2" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986RelativeRef</definition>
+        <argsstring>(xmlURIPtr uri, const char *str)</argsstring>
+        <name>xmlParse3986RelativeRef</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an URI string and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>relative-ref = relative-part [ &quot;?&quot; query ] [ &quot;\#&quot; fragment ] relative-part = &quot;//&quot; authority path-abempty / path-absolute / path-noscheme / path-empty</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="833" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="833" bodyend="871"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a4db42d6e76c80e2eaf62fa69ad943203" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986URI</definition>
+        <argsstring>(xmlURIPtr uri, const char *str)</argsstring>
+        <name>xmlParse3986URI</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an URI string and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>scheme &quot;:&quot; hier-part [ &quot;?&quot; query ] [ &quot;\#&quot; fragment ]</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="885" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="885" bodyend="911"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a12d0e8c296d3a9bdb21b2ecf2824ca22" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParse3986URIReference</definition>
+        <argsstring>(xmlURIPtr uri, const char *str)</argsstring>
+        <name>xmlParse3986URIReference</name>
+        <param>
+          <type>xmlURIPtr</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an URI reference string and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>URI-reference = URI / relative-ref</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="924" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="924" bodyend="947"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a527ff06bd46f2d190c9dd797ac9e00d1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlParseURISafe</definition>
+        <argsstring>(const char *str, xmlURI **uriOut)</argsstring>
+        <name>xmlParseURISafe</name>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type><ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> **</type>
+          <declname>uriOut</declname>
+        </param>
+        <briefdescription>
+<para>Parse an URI based on RFC 3986. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>URI-reference = [ absoluteURI | relativeURI ] [ &quot;\#&quot; fragment ]</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI string to analyze </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>uriOut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>optional pointer to parsed URI </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, an error code (typically 1) if the URI is invalid or -1 if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="962" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="962" bodyend="984"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a4aff5eec35266e0089db4b6c8e5ce08d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> *</type>
+        <definition>xmlURI * xmlParseURI</definition>
+        <argsstring>(const char *str)</argsstring>
+        <name>xmlParseURI</name>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an URI based on RFC 3986. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>URI-reference = [ absoluteURI | relativeURI ] [ &quot;\#&quot; fragment ]</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a newly built <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="995" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="995" bodyend="999"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a514cc3a4264cd29c6bc167a9b07df420" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlParseURIReference</definition>
+        <argsstring>(xmlURI *uri, const char *str)</argsstring>
+        <name>xmlParseURIReference</name>
+        <param>
+          <type><ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> *</type>
+          <declname>uri</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Parse an URI reference string based on RFC 3986 and fills in the appropriate fields of the <computeroutput>uri</computeroutput> structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>URI-reference = URI / relative-ref</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an URI structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to analyze </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or the error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1012" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1012" bodyend="1014"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a38216a8df6d17bc4308962f33ce07b03" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> *</type>
+        <definition>xmlURI * xmlParseURIRaw</definition>
+        <argsstring>(const char *str, int raw)</argsstring>
+        <name>xmlParseURIRaw</name>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>raw</declname>
+        </param>
+        <briefdescription>
+<para>Parse an URI but allows to keep intact the original fragments. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>URI-reference = URI / relative-ref</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI string to analyze </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>raw</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>if 1 unescaping of URI pieces are disabled </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a newly built <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1026" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1026" bodyend="1044"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a85433ad4507ddd44ab83bdef6b6639c5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> *</type>
+        <definition>xmlURI * xmlCreateURI</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCreateURI</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Simply creates an empty <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>the new structure or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1058" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1058" bodyend="1067"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a5d4f05ea4d36cee3bed422f8748ac946" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>static xmlChar * xmlSaveUriRealloc</definition>
+        <argsstring>(xmlChar *ret, int *max)</argsstring>
+        <name>xmlSaveUriRealloc</name>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ret</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>max</declname>
+        </param>
+        <briefdescription>
+<para>Function to handle properly a reallocation when saving an URI Also imposes some limit on the length of an URI string output. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1074" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1074" bodyend="1086"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1af02614d7cb32e8c00af6ddd9a295334d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlSaveUri</definition>
+        <argsstring>(xmlURI *uri)</argsstring>
+        <name>xmlSaveUri</name>
+        <param>
+          <type><ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> *</type>
+          <declname>uri</declname>
+        </param>
+        <briefdescription>
+<para>Save the URI as an escaped string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new string (to be deallocated by caller) </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1095" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1095" bodyend="1358"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1ad447a72a931cb5a89926c4522f678a5a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlPrintURI</definition>
+        <argsstring>(FILE *stream, xmlURI *uri)</argsstring>
+        <name>xmlPrintURI</name>
+        <param>
+          <type>FILE *</type>
+          <declname>stream</declname>
+        </param>
+        <param>
+          <type><ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> *</type>
+          <declname>uri</declname>
+        </param>
+        <briefdescription>
+<para>Prints the URI in the stream <computeroutput>stream</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a FILE* for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1367" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1367" bodyend="1375"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a37180976cc2330cadea9932b5fd42024" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeURI</definition>
+        <argsstring>(xmlURI *uri)</argsstring>
+        <name>xmlFreeURI</name>
+        <param>
+          <type><ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> *</type>
+          <declname>uri</declname>
+        </param>
+        <briefdescription>
+<para>Free up the <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> struct. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to an <ref refid="uri_8h_1ae2d1c5456730ad1fce438a9c6c6c4f12" kindref="member">xmlURI</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1412" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1412" bodyend="1425"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1ac6b7946eebbeca75f5b4fb8bfd89ee6e" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlIsPathSeparator</definition>
+        <argsstring>(int c, int isFile)</argsstring>
+        <name>xmlIsPathSeparator</name>
+        <param>
+          <type>int</type>
+          <declname>c</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>isFile</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1434" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1434" bodyend="1446"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1abb30dcbba6dfe5208c80ccb6e16e467c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlNormalizePath</definition>
+        <argsstring>(char *path, int isFile)</argsstring>
+        <name>xmlNormalizePath</name>
+        <param>
+          <type>char *</type>
+          <declname>path</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>isFile</declname>
+        </param>
+        <briefdescription>
+<para>Normalize a filesystem path or URI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>path</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the path string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>isFile</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>true for filesystem paths, false for URIs </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or an error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1456" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1456" bodyend="1543"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1ac638a3ab703e847b4af65f5a6bbc98bd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlNormalizeURIPath</definition>
+        <argsstring>(char *path)</argsstring>
+        <name>xmlNormalizeURIPath</name>
+        <param>
+          <type>char *</type>
+          <declname>path</declname>
+        </param>
+        <briefdescription>
+<para>Applies the 5 normalization steps to a path string<ndash/>that is, RFC 2396 Section 5.2, steps 6.c through 6.g. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Normalization occurs directly on the string, no new allocation is done</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>path</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the path string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 or an error code </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1555" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1555" bodyend="1557"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a24e67831d8eeaa937947a26dcdbde6a6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int is_hex</definition>
+        <argsstring>(char c)</argsstring>
+        <name>is_hex</name>
+        <param>
+          <type>char</type>
+          <declname>c</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1559" column="12" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1559" bodyend="1565"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a196cf546672f4802b62a87cbebc2dc72" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>char *</type>
+        <definition>char * xmlURIUnescapeString</definition>
+        <argsstring>(const char *str, int len, char *target)</argsstring>
+        <name>xmlURIUnescapeString</name>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <param>
+          <type>char *</type>
+          <declname>target</declname>
+        </param>
+        <briefdescription>
+<para>Unescaping routine, but does not check that the string is an URI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The output is a direct unsigned char translation of XX values (no encoding) Note that the length of the result can only be smaller or same size as the input string.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to unescape </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length in bytes to unescape (or &lt;= 0 to indicate full string) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>target</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>optional destination buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a copy of the string, but unescaped, will return NULL only in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1580" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1580" bodyend="1625"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a1ce4f41a5ee6008746eaa0ac315ff114" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlURIEscapeStr</definition>
+        <argsstring>(const xmlChar *str, const xmlChar *list)</argsstring>
+        <name>xmlURIEscapeStr</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>list</declname>
+        </param>
+        <briefdescription>
+<para>This routine escapes a string to hex, ignoring unreserved characters a-z, A-Z, 0-9, &quot;-._~&quot;, a few sub-delims &quot;!*&apos;()&quot;, the gen-delim &quot;@&quot; (why?) and the characters in the exception list. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string to escape </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>list</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>exception list string of chars not to escape </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new escaped string or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1637" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1637" bodyend="1698"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1aad2ce265c73c863e5659027497990a85" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlURIEscape</definition>
+        <argsstring>(const xmlChar *str)</argsstring>
+        <name>xmlURIEscape</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Escaping routine, does not do validity checks ! </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It will try to escape the chars needing this, but this is heuristic based it&apos;s impossible to be sure.</para>
+<para>25 May 2001 Uses <ref refid="uri_8h_1a4aff5eec35266e0089db4b6c8e5ce08d" kindref="member">xmlParseURI</ref> and <ref refid="uri_8h_1a1ce4f41a5ee6008746eaa0ac315ff114" kindref="member">xmlURIEscapeStr</ref> to try to escape correctly according to RFC2396.<itemizedlist>
+<listitem><para>Carl Douglas <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string of the URI to escape </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an copy of the string, but escaped </para>
+</simplesect>
+</para>
+</listitem></itemizedlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1713" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1713" bodyend="1828"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1aea9582fea69440a104fcd6f9d4f5e14d" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlIsAbsolutePath</definition>
+        <argsstring>(const xmlChar *path)</argsstring>
+        <name>xmlIsAbsolutePath</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>path</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1837" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1837" bodyend="1851"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1ab44206cd3e5f3ae9c1ee1b28c1fd3b0f" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlResolvePath</definition>
+        <argsstring>(const xmlChar *escRef, const xmlChar *base, xmlChar **out)</argsstring>
+        <name>xmlResolvePath</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>escRef</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>base</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Resolves a filesystem path from a base path. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>escRef</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filesystem path </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>base</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the base value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to result URI </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 if a memory allocation failed or an error code if URI or base are invalid. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1863" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1863" bodyend="1953"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a1a43cb3734af736da0a142e88aa61c2d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBuildURISafe</definition>
+        <argsstring>(const xmlChar *URI, const xmlChar *base, xmlChar **valPtr)</argsstring>
+        <name>xmlBuildURISafe</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>base</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>valPtr</declname>
+        </param>
+        <briefdescription>
+<para>Computes he final URI of the reference done by checking that the given URI is valid, and building the final URI using the base URI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This is processed according to section 5.2 of the RFC 2396</para>
+<para>5.2. Resolving Relative References to Absolute Form</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI instance found in the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>base</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the base value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>valPtr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to result URI </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 if a memory allocation failed or an error code if URI or base are invalid. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="1972" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="1972" bodyend="2320"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a6334686e706235baf07ea115fa8c8d2d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlBuildURI</definition>
+        <argsstring>(const xmlChar *URI, const xmlChar *base)</argsstring>
+        <name>xmlBuildURI</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>base</declname>
+        </param>
+        <briefdescription>
+<para>Computes he final URI of the reference done by checking that the given URI is valid, and building the final URI using the base URI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This is processed according to section 5.2 of the RFC 2396</para>
+<para>5.2. Resolving Relative References to Absolute Form</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI instance found in the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>base</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the base value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new URI string (to be freed by the caller) or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="2336" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="2336" bodyend="2341"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a2c4ed95e2fbbe36eafba06edfb3d9df8" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlParseUriOrPath</definition>
+        <argsstring>(const char *str, xmlURIPtr *out, int *drive)</argsstring>
+        <name>xmlParseUriOrPath</name>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>xmlURIPtr *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>drive</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="2344" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="2344" bodyend="2464"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1adc9805a5b06298d7f7f2a26164fdf5fb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBuildRelativeURISafe</definition>
+        <argsstring>(const xmlChar *URI, const xmlChar *base, xmlChar **valPtr)</argsstring>
+        <name>xmlBuildRelativeURISafe</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>base</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>valPtr</declname>
+        </param>
+        <briefdescription>
+<para>Expresses the URI of the reference in terms relative to the base. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Some examples of this operation include: <verbatim>base = &quot;http://site1.com/docs/book1.html&quot;
+   URI input                        URI returned
+http://site1.com/docs/pic1.gif   pic1.gif
+http://site2.com/docs/pic1.gif   http://site2.com/docs/pic1.gif
+
+base = &quot;docs/book1.html&quot;
+   URI input                        URI returned
+docs/pic1.gif                    pic1.gif
+docs/img/pic1.gif                img/pic1.gif
+img/pic1.gif                     ../img/pic1.gif
+http://site1.com/docs/pic1.gif   http://site1.com/docs/pic1.gif
+</verbatim></para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI reference under consideration </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>base</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the base value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>valPtr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to result URI </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 if a memory allocation failed or an error code if URI or base are invalid. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="2491" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="2491" bodyend="2709"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a4a8312eacdcb89055884b76e5cb81252" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlBuildRelativeURI</definition>
+        <argsstring>(const xmlChar *URI, const xmlChar *base)</argsstring>
+        <name>xmlBuildRelativeURI</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>base</declname>
+        </param>
+        <briefdescription>
+<para>See <ref refid="uri_8h_1a7aa14f7dd11cc0479e053ed54dae313c" kindref="member">xmlBuildRelativeURISafe</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI reference under consideration </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>base</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the base value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new URI string (to be freed by the caller) or NULL in case error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="2720" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="2720" bodyend="2726"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a0438fbb18ad322938345a08c20547500" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlCanonicPath</definition>
+        <argsstring>(const xmlChar *path)</argsstring>
+        <name>xmlCanonicPath</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>path</declname>
+        </param>
+        <briefdescription>
+<para>Prepares a path. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If the path contains the substring &quot;://&quot;, it is considered a Legacy Extended IRI. Characters which aren&apos;t allowed in URIs are escaped.</para>
+<para>Otherwise, the path is considered a filesystem path which is copied without modification.</para>
+<para>The caller is responsible for freeing the memory occupied by the returned string. If there is insufficient memory available, or the argument is NULL, the function returns NULL.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>path</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the resource locator in a filesystem notation </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the escaped path. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="2746" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="2746" bodyend="2768"/>
+      </memberdef>
+      <memberdef kind="function" id="uri_8c_1a47f20ab34321fc18df02e0b4b14dc3c0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlPathToURI</definition>
+        <argsstring>(const xmlChar *path)</argsstring>
+        <name>xmlPathToURI</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>path</declname>
+        </param>
+        <briefdescription>
+<para>Constructs an URI expressing the existing path. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>path</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the resource locator in a filesystem notation </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new URI, or a duplicate of the path parameter if the construction fails. The caller is responsible for freeing the memory occupied by the returned string. If there is insufficient memory available, or the argument is NULL, the function returns NULL. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/uri.c" line="2780" column="1" bodyfile="/builds/GNOME/libxml2/uri.c" bodystart="2780" bodyend="2783"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/uri.c"/>
+  </compounddef>
+</doxygen>

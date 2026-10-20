@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,19 +21,19 @@
 void proto_register_ftserver (void);
 void proto_reg_handoff_ftserver (void);
 
-static int proto_ftserver = -1;
-static int hf_ftserver_opnum = -1;
+static int proto_ftserver;
+static int hf_ftserver_opnum;
 
 
 
-static gint ett_ftserver = -1;
+static int ett_ftserver;
 
 
 static e_guid_t uuid_ftserver = { 0x4d37f2dd, 0xed43, 0x0004, { 0x02, 0xc0, 0x37, 0xcf, 0x1e, 0x00, 0x00, 0x00 } };
-static guint16  ver_ftserver = 4;
+static uint16_t ver_ftserver = 4;
 
 
-static dcerpc_sub_dissector ftserver_dissectors[] = {
+static const dcerpc_sub_dissector ftserver_dissectors[] = {
 	{  0, "CreateTrans",         NULL, NULL },
 	{  1, "AbortTrans",          NULL, NULL },
 	{  2, "DeleteTrans",         NULL, NULL },
@@ -79,7 +67,7 @@ proto_register_ftserver (void)
 	      NULL, 0x0, NULL, HFILL }}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ftserver,
 	};
 	proto_ftserver = proto_register_protocol ("FTServer Operations", "FTSERVER", "ftserver");
@@ -95,7 +83,7 @@ proto_reg_handoff_ftserver (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-FileCopyrightText: 2025 Marco Trevisan (Treviño)
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Test
+X-SnapInstanceName=snap-app
+X-SnapAppName=dbusappinfo
+X-SnapCommonID=org.gtk.test.dbusappinfo.snap
+DBusActivatable=true
+StartupNotify=true

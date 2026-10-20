@@ -1,0 +1,208 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlAutomataState" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlAutomataState</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a45cf8c240abb14720bad9e0b39872ec4" prot="public" static="no" mutable="no">
+        <type>xmlRegStateType</type>
+        <definition>xmlRegStateType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlAutomataState::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="271" column="21" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="271" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a2565c1cfaa1da8b8c7625443baa14faa" prot="public" static="no" mutable="no">
+        <type>xmlRegMarkedType</type>
+        <definition>xmlRegMarkedType mark</definition>
+        <argsstring></argsstring>
+        <name>mark</name>
+        <qualifiedname>_xmlAutomataState::mark</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="272" column="22" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="272" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a4f8b75782e70f17c852d727f03fa5a77" prot="public" static="no" mutable="no">
+        <type>xmlRegMarkedType</type>
+        <definition>xmlRegMarkedType markd</definition>
+        <argsstring></argsstring>
+        <name>markd</name>
+        <qualifiedname>_xmlAutomataState::markd</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="273" column="22" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="273" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a240c2d8ba6a663f2be08ff70d2e264f5" prot="public" static="no" mutable="no">
+        <type>xmlRegMarkedType</type>
+        <definition>xmlRegMarkedType reached</definition>
+        <argsstring></argsstring>
+        <name>reached</name>
+        <qualifiedname>_xmlAutomataState::reached</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="274" column="22" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="274" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a196206e0ab201e18d79c3878336d7d20" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int no</definition>
+        <argsstring></argsstring>
+        <name>no</name>
+        <qualifiedname>_xmlAutomataState::no</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="275" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="275" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1afc5b526dc1aff9e06e2317632485f2ed" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxTrans</definition>
+        <argsstring></argsstring>
+        <name>maxTrans</name>
+        <qualifiedname>_xmlAutomataState::maxTrans</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="276" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="276" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1ac1e0aa513acb568de46bfbe0af6874dc" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbTrans</definition>
+        <argsstring></argsstring>
+        <name>nbTrans</name>
+        <qualifiedname>_xmlAutomataState::nbTrans</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="277" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="277" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a1146c9a6bc3c6d6d84b8fe91ac65713d" prot="public" static="no" mutable="no">
+        <type>xmlRegTrans *</type>
+        <definition>xmlRegTrans* trans</definition>
+        <argsstring></argsstring>
+        <name>trans</name>
+        <qualifiedname>_xmlAutomataState::trans</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="278" column="17" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="278" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a6aaeaf97f356da3473f9c65e04bd96c7" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxTransTo</definition>
+        <argsstring></argsstring>
+        <name>maxTransTo</name>
+        <qualifiedname>_xmlAutomataState::maxTransTo</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="280" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="280" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a7312982367ecc3c82e8adbe111362459" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbTransTo</definition>
+        <argsstring></argsstring>
+        <name>nbTransTo</name>
+        <qualifiedname>_xmlAutomataState::nbTransTo</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="281" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="281" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlAutomataState_1a94ee785d129d08a92338457ad20623ab" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* transTo</definition>
+        <argsstring></argsstring>
+        <name>transTo</name>
+        <qualifiedname>_xmlAutomataState::transTo</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="282" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="282" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlAutomataState</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlRegAtom</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="2">
+        <label>_xmlRegTrans</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="270" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="270" bodyend="283"/>
+    <listofallmembers>
+      <member refid="struct__xmlAutomataState_1a2565c1cfaa1da8b8c7625443baa14faa" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>mark</name></member>
+      <member refid="struct__xmlAutomataState_1a4f8b75782e70f17c852d727f03fa5a77" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>markd</name></member>
+      <member refid="struct__xmlAutomataState_1afc5b526dc1aff9e06e2317632485f2ed" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>maxTrans</name></member>
+      <member refid="struct__xmlAutomataState_1a6aaeaf97f356da3473f9c65e04bd96c7" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>maxTransTo</name></member>
+      <member refid="struct__xmlAutomataState_1ac1e0aa513acb568de46bfbe0af6874dc" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>nbTrans</name></member>
+      <member refid="struct__xmlAutomataState_1a7312982367ecc3c82e8adbe111362459" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>nbTransTo</name></member>
+      <member refid="struct__xmlAutomataState_1a196206e0ab201e18d79c3878336d7d20" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>no</name></member>
+      <member refid="struct__xmlAutomataState_1a240c2d8ba6a663f2be08ff70d2e264f5" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>reached</name></member>
+      <member refid="struct__xmlAutomataState_1a1146c9a6bc3c6d6d84b8fe91ac65713d" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>trans</name></member>
+      <member refid="struct__xmlAutomataState_1a94ee785d129d08a92338457ad20623ab" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>transTo</name></member>
+      <member refid="struct__xmlAutomataState_1a45cf8c240abb14720bad9e0b39872ec4" prot="public" virt="non-virtual"><scope>_xmlAutomataState</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

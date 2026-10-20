@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_LBTRM_H_INCLUDED
@@ -28,11 +16,11 @@
 typedef struct
 {
     address source_address;
-    guint16 source_port;
-    guint32 session_id;
+    uint16_t source_port;
+    uint32_t session_id;
     address multicast_group;
-    guint16 dest_port;
-    guint64 channel;
+    uint16_t dest_port;
+    uint64_t channel;
     wmem_tree_t * frame;
     lbm_transport_frame_t * last_frame;
     lbm_transport_frame_t * last_data_frame;
@@ -41,17 +29,17 @@ typedef struct
     lbm_transport_frame_t * last_ncf_frame;
     wmem_tree_t * data_sqn;
     wmem_tree_t * sm_sqn;
-    guint32 data_high_sqn;
-    guint32 sm_high_sqn;
+    uint32_t data_high_sqn;
+    uint32_t sm_high_sqn;
 } lbtrm_transport_t;
 
-lbtrm_transport_t * lbtrm_transport_add(const address * source_address, guint16 source_port, guint32 session_id, const address * multicast_group, guint16 dest_port, guint32 frame);
-char * lbtrm_transport_source_string(const address * source_address, guint16 source_port, guint32 session_id, const address * multicast_group, guint16 dest_port);
+lbtrm_transport_t * lbtrm_transport_add(const address * source_address, uint16_t source_port, uint32_t session_id, const address * multicast_group, uint16_t dest_port, uint32_t frame);
+char * lbtrm_transport_source_string(const address * source_address, uint16_t source_port, uint32_t session_id, const address * multicast_group, uint16_t dest_port);
 
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

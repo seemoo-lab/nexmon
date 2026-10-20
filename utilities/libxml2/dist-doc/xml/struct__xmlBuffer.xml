@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlBuffer" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlBuffer</compoundname>
+    <includes local="no">tree.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlBuffer_1a26031fb504d7c8616a5b161b0fbc8c62" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* content</definition>
+        <argsstring></argsstring>
+        <name>content</name>
+        <qualifiedname>_xmlBuffer::content</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000066"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="tree_8h_1a0f19f56a45ed97079b579cdf1171abca" kindref="member">xmlBufferContent</ref></para>
+</xrefdescription></xrefsect></para>
+<para>The buffer content UTF8 </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="115" column="13" bodyfile="tree.h" bodystart="115" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuffer_1a22e8c9b2dec99402b0615755a7cd0e43" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int use</definition>
+        <argsstring></argsstring>
+        <name>use</name>
+        <qualifiedname>_xmlBuffer::use</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000067"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="tree_8h_1afdaf9cd81ba6bbfd4ff47370e5d71817" kindref="member">xmlBufferLength</ref></para>
+</xrefdescription></xrefsect></para>
+<para>The buffer size used </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="121" column="18" bodyfile="tree.h" bodystart="121" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuffer_1aac913b3a1f6ef005d66bf7a84428773e" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <qualifiedname>_xmlBuffer::size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="123" column="18" bodyfile="tree.h" bodystart="123" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuffer_1a77b89fbe0c259ba4778b4b9047bfc486" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a97b35ae4cd8dc514398f48f6785ec760" kindref="member">xmlBufferAllocationScheme</ref></type>
+        <definition>xmlBufferAllocationScheme alloc</definition>
+        <argsstring></argsstring>
+        <name>alloc</name>
+        <qualifiedname>_xmlBuffer::alloc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="125" column="31" bodyfile="tree.h" bodystart="125" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlBuffer_1ac7318fabc9b42f2d98cb332eb7345af9" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* contentIO</definition>
+        <argsstring></argsstring>
+        <name>contentIO</name>
+        <qualifiedname>_xmlBuffer::contentIO</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="127" column="13" bodyfile="tree.h" bodystart="127" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A buffer structure, this old construct is limited to 2GB and is being deprecated, use API with <ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> instead. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="tree.h" line="109" column="1" bodyfile="tree.h" bodystart="109" bodyend="128"/>
+    <listofallmembers>
+      <member refid="struct__xmlBuffer_1a77b89fbe0c259ba4778b4b9047bfc486" prot="public" virt="non-virtual"><scope>_xmlBuffer</scope><name>alloc</name></member>
+      <member refid="struct__xmlBuffer_1a26031fb504d7c8616a5b161b0fbc8c62" prot="public" virt="non-virtual"><scope>_xmlBuffer</scope><name>content</name></member>
+      <member refid="struct__xmlBuffer_1ac7318fabc9b42f2d98cb332eb7345af9" prot="public" virt="non-virtual"><scope>_xmlBuffer</scope><name>contentIO</name></member>
+      <member refid="struct__xmlBuffer_1aac913b3a1f6ef005d66bf7a84428773e" prot="public" virt="non-virtual"><scope>_xmlBuffer</scope><name>size</name></member>
+      <member refid="struct__xmlBuffer_1a22e8c9b2dec99402b0615755a7cd0e43" prot="public" virt="non-virtual"><scope>_xmlBuffer</scope><name>use</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

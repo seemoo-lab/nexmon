@@ -1,5 +1,5 @@
 ## Makefile for the gettext-tools/examples subdirectory of GNU gettext
-## Copyright (C) 2001-2007, 2009-2016 Free Software Foundation, Inc.
+## Copyright (C) 2001-2025 Free Software Foundation, Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -12,14 +12,16 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## Process this file with automake to produce Makefile.in.
 
 AUTOMAKE_OPTIONS = 1.2 foreign
 ACLOCAL_AMFLAGS = -I ../../gettext-runtime/m4 -I ../../m4
 SUBDIRS = po
-EXTRA_DIST =
+EXTRA_DIST = \
+  HACKING \
+  check-examples
 
 examplesdir = $(docdir)/examples
 
@@ -38,32 +40,47 @@ EXAMPLESFILES = \
   hello-c/po/Makevars \
   hello-c/po/POTFILES.in \
   \
-  hello-c-gnome/INSTALL \
-  hello-c-gnome/autogen.sh \
-  hello-c-gnome/autoclean.sh \
-  hello-c-gnome/hello.c \
-  hello-c-gnome/Makefile.am \
-  hello-c-gnome/configure.ac \
-  hello-c-gnome/m4/Makefile.am \
-  hello-c-gnome/m4/gnome.m4 \
-  hello-c-gnome/m4/gnome-gnorba-check.m4 \
-  hello-c-gnome/m4/gnome-orbit-check.m4 \
-  hello-c-gnome/po/Makevars \
-  hello-c-gnome/po/POTFILES.in \
+  hello-c-gnome2/INSTALL \
+  hello-c-gnome2/autogen.sh \
+  hello-c-gnome2/autoclean.sh \
+  hello-c-gnome2/hello.c \
+  hello-c-gnome2/Makefile.am \
+  hello-c-gnome2/configure.ac \
+  hello-c-gnome2/m4/Makefile.am \
+  hello-c-gnome2/m4/gnome.m4 \
+  hello-c-gnome2/m4/gnome-gnorba-check.m4 \
+  hello-c-gnome2/m4/gnome-orbit-check.m4 \
+  hello-c-gnome2/po/Makevars \
+  hello-c-gnome2/po/POTFILES.in \
   \
   hello-c-gnome3/INSTALL \
+  hello-c-gnome3/README \
   hello-c-gnome3/autogen.sh \
   hello-c-gnome3/autoclean.sh \
   hello-c-gnome3/hello.c \
   hello-c-gnome3/hello.desktop.in.in \
-  hello-c-gnome3/hello.gschema.xml \
   hello-c-gnome3/hello.gresource.xml \
   hello-c-gnome3/hello.ui \
+  hello-c-gnome3/hello2.c \
+  hello-c-gnome3/hello2.desktop.in.in \
+  hello-c-gnome3/hello2.gresource.xml \
+  hello-c-gnome3/hello2.ui \
+  hello-c-gnome3/hello2.gschema.xml \
   hello-c-gnome3/Makefile.am \
   hello-c-gnome3/configure.ac \
   hello-c-gnome3/m4/Makefile.am \
   hello-c-gnome3/po/Makevars \
   hello-c-gnome3/po/POTFILES.in \
+  \
+  hello-c-http/INSTALL \
+  hello-c-http/autogen.sh \
+  hello-c-http/autoclean.sh \
+  hello-c-http/hello-server.c \
+  hello-c-http/Makefile.am \
+  hello-c-http/configure.ac \
+  hello-c-http/m4/Makefile.am \
+  hello-c-http/po/Makevars \
+  hello-c-http/po/POTFILES.in \
   \
   hello-c++/INSTALL \
   hello-c++/autogen.sh \
@@ -74,6 +91,16 @@ EXAMPLESFILES = \
   hello-c++/m4/Makefile.am \
   hello-c++/po/Makevars \
   hello-c++/po/POTFILES.in \
+  \
+  hello-c++20/INSTALL \
+  hello-c++20/autogen.sh \
+  hello-c++20/autoclean.sh \
+  hello-c++20/hello.cc \
+  hello-c++20/Makefile.am \
+  hello-c++20/configure.ac \
+  hello-c++20/m4/Makefile.am \
+  hello-c++20/po/Makevars \
+  hello-c++20/po/POTFILES.in \
   \
   hello-c++-qt/INSTALL \
   hello-c++-qt/BUGS \
@@ -123,20 +150,34 @@ EXAMPLESFILES = \
   hello-c++-kde/po/Makevars \
   hello-c++-kde/po/POTFILES.in \
   \
-  hello-c++-gnome/INSTALL \
-  hello-c++-gnome/autogen.sh \
-  hello-c++-gnome/autoclean.sh \
-  hello-c++-gnome/hello.cc \
-  hello-c++-gnome/Makefile.am \
-  hello-c++-gnome/configure.ac \
-  hello-c++-gnome/m4/Makefile.am \
-  hello-c++-gnome/m4/gnome.m4 \
-  hello-c++-gnome/m4/gnome-gnorba-check.m4 \
-  hello-c++-gnome/m4/gnome-orbit-check.m4 \
-  hello-c++-gnome/m4/gtk.m4 \
-  hello-c++-gnome/m4/gtk--.m4 \
-  hello-c++-gnome/po/Makevars \
-  hello-c++-gnome/po/POTFILES.in \
+  hello-c++-gnome2/INSTALL \
+  hello-c++-gnome2/autogen.sh \
+  hello-c++-gnome2/autoclean.sh \
+  hello-c++-gnome2/hello.cc \
+  hello-c++-gnome2/Makefile.am \
+  hello-c++-gnome2/configure.ac \
+  hello-c++-gnome2/m4/Makefile.am \
+  hello-c++-gnome2/m4/gnome.m4 \
+  hello-c++-gnome2/m4/gnome-gnorba-check.m4 \
+  hello-c++-gnome2/m4/gnome-orbit-check.m4 \
+  hello-c++-gnome2/m4/gtk.m4 \
+  hello-c++-gnome2/m4/gtk--.m4 \
+  hello-c++-gnome2/po/Makevars \
+  hello-c++-gnome2/po/POTFILES.in \
+  \
+  hello-c++-gnome3/INSTALL \
+  hello-c++-gnome3/README \
+  hello-c++-gnome3/autogen.sh \
+  hello-c++-gnome3/autoclean.sh \
+  hello-c++-gnome3/hello.cc \
+  hello-c++-gnome3/hello.desktop.in.in \
+  hello-c++-gnome3/hello.gresource.xml \
+  hello-c++-gnome3/hello.ui \
+  hello-c++-gnome3/Makefile.am \
+  hello-c++-gnome3/configure.ac \
+  hello-c++-gnome3/m4/Makefile.am \
+  hello-c++-gnome3/po/Makevars \
+  hello-c++-gnome3/po/POTFILES.in \
   \
   hello-c++-wxwidgets/INSTALL \
   hello-c++-wxwidgets/autogen.sh \
@@ -171,27 +212,18 @@ EXAMPLESFILES = \
   hello-objc-gnustep/po/GNUmakefile \
   hello-objc-gnustep/po/LocaleAliases \
   \
-  hello-objc-gnome/INSTALL \
-  hello-objc-gnome/autogen.sh \
-  hello-objc-gnome/autoclean.sh \
-  hello-objc-gnome/hello.m \
-  hello-objc-gnome/Makefile.am \
-  hello-objc-gnome/configure.ac \
-  hello-objc-gnome/m4/Makefile.am \
-  hello-objc-gnome/m4/gnome.m4 \
-  hello-objc-gnome/m4/gnome-gnorba-check.m4 \
-  hello-objc-gnome/m4/gnome-orbit-check.m4 \
-  hello-objc-gnome/po/Makevars \
-  hello-objc-gnome/po/POTFILES.in \
-  \
-  hello-sh/INSTALL \
-  hello-sh/autogen.sh \
-  hello-sh/autoclean.sh \
-  hello-sh/hello.sh \
-  hello-sh/Makefile.am \
-  hello-sh/configure.ac \
-  hello-sh/m4/Makefile.am \
-  hello-sh/po/Makefile.am \
+  hello-objc-gnome2/INSTALL \
+  hello-objc-gnome2/autogen.sh \
+  hello-objc-gnome2/autoclean.sh \
+  hello-objc-gnome2/hello.m \
+  hello-objc-gnome2/Makefile.am \
+  hello-objc-gnome2/configure.ac \
+  hello-objc-gnome2/m4/Makefile.am \
+  hello-objc-gnome2/m4/gnome.m4 \
+  hello-objc-gnome2/m4/gnome-gnorba-check.m4 \
+  hello-objc-gnome2/m4/gnome-orbit-check.m4 \
+  hello-objc-gnome2/po/Makevars \
+  hello-objc-gnome2/po/POTFILES.in \
   \
   hello-python/INSTALL \
   hello-python/autogen.sh \
@@ -201,42 +233,6 @@ EXAMPLESFILES = \
   hello-python/configure.ac \
   hello-python/m4/Makefile.am \
   hello-python/po/Makefile.am \
-  \
-  hello-clisp/INSTALL \
-  hello-clisp/autogen.sh \
-  hello-clisp/autoclean.sh \
-  hello-clisp/hello.lisp.in \
-  hello-clisp/Makefile.am \
-  hello-clisp/configure.ac \
-  hello-clisp/m4/Makefile.am \
-  hello-clisp/po/Makefile.am \
-  \
-  hello-librep/INSTALL \
-  hello-librep/autogen.sh \
-  hello-librep/autoclean.sh \
-  hello-librep/hello.jl.in \
-  hello-librep/Makefile.am \
-  hello-librep/configure.ac \
-  hello-librep/m4/Makefile.am \
-  hello-librep/po/Makefile.am \
-  \
-  hello-guile/INSTALL \
-  hello-guile/autogen.sh \
-  hello-guile/autoclean.sh \
-  hello-guile/hello.scm \
-  hello-guile/Makefile.am \
-  hello-guile/configure.ac \
-  hello-guile/m4/Makefile.am \
-  hello-guile/po/Makefile.am \
-  \
-  hello-smalltalk/INSTALL \
-  hello-smalltalk/autogen.sh \
-  hello-smalltalk/autoclean.sh \
-  hello-smalltalk/hello.st.in \
-  hello-smalltalk/Makefile.am \
-  hello-smalltalk/configure.ac \
-  hello-smalltalk/m4/Makefile.am \
-  hello-smalltalk/po/Makefile.am \
   \
   hello-java/INSTALL \
   hello-java/autogen.sh \
@@ -294,7 +290,6 @@ EXAMPLESFILES = \
   \
   hello-csharp-forms/INSTALL \
   hello-csharp-forms/README \
-  hello-csharp-forms/BUGS \
   hello-csharp-forms/autogen.sh \
   hello-csharp-forms/autoclean.sh \
   hello-csharp-forms/hello.cs \
@@ -302,6 +297,92 @@ EXAMPLESFILES = \
   hello-csharp-forms/configure.ac \
   hello-csharp-forms/m4/Makefile.am \
   hello-csharp-forms/po/Makefile.am \
+  \
+  hello-guile/INSTALL \
+  hello-guile/autogen.sh \
+  hello-guile/autoclean.sh \
+  hello-guile/hello.scm \
+  hello-guile/Makefile.am \
+  hello-guile/configure.ac \
+  hello-guile/m4/Makefile.am \
+  hello-guile/po/Makefile.am \
+  \
+  hello-clisp/INSTALL \
+  hello-clisp/autogen.sh \
+  hello-clisp/autoclean.sh \
+  hello-clisp/hello.lisp.in \
+  hello-clisp/Makefile.am \
+  hello-clisp/configure.ac \
+  hello-clisp/m4/Makefile.am \
+  hello-clisp/po/Makefile.am \
+  \
+  hello-librep/INSTALL \
+  hello-librep/autogen.sh \
+  hello-librep/autoclean.sh \
+  hello-librep/hello.jl.in \
+  hello-librep/Makefile.am \
+  hello-librep/configure.ac \
+  hello-librep/m4/Makefile.am \
+  hello-librep/po/Makefile.am \
+  \
+  hello-rust/INSTALL \
+  hello-rust/autogen.sh \
+  hello-rust/autoclean.sh \
+  hello-rust/Cargo.toml.in \
+  hello-rust/src/main.rs.in \
+  hello-rust/Makefile.am \
+  hello-rust/configure.ac \
+  hello-rust/m4/Makefile.am \
+  hello-rust/po/Makefile.am \
+  \
+  hello-go/INSTALL \
+  hello-go/autogen.sh \
+  hello-go/autoclean.sh \
+  hello-go/example1/hello1sl.go.in \
+  hello-go/example1/hello1ml.go.in \
+  hello-go/example1/go.mod.in \
+  hello-go/example1/Makefile.am \
+  hello-go/example2/hello2sl.go.in \
+  hello-go/example2/go.mod.in \
+  hello-go/example2/Makefile.am \
+  hello-go/example3/hello3ml.go.in \
+  hello-go/example3/go.mod.in \
+  hello-go/example3/Makefile.am \
+  hello-go/Makefile.am \
+  hello-go/configure.ac \
+  hello-go/m4/Makefile.am \
+  hello-go/po/Makefile.am \
+  \
+  hello-go-http/INSTALL \
+  hello-go-http/autogen.sh \
+  hello-go-http/autoclean.sh \
+  hello-go-http/example1/hello1ml.go.in \
+  hello-go-http/example1/go.mod.in \
+  hello-go-http/example1/Makefile.am \
+  hello-go-http/Makefile.am \
+  hello-go-http/configure.ac \
+  hello-go-http/m4/Makefile.am \
+  hello-go-http/po/Makefile.am \
+  \
+  hello-ruby/INSTALL \
+  hello-ruby/autogen.sh \
+  hello-ruby/autoclean.sh \
+  hello-ruby/hello.rb \
+  hello-ruby/Makefile.am \
+  hello-ruby/configure.ac \
+  hello-ruby/m4/Makefile.am \
+  hello-ruby/po/Makefile.am \
+  \
+  hello-sh/INSTALL \
+  hello-sh/autogen.sh \
+  hello-sh/autoclean.sh \
+  hello-sh/hello-1.sh \
+  hello-sh/hello-2.sh \
+  hello-sh/hello-3.sh \
+  hello-sh/Makefile.am \
+  hello-sh/configure.ac \
+  hello-sh/m4/Makefile.am \
+  hello-sh/po/Makefile.am \
   \
   hello-gawk/INSTALL \
   hello-gawk/autogen.sh \
@@ -316,20 +397,48 @@ EXAMPLESFILES = \
   hello-pascal/autogen.sh \
   hello-pascal/autoclean.sh \
   hello-pascal/hello.pas \
-  hello-pascal/hello.rst \
   hello-pascal/Makefile.am \
   hello-pascal/configure.ac \
   hello-pascal/m4/Makefile.am \
   hello-pascal/po/Makefile.am \
   \
-  hello-ycp/INSTALL \
-  hello-ycp/autogen.sh \
-  hello-ycp/autoclean.sh \
-  hello-ycp/hello.ycp \
-  hello-ycp/Makefile.am \
-  hello-ycp/configure.ac \
-  hello-ycp/m4/Makefile.am \
-  hello-ycp/po/Makefile.am \
+  hello-modula2/INSTALL \
+  hello-modula2/autogen.sh \
+  hello-modula2/autoclean.sh \
+  hello-modula2/hello.mod.in \
+  hello-modula2/Makefile.am \
+  hello-modula2/configure.ac \
+  hello-modula2/m4/Makefile.am \
+  hello-modula2/po/Makefile.am \
+  \
+  hello-d/INSTALL \
+  hello-d/autogen.sh \
+  hello-d/autoclean.sh \
+  hello-d/hello.d.in \
+  hello-d/Makefile.am \
+  hello-d/configure.ac \
+  hello-d/m4/Makefile.am \
+  hello-d/po/Makefile.am \
+  \
+  hello-ocaml/INSTALL \
+  hello-ocaml/autogen.sh \
+  hello-ocaml/autoclean.sh \
+  hello-ocaml/dune.in \
+  hello-ocaml/dune-project.in \
+  hello-ocaml/hello.ml.in \
+  hello-ocaml/Makefile.am \
+  hello-ocaml/configure.ac \
+  hello-ocaml/m4/Makefile.am \
+  hello-ocaml/po/Makefile.am \
+  \
+  hello-smalltalk/INSTALL \
+  hello-smalltalk/autogen.sh \
+  hello-smalltalk/autoclean.sh \
+  hello-smalltalk/hello.st.in \
+  hello-smalltalk/Makefile.am \
+  hello-smalltalk/configure.ac \
+  hello-smalltalk/m4/Makefile.am \
+  hello-smalltalk/po/Makefile.am \
   \
   hello-tcl/INSTALL \
   hello-tcl/autogen.sh \
@@ -369,40 +478,59 @@ EXAMPLESFILES = \
   hello-php/m4/Makefile.am \
   hello-php/po/Makefile.am \
   \
+  hello-ycp/INSTALL \
+  hello-ycp/autogen.sh \
+  hello-ycp/autoclean.sh \
+  hello-ycp/hello.ycp \
+  hello-ycp/Makefile.am \
+  hello-ycp/configure.ac \
+  hello-ycp/m4/Makefile.am \
+  hello-ycp/po/Makefile.am \
+  \
   README
 
 # List of examples directories containing a po directory.
 EXAMPLESDIRS = \
   hello-c \
-  hello-c-gnome \
+  hello-c-gnome2 \
   hello-c-gnome3 \
+  hello-c-http \
   hello-c++ \
+  hello-c++20 \
   hello-c++-qt \
   hello-c++-kde \
-  hello-c++-gnome \
+  hello-c++-gnome2 \
+  hello-c++-gnome3 \
   hello-c++-wxwidgets \
   hello-objc \
   hello-objc-gnustep \
-  hello-objc-gnome \
-  hello-sh \
+  hello-objc-gnome2 \
   hello-python \
-  hello-clisp \
-  hello-librep \
-  hello-guile \
-  hello-smalltalk \
   hello-java \
   hello-java-awt \
   hello-java-swing \
   hello-java-qtjambi \
   hello-csharp \
   hello-csharp-forms \
+  hello-guile \
+  hello-clisp \
+  hello-librep \
+  hello-rust \
+  hello-go \
+  hello-go-http \
+  hello-ruby \
+  hello-sh \
   hello-gawk \
   hello-pascal \
-  hello-ycp \
+  hello-modula2 \
+  hello-d \
+  hello-ocaml \
+  hello-smalltalk \
   hello-tcl \
   hello-tcl-tk \
   hello-perl \
-  hello-php
+  hello-php \
+  hello-ycp
 
 # List of files present in every example's po directory.
 EXAMPLESPOFILES = \
@@ -426,12 +554,14 @@ EXAMPLESPOFILES = \
   id.po \
   it.po \
   ja.po \
+  ka.po \
   ky.po \
   lv.po \
   ms.po \
   mt.po \
   nb.po \
   nl.po \
+  nn.po \
   pl.po \
   pt.po \
   pt_BR.po \
@@ -439,8 +569,10 @@ EXAMPLESPOFILES = \
   ru.po \
   sk.po \
   sl.po \
+  sq.po \
   sr.po \
   sv.po \
+  ta.po \
   tr.po \
   uk.po \
   vi.po \

@@ -5,35 +5,28 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include <wiretap/wtap.h>
-#include <epan/circuit.h>
+#include <epan/conversation.h>
 
 void proto_register_isdn(void);
 void proto_reg_handoff_isdn(void);
 
-static int proto_isdn = -1;
-static int hf_isdn_channel = -1;
+static int proto_isdn;
+static int hf_isdn_direction;
+static int hf_isdn_channel;
 
-static gint ett_isdn = -1;
+static int ett_isdn;
+
+static dissector_handle_t isdn_handle;
 
 /*
  * Protocol used on the D channel.
@@ -49,10 +42,15 @@ static const enum_val_t dchannel_protocol_options[] = {
 
 static int dchannel_protocol = DCHANNEL_LAPD;
 
-static dissector_handle_t lapd_handle;
+static dissector_handle_t lapd_phdr_handle;
 static dissector_handle_t dpnss_link_handle;
 static dissector_handle_t ppp_hdlc_handle;
 static dissector_handle_t v120_handle;
+
+static const true_false_string isdn_direction_tfs = {
+	"User->Network",
+	"Network->User"
+};
 
 static const value_string channel_vals[] = {
 	{  0,	"D" },
@@ -73,7 +71,7 @@ static const value_string channel_vals[] = {
 	{ 15,	"B15" },
 	{ 16,	"B16" },
 	{ 17,	"B17" },
-	{ 18,	"B19" },
+	{ 18,	"B18" },
 	{ 19,	"B19" },
 	{ 20,	"B20" },
 	{ 21,	"B21" },
@@ -83,55 +81,56 @@ static const value_string channel_vals[] = {
 	{ 25,	"B25" },
 	{ 26,	"B26" },
 	{ 27,	"B27" },
-	{ 28,	"B29" },
+	{ 28,	"B28" },
 	{ 29,	"B29" },
 	{ 30,	"B30" },
 	{ 0,	NULL }
 };
 
 static int
-dissect_isdn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+dissect_isdn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
+	struct isdn_phdr *isdn = (struct isdn_phdr *)data;
 	proto_tree *isdn_tree;
 	proto_item *ti;
-	static const guint8 v120_sabme[3] = { 0x08, 0x01, 0x7F };
-	static const guint8 ppp[2] = { 0xFF, 0x03 };
-	circuit_t *circuit;
+	static const uint8_t v120_sabme[3] = { 0x08, 0x01, 0x7F };
+	static const uint8_t ppp[2] = { 0xFF, 0x03 };
+	conversation_t *conv;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "ISDN");
 
-	if (pinfo->pseudo_header->isdn.uton) {
+	if (isdn->uton) {
 		col_set_str(pinfo->cinfo, COL_RES_DL_DST, "Network");
 		col_set_str(pinfo->cinfo, COL_RES_DL_SRC, "User");
+		pinfo->p2p_dir = P2P_DIR_SENT;
 	} else {
 		col_set_str(pinfo->cinfo, COL_RES_DL_DST, "User");
 		col_set_str(pinfo->cinfo, COL_RES_DL_SRC, "Network");
+		pinfo->p2p_dir = P2P_DIR_RECV;
 	}
-
-    /* XXX - Are these still needed? We've used other values where necessary */
-	pinfo->ctype = CT_ISDN;
-	pinfo->circuit_id = pinfo->pseudo_header->isdn.channel;
 
 	if (tree) {
 		ti = proto_tree_add_item(tree, proto_isdn, tvb, 0, 0, ENC_NA);
 		isdn_tree = proto_item_add_subtree(ti, ett_isdn);
 
+		proto_tree_add_boolean(isdn_tree, hf_isdn_direction, tvb, 0, 0,
+		     isdn->uton);
+
 		proto_tree_add_uint(isdn_tree, hf_isdn_channel, tvb, 0, 0,
-		    pinfo->pseudo_header->isdn.channel);
+		    isdn->channel);
 	}
 
 	/*
 	 * Set up a circuit for this channel, and assign it a dissector.
 	 */
-	circuit = find_circuit(CT_ISDN, pinfo->pseudo_header->isdn.channel, pinfo->num);
-	if (circuit == NULL)
-		circuit = circuit_new(CT_ISDN, pinfo->pseudo_header->isdn.channel, pinfo->num);
+	conv = find_or_create_conversation_by_id(pinfo, CONVERSATION_ISDN,
+	    isdn->channel);
 
-	if (circuit_get_dissector(circuit) == NULL) {
+	if (conversation_get_dissector(conv, 0) == NULL) {
 		/*
 		 * We don't yet know the type of traffic on the circuit.
 		 */
-		switch (pinfo->pseudo_header->isdn.channel) {
+		switch (isdn->channel) {
 
 		case 0:
 			/*
@@ -142,11 +141,11 @@ dissect_isdn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 			switch (dchannel_protocol) {
 
 			case DCHANNEL_LAPD:
-				circuit_set_dissector(circuit, lapd_handle);
+				conversation_set_dissector(conv, lapd_phdr_handle);
 				break;
 
 			case DCHANNEL_DPNSS:
-				circuit_set_dissector(circuit,
+				conversation_set_dissector(conv,
 				    dpnss_link_handle);
 				break;
 			}
@@ -185,19 +184,19 @@ dissect_isdn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 				/*
 				 * We assume this is V.120.
 				 */
-				circuit_set_dissector(circuit, v120_handle);
+				conversation_set_dissector(conv, v120_handle);
 			} else if (tvb_memeql(tvb, 0, ppp, 2) == 0) {
 				/*
 				 * We assume this is PPP.
 				 */
-				circuit_set_dissector(circuit, ppp_hdlc_handle);
+				conversation_set_dissector(conv, ppp_hdlc_handle);
 			}
 			break;
 		}
 	}
 
-	if (!try_circuit_dissector(CT_ISDN, pinfo->pseudo_header->isdn.channel,
-		pinfo->num, tvb, pinfo, tree, NULL))
+	if (!try_conversation_dissector_by_id(CONVERSATION_ISDN, isdn->channel,
+		tvb, pinfo, tree, data))
 		call_data_dissector(tvb, pinfo, tree);
 
 	return tvb_captured_length(tvb);
@@ -207,11 +206,15 @@ void
 proto_register_isdn(void)
 {
 	static hf_register_info hf[] = {
+		{ &hf_isdn_direction,
+		{ "Direction", "isdn.direction", FT_BOOLEAN, BASE_NONE,
+		  TFS(&isdn_direction_tfs), 0x0, NULL, HFILL }},
+
 		{ &hf_isdn_channel,
 		{ "Channel",	"isdn.channel", FT_UINT8, BASE_DEC,
 		  VALS(channel_vals), 0x0, NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_isdn,
 	};
 	module_t *isdn_module;
@@ -225,30 +228,28 @@ proto_register_isdn(void)
 	prefs_register_enum_preference(isdn_module, "dchannel_protocol",
 	    "D-channel protocol",
 	    "The protocol running on the D channel",
-	    &dchannel_protocol, dchannel_protocol_options, FALSE);
+	    &dchannel_protocol, dchannel_protocol_options, false);
+
+	isdn_handle = register_dissector("isdn", dissect_isdn, proto_isdn);
 }
 
 void
 proto_reg_handoff_isdn(void)
 {
-	dissector_handle_t isdn_handle;
-
 	/*
-	 * Get handles for the LAPD, DPNSS link-layer, PPP, and V.120
-	 * dissectors.
+	 * Get handles for the LAPD-with-pseudoheader, DPNSS link-layer,
+	 * PPP, and V.120 dissectors.
 	 */
-	lapd_handle = find_dissector("lapd");
+	lapd_phdr_handle = find_dissector("lapd-phdr");
 	dpnss_link_handle = find_dissector("dpnss_link");
 	ppp_hdlc_handle = find_dissector("ppp_hdlc");
 	v120_handle = find_dissector("v120");
-
-	isdn_handle = create_dissector_handle(dissect_isdn, proto_isdn);
 
 	dissector_add_uint("wtap_encap", WTAP_ENCAP_ISDN, isdn_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

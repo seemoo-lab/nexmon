@@ -1,3 +1,121 @@
+2026-03-06  Bruno Haible  <bruno@clisp.org>
+
+	Update translations.
+	Ran  (cd po; ./fetch-po; make update-po)
+	* *.po: Now exact copies of the PO files from the TP.
+	* rm.po: Remove file.
+	* LINGUAS: Automatically generated.
+
+2026-03-06  Bruno Haible  <bruno@clisp.org>
+
+	Use the newest gettext release.
+	* Makefile.in.in: Upgrade to gettext-1.0, keeping the change
+		2019-01-27  Bruno Haible  <bruno@clisp.org>
+		Accommodate a shell that is not in /bin/sh.
+		* Makefile.in.in (SHELL): Use the value found by configure.
+	* Rules-quot: Upgrade to gettext-1.0.
+	* boldquot.sed: Upgrade to gettext-1.0.
+	* en@boldquot.header: Upgrade to gettext-1.0.
+	* en@quot.header: Upgrade to gettext-1.0.
+	* insert-header.sed: Upgrade to gettext-1.0.
+	* quot.sed: Upgrade to gettext-1.0.
+	* Makevars (PO_DEPENDS_ON_POT): Remove variable.
+	* fetch-po: New file.
+
+2022-05-15  Bruno Haible  <bruno@clisp.org>
+
+	Use the newest gettext release.
+	* Makefile.in.in: Upgrade to gettext-0.21, keeping the change
+		2019-01-27  Bruno Haible  <bruno@clisp.org>
+		Accommodate a shell that is not in /bin/sh.
+		* Makefile.in.in (SHELL): Use the value found by configure.
+
+2022-05-15  Bruno Haible  <bruno@clisp.org>
+
+	Update translations.
+	* *.po: Update from TP, with 'msgmerge --previous'.
+	* LINGUAS: Add ko.
+
+2019-07-02  Bruno Haible  <bruno@clisp.org>
+
+	Use the newest gettext release.
+	* Makefile.in.in: Upgrade to gettext-0.20.1, keeping the change
+		2019-01-27  Bruno Haible  <bruno@clisp.org>
+		Accommodate a shell that is not in /bin/sh.
+		* Makefile.in.in (SHELL): Use the value found by configure.
+	* Rules-quot: Upgrade to gettext-0.20.1.
+	* en@boldquot.header: Upgrade to gettext-0.20.1.
+	* en@quot.header: Upgrade to gettext-0.20.1.
+	* insert-header.sin: Upgrade to gettext-0.20.1.
+	* remove-potcdate.sin: Upgrade to gettext-0.20.1.
+
+2019-04-26  Bruno Haible  <bruno@clisp.org>
+
+	* cs.po: Update from Petr Pisar <petr.pisar@atlas.cz>.
+	* da.po: Update from Keld Simonsen <keld@keldix.com>.
+	* hu.po: Update from Balázs Úr <urbalazs@gmail.com>.
+	* ru.po: Update from Yuri Kozlov <yuray@komyakino.ru>.
+	* sv.po: Update from Anders Jonsson <anders.jonsson@norsjovallen.se>.
+	* zh_CN.po: Update from Boyuan Yang <073plan@gmail.com>.
+	* zh_TW.po: Update from pan93412 <pan93412@gmail.com>.
+	* lt.po: New file, from Rimas Kudelis <rq@akl.lt>.
+	* LINGUAS: Add lt.
+
+2019-01-27  Bruno Haible  <bruno@clisp.org>
+
+	Accommodate a shell that is not in /bin/sh.
+	* Makefile.in.in (SHELL): Use the value found by configure.
+
+2017-04-16  Bruno Haible  <bruno@clisp.org>
+
+	* uk.po: Fix header syntax (bug in old version of KDE Lokalize).
+
+2017-01-30  Bruno Haible  <bruno@clisp.org>
+
+	* bg.po: Update from Roumen Petrov <transl@roumenpetrov.info>.
+	* cs.po: Update from Petr Pisar <petr.pisar@atlas.cz>.
+	* de.po: Update from Mario Blättermann <mario.blaettermann@gmail.com>.
+	* eo.po: Update from Felipe Castro <fefcas@gmail.com>.
+	* et.po: Update from Toomas Soome <tsoome@me.com>.
+	* fr.po: Update from Stéphane Aulery <lkppo@free.fr>.
+	* ga.po: Update from Kevin Scannell <kscanne@gmail.com>.
+	* it.po: Update from Milo Casagrande <milo@milo.name>.
+	* ja.po: Update from Takeshi Hamasaki <hmatrjp@users.sourceforge.jp>.
+	* nl.po: Update from Benno Schulenberg <benno@vertaalt.nl>.
+	* pl.po: Update from Jakub Bogusz <qboosh@pld-linux.org>.
+	* pt_BR.po: Update from Rafael Fontenelle <rffontenelle@gmail.com>.
+	* sk.po: Update from Marcel Telka <marcel@telka.sk>.
+	* sr.po: Update from Мирослав Николић <miroslavnikolic@rocketmail.com>.
+	* uk.po: Update from Yuri Chornoivan <yurchor@ukr.net>.
+	* vi.po: Update from Trần Ngọc Quân <vnwildman@gmail.com>.
+
+2016-10-01  Bruno Haible  <bruno@clisp.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.19.8.1.
+	* Makevars: Upgrade to gettext-0.19.8.1, keeping modifications.
+	* Rules-quot: Upgrade to gettext-0.19.8.1.
+
+2016-10-01  Bruno Haible  <bruno@clisp.org>
+
+	* es.po: Update from Santiago Vila Doncel <sanvila@unex.es>.
+	* gl.po: Update from Leandro Regueiro <leandro.regueiro@gmail.com>.
+	* hu.po: Update from Balázs Úr <urbalazs@gmail.com>.
+	* pt_BR.po: Update from Rafael Ferreira <rafael.f.f1@gmail.com>.
+	* zh_TW.po: Update from Wei-Lun Chao <bluebat@member.fsf.org>.
+	* zh_CN.po: Update Language-Team address.
+
+2012-12-07  Bruno Haible  <bruno@clisp.org>
+
+	* gl.po: Update from Leandro Regueiro <leandro.regueiro@gmail.com>.
+
+2012-06-03  Bruno Haible  <bruno@clisp.org>
+
+	* hr.po: Update from Tomislav Krznar <tomislav.krznar@gmail.com>.
+
+2012-02-19  Bruno Haible  <bruno@clisp.org>
+
+	* sr.po: Update from Мирослав Николић <miroslavnikolic@rocketmail.com>.
+
 2011-06-04  Bruno Haible  <bruno@clisp.org>
 
 	* uk.po: Update from Yuri Chornoivan <yurchor@ukr.net>.

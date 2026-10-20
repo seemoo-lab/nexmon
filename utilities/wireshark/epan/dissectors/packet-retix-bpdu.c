@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -36,14 +24,14 @@
 
 void proto_register_retix_bpdu(void);
 
-static gint ett_retix_bpdu = -1;
-static int proto_retix_bpdu = -1;
+static int ett_retix_bpdu;
+static int proto_retix_bpdu;
 
-static int hf_retix_bpdu_root_mac = -1;
-static int hf_retix_bpdu_bridge_mac = -1;
-static int hf_retix_bpdu_max_age = -1;
-static int hf_retix_bpdu_hello_time = -1;
-static int hf_retix_bpdu_forward_delay = -1;
+static int hf_retix_bpdu_root_mac;
+static int hf_retix_bpdu_bridge_mac;
+static int hf_retix_bpdu_max_age;
+static int hf_retix_bpdu_hello_time;
+static int hf_retix_bpdu_forward_delay;
 
 /* I don't have the spec's for this protcol so it's been reverse engineered
  * It seems quite like 802.1D
@@ -67,7 +55,7 @@ dissect_retix_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
   proto_tree_add_item(retix_bpdu_tree, hf_retix_bpdu_root_mac, tvb, 0, 6, ENC_NA);
 
   proto_tree_add_item(retix_bpdu_tree, hf_retix_bpdu_bridge_mac, tvb, 10, 6, ENC_NA);
-  col_add_fstr(pinfo->cinfo, COL_INFO, "Bridge MAC %s", tvb_ether_to_str(tvb, 10));
+  col_add_fstr(pinfo->cinfo, COL_INFO, "Bridge MAC %s", tvb_ether_to_str(pinfo->pool, tvb, 10));
 
   proto_tree_add_item(retix_bpdu_tree, hf_retix_bpdu_max_age, tvb, 20, 2, ENC_BIG_ENDIAN);
   proto_tree_add_item(retix_bpdu_tree, hf_retix_bpdu_hello_time, tvb, 22, 2, ENC_BIG_ENDIAN);
@@ -102,7 +90,7 @@ proto_register_retix_bpdu(void)
     NULL, HFILL}},
   };
 
-  static gint *ett[] ={
+  static int *ett[] ={
     &ett_retix_bpdu,
   };
 
@@ -113,7 +101,7 @@ proto_register_retix_bpdu(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

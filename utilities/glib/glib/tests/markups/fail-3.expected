@@ -1,5 +1,5 @@
 ELEMENT 'foobar'
-ERROR Error on line 49 char 2: Invalid UTF-8 encoded text in name - not valid '
+ERROR Error on line 49 char 2: Invalid UTF-8 encoded text in name — not valid “
 Παν語
 
 This is a list of ways to say hello in various languages. Its purpose is to illustrate a number of scripts.
@@ -47,4 +47,4 @@ Difference among chinese characters in GB, JIS, KSC, BIG5:‎
  BIG5	--	元氣	開發
 
 
-'
+”

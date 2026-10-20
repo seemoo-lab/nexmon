@@ -11,27 +11,15 @@
  * Copyright 1998 Gerald Combs
  *
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * References for "media-type multipart/mixed :
- * http://www.iana.org/assignments/media-types/index.html
- * http://www.ietf.org/rfc/rfc2045.txt?number=2045
- * http://www.rfc-editor.org/rfc/rfc2046.txt
- * http://www.rfc-editor.org/rfc/rfc2047.txt
- * http://www.rfc-editor.org/rfc/rfc2048.txt
- * http://www.rfc-editor.org/rfc/rfc2049.txt
+ * https://www.iana.org/assignments/media-types/index.html
+ * https://tools.ietf.org/html/rfc2045
+ * https://tools.ietf.org/html/rfc2046
+ * https://tools.ietf.org/html/rfc2047
+ * https://tools.ietf.org/html/rfc2048
+ * https://tools.ietf.org/html/rfc2049
  *
  * Part of the code is modeled from the SIP and HTTP dissectors
  *
@@ -56,7 +44,6 @@
 
 #include "config.h"
 
-
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/media_params.h>
@@ -64,9 +51,10 @@
 #include <wsutil/str_util.h>
 #include "packet-imf.h"
 
-#include "packet-dcerpc.h"
+#include <wsutil/array.h>
+
 #include "packet-gssapi.h"
-#include "packet-http.h"
+#include "packet-media-type.h"
 
 void proto_register_multipart(void);
 void proto_reg_handoff_multipart(void);
@@ -76,23 +64,23 @@ void proto_reg_handoff_multipart(void);
 static dissector_table_t multipart_media_subdissector_table;
 
 /* Initialize the protocol and registered fields */
-static int proto_multipart = -1;
+static int proto_multipart;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_multipart_trailer = -1;
-static int hf_multipart_boundary = -1;
-static int hf_multipart_first_boundary = -1;
-static int hf_multipart_last_boundary = -1;
-static int hf_multipart_preamble = -1;
+static int hf_multipart_trailer;
+static int hf_multipart_boundary;
+static int hf_multipart_first_boundary;
+static int hf_multipart_last_boundary;
+static int hf_multipart_preamble;
 
 /* Initialize the subtree pointers */
-static gint ett_multipart = -1;
-static gint ett_multipart_main = -1;
-static gint ett_multipart_body = -1;
+static int ett_multipart;
+static int ett_multipart_main;
+static int ett_multipart_body;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static expert_field ei_multipart_no_required_parameter = EI_INIT;
-static expert_field ei_multipart_decryption_not_possible = EI_INIT;
+static expert_field ei_multipart_no_required_parameter;
+static expert_field ei_multipart_decryption_not_possible;
 
 /* Not sure that compact_name exists for multipart, but choose to keep
  * the structure from SIP dissector, all the content- is also from SIP */
@@ -127,27 +115,16 @@ static const multipart_header_t multipart_headers[] = {
 #define POS_ORIGINALCONTENT             9
 
 /* Initialize the header fields */
-static gint hf_multipart_type = -1;
-static gint hf_multipart_part = -1;
-static gint hf_multipart_sec_token_len = -1;
-
-static gint hf_header_array[] = {
-    -1, /* "Unknown-header" - Pad so that the real headers start at index 1 */
-    -1, /* "Content-Description" */
-    -1, /* "Content-Disposition" */
-    -1, /* "Content-Encoding" */
-    -1, /* "Content-Id" */
-    -1, /* "Content-Language" */
-    -1, /* "Content-Length" */
-    -1, /* "Content-Transfer-Encoding" */
-    -1, /* "Content-Type" */
-    -1, /* "OriginalContent" */
-};
+static int hf_multipart_type;
+static int hf_multipart_part;
+static int hf_multipart_sec_token_len;
+static int hf_header_array[array_length(multipart_headers)];
 
 /* Define media_type/Content type table */
 static dissector_table_t media_type_dissector_table;
 
 /* Data and media dissector handles */
+static dissector_handle_t multipart_handle;
 static dissector_handle_t media_handle;
 static dissector_handle_t gssapi_handle;
 
@@ -155,38 +132,40 @@ static dissector_handle_t gssapi_handle;
  * as raw text, may cause problems with images sound etc
  * TODO improve to check for different content types ?
  */
-static gboolean display_unknown_body_as_text = FALSE;
-static gboolean remove_base64_encoding = FALSE;
-
+static bool display_unknown_body_as_text;
+static bool remove_base64_encoding;
+#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
+static bool uncompress_data = true;
+#endif
 
 typedef struct {
     const char *type; /* Type of multipart */
     char *boundary; /* Boundary string (enclosing quotes removed if any) */
-    guint boundary_length; /* Length of the boundary string */
+    unsigned boundary_length; /* Length of the boundary string */
     char *protocol; /* Protocol string if encrypted multipart (enclosing quotes removed if any) */
-    guint protocol_length; /* Length of the protocol string  */
+    unsigned protocol_length; /* Length of the protocol string  */
     char *orig_content_type; /* Content-Type of original message */
     char *orig_parameters; /* Parameters for Content-Type of original message */
 } multipart_info_t;
 
 
 
-static gint
-find_first_boundary(tvbuff_t *tvb, gint start, const guint8 *boundary,
-        gint boundary_len, gint *boundary_line_len, gboolean *last_boundary);
-static gint
-find_next_boundary(tvbuff_t *tvb, gint start, const guint8 *boundary,
-        gint boundary_len, gint *boundary_line_len, gboolean *last_boundary);
-static gint
+static int
+find_first_boundary(tvbuff_t *tvb, int start, const uint8_t *boundary,
+        int boundary_len, int *boundary_line_len, bool *last_boundary);
+static int
+find_next_boundary(tvbuff_t *tvb, int start, const uint8_t *boundary,
+        int boundary_len, int *boundary_line_len, bool *last_boundary);
+static int
 process_preamble(proto_tree *tree, tvbuff_t *tvb, multipart_info_t *m_info,
-        gboolean *last_boundary);
-static gint
+        bool *last_boundary);
+static int
 process_body_part(proto_tree *tree, tvbuff_t *tvb,
-        http_message_info_t *input_message_info, multipart_info_t *m_info,
-        packet_info *pinfo, gint start, gint idx,
-        gboolean *last_boundary);
-static gint
-is_known_multipart_header(const char *header_str, guint len);
+        media_content_info_t *input_content_info, multipart_info_t *m_info,
+        packet_info *pinfo, int start, int idx,
+        bool *last_boundary);
+static int
+is_known_multipart_header(const char *header_str, unsigned len);
 
 
 /* Return a tvb that contains the binary representation of a base64
@@ -197,7 +176,7 @@ base64_decode(packet_info *pinfo, tvbuff_t *b64_tvb, char *name)
 {
     char *data;
     tvbuff_t *tvb;
-    data = tvb_get_string_enc(wmem_packet_scope(), b64_tvb, 0, tvb_reported_length(b64_tvb), ENC_ASCII);
+    data = tvb_get_string_enc(pinfo->pool, b64_tvb, 0, tvb_reported_length(b64_tvb), ENC_ASCII);
 
     tvb = base64_to_tvb(b64_tvb, data);
     add_new_data_source(pinfo, tvb, name);
@@ -215,67 +194,67 @@ base64_decode(packet_info *pinfo, tvbuff_t *b64_tvb, char *name)
  * Return the cleaned-up RFC2822 header (buffer must be freed).
  */
 static char *
-unfold_and_compact_mime_header(const char *lines, gint *first_colon_offset)
+unfold_and_compact_mime_header(wmem_allocator_t *pool, const char *lines, int *first_colon_offset)
 {
     const char *p = lines;
     char c;
     char *ret, *q;
     char sep_seen = 0; /* Did we see a separator ":;," */
-    char lws = FALSE; /* Did we see LWS (incl. folding) */
-    gint colon = -1;
+    char lws = false; /* Did we see LWS (incl. folding) */
+    int colon = -1;
 
     if (! lines) return NULL;
 
     c = *p;
-    ret = (char *)wmem_alloc(wmem_packet_scope(), strlen(lines) + 1);
+    ret = (char *)wmem_alloc(pool, strlen(lines) + 1);
     q = ret;
 
     while (c) {
         if (c == ':') {
-            lws = FALSE; /* Prevent leading LWS from showing up */
+            lws = false; /* Prevent leading LWS from showing up */
             if (colon == -1) {/* First colon */
-                colon = (gint) (q - ret);
+                colon = (int) (q - ret);
             }
             *(q++) = sep_seen = c;
             p++;
         } else if (c == ';' || c == ',' || c == '=') {
-            lws = FALSE; /* Prevent leading LWS from showing up */
+            lws = false; /* Prevent leading LWS from showing up */
             *(q++) = sep_seen = c;
             p++;
         } else if (c == ' ' || c == '\t') {
-            lws = TRUE;
+            lws = true;
             p++;
         } else if (c == '\n') {
-            lws = FALSE; /* Skip trailing LWS */
+            lws = false; /* Skip trailing LWS */
             if ((c = *(p+1))) {
                 if (c == ' ' || c == '\t') { /* Header unfolding */
-                    lws = TRUE;
+                    lws = true;
                     p += 2;
                 } else {
                     *q = c = 0; /* Stop */
                 }
             }
         } else if (c == '\r') {
-            lws = FALSE;
+            lws = false;
             if ((c = *(p+1))) {
                 if (c == '\n') {
                     if ((c = *(p+2))) {
                         if (c == ' ' || c == '\t') { /* Header unfolding */
-                            lws = TRUE;
+                            lws = true;
                             p += 3;
                         } else {
                             *q = c = 0; /* Stop */
                         }
                     }
                 } else if (c == ' ' || c == '\t') { /* Header unfolding */
-                    lws = TRUE;
+                    lws = true;
                     p += 2;
                 } else {
                     *q = c = 0; /* Stop */
                 }
             }
         } else if (c == '"') { /* Start of quoted-string */
-            lws = FALSE;
+            lws = false;
             *(q++) = c;
             while (c) {
                 c = *(q++) = *(++p);
@@ -302,7 +281,7 @@ unfold_and_compact_mime_header(const char *lines, gint *first_colon_offset)
                     *(q++) = ' ';
                 }
             }
-            lws = FALSE;
+            lws = false;
             *(q++) = c;
             p++; /* OK */
         }
@@ -326,13 +305,13 @@ unfold_and_compact_mime_header(const char *lines, gint *first_colon_offset)
  * leading hyphens. (quote from rfc2046)
  */
 static multipart_info_t *
-get_multipart_info(packet_info *pinfo, http_message_info_t *message_info)
+get_multipart_info(packet_info *pinfo, media_content_info_t *content_info)
 {
     char *start_boundary, *start_protocol = NULL;
     multipart_info_t *m_info = NULL;
     const char *type = pinfo->match_string;
     char *parameters;
-    gint dummy;
+    int dummy;
 
     /*
      * We need both a content type AND parameters
@@ -341,25 +320,24 @@ get_multipart_info(packet_info *pinfo, http_message_info_t *message_info)
     if (type == NULL) {
         return NULL;
     }
-    if (message_info == NULL) {
+    if (content_info == NULL) {
         return NULL;
     }
-    if (message_info->media_str == NULL) {
+    if (content_info->media_str == NULL) {
         return NULL;
     }
 
     /* Clean up the parameters */
-    parameters = unfold_and_compact_mime_header(message_info->media_str, &dummy);
+    parameters = unfold_and_compact_mime_header(pinfo->pool, content_info->media_str, &dummy);
 
-    start_boundary = ws_find_media_type_parameter(parameters, "boundary");
-
-    if(!start_boundary) {
+    start_boundary = ws_find_media_type_parameter(pinfo->pool, parameters, "boundary");
+    if (!start_boundary) {
         return NULL;
     }
-    if(strncmp(type, "multipart/encrypted", sizeof("multipart/encrypted")-1) == 0) {
-        start_protocol = ws_find_media_type_parameter(parameters, "protocol");
-        if(!start_protocol) {
-            g_free(start_boundary);
+
+    if (strncmp(type, "multipart/encrypted", sizeof("multipart/encrypted") - 1) == 0) {
+        start_protocol = ws_find_media_type_parameter(pinfo->pool, parameters, "protocol");
+        if (!start_protocol) {
             return NULL;
         }
     }
@@ -367,15 +345,13 @@ get_multipart_info(packet_info *pinfo, http_message_info_t *message_info)
     /*
      * There is a value for the boundary string
      */
-    m_info = wmem_new(wmem_packet_scope(), multipart_info_t);
+    m_info = wmem_new(pinfo->pool, multipart_info_t);
     m_info->type = type;
-    m_info->boundary = wmem_strdup(wmem_packet_scope(), start_boundary);
-    m_info->boundary_length = (guint)strlen(start_boundary);
-    g_free(start_boundary);
+    m_info->boundary = start_boundary;
+    m_info->boundary_length = (unsigned)strlen(start_boundary);
     if(start_protocol) {
-        m_info->protocol = wmem_strdup(wmem_packet_scope(), start_protocol);
-        m_info->protocol_length = (guint)strlen(start_protocol);
-        g_free(start_protocol);
+        m_info->protocol = start_protocol;
+        m_info->protocol_length = (unsigned)strlen(start_protocol);
     } else {
         m_info->protocol = NULL;
         m_info->protocol_length = -1;
@@ -392,29 +368,29 @@ get_multipart_info(packet_info *pinfo, http_message_info_t *message_info)
  *
  * Return the offset to the 1st byte of the boundary delimiter line.
  * Set boundary_line_len to the length of the entire boundary delimiter.
- * Set last_boundary to TRUE if we've seen the last-boundary delimiter.
+ * Set last_boundary to true if we've seen the last-boundary delimiter.
  */
-static gint
-find_first_boundary(tvbuff_t *tvb, gint start, const guint8 *boundary,
-        gint boundary_len, gint *boundary_line_len, gboolean *last_boundary)
+static int
+find_first_boundary(tvbuff_t *tvb, int start, const uint8_t *boundary,
+        int boundary_len, int *boundary_line_len, bool *last_boundary)
 {
-    gint offset = start, next_offset, line_len, boundary_start;
+    int offset = start, next_offset, line_len, boundary_start;
 
     while (tvb_offset_exists(tvb, offset + 2 + boundary_len)) {
         boundary_start = offset;
-        if (((tvb_strneql(tvb, offset, (const guint8 *)"--", 2) == 0)
+        if (((tvb_strneql(tvb, offset, (const uint8_t *)"--", 2) == 0)
                     && (tvb_strneql(tvb, offset + 2, boundary,  boundary_len) == 0)))
         {
             /* Boundary string; now check if last */
             if ((tvb_reported_length_remaining(tvb, offset + 2 + boundary_len + 2) >= 0)
                     && (tvb_strneql(tvb, offset + 2 + boundary_len,
-                            (const guint8 *)"--", 2) == 0)) {
-                *last_boundary = TRUE;
+                            (const uint8_t *)"--", 2) == 0)) {
+                *last_boundary = true;
             } else {
-                *last_boundary = FALSE;
+                *last_boundary = false;
             }
             /* Look for line end of the boundary line */
-            line_len =  tvb_find_line_end(tvb, offset, -1, &offset, FALSE);
+            line_len =  tvb_find_line_end(tvb, offset, -1, &offset, false);
             if (line_len == -1) {
                 *boundary_line_len = -1;
             } else {
@@ -422,7 +398,7 @@ find_first_boundary(tvbuff_t *tvb, gint start, const guint8 *boundary,
             }
             return boundary_start;
         }
-        line_len =  tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
+        line_len =  tvb_find_line_end(tvb, offset, -1, &next_offset, false);
         if (line_len == -1) {
             return -1;
         }
@@ -438,33 +414,33 @@ find_first_boundary(tvbuff_t *tvb, gint start, const guint8 *boundary,
  *
  * Return the offset to the 1st byte of the boundary delimiter line.
  * Set boundary_line_len to the length of the entire boundary delimiter.
- * Set last_boundary to TRUE if we've seen the last-boundary delimiter.
+ * Set last_boundary to true if we've seen the last-boundary delimiter.
  */
-static gint
-find_next_boundary(tvbuff_t *tvb, gint start, const guint8 *boundary,
-        gint boundary_len, gint *boundary_line_len, gboolean *last_boundary)
+static int
+find_next_boundary(tvbuff_t *tvb, int start, const uint8_t *boundary,
+        int boundary_len, int *boundary_line_len, bool *last_boundary)
 {
-    gint offset = start, next_offset, line_len, boundary_start;
+    int offset = start, next_offset, line_len, boundary_start;
 
     while (tvb_offset_exists(tvb, offset + 2 + boundary_len)) {
-        line_len =  tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
+        line_len =  tvb_find_line_end(tvb, offset, -1, &next_offset, false);
         if (line_len == -1) {
             return -1;
         }
         boundary_start = offset + line_len;
-        if (((tvb_strneql(tvb, next_offset, (const guint8 *)"--", 2) == 0)
+        if (((tvb_strneql(tvb, next_offset, (const uint8_t *)"--", 2) == 0)
                     && (tvb_strneql(tvb, next_offset + 2, boundary, boundary_len) == 0)))
         {
             /* Boundary string; now check if last */
             if ((tvb_reported_length_remaining(tvb, next_offset + 2 + boundary_len + 2) >= 0)
                     && (tvb_strneql(tvb, next_offset + 2 + boundary_len,
-                            (const guint8 *)"--", 2) == 0)) {
-                *last_boundary = TRUE;
+                            (const uint8_t *)"--", 2) == 0)) {
+                *last_boundary = true;
             } else {
-                *last_boundary = FALSE;
+                *last_boundary = false;
             }
             /* Look for line end of the boundary line */
-            line_len =  tvb_find_line_end(tvb, next_offset, -1, &offset, FALSE);
+            line_len =  tvb_find_line_end(tvb, next_offset, -1, &offset, false);
             if (line_len == -1) {
                 *boundary_line_len = -1;
             } else {
@@ -472,13 +448,13 @@ find_next_boundary(tvbuff_t *tvb, gint start, const guint8 *boundary,
             }
             return boundary_start;
         /* check if last before CRLF; some ignore the standard, so there is no CRLF before the boundary */
-        } else if ((tvb_strneql(tvb, boundary_start - 2, (const guint8 *)"--", 2) == 0)
+        } else if ((tvb_strneql(tvb, boundary_start - 2, (const uint8_t *)"--", 2) == 0)
                     && (tvb_strneql(tvb, boundary_start - (2 + boundary_len), boundary, boundary_len) == 0)
                     && (tvb_strneql(tvb, boundary_start - (2 + boundary_len + 2),
-                            (const guint8 *)"--", 2) == 0)) {
+                            (const uint8_t *)"--", 2) == 0)) {
             boundary_start -= 2 + boundary_len + 2;
             *boundary_line_len = next_offset - boundary_start;
-            *last_boundary = TRUE;
+            *last_boundary = true;
             return boundary_start;
         }
         offset = next_offset;
@@ -493,28 +469,25 @@ find_next_boundary(tvbuff_t *tvb, gint start, const guint8 *boundary,
  *
  * Return the offset to the start of the first body-part.
  */
-static gint
+static int
 process_preamble(proto_tree *tree, tvbuff_t *tvb, multipart_info_t *m_info,
-        gboolean *last_boundary)
+        bool *last_boundary)
 {
-    gint boundary_start, boundary_line_len;
+    int boundary_start, boundary_line_len;
 
-    const guint8 *boundary = (guint8 *)m_info->boundary;
-    gint boundary_len = m_info->boundary_length;
+    const uint8_t *boundary = (uint8_t *)m_info->boundary;
+    int boundary_len = m_info->boundary_length;
 
     boundary_start = find_first_boundary(tvb, 0, boundary, boundary_len,
             &boundary_line_len, last_boundary);
     if (boundary_start == 0) {
-       proto_tree_add_item(tree, hf_multipart_first_boundary, tvb, boundary_start, boundary_line_len, ENC_NA|ENC_ASCII);
+       proto_tree_add_item(tree, hf_multipart_first_boundary, tvb, boundary_start, boundary_line_len, ENC_ASCII);
         return boundary_start + boundary_line_len;
     } else if (boundary_start > 0) {
         if (boundary_line_len > 0) {
-            gint body_part_start = boundary_start + boundary_line_len;
-
-            if (boundary_start > 0) {
-               proto_tree_add_item(tree, hf_multipart_preamble, tvb, 0, boundary_start, ENC_NA);
-            }
-            proto_tree_add_item(tree, hf_multipart_first_boundary, tvb, boundary_start, boundary_line_len, ENC_NA|ENC_ASCII);
+            int body_part_start = boundary_start + boundary_line_len;
+            proto_tree_add_item(tree, hf_multipart_preamble, tvb, 0, boundary_start, ENC_NA);
+            proto_tree_add_item(tree, hf_multipart_first_boundary, tvb, boundary_start, boundary_line_len, ENC_ASCII);
             return body_part_start;
         }
     }
@@ -525,8 +498,8 @@ static void
 dissect_kerberos_encrypted_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gssapi_encrypt_info_t* encrypt)
 {
     tvbuff_t *kerberos_tvb;
-    gint offset = 0, len;
-    guint8 *data;
+    int offset = 0, len;
+    uint8_t *data;
 
     proto_tree_add_item(tree, hf_multipart_sec_token_len, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset += 4;
@@ -534,7 +507,7 @@ dissect_kerberos_encrypted_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 
     DISSECTOR_ASSERT(tvb_bytes_exist(tvb, offset, len));
 
-    data = (guint8 *)tvb_memdup(pinfo->pool, tvb, offset, len);
+    data = (uint8_t *)tvb_memdup(pinfo->pool, tvb, offset, len);
     kerberos_tvb = tvb_new_child_real_data(tvb, data, len, len);
 
     add_new_data_source(pinfo, kerberos_tvb, "Kerberos Data");
@@ -550,29 +523,32 @@ dissect_kerberos_encrypted_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree
  *
  * Return the offset to the start of the next body-part.
  */
-static gint
+static int
 process_body_part(proto_tree *tree, tvbuff_t *tvb,
-        http_message_info_t *input_message_info, multipart_info_t *m_info,
-        packet_info *pinfo, gint start, gint idx,
-        gboolean *last_boundary)
+        media_content_info_t *input_content_info, multipart_info_t *m_info,
+        packet_info *pinfo, int start, int idx,
+        bool *last_boundary)
 {
     proto_tree *subtree;
     proto_item *ti;
-    gint offset = start, next_offset = 0;
-    http_message_info_t message_info = { input_message_info->type, NULL };
-    gint body_start, boundary_start, boundary_line_len;
+    int offset = start, next_offset = 0;
+    media_content_info_t content_info = { input_content_info->type, NULL, NULL, NULL };
+    int body_start, boundary_start, boundary_line_len;
 
-    gchar *content_type_str = NULL;
-    gchar *content_encoding_str = NULL;
+    char *content_type_str = NULL;
+    char *content_trans_encoding_str = NULL;
+#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
+    char *content_encoding_str = NULL;
+#endif
     char *filename = NULL;
     char *mimetypename = NULL;
-    gboolean last_field = FALSE;
-    gboolean is_raw_data = FALSE;
+    bool last_field = false;
+    bool is_raw_data = false;
 
-    const guint8 *boundary = (guint8 *)m_info->boundary;
-    gint boundary_len = m_info->boundary_length;
+    const uint8_t *boundary = (uint8_t *)m_info->boundary;
+    int boundary_len = m_info->boundary_length;
 
-    ti = proto_tree_add_item(tree, hf_multipart_part, tvb, start, 0, ENC_ASCII|ENC_NA);
+    ti = proto_tree_add_item(tree, hf_multipart_part, tvb, start, 0, ENC_ASCII);
     subtree = proto_item_add_subtree(ti, ett_multipart_body);
 
     /* find the next boundary to find the end of this body part */
@@ -589,7 +565,7 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
 
     while (!last_field)
     {
-        gint colon_offset;
+        int colon_offset;
         char *hdr_str;
         char *header_str;
 
@@ -610,52 +586,50 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
         } else if((next_offset-2) == boundary_start) {
             /* if CRLF is the start of next boundary it belongs to the boundary and not the field,
                so it's the last field without CRLF */
-            last_field = TRUE;
+            last_field = true;
             next_offset -= 2;
         } else if (next_offset > boundary_start) {
             /* if there is no CRLF between last field and next boundary - trim it! */
             next_offset = boundary_start;
         }
 
-        hdr_str = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, next_offset - offset, ENC_ASCII);
+        hdr_str = tvb_get_string_enc(pinfo->pool, tvb, offset, next_offset - offset, ENC_ASCII);
 
-        header_str = unfold_and_compact_mime_header(hdr_str, &colon_offset);
+        colon_offset = 0;
+        header_str = unfold_and_compact_mime_header(pinfo->pool, hdr_str, &colon_offset);
         if (colon_offset <= 0) {
             /* if there is no colon it's no header, so break and add complete line to the body */
             next_offset = offset;
             break;
         } else {
-            gint hf_index;
+            int hf_index;
 
-            /* Split header name from header value */
-            header_str[colon_offset] = '\0';
             hf_index = is_known_multipart_header(header_str, colon_offset);
 
             if (hf_index == -1) {
-                if(isprint_string(hdr_str)) {
+                if(isprint_string(header_str)) {
                     proto_tree_add_format_text(subtree, tvb, offset, next_offset - offset);
                 } else {
-                    /* if the header name is unkown and not printable, break and add complete line to the body */
+                    /* if the header name is unknown and not printable, break and add complete line to the body */
                     next_offset = offset;
                     break;
                 }
             } else {
-                char *value_str = g_strdup(header_str + colon_offset + 1);
+                char *value_str = wmem_strdup(pinfo->pool, header_str + colon_offset + 1);
 
                 proto_tree_add_string_format(subtree,
                       hf_header_array[hf_index], tvb,
                       offset, next_offset - offset,
                       (const char *)value_str, "%s",
-                      tvb_format_text(tvb, offset, next_offset - offset));
+                      tvb_format_text(pinfo->pool, tvb, offset, next_offset - offset));
 
                 switch (hf_index) {
                     case POS_ORIGINALCONTENT:
                         {
                             char *semicolonp;
                             /* The Content-Type starts at colon_offset + 1 or after the type parameter */
-                            char* type_str = ws_find_media_type_parameter(value_str, "type");
+                            char* type_str = ws_find_media_type_parameter(pinfo->pool, value_str, "type");
                             if(type_str != NULL) {
-                                g_free(value_str);
                                 value_str = type_str;
                             }
 
@@ -663,11 +637,11 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
 
                             if (semicolonp != NULL) {
                                 *semicolonp = '\0';
-                                m_info->orig_parameters = wmem_strdup(wmem_packet_scope(),
+                                m_info->orig_parameters = wmem_strdup(pinfo->pool,
                                                              semicolonp + 1);
                             }
 
-                            m_info->orig_content_type = wmem_ascii_strdown(wmem_packet_scope(), value_str, -1);
+                            m_info->orig_content_type = wmem_ascii_strdown(pinfo->pool, value_str, -1);
                         }
                         break;
                     case POS_CONTENT_TYPE:
@@ -677,22 +651,22 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
 
                             if (semicolonp != NULL) {
                                 *semicolonp = '\0';
-                                message_info.media_str = wmem_strdup(wmem_packet_scope(), semicolonp + 1);
+                                content_info.media_str = wmem_strdup(pinfo->pool, semicolonp + 1);
                             } else {
-                                message_info.media_str = NULL;
+                                content_info.media_str = NULL;
                             }
 
-                            content_type_str = wmem_ascii_strdown(wmem_packet_scope(), value_str, -1);
+                            content_type_str = wmem_ascii_strdown(pinfo->pool, value_str, -1);
 
                             /* Show content-type in root 'part' label */
                             proto_item_append_text(ti, " (%s)", content_type_str);
 
                             /* find the "name" parameter in case we don't find a content disposition "filename" */
-                            mimetypename = ws_find_media_type_parameter(message_info.media_str, "name");
+                            mimetypename = ws_find_media_type_parameter(pinfo->pool, content_info.media_str, "name");
 
                             if(strncmp(content_type_str, "application/octet-stream",
                                     sizeof("application/octet-stream")-1) == 0) {
-                                is_raw_data = TRUE;
+                                is_raw_data = true;
                             }
 
                             /* there are only 2 body parts possible and each part has specific content types */
@@ -704,7 +678,20 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
                             }
                         }
                         break;
-                        case POS_CONTENT_TRANSFER_ENCODING:
+                    case POS_CONTENT_ENCODING:
+                        {
+                            /* The Content-Encoding starts at colon_offset + 1 */
+                            char *crp = strchr(value_str, '\r');
+
+                            if (crp != NULL) {
+                                *crp = '\0';
+                            }
+#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
+                            content_encoding_str = wmem_ascii_strdown(pinfo->pool, value_str, -1);
+#endif
+                        }
+                        break;
+                    case POS_CONTENT_TRANSFER_ENCODING:
                         {
                             /* The Content-Transferring starts at colon_offset + 1 */
                             char *crp = strchr(value_str, '\r');
@@ -713,19 +700,21 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
                                 *crp = '\0';
                             }
 
-                            content_encoding_str = wmem_ascii_strdown(wmem_packet_scope(), value_str, -1);
+                            content_trans_encoding_str = wmem_ascii_strdown(pinfo->pool, value_str, -1);
                         }
                         break;
-                        case POS_CONTENT_DISPOSITION:
+                    case POS_CONTENT_DISPOSITION:
                         {
                             /* find the "filename" parameter */
-                            filename = ws_find_media_type_parameter(value_str, "filename");
+                            filename = ws_find_media_type_parameter(pinfo->pool, value_str, "filename");
                         }
+                        break;
+                    case POS_CONTENT_ID:
+                        content_info.content_id = wmem_strdup(pinfo->pool, value_str);
                         break;
                     default:
                         break;
                 }
-                g_free(value_str);
             }
         }
         offset = next_offset;
@@ -738,11 +727,18 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
      */
 
     {
-        gint body_len = boundary_start - body_start;
+        int body_len = boundary_start - body_start;
         tvbuff_t *tmp_tvb = tvb_new_subset_length(tvb, body_start, body_len);
-        /* if multipart subtype is encrypted the protcol string was set */
-        /* see: https://msdn.microsoft.com/en-us/library/cc251581.aspx */
-        /* there are only 2 body parts possible and each part has specific content types */
+        /*
+         * If multipart subtype is encrypted the protcol string was set.
+         *
+         * See MS-WSMV section 2.2.9.1.2.1 "HTTP Headers":
+         *
+         *  https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wsmv/b79927c2-96be-4801-aa68-180db95593f9
+         *
+         * There are only 2 body parts possible, and each part has specific
+         * content types.
+         */
         if(m_info->protocol && idx == 1 && is_raw_data)
         {
             gssapi_encrypt_info_t  encrypt;
@@ -754,9 +750,9 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
 
             if(encrypt.gssapi_decrypted_tvb){
                     tmp_tvb = encrypt.gssapi_decrypted_tvb;
-                    is_raw_data = FALSE;
+                    is_raw_data = false;
                     content_type_str = m_info->orig_content_type;
-                    message_info.media_str = m_info->orig_parameters;
+                    content_info.media_str = m_info->orig_parameters;
             } else if(encrypt.gssapi_encrypted_tvb) {
                     tmp_tvb = encrypt.gssapi_encrypted_tvb;
                     proto_tree_add_expert(tree, pinfo, &ei_multipart_decryption_not_possible, tmp_tvb, 0, -1);
@@ -769,7 +765,7 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
             /*
              * subdissection
              */
-            gboolean dissected;
+            bool dissected;
 
             /*
              * Try and remove any content transfer encoding so that each sub-dissector
@@ -777,44 +773,58 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,
              *
              */
 
-            if(content_encoding_str && remove_base64_encoding) {
+            if(content_trans_encoding_str && remove_base64_encoding) {
 
-                if(!g_ascii_strncasecmp(content_encoding_str, "base64", 6))
+                if(!g_ascii_strncasecmp(content_trans_encoding_str, "base64", 6))
                     tmp_tvb = base64_decode(pinfo, tmp_tvb, filename ? filename : (mimetypename ? mimetypename : content_type_str));
 
             }
 
+#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
+            if(content_encoding_str && uncompress_data) {
+
+                if(g_ascii_strncasecmp(content_encoding_str,"gzip",4) == 0 ||
+                   g_ascii_strncasecmp(content_encoding_str,"deflate",7) == 0 ||
+                   g_ascii_strncasecmp(content_encoding_str,"x-gzip",6) == 0 ||
+                   g_ascii_strncasecmp(content_encoding_str,"x-deflate",9) == 0){
+                   /* The body is gzip:ed */
+                    tvbuff_t *uncompress_tvb = tvb_child_uncompress_zlib(tmp_tvb, tmp_tvb, 0, body_len);
+                    if (uncompress_tvb) {
+                        tmp_tvb = uncompress_tvb;
+                        add_new_data_source(pinfo, tmp_tvb, "gunzipped data");
+                    }
+                }
+            }
+#endif
+
             /*
              * First try the dedicated multipart dissector table
              */
-            dissected = dissector_try_string(multipart_media_subdissector_table,
-                        content_type_str, tmp_tvb, pinfo, subtree, &message_info);
+            dissected = dissector_try_string_with_data(multipart_media_subdissector_table,
+                        content_type_str, tmp_tvb, pinfo, subtree, true, &content_info);
             if (! dissected) {
                 /*
                  * Fall back to the default media dissector table
                  */
-                dissected = dissector_try_string(media_type_dissector_table,
-                        content_type_str, tmp_tvb, pinfo, subtree, &message_info);
+                dissected = dissector_try_string_with_data(media_type_dissector_table,
+                        content_type_str, tmp_tvb, pinfo, subtree, true, &content_info);
             }
             if (! dissected) {
                 const char *save_match_string = pinfo->match_string;
                 pinfo->match_string = content_type_str;
-                call_dissector_with_data(media_handle, tmp_tvb, pinfo, subtree, &message_info);
+                call_dissector_with_data(media_handle, tmp_tvb, pinfo, subtree, &content_info);
                 pinfo->match_string = save_match_string;
             }
-            message_info.media_str = NULL; /* Shares same memory as content_type_str */
+            content_info.media_str = NULL; /* Shares same memory as content_type_str */
         } else {
             call_data_dissector(tmp_tvb, pinfo, subtree);
         }
         proto_item_set_len(ti, boundary_start - start);
-        if (*last_boundary == TRUE) {
-           proto_tree_add_item(tree, hf_multipart_last_boundary, tvb, boundary_start, boundary_line_len, ENC_NA|ENC_ASCII);
+        if (*last_boundary == true) {
+           proto_tree_add_item(tree, hf_multipart_last_boundary, tvb, boundary_start, boundary_line_len, ENC_ASCII);
         } else {
-           proto_tree_add_item(tree, hf_multipart_boundary, tvb, boundary_start, boundary_line_len, ENC_NA|ENC_ASCII);
+           proto_tree_add_item(tree, hf_multipart_boundary, tvb, boundary_start, boundary_line_len, ENC_ASCII);
         }
-
-        g_free(filename);
-        g_free(mimetypename);
 
         return boundary_start + boundary_line_len;
     }
@@ -829,11 +839,11 @@ static int dissect_multipart(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     proto_tree *subtree;
     proto_item *ti;
     proto_item *type_ti;
-    http_message_info_t *message_info = (http_message_info_t *)data;
-    multipart_info_t *m_info = get_multipart_info(pinfo, message_info);
-    gint header_start = 0;
-    gint body_index = 0;
-    gboolean last_boundary = FALSE;
+    media_content_info_t *content_info = (media_content_info_t *)data;
+    multipart_info_t *m_info = get_multipart_info(pinfo, content_info);
+    int header_start = 0;
+    int body_index = 0;
+    bool last_boundary = false;
 
     if (m_info == NULL) {
         /*
@@ -854,7 +864,7 @@ static int dissect_multipart(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     /* Show multi-part type as a generated field */
     type_ti = proto_tree_add_string(subtree, hf_multipart_type,
           tvb, 0, 0, pinfo->match_string);
-    PROTO_ITEM_SET_GENERATED(type_ti);
+    proto_item_set_generated(type_ti);
 
     /*
      * Make no entries in Protocol column and Info column on summary display,
@@ -873,8 +883,8 @@ static int dissect_multipart(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     /*
      * Process the encapsulated bodies
      */
-    while (last_boundary == FALSE) {
-        header_start = process_body_part(subtree, tvb, message_info, m_info,
+    while (last_boundary == false) {
+        header_start = process_body_part(subtree, tvb, content_info, m_info,
                 pinfo, header_start, body_index++, &last_boundary);
         if (header_start == -1) {
             return tvb_reported_length(tvb);
@@ -891,10 +901,10 @@ static int dissect_multipart(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 }
 
 /* Returns index of method in multipart_headers */
-static gint
-is_known_multipart_header(const char *header_str, guint len)
+static int
+is_known_multipart_header(const char *header_str, unsigned len)
 {
-    guint i;
+    unsigned i;
 
     for (i = 1; i < array_length(multipart_headers); i++) {
         if (len == strlen(multipart_headers[i].name) &&
@@ -1026,7 +1036,7 @@ proto_register_multipart(void)
     /*
      * Setup protocol subtree array
      */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_multipart,
         &ett_multipart_main,
         &ett_multipart_body,
@@ -1040,10 +1050,7 @@ proto_register_multipart(void)
     /*
      * Register the protocol name and description
      */
-    proto_multipart = proto_register_protocol(
-        "MIME Multipart Media Encapsulation",
-        "MIME multipart",
-        "mime_multipart");
+    proto_multipart = proto_register_protocol("MIME Multipart Media Encapsulation", "MIME multipart", "mime_multipart");
 
     /*
      * Required function calls to register
@@ -1070,6 +1077,15 @@ proto_register_multipart(void)
                                    "This supports export of the body and its further dissection.",
                                    &remove_base64_encoding);
 
+#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
+    prefs_register_bool_preference(multipart_module,
+                                   "uncompress_data",
+                                   "Uncompress parts which are compressed",
+                                   "Uncompress parts which are compressed. GZIP for example. "
+                                   "This supports export of the body and its further dissection.",
+                                   &uncompress_data);
+#endif
+
     /*
      * Dissectors requiring different behavior in cases where the media
      * is contained in a multipart entity should register their multipart
@@ -1079,7 +1095,13 @@ proto_register_multipart(void)
     multipart_media_subdissector_table = register_dissector_table(
         "multipart_media_type",
         "Internet media type (for multipart processing)",
-        proto_multipart, FT_STRING, BASE_NONE);
+        proto_multipart, FT_STRING, STRING_CASE_INSENSITIVE);
+
+    /*
+     * Handle for multipart dissection
+     */
+    multipart_handle = register_dissector("mime_multipart",
+            dissect_multipart, proto_multipart);
 }
 
 
@@ -1090,8 +1112,6 @@ proto_register_multipart(void)
 void
 proto_reg_handoff_multipart(void)
 {
-    dissector_handle_t multipart_handle;
-
     /*
      * When we cannot display the data, call the data dissector.
      * When there is no dissector for the given media, call the media dissector.
@@ -1103,12 +1123,6 @@ proto_reg_handoff_multipart(void)
      * Get the content type and Internet media type table
      */
     media_type_dissector_table = find_dissector_table("media_type");
-
-    /*
-     * Handle for multipart dissection
-     */
-    multipart_handle = create_dissector_handle(
-            dissect_multipart, proto_multipart);
 
     dissector_add_string("media_type",
             "multipart/mixed", multipart_handle);
@@ -1134,7 +1148,7 @@ proto_reg_handoff_multipart(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

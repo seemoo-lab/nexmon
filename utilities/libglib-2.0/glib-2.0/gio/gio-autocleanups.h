@@ -1,10 +1,12 @@
 /*
  * Copyright © 2015 Canonical Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,6 +22,8 @@
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
+
+#ifndef __GI_SCANNER__
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GAction, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GActionMap, g_object_unref)
@@ -42,7 +46,6 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GCredentials, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDatagramBased, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDataInputStream, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDataOutputStream, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDBusActionGroup, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDBusAuthObserver, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDBusConnection, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDBusInterface, g_object_unref)
@@ -61,9 +64,9 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDBusProxy, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDBusServer, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDrive, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GEmblemedIcon, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC(GEmblem, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GFileEnumerator, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GFile, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GFileAttributeInfoList, g_file_attribute_info_list_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GFileIcon, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GFileInfo, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GFileInputStream, g_object_unref)
@@ -107,9 +110,12 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GProxy, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GProxyResolver, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GRemoteActionGroup, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GResolver, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GResource, g_resource_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSeekable, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSettingsBackend, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSettingsSchema, g_settings_schema_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSettingsSchemaKey, g_settings_schema_key_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSettingsSchemaSource, g_settings_schema_source_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSettings, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSimpleActionGroup, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSimpleAction, g_object_unref)
@@ -121,7 +127,6 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSocketAddress, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSocketClient, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSocketConnectable, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSocketConnection, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSocketControlMessage, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSocket, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSocketListener, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSocketService, g_object_unref)
@@ -147,3 +152,5 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GVolume, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GVolumeMonitor, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GZlibCompressor, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GZlibDecompressor, g_object_unref)
+
+#endif /* __GI_SCANNER__ */

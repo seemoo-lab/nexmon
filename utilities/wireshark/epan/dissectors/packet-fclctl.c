@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -107,35 +95,35 @@ static const value_string fc_lctl_rjt_val[] = {
 };
 static value_string_ext fc_lctl_rjt_val_ext = VALUE_STRING_EXT_INIT(fc_lctl_rjt_val);
 
-const gchar *
-fclctl_get_typestr (guint8 linkctl_type, guint8 type)
+const char *
+fclctl_get_typestr (wmem_allocator_t* pool, uint8_t linkctl_type, uint8_t type)
 {
     if ((linkctl_type == FC_LCTL_FBSYB) ||
         (linkctl_type == FC_LCTL_FBSYL)) {
-        return (val_to_str ((type & 0xF0), fc_lctl_fbsy_val, "0x%x"));
+        return (val_to_str(pool, (type & 0xF0), fc_lctl_fbsy_val, "0x%x"));
     }
     return "";
 }
 
-const gchar *
-fclctl_get_paramstr (guint32 linkctl_type, guint32 param)
+const char *
+fclctl_get_paramstr (wmem_allocator_t *pool, uint32_t linkctl_type, uint32_t param)
 {
     if (linkctl_type == FC_LCTL_PBSY) {
-      return wmem_strdup_printf(wmem_packet_scope(), "%s, %s",
-                 val_to_str (((param & 0xFF000000) >> 24), fc_lctl_pbsy_acode_val, "0x%x"),
-                 val_to_str (((param & 0x00FF0000) >> 16), fc_lctl_pbsy_rjt_val, "0x%x"));
+      return wmem_strdup_printf(pool, "%s, %s",
+                 val_to_str(pool, ((param & 0xFF000000) >> 24), fc_lctl_pbsy_acode_val, "0x%x"),
+                 val_to_str(pool, ((param & 0x00FF0000) >> 16), fc_lctl_pbsy_rjt_val, "0x%x"));
     }
     if ((linkctl_type == FC_LCTL_FRJT) ||
              (linkctl_type == FC_LCTL_PRJT)) {
-      return wmem_strdup_printf(wmem_packet_scope(), "%s, %s",
-                 val_to_str (((param & 0xFF000000) >> 24), fc_lctl_rjt_acode_val, "0x%x"),
-                 val_to_str_ext (((param & 0x00FF0000) >> 16), &fc_lctl_rjt_val_ext, "%x"));
+      return wmem_strdup_printf(pool, "%s, %s",
+                 val_to_str(pool, ((param & 0xFF000000) >> 24), fc_lctl_rjt_acode_val, "0x%x"),
+                 val_to_str_ext(pool, ((param & 0x00FF0000) >> 16), &fc_lctl_rjt_val_ext, "%x"));
     }
     return "";
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

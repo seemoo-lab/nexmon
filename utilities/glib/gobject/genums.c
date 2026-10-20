@@ -1,10 +1,12 @@
 /* GObject - GLib Type, Object, Parameter and Signal Library
  * Copyright (C) 1998-1999, 2000-2001 Tim Janik and Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,43 +29,6 @@
 #include "gtype-private.h"
 #include "gvalue.h"
 #include "gvaluecollector.h"
-
-
-/**
- * SECTION:enumerations_flags
- * @short_description: Enumeration and flags types
- * @title: Enumeration and Flag Types
- * @see_also:#GParamSpecEnum, #GParamSpecFlags, g_param_spec_enum(),
- * g_param_spec_flags()
- *
- * The GLib type system provides fundamental types for enumeration and
- * flags types. (Flags types are like enumerations, but allow their
- * values to be combined by bitwise or). A registered enumeration or
- * flags type associates a name and a nickname with each allowed
- * value, and the methods g_enum_get_value_by_name(),
- * g_enum_get_value_by_nick(), g_flags_get_value_by_name() and
- * g_flags_get_value_by_nick() can look up values by their name or
- * nickname.  When an enumeration or flags type is registered with the
- * GLib type system, it can be used as value type for object
- * properties, using g_param_spec_enum() or g_param_spec_flags().
- *
- * GObject ships with a utility called [glib-mkenums][glib-mkenums],
- * that can construct suitable type registration functions from C enumeration
- * definitions.
- *
- * Example of how to get a string representation of an enum value:
- * |[<!-- language="C" -->
- * GEnumClass *enum_class;
- * GEnumValue *enum_value;
- *
- * enum_class = g_type_class_ref (MAMAN_TYPE_MY_ENUM);
- * enum_value = g_enum_get_value (enum_class, MAMAN_MY_ENUM_FOO);
- *
- * g_print ("Name: %s\n", enum_value->value_name);
- *
- * g_type_class_unref (enum_class);
- * ]|
- */
 
 
 /* --- prototypes --- */
@@ -113,7 +78,7 @@ _g_enum_types_init (void)
   static const GTypeFundamentalInfo finfo = {
     G_TYPE_FLAG_CLASSED | G_TYPE_FLAG_DERIVABLE,
   };
-  GType type;
+  GType type G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
   
   g_return_if_fail (initialized == FALSE);
   initialized = TRUE;
@@ -152,7 +117,10 @@ value_flags_enum_collect_value (GValue      *value,
 				GTypeCValue *collect_values,
 				guint        collect_flags)
 {
-  value->data[0].v_long = collect_values[0].v_int;
+  if (G_VALUE_HOLDS_ENUM (value))
+    value->data[0].v_long = collect_values[0].v_int;
+  else
+    value->data[0].v_ulong = (guint) collect_values[0].v_int;
 
   return NULL;
 }
@@ -164,11 +132,10 @@ value_flags_enum_lcopy_value (const GValue *value,
 			      guint         collect_flags)
 {
   gint *int_p = collect_values[0].v_pointer;
-  
-  if (!int_p)
-    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
-  
-  *int_p = value->data[0].v_long;
+
+  g_return_val_if_fail (int_p != NULL, g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value)));
+
+  *int_p = (int) value->data[0].v_long;
   
   return NULL;
 }
@@ -176,10 +143,10 @@ value_flags_enum_lcopy_value (const GValue *value,
 /**
  * g_enum_register_static:
  * @name: A nul-terminated string used as the name of the new type.
- * @const_static_values: An array of #GEnumValue structs for the possible
- *  enumeration values. The array is terminated by a struct with all
- *  members being 0. GObject keeps a reference to the data, so it cannot
- *  be stack-allocated.
+ * @const_static_values: (array zero-terminated=1): An array of
+ *  #GEnumValue structs for the possible enumeration values. The array is
+ *  terminated by a struct with all members being 0. GObject keeps a
+ *  reference to the data, so it cannot be stack-allocated.
  *
  * Registers a new static enumeration type with the name @name.
  *
@@ -220,9 +187,10 @@ g_enum_register_static (const gchar	 *name,
 /**
  * g_flags_register_static:
  * @name: A nul-terminated string used as the name of the new type.
- * @const_static_values: An array of #GFlagsValue structs for the possible
- *  flags values. The array is terminated by a struct with all members being 0.
- *  GObject keeps a reference to the data, so it cannot be stack-allocated.
+ * @const_static_values: (array zero-terminated=1): An array of
+ *  #GFlagsValue structs for the possible flags values. The array is
+ *  terminated by a struct with all members being 0. GObject keeps a
+ *  reference to the data, so it cannot be stack-allocated.
  *
  * Registers a new static flags type with the name @name.
  *
@@ -264,9 +232,9 @@ g_flags_register_static (const gchar	   *name,
  * g_enum_complete_type_info:
  * @g_enum_type: the type identifier of the type being completed
  * @info: (out callee-allocates): the #GTypeInfo struct to be filled in
- * @const_values: An array of #GEnumValue structs for the possible
- *  enumeration values. The array is terminated by a struct with all
- *  members being 0.
+ * @const_values: (array zero-terminated=1): An array of #GEnumValue
+ *  structs for the possible enumeration values. The array is terminated
+ *  by a struct with all members being 0.
  *
  * This function is meant to be called from the `complete_type_info`
  * function of a #GTypePlugin implementation, as in the following
@@ -310,9 +278,9 @@ g_enum_complete_type_info (GType	     g_enum_type,
  * g_flags_complete_type_info:
  * @g_flags_type: the type identifier of the type being completed
  * @info: (out callee-allocates): the #GTypeInfo struct to be filled in
- * @const_values: An array of #GFlagsValue structs for the possible
- *  enumeration values. The array is terminated by a struct with all
- *  members being 0.
+ * @const_values: (array zero-terminated=1): An array of #GFlagsValue
+ *  structs for the possible enumeration values. The array is terminated
+ *  by a struct with all members being 0.
  *
  * This function is meant to be called from the complete_type_info()
  * function of a #GTypePlugin implementation, see the example for
@@ -383,6 +351,33 @@ g_flags_class_init (GFlagsClass *class,
     }
 }
 
+/* Internal function to compare strings without taking into account
+ * character case and more... in order to ease the look ups. */
+static int
+strcmp_ignore_case (const char *str1, const char *str2)
+{
+  const char *ptr1 = str1, *ptr2 = str2;
+  char c1, c2;
+
+  do
+    {
+      /* Normalize to lower case */
+      c1 = g_ascii_tolower (*ptr1++);
+      c2 = g_ascii_tolower (*ptr2++);
+
+      /* End of either string */
+      if (c1 == '\0' || c2 == '\0')
+        return c1 - c2;
+
+      /* Normalize '-' to '_' */
+      c1 = (c1 == '-') ? '_' : c1;
+      c2 = (c2 == '-') ? '_' : c2;
+    }
+  while (c1 == c2);
+
+  return c1 - c2;
+}
+
 /**
  * g_enum_get_value_by_name:
  * @enum_class: a #GEnumClass
@@ -390,7 +385,7 @@ g_flags_class_init (GFlagsClass *class,
  *
  * Looks up a #GEnumValue by name.
  *
- * Returns: (transfer none): the #GEnumValue with name @name,
+ * Returns: (transfer none) (nullable): the #GEnumValue with name @name,
  *          or %NULL if the enumeration doesn't have a member
  *          with that name
  */
@@ -406,8 +401,8 @@ g_enum_get_value_by_name (GEnumClass  *enum_class,
       GEnumValue *enum_value;
       
       for (enum_value = enum_class->values; enum_value->value_name; enum_value++)
-	if (strcmp (name, enum_value->value_name) == 0)
-	  return enum_value;
+        if (strcmp_ignore_case (name, enum_value->value_name) == 0)
+          return enum_value;
     }
   
   return NULL;
@@ -420,7 +415,7 @@ g_enum_get_value_by_name (GEnumClass  *enum_class,
  *
  * Looks up a #GFlagsValue by name.
  *
- * Returns: (transfer none): the #GFlagsValue with name @name,
+ * Returns: (transfer none) (nullable): the #GFlagsValue with name @name,
  *          or %NULL if there is no flag with that name
  */
 GFlagsValue*
@@ -435,8 +430,8 @@ g_flags_get_value_by_name (GFlagsClass *flags_class,
       GFlagsValue *flags_value;
       
       for (flags_value = flags_class->values; flags_value->value_name; flags_value++)
-	if (strcmp (name, flags_value->value_name) == 0)
-	  return flags_value;
+        if (strcmp_ignore_case (name, flags_value->value_name) == 0)
+          return flags_value;
     }
   
   return NULL;
@@ -449,7 +444,7 @@ g_flags_get_value_by_name (GFlagsClass *flags_class,
  *
  * Looks up a #GEnumValue by nickname.
  *
- * Returns: (transfer none): the #GEnumValue with nickname @nick,
+ * Returns: (transfer none) (nullable): the #GEnumValue with nickname @nick,
  *          or %NULL if the enumeration doesn't have a member
  *          with that nickname
  */
@@ -465,8 +460,8 @@ g_enum_get_value_by_nick (GEnumClass  *enum_class,
       GEnumValue *enum_value;
       
       for (enum_value = enum_class->values; enum_value->value_name; enum_value++)
-	if (enum_value->value_nick && strcmp (nick, enum_value->value_nick) == 0)
-	  return enum_value;
+        if (enum_value->value_nick && strcmp_ignore_case (nick, enum_value->value_nick) == 0)
+          return enum_value;
     }
   
   return NULL;
@@ -479,7 +474,7 @@ g_enum_get_value_by_nick (GEnumClass  *enum_class,
  *
  * Looks up a #GFlagsValue by nickname.
  *
- * Returns: (transfer none): the #GFlagsValue with nickname @nick,
+ * Returns: (transfer none) (nullable): the #GFlagsValue with nickname @nick,
  *          or %NULL if there is no flag with that nickname
  */
 GFlagsValue*
@@ -494,8 +489,8 @@ g_flags_get_value_by_nick (GFlagsClass *flags_class,
       GFlagsValue *flags_value;
       
       for (flags_value = flags_class->values; flags_value->value_nick; flags_value++)
-	if (flags_value->value_nick && strcmp (nick, flags_value->value_nick) == 0)
-	  return flags_value;
+        if (flags_value->value_nick && strcmp_ignore_case (nick, flags_value->value_nick) == 0)
+          return flags_value;
     }
   
   return NULL;
@@ -508,7 +503,7 @@ g_flags_get_value_by_nick (GFlagsClass *flags_class,
  *
  * Returns the #GEnumValue for a value.
  *
- * Returns: (transfer none): the #GEnumValue for @value, or %NULL
+ * Returns: (transfer none) (nullable): the #GEnumValue for @value, or %NULL
  *          if @value is not a member of the enumeration
  */
 GEnumValue*
@@ -536,7 +531,7 @@ g_enum_get_value (GEnumClass *enum_class,
  *
  * Returns the first #GFlagsValue which is set in @value.
  *
- * Returns: (transfer none): the first #GFlagsValue which is set in
+ * Returns: (transfer none) (nullable): the first #GFlagsValue which is set in
  *          @value, or %NULL if none is set
  */
 GFlagsValue*
@@ -567,6 +562,133 @@ g_flags_get_first_value (GFlagsClass *flags_class,
 }
 
 /**
+ * g_enum_to_string:
+ * @g_enum_type: the type identifier of a #GEnumClass type
+ * @value: the value
+ *
+ * Pretty-prints @value in the form of the enum’s name.
+ *
+ * This is intended to be used for debugging purposes. The format of the output
+ * may change in the future.
+ *
+ * Returns: (transfer full): a newly-allocated text string
+ *
+ * Since: 2.54
+ */
+gchar *
+g_enum_to_string (GType g_enum_type,
+                  gint  value)
+{
+  gchar *result;
+  GEnumClass *enum_class;
+  GEnumValue *enum_value;
+
+  g_return_val_if_fail (G_TYPE_IS_ENUM (g_enum_type), NULL);
+
+  enum_class = g_type_class_ref (g_enum_type);
+
+  /* Already warned */
+  if (enum_class == NULL)
+    return g_strdup_printf ("%d", value);
+
+  enum_value = g_enum_get_value (enum_class, value);
+
+  if (enum_value == NULL)
+    result = g_strdup_printf ("%d", value);
+  else
+    result = g_strdup (enum_value->value_name);
+
+  g_type_class_unref (enum_class);
+  return result;
+}
+
+/*
+ * g_flags_get_value_string:
+ * @flags_class: a #GFlagsClass
+ * @value: the value
+ *
+ * Pretty-prints @value in the form of the flag names separated by ` | ` and
+ * sorted. Any extra bits will be shown at the end as a hexadecimal number.
+ *
+ * This is intended to be used for debugging purposes. The format of the output
+ * may change in the future.
+ *
+ * Returns: (transfer full): a newly-allocated text string
+ *
+ * Since: 2.54
+ */
+static gchar *
+g_flags_get_value_string (GFlagsClass *flags_class,
+                          guint        value)
+{
+  GString *str;
+  GFlagsValue *flags_value;
+
+  g_return_val_if_fail (G_IS_FLAGS_CLASS (flags_class), NULL);
+
+  str = g_string_new (NULL);
+
+  while ((str->len == 0 || value != 0) &&
+         (flags_value = g_flags_get_first_value (flags_class, value)) != NULL)
+    {
+      if (str->len > 0)
+        g_string_append (str, " | ");
+
+      g_string_append (str, flags_value->value_name);
+
+      value &= ~flags_value->value;
+    }
+
+  /* Show the extra bits */
+  if (value != 0 || str->len == 0)
+    {
+      if (str->len > 0)
+        g_string_append (str, " | ");
+
+      g_string_append_printf (str, "0x%x", value);
+    }
+
+  return g_string_free (str, FALSE);
+}
+
+/**
+ * g_flags_to_string:
+ * @flags_type: the type identifier of a #GFlagsClass type
+ * @value: the value
+ *
+ * Pretty-prints @value in the form of the flag names separated by ` | ` and
+ * sorted. Any extra bits will be shown at the end as a hexadecimal number.
+ *
+ * This is intended to be used for debugging purposes. The format of the output
+ * may change in the future.
+ *
+ * Returns: (transfer full): a newly-allocated text string
+ *
+ * Since: 2.54
+ */
+gchar *
+g_flags_to_string (GType flags_type,
+                   guint value)
+{
+  gchar *result;
+  GFlagsClass *flags_class;
+
+  g_return_val_if_fail (G_TYPE_IS_FLAGS (flags_type), NULL);
+
+  flags_class = g_type_class_ref (flags_type);
+
+  /* Already warned */
+  if (flags_class == NULL)
+    return NULL;
+
+  result = g_flags_get_value_string (flags_class, value);
+
+  g_type_class_unref (flags_class);
+  return result;
+}
+
+
+/**
  * g_value_set_enum:
  * @value: a valid #GValue whose type is derived from %G_TYPE_ENUM
  * @v_enum: enum value to be set
@@ -595,7 +717,7 @@ g_value_get_enum (const GValue *value)
 {
   g_return_val_if_fail (G_VALUE_HOLDS_ENUM (value), 0);
   
-  return value->data[0].v_long;
+  return (int) value->data[0].v_long;
 }
 
 /**
@@ -627,5 +749,5 @@ g_value_get_flags (const GValue *value)
 {
   g_return_val_if_fail (G_VALUE_HOLDS_FLAGS (value), 0);
   
-  return value->data[0].v_ulong;
+  return (unsigned int) value->data[0].v_ulong;
 }

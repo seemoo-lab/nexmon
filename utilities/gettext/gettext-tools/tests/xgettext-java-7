@@ -13,7 +13,7 @@ EOF
 ${XGETTEXT} --omit-header --no-location -d xg-j-7.tmp xg-j-7.java || Exit 1
 LC_ALL=C tr -d '\r' < xg-j-7.tmp.po > xg-j-7.po || Exit 1
 
-cat <<EOF > xg-j-7.ok
+cat <<\EOF > xg-j-7.ok
 msgid "help"
 msgstr ""
 

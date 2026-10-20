@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Weather for Toronto Island
-Exec=/bin/true
+Exec=true
 StartupNotify=true
 Terminal=false
 Type=Application

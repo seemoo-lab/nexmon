@@ -1,12 +1,12 @@
 #!/bin/sh
 # Execute a C# program.
 
-# Copyright (C) 2003-2016 Free Software Foundation, Inc.
+# Copyright (C) 2003-2026 Free Software Foundation, Inc.
 # Written by Bruno Haible <bruno@clisp.org>, 2003.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # This uses the same choices as csharpexec.c, but instead of relying on the
 # environment settings at run time, it uses the environment variables
@@ -28,15 +28,45 @@
 # Options:
 #   -L DIRECTORY      search for C# libraries also in DIRECTORY
 
-sed_quote_subst='s/\([|&;<>()$`"'"'"'*?[#~=% 	\\]\)/\\\1/g'
-options_ilrun=
+# func_tmpdir
+# creates a temporary directory.
+# Sets variable
+# - tmp             pathname of freshly created temporary directory
+func_tmpdir ()
+{
+  # Use the environment variable TMPDIR, falling back to /tmp. This allows
+  # users to specify a different temporary directory, for example, if their
+  # /tmp is filled up or too small.
+  : "${TMPDIR=/tmp}"
+  {
+    # Use the mktemp program if available. If not available, hide the error
+    # message.
+    tmp=`(umask 077 && mktemp -d -q "$TMPDIR/gtXXXXXX") 2>/dev/null` &&
+    test -n "$tmp" && test -d "$tmp"
+  } ||
+  {
+    # Use a simple mkdir command. It is guaranteed to fail if the directory
+    # already exists.  $RANDOM is bash specific and expands to empty in shells
+    # other than bash, ksh and zsh.  Its use does not increase security;
+    # rather, it minimizes the probability of failure in a very cluttered /tmp
+    # directory.
+    tmp=$TMPDIR/gt$$-$RANDOM
+    (umask 077 && mkdir "$tmp")
+  } ||
+  {
+    echo "$0: cannot create a temporary directory in $TMPDIR" >&2
+    { (exit 1); exit 1; }
+  }
+}
+
 libdirs_mono=
+libdirs_dotnet=
 prog=
 while test $# != 0; do
   case "$1" in
     -L)
-      options_ilrun="$options_ilrun -L "`echo "$2" | sed -e "$sed_quote_subst"`
       libdirs_mono="${libdirs_mono:+$libdirs_mono@MONO_PATH_SEPARATOR@}$2"
+      libdirs_dotnet="${libdirs_dotnet:+$libdirs_dotnet|}$2"
       shift
       ;;
     -*)
@@ -62,20 +92,100 @@ case "$prog" in
     ;;
 esac
 
-if test -n "@HAVE_ILRUN@"; then
-  test -z "$CSHARP_VERBOSE" || echo ilrun $options_ilrun "$@"
-  exec ilrun $options_ilrun "$@"
+if test -n "@HAVE_MONO@"; then
+  CONF_MONO_PATH='@MONO_PATH@'
+  if test -n "$libdirs_mono"; then
+    MONO_PATH="$libdirs_mono${CONF_MONO_PATH:+@MONO_PATH_SEPARATOR@$CONF_MONO_PATH}"
+  else
+    MONO_PATH="$CONF_MONO_PATH"
+  fi
+  export MONO_PATH
+  test -z "$CSHARP_VERBOSE" || echo mono "$@" 1>&2
+  exec mono "$@"
 else
-  if test -n "@HAVE_MONO@"; then
-    CONF_MONO_PATH='@MONO_PATH@'
-    if test -n "$libdirs_mono"; then
-      MONO_PATH="$libdirs_mono${CONF_MONO_PATH:+@MONO_PATH_SEPARATOR@$CONF_MONO_PATH}"
-    else
-      MONO_PATH="$CONF_MONO_PATH"
+  if test -n "@HAVE_DOTNET@"; then
+    # Invoke 'dotnet $prog ...'.
+    # Documentation:
+    # <https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet#options-for-running-an-application>
+    # This could be optimized on Windows platforms, because C# .exe files are
+    # directly executable there. But there's no point in optimizing specifically
+    # a non-free platform, especially since it would increase the test matrix.
+    shift
+    # On Windows, assume that 'dotnet' is a native Windows program, not a Cygwin program.
+    prog_arg="$prog"
+    case "@build_os@" in
+      cygwin*)
+        prog_arg=`cygpath -w "$prog"`
+        ;;
+    esac
+    # Handle the -L options.
+    # The way this works is that we have to copy (or symlink) the DLLs into the
+    # directory where FOO.exe resides.
+    # Maybe there is another way to do this, but I haven't found it, trying
+    #   - the --additionalprobingpath command-line option,
+    #   - the additionalProbingPaths property in runtimeconfig.json,
+    #   - adding a --deps deps.json option,
+    # cf. <https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet#options-for-running-an-application>
+    # and <https://github.com/dotnet/runtime/blob/main/docs/design/features/host-probing.md>.
+    tmpfiles=
+    if test -n "$libdirs_dotnet"; then
+      # Make sure the added DLLs are removed when this script terminates.
+      func_cleanup_tmpfiles()
+      {
+        saved_IFS="$IFS"
+        IFS='|'
+        for file in $tmpfiles; do
+          IFS="$saved_IFS"
+          rm -f "$file"
+        done
+        IFS="$saved_IFS"
+      }
+      trap func_cleanup_tmpfiles HUP INT QUIT PIPE TERM
+      trap 'exit_status=$?; func_cleanup_tmpfiles; exit $exit_status' EXIT
+      # Copy the DLLs.
+      prog_dir=`dirname "$prog"`
+      saved_IFS="$IFS"
+      IFS='|'
+      for dir in $libdirs_dotnet; do
+        IFS="$saved_IFS"
+        for file in `cd "$dir" && echo *.dll`; do
+          if test -f "$prog_dir/$file"; then
+            # A DLL of this name is already at the expected location.
+            :
+          else
+            tmpfiles="${tmpfiles:+$tmpfiles|}$prog_dir/$file"
+            cp "$dir/$file" "$prog_dir/$file" || exit 1
+          fi
+        done
+      done
+      IFS="$saved_IFS"
     fi
-    export MONO_PATH
-    test -z "$CSHARP_VERBOSE" || echo mono "$@"
-    exec mono "$@"
+    if test -f "${prog%.exe}.runtimeconfig.json"; then
+      # There is already a FOO.runtimeconfig.json alongside FOO.exe.
+      dotnet exec "$prog_arg" "$@"
+      result=$?
+    else
+      # dotnet needs a FOO.runtimeconfig.json alongside FOO.exe in order to
+      # execute FOO.exe.  Create a dummy one in a temporary directory
+      # (because the directory where FOO.exe sits is not necessarily writable).
+      # Documentation of this file format:
+      # <https://learn.microsoft.com/en-us/dotnet/core/runtime-config/>
+      func_tmpdir
+      runtimeconfig="$tmp"/runtimeconfig.json
+      dotnet --list-runtimes | sed -n -e 's/Microsoft.NETCore.App \([^ ]*\) .*/{ "runtimeOptions": { "framework": { "name": "Microsoft.NETCore.App", "version": "\1" } } }/p' > "$runtimeconfig"
+      runtimeconfig_arg="$runtimeconfig"
+      case "@build_os@" in
+        cygwin*)
+          runtimeconfig_arg=`cygpath -w "$runtimeconfig"`
+          ;;
+      esac
+      test -z "$CSHARP_VERBOSE" || echo dotnet exec --runtimeconfig "$runtimeconfig_arg" "$prog_arg" "$@" 1>&2
+      dotnet exec --runtimeconfig "$runtimeconfig_arg" "$prog_arg" "$@"
+      result=$?
+      rm -f "$runtimeconfig"
+      rmdir "$tmp"
+    fi
+    exit $result
   else
     if test -n "@HAVE_CLIX@"; then
       CONF_CLIX_PATH='@CLIX_PATH@'
@@ -85,10 +195,18 @@ else
         @CLIX_PATH_VAR@="$CONF_CLIX_PATH"
       fi
       export @CLIX_PATH_VAR@
-      test -z "$CSHARP_VERBOSE" || echo clix "$@"
-      exec clix "$@"
+      shift
+      # On Windows, assume that 'clix' is a native Windows program,
+      # not a Cygwin program.
+      case "@build_os@" in
+        cygwin*)
+          prog=`cygpath -w "$prog"`
+          ;;
+      esac
+      test -z "$CSHARP_VERBOSE" || echo clix "$prog" "$@" 1>&2
+      exec clix "$prog" "$@"
     else
-      echo 'C# virtual machine not found, try installing pnet, then reconfigure' 1>&2
+      echo 'C# virtual machine not found, try installing mono or dotnet, then reconfigure' 1>&2
       exit 1
     fi
   fi

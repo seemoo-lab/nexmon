@@ -1,5 +1,4 @@
-<!-- Creator     : groff version 1.20.1 -->
-<!-- CreationDate: Sun Aug  7 19:49:14 2011 -->
+<!-- Creator     : groff version 1.22.3 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -26,6 +25,7 @@
 <a href="#RETURN VALUE">RETURN VALUE</a><br>
 <a href="#ERRORS">ERRORS</a><br>
 <a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
 
 <hr>
@@ -50,6 +50,16 @@ perform character set conversion</p>
 <p style="margin-left:11%; margin-top: 1em"><b>size_t iconv
 (iconv_t</b> <i>cd</i><b>, <br>
 const char* *</b> <i>inbuf</i><b>, size_t *</b>
+<i>inbytesleft</i><b>, <br>
+char* *</b> <i>outbuf</i><b>, size_t *</b>
+<i>outbytesleft</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">or (for POSIX
+compatibility)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>size_t iconv
+(iconv_t</b> <i>cd</i><b>, <br>
+char* *</b> <i>inbuf</i><b>, size_t *</b>
 <i>inbytesleft</i><b>, <br>
 char* *</b> <i>outbuf</i><b>, size_t *</b>
 <i>outbytesleft</i><b>);</b></p>
@@ -84,7 +94,7 @@ encoding of the input is stateful, the <b>iconv</b> function
 can also convert a sequence of input bytes to an update of
 the conversion state without producing any output bytes;
 such input is called a <i>shift sequence</i>. The conversion
-can stop for four reasons:</p>
+can stop for five reasons:</p>
 
 <p style="margin-left:11%; margin-top: 1em">1. An invalid
 multibyte sequence is encountered in the input. In this case
@@ -92,20 +102,40 @@ it sets <b>errno</b> to <b>EILSEQ</b> and returns
 (size_t)(&minus;1). <i>*inbuf</i> is left pointing to the
 beginning of the invalid multibyte sequence.</p>
 
-<p style="margin-left:11%; margin-top: 1em">2. The input
+<p style="margin-left:11%; margin-top: 1em">2. A multibyte
+sequence is encountered that is valid but that cannot be
+translated to the character encoding of the output. This
+condition depends on the implementation and on the
+conversion descriptor. In the GNU C library and GNU
+libiconv, if <i>cd</i> was created without the suffix
+<b>//TRANSLIT</b> or <b>//IGNORE</b> or
+<b>//NON_IDENTICAL_DISCARD</b>, the conversion is strict:
+lossy conversions produce this condition. If the suffix
+<b>//TRANSLIT</b> was specified, transliteration can avoid
+this condition in some cases. In the musl C library, this
+condition cannot occur because a conversion to <b>'*'</b> is
+used as a fallback. In the FreeBSD, NetBSD, and Solaris
+implementations of <b>iconv</b>, this condition cannot occur
+either, because a conversion to <b>'?'</b> is used as a
+fallback. When this condition is met, the <b>iconv</b>
+function sets <b>errno</b> to <b>EILSEQ</b> and returns
+(size_t)(&minus;1). <i>*inbuf</i> is left pointing to the
+beginning of the unconvertible multibyte sequence.</p>
+
+<p style="margin-left:11%; margin-top: 1em">3. The input
 byte sequence has been entirely converted, i.e.
 <i>*inbytesleft</i> has gone down to 0. In this case
 <b>iconv</b> returns the number of non-reversible
 conversions performed during this call.</p>
 
-<p style="margin-left:11%; margin-top: 1em">3. An
+<p style="margin-left:11%; margin-top: 1em">4. An
 incomplete multibyte sequence is encountered in the input,
 and the input byte sequence terminates after it. In this
 case it sets <b>errno</b> to <b>EINVAL</b> and returns
 (size_t)(&minus;1). <i>*inbuf</i> is left pointing to the
 beginning of the incomplete multibyte sequence.</p>
 
-<p style="margin-left:11%; margin-top: 1em">4. The output
+<p style="margin-left:11%; margin-top: 1em">5. The output
 buffer has no more room for the next converted character. In
 this case it sets <b>errno</b> to <b>E2BIG</b> and returns
 (size_t)(&minus;1).</p>
@@ -192,7 +222,53 @@ the input.</p></td></tr>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">POSIX:2001</p>
+<p style="margin-left:11%; margin-top: 1em">POSIX:2024</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note: In the
+functions <b>iconv</b>, <b>execv</b>, <b>execve</b>,
+<b>execvp</b>, POSIX uses the type <b>char **</b> in place
+of the more correct <b>const char **</b>, thus forcing
+programs which use <b>const</b> as usual to add a cast in
+the second argument of an <b>iconv</b> invocation. GNU
+libiconv uses <b>const char **</b> or <b>char **</b>,
+depending on the platform.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Packages that
+use the GNU Build System can determine which of the two
+choices the declaration of <b>iconv</b> in
+<b>&lt;iconv.h&gt;</b> actually uses. To do this, the
+package can use the Autoconf macro <b>AM_ICONV</b>,
+documented in the GNU gettext manual and also available from
+the module <b>iconv</b> in GNU gnulib, and then use the C
+preprocessor symbol <b>ICONV_CONST</b>.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In each series
+of calls to the <b>iconv</b> function, the last should be
+one with <i>inbuf</i> or <i>*inbuf</i> equal to NULL, in
+order to complete the conversion of any partially converted
+input.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Although
+<i>inbuf</i> and <i>outbuf</i> are typed as <b>const char
+**</b> and <b>char **</b>, respectively, this does not mean
+that the objects they point can be interpreted as C strings
+or as arrays of characters: the interpretation of character
+byte sequences is handled internally by the conversion
+functions. In some encodings, a zero byte may be a valid
+part of a multibyte character.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The caller of
+the <b>iconv</b> function must ensure that the pointers
+passed to the function are suitable for accessing characters
+in the appropriate character set. For the encodings
+<b>UCS-2-INTERNAL</b>, <b>UCS-4-INTERNAL</b>, and
+<b>wchar_t</b>, this includes ensuring correct
+alignment.</p>
 
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>
@@ -201,7 +277,7 @@ the input.</p></td></tr>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>iconv_open</b>(3),
-<b>iconvctl</b>(3) <b>iconv_close</b>(3)</p>
+<b>iconvctl</b>(3), <b>iconv_close</b>(3)</p>
 <hr>
 </body>
 </html>

@@ -2,6 +2,8 @@
  * Copyright (C) 2012 Red Hat, Inc
  * Author: Matthias Clasen
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -51,6 +53,11 @@ test_parse (void)
   addr = g_inet_address_new_from_string ("204.152.189.116");
   g_assert (addr != NULL);
   g_object_unref (addr);
+#ifndef G_OS_WIN32 /* getaddrinfo on Windows does not support scope-id */
+  addr = g_inet_address_new_from_string ("::1%0");
+  g_assert (addr != NULL);
+  g_object_unref (addr);
+#endif
 
   addr = g_inet_address_new_from_string ("::1::2");
   g_assert (addr == NULL);
@@ -58,10 +65,12 @@ test_parse (void)
   g_assert (addr == NULL);
   addr = g_inet_address_new_from_string ("[2001:1:2:3:4:5:6:7");
   g_assert (addr == NULL);
+#ifndef G_OS_WIN32 /* getaddrinfo on Windows is more forgiving about format and accepts these strings */
   addr = g_inet_address_new_from_string ("[2001:1:2:3:4:5:6:7]");
   g_assert (addr == NULL);
   addr = g_inet_address_new_from_string ("[2001:1:2:3:4:5:6:7]:80");
   g_assert (addr == NULL);
+#endif
   addr = g_inet_address_new_from_string ("0:1:2:3:4:5:6:7:8:9");
   g_assert (addr == NULL);
   addr = g_inet_address_new_from_string ("::FFFFFFF");
@@ -252,19 +261,19 @@ test_socket_address_to_string (void)
   g_object_unref (ia);
 
   /* IPv6. */
-  ia = g_inet_address_new_from_string ("::80");
+  ia = g_inet_address_new_from_string ("fe80::80");
   sa = g_inet_socket_address_new (ia, 80);
   str = g_socket_connectable_to_string (G_SOCKET_CONNECTABLE (sa));
-  g_assert_cmpstr (str, ==, "[::80]:80");
+  g_assert_cmpstr (str, ==, "[fe80::80]:80");
   g_free (str);
   g_object_unref (sa);
   g_object_unref (ia);
 
   /* IPv6 without port. */
-  ia = g_inet_address_new_from_string ("::80");
+  ia = g_inet_address_new_from_string ("fe80::80");
   sa = g_inet_socket_address_new (ia, 0);
   str = g_socket_connectable_to_string (G_SOCKET_CONNECTABLE (sa));
-  g_assert_cmpstr (str, ==, "::80");
+  g_assert_cmpstr (str, ==, "fe80::80");
   g_free (str);
   g_object_unref (sa);
   g_object_unref (ia);

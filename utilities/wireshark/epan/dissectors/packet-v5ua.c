@@ -24,19 +24,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -45,75 +33,75 @@
 #include <epan/sctpppids.h>      /* include V5UA payload protocol ID */
 
 #include <wsutil/str_util.h>
+#include <wsutil/ws_roundup.h>
 
 void proto_register_v5ua(void);
 void proto_reg_handoff_v5ua(void);
 
-static int paddingl = 0;
+static dissector_handle_t v5ua_handle;
+
+static int paddingl;
 static int dlci_efa = -1;
 
 /* Initialize the protocol and registered fields */
-static int proto_v5ua                    = -1;
+static int proto_v5ua;
 
 static dissector_handle_t q931_handle;
 static dissector_handle_t v52_handle;
 
- /* round up parameter length to multiple of four */
-#define ADD_PADDING(x) ((((x) + 3) >> 2) << 2)
-
 /* common msg-header */
-static int hf_version               = -1;
-static int hf_reserved              = -1;
-static int hf_msg_class             = -1;
-static int hf_msg_type              = -1;
-/* static int hf_msg_type_id        = -1; */
-static int hf_msg_length            = -1;
+static int hf_version;
+static int hf_reserved;
+static int hf_msg_class;
+static int hf_msg_type;
+/* static int hf_msg_type_id; */
+static int hf_msg_length;
 /* V5UA message header */
-static int hf_link_id               = -1;
-static int hf_chnl_id               = -1;
-static int hf_adaptation_layer_id   = -1;
-static int hf_text_if_id            = -1;
-static int hf_scn_protocol_id       = -1;
-static int hf_info_string           = -1;
-static int hf_asp_identifier        = -1;
-static int hf_dlci_zero_bit         = -1;
-static int hf_dlci_spare_bit        = -1;
-static int hf_dlci_sapi             = -1;
-static int hf_dlci_one_bit          = -1;
-static int hf_dlci_tei              = -1;
-static int hf_efa                   = -1;
-/* static int hf_spare_efa          = -1; */
+static int hf_link_id;
+static int hf_chnl_id;
+static int hf_adaptation_layer_id;
+static int hf_text_if_id;
+static int hf_scn_protocol_id;
+static int hf_info_string;
+static int hf_asp_identifier;
+static int hf_dlci_zero_bit;
+static int hf_dlci_spare_bit;
+static int hf_dlci_sapi;
+static int hf_dlci_one_bit;
+static int hf_dlci_tei;
+static int hf_efa;
+/* static int hf_spare_efa; */
 /* variable length parameter (msg) */
-static int hf_parameter_tag         = -1;
-static int hf_parameter_tag_draft   = -1;
-static int hf_parameter_length      = -1;
-static int hf_parameter_value       = -1;
-static int hf_parameter_padding     = -1;
+static int hf_parameter_tag;
+static int hf_parameter_tag_draft;
+static int hf_parameter_length;
+static int hf_parameter_value;
+static int hf_parameter_padding;
 
  /* parameter fields */
-static int hf_link_status           = -1;
-static int hf_sa_bit_id             = -1;
-static int hf_sa_bit_value          = -1;
-static int hf_diagnostic_info       = -1;
-static int hf_if_range_start        = -1;
-static int hf_if_range_end          = -1;
-static int hf_heartbeat_data        = -1;
-static int hf_traffic_mode_type     = -1;
-static int hf_error_code            = -1;
-static int hf_draft_error_code      = -1;
-static int hf_status_type           = -1;
-static int hf_status_id             = -1;
-static int hf_error_reason          = -1;
-static int hf_asp_reason            = -1;
-static int hf_tei_status            = -1;
-static int hf_tei_draft_status      = -1;
-static int hf_release_reason        = -1;
+static int hf_link_status;
+static int hf_sa_bit_id;
+static int hf_sa_bit_value;
+static int hf_diagnostic_info;
+static int hf_if_range_start;
+static int hf_if_range_end;
+static int hf_heartbeat_data;
+static int hf_traffic_mode_type;
+static int hf_error_code;
+static int hf_draft_error_code;
+static int hf_status_type;
+static int hf_status_id;
+static int hf_error_reason;
+static int hf_asp_reason;
+static int hf_tei_status;
+static int hf_tei_draft_status;
+static int hf_release_reason;
 
 /* Initialize the subtree pointers */
-static gint ett_v5ua              = -1;
-static gint ett_v5ua_common_header= -1;
-static gint ett_v5ua_parameter    = -1;
-static gint ett_v5ua_layer3       = -1;
+static int ett_v5ua;
+static int ett_v5ua_common_header;
+static int ett_v5ua_parameter;
+static int ett_v5ua_layer3;
 
 #define RFC             0x1
 #define DRAFT           0x2
@@ -153,9 +141,9 @@ static int linkIdentifier = -1;
 static void
 dissect_int_interface_identifier_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   guint32 identifier;
-   guint16 number_of_ids, id_number;
-   gint offset;
+   uint32_t identifier;
+   uint16_t number_of_ids, id_number;
+   int offset;
 
    number_of_ids= (tvb_get_ntohs(parameter_tvb, PARAMETER_LENGTH_OFFSET) - PARAMETER_HEADER_LENGTH) / INT_INTERFACE_ID_LENGTH;
 
@@ -172,7 +160,7 @@ dissect_int_interface_identifier_parameter(tvbuff_t *parameter_tvb, proto_tree *
       linkIdentifier = identifier;
 
       proto_tree_add_item(parameter_tree, hf_chnl_id, parameter_tvb, offset+3, INT_IF_ID_CHNL_LENGTH, ENC_BIG_ENDIAN);
-      identifier = tvb_get_guint8(parameter_tvb,offset+3)&0x1f;
+      identifier = tvb_get_uint8(parameter_tvb,offset+3)&0x1f;
       proto_item_append_text(parameter_item, " C:%d", identifier);
       offset += INT_INTERFACE_ID_LENGTH;
    }
@@ -187,15 +175,15 @@ dissect_int_interface_identifier_parameter(tvbuff_t *parameter_tvb, proto_tree *
 #define TEXT_IF_ID_HEADER_LENGTH PARAMETER_HEADER_LENGTH
 
 static void
-dissect_text_interface_identifier_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
+dissect_text_interface_identifier_parameter(packet_info *pinfo, tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   guint16 if_id_length;
-   const guint8* str;
+   uint16_t if_id_length;
+   const uint8_t* str;
 
    if_id_length = tvb_get_ntohs(parameter_tvb, TEXT_IF_ID_LENGTH_OFFSET) - TEXT_IF_ID_HEADER_LENGTH;
 
-   proto_tree_add_item_ret_string(parameter_tree, hf_text_if_id, parameter_tvb, TEXT_IF_ID_VALUE_OFFSET, if_id_length, ENC_ASCII|ENC_NA, wmem_packet_scope(), &str);
-   proto_item_append_text(parameter_item, " (0x%.*s)", if_id_length, str);
+   proto_tree_add_item_ret_string(parameter_tree, hf_text_if_id, parameter_tvb, TEXT_IF_ID_VALUE_OFFSET, if_id_length, ENC_ASCII, pinfo->pool, &str);
+   proto_item_append_text(parameter_item, " (0x%s)", str);
 }
 /*----------------------Text Interface Identifier (RFC)------------------------*/
 
@@ -224,10 +212,10 @@ static const value_string efa_values[] = {
 static void
 dissect_dlci_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item, packet_info *pinfo)
 {
-   guint16 efa = 0, offset = 0;
+   uint16_t efa = 0, offset = 0;
 
-   guint8 sapi = -1;
-   guint8 tei = -1;
+   uint8_t sapi = -1;
+   uint8_t tei = -1;
 
 
    if     (iua_version == RFC)   offset = DLCI_SAPI_OFFSET;
@@ -260,7 +248,7 @@ dissect_dlci_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, prot
             "ISDN (%u)", efa);
       proto_item_append_text(parameter_item, " (SAPI:%u TEI:%u EFA:ISDN (%u))",sapi,tei,efa);
    }
-   else if (efa > 8175 && efa <= 8180){
+   else if (efa <= 8180){
       proto_tree_add_uint_format_value(parameter_tree, hf_efa,  parameter_tvb, offset, EFA_LENGTH, efa,
             "%s (%u)", val_to_str_const(efa, efa_values, "unknown EFA"),tvb_get_ntohs(parameter_tvb, offset));
       proto_item_append_text(parameter_item, " (SAPI:%u TEI:%u EFA:%s (%u))",sapi,tei,val_to_str_const(efa, efa_values, "unknown EFA-value"),efa);
@@ -304,11 +292,11 @@ static const value_string draft_error_code_values[] = {
 static void
 dissect_draft_error_code_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree)
 {
-   guint16 offset = MGMT_ERROR_MSG_HEADER_LENGTH + tvb_get_ntohs(parameter_tvb, MGMT_ERROR_MSG_LENGTH_OFFSET) + 4;
+   uint16_t offset = MGMT_ERROR_MSG_HEADER_LENGTH + tvb_get_ntohs(parameter_tvb, MGMT_ERROR_MSG_LENGTH_OFFSET) + 4;
    proto_tree_add_item(parameter_tree, hf_draft_error_code, parameter_tvb, offset, MGMT_ERROR_CODE_LENGTH, ENC_BIG_ENDIAN);
    offset += MGMT_ERROR_CODE_LENGTH ;
    if( tvb_reported_length_remaining(parameter_tvb,offset) > 0 )
-      proto_tree_add_item(parameter_tree, hf_info_string, parameter_tvb, offset, msg_length - offset,ENC_ASCII|ENC_NA);
+      proto_tree_add_item(parameter_tree, hf_info_string, parameter_tvb, offset, msg_length - offset,ENC_ASCII);
 }
 /*----------------------Error Indication (Draft)-------------------------------*/
 
@@ -356,7 +344,7 @@ dissect_error_code_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree
 static void
 dissect_diagnostic_information_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   guint16 diag_info_length;
+   uint16_t diag_info_length;
 
    diag_info_length = tvb_get_ntohs(parameter_tvb, MGMT_ERROR_MSG_LENGTH_OFFSET) - MGMT_ERROR_MSG_HEADER_LENGTH;
    proto_tree_add_item(parameter_tree, hf_diagnostic_info, parameter_tvb, PARAMETER_VALUE_OFFSET, diag_info_length, ENC_NA);
@@ -401,7 +389,7 @@ static const value_string status_type_id_values[] = {
 static void
 dissect_status_type_identification_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   guint16 status_type, status_id;
+   uint16_t status_type, status_id;
 
    status_type = tvb_get_ntohs(parameter_tvb, NTFY_STATUS_TYPE_OFFSET);
    status_id   = tvb_get_ntohs(parameter_tvb, NTFY_STATUS_IDENT_OFFSET);
@@ -453,7 +441,7 @@ static const value_string tei_draft_status_values[] = {
 static void
 dissect_draft_tei_status_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   gint offset;
+   int offset;
    offset = tvb_get_ntohs(parameter_tvb, TEI_STATUS_LENGTH_OFFSET) + 8;
    if(tvb_reported_length_remaining(parameter_tvb, offset) > 0 ){
       proto_tree_add_item(parameter_tree, hf_tei_draft_status, parameter_tvb, offset, TEI_STATUS_LENGTH, ENC_BIG_ENDIAN);
@@ -466,22 +454,22 @@ dissect_draft_tei_status_parameter(tvbuff_t *parameter_tvb, proto_tree *paramete
 /*----------------------ASP Up,Down,Active,Inactive (Draft)--------------------*/
 
 static void
-dissect_asp_msg_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
+dissect_asp_msg_parameter(packet_info *pinfo, tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   const guint8* str;
-   guint16 adaptation_layer_id_length = tvb_get_ntohs(parameter_tvb, PARAMETER_LENGTH_OFFSET);
+   const uint8_t* str;
+   uint16_t adaptation_layer_id_length = tvb_get_ntohs(parameter_tvb, PARAMETER_LENGTH_OFFSET);
 
-   proto_tree_add_item_ret_string(parameter_tree, hf_adaptation_layer_id, parameter_tvb, PARAMETER_VALUE_OFFSET, adaptation_layer_id_length, ENC_ASCII|ENC_NA, wmem_packet_scope(), &str);
-   proto_item_append_text(parameter_item, " (%.*s)", adaptation_layer_id_length, str);
+   proto_tree_add_item_ret_string(parameter_tree, hf_adaptation_layer_id, parameter_tvb, PARAMETER_VALUE_OFFSET, adaptation_layer_id_length, ENC_ASCII, pinfo->pool, &str);
+   proto_item_append_text(parameter_item, " (%s)", str);
 }
 
 static void
-dissect_scn_protocol_id_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
+dissect_scn_protocol_id_parameter(packet_info *pinfo, tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   const guint8* str;
-   guint16 id_length = tvb_get_ntohs(parameter_tvb, PARAMETER_LENGTH_OFFSET);
-   proto_tree_add_item_ret_string(parameter_tree, hf_scn_protocol_id, parameter_tvb, PARAMETER_VALUE_OFFSET, id_length, ENC_ASCII|ENC_NA, wmem_packet_scope(), &str);
-   proto_item_append_text(parameter_item, " (%.*s)", id_length, str);
+   const uint8_t* str;
+   uint16_t id_length = tvb_get_ntohs(parameter_tvb, PARAMETER_LENGTH_OFFSET);
+   proto_tree_add_item_ret_string(parameter_tree, hf_scn_protocol_id, parameter_tvb, PARAMETER_VALUE_OFFSET, id_length, ENC_ASCII, pinfo->pool, &str);
+   proto_item_append_text(parameter_item, " (%s)", str);
 }
 
 /*----------------------ASP (Draft)--------------------------------------------*/
@@ -516,7 +504,7 @@ dissect_asp_reason_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree
 static void
 dissect_heartbeat_data_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   guint16 heartbeat_data_length;
+   uint16_t heartbeat_data_length;
 
    heartbeat_data_length = tvb_get_ntohs(parameter_tvb, HEARTBEAT_MSG_LENGTH_OFFSET) - HEARTBEAT_MSG_HEADER_LENGTH;
    proto_tree_add_item(parameter_tree, hf_heartbeat_data, parameter_tvb, HEARTBEAT_DATA_OFFSET, heartbeat_data_length, ENC_NA);
@@ -559,7 +547,7 @@ dissect_traffic_mode_type_parameter(tvbuff_t *parameter_tvb, proto_tree *paramet
 static void
 dissect_integer_range_interface_identifier_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   guint16 number_of_ranges, range_number, offset;
+   uint16_t number_of_ranges, range_number, offset;
 
    number_of_ranges = (tvb_get_ntohs(parameter_tvb, INT_RANGE_LENGTH_OFFSET) - INT_RANGE_HEADER_LENGTH) / IF_ID_INTERVAL_LENGTH;
    offset = INT_RANGE_START_OFFSET;
@@ -594,7 +582,7 @@ dissect_integer_range_interface_identifier_parameter(tvbuff_t *parameter_tvb, pr
 static void
 dissect_layer3_message(tvbuff_t *layer3_data_tvb, proto_tree *v5ua_tree,proto_item *parameter_item, packet_info *pinfo)
 {
-   guint16 discriminator_offset;
+   uint16_t discriminator_offset;
 
    if(iua_version == DRAFT){
       discriminator_offset = DISCRIMINATOR_OFFSET;
@@ -603,8 +591,8 @@ dissect_layer3_message(tvbuff_t *layer3_data_tvb, proto_tree *v5ua_tree,proto_it
       discriminator_offset = DISCRIMINATOR_OFFSET + PARAMETER_HEADER_LENGTH;
    }
 
-   if (tvb_get_guint8(layer3_data_tvb, discriminator_offset) == 0x48){
-      guint16 protocol_data_length;
+   if (tvb_get_uint8(layer3_data_tvb, discriminator_offset) == 0x48){
+      uint16_t protocol_data_length;
       tvbuff_t *protocol_data_tvb;
 
       protocol_data_length = tvb_get_ntohs(layer3_data_tvb, PARAMETER_LENGTH_OFFSET) - PARAMETER_HEADER_LENGTH;
@@ -616,7 +604,7 @@ dissect_layer3_message(tvbuff_t *layer3_data_tvb, proto_tree *v5ua_tree,proto_it
 
    }
    else{
-      guint16 protocol_data_length;
+      uint16_t protocol_data_length;
       tvbuff_t *protocol_data_tvb;
 
       protocol_data_length = tvb_get_ntohs(layer3_data_tvb, PARAMETER_LENGTH_OFFSET) - PARAMETER_HEADER_LENGTH;
@@ -657,7 +645,7 @@ static const value_string release_reason_values[] = {
 static void
 dissect_release_reason_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   gint offset = RELEASE_REASON_OFFSET;
+   int offset = RELEASE_REASON_OFFSET;
    if(iua_version == DRAFT) offset = tvb_get_ntohs(parameter_tvb, RELEASE_REASON_LENGTH_OFFSET)+8;
    proto_tree_add_item(parameter_tree, hf_release_reason, parameter_tvb, offset, RELEASE_REASON_LENGTH, ENC_BIG_ENDIAN);
    if(iua_version != DRAFT)
@@ -763,17 +751,17 @@ dissect_asp_identifier_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_
 #define INFO_STRING_OFFSET PARAMETER_VALUE_OFFSET
 
 static void
-dissect_info_string_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
+dissect_info_string_parameter(packet_info *pinfo, tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-   guint16 info_string_length;
-   const guint8* str;
+   uint16_t info_string_length;
+   const uint8_t* str;
 
    info_string_length = tvb_get_ntohs(parameter_tvb, PARAMETER_LENGTH_OFFSET);
    if(iua_version == DRAFT) info_string_length += 4;
    if(info_string_length > 4){
       info_string_length -= PARAMETER_HEADER_LENGTH;
-      proto_tree_add_item_ret_string(parameter_tree, hf_info_string, parameter_tvb, INFO_STRING_OFFSET, info_string_length, ENC_ASCII|ENC_NA, wmem_packet_scope(), &str);
-      proto_item_append_text(parameter_item, " (%.*s)", info_string_length, str);
+      proto_tree_add_item_ret_string(parameter_tree, hf_info_string, parameter_tvb, INFO_STRING_OFFSET, info_string_length, ENC_ASCII, pinfo->pool, &str);
+      proto_item_append_text(parameter_item, " (%s)", str);
    }
 }
 
@@ -782,7 +770,7 @@ static void
 dissect_unknown_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
 
-   guint16 parameter_value_length;
+   uint16_t parameter_value_length;
 
    parameter_value_length = tvb_get_ntohs(parameter_tvb, PARAMETER_LENGTH_OFFSET) - PARAMETER_HEADER_LENGTH;
    if (parameter_value_length > 0)
@@ -851,7 +839,7 @@ static const value_string parameter_tag_draft_values[] = {
 static void
 dissect_parameter(tvbuff_t *parameter_tvb, packet_info *pinfo, proto_tree *v5ua_tree)
 {
-   guint16 tag, length, padding_length;
+   uint16_t tag, length, padding_length;
    proto_item *parameter_item;
    proto_tree *parameter_tree;
 
@@ -904,12 +892,12 @@ dissect_parameter(tvbuff_t *parameter_tvb, packet_info *pinfo, proto_tree *v5ua_
             if(msg_class==1)                   dissect_draft_tei_status_parameter(parameter_tvb, parameter_tree, parameter_item);
             if(msg_class==9){
                if(msg_type==1||msg_type==2||msg_type==3||msg_type==4){
-                  guint16 length_2, offset;
+                  uint16_t length_2, offset;
                   tvbuff_t *layer3_data_tvb;
                   offset = tvb_get_ntohs(parameter_tvb, PARAMETER_LENGTH_OFFSET) + 8;
                   length_2 = msg_length - offset;
                   if(length_2 > 0){
-                     if(tvb_get_guint8(parameter_tvb, offset) == 0x48){
+                     if(tvb_get_uint8(parameter_tvb, offset) == 0x48){
                         layer3_data_tvb = tvb_new_subset_length(parameter_tvb, offset, length_2);
                         dissect_layer3_message(layer3_data_tvb, v5ua_tree, parameter_item, pinfo);
                      }
@@ -920,16 +908,16 @@ dissect_parameter(tvbuff_t *parameter_tvb, packet_info *pinfo, proto_tree *v5ua_
          }
          break;
       case ASP_MSG_PARAMETER_TAG:
-         dissect_asp_msg_parameter(parameter_tvb, parameter_tree, parameter_item);
+         dissect_asp_msg_parameter(pinfo, parameter_tvb, parameter_tree, parameter_item);
          break;
       case TEXT_INTERFACE_IDENTIFIER_PARAMETER_TAG:
          if(iua_version == RFC)
-            dissect_text_interface_identifier_parameter(parameter_tvb, parameter_tree, parameter_item);
+            dissect_text_interface_identifier_parameter(pinfo, parameter_tvb, parameter_tree, parameter_item);
          if(iua_version == DRAFT)
-            dissect_scn_protocol_id_parameter(parameter_tvb, parameter_tree, parameter_item);
+            dissect_scn_protocol_id_parameter(pinfo, parameter_tvb, parameter_tree, parameter_item);
          break;
       case INFO_PARAMETER_TAG:
-         dissect_info_string_parameter(parameter_tvb, parameter_tree, parameter_item);
+         dissect_info_string_parameter(pinfo, parameter_tvb, parameter_tree, parameter_item);
          break;
       case DLCI_PARAMETER_TAG:
          dissect_dlci_parameter(parameter_tvb, parameter_tree, parameter_item, pinfo);
@@ -989,7 +977,7 @@ dissect_parameter(tvbuff_t *parameter_tvb, packet_info *pinfo, proto_tree *v5ua_
 static void
 dissect_parameters(tvbuff_t *parameters_tvb, packet_info *pinfo, proto_tree *tree _U_, proto_tree *v5ua_tree)
 {
-   gint tag, offset, length, total_length, remaining_length;
+   int tag, offset, length, total_length, remaining_length;
    tvbuff_t *parameter_tvb;
 
 
@@ -1005,7 +993,7 @@ dissect_parameters(tvbuff_t *parameters_tvb, packet_info *pinfo, proto_tree *tre
          if((msg_class==0 || msg_class==1 || msg_class==9)&&msg_type<=10)
             length = msg_length;
       }
-      total_length = ADD_PADDING(length);
+      total_length = WS_ROUNDUP_4(length);
       if (remaining_length >= length)
          total_length = MIN(total_length, remaining_length);
       /* create a tvb for the parameter including the padding bytes */
@@ -1269,10 +1257,10 @@ dissect_common_header(tvbuff_t *common_header_tvb, packet_info *pinfo, proto_tre
    proto_item *common_header_item;
    proto_tree *common_header_tree;
 
-   guint8 message_class, message_type;
+   uint8_t message_class, message_type;
 
-   message_class  = tvb_get_guint8(common_header_tvb, COMMON_HEADER_MSG_CLASS_OFFSET);
-   message_type   = tvb_get_guint8(common_header_tvb, COMMON_HEADER_MSG_TYPE_OFFSET);
+   message_class  = tvb_get_uint8(common_header_tvb, COMMON_HEADER_MSG_CLASS_OFFSET);
+   message_type   = tvb_get_uint8(common_header_tvb, COMMON_HEADER_MSG_TYPE_OFFSET);
 
    /* Add message type into info column */
    col_set_str(pinfo->cinfo, COL_INFO, val_to_str_const(message_class * 256 + message_type, msg_class_type_values_short, "UNKNOWN"));
@@ -1350,7 +1338,7 @@ dissect_v5ua_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_
 static int
 dissect_v5ua(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-   gint    offset, remaining_length, length, tag, one_bit;
+   int     offset, remaining_length, length, tag, one_bit;
 
 
    /* Set up structures needed to add the protocol subtree and manage it */
@@ -1380,15 +1368,15 @@ dissect_v5ua(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
          tag = tvb_get_ntohs(tvb, offset+length);
          /* tag 0x5 indicates the DLCI in the V5UA-Header accoriding to RFC spec */
          if(tag==0x81){
-            remaining_length = FALSE;
+            remaining_length = false;
          }
          else{
-            one_bit = tvb_get_guint8(tvb, offset+4+length+1);
+            one_bit = tvb_get_uint8(tvb, offset+4+length+1);
             /* no indication from DLCI by tag (in the V5UA-Header according DRAFT).
                Thus the ONE-Bit within DLCI have to compare */
             if((one_bit & 0x01) == 0x01){
                iua_version = DRAFT;
-               remaining_length = FALSE;
+               remaining_length = false;
             }
             /* an indication to incorrect bit in DLCI.
                Must be include to decode an incorrect implemented message on Nortels PVG*/
@@ -1396,26 +1384,26 @@ dissect_v5ua(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                proto_item_append_text(v5ua_tree, "   !! DLCI INCORRECT !!");
 
                iua_version = DRAFT;
-               remaining_length = FALSE;
+               remaining_length = false;
             }
          }
       }
       /*0x02: AL Id (draft) following after common msg header without V5UA header*/
       else if(tag==0x02){
          iua_version = DRAFT;
-         remaining_length = FALSE;
+         remaining_length = false;
       }
       /*0x03: Text formatted IId SHALL not be supported by draft*/
       else if(tag==0x03){
          iua_version = RFC;
-         remaining_length = FALSE;
+         remaining_length = false;
       }
       else if(tag==0x11){
-         remaining_length = FALSE;
+         remaining_length = false;
       }
       /*ASP, Notify and Error messages (RFC) only contain common msg header followed by parameter*/
       else if(tag==0x04 || tag == 0x0a || tag == 0x0b || tag == 0x0c || tag == 0x0d){
-         remaining_length = FALSE;
+         remaining_length = false;
       }
       else{
          offset+=2;
@@ -1620,7 +1608,7 @@ proto_register_v5ua(void)
    };
 
    /* Setup protocol subtree array */
-   static gint *ett[] = {
+   static int *ett[] = {
       &ett_v5ua,
       &ett_v5ua_common_header,
       &ett_v5ua_parameter,
@@ -1633,6 +1621,9 @@ proto_register_v5ua(void)
    /* Required function calls to register the header fields and subtrees used */
    proto_register_field_array(proto_v5ua, hf, array_length(hf));
    proto_register_subtree_array(ett, array_length(ett));
+
+   /* Register the dissector handle */
+   v5ua_handle = register_dissector("v5ua", dissect_v5ua, proto_v5ua);
 }
 
 
@@ -1643,9 +1634,6 @@ proto_register_v5ua(void)
 void
 proto_reg_handoff_v5ua(void)
 {
-   dissector_handle_t v5ua_handle;
-
-   v5ua_handle = create_dissector_handle(dissect_v5ua, proto_v5ua);
    q931_handle = find_dissector_add_dependency("q931", proto_v5ua);
    v52_handle = find_dissector_add_dependency("v52", proto_v5ua);
 
@@ -1655,7 +1643,7 @@ proto_reg_handoff_v5ua(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

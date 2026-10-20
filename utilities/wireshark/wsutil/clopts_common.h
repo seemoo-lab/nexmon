@@ -1,42 +1,92 @@
-/* clopts_common.h
+/** @file
+ *
  * Handle command-line arguments common to various programs
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifndef __WSUTIL_CLOPTS_COMMON_H__
-#define __WSUTIL_CLOPTS_COMMON_H__
+#ifndef __CLOPTS_COMMON_H__
+#define __CLOPTS_COMMON_H__
 
-#include "ws_symbol_export.h"
+#include <wireshark.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-WS_DLL_PUBLIC int
-get_natural_int(const char *string, const char *name);
+/*
+ * Long options.
+ * For long options with no corresponding short options, we define values
+ * outside the range of ASCII graphic characters, make that the last
+ * component of the entry for the long option, and have a case for that
+ * option in the switch statement.
+ */
+// Base value for capture related long options
+#define LONGOPT_BASE_CAPTURE        1000
+// Base value for dissector related long options
+#define LONGOPT_BASE_DISSECTOR      2000
+// Base value for application specific long options
+#define LONGOPT_BASE_APPLICATION    3000
+// Base value for GUI specific long options
+#define LONGOPT_BASE_GUI            4000
+// Base value for logging related long options
+#define LONGOPT_BASE_WSLOG          5000
 
-WS_DLL_PUBLIC int
-get_positive_int(const char *string, const char *name);
+#define LONGOPT_READ_CAPTURE_COMMON \
+    {"read-file", ws_required_argument, NULL, 'r' }, \
+
+#define OPTSTRING_READ_CAPTURE_COMMON \
+    "r:"
+
+WS_DLL_PUBLIC bool
+get_natural_int(const char *string, const char *name, int32_t* number);
+
+WS_DLL_PUBLIC bool
+get_positive_int(const char *string, const char *name, int32_t* number);
+
+WS_DLL_PUBLIC bool
+get_natural_int64(const char* string, const char* name, int64_t* number);
+
+WS_DLL_PUBLIC bool
+get_positive_int64(const char* string, const char* name, int64_t* number);
+
+WS_DLL_PUBLIC bool
+get_uint32(const char *string, const char *name, uint32_t* number);
+
+WS_DEPRECATED_X("Use get_uint32 instead")
+static inline uint32_t
+get_guint32(const char *string, const char *name) {
+    uint32_t number = 0;
+    get_uint32(string, name, &number);
+    return number;
+}
+
+WS_DLL_PUBLIC bool
+get_nonzero_uint32(const char *string, const char *name, uint32_t* number);
+
+WS_DEPRECATED_X("Use get_nonzero_uint32 instead")
+static inline uint32_t
+get_nonzero_guint32(const char *string, const char *name) {
+    uint32_t number = 0;
+    get_nonzero_uint32(string, name, &number);
+    return number;
+}
+
+WS_DLL_PUBLIC bool
+get_uint64(const char *string, const char *name, uint64_t* number);
+
+WS_DLL_PUBLIC bool
+get_nonzero_uint64(const char *string, const char *name, uint64_t* number);
+
+WS_DLL_PUBLIC bool
+get_positive_double(const char *string, const char *name, double* number);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* __WSUTIL_CLOPTS_COMMON_H__ */
+#endif /* __CLOPTS_COMMON_H__ */

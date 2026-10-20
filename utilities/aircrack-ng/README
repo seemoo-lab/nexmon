@@ -1,10 +1,10 @@
-Documentation, tutorials, ... can be found on http://www.aircrack-ng.org
+Documentation, tutorials, ... can be found on https://www.aircrack-ng.org
 See also manpages and the forum.
 
 Installing
 ==========
 
-This version now requires more libraries than 0.X versions to be compiled. 
+This version has more dependencies/libraries required than previous versions to be compiled. 
 See INSTALLING file for more information
 
 OpenWrt Devices
@@ -43,7 +43,7 @@ Drivers
 		  
 	
 	Problem 4: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
-	Solution 4: It's the behaviour of madwifi-ng, don't worry (... be happy ;)).
+	Solution 4: It's the behavior of madwifi-ng, don't worry (... be happy ;)).
 
 
 	Orinoco
@@ -67,7 +67,7 @@ Aircrack-ng
 	----------
 
 	Problem: On windows only, opening/creating a database doesn't work when airolib-ng is in directories containing
-	         special characters like 'ç', 'é', 'è', 'à', ... (directories containing spaces are not affected).
+	         special characters like 'Ã§', 'Ã©', 'Ã¨', 'Ã ', ... (directories containing spaces are not affected).
 	Reason: It's a SQLite issue.
 	Solution: Rename the directory or move the database into another directory.
 
@@ -94,9 +94,6 @@ Aircrack-ng
 
 	Cygwin
 	------
-	
-	Problem: Aircrack-ng doesn't build on Cygwin64
-	Solution: None at this time. Build it using 32 bit cygwin.
 
 	Problem: /usr/include/sys/reent.h:14:20: fatal error: stddef.h: No such file or directory
 	Solution: It happens because the gcc and g++ version are different. Make sure they are the same.
@@ -125,7 +122,7 @@ test.ivs (http://download.aircrack-ng.org/wiki-files/other/test.ivs):
     This is a 128 bit WEP key file.
     The key is AE:5B:7F:3A:03:D0:AF:9B:F6:8D:A5:E2:C7.
 
-ptw.cap (http://dl.aircrack-ng.org/ptw.cap): 
+wep_64_ptw.cap (http://dl.aircrack-ng.org/ptw.cap): 
     This is a 64 bit WEP key file suitable for the PTW method.
     The key is '1F:1F:1F:1F:1F'.
 
@@ -137,9 +134,12 @@ wpa2-psk-linksys.cap:
     This is a sample file with a WPA2 handshake along with some encrypted packets.
     Useful for testing with airdecap-ng. The password is 'dictionary'.
 
-password.lst
+wps2.0.pcap:
+    This is a test file with WPS 2.0 beacon.
+
+password.lst and password-2.lst:
     This is a sample wordlist for WPA key cracking. More wordlists can be found at
-    http://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
+    https://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
 
 password.db
     This is a sample airolib-ng database for WPA key cracking.
@@ -152,3 +152,25 @@ Chinese-SSID-Name.pcap
 
 verify_inject.py
     Testing DNS requests using airtun-ng.
+
+n-02.cap:
+    This is a test file with 802.11X-2004 AES-128-CMAC handshake.
+    Useful for testing with aircrack-ng. The password is 'bo$$password'.
+
+test-pmkid.pcap:
+    This is a test file with PMKID. Passphrase for 'WLAN-771698' is 'SP-91862D361'
+
+test1.pcap:
+    This is another test file with PMKID. Passphrase for the network
+    'ogogo' is '15211521'
+
+StayAlfred.hccapx:
+    Hashcat HCCAPx file with WPA handshake.
+    Passphrase for 'StayAlfred' ESSID is 'staytogether'
+
+wpa3-psk.pcap:
+    WPA3 PSK SAE authentication. Passphrase for the network 
+    'WPA3-Network' is 'abcdefgh'
+
+More sample pcap are available from Wireshark: 
+    https://wiki.wireshark.org/SampleCaptures#Wifi_.2F_Wireless_LAN_captures_.2F_802.11

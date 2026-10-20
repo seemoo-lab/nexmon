@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -90,32 +78,34 @@ enum {
 void proto_register_ipmi_trace(void);
 void proto_reg_handoff_ipmi_trace(void);
 
-static int proto_ipmi_trace = -1;
+static dissector_handle_t ipmi_trace_handle;
+
+static int proto_ipmi_trace;
 
 static dissector_table_t proto_dissector_table;
 
-static gint ett_ipmi_trace = -1;
-static gint ett_trace_block_type = -1;
-static gint ett_trace_timestamp = -1;
-static gint ett_trace_protocol_data = -1;
-static gint ett_trace_ipmb_state = -1;
+static int ett_ipmi_trace;
+static int ett_trace_block_type;
+static int ett_trace_timestamp;
+static int ett_trace_protocol_data;
+static int ett_trace_ipmb_state;
 
-static gint hf_trace_block_type = -1;
-static gint hf_trace_channel_num = -1;
-static gint hf_trace_packet_type = -1;
-static gint hf_trace_timestamp = -1;
-static gint hf_trace_timestamp_sec = -1;
-static gint hf_trace_timestamp_msec = -1;
-static gint hf_trace_data_type = -1;
-static gint hf_trace_protocol_data = -1;
-static gint hf_trace_dir = -1;
-static gint hf_trace_ipmb_red_chn = -1;
-static gint hf_trace_ipmb_link_num = -1;
-static gint hf_trace_data_len = -1;
-static gint hf_trace_notify_format = -1;
-static gint hf_trace_ipmb_state = -1;
-static gint hf_trace_ipmb_ovr_state = -1;
-static gint hf_trace_ipmb_loc_state = -1;
+static int hf_trace_block_type;
+static int hf_trace_channel_num;
+static int hf_trace_packet_type;
+static int hf_trace_timestamp;
+static int hf_trace_timestamp_sec;
+static int hf_trace_timestamp_msec;
+static int hf_trace_data_type;
+static int hf_trace_protocol_data;
+static int hf_trace_dir;
+static int hf_trace_ipmb_red_chn;
+static int hf_trace_ipmb_link_num;
+static int hf_trace_data_len;
+static int hf_trace_notify_format;
+static int hf_trace_ipmb_state;
+static int hf_trace_ipmb_ovr_state;
+static int hf_trace_ipmb_loc_state;
 
 static const value_string str_packet_types[] = {
 	{ 0, "IPMI Trace Packet Data" },
@@ -176,32 +166,32 @@ static const value_string str_ipmb_loc_statuses[] = {
 	{ 0, NULL }
 };
 
-static const gint * bits_trace_block_type[] = {
+static int * const bits_trace_block_type[] = {
 	&hf_trace_channel_num,
 	&hf_trace_packet_type,
 	NULL
 };
 
-static const gint * bits_ipmb_protocol_data[] = {
+static int * const bits_ipmb_protocol_data[] = {
 	&hf_trace_ipmb_link_num,
 	&hf_trace_ipmb_red_chn,
 	&hf_trace_dir,
 	NULL
 };
 
-static const gint * bits_host_protocol_data[] = {
+static int * const bits_host_protocol_data[] = {
 	&hf_trace_dir,
 	NULL
 };
 
-static const gint * bits_chn_state_info[] = {
+static int * const bits_chn_state_info[] = {
 	&hf_trace_ipmb_ovr_state,
 	&hf_trace_ipmb_loc_state,
 	NULL
 };
 
 /* HPM.2 Trace Collection tree indices. */
-static gint * const ipmi_trace_ett[] = {
+static int * ipmi_trace_ett[] = {
 	&ett_ipmi_trace,
 	&ett_trace_block_type,
 	&ett_trace_timestamp,
@@ -277,7 +267,7 @@ dissect_ipmb_state_notify(tvbuff_t * tvb, proto_tree * tree)
 static int
 dissect_ipmi_trace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint block_type, chn_num, data_type, tmp;
+	unsigned block_type, chn_num, data_type, tmp;
 	tvbuff_t * next_tvb;
 
 	if (tvb_captured_length(tvb) < 11) {
@@ -287,7 +277,7 @@ dissect_ipmi_trace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 	}
 
 	/* get first byte */
-	tmp = tvb_get_guint8(tvb, 0);
+	tmp = tvb_get_uint8(tvb, 0);
 
 	/* get block type */
 	block_type = (tmp >> 4) & 3;
@@ -296,12 +286,12 @@ dissect_ipmi_trace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 	chn_num = tmp & 0xF;
 
 	/* get trace data type */
-	data_type = tvb_get_guint8(tvb, 7);
+	data_type = tvb_get_uint8(tvb, 7);
 
 
 	col_add_fstr(pinfo->cinfo, COL_DEF_SRC, "Channel %d", chn_num);
 	col_add_str(pinfo->cinfo, COL_PROTOCOL,
-			val_to_str(data_type, str_protocol_types,
+			val_to_str(pinfo->pool, data_type, str_protocol_types,
 					"Reserved (0x%02x)"));
 
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -312,17 +302,14 @@ dissect_ipmi_trace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 		col_set_str(pinfo->cinfo, COL_INFO,
 				"Channel State Change Notification");
 	} else if (block_type == HPM2_EMBED_ASCII_MSG) {
-		char str[257];
+		char *str;
 
 		/* get data length */
-		guint str_len = tvb_get_guint8(tvb, 10);
+		unsigned str_len = tvb_get_uint8(tvb, 10);
 
 		if (str_len) {
 			/* copy string */
-			tvb_memcpy(tvb, str, 11, str_len);
-
-			/* pad with nul */
-			str[str_len] = 0;
+			str = (char *) tvb_get_string_enc(pinfo->pool, tvb, 11, str_len, ENC_ASCII|ENC_NA);
 
 			/* print the string right inside the column */
 			col_add_str(pinfo->cinfo, COL_INFO, str);
@@ -407,10 +394,10 @@ dissect_ipmi_trace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 		/* setup IPMI protocol argument */
 		arg.context = IPMI_E_NONE;
 		arg.channel = chn_num;
-		arg.flags	= tvb_get_guint8(tvb, 8);
+		arg.flags	= tvb_get_uint8(tvb, 8);
 
-		if (!dissector_try_uint_new(proto_dissector_table,
-				data_type, next_tvb, pinfo, tree, TRUE, &arg)) {
+		if (!dissector_try_uint_with_data(proto_dissector_table,
+				data_type, next_tvb, pinfo, tree, true, &arg)) {
 			call_data_dissector(next_tvb, pinfo, tree);
 		}
 	} else if (block_type == HPM2_CHN_STATE_NOTIFY
@@ -440,16 +427,13 @@ proto_register_ipmi_trace(void)
 	/* register dissector table for IPMI messaging protocols */
 	proto_dissector_table = register_dissector_table("ipmi.protocol",
 			"IPMI Channel Protocol Type", proto_ipmi_trace, FT_UINT8, BASE_HEX);
+
+	ipmi_trace_handle = register_dissector("ipmi.trace", dissect_ipmi_trace, proto_ipmi_trace);
 }
 
 void
 proto_reg_handoff_ipmi_trace(void)
 {
-	dissector_handle_t ipmi_trace_handle;
-
-	ipmi_trace_handle = create_dissector_handle(dissect_ipmi_trace,
-			proto_ipmi_trace);
-
 	dissector_add_uint("wtap_encap", WTAP_ENCAP_IPMI_TRACE, ipmi_trace_handle);
 
 	dissector_add_uint("ipmi.protocol", IPMI_PROTO_IPMB_1_0,
@@ -461,7 +445,7 @@ proto_reg_handoff_ipmi_trace(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

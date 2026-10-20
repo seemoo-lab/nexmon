@@ -1,19 +1,20 @@
 # Irish translations for hello-java-swing.
-# Copyright (C) 2004 Yoyodyne, Inc.
-# This file is distributed under the same license as the hello-java-swing package.
-# Kevin Patrick Scannell <scannell@SLU.EDU>, 2004.
+# Copyright (C) 2015 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Kevin Patrick Scannell <kscanne@gmail.com>, 2004, 2017.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: hello-java-swing 0.14.1\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"PO-Revision-Date: 2005-02-07 12:09-0500\n"
-"Last-Translator: Kevin Patrick Scannell <scannell@SLU.EDU>\n"
-"Language-Team: Irish <ga@li.org>\n"
+"Project-Id-Version: hello-java-swing 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2017-01-10 12:09-0500\n"
+"Last-Translator: Kevin Patrick Scannell <kscanne@gmail.com>\n"
+"Language-Team: Irish <gaeilge-gnulinux@lists.sourceforge.net>\n"
 "Language: ga\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 
 #: Hello.java:20
 msgid "Hello, world!"
@@ -22,4 +23,4 @@ msgstr "Dia duit, a dhomhain!"
 #: Hello.java:25
 #, java-format
 msgid "This program is running as process number {0}."
-msgstr "T· an cl·r seo · rith mar phrÛiseas {0}."
+msgstr "T√° an cl√°r seo ag rith mar phr√≥iseas {0}."

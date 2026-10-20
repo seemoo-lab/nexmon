@@ -1,24 +1,12 @@
 /* packet-ipoib.c
  * Routines for decoding IP over InfiniBand (IPoIB) packet disassembly
- * See: http://tools.ietf.org/html/rfc4391#section-6
+ * See: https://tools.ietf.org/html/rfc4391#section-6
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,21 +18,23 @@
 void proto_register_ipoib(void);
 void proto_reg_handoff_ipoib(void);
 
-static int proto_ipoib          = -1;
-static int hf_dgid              = -1;
-static int hf_daddr             = -1;
-static int hf_daddr_qpn         = -1;
-static int hf_grh               = -1;
-static int hf_grh_ip_version    = -1;
-static int hf_grh_traffic_class = -1;
-static int hf_grh_flow_label    = -1;
-static int hf_grh_sqpn          = -1;
-static int hf_grh_sgid          = -1;
-static int hf_type              = -1;
-static int hf_reserved          = -1;
+static dissector_handle_t ipoib_handle;
 
-static gint ett_raw = -1;
-static gint ett_hdr = -1;
+static int proto_ipoib;
+static int hf_dgid;
+static int hf_daddr;
+static int hf_daddr_qpn;
+static int hf_grh;
+static int hf_grh_ip_version;
+static int hf_grh_traffic_class;
+static int hf_grh_flow_label;
+static int hf_grh_sqpn;
+static int hf_grh_sgid;
+static int hf_type;
+static int hf_reserved;
+
+static int ett_raw;
+static int ett_hdr;
 
 static dissector_handle_t arp_handle;
 static dissector_handle_t ip_handle;
@@ -57,10 +47,10 @@ dissect_ipoib(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
   proto_tree *fh_subtree;
   proto_item *ti;
   tvbuff_t   *next_tvb;
-  guint16     type;
+  uint16_t    type;
   int         grh_size = 0;
 
-  if (pinfo->phdr->pkt_encap == WTAP_ENCAP_IP_OVER_IB_PCAP)
+  if (pinfo->rec->rec_header.packet_header.pkt_encap == WTAP_ENCAP_IP_OVER_IB_PCAP)
     grh_size = 40;
 
   /* load the top pane info. This should be overwritten by
@@ -74,7 +64,7 @@ dissect_ipoib(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     fh_tree = proto_item_add_subtree(ti, ett_raw);
 
     /* for PCAP data populate subtree with GRH pseudo header data */
-    if (pinfo->phdr->pkt_encap == WTAP_ENCAP_IP_OVER_IB_PCAP) {
+    if (pinfo->rec->rec_header.packet_header.pkt_encap == WTAP_ENCAP_IP_OVER_IB_PCAP) {
 
       /* Zero means GRH is not valid (unicast). Only destination
          address is set. */
@@ -171,7 +161,7 @@ proto_register_ipoib(void)
         NULL, HFILL }}
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_raw,
     &ett_hdr
   };
@@ -179,13 +169,13 @@ proto_register_ipoib(void)
   proto_ipoib = proto_register_protocol("IP over Infiniband", "IPoIB", "ipoib");
   proto_register_field_array(proto_ipoib, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  ipoib_handle = register_dissector("ipoib", dissect_ipoib, proto_ipoib);
 }
 
 void
 proto_reg_handoff_ipoib(void)
 {
-  dissector_handle_t ipoib_handle;
-
   /*
    * Get handles for the ARP, IP and IPv6 dissectors.
    */
@@ -193,13 +183,12 @@ proto_reg_handoff_ipoib(void)
   ip_handle   = find_dissector_add_dependency("ip", proto_ipoib);
   ipv6_handle = find_dissector_add_dependency("ipv6", proto_ipoib);
 
-  ipoib_handle = create_dissector_handle(dissect_ipoib, proto_ipoib);
   dissector_add_uint("wtap_encap", WTAP_ENCAP_IP_OVER_IB_SNOOP, ipoib_handle);
   dissector_add_uint("wtap_encap", WTAP_ENCAP_IP_OVER_IB_PCAP, ipoib_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

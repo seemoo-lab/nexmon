@@ -4,7 +4,7 @@
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Lesser General Public
 * License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
+* version 2.1 of the License, or (at your option) any later version.
 *
 * This library is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,6 +22,7 @@
 
 #include "giomodule-priv.h"
 #include "gdbusconnection.h"
+#include "gdbusprivate.h"
 #include "gapplication.h"
 #include "gnotification-private.h"
 
@@ -50,7 +51,7 @@ g_gtk_notification_backend_is_supported (void)
   GVariant *reply;
 
   /* Find out if the notification server is running. This is a
-   * synchronous call because gio extension points don't support asnyc
+   * synchronous call because gio extension points don't support async
    * backend verification. This is only run once and only contacts the
    * dbus daemon. */
 
@@ -58,7 +59,8 @@ g_gtk_notification_backend_is_supported (void)
   if (session_bus == NULL)
     return FALSE;
 
-  reply = g_dbus_connection_call_sync (session_bus, "org.freedesktop.DBus", "/", "org.freedesktop.DBus",
+  reply = g_dbus_connection_call_sync (session_bus, DBUS_SERVICE_DBUS, DBUS_PATH_DBUS,
+                                       DBUS_INTERFACE_DBUS,
                                        "GetNameOwner", g_variant_new ("(s)", "org.gtk.Notifications"),
                                        G_VARIANT_TYPE ("(s)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
 
@@ -80,7 +82,10 @@ g_gtk_notification_backend_send_notification (GNotificationBackend *backend,
 {
   GVariant *params;
 
-  params = g_variant_new ("(ss@a{sv})", g_application_get_application_id (backend->application),
+  GApplication *application = g_notification_backend_dup_application (backend);
+  g_assert (application != NULL);
+
+  params = g_variant_new ("(ss@a{sv})", g_application_get_application_id (application),
                                         id,
                                         g_notification_serialize (notification));
 
@@ -89,6 +94,8 @@ g_gtk_notification_backend_send_notification (GNotificationBackend *backend,
                           "org.gtk.Notifications", "AddNotification", params,
                           G_VARIANT_TYPE_UNIT,
                           G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
+
+  g_object_unref (application);
 }
 
 static void
@@ -97,12 +104,17 @@ g_gtk_notification_backend_withdraw_notification (GNotificationBackend *backend,
 {
   GVariant *params;
 
-  params = g_variant_new ("(ss)", g_application_get_application_id (backend->application), id);
+  GApplication *application = g_notification_backend_dup_application (backend);
+  g_assert (application != NULL);
+
+  params = g_variant_new ("(ss)", g_application_get_application_id (application), id);
 
   g_dbus_connection_call (backend->dbus_connection, "org.gtk.Notifications",
                           "/org/gtk/Notifications", "org.gtk.Notifications",
                           "RemoveNotification", params, G_VARIANT_TYPE_UNIT,
                           G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
+
+  g_object_unref (application);
 }
 
 static void

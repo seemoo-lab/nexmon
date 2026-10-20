@@ -1,0 +1,6441 @@
+# Friulian translation for glib.
+# Copyright (C) 2017 glib's COPYRIGHT HOLDER
+# This file is distributed under the same license as the glib package.
+# Fabio Tomat <f.t.public@gmail.com>, 2017.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: glib master\n"
+"Report-Msgid-Bugs-To: https://gitlab.gnome.org/GNOME/glib/issues\n"
+"POT-Creation-Date: 2022-10-16 12:25+0000\n"
+"PO-Revision-Date: 2022-10-25 13:42+0200\n"
+"Last-Translator: Fabio Tomat <f.t.public@gmail.com>\n"
+"Language-Team: Friulian <f.t.public@gmail.com>\n"
+"Language: fur\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Editor: HaiPO 1.0 Release\n"
+"X-Generator: Poedit 3.1.1\n"
+
+#: gio/gappinfo.c:335
+msgid "Setting default applications not supported yet"
+msgstr ""
+"No je ancjemò supuartade la pussibilitât di stabilî lis aplicazions "
+"predefinidis"
+
+#: gio/gappinfo.c:368
+msgid "Setting application as last used for type not supported yet"
+msgstr ""
+"No je ancjemò supuartade la pussibilitât di stabilî la aplicazion come chê "
+"ultime doprade pal gjenar"
+
+#: gio/gappinfo.c:810
+#, fuzzy, c-format
+#| msgid "No default applications for “%s”\n"
+msgid "Failed to find default application for content type ‘%s’"
+msgstr "Nissune aplicazion predefinide par “%s”\n"
+
+#: gio/gappinfo.c:870
+#, fuzzy, c-format
+#| msgid "No default applications for “%s”\n"
+msgid "Failed to find default application for URI Scheme ‘%s’"
+msgstr "Nissune aplicazion predefinide par “%s”\n"
+
+#: gio/gapplication.c:502
+msgid "GApplication options"
+msgstr "Opzions GApplication"
+
+#: gio/gapplication.c:502
+msgid "Show GApplication options"
+msgstr "Mostre lis opzions di GApplication"
+
+#: gio/gapplication.c:547
+msgid "Enter GApplication service mode (use from D-Bus service files)"
+msgstr ""
+"Jentre in modalitât servizi GApplication (doprâ dai file di servizi D-Bus)"
+
+#: gio/gapplication.c:559
+msgid "Override the application’s ID"
+msgstr "Passe sore al ID de aplicazion"
+
+#: gio/gapplication.c:571
+msgid "Replace the running instance"
+msgstr "Sostituìs la istance in esecuzion"
+
+#: gio/gapplication-tool.c:47 gio/gapplication-tool.c:48 gio/gio-tool.c:229
+#: gio/gresource-tool.c:496 gio/gsettings-tool.c:586
+msgid "Print help"
+msgstr "Stampe jutori"
+
+#: gio/gapplication-tool.c:49 gio/gresource-tool.c:497 gio/gresource-tool.c:565
+msgid "[COMMAND]"
+msgstr "[COMANT]"
+
+#: gio/gapplication-tool.c:51 gio/gio-tool.c:230
+msgid "Print version"
+msgstr "Stampe version"
+
+#: gio/gapplication-tool.c:52 gio/gsettings-tool.c:592
+msgid "Print version information and exit"
+msgstr "Stampe informazions su la version e jes"
+
+#: gio/gapplication-tool.c:55
+msgid "List applications"
+msgstr "Liste aplicazions"
+
+#: gio/gapplication-tool.c:56
+msgid "List the installed D-Bus activatable applications (by .desktop files)"
+msgstr ""
+"Liste lis aplicazion instaladis che si puedin ativâ di D-Bus (par file ."
+"desktop)"
+
+#: gio/gapplication-tool.c:59
+msgid "Launch an application"
+msgstr "Invie une aplicazion"
+
+#: gio/gapplication-tool.c:60
+msgid "Launch the application (with optional files to open)"
+msgstr "Invie la aplicazion (cun file opzionâi di vierzi)"
+
+#: gio/gapplication-tool.c:61
+msgid "APPID [FILE…]"
+msgstr "APPID [FILE…]"
+
+#: gio/gapplication-tool.c:63
+msgid "Activate an action"
+msgstr "Ative une azion"
+
+#: gio/gapplication-tool.c:64
+msgid "Invoke an action on the application"
+msgstr "Invoche une azion su la aplicazion"
+
+#: gio/gapplication-tool.c:65
+msgid "APPID ACTION [PARAMETER]"
+msgstr "APPID AZION [PARAMETRI]"
+
+#: gio/gapplication-tool.c:67
+msgid "List available actions"
+msgstr "Liste azions disponibilis"
+
+#: gio/gapplication-tool.c:68
+msgid "List static actions for an application (from .desktop file)"
+msgstr "Liste lis azions statichis par une aplicazion (dal file .desktop)"
+
+#: gio/gapplication-tool.c:69 gio/gapplication-tool.c:75
+msgid "APPID"
+msgstr "APPID"
+
+#: gio/gapplication-tool.c:74 gio/gapplication-tool.c:137 gio/gdbus-tool.c:108
+#: gio/gio-tool.c:226
+msgid "COMMAND"
+msgstr "COMANT"
+
+#: gio/gapplication-tool.c:74
+msgid "The command to print detailed help for"
+msgstr "Il comant che di chel stampâ il jutori detaiât"
+
+#: gio/gapplication-tool.c:75
+msgid "Application identifier in D-Bus format (eg: org.example.viewer)"
+msgstr ""
+"Identificadôr aplicazion tal formât D-Bus (p.e. org.esempli.visualizadôr)"
+
+#: gio/gapplication-tool.c:76 gio/glib-compile-resources.c:822
+#: gio/glib-compile-resources.c:828 gio/glib-compile-resources.c:857
+#: gio/gresource-tool.c:503 gio/gresource-tool.c:569
+msgid "FILE"
+msgstr "FILE"
+
+#: gio/gapplication-tool.c:76
+msgid "Optional relative or absolute filenames, or URIs to open"
+msgstr "Nons di file assolûts o relatîfs opzionâi opûr URI di vierzi"
+
+#: gio/gapplication-tool.c:77
+msgid "ACTION"
+msgstr "AZION"
+
+#: gio/gapplication-tool.c:77
+msgid "The action name to invoke"
+msgstr "La azion di invocâ"
+
+#: gio/gapplication-tool.c:78
+msgid "PARAMETER"
+msgstr "PARAMETRI"
+
+#: gio/gapplication-tool.c:78
+msgid "Optional parameter to the action invocation, in GVariant format"
+msgstr "Parametri opzionâl pe invocazion de azion, in formât GVariant"
+
+#: gio/gapplication-tool.c:100 gio/gresource-tool.c:534
+#: gio/gsettings-tool.c:678
+#, c-format
+msgid ""
+"Unknown command %s\n"
+"\n"
+msgstr ""
+"Comant no cognossût %s\n"
+"\n"
+
+#: gio/gapplication-tool.c:105
+msgid "Usage:\n"
+msgstr "Ûs:\n"
+
+#: gio/gapplication-tool.c:118 gio/gresource-tool.c:559
+#: gio/gsettings-tool.c:713
+msgid "Arguments:\n"
+msgstr "Argoments:\n"
+
+#: gio/gapplication-tool.c:137 gio/gio-tool.c:226
+msgid "[ARGS…]"
+msgstr "[ARGS…]"
+
+#: gio/gapplication-tool.c:138
+#, c-format
+msgid "Commands:\n"
+msgstr "Comants:\n"
+
+#. Translators: do not translate 'help', but please translate 'COMMAND'.
+#: gio/gapplication-tool.c:150
+#, c-format
+msgid ""
+"Use “%s help COMMAND” to get detailed help.\n"
+"\n"
+msgstr ""
+"Dopre “%s help COMANT” par vê un jutori detaiât.\n"
+"\n"
+
+#: gio/gapplication-tool.c:169
+#, c-format
+msgid ""
+"%s command requires an application id to directly follow\n"
+"\n"
+msgstr ""
+"Il comant %s al domande un id di aplicazion di seguî in maniere direte\n"
+"\n"
+
+#: gio/gapplication-tool.c:175
+#, c-format
+msgid "invalid application id: “%s”\n"
+msgstr "id aplicazion no valit: “%s”\n"
+
+#. Translators: %s is replaced with a command name like 'list-actions'
+#: gio/gapplication-tool.c:186
+#, c-format
+msgid ""
+"“%s” takes no arguments\n"
+"\n"
+msgstr ""
+"“%s” no si spiete nissun argoment\n"
+"\n"
+
+#: gio/gapplication-tool.c:270
+#, c-format
+msgid "unable to connect to D-Bus: %s\n"
+msgstr "impussibil conetisi al D-Bus: %s\n"
+
+#: gio/gapplication-tool.c:290
+#, c-format
+msgid "error sending %s message to application: %s\n"
+msgstr "erôr tal inviâ il messaç %s ae aplicazion: %s\n"
+
+#: gio/gapplication-tool.c:321
+msgid "action name must be given after application id\n"
+msgstr "si scugne furnî il non de azion dopo il id de aplicazion\n"
+
+#: gio/gapplication-tool.c:329
+#, c-format
+msgid ""
+"invalid action name: “%s”\n"
+"action names must consist of only alphanumerics, “-” and “.”\n"
+msgstr ""
+"non azion no valit: “%s”\n"
+"i nons des azions a scugnin consisti nome di alfanumerics, “-” e “.”\n"
+
+#: gio/gapplication-tool.c:348
+#, c-format
+msgid "error parsing action parameter: %s\n"
+msgstr "erôr tal analizâ il parametri de azion: %s\n"
+
+#: gio/gapplication-tool.c:360
+msgid "actions accept a maximum of one parameter\n"
+msgstr "lis azions a acetin un massim di un parametri\n"
+
+#: gio/gapplication-tool.c:415
+msgid "list-actions command takes only the application id"
+msgstr "il comant list-actions al vûl dome il id de aplicazion"
+
+#: gio/gapplication-tool.c:425
+#, c-format
+msgid "unable to find desktop file for application %s\n"
+msgstr "impussibil cjatâ il file scritori pe aplicazion %s\n"
+
+#: gio/gapplication-tool.c:470
+#, c-format
+msgid ""
+"unrecognised command: %s\n"
+"\n"
+msgstr ""
+"comant no ricognossût: %s\n"
+"\n"
+
+#: gio/gbufferedinputstream.c:422 gio/gbufferedinputstream.c:500
+#: gio/ginputstream.c:181 gio/ginputstream.c:381 gio/ginputstream.c:650
+#: gio/ginputstream.c:1052 gio/goutputstream.c:225 gio/goutputstream.c:1051
+#: gio/gpollableinputstream.c:207 gio/gpollableoutputstream.c:279
+#, c-format
+msgid "Too large count value passed to %s"
+msgstr "Valôr di conte passât a %s masse grant"
+
+#: gio/gbufferedinputstream.c:893 gio/gbufferedoutputstream.c:577
+#: gio/gdataoutputstream.c:564
+msgid "Seek not supported on base stream"
+msgstr "Ricercje no supuartade sul flus di base"
+
+#: gio/gbufferedinputstream.c:940
+msgid "Cannot truncate GBufferedInputStream"
+msgstr "Impussibil cjonçâ GBufferedInputStream"
+
+#: gio/gbufferedinputstream.c:985 gio/ginputstream.c:1241 gio/giostream.c:302
+#: gio/goutputstream.c:2200
+msgid "Stream is already closed"
+msgstr "Il flus al è za sierât"
+
+#: gio/gbufferedoutputstream.c:614 gio/gdataoutputstream.c:594
+msgid "Truncate not supported on base stream"
+msgstr "Cjonçâ no supuartât sul flus di base"
+
+#: gio/gcancellable.c:319 gio/gdbusconnection.c:1859 gio/gdbusprivate.c:1420
+#: gio/gsimpleasyncresult.c:873 gio/gsimpleasyncresult.c:899
+#, c-format
+msgid "Operation was cancelled"
+msgstr "La operazion e jere anulade"
+
+#: gio/gcharsetconverter.c:262
+msgid "Invalid object, not initialized"
+msgstr "Ogjet no valit, no inizializât"
+
+#: gio/gcharsetconverter.c:283 gio/gcharsetconverter.c:311
+msgid "Incomplete multibyte sequence in input"
+msgstr "Secuence multibyte incomplete tal input"
+
+#: gio/gcharsetconverter.c:317 gio/gcharsetconverter.c:326
+msgid "Not enough space in destination"
+msgstr "No vonde spazi te destinazion"
+
+#: gio/gcharsetconverter.c:344 gio/gdatainputstream.c:850
+#: gio/gdatainputstream.c:1268 glib/gconvert.c:451 glib/gconvert.c:883
+#: glib/giochannel.c:1576 glib/giochannel.c:1618 glib/giochannel.c:2473
+#: glib/gutf8.c:892 glib/gutf8.c:1346
+msgid "Invalid byte sequence in conversion input"
+msgstr "Secuence byte no valide tal input di conversion"
+
+#: gio/gcharsetconverter.c:349 glib/gconvert.c:459 glib/gconvert.c:797
+#: glib/giochannel.c:1583 glib/giochannel.c:2485
+#, c-format
+msgid "Error during conversion: %s"
+msgstr "Erôr dilunc la conversion: %s"
+
+#: gio/gcharsetconverter.c:447 gio/gsocket.c:1151
+msgid "Cancellable initialization not supported"
+msgstr "Inizializazion anulabile no supuartade"
+
+#: gio/gcharsetconverter.c:458 glib/gconvert.c:324 glib/giochannel.c:1404
+#, c-format
+msgid "Conversion from character set “%s” to “%s” is not supported"
+msgstr "Conversion de cumbinazion di caratars “%s” a “%s” no je supuartade"
+
+#: gio/gcharsetconverter.c:462 glib/gconvert.c:328
+#, c-format
+msgid "Could not open converter from “%s” to “%s”"
+msgstr "Impussibil vierzi il convertidôr di “%s” a “%s”"
+
+#: gio/gcontenttype.c:472
+#, c-format
+msgid "%s type"
+msgstr "gjenar %s"
+
+#: gio/gcontenttype-win32.c:198
+msgid "Unknown type"
+msgstr "Gjenar no cognossût"
+
+#: gio/gcontenttype-win32.c:200
+#, c-format
+msgid "%s filetype"
+msgstr "gjenar di file %s"
+
+#: gio/gcredentials.c:337
+msgid "GCredentials contains invalid data"
+msgstr "GCredentials al conten dâts no valits"
+
+#: gio/gcredentials.c:397 gio/gcredentials.c:688
+msgid "GCredentials is not implemented on this OS"
+msgstr "GCredentials nol è implementât in chest SO"
+
+#: gio/gcredentials.c:552 gio/gcredentials.c:570
+msgid "There is no GCredentials support for your platform"
+msgstr "Nol esist il supuart par GCredentials pe tô plateforme"
+
+#: gio/gcredentials.c:628
+msgid "GCredentials does not contain a process ID on this OS"
+msgstr "GCredentials nol conten un ID  di procès su chest SO"
+
+#: gio/gcredentials.c:682
+msgid "Credentials spoofing is not possible on this OS"
+msgstr "Imbroi des credenziâls (spoofing) nol è pussibil su chest SO"
+
+#: gio/gdatainputstream.c:306
+msgid "Unexpected early end-of-stream"
+msgstr "Fin-dal-flus premadûr inspietât"
+
+#: gio/gdbusaddress.c:164 gio/gdbusaddress.c:238 gio/gdbusaddress.c:327
+#, c-format
+msgid "Unsupported key “%s” in address entry “%s”"
+msgstr "Clâf “%s” no supuartade inte vôs di direzion “%s”"
+
+#: gio/gdbusaddress.c:177
+#, c-format
+msgid "Meaningless key/value pair combination in address entry “%s”"
+msgstr ""
+"Cumbinazion de cubie clâf/valôr cence significât inte vôs di direzion “%s”"
+
+#: gio/gdbusaddress.c:186
+#, c-format
+msgid ""
+"Address “%s” is invalid (need exactly one of path, dir, tmpdir, or abstract "
+"keys)"
+msgstr ""
+"Direzion “%s” no valide (e covente juste un tra une clâf astrate, tmpdir, "
+"dir o percors)"
+
+#: gio/gdbusaddress.c:253 gio/gdbusaddress.c:264 gio/gdbusaddress.c:279
+#: gio/gdbusaddress.c:342 gio/gdbusaddress.c:353
+#, c-format
+msgid "Error in address “%s” — the “%s” attribute is malformed"
+msgstr "Erôr te direzion “%s” — l'atribût “%s” al è malformât"
+
+#: gio/gdbusaddress.c:423 gio/gdbusaddress.c:682
+#, c-format
+msgid "Unknown or unsupported transport “%s” for address “%s”"
+msgstr "Traspuart “%s” no cognossût o no supuartât pe direzion “%s”"
+
+#: gio/gdbusaddress.c:467
+#, c-format
+msgid "Address element “%s” does not contain a colon (:)"
+msgstr "L'element direzion “%s” nol conten un doi ponts (:)"
+
+#: gio/gdbusaddress.c:476
+#, c-format
+msgid "Transport name in address element “%s” must not be empty"
+msgstr ""
+"Il non dal traspuart intal element de direzion “%s” nol à di jessi vueit"
+
+#: gio/gdbusaddress.c:497
+#, c-format
+msgid ""
+"Key/Value pair %d, “%s”, in address element “%s” does not contain an equal "
+"sign"
+msgstr ""
+"Cubie clâf/valôr %d, “%s”, intal element direzion “%s” no conten un segn "
+"uguâl"
+
+#: gio/gdbusaddress.c:508
+#, c-format
+msgid ""
+"Key/Value pair %d, “%s”, in address element “%s” must not have an empty key"
+msgstr ""
+"Cubie clâf/valôr %d, “%s”, intal element direzion “%s” nol à di contignî une "
+"clâf vueide"
+
+#: gio/gdbusaddress.c:522
+#, c-format
+msgid ""
+"Error unescaping key or value in Key/Value pair %d, “%s”, in address element "
+"“%s”"
+msgstr ""
+
+#: gio/gdbusaddress.c:590
+#, c-format
+msgid ""
+"Error in address “%s” — the unix transport requires exactly one of the keys "
+"“path” or “abstract” to be set"
+msgstr ""
+"Erôr inte direzion “%s” — il traspuart unix al domande di stabilî juste une "
+"des clâfs tra “path” o “abstract”"
+
+#: gio/gdbusaddress.c:625
+#, c-format
+msgid "Error in address “%s” — the host attribute is missing or malformed"
+msgstr "Erôr inte direzion “%s” — l'atribût host al mancje o al è malformât"
+
+#: gio/gdbusaddress.c:639
+#, c-format
+msgid "Error in address “%s” — the port attribute is missing or malformed"
+msgstr "Erôr inte direzion “%s” — l'atribût puarte al mancje o al è malformât"
+
+#: gio/gdbusaddress.c:653
+#, c-format
+msgid "Error in address “%s” — the noncefile attribute is missing or malformed"
+msgstr ""
+"Erôr te direzion “%s” — al mancje, o al è malformât, l'atribût dal file dal "
+"numar doprât une sole volte"
+
+#: gio/gdbusaddress.c:674
+msgid "Error auto-launching: "
+msgstr "Erôr tal inviâ in automatic: "
+
+#: gio/gdbusaddress.c:727
+#, c-format
+msgid "Error opening nonce file “%s”: %s"
+msgstr "Erôr tal vierzi il file dal numar doprât une sole volte “%s”: %s"
+
+#: gio/gdbusaddress.c:746
+#, c-format
+msgid "Error reading from nonce file “%s”: %s"
+msgstr "Erôr tal lei dal file dal numar doprât une sole volte “%s”: %s"
+
+#: gio/gdbusaddress.c:755
+#, c-format
+msgid "Error reading from nonce file “%s”, expected 16 bytes, got %d"
+msgstr ""
+"Erôr tal lei dal file dal numar doprât une sole volte “%s”, si spietavin 16 "
+"byte, si à vût %d"
+
+#: gio/gdbusaddress.c:773
+#, c-format
+msgid "Error writing contents of nonce file “%s” to stream:"
+msgstr ""
+"Erôr tal scrivi sul flus i contignûts dal file dal numar doprât une sole "
+"volte “%s”:"
+
+#: gio/gdbusaddress.c:988
+msgid "The given address is empty"
+msgstr "La direzion furnide e je vueide"
+
+#: gio/gdbusaddress.c:1101
+#, c-format
+msgid "Cannot spawn a message bus when AT_SECURE is set"
+msgstr ""
+
+#: gio/gdbusaddress.c:1108
+msgid "Cannot spawn a message bus without a machine-id: "
+msgstr ""
+
+#: gio/gdbusaddress.c:1115
+#, c-format
+msgid "Cannot autolaunch D-Bus without X11 $DISPLAY"
+msgstr "Impussibil inviâ in automatic D-Bus cence $DISPLAY X11"
+
+#: gio/gdbusaddress.c:1157
+#, c-format
+msgid "Error spawning command line “%s”: "
+msgstr ""
+
+#: gio/gdbusaddress.c:1226
+#, c-format
+msgid "Cannot determine session bus address (not implemented for this OS)"
+msgstr ""
+"Impussibil determinâ la direzion dal bus di session (no implementade par "
+"chest SO)"
+
+#: gio/gdbusaddress.c:1375 gio/gdbusconnection.c:7321
+#, c-format
+msgid ""
+"Cannot determine bus address from DBUS_STARTER_BUS_TYPE environment variable "
+"— unknown value “%s”"
+msgstr ""
+"Impussibil determinâ la direzion dal bus de variabile di ambient "
+"DBUS_STARTER_BUS_TYPE — valôr “%s” no cognossût"
+
+#: gio/gdbusaddress.c:1384 gio/gdbusconnection.c:7330
+msgid ""
+"Cannot determine bus address because the DBUS_STARTER_BUS_TYPE environment "
+"variable is not set"
+msgstr ""
+"Impussibil determinâ la direzion dal bus parcè che la variabile di ambient "
+"DBUS_STARTER_BUS_TYPE no je stabilide"
+
+#: gio/gdbusaddress.c:1394
+#, c-format
+msgid "Unknown bus type %d"
+msgstr "Gjenar di bus %d no cognossût"
+
+#: gio/gdbusauth.c:294
+msgid "Unexpected lack of content trying to read a line"
+msgstr "Mancjance di contignût inspietade cirint di lei une rie"
+
+#: gio/gdbusauth.c:338
+msgid "Unexpected lack of content trying to (safely) read a line"
+msgstr "Mancjance di contignût inspietade cirint di lei (in sigurece) une rie"
+
+#: gio/gdbusauth.c:482
+#, c-format
+msgid ""
+"Exhausted all available authentication mechanisms (tried: %s) (available: %s)"
+msgstr ""
+"Esaurîts ducj i mecanisims di autenticazion disponibii (provâts: %s) "
+"(disponibii: %s)"
+
+#: gio/gdbusauth.c:1178
+msgid "User IDs must be the same for peer and server"
+msgstr ""
+
+#: gio/gdbusauth.c:1190
+msgid "Cancelled via GDBusAuthObserver::authorize-authenticated-peer"
+msgstr "Anulât vie GDBusAuthObserver::authorize-authenticated-peer"
+
+#: gio/gdbusauthmechanismsha1.c:303
+#, c-format
+msgid "Error when getting information for directory “%s”: %s"
+msgstr "Erôr tal vê informazions pe cartele “%s”: %s"
+
+#: gio/gdbusauthmechanismsha1.c:318
+#, c-format
+msgid ""
+"Permissions on directory “%s” are malformed. Expected mode 0700, got 0%o"
+msgstr ""
+"I permès su pe cartele “%s” no son valits. Si spietave modalitât 0700, vût "
+"0%o"
+
+#: gio/gdbusauthmechanismsha1.c:351 gio/gdbusauthmechanismsha1.c:362
+#, c-format
+msgid "Error creating directory “%s”: %s"
+msgstr "Erôr tal creâ la cartele “%s”: %s"
+
+#: gio/gdbusauthmechanismsha1.c:364 gio/gfile.c:1095 gio/gfile.c:1333
+#: gio/gfile.c:1471 gio/gfile.c:1709 gio/gfile.c:1764 gio/gfile.c:1822
+#: gio/gfile.c:1906 gio/gfile.c:1963 gio/gfile.c:2027 gio/gfile.c:2082
+#: gio/gfile.c:3787 gio/gfile.c:3927 gio/gfile.c:4339 gio/gfile.c:4809
+#: gio/gfile.c:5220 gio/gfile.c:5305 gio/gfile.c:5395 gio/gfile.c:5492
+#: gio/gfile.c:5579 gio/gfile.c:5680 gio/gfile.c:8809 gio/gfile.c:8899
+#: gio/gfile.c:8983 gio/win32/gwinhttpfile.c:453
+msgid "Operation not supported"
+msgstr "Operazion no supuartade"
+
+#: gio/gdbusauthmechanismsha1.c:407
+#, c-format
+msgid "Error opening keyring “%s” for reading: "
+msgstr "Erôr tal lei il puarteclâfs “%s” pe leture: "
+
+#: gio/gdbusauthmechanismsha1.c:430 gio/gdbusauthmechanismsha1.c:771
+#, c-format
+msgid "Line %d of the keyring at “%s” with content “%s” is malformed"
+msgstr "La rie %d dal puarteclâfs su “%s” cun contignût “%s” e je malformade"
+
+#: gio/gdbusauthmechanismsha1.c:444 gio/gdbusauthmechanismsha1.c:785
+#, c-format
+msgid ""
+"First token of line %d of the keyring at “%s” with content “%s” is malformed"
+msgstr ""
+"Il prin token de rie %d dal puarteclâfs su “%s” cul contignût “%s” al è "
+"malformât"
+
+#: gio/gdbusauthmechanismsha1.c:458 gio/gdbusauthmechanismsha1.c:799
+#, c-format
+msgid ""
+"Second token of line %d of the keyring at “%s” with content “%s” is malformed"
+msgstr ""
+"Il secont token de rie %d dal puarteclâfs su “%s” cul contignût “%s” al è "
+"malformât"
+
+#: gio/gdbusauthmechanismsha1.c:482
+#, c-format
+msgid "Didn’t find cookie with id %d in the keyring at “%s”"
+msgstr "No si à cjatât il cookie cul id %d intal puarteclâfs su “%s”"
+
+#: gio/gdbusauthmechanismsha1.c:539
+#, c-format
+msgid "Error creating lock file “%s”: %s"
+msgstr "Erôr tal creâ il file di bloc “%s”: %s"
+
+#: gio/gdbusauthmechanismsha1.c:612
+#, c-format
+msgid "Error deleting stale lock file “%s”: %s"
+msgstr "Erôr tal eliminâ il file di bloc passât “%s”: %s"
+
+#: gio/gdbusauthmechanismsha1.c:651
+#, c-format
+msgid "Error closing (unlinked) lock file “%s”: %s"
+msgstr "Erôr tal sierâ il file di bloc (cence colegament) “%s”: %s"
+
+#: gio/gdbusauthmechanismsha1.c:662
+#, c-format
+msgid "Error unlinking lock file “%s”: %s"
+msgstr "Erôr tal discolegâ il file di bloc “%s”: %s"
+
+#: gio/gdbusauthmechanismsha1.c:738
+#, c-format
+msgid "Error opening keyring “%s” for writing: "
+msgstr "Erôr tal vierzi il puarteclâfs “%s” pe scriture: "
+
+#: gio/gdbusauthmechanismsha1.c:932
+#, c-format
+msgid "(Additionally, releasing the lock for “%s” also failed: %s) "
+msgstr "(In plui no si è rivâts ancje a molâ il bloc par “%s”: %s) "
+
+#: gio/gdbusconnection.c:590 gio/gdbusconnection.c:2404
+msgid "The connection is closed"
+msgstr "La conession e je sierade"
+
+#: gio/gdbusconnection.c:1889
+msgid "Timeout was reached"
+msgstr "Si à passât il timp massim"
+
+#: gio/gdbusconnection.c:2527
+msgid ""
+"Unsupported flags encountered when constructing a client-side connection"
+msgstr ""
+"Si à intivât opzions no supuartadis cuant che si costruive une conession de "
+"bande dal client"
+
+#: gio/gdbusconnection.c:4256 gio/gdbusconnection.c:4610
+#, c-format
+msgid ""
+"No such interface “org.freedesktop.DBus.Properties” on object at path %s"
+msgstr ""
+"Interface “org.freedesktop.DBus.Properties” inesistente sul ogjet tal "
+"percors %s"
+
+#: gio/gdbusconnection.c:4401
+#, c-format
+msgid "No such property “%s”"
+msgstr "Proprietât “%s” inesistente"
+
+#: gio/gdbusconnection.c:4413
+#, c-format
+msgid "Property “%s” is not readable"
+msgstr "No si pues lei la proprietât “%s”"
+
+#: gio/gdbusconnection.c:4424
+#, c-format
+msgid "Property “%s” is not writable"
+msgstr "No si pues scrivi la proprietât “%s”"
+
+#: gio/gdbusconnection.c:4444
+#, c-format
+msgid "Error setting property “%s”: Expected type “%s” but got “%s”"
+msgstr ""
+"Erôr tal configurâ la proprietât “%s”: si spietave il gjenar “%s” ma si à "
+"vût “%s”"
+
+#: gio/gdbusconnection.c:4549 gio/gdbusconnection.c:4764
+#: gio/gdbusconnection.c:6747
+#, c-format
+msgid "No such interface “%s”"
+msgstr "Interface “%s” inesistente"
+
+#: gio/gdbusconnection.c:4986 gio/gdbusconnection.c:7261
+#, c-format
+msgid "No such interface “%s” on object at path %s"
+msgstr "Interface “%s” inesistente sul ogjet tal percors %s"
+
+#: gio/gdbusconnection.c:5087
+#, c-format
+msgid "No such method “%s”"
+msgstr "Metodi “%s” inesistent"
+
+#: gio/gdbusconnection.c:5118
+#, c-format
+msgid "Type of message, “%s”, does not match expected type “%s”"
+msgstr "Il gjenar di messaç “%s”, nol corispuint al gjenar spietât “%s”"
+
+#: gio/gdbusconnection.c:5321
+#, c-format
+msgid "An object is already exported for the interface %s at %s"
+msgstr "Un ogjet al è za espuartât pe interface %s su %s"
+
+#: gio/gdbusconnection.c:5548
+#, c-format
+msgid "Unable to retrieve property %s.%s"
+msgstr "Impussibil recuperâ la proprietât %s.%s"
+
+#: gio/gdbusconnection.c:5604
+#, c-format
+msgid "Unable to set property %s.%s"
+msgstr "Impussibil stabilî la proprietât %s.%s"
+
+#: gio/gdbusconnection.c:5783
+#, c-format
+msgid "Method “%s” returned type “%s”, but expected “%s”"
+msgstr "Il metodi “%s” al à tornât il gjenar “%s”, ma si spietave “%s”"
+
+#: gio/gdbusconnection.c:6859
+#, c-format
+msgid "Method “%s” on interface “%s” with signature “%s” does not exist"
+msgstr "Il metodi “%s” su pe interface “%s” cun firme “%s” nol esist"
+
+#: gio/gdbusconnection.c:6980
+#, c-format
+msgid "A subtree is already exported for %s"
+msgstr "Un sot-arbul al è za espuartât par %s"
+
+#: gio/gdbusconnection.c:7269
+#, c-format
+msgid "Object does not exist at path “%s”"
+msgstr "L'ogjet nol esist tal percors “%s”"
+
+#: gio/gdbusmessage.c:1303
+msgid "type is INVALID"
+msgstr "il gjenar al è NO VALIT"
+
+#: gio/gdbusmessage.c:1314
+msgid "METHOD_CALL message: PATH or MEMBER header field is missing"
+msgstr "Messaç METHOD_CALL: il cjamp di intestazion PATH o MEMBER al mancje"
+
+#: gio/gdbusmessage.c:1325
+msgid "METHOD_RETURN message: REPLY_SERIAL header field is missing"
+msgstr "Messaç METHOD_RETURN: il cjamp di intestazion REPLY_SERIAL al mancje"
+
+#: gio/gdbusmessage.c:1337
+msgid "ERROR message: REPLY_SERIAL or ERROR_NAME header field is missing"
+msgstr ""
+"Messaç di ERÔR: il cjamp di intestazion REPLY_SERIAL o ERROR_NAME al mancje"
+
+#: gio/gdbusmessage.c:1350
+msgid "SIGNAL message: PATH, INTERFACE or MEMBER header field is missing"
+msgstr ""
+"Messaç SIGNAL: il cjamp di intestazion PATH, INTERFACE o MEMBER al mancje"
+
+#: gio/gdbusmessage.c:1358
+msgid ""
+"SIGNAL message: The PATH header field is using the reserved value /org/"
+"freedesktop/DBus/Local"
+msgstr ""
+"Messaç SIGNAL: il cjamp di intestazion PATH al sta doprant il valôr "
+"riservât /org/freedesktop/DBus/Local"
+
+#: gio/gdbusmessage.c:1366
+msgid ""
+"SIGNAL message: The INTERFACE header field is using the reserved value org."
+"freedesktop.DBus.Local"
+msgstr ""
+"Messaç SIGNAL: il cjamp di intestazion INTERFACE al sta doprant il valôr "
+"riservât org.freedesktop.DBus.Local"
+
+#: gio/gdbusmessage.c:1414 gio/gdbusmessage.c:1474
+#, c-format
+msgid "Wanted to read %lu byte but only got %lu"
+msgid_plural "Wanted to read %lu bytes but only got %lu"
+msgstr[0] "Si voleve lei %lu byte, ma si à vût dome %lu"
+msgstr[1] "Si voleve lei %lu byte, ma si à vût dome %lu"
+
+#: gio/gdbusmessage.c:1428
+#, c-format
+msgid "Expected NUL byte after the string “%s” but found byte %d"
+msgstr ""
+"Si spietave un byte NUL dopo de stringhe “%s” ma si à cjatât il byte %d"
+
+#: gio/gdbusmessage.c:1447
+#, c-format
+msgid ""
+"Expected valid UTF-8 string but found invalid bytes at byte offset %d "
+"(length of string is %d). The valid UTF-8 string up until that point was “%s”"
+msgstr ""
+"Si spietave une stringhe UTF-8 valide ma si à cjatât byte no valits al byte "
+"offset %d (la lungjece de stringhe e je %d). La stringhe UTF-8 valide fin "
+"chel pont e jere “%s”"
+
+#: gio/gdbusmessage.c:1511 gio/gdbusmessage.c:1787 gio/gdbusmessage.c:1998
+msgid "Value nested too deeply"
+msgstr "Valôr nidificât masse in profonditât"
+
+#: gio/gdbusmessage.c:1679
+#, c-format
+msgid "Parsed value “%s” is not a valid D-Bus object path"
+msgstr "Il valôr “%s” analizât nol è un percors di ogjet D-Bus valit"
+
+#: gio/gdbusmessage.c:1703
+#, c-format
+msgid "Parsed value “%s” is not a valid D-Bus signature"
+msgstr "Il valôr “%s” analizât no je une firme D-Bus valide"
+
+#: gio/gdbusmessage.c:1754
+#, c-format
+msgid ""
+"Encountered array of length %u byte. Maximum length is 2<<26 bytes (64 MiB)."
+msgid_plural ""
+"Encountered array of length %u bytes. Maximum length is 2<<26 bytes (64 MiB)."
+msgstr[0] ""
+"Si à intivât un array lunc %u byte. La lungjece massime e je 2<<26 byte (64 "
+"MiB)."
+msgstr[1] ""
+"Si à intivât un array lunc %u byte. La lungjece massime e je 2<<26 byte (64 "
+"MiB)."
+
+#: gio/gdbusmessage.c:1774
+#, c-format
+msgid ""
+"Encountered array of type “a%c”, expected to have a length a multiple of %u "
+"bytes, but found to be %u bytes in length"
+msgstr ""
+"Si à intivât un array di gjenar “a%c”, si veve di vê une lungjece multiple "
+"di %u byte, ma si à cjatât che e jere di %u byte"
+
+#: gio/gdbusmessage.c:1928 gio/gdbusmessage.c:2647
+msgid "Empty structures (tuples) are not allowed in D-Bus"
+msgstr "No son permetudis struturis vueidis (tuplis) in D-Bus"
+
+#: gio/gdbusmessage.c:1982
+#, c-format
+msgid "Parsed value “%s” for variant is not a valid D-Bus signature"
+msgstr "Il valôr “%s” analizât pal variant no je une firme D-Bus valide"
+
+#: gio/gdbusmessage.c:2023
+#, c-format
+msgid ""
+"Error deserializing GVariant with type string “%s” from the D-Bus wire format"
+msgstr ""
+"Erôr tal deserializâ GVariant cu la stringhe di gjenar “%s” dal formât fîl "
+"di D-Bus"
+
+#: gio/gdbusmessage.c:2208
+#, c-format
+msgid ""
+"Invalid endianness value. Expected 0x6c (“l”) or 0x42 (“B”) but found value "
+"0x%02x"
+msgstr ""
+"Valôr di endian no valit. Si spietave 0x6c (“l”) o 0x42 (“B”) ma si à cjatât "
+"il valôr 0x%02x"
+
+#: gio/gdbusmessage.c:2227
+#, c-format
+msgid "Invalid major protocol version. Expected 1 but found %d"
+msgstr "Version maiôr dal protocol no valide. Si spietave 1 ma si à cjatât %d"
+
+#: gio/gdbusmessage.c:2285 gio/gdbusmessage.c:2883
+msgid "Signature header found but is not of type signature"
+msgstr "Cjatade intestazion di firme ma no je di gjenar firme"
+
+#: gio/gdbusmessage.c:2297
+#, c-format
+msgid "Signature header with signature “%s” found but message body is empty"
+msgstr ""
+"Cjatade intestazion di firme cun firme “%s” ma il cuarp dal messaç al è vueit"
+
+#: gio/gdbusmessage.c:2312
+#, c-format
+msgid "Parsed value “%s” is not a valid D-Bus signature (for body)"
+msgstr "Il valôr “%s” analizât no je une firme D-Bus valide (pal cuarp)"
+
+#: gio/gdbusmessage.c:2344
+#, c-format
+msgid "No signature header in message but the message body is %u byte"
+msgid_plural "No signature header in message but the message body is %u bytes"
+msgstr[0] ""
+"Nissune intestazion di firme tal messaç, ma il cuarp dal messaç al è di %u "
+"byte"
+msgstr[1] ""
+"Nissune intestazion di firme tal messaç, ma il cuarp dal messaç al è di %u "
+"byte"
+
+#: gio/gdbusmessage.c:2354
+msgid "Cannot deserialize message: "
+msgstr "Impussibil deserializâ il messaç: "
+
+#: gio/gdbusmessage.c:2700
+#, c-format
+msgid ""
+"Error serializing GVariant with type string “%s” to the D-Bus wire format"
+msgstr ""
+"Erôr tal serializâ GVariant cu la stringhe di gjenar “%s” al formât fîl di D-"
+"Bus"
+
+#: gio/gdbusmessage.c:2837
+#, c-format
+msgid ""
+"Number of file descriptors in message (%d) differs from header field (%d)"
+msgstr ""
+"Il numar dai descritôrs di file tal messaç (%d) al è diviers dal cjamp di "
+"intestazion (%d)"
+
+#: gio/gdbusmessage.c:2845
+msgid "Cannot serialize message: "
+msgstr "Impussibil serializâ il messaç: "
+
+#: gio/gdbusmessage.c:2898
+#, c-format
+msgid "Message body has signature “%s” but there is no signature header"
+msgstr "Il cuarp dal messaç al à firme “%s” ma no je la intestazion de firme"
+
+#: gio/gdbusmessage.c:2908
+#, c-format
+msgid ""
+"Message body has type signature “%s” but signature in the header field is "
+"“%s”"
+msgstr ""
+"Il cuarp dal messaç al à une firme di gjenar “%s”, ma la firme tal cjamp de "
+"intestazion e je “%s”"
+
+#: gio/gdbusmessage.c:2924
+#, c-format
+msgid "Message body is empty but signature in the header field is “(%s)”"
+msgstr ""
+"Il cuarp dal messaç al è vueit ma la firme tal cjamp de intestazion e je "
+"“(%s)”"
+
+#: gio/gdbusmessage.c:3479
+#, c-format
+msgid "Error return with body of type “%s”"
+msgstr "Tornade di erôr cun cuarp di gjenar “%s”"
+
+#: gio/gdbusmessage.c:3487
+msgid "Error return with empty body"
+msgstr "Tornade di erôr cun cuarp vueit"
+
+#: gio/gdbusprivate.c:2187
+#, c-format
+msgid "(Type any character to close this window)\n"
+msgstr "(Scrîf cualsisei caratar par sierâ chest barcon)\n"
+
+#: gio/gdbusprivate.c:2373
+#, c-format
+msgid "Session dbus not running, and autolaunch failed"
+msgstr "Session dbus no je in esecuzion e l'inviament automatic al è falît"
+
+#: gio/gdbusprivate.c:2396
+#, c-format
+msgid "Unable to get Hardware profile: %s"
+msgstr "Impussibil otignî il profîl Hardware: %s"
+
+#. Translators: Both placeholders are file paths
+#: gio/gdbusprivate.c:2447
+#, c-format
+msgid "Unable to load %s or %s: "
+msgstr "Impussibil cjariâ %s o %s: "
+
+#: gio/gdbusproxy.c:1575
+#, c-format
+msgid "Error calling StartServiceByName for %s: "
+msgstr "Erôr tal clamâ StartServiceByName par %s: "
+
+#: gio/gdbusproxy.c:1598
+#, c-format
+msgid "Unexpected reply %d from StartServiceByName(\"%s\") method"
+msgstr "Rispueste %d inspietade dal metodi StartServiceByName(\"%s\")"
+
+#: gio/gdbusproxy.c:2709 gio/gdbusproxy.c:2844
+#, c-format
+msgid ""
+"Cannot invoke method; proxy is for the well-known name %s without an owner, "
+"and proxy was constructed with the G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START flag"
+msgstr ""
+"Impussibil invocâ il metodi; il proxy al è pal no ben-cognossût %s cence un "
+"proprietari e il proxy al jere costruît cu la opzion "
+"G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START"
+
+#: gio/gdbusserver.c:765
+msgid "Abstract namespace not supported"
+msgstr "Spazi di non astrat no supuartât"
+
+#: gio/gdbusserver.c:857
+msgid "Cannot specify nonce file when creating a server"
+msgstr ""
+"Impussibil specificâ il file dal numar doprât une sole volte cuant che si "
+"creave un servidôr"
+
+#: gio/gdbusserver.c:939
+#, c-format
+msgid "Error writing nonce file at “%s”: %s"
+msgstr "Erôr tal scrivi il file dal numar doprât une sole volte su “%s”: %s"
+
+#: gio/gdbusserver.c:1114
+#, c-format
+msgid "The string “%s” is not a valid D-Bus GUID"
+msgstr "La stringhe “%s” no je un valit GUID D-Bus"
+
+#: gio/gdbusserver.c:1152
+#, c-format
+msgid "Cannot listen on unsupported transport “%s”"
+msgstr "Impussibil scoltâ o traspuart “%s” no supuartât"
+
+#: gio/gdbus-tool.c:113
+#, c-format
+msgid ""
+"Commands:\n"
+"  help         Shows this information\n"
+"  introspect   Introspect a remote object\n"
+"  monitor      Monitor a remote object\n"
+"  call         Invoke a method on a remote object\n"
+"  emit         Emit a signal\n"
+"  wait         Wait for a bus name to appear\n"
+"\n"
+"Use “%s COMMAND --help” to get help on each command.\n"
+msgstr ""
+"Comants:\n"
+"  help         Mostre chestis informazions\n"
+"  introspect   Introspezion di un ogjet lontan\n"
+"  monitor      Monitorâ un ogjet lontan\n"
+"  call         Invocâ un metodi suntun ogjet lontan\n"
+"  emit         Emet un segnâl\n"
+"  wait         Spiete che un non di bus al vegni fûr\n"
+"\n"
+"Dopre “%s COMANT --help” par vê jutori su ogni comant.\n"
+
+#: gio/gdbus-tool.c:204 gio/gdbus-tool.c:276 gio/gdbus-tool.c:348
+#: gio/gdbus-tool.c:372 gio/gdbus-tool.c:862 gio/gdbus-tool.c:1247
+#: gio/gdbus-tool.c:1734
+#, c-format
+msgid "Error: %s\n"
+msgstr "Erôr: %s\n"
+
+#: gio/gdbus-tool.c:215 gio/gdbus-tool.c:289 gio/gdbus-tool.c:1750
+#, c-format
+msgid "Error parsing introspection XML: %s\n"
+msgstr "Erôr tal analizâ XML di introspezion: %s\n"
+
+#: gio/gdbus-tool.c:253
+#, c-format
+msgid "Error: %s is not a valid name\n"
+msgstr "Erôr: %s nol è un non valit\n"
+
+#: gio/gdbus-tool.c:258 gio/gdbus-tool.c:748 gio/gdbus-tool.c:1066
+#: gio/gdbus-tool.c:1900 gio/gdbus-tool.c:2140
+#, c-format
+msgid "Error: %s is not a valid object path\n"
+msgstr "Erôr: %s nol è un percors ogjet valit\n"
+
+#: gio/gdbus-tool.c:406
+msgid "Connect to the system bus"
+msgstr "Conet al bus di sisteme"
+
+#: gio/gdbus-tool.c:407
+msgid "Connect to the session bus"
+msgstr "Conet al bus di session"
+
+#: gio/gdbus-tool.c:408
+msgid "Connect to given D-Bus address"
+msgstr "Conet ae direzion D-Bus furnide"
+
+#: gio/gdbus-tool.c:418
+msgid "Connection Endpoint Options:"
+msgstr "Opzions dal pont finâl de conession:"
+
+#: gio/gdbus-tool.c:419
+msgid "Options specifying the connection endpoint"
+msgstr "Opzions che a specifichin il pont finâl (endpoint) de conession"
+
+#: gio/gdbus-tool.c:442
+#, c-format
+msgid "No connection endpoint specified"
+msgstr "Nissun pont finâl (endpoint) di conession specificât"
+
+#: gio/gdbus-tool.c:452
+#, c-format
+msgid "Multiple connection endpoints specified"
+msgstr "Plui ponts finâi (endpoint) di conession specificâts"
+
+#: gio/gdbus-tool.c:525
+#, c-format
+msgid ""
+"Warning: According to introspection data, interface “%s” does not exist\n"
+msgstr ""
+"Avertiment: In acuardi cui dâts di introspezion, la interface “%s” no esist\n"
+
+#: gio/gdbus-tool.c:534
+#, c-format
+msgid ""
+"Warning: According to introspection data, method “%s” does not exist on "
+"interface “%s”\n"
+msgstr ""
+"Avertiment: In acuardi cui dâts di introspezion, il metodi “%s” nol esist su "
+"pe interface “%s”\n"
+
+#: gio/gdbus-tool.c:596
+msgid "Optional destination for signal (unique name)"
+msgstr "Destinazion opzionâl pal segnâl (non univoc)"
+
+#: gio/gdbus-tool.c:597
+msgid "Object path to emit signal on"
+msgstr "Percors ogjet dulà emeti il segnâl"
+
+#: gio/gdbus-tool.c:598
+msgid "Signal and interface name"
+msgstr "Segnâl e non interface"
+
+#: gio/gdbus-tool.c:631
+msgid "Emit a signal."
+msgstr "Emet un segnâl."
+
+#: gio/gdbus-tool.c:686 gio/gdbus-tool.c:1003 gio/gdbus-tool.c:1837
+#: gio/gdbus-tool.c:2069 gio/gdbus-tool.c:2289
+#, c-format
+msgid "Error connecting: %s\n"
+msgstr "Erôr tal coneti: %s\n"
+
+#: gio/gdbus-tool.c:706
+#, c-format
+msgid "Error: %s is not a valid unique bus name.\n"
+msgstr "Erôr: %s nol è un non bus univoc valit.\n"
+
+#: gio/gdbus-tool.c:725 gio/gdbus-tool.c:1046 gio/gdbus-tool.c:1880
+msgid "Error: Object path is not specified\n"
+msgstr "Erôr: il percors ogjet nol è specificât\n"
+
+#: gio/gdbus-tool.c:768
+msgid "Error: Signal name is not specified\n"
+msgstr "Erôr: il non dal segnâl nol è specificât\n"
+
+#: gio/gdbus-tool.c:782
+#, c-format
+msgid "Error: Signal name “%s” is invalid\n"
+msgstr "Erôr: il non segnâl “%s” nol è valit\n"
+
+#: gio/gdbus-tool.c:794
+#, c-format
+msgid "Error: %s is not a valid interface name\n"
+msgstr "Erôr: %s nol è un non interface valit\n"
+
+#: gio/gdbus-tool.c:800
+#, c-format
+msgid "Error: %s is not a valid member name\n"
+msgstr "Erôr: %s nol è un non membri valit\n"
+
+#. Use the original non-"parse-me-harder" error
+#: gio/gdbus-tool.c:837 gio/gdbus-tool.c:1178
+#, c-format
+msgid "Error parsing parameter %d: %s\n"
+msgstr "Erôr tal analizâ il parametri %d: %s\n"
+
+#: gio/gdbus-tool.c:869
+#, c-format
+msgid "Error flushing connection: %s\n"
+msgstr "Erôr tal resentâ la conession: %s\n"
+
+#: gio/gdbus-tool.c:897
+msgid "Destination name to invoke method on"
+msgstr "Il non di destinazion de invocazion dal metodi"
+
+#: gio/gdbus-tool.c:898
+msgid "Object path to invoke method on"
+msgstr "Percors dal ogjet de invocazion dal metodi"
+
+#: gio/gdbus-tool.c:899
+msgid "Method and interface name"
+msgstr "Metodi e non interface"
+
+#: gio/gdbus-tool.c:900
+msgid "Timeout in seconds"
+msgstr "Timp massim in seconts"
+
+#: gio/gdbus-tool.c:901
+msgid "Allow interactive authorization"
+msgstr "Permet autorizazion interative"
+
+#: gio/gdbus-tool.c:948
+msgid "Invoke a method on a remote object."
+msgstr "Invoche un metodi suntun ogjet lontan."
+
+#: gio/gdbus-tool.c:1020 gio/gdbus-tool.c:1854 gio/gdbus-tool.c:2094
+msgid "Error: Destination is not specified\n"
+msgstr "Erôr: Destinazion no specificade\n"
+
+#: gio/gdbus-tool.c:1031 gio/gdbus-tool.c:1871 gio/gdbus-tool.c:2105
+#, c-format
+msgid "Error: %s is not a valid bus name\n"
+msgstr "Erôr: %s nol è un non bus valit\n"
+
+#: gio/gdbus-tool.c:1081
+msgid "Error: Method name is not specified\n"
+msgstr "Erôr: il non dal metodi nol è specificât\n"
+
+#: gio/gdbus-tool.c:1092
+#, c-format
+msgid "Error: Method name “%s” is invalid\n"
+msgstr "Erôr: il non dal metodi “%s” nol è valit\n"
+
+#: gio/gdbus-tool.c:1170
+#, c-format
+msgid "Error parsing parameter %d of type “%s”: %s\n"
+msgstr "Erôr tal analizâ il parametri %d di gjenar “%s”: %s\n"
+
+#: gio/gdbus-tool.c:1196
+#, c-format
+msgid "Error adding handle %d: %s\n"
+msgstr "Erôr tal zontâ il gjestôr %d: %s\n"
+
+#: gio/gdbus-tool.c:1696
+msgid "Destination name to introspect"
+msgstr "Non di destinazion de introspezion"
+
+#: gio/gdbus-tool.c:1697
+msgid "Object path to introspect"
+msgstr "Percors dal ogjet de introspezion"
+
+#: gio/gdbus-tool.c:1698
+msgid "Print XML"
+msgstr "Stampe XML"
+
+#: gio/gdbus-tool.c:1699
+msgid "Introspect children"
+msgstr "Auto-esamine i fîs"
+
+#: gio/gdbus-tool.c:1700
+msgid "Only print properties"
+msgstr "Dome stampe proprietâts"
+
+#: gio/gdbus-tool.c:1789
+msgid "Introspect a remote object."
+msgstr "Auto-esamine un ogjet lontan."
+
+#: gio/gdbus-tool.c:1995
+msgid "Destination name to monitor"
+msgstr "Non di destinazion di monitorâ"
+
+#: gio/gdbus-tool.c:1996
+msgid "Object path to monitor"
+msgstr "Percors dal ogjet di monitorâ"
+
+#: gio/gdbus-tool.c:2021
+msgid "Monitor a remote object."
+msgstr "Monitore un ogjet lontan."
+
+#: gio/gdbus-tool.c:2079
+msgid "Error: can’t monitor a non-message-bus connection\n"
+msgstr "Erôr: impussibil monitorâ une conession non-message-bus\n"
+
+#: gio/gdbus-tool.c:2203
+msgid "Service to activate before waiting for the other one (well-known name)"
+msgstr "Servizi di ativâ prime di spietâ par chel altri (non ben-cognossût)"
+
+#: gio/gdbus-tool.c:2206
+msgid ""
+"Timeout to wait for before exiting with an error (seconds); 0 for no timeout "
+"(default)"
+msgstr ""
+"Timp di spietâ prime di jessi cuntun erôr (seconts); 0 par no vê scjadince "
+"(predefinît)"
+
+#: gio/gdbus-tool.c:2254
+msgid "[OPTION…] BUS-NAME"
+msgstr "[OPZION…] NON-BUS"
+
+#: gio/gdbus-tool.c:2255
+msgid "Wait for a bus name to appear."
+msgstr "Spiete che al vegni fûr un non di bus."
+
+#: gio/gdbus-tool.c:2331
+msgid "Error: A service to activate for must be specified.\n"
+msgstr "Erôr: si scugne specificâ un servizi che si à di ativâ.\n"
+
+#: gio/gdbus-tool.c:2336
+msgid "Error: A service to wait for must be specified.\n"
+msgstr "Erôr: si scugne specificâ un servizi che si à di spietâ.\n"
+
+#: gio/gdbus-tool.c:2341
+msgid "Error: Too many arguments.\n"
+msgstr "Erôr: masse argoments.\n"
+
+#: gio/gdbus-tool.c:2349 gio/gdbus-tool.c:2356
+#, c-format
+msgid "Error: %s is not a valid well-known bus name.\n"
+msgstr "Erôr: %s nol è un non di bus ben-cognossût valit\n"
+
+#: gio/gdebugcontrollerdbus.c:360
+#, c-format
+msgid "Not authorized to change debug settings"
+msgstr "No autorizât a cambiâ lis impostazions di debug"
+
+#: gio/gdesktopappinfo.c:2182 gio/gdesktopappinfo.c:5119
+msgid "Unnamed"
+msgstr "Cence non"
+
+#: gio/gdesktopappinfo.c:2592
+msgid "Desktop file didn’t specify Exec field"
+msgstr "Il file .desktop nol specifiche il cjamp Exec"
+
+#: gio/gdesktopappinfo.c:2891
+msgid "Unable to find terminal required for application"
+msgstr "Impussibil cjatâ il terminâl necessari pe aplicazion"
+
+#: gio/gdesktopappinfo.c:3637
+#, c-format
+msgid "Can’t create user application configuration folder %s: %s"
+msgstr ""
+"Impussibil creâ la cartele dal utent pe configurazion de aplicazion %s: %s"
+
+#: gio/gdesktopappinfo.c:3641
+#, c-format
+msgid "Can’t create user MIME configuration folder %s: %s"
+msgstr "Impussibil creâ la cartele dal utent pe configurazion MIME %s: %s"
+
+#: gio/gdesktopappinfo.c:3883 gio/gdesktopappinfo.c:3907
+msgid "Application information lacks an identifier"
+msgstr "La informazion de aplicazion e mancje di un identificadôr"
+
+#: gio/gdesktopappinfo.c:4143
+#, c-format
+msgid "Can’t create user desktop file %s"
+msgstr "Impussibil creâ il file .desktop %s dal utent"
+
+#: gio/gdesktopappinfo.c:4279
+#, c-format
+msgid "Custom definition for %s"
+msgstr "Definizion personalizade par %s"
+
+#: gio/gdrive.c:419
+msgid "drive doesn’t implement eject"
+msgstr "la unitât no implemente eject"
+
+#. Translators: This is an error
+#. * message for drive objects that
+#. * don't implement any of eject or eject_with_operation.
+#: gio/gdrive.c:497
+msgid "drive doesn’t implement eject or eject_with_operation"
+msgstr ""
+"la unitât no implemente il parâ fûr (eject) o il parâ fûr cun operazion "
+"(eject_with_operation)"
+
+#: gio/gdrive.c:573
+msgid "drive doesn’t implement polling for media"
+msgstr "la unitât no implemente il control sistematic dai supuarts"
+
+#: gio/gdrive.c:780
+msgid "drive doesn’t implement start"
+msgstr "la unitât no implemente la azion start"
+
+#: gio/gdrive.c:882
+msgid "drive doesn’t implement stop"
+msgstr "la unitât no implemente la azion stop"
+
+#: gio/gdtlsconnection.c:1188 gio/gtlsconnection.c:957
+msgid "TLS backend does not implement TLS binding retrieval"
+msgstr "Il backend TLS nol implemente il recupar dal vincul TLS"
+
+#: gio/gdummytlsbackend.c:197 gio/gdummytlsbackend.c:323
+#: gio/gdummytlsbackend.c:515
+msgid "TLS support is not available"
+msgstr "Il supuart TLS nol è disponibil"
+
+#: gio/gdummytlsbackend.c:425
+msgid "DTLS support is not available"
+msgstr "Il supuart DTLS nol è disponibil"
+
+#: gio/gemblem.c:325
+#, c-format
+msgid "Can’t handle version %d of GEmblem encoding"
+msgstr "Impussibil gjestî la version %d de codifiche GEmblem"
+
+#: gio/gemblem.c:335
+#, c-format
+msgid "Malformed number of tokens (%d) in GEmblem encoding"
+msgstr "Numar di token malformât (%d) inte codifiche GEmblem"
+
+#: gio/gemblemedicon.c:364
+#, c-format
+msgid "Can’t handle version %d of GEmblemedIcon encoding"
+msgstr "Impussibil gjestî la version %d de codifiche GEmblemedIcon"
+
+#: gio/gemblemedicon.c:374
+#, c-format
+msgid "Malformed number of tokens (%d) in GEmblemedIcon encoding"
+msgstr "Numar di token malformât (%d) inte codifiche GEmblemedIcon"
+
+#: gio/gemblemedicon.c:397
+msgid "Expected a GEmblem for GEmblemedIcon"
+msgstr "Si spietave un GEmblem par GEmblemedIcon"
+
+#. Translators: This is an error message when
+#. * trying to find the enclosing (user visible)
+#. * mount of a file, but none exists.
+#.
+#: gio/gfile.c:1594
+msgid "Containing mount does not exist"
+msgstr "Il montaç contignût nol esist"
+
+#: gio/gfile.c:2641 gio/glocalfile.c:2500
+msgid "Can’t copy over directory"
+msgstr "Impussibil copiâ sore de cartele"
+
+#: gio/gfile.c:2701
+msgid "Can’t copy directory over directory"
+msgstr "Impussibil copiâ la cartele sore de cartele"
+
+#: gio/gfile.c:2709
+msgid "Target file exists"
+msgstr "Il file di destinazion al esist"
+
+#: gio/gfile.c:2728
+msgid "Can’t recursively copy directory"
+msgstr "Impussibil copiâ in maniere ricorsive la cartele"
+
+#: gio/gfile.c:3029
+msgid "Splice not supported"
+msgstr "Union no supuartade"
+
+#: gio/gfile.c:3033
+#, c-format
+msgid "Error splicing file: %s"
+msgstr "Erôr tal unî il file: %s"
+
+#: gio/gfile.c:3185
+msgid "Copy (reflink/clone) between mounts is not supported"
+msgstr "La copie (reflink/clone) tra i montaçs no je supuartade"
+
+#: gio/gfile.c:3189
+msgid "Copy (reflink/clone) is not supported or invalid"
+msgstr "La copie (reflink/clone) no je supuartade o no je valide"
+
+#: gio/gfile.c:3194
+msgid "Copy (reflink/clone) is not supported or didn’t work"
+msgstr "La copie (reflink/clone) no je supuartade o no à funzionât"
+
+#: gio/gfile.c:3259
+msgid "Can’t copy special file"
+msgstr "Impussibil copiâ il file speciâl"
+
+#: gio/gfile.c:4153
+msgid "Invalid symlink value given"
+msgstr "Furnît valôr di colegament simbolic no valit"
+
+#: gio/gfile.c:4163 glib/gfileutils.c:2335
+msgid "Symbolic links not supported"
+msgstr "Colegaments simbolics no supuartâts"
+
+#: gio/gfile.c:4450
+msgid "Trash not supported"
+msgstr "Scovacere no supuartade"
+
+#: gio/gfile.c:4562
+#, c-format
+msgid "File names cannot contain “%c”"
+msgstr "I nons dai file no puedin contignî “%c”"
+
+#: gio/gfile.c:6993 gio/gfile.c:7119
+#, fuzzy, c-format
+#| msgid "Failed to change to directory “%s” (%s)"
+msgid "Failed to create a temporary directory for template “%s”: %s"
+msgstr "No si è rivâts a lâ ae cartele “%s” (%s)"
+
+#: gio/gfile.c:7408 gio/gvolume.c:366
+msgid "volume doesn’t implement mount"
+msgstr "il volum nol implemente la azion mount"
+
+#: gio/gfile.c:7522 gio/gfile.c:7599
+msgid "No application is registered as handling this file"
+msgstr "No je regjistrade nissune aplicazion par gjestî chest file"
+
+#: gio/gfileenumerator.c:214
+msgid "Enumerator is closed"
+msgstr "L'enumeradôr al è sierât"
+
+#: gio/gfileenumerator.c:221 gio/gfileenumerator.c:280
+#: gio/gfileenumerator.c:379 gio/gfileenumerator.c:478
+msgid "File enumerator has outstanding operation"
+msgstr "Il numeradôr dal file al à une operazion ecezionâl"
+
+#: gio/gfileenumerator.c:370 gio/gfileenumerator.c:469
+msgid "File enumerator is already closed"
+msgstr "L'enumeradôr dal file al è za sierât"
+
+#: gio/gfileicon.c:252
+#, c-format
+msgid "Can’t handle version %d of GFileIcon encoding"
+msgstr "Impussibil gjestî la version %d de codifiche GFileIcon"
+
+#: gio/gfileicon.c:262
+msgid "Malformed input data for GFileIcon"
+msgstr "Dâts di input malformâts par GFileIcon"
+
+#: gio/gfileinputstream.c:151 gio/gfileinputstream.c:396
+#: gio/gfileiostream.c:169 gio/gfileoutputstream.c:166
+#: gio/gfileoutputstream.c:499
+msgid "Stream doesn’t support query_info"
+msgstr "Il flus nol supuarte la azion query_info"
+
+#: gio/gfileinputstream.c:327 gio/gfileiostream.c:381
+#: gio/gfileoutputstream.c:373
+msgid "Seek not supported on stream"
+msgstr "Ricercje no supuartade sul flus"
+
+#: gio/gfileinputstream.c:371
+msgid "Truncate not allowed on input stream"
+msgstr "Cjonçâ no permetût sul flus di jentrade"
+
+#: gio/gfileiostream.c:457 gio/gfileoutputstream.c:449
+msgid "Truncate not supported on stream"
+msgstr "Cjonçâ no supuartât sul flus"
+
+#: gio/ghttpproxy.c:93 gio/gresolver.c:460 gio/gresolver.c:613
+#: glib/gconvert.c:1829
+msgid "Invalid hostname"
+msgstr "Non dal host no valit"
+
+#: gio/ghttpproxy.c:145
+msgid "Bad HTTP proxy reply"
+msgstr "Rispueste dal proxy HTTP sbaliade"
+
+#: gio/ghttpproxy.c:161
+msgid "HTTP proxy connection not allowed"
+msgstr "Conession proxy HTTP no permetude"
+
+#: gio/ghttpproxy.c:166
+msgid "HTTP proxy authentication failed"
+msgstr "Autenticazion proxy HTTP falide"
+
+#: gio/ghttpproxy.c:169
+msgid "HTTP proxy authentication required"
+msgstr "Domandade autenticazion proxy HTTP"
+
+#: gio/ghttpproxy.c:173
+#, c-format
+msgid "HTTP proxy connection failed: %i"
+msgstr "Conession proxy HTTP falide: %i"
+
+#: gio/ghttpproxy.c:268
+msgid "HTTP proxy response too big"
+msgstr "Rispueste masse grande dal proxy HTTP"
+
+#: gio/ghttpproxy.c:285
+msgid "HTTP proxy server closed connection unexpectedly."
+msgstr "Il servidôr proxy HTTP al à sierât la conession in maniere inspietade."
+
+#: gio/gicon.c:300
+#, c-format
+msgid "Wrong number of tokens (%d)"
+msgstr "Numar di token sbaliât (%d)"
+
+#: gio/gicon.c:320
+#, c-format
+msgid "No type for class name %s"
+msgstr "Nissun gjenar pal non de classe %s"
+
+#: gio/gicon.c:330
+#, c-format
+msgid "Type %s does not implement the GIcon interface"
+msgstr "Il gjenar %s nol implemente la interface GIcon"
+
+#: gio/gicon.c:341
+#, c-format
+msgid "Type %s is not classed"
+msgstr "Il Gjenar %s nol à classe"
+
+#: gio/gicon.c:355
+#, c-format
+msgid "Malformed version number: %s"
+msgstr "Numar di version malformât: %s"
+
+#: gio/gicon.c:369
+#, c-format
+msgid "Type %s does not implement from_tokens() on the GIcon interface"
+msgstr "Il gjenar %s nol implemente from_tokens() su la interface GIcon"
+
+#: gio/gicon.c:471
+msgid "Can’t handle the supplied version of the icon encoding"
+msgstr "Impussibil gjestî la version furnide de codifiche de icone"
+
+#: gio/ginetaddressmask.c:184
+msgid "No address specified"
+msgstr "Nissune direzion specificade"
+
+#: gio/ginetaddressmask.c:192
+#, c-format
+msgid "Length %u is too long for address"
+msgstr "La lungjece %u e je masse lungje pe direzion"
+
+#: gio/ginetaddressmask.c:225
+msgid "Address has bits set beyond prefix length"
+msgstr "La direzion e presente cualchi bit plui in là de lungjece dal prefìs"
+
+#: gio/ginetaddressmask.c:302
+#, c-format
+msgid "Could not parse “%s” as IP address mask"
+msgstr "Impussibil analizâ “%s” come mascare de direzion IP"
+
+#: gio/ginetsocketaddress.c:205 gio/ginetsocketaddress.c:222
+#: gio/gnativesocketaddress.c:111 gio/gunixsocketaddress.c:230
+msgid "Not enough space for socket address"
+msgstr "No vonde spazi pe direzion dal socket"
+
+#: gio/ginetsocketaddress.c:237
+msgid "Unsupported socket address"
+msgstr "Direzion dal socket no supuartade"
+
+#: gio/ginputstream.c:190
+msgid "Input stream doesn’t implement read"
+msgstr "Il flus di jentrade nol implemente la leture"
+
+#. Translators: This is an error you get if there is already an
+#. * operation running against this stream when you try to start
+#. * one
+#. Translators: This is an error you get if there is
+#. * already an operation running against this stream when
+#. * you try to start one
+#: gio/ginputstream.c:1251 gio/giostream.c:312 gio/goutputstream.c:2210
+msgid "Stream has outstanding operation"
+msgstr "Il flus al à une operazion ecezionâl"
+
+#: gio/gio-tool.c:162
+msgid "Copy with file"
+msgstr "Copie cul file"
+
+#: gio/gio-tool.c:166
+msgid "Keep with file when moved"
+msgstr "Ten adun cul file cuant che si sposte"
+
+#: gio/gio-tool.c:207
+msgid "“version” takes no arguments"
+msgstr "“version” no vûl nissun argoment"
+
+#: gio/gio-tool.c:209 gio/gio-tool.c:225 glib/goption.c:871
+msgid "Usage:"
+msgstr "Ûs:"
+
+#: gio/gio-tool.c:212
+msgid "Print version information and exit."
+msgstr "Stampe informazions su la version e jes."
+
+#: gio/gio-tool.c:228
+msgid "Commands:"
+msgstr "Comants:"
+
+#: gio/gio-tool.c:231
+msgid "Concatenate files to standard output"
+msgstr "Met dongje i file su la jessude standard (standard output)"
+
+#: gio/gio-tool.c:232
+msgid "Copy one or more files"
+msgstr "Copie un o plui file"
+
+#: gio/gio-tool.c:233
+msgid "Show information about locations"
+msgstr "Mostre informazions su lis posizions"
+
+#: gio/gio-tool.c:234
+msgid "Launch an application from a desktop file"
+msgstr "Invie une aplicazion di un file “desktop”"
+
+#: gio/gio-tool.c:235
+msgid "List the contents of locations"
+msgstr "Liste i contignûts des posizions"
+
+#: gio/gio-tool.c:236
+msgid "Get or set the handler for a mimetype"
+msgstr "Oten o stabilìs il gjestôr par un gjenar di mime"
+
+#: gio/gio-tool.c:237
+msgid "Create directories"
+msgstr "Cree cartelis"
+
+#: gio/gio-tool.c:238
+msgid "Monitor files and directories for changes"
+msgstr "Ten di voli lis modifichis a file e cartelis"
+
+#: gio/gio-tool.c:239
+msgid "Mount or unmount the locations"
+msgstr "Monte o dismonte lis posizions"
+
+#: gio/gio-tool.c:240
+msgid "Move one or more files"
+msgstr "Sposte un o plui file"
+
+#: gio/gio-tool.c:241
+msgid "Open files with the default application"
+msgstr "Vierç i file cun la aplicazion predefinide"
+
+#: gio/gio-tool.c:242
+msgid "Rename a file"
+msgstr "Cambie non a un file"
+
+#: gio/gio-tool.c:243
+msgid "Delete one or more files"
+msgstr "Elimine un o plui file"
+
+#: gio/gio-tool.c:244
+msgid "Read from standard input and save"
+msgstr "Lei de jentrade standard (standard input) e salve"
+
+#: gio/gio-tool.c:245
+msgid "Set a file attribute"
+msgstr "Stabilìs un atribût di file"
+
+#: gio/gio-tool.c:246
+msgid "Move files or directories to the trash"
+msgstr "Sposte te scovacere file o cartelis"
+
+#: gio/gio-tool.c:247
+msgid "Lists the contents of locations in a tree"
+msgstr "Al liste intun arbul i contignûts des posizions"
+
+#: gio/gio-tool.c:249
+#, c-format
+msgid "Use %s to get detailed help.\n"
+msgstr "Dopre %s par vê un jutori detaiât.\n"
+
+#: gio/gio-tool-cat.c:89
+msgid "Error writing to stdout"
+msgstr "Erôr tal scrivi su stdout"
+
+#. Translators: commandline placeholder
+#: gio/gio-tool-cat.c:135 gio/gio-tool-info.c:379 gio/gio-tool-list.c:173
+#: gio/gio-tool-mkdir.c:50 gio/gio-tool-monitor.c:39 gio/gio-tool-monitor.c:41
+#: gio/gio-tool-monitor.c:43 gio/gio-tool-monitor.c:45
+#: gio/gio-tool-monitor.c:206 gio/gio-tool-mount.c:1210 gio/gio-tool-open.c:72
+#: gio/gio-tool-remove.c:50 gio/gio-tool-rename.c:47 gio/gio-tool-set.c:95
+#: gio/gio-tool-trash.c:222 gio/gio-tool-tree.c:241
+msgid "LOCATION"
+msgstr "POSIZION"
+
+#: gio/gio-tool-cat.c:140
+msgid "Concatenate files and print to standard output."
+msgstr ""
+"Met in cjadene i file e stampe su la jessude standard (standard output)."
+
+#: gio/gio-tool-cat.c:142
+msgid ""
+"gio cat works just like the traditional cat utility, but using GIO\n"
+"locations instead of local files: for example, you can use something\n"
+"like smb://server/resource/file.txt as location."
+msgstr ""
+"gio cat al funzione propite come la utilitât cat tradizionâl, ma doprant\n"
+"lis posizions GIO al puest dai file locâi: par esempli tu puedis doprâ\n"
+"alc come smb://servidôr/risorse/file.txt tant che posizion."
+
+#: gio/gio-tool-cat.c:164 gio/gio-tool-info.c:410 gio/gio-tool-mkdir.c:78
+#: gio/gio-tool-monitor.c:231 gio/gio-tool-mount.c:1261 gio/gio-tool-open.c:98
+#: gio/gio-tool-remove.c:74 gio/gio-tool-trash.c:303
+msgid "No locations given"
+msgstr "Nissune posizion furnide"
+
+#: gio/gio-tool-copy.c:45 gio/gio-tool-move.c:40
+msgid "No target directory"
+msgstr "Nissune cartele di destinazion"
+
+#: gio/gio-tool-copy.c:46 gio/gio-tool-move.c:41
+msgid "Show progress"
+msgstr "Mostre avanzament"
+
+#: gio/gio-tool-copy.c:47 gio/gio-tool-move.c:42
+msgid "Prompt before overwrite"
+msgstr "Domande prime di sorescrivi"
+
+#: gio/gio-tool-copy.c:48
+msgid "Preserve all attributes"
+msgstr "Preserve ducj i atribûts"
+
+#: gio/gio-tool-copy.c:49 gio/gio-tool-move.c:43 gio/gio-tool-save.c:51
+msgid "Backup existing destination files"
+msgstr "Fâs il backup dai file di destinazion esistents"
+
+#: gio/gio-tool-copy.c:50
+msgid "Never follow symbolic links"
+msgstr "No sta mai lâ daûr ai colegaments simbolics"
+
+#: gio/gio-tool-copy.c:51
+msgid "Use default permissions for the destination"
+msgstr "Dopre i permès predefinîts pe destinazion"
+
+#: gio/gio-tool-copy.c:76 gio/gio-tool-move.c:69
+#, c-format
+msgid "Transferred %s out of %s (%s/s)"
+msgstr "Trasferîts %s di %s (%s/s)"
+
+#. Translators: commandline placeholder
+#: gio/gio-tool-copy.c:102 gio/gio-tool-move.c:96
+msgid "SOURCE"
+msgstr "SORZINT"
+
+#. Translators: commandline placeholder
+#: gio/gio-tool-copy.c:102 gio/gio-tool-move.c:96 gio/gio-tool-save.c:162
+msgid "DESTINATION"
+msgstr "DESTINAZION"
+
+#: gio/gio-tool-copy.c:107
+msgid "Copy one or more files from SOURCE to DESTINATION."
+msgstr "Copie un o plui file de SORZINT ae DESTINAZION."
+
+#: gio/gio-tool-copy.c:109
+msgid ""
+"gio copy is similar to the traditional cp utility, but using GIO\n"
+"locations instead of local files: for example, you can use something\n"
+"like smb://server/resource/file.txt as location."
+msgstr ""
+"gio copy al è simil ae utilitât cp tradizionâl, ma e dopre lis\n"
+"posizions GIO al puest dai file locâi: par esempli tu puedis doprâ\n"
+"alc come smb://servidôr/risorse/file.txt tant che posizion."
+
+#: gio/gio-tool-copy.c:151
+#, c-format
+msgid "Destination %s is not a directory"
+msgstr "La destinazion %s no je une cartele"
+
+#: gio/gio-tool-copy.c:198 gio/gio-tool-move.c:188
+#, c-format
+msgid "%s: overwrite “%s”? "
+msgstr "%s: sorescrivi “%s”? "
+
+#: gio/gio-tool-info.c:39
+msgid "List writable attributes"
+msgstr "Liste i atribûts scrivibii"
+
+#: gio/gio-tool-info.c:40
+msgid "Get file system info"
+msgstr "Oten informazions sul file-system"
+
+#: gio/gio-tool-info.c:41 gio/gio-tool-list.c:37
+msgid "The attributes to get"
+msgstr "I atribûts di otignî"
+
+#: gio/gio-tool-info.c:41 gio/gio-tool-list.c:37
+msgid "ATTRIBUTES"
+msgstr "ATRIBÛTS"
+
+#: gio/gio-tool-info.c:42 gio/gio-tool-list.c:40 gio/gio-tool-set.c:37
+msgid "Don’t follow symbolic links"
+msgstr "No sta lâ daûr ai colegaments simbolics"
+
+#: gio/gio-tool-info.c:105
+msgid "attributes:\n"
+msgstr "atribûts:\n"
+
+#: gio/gio-tool-info.c:165 gio/gio-tool-info.c:174
+#, c-format
+msgid "display name: %s\n"
+msgstr "non di mostrâ: %s\n"
+
+#: gio/gio-tool-info.c:182
+#, c-format
+msgid "name: %s\n"
+msgstr "non: %s\n"
+
+#: gio/gio-tool-info.c:189
+#, c-format
+msgid "type: %s\n"
+msgstr "gjenar: %s\n"
+
+#: gio/gio-tool-info.c:195
+msgid "size: "
+msgstr "dimension: "
+
+#: gio/gio-tool-info.c:200
+msgid "hidden\n"
+msgstr "platât\n"
+
+#: gio/gio-tool-info.c:203
+#, c-format
+msgid "uri: %s\n"
+msgstr "uri: %s\n"
+
+#: gio/gio-tool-info.c:210
+#, c-format
+msgid "local path: %s\n"
+msgstr "percors locâl: %s\n"
+
+#: gio/gio-tool-info.c:244
+#, c-format
+msgid "unix mount: %s%s %s %s %s\n"
+msgstr "montaç unix: %s%s %s %s %s\n"
+
+#: gio/gio-tool-info.c:325
+msgid "Settable attributes:\n"
+msgstr "Atribûts che si pues configurâ:\n"
+
+#: gio/gio-tool-info.c:349
+msgid "Writable attribute namespaces:\n"
+msgstr ""
+
+#: gio/gio-tool-info.c:384
+msgid "Show information about locations."
+msgstr "Mostre informazions su lis posizions."
+
+#: gio/gio-tool-info.c:386
+msgid ""
+"gio info is similar to the traditional ls utility, but using GIO\n"
+"locations instead of local files: for example, you can use something\n"
+"like smb://server/resource/file.txt as location. File attributes can\n"
+"be specified with their GIO name, e.g. standard::icon, or just by\n"
+"namespace, e.g. unix, or by “*”, which matches all attributes"
+msgstr ""
+"gio info al è simil ae utilitât ls tradizionâl, ma al dopre lis\n"
+"posizions GIO al puest dai file locâi: par esempli tu puedis doprâ\n"
+"alc come smb://servidôr/risorse/file.txt tant che posizion. I atribûts\n"
+"dai file a puedin jessi specificâts cul lôr non GIO, p.e. standard::icon, \n"
+"o dome cul spazi dai nons, p.e. unix, o cun “*”, che al cjape ducj i atribûts"
+
+#. Translators: commandline placeholder
+#: gio/gio-tool-launch.c:56
+msgid "DESKTOP-FILE [FILE-ARG …]"
+msgstr "FILE-DESKTOP [ARG-FILE …]"
+
+#: gio/gio-tool-launch.c:59
+msgid ""
+"Launch an application from a desktop file, passing optional filename "
+"arguments to it."
+msgstr ""
+"Invie une aplicazion di un file desktop, passantji argoments di nons di "
+"files opzionâi."
+
+#: gio/gio-tool-launch.c:79
+msgid "No desktop file given"
+msgstr "Nissun file “desktop” furnît"
+
+#: gio/gio-tool-launch.c:87
+msgid "The launch command is not currently supported on this platform"
+msgstr ""
+"Il comant di inviament in chest moment nol è supuart su cheste plateforme"
+
+#: gio/gio-tool-launch.c:100
+#, c-format
+msgid "Unable to load ‘%s‘: %s"
+msgstr "Impussibil cjariâ “%s”: %s"
+
+#: gio/gio-tool-launch.c:109
+#, c-format
+msgid "Unable to load application information for ‘%s‘"
+msgstr "Impussibil cjariâ lis informazions de aplicazion par “%s”"
+
+#: gio/gio-tool-launch.c:121
+#, c-format
+msgid "Unable to launch application ‘%s’: %s"
+msgstr "Impussibil cjariâ la aplicazion ‘%s’: %s"
+
+#: gio/gio-tool-list.c:38 gio/gio-tool-tree.c:34
+msgid "Show hidden files"
+msgstr "Mostre file platâts"
+
+#: gio/gio-tool-list.c:39
+msgid "Use a long listing format"
+msgstr "Dopre un formât di liste prolìs"
+
+#: gio/gio-tool-list.c:41
+msgid "Print display names"
+msgstr "Stampe nons dai visôrs"
+
+#: gio/gio-tool-list.c:42
+msgid "Print full URIs"
+msgstr "Stampe i URI complets"
+
+#: gio/gio-tool-list.c:178
+msgid "List the contents of the locations."
+msgstr "Liste i contignûts des posizions."
+
+#: gio/gio-tool-list.c:180
+msgid ""
+"gio list is similar to the traditional ls utility, but using GIO\n"
+"locations instead of local files: for example, you can use something\n"
+"like smb://server/resource/file.txt as location. File attributes can\n"
+"be specified with their GIO name, e.g. standard::icon"
+msgstr ""
+"gio list al è simil ae utilitât ls tradizionâl, ma al dopre lis\n"
+"posizions GIO al puest dai file locâi: par esmpli tu puedis doprâ\n"
+"alc come smb://servidôr/risorse/file.txt tant che posizion. I atribûts\n"
+"dai file a puedin jessi specificâts cul lôr non GIO, p.e. standard::icon"
+
+#. Translators: commandline placeholder
+#: gio/gio-tool-mime.c:73
+msgid "MIMETYPE"
+msgstr "GJENARMIME"
+
+#: gio/gio-tool-mime.c:73
+msgid "HANDLER"
+msgstr "GJESTÔR"
+
+#: gio/gio-tool-mime.c:78
+msgid "Get or set the handler for a mimetype."
+msgstr "Oten o stabilìs il gjestôr par un gjenar di mime."
+
+#: gio/gio-tool-mime.c:80
+msgid ""
+"If no handler is given, lists registered and recommended applications\n"
+"for the mimetype. If a handler is given, it is set as the default\n"
+"handler for the mimetype."
+msgstr ""
+"Se nissun gjestôr al è furnît, al liste lis aplicazions regjistradis e "
+"conseadis\n"
+"par un gjenar di mime. Se un gjestôr al ven furnît, chel al ven stabilît "
+"come gjestôr\n"
+"predefinît pal gjenar mime."
+
+#: gio/gio-tool-mime.c:102
+msgid "Must specify a single mimetype, and maybe a handler"
+msgstr "Si scugne specificâ un singul gjenar mime e se si vûl un gjestôr"
+
+#: gio/gio-tool-mime.c:118
+#, c-format
+msgid "No default applications for “%s”\n"
+msgstr "Nissune aplicazion predefinide par “%s”\n"
+
+#: gio/gio-tool-mime.c:124
+#, c-format
+msgid "Default application for “%s”: %s\n"
+msgstr "Aplicazion predefinide par “%s”: %s\n"
+
+#: gio/gio-tool-mime.c:129
+msgid "Registered applications:\n"
+msgstr "Aplicazions regjistradis:\n"
+
+#: gio/gio-tool-mime.c:131
+msgid "No registered applications\n"
+msgstr "Nissune aplicazion regjistrade\n"
+
+#: gio/gio-tool-mime.c:142
+msgid "Recommended applications:\n"
+msgstr "Aplicazions conseadis:\n"
+
+#: gio/gio-tool-mime.c:144
+msgid "No recommended applications\n"
+msgstr "Nissune aplicazion conseade\n"
+
+#: gio/gio-tool-mime.c:164
+#, c-format
+msgid "Failed to load info for handler “%s”"
+msgstr "No si è rivâts a cjariâ lis informazion pal gjestôr “%s”"
+
+#: gio/gio-tool-mime.c:170
+#, c-format
+msgid "Failed to set “%s” as the default handler for “%s”: %s\n"
+msgstr "No si è rivâts a stabilî “%s” come gjestôr predefinît par “%s”: %s\n"
+
+#: gio/gio-tool-mkdir.c:33
+msgid "Create parent directories"
+msgstr "Cree cartelis superiôrs"
+
+#: gio/gio-tool-mkdir.c:54
+msgid "Create directories."
+msgstr "Cree cartelis."
+
+#: gio/gio-tool-mkdir.c:56
+msgid ""
+"gio mkdir is similar to the traditional mkdir utility, but using GIO\n"
+"locations instead of local files: for example, you can use something\n"
+"like smb://server/resource/mydir as location."
+msgstr ""
+"gio mkdir al è simil ae utilitât mkdir tradizionâl, ma al dopre lis\n"
+"posizions GIO al puest dai file locâi: par esempli tu puedis doprâ alc\n"
+"come smb://servidôr/risorse/mêcartele tant che posizion."
+
+#: gio/gio-tool-monitor.c:39
+msgid "Monitor a directory (default: depends on type)"
+msgstr "Ten di voli une cartele (predefinît: al dipent dal gjenar)"
+
+#: gio/gio-tool-monitor.c:41
+msgid "Monitor a file (default: depends on type)"
+msgstr "Ten di voli un file (predefinît: al dipent dal gjenar)"
+
+#: gio/gio-tool-monitor.c:43
+msgid "Monitor a file directly (notices changes made via hardlinks)"
+msgstr ""
+"Ten di voli un file in maniere direte (si vise des modifichis fatis par mieç "
+"di colegaments permanents)"
+
+#: gio/gio-tool-monitor.c:45
+msgid "Monitors a file directly, but doesn’t report changes"
+msgstr "Al monitore un file in maniere direte, ma nol segnale modifichis"
+
+#: gio/gio-tool-monitor.c:47
+msgid "Report moves and renames as simple deleted/created events"
+msgstr ""
+"Segnale spostaments e cambiaments di non come sempliçs events eliminât/creât"
+
+#: gio/gio-tool-monitor.c:49
+msgid "Watch for mount events"
+msgstr "Ten di voli i events di montaç"
+
+#: gio/gio-tool-monitor.c:211
+msgid "Monitor files or directories for changes."
+msgstr "Monitore i file o lis cartelis pes modifichis."
+
+#: gio/gio-tool-mount.c:65
+msgid "Mount as mountable"
+msgstr "Monte come montabil"
+
+#: gio/gio-tool-mount.c:66
+msgid "Mount volume with device file, or other identifier"
+msgstr "Monte il volum cul file dal dispositîf o altri identificadôr"
+
+#: gio/gio-tool-mount.c:66
+msgid "ID"
+msgstr "ID"
+
+#: gio/gio-tool-mount.c:67
+msgid "Unmount"
+msgstr "Dismonte"
+
+#: gio/gio-tool-mount.c:68
+msgid "Eject"
+msgstr "Pare fûr"
+
+#: gio/gio-tool-mount.c:69
+msgid "Stop drive with device file"
+msgstr "Ferme la unitât cul file dal dispositîf"
+
+#: gio/gio-tool-mount.c:69
+msgid "DEVICE"
+msgstr "DISPOSITÎF"
+
+#: gio/gio-tool-mount.c:70
+msgid "Unmount all mounts with the given scheme"
+msgstr "Dismonte ducj i montaçs cul scheme indicât"
+
+#: gio/gio-tool-mount.c:70
+msgid "SCHEME"
+msgstr "SCHEME"
+
+#: gio/gio-tool-mount.c:71
+msgid "Ignore outstanding file operations when unmounting or ejecting"
+msgstr ""
+"Ignore lis operazions ecezionâls sui file cuant che si dismonte o si pare fûr"
+
+#: gio/gio-tool-mount.c:72
+msgid "Use an anonymous user when authenticating"
+msgstr "Dopre un utent anonim cuant che si fâs la autenticazion"
+
+#. Translator: List here is a verb as in 'List all mounts'
+#: gio/gio-tool-mount.c:74
+msgid "List"
+msgstr "Liste"
+
+#: gio/gio-tool-mount.c:75
+msgid "Monitor events"
+msgstr "Monitore events"
+
+#: gio/gio-tool-mount.c:76
+msgid "Show extra information"
+msgstr "Mostre informazions adizionâls"
+
+#: gio/gio-tool-mount.c:77
+msgid "The numeric PIM when unlocking a VeraCrypt volume"
+msgstr "Il PIM numeric cuant che si sbloche un volum VeraCrypt"
+
+#: gio/gio-tool-mount.c:77
+msgid "PIM"
+msgstr "PIM"
+
+#: gio/gio-tool-mount.c:78
+msgid "Mount a TCRYPT hidden volume"
+msgstr "Monte un volum platât TCRYPT"
+
+#: gio/gio-tool-mount.c:79
+msgid "Mount a TCRYPT system volume"
+msgstr "Monte un volum di sisteme TCRYPT"
+
+#: gio/gio-tool-mount.c:276 gio/gio-tool-mount.c:308
+msgid "Anonymous access denied"
+msgstr "Acès anonim dineât"
+
+#: gio/gio-tool-mount.c:533
+msgid "No drive for device file"
+msgstr "Nissune unitât pal file di dispositîf"
+
+#: gio/gio-tool-mount.c:1025
+msgid "No volume for given ID"
+msgstr "Nissun volum pal ID indicât"
+
+#: gio/gio-tool-mount.c:1214
+msgid "Mount or unmount the locations."
+msgstr "Monte o dismonte lis posizions."
+
+#: gio/gio-tool-move.c:44
+msgid "Don’t use copy and delete fallback"
+msgstr "No sta doprâ i copie e elimine di repeç"
+
+#: gio/gio-tool-move.c:101
+msgid "Move one or more files from SOURCE to DEST."
+msgstr "Sposte un o plui file di SORZINT a DESTINAZION."
+
+#: gio/gio-tool-move.c:103
+msgid ""
+"gio move is similar to the traditional mv utility, but using GIO\n"
+"locations instead of local files: for example, you can use something\n"
+"like smb://server/resource/file.txt as location"
+msgstr ""
+"gio move al è simil ae utilitât mv tradizionâl, ma e dopre lis\n"
+"posizions GIO al puest dai file locâi: par esempli tu puedis doprâ\n"
+"alc come smb://servidôr/risorse/file.txt tant che posizion"
+
+#: gio/gio-tool-move.c:145
+#, c-format
+msgid "Target %s is not a directory"
+msgstr "La destinazion %s no je une cartele"
+
+#: gio/gio-tool-open.c:77
+msgid ""
+"Open files with the default application that\n"
+"is registered to handle files of this type."
+msgstr ""
+"Vierç i file cu la aplicazion definitive che\n"
+"e je regjistrade par gjestî i file di chest gjenar."
+
+#: gio/gio-tool-remove.c:33 gio/gio-tool-trash.c:35
+msgid "Ignore nonexistent files, never prompt"
+msgstr "Ignore i file inesistents, no sta domandâ mai"
+
+#: gio/gio-tool-remove.c:54
+msgid "Delete the given files."
+msgstr "Elimine i file furnîts."
+
+#: gio/gio-tool-rename.c:47
+msgid "NAME"
+msgstr "NON"
+
+#: gio/gio-tool-rename.c:52
+msgid "Rename a file."
+msgstr "Cambie non a un file."
+
+#: gio/gio-tool-rename.c:72
+msgid "Missing argument"
+msgstr "Argoment mancjant"
+
+#: gio/gio-tool-rename.c:78 gio/gio-tool-save.c:192 gio/gio-tool-set.c:150
+msgid "Too many arguments"
+msgstr "Masse argoments"
+
+#: gio/gio-tool-rename.c:97
+#, c-format
+msgid "Rename successful. New uri: %s\n"
+msgstr "Cambiâ di non lât ben. Gnûf uri: %s\n"
+
+#: gio/gio-tool-save.c:52
+msgid "Only create if not existing"
+msgstr "Cree dome se nol esist"
+
+#: gio/gio-tool-save.c:53
+msgid "Append to end of file"
+msgstr "Zonte ae fin dal file"
+
+#: gio/gio-tool-save.c:54
+msgid "When creating, restrict access to the current user"
+msgstr "Cuant che si cree, limite l'acès al utent atuâl"
+
+#: gio/gio-tool-save.c:55
+msgid "When replacing, replace as if the destination did not exist"
+msgstr "Cuant che si sostituìs, sostituìs come che la destinazion no esisti"
+
+#. Translators: The "etag" is a token allowing to verify whether a file has been modified
+#: gio/gio-tool-save.c:57
+msgid "Print new etag at end"
+msgstr "Stampe gnûf etag ae fin"
+
+#. Translators: The "etag" is a token allowing to verify whether a file has been modified
+#: gio/gio-tool-save.c:59
+msgid "The etag of the file being overwritten"
+msgstr "Il etag dal file che si sta par sorescrivi"
+
+#: gio/gio-tool-save.c:59
+msgid "ETAG"
+msgstr "ETAG"
+
+#: gio/gio-tool-save.c:115
+msgid "Error reading from standard input"
+msgstr "Erôr tal lei dal standard input"
+
+#. Translators: The "etag" is a token allowing to verify whether a file has been modified
+#: gio/gio-tool-save.c:141
+msgid "Etag not available\n"
+msgstr "Etag no disponibil\n"
+
+#: gio/gio-tool-save.c:165
+msgid "Read from standard input and save to DEST."
+msgstr "Lei de jentrade standard (standard input) e salve su DESTINAZION."
+
+#: gio/gio-tool-save.c:185
+msgid "No destination given"
+msgstr "Nissune destinazion furnide"
+
+#: gio/gio-tool-set.c:36
+msgid "Type of the attribute"
+msgstr "Gjenar dal atribût"
+
+#: gio/gio-tool-set.c:36
+msgid "TYPE"
+msgstr "GJENAR"
+
+#: gio/gio-tool-set.c:38
+#, fuzzy
+#| msgid "Set a file attribute"
+msgid "Unset given attribute"
+msgstr "Stabilìs un atribût di file"
+
+#: gio/gio-tool-set.c:95
+msgid "ATTRIBUTE"
+msgstr "ATRIBÛT"
+
+#: gio/gio-tool-set.c:95
+msgid "VALUE"
+msgstr "VALÔR"
+
+#: gio/gio-tool-set.c:99
+msgid "Set a file attribute of LOCATION."
+msgstr "Stabilìs un atribût di file di POSIZION."
+
+#: gio/gio-tool-set.c:119
+msgid "Location not specified"
+msgstr "Posizion no specificade"
+
+#: gio/gio-tool-set.c:126
+msgid "Attribute not specified"
+msgstr "Atribût no specificât"
+
+#: gio/gio-tool-set.c:143
+msgid "Value not specified"
+msgstr "Valôr no specificât"
+
+#: gio/gio-tool-set.c:193
+#, c-format
+msgid "Invalid attribute type “%s”"
+msgstr "Gjenar di atribût “%s” no valit"
+
+#: gio/gio-tool-trash.c:36
+msgid "Empty the trash"
+msgstr "Disvuede la scovacere"
+
+#: gio/gio-tool-trash.c:37
+msgid "List files in the trash with their original locations"
+msgstr "Liste i files te scovacere cu lis lôr posizions origjinâls"
+
+#: gio/gio-tool-trash.c:38
+msgid ""
+"Restore a file from trash to its original location (possibly recreating the "
+"directory)"
+msgstr ""
+"Ripristine un file de scovacere te sô posizion origjinâl (se pussibil "
+"tornant a creâ la cartele)"
+
+#: gio/gio-tool-trash.c:108
+msgid "Unable to find original path"
+msgstr "Impussibil cjatâ il percors origjinâl"
+
+#: gio/gio-tool-trash.c:125
+msgid "Unable to recreate original location: "
+msgstr "Impussibil tornâ a creâ la posizion origjinâl: "
+
+#: gio/gio-tool-trash.c:138
+msgid "Unable to move file to its original location: "
+msgstr "Impussibil spostâ il file te sô posizion origjinâl: "
+
+#: gio/gio-tool-trash.c:227
+msgid "Move/Restore files or directories to the trash."
+msgstr "Sposte/Ripristine i files o lis cartelis te scovacere."
+
+#: gio/gio-tool-trash.c:229
+msgid ""
+"Note: for --restore switch, if the original location of the trashed file \n"
+"already exists, it will not be overwritten unless --force is set."
+msgstr ""
+"Note: pe opzion --restore, se la posizion origjinarie dal file butât te\n"
+"scovacere e esist za, no vignarà sorescrite fintremai che nol ven metût --"
+"force."
+
+#: gio/gio-tool-trash.c:260
+msgid "Location given doesn't start with trash:///"
+msgstr "La posizion indicade no scomence cun trash:///"
+
+#: gio/gio-tool-tree.c:35
+msgid "Follow symbolic links, mounts and shortcuts"
+msgstr "Seguìs i colegaments simbolics, i montaçs e lis scurtis"
+
+#: gio/gio-tool-tree.c:246
+msgid "List contents of directories in a tree-like format."
+msgstr "Liste i contignûts des cartelis intun formât a arbul."
+
+#: gio/glib-compile-resources.c:142 gio/glib-compile-schemas.c:1516
+#, c-format
+msgid "Element <%s> not allowed inside <%s>"
+msgstr "L'element <%s> nol è permetût dentri di <%s>"
+
+#: gio/glib-compile-resources.c:146
+#, c-format
+msgid "Element <%s> not allowed at toplevel"
+msgstr "L'element <%s> nol è permetût a nivel primari"
+
+#: gio/glib-compile-resources.c:236
+#, c-format
+msgid "File %s appears multiple times in the resource"
+msgstr "Il file %s al ven fûr plui voltis inte risorse"
+
+#: gio/glib-compile-resources.c:247
+#, c-format
+msgid "Failed to locate “%s” in any source directory"
+msgstr "No si è rivâts a localizâ “%s” in nissune cartele sorzint"
+
+#: gio/glib-compile-resources.c:258
+#, c-format
+msgid "Failed to locate “%s” in current directory"
+msgstr "No si è rivâts a localizâ “%s” inte cartele atuâl"
+
+#: gio/glib-compile-resources.c:292
+#, c-format
+msgid "Unknown processing option “%s”"
+msgstr "Opzion di elaborazion “%s” no cognossude"
+
+#. Translators: the first %s is a gresource XML attribute,
+#. * the second %s is an environment variable, and the third
+#. * %s is a command line tool
+#.
+#: gio/glib-compile-resources.c:312 gio/glib-compile-resources.c:369
+#: gio/glib-compile-resources.c:426
+#, c-format
+msgid "%s preprocessing requested, but %s is not set, and %s is not in PATH"
+msgstr ""
+"Pre-elaborazion %s domandade, ma %s nol è stabilît e %s nol è in PERCORS"
+
+#: gio/glib-compile-resources.c:459
+#, c-format
+msgid "Error reading file %s: %s"
+msgstr "Erôr tal lei il file %s: %s"
+
+#: gio/glib-compile-resources.c:479
+#, c-format
+msgid "Error compressing file %s"
+msgstr "Erôr tal comprimi il file %s"
+
+#: gio/glib-compile-resources.c:543
+#, c-format
+msgid "text may not appear inside <%s>"
+msgstr "il test al podarès no aparî dentri di <%s>"
+
+#: gio/glib-compile-resources.c:821 gio/glib-compile-schemas.c:2174
+msgid "Show program version and exit"
+msgstr "Mostre la version dal program e jes"
+
+#: gio/glib-compile-resources.c:822
+msgid "Name of the output file"
+msgstr "Non dal file di jessude"
+
+#: gio/glib-compile-resources.c:823
+msgid ""
+"The directories to load files referenced in FILE from (default: current "
+"directory)"
+msgstr ""
+"Lis cartelis par cjariâ i files riferîts tal FILE di (predefinide: cartele "
+"corinte)"
+
+#: gio/glib-compile-resources.c:823 gio/glib-compile-schemas.c:2175
+#: gio/glib-compile-schemas.c:2204
+msgid "DIRECTORY"
+msgstr "CARTELE"
+
+#: gio/glib-compile-resources.c:824
+msgid ""
+"Generate output in the format selected for by the target filename extension"
+msgstr ""
+"Gjenere la jessude intal formât selezionât pe estension dal non di file di "
+"destinazion"
+
+#: gio/glib-compile-resources.c:825
+msgid "Generate source header"
+msgstr "Gjenere intestazion sorzint"
+
+#: gio/glib-compile-resources.c:826
+msgid "Generate source code used to link in the resource file into your code"
+msgstr ""
+"Gjenere il codiç sorzint doprât par colegâ il file des risorsis dentri dal "
+"to codiç"
+
+#: gio/glib-compile-resources.c:827
+msgid "Generate dependency list"
+msgstr "Gjenere la liste des dipendencis"
+
+#: gio/glib-compile-resources.c:828
+msgid "Name of the dependency file to generate"
+msgstr "Non dal file des dipendencis di gjenerâ"
+
+#: gio/glib-compile-resources.c:829
+msgid "Include phony targets in the generated dependency file"
+msgstr "Inclût lis destinazions falsis tal file des dipendencis gjenerât"
+
+#: gio/glib-compile-resources.c:830
+msgid "Don’t automatically create and register resource"
+msgstr "No sta creâ in automatic e regjistrâ la risorse"
+
+#: gio/glib-compile-resources.c:831
+msgid "Don’t export functions; declare them G_GNUC_INTERNAL"
+msgstr "No sta espuartâ lis funzions; declarilis G_GNUC_INTERNAL"
+
+#: gio/glib-compile-resources.c:832
+msgid ""
+"Don’t embed resource data in the C file; assume it's linked externally "
+"instead"
+msgstr ""
+"No sta incorporâ i dâts de risorse intal file C; assum invezit che al sedi "
+"colegât par difûr"
+
+#: gio/glib-compile-resources.c:833
+msgid "C identifier name used for the generated source code"
+msgstr "Non identificadôr di C doprât pal codiç sorzint gjenerât"
+
+#: gio/glib-compile-resources.c:834
+msgid "The target C compiler (default: the CC environment variable)"
+msgstr ""
+
+#: gio/glib-compile-resources.c:860
+msgid ""
+"Compile a resource specification into a resource file.\n"
+"Resource specification files have the extension .gresource.xml,\n"
+"and the resource file have the extension called .gresource."
+msgstr ""
+"Compile une specifiche di risorse intun file di risorse.\n"
+"I file de specifiche di risorse a àn la estension .gresource.xml\n"
+"e i file de risorse a àn la estension clamade .gresource."
+
+#: gio/glib-compile-resources.c:882
+msgid "You should give exactly one file name\n"
+msgstr "Si scugne dâ juste un non di file\n"
+
+#: gio/glib-compile-schemas.c:94
+#, c-format
+msgid "nick must be a minimum of 2 characters"
+msgstr "il nick al scugne jessi di almancul 2 caratars"
+
+#: gio/glib-compile-schemas.c:105
+#, c-format
+msgid "Invalid numeric value"
+msgstr "Valôr numeric no valit"
+
+#: gio/glib-compile-schemas.c:113
+#, c-format
+msgid "<value nick='%s'/> already specified"
+msgstr "<value nick='%s'/> za specificât"
+
+#: gio/glib-compile-schemas.c:121
+#, c-format
+msgid "value='%s' already specified"
+msgstr "valôr='%s' za specificât"
+
+#: gio/glib-compile-schemas.c:135
+#, c-format
+msgid "flags values must have at most 1 bit set"
+msgstr "i valôrs des opzions a scugnin vê stabilît al massim 1 bit"
+
+#: gio/glib-compile-schemas.c:160
+#, c-format
+msgid "<%s> must contain at least one <value>"
+msgstr "<%s> al à di contignî almancul un <value>"
+
+#: gio/glib-compile-schemas.c:316
+#, c-format
+msgid "<%s> is not contained in the specified range"
+msgstr "<%s> nol è contignût intal interval specificât"
+
+#: gio/glib-compile-schemas.c:328
+#, c-format
+msgid "<%s> is not a valid member of the specified enumerated type"
+msgstr "<%s> nol è un membri valit dal gjenar enumerât specificât"
+
+#: gio/glib-compile-schemas.c:334
+#, c-format
+msgid "<%s> contains string not in the specified flags type"
+msgstr "<%s> al conten stringhis che no son tal gjenar di opzions specificadis"
+
+#: gio/glib-compile-schemas.c:340
+#, c-format
+msgid "<%s> contains a string not in <choices>"
+msgstr "<%s> al conten une stringhe che no je tes <choices>"
+
+#: gio/glib-compile-schemas.c:374
+msgid "<range/> already specified for this key"
+msgstr "<range/> za specificât par cheste clâf"
+
+#: gio/glib-compile-schemas.c:392
+#, c-format
+msgid "<range> not allowed for keys of type “%s”"
+msgstr "<range> no permetût pes clâfs di gjenar “%s”"
+
+#: gio/glib-compile-schemas.c:409
+#, c-format
+msgid "<range> specified minimum is greater than maximum"
+msgstr "il minim specificât di <range> al è plui grant dal massim"
+
+#: gio/glib-compile-schemas.c:434
+#, c-format
+msgid "unsupported l10n category: %s"
+msgstr "categorie l10n no supuartade: %s"
+
+#: gio/glib-compile-schemas.c:442
+msgid "l10n requested, but no gettext domain given"
+msgstr "l10n domandât, ma nissun domini gettext furnît"
+
+#: gio/glib-compile-schemas.c:454
+msgid "translation context given for value without l10n enabled"
+msgstr "contest di traduzion furnît pal valôr cence l10n abilitât"
+
+#: gio/glib-compile-schemas.c:476
+#, c-format
+msgid "Failed to parse <default> value of type “%s”: "
+msgstr "No si è rivâts a analizâ il valôr <default> di gjenar “%s”: "
+
+#: gio/glib-compile-schemas.c:493
+msgid ""
+"<choices> cannot be specified for keys tagged as having an enumerated type"
+msgstr ""
+"<choices> nol pues jessi specificât pes clâfs etichetadis come clâfs che a "
+"àn un gjenar enumerât"
+
+#: gio/glib-compile-schemas.c:502
+msgid "<choices> already specified for this key"
+msgstr "<choices> za specificât par cheste clâf"
+
+#: gio/glib-compile-schemas.c:514
+#, c-format
+msgid "<choices> not allowed for keys of type “%s”"
+msgstr "<choices> no ametudis pes clâfs di gjenar “%s”"
+
+#: gio/glib-compile-schemas.c:530
+#, c-format
+msgid "<choice value='%s'/> already given"
+msgstr "<choice value='%s'/> za indicât"
+
+#: gio/glib-compile-schemas.c:545
+#, c-format
+msgid "<choices> must contain at least one <choice>"
+msgstr "<choices> a scugnin contignî almancul un <choice>"
+
+#: gio/glib-compile-schemas.c:559
+msgid "<aliases> already specified for this key"
+msgstr "<aliases> za specificât par cheste clâf"
+
+#: gio/glib-compile-schemas.c:563
+msgid ""
+"<aliases> can only be specified for keys with enumerated or flags types or "
+"after <choices>"
+msgstr ""
+"Al è pussibil specificâ i <aliases> dome pes clâfs cun gjenars numerâts o di "
+"flags opûr dopo <choices>"
+
+#: gio/glib-compile-schemas.c:582
+#, c-format
+msgid ""
+"<alias value='%s'/> given when “%s” is already a member of the enumerated "
+"type"
+msgstr ""
+"Indicât <alias value='%s'/> cuant che “%s” al è za un membri dal gjenar "
+"numerât"
+
+#: gio/glib-compile-schemas.c:588
+#, c-format
+msgid "<alias value='%s'/> given when <choice value='%s'/> was already given"
+msgstr ""
+"Indicât <alias value='%s'/> cuant che <choice value='%s'/> al è za stât "
+"indicât"
+
+#: gio/glib-compile-schemas.c:596
+#, c-format
+msgid "<alias value='%s'/> already specified"
+msgstr "<alias value='%s'/> za specificât"
+
+#: gio/glib-compile-schemas.c:606
+#, c-format
+msgid "alias target “%s” is not in enumerated type"
+msgstr "alias di destinazion “%s” nol è tal gjenar numerât"
+
+#: gio/glib-compile-schemas.c:607
+#, c-format
+msgid "alias target “%s” is not in <choices>"
+msgstr "alias di destinazion “%s” nol è tes <choices>"
+
+#: gio/glib-compile-schemas.c:622
+#, c-format
+msgid "<aliases> must contain at least one <alias>"
+msgstr "<aliases> a scugnin contignî almancul un <alias>"
+
+#: gio/glib-compile-schemas.c:799
+msgid "Empty names are not permitted"
+msgstr "No son ametûts nons vueits"
+
+#: gio/glib-compile-schemas.c:809
+#, c-format
+msgid "Invalid name “%s”: names must begin with a lowercase letter"
+msgstr "Non “%s” no valit: i nons a scugnin scomençâ cuntune letare minuscule"
+
+#: gio/glib-compile-schemas.c:821
+#, c-format
+msgid ""
+"Invalid name “%s”: invalid character “%c”; only lowercase letters, numbers "
+"and hyphen (“-”) are permitted"
+msgstr ""
+"Non “%s” no valit: caratar “%c” no valit; a son permetûts dome letaris "
+"minusculis, numars e il tratut (“-”)"
+
+#: gio/glib-compile-schemas.c:830
+#, c-format
+msgid "Invalid name “%s”: two successive hyphens (“--”) are not permitted"
+msgstr "Non “%s” no valit: no son ametûts doi tratuts sucessivis (“--”)"
+
+#: gio/glib-compile-schemas.c:839
+#, c-format
+msgid "Invalid name “%s”: the last character may not be a hyphen (“-”)"
+msgstr "Non “%s” no valit: l'ultin caratar nol pues jessi un tratut (“-”)"
+
+#: gio/glib-compile-schemas.c:847
+#, c-format
+msgid "Invalid name “%s”: maximum length is 1024"
+msgstr "Non “%s” no valit: la lungjece massime e je 1024"
+
+#: gio/glib-compile-schemas.c:919
+#, c-format
+msgid "<child name='%s'> already specified"
+msgstr "<child name='%s'> za specificât"
+
+#: gio/glib-compile-schemas.c:945
+msgid "Cannot add keys to a “list-of” schema"
+msgstr "Impussibil zontâ clâfs suntun scheme “liste-di”"
+
+#: gio/glib-compile-schemas.c:956
+#, c-format
+msgid "<key name='%s'> already specified"
+msgstr "<key name='%s'> za specificât"
+
+#: gio/glib-compile-schemas.c:974
+#, c-format
+msgid ""
+"<key name='%s'> shadows <key name='%s'> in <schema id='%s'>; use <override> "
+"to modify value"
+msgstr ""
+"<key name='%s'> al tapone <key name='%s'> in <schema id='%s'>; dopre "
+"<override> par modificâ il valôr"
+
+#: gio/glib-compile-schemas.c:985
+#, c-format
+msgid ""
+"Exactly one of “type”, “enum” or “flags” must be specified as an attribute "
+"to <key>"
+msgstr ""
+"Si scugne specificâ in mût esat dome un tra “type”, “enum” o “flags” tant "
+"che atribût a <key>"
+
+#: gio/glib-compile-schemas.c:1004
+#, c-format
+msgid "<%s id='%s'> not (yet) defined."
+msgstr "<%s id='%s'> no (ancjemò) definît."
+
+#: gio/glib-compile-schemas.c:1019
+#, c-format
+msgid "Invalid GVariant type string “%s”"
+msgstr "Stringhe di gjenar GVariant “%s” no valide"
+
+#: gio/glib-compile-schemas.c:1049
+msgid "<override> given but schema isn’t extending anything"
+msgstr "indicât <override> ma il scheme nol slargje nuie"
+
+#: gio/glib-compile-schemas.c:1062
+#, c-format
+msgid "No <key name='%s'> to override"
+msgstr "Nissun <key name='%s'> di ignorâ"
+
+#: gio/glib-compile-schemas.c:1070
+#, c-format
+msgid "<override name='%s'> already specified"
+msgstr "<override name='%s'> za specificât"
+
+#: gio/glib-compile-schemas.c:1143
+#, c-format
+msgid "<schema id='%s'> already specified"
+msgstr "<schema id='%s'> za specificât"
+
+#: gio/glib-compile-schemas.c:1155
+#, c-format
+msgid "<schema id='%s'> extends not yet existing schema “%s”"
+msgstr "<schema id='%s'> al slargje un scheme “%s” che nol esist ancjemò"
+
+#: gio/glib-compile-schemas.c:1171
+#, c-format
+msgid "<schema id='%s'> is list of not yet existing schema “%s”"
+msgstr ""
+"<schema id='%s'> al è une liste di un scheme “%s” che nol esist ancjemò"
+
+#: gio/glib-compile-schemas.c:1179
+#, c-format
+msgid "Cannot be a list of a schema with a path"
+msgstr "Nol pues jessi une liste di un scheme cuntun percors"
+
+#: gio/glib-compile-schemas.c:1189
+#, c-format
+msgid "Cannot extend a schema with a path"
+msgstr "Impussibil slargjâ un scheme cuntun percors"
+
+#: gio/glib-compile-schemas.c:1199
+#, c-format
+msgid ""
+"<schema id='%s'> is a list, extending <schema id='%s'> which is not a list"
+msgstr ""
+"<schema id='%s'> al è une liste, al slargje <schema id='%s'> che no je une "
+"liste"
+
+#: gio/glib-compile-schemas.c:1209
+#, c-format
+msgid ""
+"<schema id='%s' list-of='%s'> extends <schema id='%s' list-of='%s'> but “%s” "
+"does not extend “%s”"
+msgstr ""
+"<schema id='%s' list-of='%s'> al slargje <schema id='%s' list-of='%s'> ma "
+"“%s” nol slargje “%s”"
+
+#: gio/glib-compile-schemas.c:1226
+#, c-format
+msgid "A path, if given, must begin and end with a slash"
+msgstr "Un percors, se indicât, al scugne scomençâ e finî cuntune sbare"
+
+#: gio/glib-compile-schemas.c:1233
+#, c-format
+msgid "The path of a list must end with “:/”"
+msgstr "Il percors di une liste al scugne finî cun “:/”"
+
+#: gio/glib-compile-schemas.c:1242
+#, c-format
+msgid ""
+"Warning: Schema “%s” has path “%s”.  Paths starting with “/apps/”, “/"
+"desktop/” or “/system/” are deprecated."
+msgstr ""
+"Atenzion: il scheme “%s” al à percors “%s”.  I percors che a scomencin par “/"
+"apps/”, “/desktop/” o “/system/” a son deplorâts."
+
+#: gio/glib-compile-schemas.c:1272
+#, c-format
+msgid "<%s id='%s'> already specified"
+msgstr "<%s id='%s'> za specificât"
+
+#: gio/glib-compile-schemas.c:1422 gio/glib-compile-schemas.c:1438
+#, c-format
+msgid "Only one <%s> element allowed inside <%s>"
+msgstr "Al è permetût dome un element <%s> dentri <%s>"
+
+#: gio/glib-compile-schemas.c:1520
+#, c-format
+msgid "Element <%s> not allowed at the top level"
+msgstr "L'element <%s> nol è ametût al nivel plui alt"
+
+#: gio/glib-compile-schemas.c:1538
+msgid "Element <default> is required in <key>"
+msgstr "L'element <default> al è necessari in <key>"
+
+#: gio/glib-compile-schemas.c:1628
+#, c-format
+msgid "Text may not appear inside <%s>"
+msgstr "Il test al podarès no aparî dentri di <%s>"
+
+#: gio/glib-compile-schemas.c:1696
+#, c-format
+msgid "Warning: undefined reference to <schema id='%s'/>"
+msgstr "Atenzion: riferiment no definît a <schema id='%s'/>"
+
+#. Translators: Do not translate "--strict".
+#: gio/glib-compile-schemas.c:1835 gio/glib-compile-schemas.c:1914
+msgid "--strict was specified; exiting."
+msgstr "--strict al jere specificât; si jes."
+
+#: gio/glib-compile-schemas.c:1847
+msgid "This entire file has been ignored."
+msgstr "Chest file intîr al è stât ignorât."
+
+#: gio/glib-compile-schemas.c:1910
+msgid "Ignoring this file."
+msgstr "Si ignore chest file."
+
+#: gio/glib-compile-schemas.c:1965
+#, c-format
+msgid ""
+"No such key “%s” in schema “%s” as specified in override file “%s”; ignoring "
+"override for this key."
+msgstr ""
+"No esist nissune clâf “%s” tal scheme “%s” come specificât tal file par "
+"passâ parsore “%s”; si ignore il passâ parsore par cheste clâf."
+
+#: gio/glib-compile-schemas.c:1973
+#, c-format
+msgid ""
+"No such key “%s” in schema “%s” as specified in override file “%s” and --"
+"strict was specified; exiting."
+msgstr ""
+"No esist nissune clâf “%s” tal scheme “%s” come specificât tal file par "
+"passâ parsore “%s” e --strict al è stât specificât; si jes."
+
+#: gio/glib-compile-schemas.c:1995
+#, c-format
+msgid ""
+"Cannot provide per-desktop overrides for localized key “%s” in schema "
+"“%s” (override file “%s”); ignoring override for this key."
+msgstr ""
+"Impussibil indicâ lis opzion par passâ-sore par ogni scritori pe clâf "
+"localizade “%s” tal scheme “%s” (file par passâ parsore “%s”); si ignore il "
+"passâ parsore par cheste clâf."
+
+#: gio/glib-compile-schemas.c:2004
+#, c-format
+msgid ""
+"Cannot provide per-desktop overrides for localized key “%s” in schema "
+"“%s” (override file “%s”) and --strict was specified; exiting."
+msgstr ""
+"Impussibil indicâ lis opzions par passâ-sore par ogni scritori pe clâf "
+"localizade “%s” tal scheme “%s” (file par passâ parsore “%s”) e --strict al "
+"è stât specificât; si jes."
+
+#: gio/glib-compile-schemas.c:2028
+#, c-format
+msgid ""
+"Error parsing key “%s” in schema “%s” as specified in override file “%s”: "
+"%s. Ignoring override for this key."
+msgstr ""
+"Erôr tal analizâ la clâf “%s” tal scheme “%s” come specificât tal file par "
+"passâ parsore “%s”: %s. Si ignore il passâ parsore par cheste clâf."
+
+#: gio/glib-compile-schemas.c:2040
+#, c-format
+msgid ""
+"Error parsing key “%s” in schema “%s” as specified in override file “%s”: "
+"%s. --strict was specified; exiting."
+msgstr ""
+"Erôr tal analizâ la clâf “%s” tal scheme “%s” come specificât tal file par "
+"passâ parsore “%s”: %s. --strict al è stât specificât; si jes."
+
+#: gio/glib-compile-schemas.c:2067
+#, c-format
+msgid ""
+"Override for key “%s” in schema “%s” in override file “%s” is outside the "
+"range given in the schema; ignoring override for this key."
+msgstr ""
+"La opzion par passâ parsore pe clâf “%s” tal scheme “%s” tal file par passâ "
+"parsore “%s” e je fûr dal interval indicât tal scheme; si ignore il passâ "
+"parsore par cheste clâf."
+
+#: gio/glib-compile-schemas.c:2077
+#, c-format
+msgid ""
+"Override for key “%s” in schema “%s” in override file “%s” is outside the "
+"range given in the schema and --strict was specified; exiting."
+msgstr ""
+"La opzion par passâ parsore pe clâf “%s” tal scheme “%s” tal file par passâ "
+"parsore “%s” e je fûr dal interval indicât tal scheme e --strict al è stât "
+"specificât; si jes."
+
+#: gio/glib-compile-schemas.c:2103
+#, c-format
+msgid ""
+"Override for key “%s” in schema “%s” in override file “%s” is not in the "
+"list of valid choices; ignoring override for this key."
+msgstr ""
+"La opzion par passâ parsore pe clâf “%s” tal scheme “%s” tal file par passâ "
+"parsore “%s” no je te liste des sieltis validis; si ignore il passâ parsore "
+"par cheste clâf."
+
+#: gio/glib-compile-schemas.c:2113
+#, c-format
+msgid ""
+"Override for key “%s” in schema “%s” in override file “%s” is not in the "
+"list of valid choices and --strict was specified; exiting."
+msgstr ""
+"La opzion par passâ parsore pe clâf “%s” tal scheme “%s” tal file par passâ "
+"parsore “%s” no je te liste des sieltis validis e --strict al è stât "
+"specificât; si jes."
+
+#: gio/glib-compile-schemas.c:2175
+msgid "Where to store the gschemas.compiled file"
+msgstr "Dulà archiviâ il file gschemas.compiled"
+
+#: gio/glib-compile-schemas.c:2176
+msgid "Abort on any errors in schemas"
+msgstr "Interomp su cualsisei erôr tai schemis"
+
+#: gio/glib-compile-schemas.c:2177
+msgid "Do not write the gschema.compiled file"
+msgstr "No sta scrivi il file gschema.compiled"
+
+#: gio/glib-compile-schemas.c:2178
+msgid "Do not enforce key name restrictions"
+msgstr "No sta sfuarçâ lis restrizions dai nons des clâfs"
+
+#: gio/glib-compile-schemas.c:2207
+msgid ""
+"Compile all GSettings schema files into a schema cache.\n"
+"Schema files are required to have the extension .gschema.xml,\n"
+"and the cache file is called gschemas.compiled."
+msgstr ""
+"Compile ducj i file scheme di GSettings intune cache di schemis.\n"
+"I files di scheme a scugnin vê la estension .gschema.xml,\n"
+"e il file cache al ven clamât gschemas.compiled."
+
+#: gio/glib-compile-schemas.c:2228
+msgid "You should give exactly one directory name"
+msgstr "Si scugne dâ juste un non di cartele"
+
+#: gio/glib-compile-schemas.c:2271
+msgid "No schema files found: doing nothing."
+msgstr "Nissun file di scheme cjatât: no si fâs nuie."
+
+#: gio/glib-compile-schemas.c:2273
+msgid "No schema files found: removed existing output file."
+msgstr "Nissun file di scheme cjatât: file di jessude esistent gjavât."
+
+#: gio/glocalfile.c:563 gio/win32/gwinhttpfile.c:436
+#, c-format
+msgid "Invalid filename %s"
+msgstr "Non file %s no valit"
+
+#: gio/glocalfile.c:996
+#, c-format
+msgid "Error getting filesystem info for %s: %s"
+msgstr "Erôr tal otignî lis informazion dal filesystem par %s: %s"
+
+#. Translators: This is an error message when trying to find
+#. * the enclosing (user visible) mount of a file, but none
+#. * exists.
+#.
+#: gio/glocalfile.c:1137
+#, c-format
+msgid "Containing mount for file %s not found"
+msgstr "Il montaç che al conten il file %s nol è stât cjatât"
+
+#: gio/glocalfile.c:1160
+msgid "Can’t rename root directory"
+msgstr "Impussibil cambiâ il non de cartele lidrîs"
+
+#: gio/glocalfile.c:1178 gio/glocalfile.c:1201
+#, c-format
+msgid "Error renaming file %s: %s"
+msgstr "Erôr tal cambiâ non al file %s: %s"
+
+#: gio/glocalfile.c:1185
+msgid "Can’t rename file, filename already exists"
+msgstr "Impussibil cambiâ non al file, il non dal file al esist za"
+
+#: gio/glocalfile.c:1198 gio/glocalfile.c:2394 gio/glocalfile.c:2422
+#: gio/glocalfile.c:2561 gio/glocalfileoutputstream.c:658
+msgid "Invalid filename"
+msgstr "Non file no valit"
+
+#: gio/glocalfile.c:1366 gio/glocalfile.c:1377
+#, c-format
+msgid "Error opening file %s: %s"
+msgstr "Erôr tal vierzi il file %s: %s"
+
+#: gio/glocalfile.c:1502
+#, c-format
+msgid "Error removing file %s: %s"
+msgstr "Erôr tal gjavâ il file %s: %s"
+
+#: gio/glocalfile.c:1996 gio/glocalfile.c:2007 gio/glocalfile.c:2034
+#, c-format
+msgid "Error trashing file %s: %s"
+msgstr "Erôr tal butâ te scovacere il file %s: %s"
+
+#: gio/glocalfile.c:2054
+#, c-format
+msgid "Unable to create trash directory %s: %s"
+msgstr "Impussibil creâ la cartele scovacere %s: %s"
+
+#: gio/glocalfile.c:2075
+#, c-format
+msgid "Unable to find toplevel directory to trash %s"
+msgstr "Impussibil cjatâ la cartele di nivel superiôr par butâ tes scovacis %s"
+
+#: gio/glocalfile.c:2083
+#, c-format
+msgid "Trashing on system internal mounts is not supported"
+msgstr "Nol è supuartât il butâ te scovacere su montaçs internis dal sisteme"
+
+#: gio/glocalfile.c:2169 gio/glocalfile.c:2197
+#, c-format
+msgid "Unable to find or create trash directory %s to trash %s"
+msgstr "Impussibil cjatâ o creâ la cartele %s te scovacere %s"
+
+#: gio/glocalfile.c:2243
+#, c-format
+msgid "Unable to create trashing info file for %s: %s"
+msgstr ""
+"Impussibil creâ il file des informazions de butade tes scovacis par %s: %s"
+
+#: gio/glocalfile.c:2305
+#, c-format
+msgid "Unable to trash file %s across filesystem boundaries"
+msgstr "Impussibil butâ tes scovacis il file %s jenfri i limits dal filesystem"
+
+#: gio/glocalfile.c:2309 gio/glocalfile.c:2365
+#, c-format
+msgid "Unable to trash file %s: %s"
+msgstr "Impussibil butâ te scovacere il file %s: %s"
+
+#: gio/glocalfile.c:2371
+#, c-format
+msgid "Unable to trash file %s"
+msgstr "Impussibil butâ te scovacere il file %s"
+
+#: gio/glocalfile.c:2397
+#, c-format
+msgid "Error creating directory %s: %s"
+msgstr "Erôr tal creâ la cartele %s: %s"
+
+#: gio/glocalfile.c:2426
+#, c-format
+msgid "Filesystem does not support symbolic links"
+msgstr "Il filesystem nol supuarte i colegaments simbolics"
+
+#: gio/glocalfile.c:2429
+#, c-format
+msgid "Error making symbolic link %s: %s"
+msgstr "Erôr tal creâ il colegament simbolic %s: %s"
+
+#: gio/glocalfile.c:2472 gio/glocalfile.c:2507 gio/glocalfile.c:2564
+#, c-format
+msgid "Error moving file %s: %s"
+msgstr "Erôr tal spostâ il file %s: %s"
+
+#: gio/glocalfile.c:2495
+msgid "Can’t move directory over directory"
+msgstr "Impussibil spostâ la cartele sore de cartele"
+
+#: gio/glocalfile.c:2521 gio/glocalfileoutputstream.c:1110
+#: gio/glocalfileoutputstream.c:1124 gio/glocalfileoutputstream.c:1139
+#: gio/glocalfileoutputstream.c:1156 gio/glocalfileoutputstream.c:1170
+msgid "Backup file creation failed"
+msgstr "Creazion dal file di backup falide"
+
+#: gio/glocalfile.c:2540
+#, c-format
+msgid "Error removing target file: %s"
+msgstr "Erôr tal gjavâ il file di destinazion: %s"
+
+#: gio/glocalfile.c:2554
+msgid "Move between mounts not supported"
+msgstr "Spostament tra montaçs no supuartât"
+
+#: gio/glocalfile.c:2728
+#, c-format
+msgid "Could not determine the disk usage of %s: %s"
+msgstr "Impussibil determinâ la utilizazion dal disc di %s: %s"
+
+#: gio/glocalfileinfo.c:775
+msgid "Attribute value must be non-NULL"
+msgstr "Il valôr dal atribût al scugne jessi diviers di NULL"
+
+#: gio/glocalfileinfo.c:782
+#, fuzzy
+#| msgid "Invalid attribute type (string expected)"
+msgid "Invalid attribute type (string or invalid expected)"
+msgstr "Gjenar di atribût no valit (si spietave une stringhe)"
+
+#: gio/glocalfileinfo.c:789
+msgid "Invalid extended attribute name"
+msgstr "Non di atribût estês no valit"
+
+#: gio/glocalfileinfo.c:840
+#, c-format
+msgid "Error setting extended attribute “%s”: %s"
+msgstr "Erôr tal stabilî l'atribût estês “%s”: %s"
+
+#: gio/glocalfileinfo.c:1732 gio/win32/gwinhttpfile.c:191
+msgid " (invalid encoding)"
+msgstr " (codifiche no valide)"
+
+#: gio/glocalfileinfo.c:1891 gio/glocalfileoutputstream.c:945
+#: gio/glocalfileoutputstream.c:997
+#, c-format
+msgid "Error when getting information for file “%s”: %s"
+msgstr "Erôr dilunc il recupar des informazions pal file “%s”: %s"
+
+#: gio/glocalfileinfo.c:2157
+#, c-format
+msgid "Error when getting information for file descriptor: %s"
+msgstr "Erôr dilunc il recupar des informazions pal descritôr dal file: %s"
+
+#: gio/glocalfileinfo.c:2202
+msgid "Invalid attribute type (uint32 expected)"
+msgstr "Gjenar di atribût no valit (si spietave uint32)"
+
+#: gio/glocalfileinfo.c:2220
+msgid "Invalid attribute type (uint64 expected)"
+msgstr "Gjenar di atribût no valit (si spietave uint64)"
+
+#: gio/glocalfileinfo.c:2239 gio/glocalfileinfo.c:2258
+msgid "Invalid attribute type (byte string expected)"
+msgstr "Gjenar di atribût no valit (si spietave une stringhe di byte)"
+
+#: gio/glocalfileinfo.c:2305
+msgid "Cannot set permissions on symlinks"
+msgstr "Impussibil stabilî i permès sui colegaments simbolics"
+
+#: gio/glocalfileinfo.c:2321
+#, c-format
+msgid "Error setting permissions: %s"
+msgstr "Erôr tal stabilî i permès: %s"
+
+#: gio/glocalfileinfo.c:2372
+#, c-format
+msgid "Error setting owner: %s"
+msgstr "Erôr tal stabilî il proprietari: %s"
+
+#: gio/glocalfileinfo.c:2395
+msgid "symlink must be non-NULL"
+msgstr "i colegaments simbolics a scugnin jessi diviers di NULL"
+
+#: gio/glocalfileinfo.c:2405 gio/glocalfileinfo.c:2424
+#: gio/glocalfileinfo.c:2435
+#, c-format
+msgid "Error setting symlink: %s"
+msgstr "Erôr tal stabilî il colegament simbolic: %s"
+
+#: gio/glocalfileinfo.c:2414
+msgid "Error setting symlink: file is not a symlink"
+msgstr ""
+"Erôr tal stabilî il colegament simbolic: il file nol è un colegament simbolic"
+
+#: gio/glocalfileinfo.c:2486
+#, c-format
+msgid "Extra nanoseconds %d for UNIX timestamp %lld are negative"
+msgstr ""
+
+#: gio/glocalfileinfo.c:2495
+#, c-format
+msgid "Extra nanoseconds %d for UNIX timestamp %lld reach 1 second"
+msgstr ""
+
+#: gio/glocalfileinfo.c:2505
+#, c-format
+msgid "UNIX timestamp %lld does not fit into 64 bits"
+msgstr "La marche temporâl di UNIX %lld no sta tai 64 bits"
+
+#: gio/glocalfileinfo.c:2516
+#, c-format
+msgid "UNIX timestamp %lld is outside of the range supported by Windows"
+msgstr ""
+"La marche temporâl di UNIX %lld e sta fûr dal interval supuartât di Windows"
+
+#: gio/glocalfileinfo.c:2619
+#, c-format
+msgid "File name “%s” cannot be converted to UTF-16"
+msgstr "Nol è pussibil convertî a UTF-16 il non dal file “%s”"
+
+#: gio/glocalfileinfo.c:2638
+#, c-format
+msgid "File “%s” cannot be opened: Windows Error %lu"
+msgstr "Nol è pussibil vierzi il file “%s”: erôr di Windows %lu"
+
+#: gio/glocalfileinfo.c:2651
+#, c-format
+msgid "Error setting modification or access time for file “%s”: %lu"
+msgstr "Erôr tal stabilî la ore di modifiche o di acès pal file “%s”: %lu"
+
+#: gio/glocalfileinfo.c:2825
+#, c-format
+msgid "Error setting modification or access time: %s"
+msgstr "Erôr tal stabilî la ore di modifiche o acès: %s"
+
+#: gio/glocalfileinfo.c:2848
+msgid "SELinux context must be non-NULL"
+msgstr "Il contest SELinux al scugne jessi diviers di NULL"
+
+#: gio/glocalfileinfo.c:2855
+msgid "SELinux is not enabled on this system"
+msgstr "SELinux nol è abilitât su chest sisteme"
+
+#: gio/glocalfileinfo.c:2865
+#, c-format
+msgid "Error setting SELinux context: %s"
+msgstr "Erôr tal stabilî il contest SELinux: %s"
+
+#: gio/glocalfileinfo.c:2962
+#, c-format
+msgid "Setting attribute %s not supported"
+msgstr "La configurazion dal atribût %s no je supuartade"
+
+#: gio/glocalfileinputstream.c:165 gio/glocalfileoutputstream.c:803
+#, c-format
+msgid "Error reading from file: %s"
+msgstr "Erôr tal lei dal file: %s"
+
+#: gio/glocalfileinputstream.c:196 gio/glocalfileoutputstream.c:355
+#: gio/glocalfileoutputstream.c:449
+#, c-format
+msgid "Error closing file: %s"
+msgstr "Erôr tal sierâ il file: %s"
+
+#: gio/glocalfileinputstream.c:274 gio/glocalfileoutputstream.c:565
+#: gio/glocalfileoutputstream.c:1188
+#, c-format
+msgid "Error seeking in file: %s"
+msgstr "Erôr tal cirî tal file: %s"
+
+#: gio/glocalfilemonitor.c:882
+msgid "Unable to find default local file monitor type"
+msgstr "Impussibil cjatâ un gjenar di monitor dal file locâl predefinît"
+
+#: gio/glocalfileoutputstream.c:222 gio/glocalfileoutputstream.c:300
+#: gio/glocalfileoutputstream.c:336 gio/glocalfileoutputstream.c:824
+#, c-format
+msgid "Error writing to file: %s"
+msgstr "Erôr tal scrivi sul file: %s"
+
+#: gio/glocalfileoutputstream.c:382
+#, c-format
+msgid "Error removing old backup link: %s"
+msgstr "Erôr tal gjavâ il colegament dal backup vecjo: %s"
+
+#: gio/glocalfileoutputstream.c:396 gio/glocalfileoutputstream.c:409
+#, c-format
+msgid "Error creating backup copy: %s"
+msgstr "Erôr tal creâ une copie di backup: %s"
+
+#: gio/glocalfileoutputstream.c:427
+#, c-format
+msgid "Error renaming temporary file: %s"
+msgstr "Erôr tal cambiâ non al file temporani: %s"
+
+#: gio/glocalfileoutputstream.c:611 gio/glocalfileoutputstream.c:1242
+#, c-format
+msgid "Error truncating file: %s"
+msgstr "Erôr tal cjonçâ il file: %s"
+
+#: gio/glocalfileoutputstream.c:664 gio/glocalfileoutputstream.c:909
+#: gio/glocalfileoutputstream.c:1223 gio/gsubprocess.c:231
+#, c-format
+msgid "Error opening file “%s”: %s"
+msgstr "Erôr tal vierzi il file “%s”: %s"
+
+#: gio/glocalfileoutputstream.c:959
+msgid "Target file is a directory"
+msgstr "Il file di destinazion al è une cartele"
+
+#: gio/glocalfileoutputstream.c:973
+msgid "Target file is not a regular file"
+msgstr "Il file di destinazion nol è un file regolâr"
+
+#: gio/glocalfileoutputstream.c:1015
+msgid "The file was externally modified"
+msgstr "Il file al è stât modificât di difûr di chi"
+
+#: gio/glocalfileoutputstream.c:1205
+#, c-format
+msgid "Error removing old file: %s"
+msgstr "Erôr tal gjavâ il file vecjo: %s"
+
+#: gio/gmemoryinputstream.c:476 gio/gmemoryoutputstream.c:764
+msgid "Invalid GSeekType supplied"
+msgstr "Furnît GSeekType no valit"
+
+#: gio/gmemoryinputstream.c:486
+msgid "Invalid seek request"
+msgstr "Richieste di ricercje no valide"
+
+#: gio/gmemoryinputstream.c:510
+msgid "Cannot truncate GMemoryInputStream"
+msgstr "Impussibil cjonçâ GMemoryInputStream"
+
+#: gio/gmemoryoutputstream.c:570
+msgid "Memory output stream not resizable"
+msgstr "Nol è pussibil ridimensionâ il flus di jessude de memorie"
+
+#: gio/gmemoryoutputstream.c:586
+msgid "Failed to resize memory output stream"
+msgstr "No si è rivâts a ridimensionâ il flus di jessude de memorie"
+
+#: gio/gmemoryoutputstream.c:665
+msgid ""
+"Amount of memory required to process the write is larger than available "
+"address space"
+msgstr ""
+"La cuantitât de memorie necessarie par elaborâ la scriture e je plui grande "
+"dal spazi di indreçament disponibil"
+
+#: gio/gmemoryoutputstream.c:774
+msgid "Requested seek before the beginning of the stream"
+msgstr "Domandât posizionament prime dal inizi dal flus"
+
+#: gio/gmemoryoutputstream.c:789
+msgid "Requested seek beyond the end of the stream"
+msgstr "Domandât posizionament plui in là de fin dal flus"
+
+#. Translators: This is an error
+#. * message for mount objects that
+#. * don't implement unmount.
+#: gio/gmount.c:401
+msgid "mount doesn’t implement “unmount”"
+msgstr "il montaç nol implemente la azion par dismontâ “unmount”"
+
+#. Translators: This is an error
+#. * message for mount objects that
+#. * don't implement eject.
+#: gio/gmount.c:477
+msgid "mount doesn’t implement “eject”"
+msgstr "il montaç nol implemente la azion par parâ fûr “eject”"
+
+#. Translators: This is an error
+#. * message for mount objects that
+#. * don't implement any of unmount or unmount_with_operation.
+#: gio/gmount.c:555
+msgid "mount doesn’t implement “unmount” or “unmount_with_operation”"
+msgstr "mount nol implemente “unmount” o “unmount_with_operation”"
+
+#. Translators: This is an error
+#. * message for mount objects that
+#. * don't implement any of eject or eject_with_operation.
+#: gio/gmount.c:640
+msgid "mount doesn’t implement “eject” or “eject_with_operation”"
+msgstr ""
+"mount nol implemente il parâ fûr “eject” o il parâ fûr cun operazion "
+"“eject_with_operation”"
+
+#. Translators: This is an error
+#. * message for mount objects that
+#. * don't implement remount.
+#: gio/gmount.c:728
+msgid "mount doesn’t implement “remount”"
+msgstr "mount nol implemente “remount”"
+
+#. Translators: This is an error
+#. * message for mount objects that
+#. * don't implement content type guessing.
+#: gio/gmount.c:810
+msgid "mount doesn’t implement content type guessing"
+msgstr "mount nol implemente l'induvinâ il gjenar di contignût"
+
+#. Translators: This is an error
+#. * message for mount objects that
+#. * don't implement content type guessing.
+#: gio/gmount.c:897
+msgid "mount doesn’t implement synchronous content type guessing"
+msgstr "mount nol implemente l'induvinâ il gjenar di contignût sincroni"
+
+#: gio/gnetworkaddress.c:417
+#, c-format
+msgid "Hostname “%s” contains “[” but not “]”"
+msgstr "Il non host “%s” al conten “[” ma no “]”"
+
+#: gio/gnetworkmonitorbase.c:221 gio/gnetworkmonitorbase.c:325
+msgid "Network unreachable"
+msgstr "Rêt fûr puartade"
+
+#: gio/gnetworkmonitorbase.c:259 gio/gnetworkmonitorbase.c:289
+msgid "Host unreachable"
+msgstr "Host fûr puartade"
+
+#: gio/gnetworkmonitornetlink.c:101 gio/gnetworkmonitornetlink.c:113
+#: gio/gnetworkmonitornetlink.c:132
+#, c-format
+msgid "Could not create network monitor: %s"
+msgstr "Impussibil creâ il monitor di rêt: %s"
+
+#: gio/gnetworkmonitornetlink.c:122
+msgid "Could not create network monitor: "
+msgstr "Impussibil creâ il monitor di rêt: "
+
+#: gio/gnetworkmonitornetlink.c:185
+msgid "Could not get network status: "
+msgstr "Impussibil otignî il stât de rêt: "
+
+#: gio/gnetworkmonitornm.c:313
+#, c-format
+msgid "NetworkManager not running"
+msgstr "NetworkManager nol è in esecuzion"
+
+#: gio/gnetworkmonitornm.c:324
+#, c-format
+msgid "NetworkManager version too old"
+msgstr "Version di NetworkManager masse vecje"
+
+#: gio/goutputstream.c:234 gio/goutputstream.c:777
+msgid "Output stream doesn’t implement write"
+msgstr "Il flus di jessude nol implemente la scriture"
+
+#: gio/goutputstream.c:474 gio/goutputstream.c:1535
+#, c-format
+msgid "Sum of vectors passed to %s too large"
+msgstr "La sume dai vetôrs passade a %s e je masse grande"
+
+#: gio/goutputstream.c:738 gio/goutputstream.c:1763
+msgid "Source stream is already closed"
+msgstr "Il flus sorzint al è za sierât"
+
+#: gio/gproxyaddressenumerator.c:324 gio/gproxyaddressenumerator.c:342
+msgid "Unspecified proxy lookup failure"
+msgstr ""
+
+#. Translators: the first placeholder is a domain name, the
+#. * second is an error message
+#: gio/gresolver.c:403 gio/gthreadedresolver.c:152 gio/gthreadedresolver.c:170
+#: gio/gthreadedresolver.c:782 gio/gthreadedresolver.c:806
+#: gio/gthreadedresolver.c:831 gio/gthreadedresolver.c:846
+#, c-format
+msgid "Error resolving “%s”: %s"
+msgstr "Erôr tal risolvi “%s”: %s"
+
+#. Translators: The placeholder is for a function name.
+#: gio/gresolver.c:472 gio/gresolver.c:632
+#, c-format
+msgid "%s not implemented"
+msgstr "%s no implementât"
+
+#: gio/gresolver.c:1001 gio/gresolver.c:1053
+msgid "Invalid domain"
+msgstr "Domini no valit"
+
+#: gio/gresource.c:683 gio/gresource.c:945 gio/gresource.c:985
+#: gio/gresource.c:1109 gio/gresource.c:1181 gio/gresource.c:1255
+#: gio/gresource.c:1336 gio/gresourcefile.c:478 gio/gresourcefile.c:601
+#: gio/gresourcefile.c:752
+#, c-format
+msgid "The resource at “%s” does not exist"
+msgstr "La risorse lì di “%s” no esist"
+
+#: gio/gresource.c:850
+#, c-format
+msgid "The resource at “%s” failed to decompress"
+msgstr "La risorse lì di “%s” no je rivade a decomprimisi"
+
+#: gio/gresourcefile.c:658
+msgid "Resource files cannot be renamed"
+msgstr "Nol è pussibil cambiâ non ai files des risorsis"
+
+#: gio/gresourcefile.c:748
+#, c-format
+msgid "The resource at “%s” is not a directory"
+msgstr "La risorse lì di “%s” no je une cartele"
+
+#: gio/gresourcefile.c:956
+msgid "Input stream doesn’t implement seek"
+msgstr "Il flus di jentrade nol implemente la ricercje"
+
+#: gio/gresource-tool.c:502
+msgid "List sections containing resources in an elf FILE"
+msgstr "Sezions di liste che a contegnin risorsis intun FILE elf"
+
+#: gio/gresource-tool.c:508
+msgid ""
+"List resources\n"
+"If SECTION is given, only list resources in this section\n"
+"If PATH is given, only list matching resources"
+msgstr ""
+"Liste lis risorsis\n"
+"Se SEZION al ven indicât, liste dome lis risorsis in cheste sezion \n"
+"Se PERCORS al ven indicât, liste dome lis risorsis corispondentis"
+
+#: gio/gresource-tool.c:511 gio/gresource-tool.c:521
+msgid "FILE [PATH]"
+msgstr "FILE [PERCORS]"
+
+#: gio/gresource-tool.c:512 gio/gresource-tool.c:522 gio/gresource-tool.c:529
+msgid "SECTION"
+msgstr "SEZION"
+
+#: gio/gresource-tool.c:517
+msgid ""
+"List resources with details\n"
+"If SECTION is given, only list resources in this section\n"
+"If PATH is given, only list matching resources\n"
+"Details include the section, size and compression"
+msgstr ""
+"Liste lis risorsis cui detais\n"
+"Se SEZION al ven indicât, liste dome lis risorsis in cheste sezion\n"
+"Se PERCORS al ven indicât, liste dome lis risorsis corispondentis\n"
+"I detais a includin la sezion, la dimension e la compression"
+
+#: gio/gresource-tool.c:527
+msgid "Extract a resource file to stdout"
+msgstr "Tire fûr un file di risorsis tal stdout"
+
+#: gio/gresource-tool.c:528
+msgid "FILE PATH"
+msgstr "PERCORS FILE"
+
+#: gio/gresource-tool.c:542
+msgid ""
+"Usage:\n"
+"  gresource [--section SECTION] COMMAND [ARGS…]\n"
+"\n"
+"Commands:\n"
+"  help                      Show this information\n"
+"  sections                  List resource sections\n"
+"  list                      List resources\n"
+"  details                   List resources with details\n"
+"  extract                   Extract a resource\n"
+"\n"
+"Use “gresource help COMMAND” to get detailed help.\n"
+"\n"
+msgstr ""
+"Ûs:\n"
+"  gresource [--section SEZION] COMANT [ARGS…]\n"
+"\n"
+"Comants:\n"
+"  help                      Mostre chestis informazions\n"
+"  sections                  Liste lis sezions des risorsis\n"
+"  list                      Liste lis risorsis\n"
+"  details                   Liste lis risorsis cui detais\n"
+"  extract                   Estrai une risorse\n"
+"\n"
+"Dopre “gresource help COMANT” par otignî jutori detaiât.\n"
+"\n"
+
+#: gio/gresource-tool.c:556
+#, c-format
+msgid ""
+"Usage:\n"
+"  gresource %s%s%s %s\n"
+"\n"
+"%s\n"
+"\n"
+msgstr ""
+"Ûs:\n"
+"  gresource %s%s%s %s\n"
+"\n"
+"%s\n"
+"\n"
+
+#: gio/gresource-tool.c:563
+msgid "  SECTION   An (optional) elf section name\n"
+msgstr "  SEZION    Un non di sezion elf (opzionâl)\n"
+
+#: gio/gresource-tool.c:567 gio/gsettings-tool.c:720
+msgid "  COMMAND   The (optional) command to explain\n"
+msgstr "  COMANT    Il comant (opzionâl) di spiegâ\n"
+
+#: gio/gresource-tool.c:573
+msgid "  FILE      An elf file (a binary or a shared library)\n"
+msgstr "  FILE      Un file elf (un binari o une librarie condividude)\n"
+
+#: gio/gresource-tool.c:576
+msgid ""
+"  FILE      An elf file (a binary or a shared library)\n"
+"            or a compiled resource file\n"
+msgstr ""
+"  FILE      Un file elf (un binari o une librarie condividude)\n"
+"            o un file di risorse compilade\n"
+
+#: gio/gresource-tool.c:580
+msgid "[PATH]"
+msgstr "[PERCORS]"
+
+#: gio/gresource-tool.c:582
+msgid "  PATH      An (optional) resource path (may be partial)\n"
+msgstr "  PERCORS   Un percors di risorse(opzionâl)(ancje parziâl)\n"
+
+#: gio/gresource-tool.c:583
+msgid "PATH"
+msgstr "PERCORS"
+
+#: gio/gresource-tool.c:585
+msgid "  PATH      A resource path\n"
+msgstr "  PERCORS   Un percors di risorse\n"
+
+#: gio/gsettings-tool.c:51 gio/gsettings-tool.c:72 gio/gsettings-tool.c:925
+#, c-format
+msgid "No such schema “%s”\n"
+msgstr "Nol esist nissun scheme “%s”\n"
+
+#: gio/gsettings-tool.c:57
+#, c-format
+msgid "Schema “%s” is not relocatable (path must not be specified)\n"
+msgstr ""
+"Il scheme “%s” nol è riposizionabil (no si à di specificâ il percors)\n"
+
+#: gio/gsettings-tool.c:78
+#, c-format
+msgid "Schema “%s” is relocatable (path must be specified)\n"
+msgstr "Il scheme “%s” al è riposizionabil (si scugne specificâ il percors)\n"
+
+#: gio/gsettings-tool.c:92
+msgid "Empty path given.\n"
+msgstr "Percors vueit furnît.\n"
+
+#: gio/gsettings-tool.c:98
+msgid "Path must begin with a slash (/)\n"
+msgstr "Il percors al scugne scomençâ cuntune sbare (/)\n"
+
+#: gio/gsettings-tool.c:104
+msgid "Path must end with a slash (/)\n"
+msgstr "Il percors al scugne finî cuntune sbare (/)\n"
+
+#: gio/gsettings-tool.c:110
+msgid "Path must not contain two adjacent slashes (//)\n"
+msgstr "Il percors nol à di contignî dôs sbaris dongje (//)\n"
+
+#: gio/gsettings-tool.c:555
+msgid "The provided value is outside of the valid range\n"
+msgstr "Il valôr indicât al è fûr dal interval valit\n"
+
+#: gio/gsettings-tool.c:562
+msgid "The key is not writable\n"
+msgstr "La clâf no je scrivibile\n"
+
+#: gio/gsettings-tool.c:598
+msgid "List the installed (non-relocatable) schemas"
+msgstr "Liste i schemis instalâts (no-riposizionabii)"
+
+#: gio/gsettings-tool.c:604
+msgid "List the installed relocatable schemas"
+msgstr "Liste i schemis riposizionabii instalâts"
+
+#: gio/gsettings-tool.c:610
+msgid "List the keys in SCHEMA"
+msgstr "Liste lis clâfs tal SCHEME"
+
+#: gio/gsettings-tool.c:611 gio/gsettings-tool.c:617 gio/gsettings-tool.c:660
+msgid "SCHEMA[:PATH]"
+msgstr "SCHEME[:PERCORS]"
+
+#: gio/gsettings-tool.c:616
+msgid "List the children of SCHEMA"
+msgstr "Liste i fîs dal SCHEME"
+
+#: gio/gsettings-tool.c:622
+msgid ""
+"List keys and values, recursively\n"
+"If no SCHEMA is given, list all keys\n"
+msgstr ""
+"Liste lis clâfs e i valôrs, in maniere ricorsive\n"
+"Se nissun SCHEME al ven indicât, liste dutis lis clâfs\n"
+
+#: gio/gsettings-tool.c:624
+msgid "[SCHEMA[:PATH]]"
+msgstr "[SCHEME[:PERCORS]]"
+
+#: gio/gsettings-tool.c:629
+msgid "Get the value of KEY"
+msgstr "Oten il valôr de CLÂF"
+
+#: gio/gsettings-tool.c:630 gio/gsettings-tool.c:636 gio/gsettings-tool.c:642
+#: gio/gsettings-tool.c:654 gio/gsettings-tool.c:666
+msgid "SCHEMA[:PATH] KEY"
+msgstr "SCHEME[:PERCORS] CLÂF"
+
+#: gio/gsettings-tool.c:635
+msgid "Query the range of valid values for KEY"
+msgstr "Domande l'interval dai valôrs valits pe CLÂF"
+
+#: gio/gsettings-tool.c:641
+msgid "Query the description for KEY"
+msgstr "Domande la descrizion pe CLÂF"
+
+#: gio/gsettings-tool.c:647
+msgid "Set the value of KEY to VALUE"
+msgstr "Stabilìs il valôr di CLÂF a VALÔR"
+
+#: gio/gsettings-tool.c:648
+msgid "SCHEMA[:PATH] KEY VALUE"
+msgstr "SCHEME[:PERCORS] CLÂF VALÔR"
+
+#: gio/gsettings-tool.c:653
+msgid "Reset KEY to its default value"
+msgstr "Ripristine la CLÂF al so valôr predefinît"
+
+#: gio/gsettings-tool.c:659
+msgid "Reset all keys in SCHEMA to their defaults"
+msgstr "Ripristine dutis lis clâfs tal SCHEME ai lôr valôrs predefinîts"
+
+#: gio/gsettings-tool.c:665
+msgid "Check if KEY is writable"
+msgstr "Controle se CLÂF e je scrivibile"
+
+#: gio/gsettings-tool.c:671
+msgid ""
+"Monitor KEY for changes.\n"
+"If no KEY is specified, monitor all keys in SCHEMA.\n"
+"Use ^C to stop monitoring.\n"
+msgstr ""
+
+#: gio/gsettings-tool.c:674
+msgid "SCHEMA[:PATH] [KEY]"
+msgstr "SCHEME[:PERCORS] [CLÂF]"
+
+#: gio/gsettings-tool.c:686
+msgid ""
+"Usage:\n"
+"  gsettings --version\n"
+"  gsettings [--schemadir SCHEMADIR] COMMAND [ARGS…]\n"
+"\n"
+"Commands:\n"
+"  help                      Show this information\n"
+"  list-schemas              List installed schemas\n"
+"  list-relocatable-schemas  List relocatable schemas\n"
+"  list-keys                 List keys in a schema\n"
+"  list-children             List children of a schema\n"
+"  list-recursively          List keys and values, recursively\n"
+"  range                     Queries the range of a key\n"
+"  describe                  Queries the description of a key\n"
+"  get                       Get the value of a key\n"
+"  set                       Set the value of a key\n"
+"  reset                     Reset the value of a key\n"
+"  reset-recursively         Reset all values in a given schema\n"
+"  writable                  Check if a key is writable\n"
+"  monitor                   Watch for changes\n"
+"\n"
+"Use “gsettings help COMMAND” to get detailed help.\n"
+"\n"
+msgstr ""
+"Ûs:\n"
+"  gsettings --version\n"
+"  gsettings [--schemadir SCHEMEDIR] COMANT [ARGS…]\n"
+"\n"
+"Comants:\n"
+"  help                      Mostre cheste informazion\n"
+"  list-schemas              Liste i schemis instalâts\n"
+"  list-relocatable-schemas  Liste i schemis riposizionabii\n"
+"  list-keys                 Liste lis clâfs intun scheme\n"
+"  list-children             Liste i fîs di un scheme\n"
+"  list-recursively          Liste lis clâfs e i valôrs, in mût ricorsîf\n"
+"  range                     Al interoghe l'interval di une clâf\n"
+"  describe                  Al interoghe la descrizion di une clâf\n"
+"  get                       Oten il valôr di une clâf\n"
+"  set                       Stabilìs il valôr di une clâf\n"
+"  reset                     Ripristine il valôr di une clâf\n"
+"  reset-recursively         Ripristine ducj i valôrs intun dât scheme\n"
+"  writable                  Controle se su pues scrivi une clâf\n"
+"  monitor                   Ten di voli lis modifichis\n"
+"\n"
+"Dopre “gsettings help COMANT” par otignî un jutori detaiât.\n"
+"\n"
+
+#: gio/gsettings-tool.c:710
+#, c-format
+msgid ""
+"Usage:\n"
+"  gsettings [--schemadir SCHEMADIR] %s %s\n"
+"\n"
+"%s\n"
+"\n"
+msgstr ""
+"Ûs:\n"
+"  gsettings [--schemadir SCHEMEDIR] %s %s\n"
+"\n"
+"%s\n"
+"\n"
+
+#: gio/gsettings-tool.c:716
+msgid "  SCHEMADIR A directory to search for additional schemas\n"
+msgstr "  SCHEMEDIR Une cartele di cirî par schemis adizionâi\n"
+
+#: gio/gsettings-tool.c:724
+msgid ""
+"  SCHEMA    The name of the schema\n"
+"  PATH      The path, for relocatable schemas\n"
+msgstr ""
+"  SCHEME    Il non dal scheme\n"
+"  PERCORS   Il percors, pai schemis riposizionabii\n"
+
+#: gio/gsettings-tool.c:729
+msgid "  KEY       The (optional) key within the schema\n"
+msgstr "  CLÂF      La clâf (opzionâl) dentri dal scheme\n"
+
+#: gio/gsettings-tool.c:733
+msgid "  KEY       The key within the schema\n"
+msgstr "  CLÂF      La clâf dentri dal scheme\n"
+
+#: gio/gsettings-tool.c:737
+msgid "  VALUE     The value to set\n"
+msgstr "  VALÔR     Il vaôr di stabilî\n"
+
+#: gio/gsettings-tool.c:792
+#, c-format
+msgid "Could not load schemas from %s: %s\n"
+msgstr "Impussibil cjamâ i schemis di %s: %s\n"
+
+#: gio/gsettings-tool.c:804
+msgid "No schemas installed\n"
+msgstr "Nissun scheme instalât\n"
+
+#: gio/gsettings-tool.c:883
+msgid "Empty schema name given\n"
+msgstr "Furnît non di scheme vueit\n"
+
+#: gio/gsettings-tool.c:938
+#, c-format
+msgid "No such key “%s”\n"
+msgstr "Clâf “%s” inesistente\n"
+
+#: gio/gsocket.c:419
+msgid "Invalid socket, not initialized"
+msgstr "Socket no valit, no inizializât"
+
+#: gio/gsocket.c:426
+#, c-format
+msgid "Invalid socket, initialization failed due to: %s"
+msgstr "Socket no valit, inizializazion falide par vie di: %s"
+
+#: gio/gsocket.c:434
+msgid "Socket is already closed"
+msgstr "Il socket al è za sierât"
+
+#: gio/gsocket.c:449 gio/gsocket.c:3201 gio/gsocket.c:4434 gio/gsocket.c:4492
+msgid "Socket I/O timed out"
+msgstr "I/O dal socket scjadût"
+
+#: gio/gsocket.c:586
+#, c-format
+msgid "creating GSocket from fd: %s"
+msgstr "daûr a crea GSocket dal fd: %s"
+
+#: gio/gsocket.c:615 gio/gsocket.c:679 gio/gsocket.c:686
+#, c-format
+msgid "Unable to create socket: %s"
+msgstr "Impussibil creâ il socket: %s"
+
+#: gio/gsocket.c:679
+msgid "Unknown family was specified"
+msgstr "E je stade specificade une famee no cognossude"
+
+#: gio/gsocket.c:686
+msgid "Unknown protocol was specified"
+msgstr "Al è stât specificât un protocol no cognossût"
+
+#: gio/gsocket.c:1177
+#, c-format
+msgid "Cannot use datagram operations on a non-datagram socket."
+msgstr ""
+"Impussibil doprâ lis operazions datagram suntun socket diviers dal datagram."
+
+#: gio/gsocket.c:1194
+#, c-format
+msgid "Cannot use datagram operations on a socket with a timeout set."
+msgstr ""
+"Impussibil doprâ lis operazions datagram suntun socket che al à stabilît une "
+"timp di scjadince."
+
+#: gio/gsocket.c:2001
+#, c-format
+msgid "could not get local address: %s"
+msgstr "impussibil otignî la direzion locâl: %s"
+
+#: gio/gsocket.c:2047
+#, c-format
+msgid "could not get remote address: %s"
+msgstr "impussibil otignî la direzion lontane: %s"
+
+#: gio/gsocket.c:2113
+#, c-format
+msgid "could not listen: %s"
+msgstr "impussibil scoltâ: %s"
+
+#: gio/gsocket.c:2217
+#, c-format
+msgid "Error binding to address %s: %s"
+msgstr "Erôr tal leâ ae direzion %s: %s"
+
+#: gio/gsocket.c:2392 gio/gsocket.c:2429 gio/gsocket.c:2539 gio/gsocket.c:2564
+#: gio/gsocket.c:2631 gio/gsocket.c:2689 gio/gsocket.c:2707
+#, c-format
+msgid "Error joining multicast group: %s"
+msgstr "Erôr tal unîsi al grup multicast: %s"
+
+#: gio/gsocket.c:2393 gio/gsocket.c:2430 gio/gsocket.c:2540 gio/gsocket.c:2565
+#: gio/gsocket.c:2632 gio/gsocket.c:2690 gio/gsocket.c:2708
+#, c-format
+msgid "Error leaving multicast group: %s"
+msgstr "Erôr tal lassâ il grup multicast: %s"
+
+#: gio/gsocket.c:2394
+#, fuzzy
+msgid "No support for source-specific multicast"
+msgstr "Nissun supuart pal multicast specific de sorzint"
+
+#: gio/gsocket.c:2541
+msgid "Unsupported socket family"
+msgstr "Famee dal socket no supuartade"
+
+#: gio/gsocket.c:2566
+msgid "source-specific not an IPv4 address"
+msgstr ""
+
+#: gio/gsocket.c:2590
+#, c-format
+msgid "Interface name too long"
+msgstr "Non interface masse lunc"
+
+#: gio/gsocket.c:2603 gio/gsocket.c:2657
+#, c-format
+msgid "Interface not found: %s"
+msgstr "Interface no cjatade: %s"
+
+#: gio/gsocket.c:2633
+msgid "No support for IPv4 source-specific multicast"
+msgstr ""
+
+#: gio/gsocket.c:2691
+msgid "No support for IPv6 source-specific multicast"
+msgstr ""
+
+#: gio/gsocket.c:2900
+#, c-format
+msgid "Error accepting connection: %s"
+msgstr "Erôr tal acetâ la conession: %s"
+
+#: gio/gsocket.c:3026
+msgid "Connection in progress"
+msgstr "Conession in vore"
+
+#: gio/gsocket.c:3077
+msgid "Unable to get pending error: "
+msgstr "Impussibil otignî l'erôr in spiete: "
+
+#: gio/gsocket.c:3266
+#, c-format
+msgid "Error receiving data: %s"
+msgstr "Erôr tal ricevi dâts: %s"
+
+#: gio/gsocket.c:3463
+#, c-format
+msgid "Error sending data: %s"
+msgstr "Erôr tal inviâ dâts: %s"
+
+#: gio/gsocket.c:3650
+#, c-format
+msgid "Unable to shutdown socket: %s"
+msgstr "Impussibil distudâ il socket: %s"
+
+#: gio/gsocket.c:3731
+#, c-format
+msgid "Error closing socket: %s"
+msgstr "Erôr tal sierâ il socket: %s"
+
+#: gio/gsocket.c:4427
+#, c-format
+msgid "Waiting for socket condition: %s"
+msgstr "In spiete pe condizion dal socket: %s"
+
+#: gio/gsocket.c:4817 gio/gsocket.c:4833 gio/gsocket.c:4846
+#, c-format
+msgid "Unable to send message: %s"
+msgstr "Impussibil inviâ il messaç: %s"
+
+#: gio/gsocket.c:4818 gio/gsocket.c:4834 gio/gsocket.c:4847
+msgid "Message vectors too large"
+msgstr "I vetôrs dal messaç a son masse grancj"
+
+#: gio/gsocket.c:4863 gio/gsocket.c:4865 gio/gsocket.c:5012 gio/gsocket.c:5097
+#: gio/gsocket.c:5275 gio/gsocket.c:5315 gio/gsocket.c:5317
+#, c-format
+msgid "Error sending message: %s"
+msgstr "Erôr tal inviâ il messaç: %s"
+
+#: gio/gsocket.c:5039
+msgid "GSocketControlMessage not supported on Windows"
+msgstr "GSocketControlMessage nol è supuartât su Windows"
+
+#: gio/gsocket.c:5512 gio/gsocket.c:5588 gio/gsocket.c:5814
+#, c-format
+msgid "Error receiving message: %s"
+msgstr "Erôr tal ricevi il messaç: %s"
+
+#: gio/gsocket.c:6099 gio/gsocket.c:6110 gio/gsocket.c:6173
+#, c-format
+msgid "Unable to read socket credentials: %s"
+msgstr "Impussibil lei lis credenziâls dal socket: %s"
+
+#: gio/gsocket.c:6182
+msgid "g_socket_get_credentials not implemented for this OS"
+msgstr "g_socket_get_credentials nol è implementât par chest SO"
+
+#: gio/gsocketclient.c:193
+#, c-format
+msgid "Could not connect to proxy server %s: "
+msgstr "Impussibil conetisi al servidôr proxy %s: "
+
+#: gio/gsocketclient.c:207
+#, c-format
+msgid "Could not connect to %s: "
+msgstr "Impussibil conetisi a %s: "
+
+#: gio/gsocketclient.c:209
+msgid "Could not connect: "
+msgstr "Impussibil conetisi: "
+
+#: gio/gsocketclient.c:1204 gio/gsocketclient.c:1807
+msgid "Proxying over a non-TCP connection is not supported."
+msgstr "Jessi in proxy sore di une conession che no je TCP nol è supuartât."
+
+#: gio/gsocketclient.c:1236 gio/gsocketclient.c:1836
+#, c-format
+msgid "Proxy protocol “%s” is not supported."
+msgstr "Il protocol proxy “%s” nol è supuartât."
+
+#: gio/gsocketlistener.c:232
+msgid "Listener is already closed"
+msgstr "Il scoltadôr al è za sierât"
+
+#: gio/gsocketlistener.c:278
+msgid "Added socket is closed"
+msgstr "Il socket zontât al è sierât"
+
+#: gio/gsocks4aproxy.c:120
+#, c-format
+msgid "SOCKSv4 does not support IPv6 address “%s”"
+msgstr "SOCKSv4 nol supuarte la direzion IPv6 “%s”"
+
+#: gio/gsocks4aproxy.c:138
+msgid "Username is too long for SOCKSv4 protocol"
+msgstr "Non utent masse lunc pal protocol SOCKSv4"
+
+#: gio/gsocks4aproxy.c:155
+#, c-format
+msgid "Hostname “%s” is too long for SOCKSv4 protocol"
+msgstr "Il non host “%s”al è masse lunc pal protocol SOCKSv4"
+
+#: gio/gsocks4aproxy.c:181
+msgid "The server is not a SOCKSv4 proxy server."
+msgstr "Il servidôr nol è un servidôr proxy SOCKSv4."
+
+#: gio/gsocks4aproxy.c:188
+msgid "Connection through SOCKSv4 server was rejected"
+msgstr "La conession midiant il servidôr SOCKSv4 e je stade refudade"
+
+#: gio/gsocks5proxy.c:155 gio/gsocks5proxy.c:340 gio/gsocks5proxy.c:350
+msgid "The server is not a SOCKSv5 proxy server."
+msgstr "Il servidôr nol è un servidôr proxy SOCKSv5."
+
+#: gio/gsocks5proxy.c:169 gio/gsocks5proxy.c:186
+msgid "The SOCKSv5 proxy requires authentication."
+msgstr "Il proxy SOCKSv5 al domande autenticazion."
+
+#: gio/gsocks5proxy.c:193
+msgid ""
+"The SOCKSv5 proxy requires an authentication method that is not supported by "
+"GLib."
+msgstr ""
+"Il proxy SOCKSv5 al domande un metodi di autenticazion che nol è supuartât "
+"di GLib."
+
+#: gio/gsocks5proxy.c:222
+msgid "Username or password is too long for SOCKSv5 protocol."
+msgstr "Non utent o password masse luncs pal protocol SOCKSv5."
+
+#: gio/gsocks5proxy.c:252
+msgid "SOCKSv5 authentication failed due to wrong username or password."
+msgstr "Autenticazion SOCKSv5 falide par vie di non utent o password sbaliâts."
+
+#: gio/gsocks5proxy.c:302
+#, c-format
+msgid "Hostname “%s” is too long for SOCKSv5 protocol"
+msgstr "Il non dal host “%s” al è masse lunc pal protocol SOCKSv5"
+
+#: gio/gsocks5proxy.c:364
+msgid "The SOCKSv5 proxy server uses unknown address type."
+msgstr "Il servidôr proxy SOCKSv5 al dopre un gjenar di direzion no cognossût."
+
+#: gio/gsocks5proxy.c:371
+msgid "Internal SOCKSv5 proxy server error."
+msgstr "Erôr interni dal servidôr proxy SOCKSv5."
+
+#: gio/gsocks5proxy.c:377
+msgid "SOCKSv5 connection not allowed by ruleset."
+msgstr ""
+
+#: gio/gsocks5proxy.c:384
+msgid "Host unreachable through SOCKSv5 server."
+msgstr "Impussibil rivâ al host midiant il servidôr SOCKSv5."
+
+#: gio/gsocks5proxy.c:390
+msgid "Network unreachable through SOCKSv5 proxy."
+msgstr "Impussibil rivâ ae rêt midian il proxy SOCKSv5."
+
+#: gio/gsocks5proxy.c:396
+msgid "Connection refused through SOCKSv5 proxy."
+msgstr "Conession refudade midiant il proxy SOCKSv5."
+
+#: gio/gsocks5proxy.c:402
+msgid "SOCKSv5 proxy does not support “connect” command."
+msgstr "Il proxy SOCKSv5 nol supuarte il comant “connect”."
+
+#: gio/gsocks5proxy.c:408
+msgid "SOCKSv5 proxy does not support provided address type."
+msgstr "Il proxy SOCKSv5 nol supuarte il gjenar di direzion indicât."
+
+#: gio/gsocks5proxy.c:414
+msgid "Unknown SOCKSv5 proxy error."
+msgstr "Erôr no cognossût dal proxy SOCKSv5."
+
+#: gio/gtestdbus.c:614 glib/gspawn-win32.c:354
+#, c-format
+msgid "Failed to create pipe for communicating with child process (%s)"
+msgstr "No si è rivâts a creâ il condot par comunicâ cul procès fi (%s)"
+
+#: gio/gtestdbus.c:621
+#, c-format
+msgid "Pipes are not supported in this platform"
+msgstr "I condots no son supuartâts in cheste plateforme"
+
+#: gio/gthemedicon.c:597
+#, c-format
+msgid "Can’t handle version %d of GThemedIcon encoding"
+msgstr "Impussibil gjestî la version %d de codifiche GThemedIcon"
+
+#: gio/gthreadedresolver.c:154
+msgid "No valid addresses were found"
+msgstr "No je stade cjatade nissune direzion valide"
+
+#: gio/gthreadedresolver.c:339
+#, c-format
+msgid "Error reverse-resolving “%s”: %s"
+msgstr "Erôr tal risolvi al contrari “%s”: %s"
+
+#. Translators: the placeholder is a DNS record type, such as ‘MX’ or ‘SRV’
+#: gio/gthreadedresolver.c:552 gio/gthreadedresolver.c:574
+#: gio/gthreadedresolver.c:612 gio/gthreadedresolver.c:659
+#: gio/gthreadedresolver.c:688 gio/gthreadedresolver.c:700
+#, c-format
+msgid "Error parsing DNS %s record: malformed DNS packet"
+msgstr "Erôr tal analizâ il regjistri DNS %s: pachet DNS malformât"
+
+#: gio/gthreadedresolver.c:758 gio/gthreadedresolver.c:895
+#: gio/gthreadedresolver.c:993 gio/gthreadedresolver.c:1043
+#, c-format
+msgid "No DNS record of the requested type for “%s”"
+msgstr "Nissun regjistri DNS dal gjenar domandât par “%s”"
+
+#: gio/gthreadedresolver.c:763 gio/gthreadedresolver.c:998
+#, c-format
+msgid "Temporarily unable to resolve “%s”"
+msgstr "Impussibil risolvi in maniere temporanie “%s”"
+
+#: gio/gthreadedresolver.c:768 gio/gthreadedresolver.c:1003
+#: gio/gthreadedresolver.c:1113
+#, c-format
+msgid "Error resolving “%s”"
+msgstr "Erôr tal risolvi “%s”"
+
+#: gio/gthreadedresolver.c:782 gio/gthreadedresolver.c:806
+#: gio/gthreadedresolver.c:831 gio/gthreadedresolver.c:846
+msgid "Malformed DNS packet"
+msgstr "Pachet DNS malformât"
+
+#: gio/gthreadedresolver.c:888
+#, fuzzy, c-format
+#| msgid "Failed to open file “%s”: %s"
+msgid "Failed to parse DNS response for “%s”: "
+msgstr "No si è rivâts a vierzi il file “%s”: %s"
+
+#: gio/gtlscertificate.c:480
+msgid "No PEM-encoded private key found"
+msgstr "No je stade cjatade nissune clâf privade codificade-PEM"
+
+#: gio/gtlscertificate.c:490
+msgid "Cannot decrypt PEM-encoded private key"
+msgstr "Impussibil decifrâ la clâf privade codificade-PEM"
+
+#: gio/gtlscertificate.c:501
+msgid "Could not parse PEM-encoded private key"
+msgstr "Impussibil analizâ la clâf privade codificade-PEM"
+
+#: gio/gtlscertificate.c:528
+msgid "No PEM-encoded certificate found"
+msgstr "Nol è stât cjatât nissun certificât codificât-PEM"
+
+#: gio/gtlscertificate.c:537
+msgid "Could not parse PEM-encoded certificate"
+msgstr "Impussibil analizâ il certificât codificât-PEM"
+
+#: gio/gtlscertificate.c:800
+msgid "The current TLS backend does not support PKCS #12"
+msgstr "Il backend TLS corint nol supuarte PKCS #12"
+
+#: gio/gtlscertificate.c:1017
+msgid "This GTlsBackend does not support creating PKCS #11 certificates"
+msgstr "Chest GTlsBackend nol supuarte la creazion di certificâts PKCS #11"
+
+#: gio/gtlspassword.c:113
+msgid ""
+"This is the last chance to enter the password correctly before your access "
+"is locked out."
+msgstr ""
+"Chest al è l'ultin tentatîf par inserî la password juste prime che al vegni "
+"blocât il to acès."
+
+#. Translators: This is not the 'This is the last chance' string. It is
+#. * displayed when more than one attempt is allowed.
+#: gio/gtlspassword.c:117
+msgid ""
+"Several passwords entered have been incorrect, and your access will be "
+"locked out after further failures."
+msgstr ""
+"A son stadis inseridis tantis passwords sbaliadis e il to acès al è stât "
+"blocât daspò altris faliments."
+
+#: gio/gtlspassword.c:119
+msgid "The password entered is incorrect."
+msgstr "La password inseride e je sbaliade."
+
+#: gio/gunixconnection.c:127
+msgid "Sending FD is not supported"
+msgstr "L'inviâ FD nol è supuartât"
+
+#: gio/gunixconnection.c:180 gio/gunixconnection.c:598
+#, c-format
+msgid "Expecting 1 control message, got %d"
+msgid_plural "Expecting 1 control message, got %d"
+msgstr[0] "Si spietave 1 messaç di control, si 'nd à vût %d"
+msgstr[1] "Si spietave 1 messaç di control, si 'nd à vûts %d"
+
+#: gio/gunixconnection.c:196 gio/gunixconnection.c:610
+msgid "Unexpected type of ancillary data"
+msgstr ""
+
+#: gio/gunixconnection.c:214
+#, c-format
+msgid "Expecting one fd, but got %d\n"
+msgid_plural "Expecting one fd, but got %d\n"
+msgstr[0] "Si spietave un fd, ma si à vût %d\n"
+msgstr[1] "Si spietave un fd, ma si àn vûts %d\n"
+
+#: gio/gunixconnection.c:233
+msgid "Received invalid fd"
+msgstr "Ricevût fd no valit"
+
+#: gio/gunixconnection.c:240
+msgid "Receiving FD is not supported"
+msgstr "La ricezion di FD no je supuartade"
+
+#: gio/gunixconnection.c:382
+msgid "Error sending credentials: "
+msgstr "Erôr tal inviâ lis credenziâls: "
+
+#: gio/gunixconnection.c:539
+#, c-format
+msgid "Error checking if SO_PASSCRED is enabled for socket: %s"
+msgstr "Erôr tal verificâ se SO_PASSCRED al è abilitât pal socket: %s"
+
+#: gio/gunixconnection.c:555
+#, c-format
+msgid "Error enabling SO_PASSCRED: %s"
+msgstr "Erôr tal abilitâ SO_PASSCRED: %s"
+
+#: gio/gunixconnection.c:584
+msgid ""
+"Expecting to read a single byte for receiving credentials but read zero bytes"
+msgstr ""
+"Si spietave di lei un byte singul pe ricezion des credenziâls ma si à let "
+"zero bytes"
+
+#: gio/gunixconnection.c:624
+#, c-format
+msgid "Not expecting control message, but got %d"
+msgstr "No si spietave un messaç di control, ma si à vût %d"
+
+#: gio/gunixconnection.c:649
+#, c-format
+msgid "Error while disabling SO_PASSCRED: %s"
+msgstr "Erôr inte disabilitazion di SO_PASSCRED: %s"
+
+#: gio/gunixinputstream.c:359 gio/gunixinputstream.c:380
+#, c-format
+msgid "Error reading from file descriptor: %s"
+msgstr "Erôr tal lei dal descritôr dal file: %s"
+
+#: gio/gunixinputstream.c:413 gio/gunixoutputstream.c:522
+#: gio/gwin32inputstream.c:219 gio/gwin32outputstream.c:206
+#, c-format
+msgid "Error closing file descriptor: %s"
+msgstr "Erôr tal sierâ il descritôr dal file: %s"
+
+#: gio/gunixmounts.c:2815 gio/gunixmounts.c:2868
+msgid "Filesystem root"
+msgstr "Lidrîs dal filesystem"
+
+#: gio/gunixoutputstream.c:359 gio/gunixoutputstream.c:379
+#: gio/gunixoutputstream.c:466 gio/gunixoutputstream.c:486
+#: gio/gunixoutputstream.c:632
+#, c-format
+msgid "Error writing to file descriptor: %s"
+msgstr "Erôr tal scrivi il descritôr dal file: %s"
+
+# astratis o astrats
+#: gio/gunixsocketaddress.c:253
+#, fuzzy
+msgid "Abstract UNIX domain socket addresses not supported on this system"
+msgstr ""
+"Lis direzions di socket di domini UNIX astratis no son supuartadis su chest "
+"sisteme"
+
+#: gio/gvolume.c:440
+msgid "volume doesn’t implement eject"
+msgstr "il volum nol implemente il parâ fûr (eject)"
+
+#. Translators: This is an error
+#. * message for volume objects that
+#. * don't implement any of eject or eject_with_operation.
+#: gio/gvolume.c:517
+msgid "volume doesn’t implement eject or eject_with_operation"
+msgstr ""
+"il volum nol implemente il parâ fûr (eject) o il parâ fûr cun operazion "
+"(eject_with_operation)"
+
+#: gio/gwin32inputstream.c:187
+#, c-format
+msgid "Error reading from handle: %s"
+msgstr ""
+
+#: gio/gwin32inputstream.c:234 gio/gwin32outputstream.c:221
+#, c-format
+msgid "Error closing handle: %s"
+msgstr ""
+
+#: gio/gwin32outputstream.c:174
+#, c-format
+msgid "Error writing to handle: %s"
+msgstr ""
+
+#: gio/gzlibcompressor.c:396 gio/gzlibdecompressor.c:349
+msgid "Not enough memory"
+msgstr "No vonde memorie"
+
+#: gio/gzlibcompressor.c:403 gio/gzlibdecompressor.c:356
+#, c-format
+msgid "Internal error: %s"
+msgstr "Erôr interni: %s"
+
+#: gio/gzlibcompressor.c:416 gio/gzlibdecompressor.c:370
+msgid "Need more input"
+msgstr "A coventin plui dâts in ingrès"
+
+#: gio/gzlibdecompressor.c:342
+msgid "Invalid compressed data"
+msgstr "Dâts comprimûts no valits"
+
+#: gio/tests/gdbus-daemon.c:18
+msgid "Address to listen on"
+msgstr "Direzions di scoltâ"
+
+#: gio/tests/gdbus-daemon.c:19
+msgid "Ignored, for compat with GTestDbus"
+msgstr "Ignorât, par compatibilitât cun GTestDbus"
+
+#: gio/tests/gdbus-daemon.c:20
+msgid "Print address"
+msgstr "Stampe direzion"
+
+#: gio/tests/gdbus-daemon.c:21
+msgid "Print address in shell mode"
+msgstr "Stampe la direzion te modalitât shell"
+
+#: gio/tests/gdbus-daemon.c:28
+msgid "Run a dbus service"
+msgstr "Eseguìs un servizi dbus"
+
+#: gio/tests/gdbus-daemon.c:42
+msgid "Wrong args\n"
+msgstr "Argoments sbaliâts\n"
+
+#: glib/gbookmarkfile.c:779
+#, c-format
+msgid "Unexpected attribute “%s” for element “%s”"
+msgstr "Atribût “%s” inspietât pal element “%s”"
+
+#: glib/gbookmarkfile.c:790 glib/gbookmarkfile.c:870 glib/gbookmarkfile.c:880
+#: glib/gbookmarkfile.c:993
+#, c-format
+msgid "Attribute “%s” of element “%s” not found"
+msgstr "L'atribût “%s” dal element “%s” nol è stât cjatât"
+
+#: glib/gbookmarkfile.c:1202 glib/gbookmarkfile.c:1267
+#: glib/gbookmarkfile.c:1331 glib/gbookmarkfile.c:1341
+#, c-format
+msgid "Unexpected tag “%s”, tag “%s” expected"
+msgstr "Etichete “%s” inspietade, si spietave la etichete “%s”"
+
+#: glib/gbookmarkfile.c:1227 glib/gbookmarkfile.c:1241
+#: glib/gbookmarkfile.c:1309 glib/gbookmarkfile.c:1355
+#, c-format
+msgid "Unexpected tag “%s” inside “%s”"
+msgstr "Etichete “%s” inspietade dentri di “%s”"
+
+#: glib/gbookmarkfile.c:1635
+#, c-format
+msgid "Invalid date/time ‘%s’ in bookmark file"
+msgstr "Date/ore ‘%s’ no validis tal file dai segnelibris"
+
+#: glib/gbookmarkfile.c:1838
+msgid "No valid bookmark file found in data dirs"
+msgstr "Nissun file di segnelibri valit cjatât tes cartelis dai dâts"
+
+#: glib/gbookmarkfile.c:2039
+#, c-format
+msgid "A bookmark for URI “%s” already exists"
+msgstr "Al esist za un segnelibri pal URI “%s”"
+
+#: glib/gbookmarkfile.c:2088 glib/gbookmarkfile.c:2246
+#: glib/gbookmarkfile.c:2331 glib/gbookmarkfile.c:2411
+#: glib/gbookmarkfile.c:2496 glib/gbookmarkfile.c:2630
+#: glib/gbookmarkfile.c:2763 glib/gbookmarkfile.c:2898
+#: glib/gbookmarkfile.c:2940 glib/gbookmarkfile.c:3037
+#: glib/gbookmarkfile.c:3158 glib/gbookmarkfile.c:3352
+#: glib/gbookmarkfile.c:3493 glib/gbookmarkfile.c:3712
+#: glib/gbookmarkfile.c:3801 glib/gbookmarkfile.c:3890
+#: glib/gbookmarkfile.c:4009
+#, c-format
+msgid "No bookmark found for URI “%s”"
+msgstr "Nissun segnelibri cjatât pal URI “%s”"
+
+#: glib/gbookmarkfile.c:2420
+#, c-format
+msgid "No MIME type defined in the bookmark for URI “%s”"
+msgstr "Nissun gjenar MIME definît tal segnelibri pal URI “%s”"
+
+#: glib/gbookmarkfile.c:2505
+#, c-format
+msgid "No private flag has been defined in bookmark for URI “%s”"
+msgstr "Nissune flag privade e je stade definide tal segnelibri pal URI “%s”"
+
+#: glib/gbookmarkfile.c:3046
+#, c-format
+msgid "No groups set in bookmark for URI “%s”"
+msgstr "Nissun grup stabilît tal segnelibri pal URI “%s”"
+
+#: glib/gbookmarkfile.c:3514 glib/gbookmarkfile.c:3722
+#, c-format
+msgid "No application with name “%s” registered a bookmark for “%s”"
+msgstr "Nissune aplicazion cun non “%s” e à regjistrât un segnelibri par “%s”"
+
+#: glib/gbookmarkfile.c:3745
+#, c-format
+msgid "Failed to expand exec line “%s” with URI “%s”"
+msgstr "Impussibil slargjâ la rie di esecuzion “%s” cul URI “%s”"
+
+#: glib/gconvert.c:470
+msgid "Unrepresentable character in conversion input"
+msgstr "Caratar che no si pues rapresentâ tal input di conversion"
+
+#: glib/gconvert.c:497 glib/gutf8.c:888 glib/gutf8.c:1101 glib/gutf8.c:1238
+#: glib/gutf8.c:1342
+msgid "Partial character sequence at end of input"
+msgstr "Secuence di caratars parziâi ae fin dal input"
+
+#: glib/gconvert.c:768
+#, c-format
+msgid "Cannot convert fallback “%s” to codeset “%s”"
+msgstr ""
+
+#: glib/gconvert.c:940
+msgid "Embedded NUL byte in conversion input"
+msgstr "Byte NUL incorporât tal input di conversion"
+
+#: glib/gconvert.c:961
+msgid "Embedded NUL byte in conversion output"
+msgstr "Byte NUL incorporât tal output di conversion"
+
+#: glib/gconvert.c:1692
+#, c-format
+msgid "The URI “%s” is not an absolute URI using the “file” scheme"
+msgstr "L'URI “%s” nol è un URI assolût che al dopre il scheme “file”"
+
+#: glib/gconvert.c:1702
+#, c-format
+msgid "The local file URI “%s” may not include a “#”"
+msgstr "L'URI dal file locâl “%s” nol varès di includi un “#”"
+
+#: glib/gconvert.c:1719
+#, c-format
+msgid "The URI “%s” is invalid"
+msgstr "L'URI “%s” nol è valit"
+
+#: glib/gconvert.c:1731
+#, c-format
+msgid "The hostname of the URI “%s” is invalid"
+msgstr "Il non dal host dal URI “%s” nol è valit"
+
+#: glib/gconvert.c:1747
+#, c-format
+msgid "The URI “%s” contains invalidly escaped characters"
+msgstr "L'URI “%s” al conten caratars escape che lu rindin no valit"
+
+#: glib/gconvert.c:1819
+#, c-format
+msgid "The pathname “%s” is not an absolute path"
+msgstr "Il non dal percors “%s” nol è un percors assolût"
+
+#. Translators: this is the preferred format for expressing the date and the time
+#: glib/gdatetime.c:228
+msgctxt "GDateTime"
+msgid "%a %b %e %H:%M:%S %Y"
+msgstr "%a %H:%M:%S, %e di %B dal %Y"
+
+#. Translators: this is the preferred format for expressing the date
+#: glib/gdatetime.c:231
+msgctxt "GDateTime"
+msgid "%m/%d/%y"
+msgstr "%d/%m/%y"
+
+#. Translators: this is the preferred format for expressing the time
+#: glib/gdatetime.c:234
+msgctxt "GDateTime"
+msgid "%H:%M:%S"
+msgstr "%H:%M:%S"
+
+#. Translators: this is the preferred format for expressing 12 hour time
+#: glib/gdatetime.c:237
+msgctxt "GDateTime"
+msgid "%I:%M:%S %p"
+msgstr "%I:%M:%S %p"
+
+#. Translators: Some languages (Baltic, Slavic, Greek, and some more)
+#. * need different grammatical forms of month names depending on whether
+#. * they are standalone or in a complete date context, with the day
+#. * number.  Some other languages may prefer starting with uppercase when
+#. * they are standalone and with lowercase when they are in a complete
+#. * date context.  Here are full month names in a form appropriate when
+#. * they are used standalone.  If your system is Linux with the glibc
+#. * version 2.27 (released Feb 1, 2018) or newer or if it is from the BSD
+#. * family (which includes OS X) then you can refer to the date command
+#. * line utility and see what the command `date +%OB' produces.  Also in
+#. * the latest Linux the command `locale alt_mon' in your native locale
+#. * produces a complete list of month names almost ready to copy and
+#. * paste here.  Note that in most of the languages (western European,
+#. * non-European) there is no difference between the standalone and
+#. * complete date form.
+#.
+#: glib/gdatetime.c:276
+msgctxt "full month name"
+msgid "January"
+msgstr "Zenâr"
+
+#: glib/gdatetime.c:278
+msgctxt "full month name"
+msgid "February"
+msgstr "Fevrâr"
+
+#: glib/gdatetime.c:280
+msgctxt "full month name"
+msgid "March"
+msgstr "Març"
+
+#: glib/gdatetime.c:282
+msgctxt "full month name"
+msgid "April"
+msgstr "Avrîl"
+
+#: glib/gdatetime.c:284
+msgctxt "full month name"
+msgid "May"
+msgstr "Mai"
+
+#: glib/gdatetime.c:286
+msgctxt "full month name"
+msgid "June"
+msgstr "Jugn"
+
+#: glib/gdatetime.c:288
+msgctxt "full month name"
+msgid "July"
+msgstr "Lui"
+
+#: glib/gdatetime.c:290
+msgctxt "full month name"
+msgid "August"
+msgstr "Avost"
+
+#: glib/gdatetime.c:292
+msgctxt "full month name"
+msgid "September"
+msgstr "Setembar"
+
+#: glib/gdatetime.c:294
+msgctxt "full month name"
+msgid "October"
+msgstr "Otubar"
+
+#: glib/gdatetime.c:296
+msgctxt "full month name"
+msgid "November"
+msgstr "Novembar"
+
+#: glib/gdatetime.c:298
+msgctxt "full month name"
+msgid "December"
+msgstr "Dicembar"
+
+#. Translators: Some languages need different grammatical forms of
+#. * month names depending on whether they are standalone or in a complete
+#. * date context, with the day number.  Some may prefer starting with
+#. * uppercase when they are standalone and with lowercase when they are
+#. * in a full date context.  However, as these names are abbreviated
+#. * the grammatical difference is visible probably only in Belarusian
+#. * and Russian.  In other languages there is no difference between
+#. * the standalone and complete date form when they are abbreviated.
+#. * If your system is Linux with the glibc version 2.27 (released
+#. * Feb 1, 2018) or newer then you can refer to the date command line
+#. * utility and see what the command `date +%Ob' produces.  Also in
+#. * the latest Linux the command `locale ab_alt_mon' in your native
+#. * locale produces a complete list of month names almost ready to copy
+#. * and paste here.  Note that this feature is not yet supported by any
+#. * other platform.  Here are abbreviated month names in a form
+#. * appropriate when they are used standalone.
+#.
+#: glib/gdatetime.c:330
+msgctxt "abbreviated month name"
+msgid "Jan"
+msgstr "Zen"
+
+#: glib/gdatetime.c:332
+msgctxt "abbreviated month name"
+msgid "Feb"
+msgstr "Fev"
+
+#: glib/gdatetime.c:334
+msgctxt "abbreviated month name"
+msgid "Mar"
+msgstr "Mar"
+
+#: glib/gdatetime.c:336
+msgctxt "abbreviated month name"
+msgid "Apr"
+msgstr "Avr"
+
+#: glib/gdatetime.c:338
+msgctxt "abbreviated month name"
+msgid "May"
+msgstr "Mai"
+
+#: glib/gdatetime.c:340
+msgctxt "abbreviated month name"
+msgid "Jun"
+msgstr "Jug"
+
+#: glib/gdatetime.c:342
+msgctxt "abbreviated month name"
+msgid "Jul"
+msgstr "Lui"
+
+#: glib/gdatetime.c:344
+msgctxt "abbreviated month name"
+msgid "Aug"
+msgstr "Avo"
+
+#: glib/gdatetime.c:346
+msgctxt "abbreviated month name"
+msgid "Sep"
+msgstr "Set"
+
+#: glib/gdatetime.c:348
+msgctxt "abbreviated month name"
+msgid "Oct"
+msgstr "Otu"
+
+#: glib/gdatetime.c:350
+msgctxt "abbreviated month name"
+msgid "Nov"
+msgstr "Nov"
+
+#: glib/gdatetime.c:352
+msgctxt "abbreviated month name"
+msgid "Dec"
+msgstr "Dic"
+
+#: glib/gdatetime.c:367
+msgctxt "full weekday name"
+msgid "Monday"
+msgstr "Lunis"
+
+#: glib/gdatetime.c:369
+msgctxt "full weekday name"
+msgid "Tuesday"
+msgstr "Martars"
+
+#: glib/gdatetime.c:371
+msgctxt "full weekday name"
+msgid "Wednesday"
+msgstr "Miercus"
+
+#: glib/gdatetime.c:373
+msgctxt "full weekday name"
+msgid "Thursday"
+msgstr "Joibe"
+
+#: glib/gdatetime.c:375
+msgctxt "full weekday name"
+msgid "Friday"
+msgstr "Vinars"
+
+#: glib/gdatetime.c:377
+msgctxt "full weekday name"
+msgid "Saturday"
+msgstr "Sabide"
+
+#: glib/gdatetime.c:379
+msgctxt "full weekday name"
+msgid "Sunday"
+msgstr "Domenie"
+
+#: glib/gdatetime.c:394
+msgctxt "abbreviated weekday name"
+msgid "Mon"
+msgstr "Lun"
+
+#: glib/gdatetime.c:396
+msgctxt "abbreviated weekday name"
+msgid "Tue"
+msgstr "Mar"
+
+#: glib/gdatetime.c:398
+msgctxt "abbreviated weekday name"
+msgid "Wed"
+msgstr "Mie"
+
+#: glib/gdatetime.c:400
+msgctxt "abbreviated weekday name"
+msgid "Thu"
+msgstr "Joi"
+
+#: glib/gdatetime.c:402
+msgctxt "abbreviated weekday name"
+msgid "Fri"
+msgstr "Vin"
+
+#: glib/gdatetime.c:404
+msgctxt "abbreviated weekday name"
+msgid "Sat"
+msgstr "Sab"
+
+#: glib/gdatetime.c:406
+msgctxt "abbreviated weekday name"
+msgid "Sun"
+msgstr "Dom"
+
+#. Translators: Some languages need different grammatical forms of
+#. * month names depending on whether they are standalone or in a full
+#. * date context, with the day number.  Some may prefer starting with
+#. * uppercase when they are standalone and with lowercase when they are
+#. * in a full date context.  Here are full month names in a form
+#. * appropriate when they are used in a full date context, with the
+#. * day number.  If your system is Linux with the glibc version 2.27
+#. * (released Feb 1, 2018) or newer or if it is from the BSD family
+#. * (which includes OS X) then you can refer to the date command line
+#. * utility and see what the command `date +%B' produces.  Also in
+#. * the latest Linux the command `locale mon' in your native locale
+#. * produces a complete list of month names almost ready to copy and
+#. * paste here.  In older Linux systems due to a bug the result is
+#. * incorrect in some languages.  Note that in most of the languages
+#. * (western European, non-European) there is no difference between the
+#. * standalone and complete date form.
+#.
+#: glib/gdatetime.c:470
+msgctxt "full month name with day"
+msgid "January"
+msgstr "Zenâr"
+
+#: glib/gdatetime.c:472
+msgctxt "full month name with day"
+msgid "February"
+msgstr "Fevrâr"
+
+#: glib/gdatetime.c:474
+msgctxt "full month name with day"
+msgid "March"
+msgstr "Març"
+
+#: glib/gdatetime.c:476
+msgctxt "full month name with day"
+msgid "April"
+msgstr "Avrîl"
+
+#: glib/gdatetime.c:478
+msgctxt "full month name with day"
+msgid "May"
+msgstr "Mai"
+
+#: glib/gdatetime.c:480
+msgctxt "full month name with day"
+msgid "June"
+msgstr "Jugn"
+
+#: glib/gdatetime.c:482
+msgctxt "full month name with day"
+msgid "July"
+msgstr "Lui"
+
+#: glib/gdatetime.c:484
+msgctxt "full month name with day"
+msgid "August"
+msgstr "Avost"
+
+#: glib/gdatetime.c:486
+msgctxt "full month name with day"
+msgid "September"
+msgstr "Setembar"
+
+#: glib/gdatetime.c:488
+msgctxt "full month name with day"
+msgid "October"
+msgstr "Otubar"
+
+#: glib/gdatetime.c:490
+msgctxt "full month name with day"
+msgid "November"
+msgstr "Novembar"
+
+#: glib/gdatetime.c:492
+msgctxt "full month name with day"
+msgid "December"
+msgstr "Dicembar"
+
+#. Translators: Some languages need different grammatical forms of
+#. * month names depending on whether they are standalone or in a full
+#. * date context, with the day number.  Some may prefer starting with
+#. * uppercase when they are standalone and with lowercase when they are
+#. * in a full date context.  Here are abbreviated month names in a form
+#. * appropriate when they are used in a full date context, with the
+#. * day number.  However, as these names are abbreviated the grammatical
+#. * difference is visible probably only in Belarusian and Russian.
+#. * In other languages there is no difference between the standalone
+#. * and complete date form when they are abbreviated.  If your system
+#. * is Linux with the glibc version 2.27 (released Feb 1, 2018) or newer
+#. * then you can refer to the date command line utility and see what the
+#. * command `date +%b' produces.  Also in the latest Linux the command
+#. * `locale abmon' in your native locale produces a complete list of
+#. * month names almost ready to copy and paste here.  In other systems
+#. * due to a bug the result is incorrect in some languages.
+#.
+#: glib/gdatetime.c:557
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "Zen"
+
+#: glib/gdatetime.c:559
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "Fev"
+
+#: glib/gdatetime.c:561
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "Mar"
+
+#: glib/gdatetime.c:563
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "Avr"
+
+#: glib/gdatetime.c:565
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "Mai"
+
+#: glib/gdatetime.c:567
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "Jug"
+
+#: glib/gdatetime.c:569
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "Lui"
+
+#: glib/gdatetime.c:571
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "Avo"
+
+#: glib/gdatetime.c:573
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "Set"
+
+#: glib/gdatetime.c:575
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "Otu"
+
+#: glib/gdatetime.c:577
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "Nov"
+
+#: glib/gdatetime.c:579
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "Dic"
+
+#. Translators: 'before midday' indicator
+#: glib/gdatetime.c:596
+msgctxt "GDateTime"
+msgid "AM"
+msgstr "AM"
+
+#. Translators: 'after midday' indicator
+#: glib/gdatetime.c:599
+msgctxt "GDateTime"
+msgid "PM"
+msgstr "PM"
+
+#: glib/gdir.c:158
+#, c-format
+msgid "Error opening directory “%s”: %s"
+msgstr "Erôr tal vierzi la cartele “%s”: %s"
+
+#: glib/gfileutils.c:735 glib/gfileutils.c:827
+#, c-format
+msgid "Could not allocate %lu byte to read file “%s”"
+msgid_plural "Could not allocate %lu bytes to read file “%s”"
+msgstr[0] "Impussibil assegnâ %lu byte par lei il file “%s”"
+msgstr[1] "Impussibil assegnâ %lu bytes par lei il file “%s”"
+
+#: glib/gfileutils.c:752
+#, c-format
+msgid "Error reading file “%s”: %s"
+msgstr "Erôr tal lei il file “%s”: %s"
+
+#: glib/gfileutils.c:788
+#, c-format
+msgid "File “%s” is too large"
+msgstr "Il file “%s” al è masse larc"
+
+#: glib/gfileutils.c:852
+#, c-format
+msgid "Failed to read from file “%s”: %s"
+msgstr "Impussibil lei dal file “%s”: %s"
+
+#: glib/gfileutils.c:902 glib/gfileutils.c:977 glib/gfileutils.c:1449
+#, c-format
+msgid "Failed to open file “%s”: %s"
+msgstr "No si è rivâts a vierzi il file “%s”: %s"
+
+#: glib/gfileutils.c:915
+#, c-format
+msgid "Failed to get attributes of file “%s”: fstat() failed: %s"
+msgstr "Impussibil otignî i atribûts dal file “%s”: fstat() al à falît: %s"
+
+#: glib/gfileutils.c:946
+#, c-format
+msgid "Failed to open file “%s”: fdopen() failed: %s"
+msgstr "Impussibil vierzi il file “%s”: fdopen() al à falît: %s"
+
+#: glib/gfileutils.c:1047
+#, c-format
+msgid "Failed to rename file “%s” to “%s”: g_rename() failed: %s"
+msgstr "Impussibil cambiâ non al file “%s” in “%s”: g_rename() al à falît: %s"
+
+#: glib/gfileutils.c:1156
+#, c-format
+msgid "Failed to write file “%s”: write() failed: %s"
+msgstr "Impussibil scrivi il file “%s”: write() al à falît: %s"
+
+#: glib/gfileutils.c:1177
+#, c-format
+msgid "Failed to write file “%s”: fsync() failed: %s"
+msgstr "Impussibil scrivi il file “%s”: fsync() al à falît: %s"
+
+#: glib/gfileutils.c:1338 glib/gfileutils.c:1753
+#, c-format
+msgid "Failed to create file “%s”: %s"
+msgstr "Impussibil creâ il file “%s”: %s"
+
+#: glib/gfileutils.c:1383
+#, c-format
+msgid "Existing file “%s” could not be removed: g_unlink() failed: %s"
+msgstr ""
+"Nol è stât pussibil gjavâ il file “%s” esistent: g_unlink() al à falît: %s"
+
+#: glib/gfileutils.c:1718
+#, c-format
+msgid "Template “%s” invalid, should not contain a “%s”"
+msgstr "Il model “%s” nol è valit, nol à di contignî un “%s”"
+
+#: glib/gfileutils.c:1731
+#, c-format
+msgid "Template “%s” doesn’t contain XXXXXX"
+msgstr "Il model “%s” nol conten XXXXXX"
+
+#: glib/gfileutils.c:2291 glib/gfileutils.c:2320
+#, c-format
+msgid "Failed to read the symbolic link “%s”: %s"
+msgstr "Impussibil lei il colegament simbolic “%s”: %s"
+
+#: glib/giochannel.c:1408
+#, c-format
+msgid "Could not open converter from “%s” to “%s”: %s"
+msgstr "Impussibil vierzi il convertidôr di “%s” a “%s”: %s"
+
+#: glib/giochannel.c:1761
+msgid "Can’t do a raw read in g_io_channel_read_line_string"
+msgstr "Impussibil eseguî une leture grese in g_io_channel_read_line_string"
+
+#: glib/giochannel.c:1808 glib/giochannel.c:2066 glib/giochannel.c:2153
+msgid "Leftover unconverted data in read buffer"
+msgstr ""
+
+#: glib/giochannel.c:1889 glib/giochannel.c:1966
+msgid "Channel terminates in a partial character"
+msgstr "Il canâl al termine intun caratar parziâl"
+
+#: glib/giochannel.c:1952
+msgid "Can’t do a raw read in g_io_channel_read_to_end"
+msgstr "Impussibil eseguî une leture grese in g_io_channel_read_to_end"
+
+#: glib/gkeyfile.c:796
+msgid "Valid key file could not be found in search dirs"
+msgstr ""
+"Nol è stât pussibil cjatâ tes cartelis di ricercje un file di clâf valit"
+
+#: glib/gkeyfile.c:833
+msgid "Not a regular file"
+msgstr "Nol è un file regolâr"
+
+#: glib/gkeyfile.c:1291
+#, c-format
+msgid ""
+"Key file contains line “%s” which is not a key-value pair, group, or comment"
+msgstr ""
+"Il file de clâf al conten la rie “%s” che no je une cubie clâf-valôr, grup o "
+"coment"
+
+#: glib/gkeyfile.c:1348
+#, c-format
+msgid "Invalid group name: %s"
+msgstr "Non di grup no valit: %s"
+
+#: glib/gkeyfile.c:1372
+msgid "Key file does not start with a group"
+msgstr "Il file de clâf nol scomence cuntun grup"
+
+#: glib/gkeyfile.c:1396
+#, c-format
+msgid "Invalid key name: %.*s"
+msgstr "Non de clâf no valit: %.*s"
+
+#: glib/gkeyfile.c:1424
+#, c-format
+msgid "Key file contains unsupported encoding “%s”"
+msgstr "Il file de clâf al conten la codifiche no supuartade “%s”"
+
+#: glib/gkeyfile.c:1679 glib/gkeyfile.c:1852 glib/gkeyfile.c:3299
+#: glib/gkeyfile.c:3363 glib/gkeyfile.c:3493 glib/gkeyfile.c:3625
+#: glib/gkeyfile.c:3771 glib/gkeyfile.c:4006 glib/gkeyfile.c:4073
+#, c-format
+msgid "Key file does not have group “%s”"
+msgstr "Il file de clâf nol à il grup “%s”"
+
+#: glib/gkeyfile.c:1807
+#, c-format
+msgid "Key file does not have key “%s” in group “%s”"
+msgstr "Il file de clâf nol à la clâf “%s” tal grup “%s”"
+
+#: glib/gkeyfile.c:1969 glib/gkeyfile.c:2085
+#, c-format
+msgid "Key file contains key “%s” with value “%s” which is not UTF-8"
+msgstr "Il file de clâf al conten la clâf “%s” cun valôr “%s” che nol è UTF-8"
+
+#: glib/gkeyfile.c:1989 glib/gkeyfile.c:2105 glib/gkeyfile.c:2544
+#, c-format
+msgid ""
+"Key file contains key “%s” which has a value that cannot be interpreted."
+msgstr ""
+"Il file de clâf al conten la clâf “%s” che e à un valôr che no si rive a "
+"interpretâ."
+
+#: glib/gkeyfile.c:2759 glib/gkeyfile.c:3128
+#, c-format
+msgid ""
+"Key file contains key “%s” in group “%s” which has a value that cannot be "
+"interpreted."
+msgstr ""
+
+#: glib/gkeyfile.c:2837 glib/gkeyfile.c:2914
+#, c-format
+msgid "Key “%s” in group “%s” has value “%s” where %s was expected"
+msgstr ""
+
+#: glib/gkeyfile.c:4326
+msgid "Key file contains escape character at end of line"
+msgstr ""
+
+#: glib/gkeyfile.c:4348
+#, c-format
+msgid "Key file contains invalid escape sequence “%s”"
+msgstr ""
+
+#: glib/gkeyfile.c:4493
+#, c-format
+msgid "Value “%s” cannot be interpreted as a number."
+msgstr ""
+
+#: glib/gkeyfile.c:4507
+#, c-format
+msgid "Integer value “%s” out of range"
+msgstr ""
+
+#: glib/gkeyfile.c:4540
+#, c-format
+msgid "Value “%s” cannot be interpreted as a float number."
+msgstr ""
+
+#: glib/gkeyfile.c:4579
+#, c-format
+msgid "Value “%s” cannot be interpreted as a boolean."
+msgstr ""
+
+#: glib/gmappedfile.c:131
+#, c-format
+msgid "Failed to get attributes of file “%s%s%s%s”: fstat() failed: %s"
+msgstr ""
+
+#: glib/gmappedfile.c:197
+#, c-format
+msgid "Failed to map %s%s%s%s: mmap() failed: %s"
+msgstr ""
+
+#: glib/gmappedfile.c:264
+#, c-format
+msgid "Failed to open file “%s”: open() failed: %s"
+msgstr ""
+
+#: glib/gmarkup.c:400 glib/gmarkup.c:442
+#, c-format
+msgid "Error on line %d char %d: "
+msgstr ""
+
+#: glib/gmarkup.c:464 glib/gmarkup.c:547
+#, c-format
+msgid "Invalid UTF-8 encoded text in name — not valid “%s”"
+msgstr ""
+
+#: glib/gmarkup.c:475
+#, c-format
+msgid "“%s” is not a valid name"
+msgstr "“%s” nol è un non valit"
+
+#: glib/gmarkup.c:491
+#, c-format
+msgid "“%s” is not a valid name: “%c”"
+msgstr "“%s” nol è un non valit: “%c”"
+
+#: glib/gmarkup.c:615
+#, c-format
+msgid "Error on line %d: %s"
+msgstr ""
+
+#: glib/gmarkup.c:692
+#, c-format
+msgid ""
+"Failed to parse “%-.*s”, which should have been a digit inside a character "
+"reference (&#234; for example) — perhaps the digit is too large"
+msgstr ""
+
+#: glib/gmarkup.c:704
+msgid ""
+"Character reference did not end with a semicolon; most likely you used an "
+"ampersand character without intending to start an entity — escape ampersand "
+"as &amp;"
+msgstr ""
+
+#: glib/gmarkup.c:730
+#, c-format
+msgid "Character reference “%-.*s” does not encode a permitted character"
+msgstr ""
+
+#: glib/gmarkup.c:768
+msgid ""
+"Empty entity “&;” seen; valid entities are: &amp; &quot; &lt; &gt; &apos;"
+msgstr ""
+
+#: glib/gmarkup.c:776
+#, c-format
+msgid "Entity name “%-.*s” is not known"
+msgstr ""
+
+#: glib/gmarkup.c:781
+msgid ""
+"Entity did not end with a semicolon; most likely you used an ampersand "
+"character without intending to start an entity — escape ampersand as &amp;"
+msgstr ""
+
+#: glib/gmarkup.c:1195
+msgid "Document must begin with an element (e.g. <book>)"
+msgstr ""
+
+#: glib/gmarkup.c:1235
+#, c-format
+msgid ""
+"“%s” is not a valid character following a “<” character; it may not begin an "
+"element name"
+msgstr ""
+
+#: glib/gmarkup.c:1278
+#, c-format
+msgid ""
+"Odd character “%s”, expected a “>” character to end the empty-element tag "
+"“%s”"
+msgstr ""
+
+#: glib/gmarkup.c:1348
+#, c-format
+msgid "Too many attributes in element “%s”"
+msgstr "Masse atribûts tal element “%s”"
+
+#: glib/gmarkup.c:1368
+#, c-format
+msgid ""
+"Odd character “%s”, expected a “=” after attribute name “%s” of element “%s”"
+msgstr ""
+
+#: glib/gmarkup.c:1410
+#, c-format
+msgid ""
+"Odd character “%s”, expected a “>” or “/” character to end the start tag of "
+"element “%s”, or optionally an attribute; perhaps you used an invalid "
+"character in an attribute name"
+msgstr ""
+
+#: glib/gmarkup.c:1455
+#, c-format
+msgid ""
+"Odd character “%s”, expected an open quote mark after the equals sign when "
+"giving value for attribute “%s” of element “%s”"
+msgstr ""
+
+#: glib/gmarkup.c:1589
+#, c-format
+msgid ""
+"“%s” is not a valid character following the characters “</”; “%s” may not "
+"begin an element name"
+msgstr ""
+
+#: glib/gmarkup.c:1627
+#, c-format
+msgid ""
+"“%s” is not a valid character following the close element name “%s”; the "
+"allowed character is “>”"
+msgstr ""
+
+#: glib/gmarkup.c:1639
+#, c-format
+msgid "Element “%s” was closed, no element is currently open"
+msgstr ""
+
+#: glib/gmarkup.c:1648
+#, c-format
+msgid "Element “%s” was closed, but the currently open element is “%s”"
+msgstr ""
+
+#: glib/gmarkup.c:1801
+msgid "Document was empty or contained only whitespace"
+msgstr ""
+
+#: glib/gmarkup.c:1815
+msgid "Document ended unexpectedly just after an open angle bracket “<”"
+msgstr ""
+
+#: glib/gmarkup.c:1823 glib/gmarkup.c:1868
+#, c-format
+msgid ""
+"Document ended unexpectedly with elements still open — “%s” was the last "
+"element opened"
+msgstr ""
+
+#: glib/gmarkup.c:1831
+#, c-format
+msgid ""
+"Document ended unexpectedly, expected to see a close angle bracket ending "
+"the tag <%s/>"
+msgstr ""
+
+#: glib/gmarkup.c:1837
+msgid "Document ended unexpectedly inside an element name"
+msgstr ""
+
+#: glib/gmarkup.c:1843
+msgid "Document ended unexpectedly inside an attribute name"
+msgstr ""
+
+#: glib/gmarkup.c:1848
+msgid "Document ended unexpectedly inside an element-opening tag."
+msgstr ""
+
+#: glib/gmarkup.c:1854
+msgid ""
+"Document ended unexpectedly after the equals sign following an attribute "
+"name; no attribute value"
+msgstr ""
+
+#: glib/gmarkup.c:1861
+msgid "Document ended unexpectedly while inside an attribute value"
+msgstr ""
+
+#: glib/gmarkup.c:1878
+#, c-format
+msgid "Document ended unexpectedly inside the close tag for element “%s”"
+msgstr ""
+
+#: glib/gmarkup.c:1882
+msgid ""
+"Document ended unexpectedly inside the close tag for an unopened element"
+msgstr ""
+
+#: glib/gmarkup.c:1888
+msgid "Document ended unexpectedly inside a comment or processing instruction"
+msgstr ""
+
+#: glib/goption.c:875
+msgid "[OPTION…]"
+msgstr "[OPZION…]"
+
+#: glib/goption.c:991
+msgid "Help Options:"
+msgstr ""
+
+#: glib/goption.c:992
+msgid "Show help options"
+msgstr ""
+
+#: glib/goption.c:998
+msgid "Show all help options"
+msgstr ""
+
+#: glib/goption.c:1061
+msgid "Application Options:"
+msgstr "Opzions aplicazion:"
+
+#: glib/goption.c:1063
+msgid "Options:"
+msgstr "Opzions:"
+
+#: glib/goption.c:1127 glib/goption.c:1197
+#, c-format
+msgid "Cannot parse integer value “%s” for %s"
+msgstr ""
+
+#: glib/goption.c:1137 glib/goption.c:1205
+#, c-format
+msgid "Integer value “%s” for %s out of range"
+msgstr ""
+
+#: glib/goption.c:1162
+#, c-format
+msgid "Cannot parse double value “%s” for %s"
+msgstr ""
+
+#: glib/goption.c:1170
+#, c-format
+msgid "Double value “%s” for %s out of range"
+msgstr ""
+
+#: glib/goption.c:1462 glib/goption.c:1541
+#, c-format
+msgid "Error parsing option %s"
+msgstr ""
+
+#: glib/goption.c:1563 glib/goption.c:1676
+#, c-format
+msgid "Missing argument for %s"
+msgstr ""
+
+#: glib/goption.c:2186
+#, c-format
+msgid "Unknown option %s"
+msgstr "Opzion %s no cognossude"
+
+#: glib/gregex.c:479
+msgid "corrupted object"
+msgstr "ogjet ruvinât"
+
+#: glib/gregex.c:481
+msgid "out of memory"
+msgstr "memorie finide"
+
+#: glib/gregex.c:487
+msgid "backtracking limit reached"
+msgstr ""
+
+#: glib/gregex.c:498
+msgid "internal error"
+msgstr "erôr interni"
+
+#: glib/gregex.c:500
+msgid "the pattern contains items not supported for partial matching"
+msgstr ""
+
+#: glib/gregex.c:502
+msgid "back references as conditions are not supported for partial matching"
+msgstr ""
+
+#: glib/gregex.c:508
+msgid "recursion limit reached"
+msgstr ""
+
+#: glib/gregex.c:510
+msgid "bad offset"
+msgstr ""
+
+#: glib/gregex.c:512
+msgid "recursion loop"
+msgstr ""
+
+#. should not happen in GRegex since we check modes before each match
+#: glib/gregex.c:515
+msgid "matching mode is requested that was not compiled for JIT"
+msgstr ""
+
+#: glib/gregex.c:536 glib/gregex.c:1838
+msgid "unknown error"
+msgstr "erôr no cognossût"
+
+#: glib/gregex.c:557
+msgid "\\ at end of pattern"
+msgstr ""
+
+#: glib/gregex.c:561
+msgid "\\c at end of pattern"
+msgstr ""
+
+#: glib/gregex.c:566
+msgid "unrecognized character following \\"
+msgstr ""
+
+#: glib/gregex.c:570
+msgid "numbers out of order in {} quantifier"
+msgstr ""
+
+#: glib/gregex.c:574
+msgid "number too big in {} quantifier"
+msgstr ""
+
+#: glib/gregex.c:578
+msgid "missing terminating ] for character class"
+msgstr ""
+
+#: glib/gregex.c:582
+msgid "invalid escape sequence in character class"
+msgstr ""
+
+#: glib/gregex.c:586
+msgid "range out of order in character class"
+msgstr ""
+
+#: glib/gregex.c:591
+msgid "nothing to repeat"
+msgstr "nuie di ce ripeti"
+
+#: glib/gregex.c:595
+msgid "unrecognized character after (? or (?-"
+msgstr ""
+
+#: glib/gregex.c:599
+msgid "POSIX named classes are supported only within a class"
+msgstr ""
+
+#: glib/gregex.c:603
+msgid "POSIX collating elements are not supported"
+msgstr ""
+
+#: glib/gregex.c:609
+msgid "missing terminating )"
+msgstr ""
+
+#: glib/gregex.c:613
+msgid "reference to non-existent subpattern"
+msgstr ""
+
+#: glib/gregex.c:617
+msgid "missing ) after comment"
+msgstr ""
+
+#: glib/gregex.c:621
+msgid "regular expression is too large"
+msgstr "la espression regolâr e je masse largje"
+
+#: glib/gregex.c:625
+msgid "malformed number or name after (?("
+msgstr "non o numar malformât dopo (?("
+
+#: glib/gregex.c:629
+msgid "lookbehind assertion is not fixed length"
+msgstr ""
+
+#: glib/gregex.c:633
+msgid "conditional group contains more than two branches"
+msgstr ""
+
+#: glib/gregex.c:637
+msgid "assertion expected after (?("
+msgstr ""
+
+#: glib/gregex.c:641
+msgid "a numbered reference must not be zero"
+msgstr "un riferiment numerât nol pues jessi zero"
+
+#: glib/gregex.c:645
+msgid "unknown POSIX class name"
+msgstr "non di classe POSIX no cognossût"
+
+#: glib/gregex.c:650
+msgid "character value in \\x{...} sequence is too large"
+msgstr ""
+
+#: glib/gregex.c:654
+msgid "\\C not allowed in lookbehind assertion"
+msgstr ""
+
+#: glib/gregex.c:658
+msgid "missing terminator in subpattern name"
+msgstr ""
+
+#: glib/gregex.c:662
+msgid "two named subpatterns have the same name"
+msgstr ""
+
+#: glib/gregex.c:666
+msgid "malformed \\P or \\p sequence"
+msgstr "secuence \\P o \\p malformade"
+
+#: glib/gregex.c:670
+msgid "unknown property name after \\P or \\p"
+msgstr ""
+
+#: glib/gregex.c:674
+msgid "subpattern name is too long (maximum 32 characters)"
+msgstr ""
+
+#: glib/gregex.c:678
+msgid "too many named subpatterns (maximum 10,000)"
+msgstr ""
+
+#: glib/gregex.c:682
+msgid "octal value is greater than \\377"
+msgstr "il valôr otâl al è plui grant di \\377"
+
+#: glib/gregex.c:686
+msgid "DEFINE group contains more than one branch"
+msgstr ""
+
+#: glib/gregex.c:690
+msgid "inconsistent NEWLINE options"
+msgstr ""
+
+#: glib/gregex.c:694
+msgid ""
+"\\g is not followed by a braced, angle-bracketed, or quoted name or number, "
+"or by a plain number"
+msgstr ""
+
+#: glib/gregex.c:699
+msgid "an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)"
+msgstr ""
+
+#: glib/gregex.c:703
+msgid "(*VERB) not recognized"
+msgstr ""
+
+#: glib/gregex.c:707
+msgid "number is too big"
+msgstr "il numar al è masse grant"
+
+#: glib/gregex.c:711
+msgid "missing subpattern name after (?&"
+msgstr ""
+
+#: glib/gregex.c:715
+msgid "different names for subpatterns of the same number are not allowed"
+msgstr ""
+
+#: glib/gregex.c:719
+msgid "(*MARK) must have an argument"
+msgstr ""
+
+#: glib/gregex.c:723
+msgid "\\c must be followed by an ASCII character"
+msgstr ""
+
+#: glib/gregex.c:727
+msgid "\\k is not followed by a braced, angle-bracketed, or quoted name"
+msgstr ""
+
+#: glib/gregex.c:731
+msgid "\\N is not supported in a class"
+msgstr "\\N nol è supuartât intune classe"
+
+#: glib/gregex.c:735
+msgid "name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)"
+msgstr "non masse lunc in (*MARK), (*PRUNE), (*SKIP), or (*THEN)"
+
+#: glib/gregex.c:739 glib/gregex.c:875
+msgid "code overflow"
+msgstr ""
+
+#: glib/gregex.c:743
+msgid "unrecognized character after (?P"
+msgstr "caratar no ricognossût dopo (?P"
+
+#: glib/gregex.c:747
+msgid "overran compiling workspace"
+msgstr ""
+
+#: glib/gregex.c:751
+msgid "previously-checked referenced subpattern not found"
+msgstr ""
+
+#: glib/gregex.c:874 glib/gregex.c:1121 glib/gregex.c:2444
+#, c-format
+msgid "Error while matching regular expression %s: %s"
+msgstr ""
+
+#: glib/gregex.c:1721
+msgid "PCRE library is compiled without UTF8 support"
+msgstr "La librarie PCRE e je compilade cence supuart UTF8"
+
+#: glib/gregex.c:1729
+msgid "PCRE library is compiled with incompatible options"
+msgstr "La librarie PCRE e je compilade cun opzions incompatibilis"
+
+#: glib/gregex.c:1847
+#, fuzzy, c-format
+#| msgid "Error while compiling regular expression %s at char %d: %s"
+msgid "Error while compiling regular expression ‘%s’ at char %s: %s"
+msgstr "Erôr intal compilâ la espression regolâr %s al caratar %d: %s"
+
+#: glib/gregex.c:2887
+msgid "hexadecimal digit or “}” expected"
+msgstr "si spietave une cifre esadecimâl o “}”"
+
+#: glib/gregex.c:2903
+msgid "hexadecimal digit expected"
+msgstr "si spietave une cifre esadecimâl"
+
+#: glib/gregex.c:2943
+msgid "missing “<” in symbolic reference"
+msgstr "al mancje “%” intal riferiment simbolic"
+
+#: glib/gregex.c:2952
+msgid "unfinished symbolic reference"
+msgstr "riferiment simbolic no finît"
+
+#: glib/gregex.c:2959
+msgid "zero-length symbolic reference"
+msgstr "riferiment simbolic di lungjece zero"
+
+#: glib/gregex.c:2970
+msgid "digit expected"
+msgstr "si spietave une cifre"
+
+#: glib/gregex.c:2988
+msgid "illegal symbolic reference"
+msgstr "riferiment simbolic ilegâl"
+
+#: glib/gregex.c:3051
+msgid "stray final “\\”"
+msgstr "pierdude la “\\” finâl"
+
+#: glib/gregex.c:3055
+msgid "unknown escape sequence"
+msgstr "secuence di escape no cognossude"
+
+#: glib/gregex.c:3065
+#, c-format
+msgid "Error while parsing replacement text “%s” at char %lu: %s"
+msgstr "Erôr tal analizâ il test di sostituzion “%s” al caratar %lu: %s"
+
+#: glib/gshell.c:98
+msgid "Quoted text doesn’t begin with a quotation mark"
+msgstr "Il test citât nol tache cuntun segn di citazion"
+
+#: glib/gshell.c:188
+msgid "Unmatched quotation mark in command line or other shell-quoted text"
+msgstr ""
+"Segn di citazion no cubiât inte rie di comant o altri test citât de shell"
+
+#: glib/gshell.c:594
+#, c-format
+msgid "Text ended just after a “\\” character. (The text was “%s”)"
+msgstr "Il test al è finît juste dopo un caratar “/”. (Il test al jere “%s”)"
+
+#: glib/gshell.c:601
+#, c-format
+msgid "Text ended before matching quote was found for %c. (The text was “%s”)"
+msgstr ""
+"Test finît prime di cjatâ la citazion corispondent par %c. (Il test al jere "
+"“%s”)"
+
+#: glib/gshell.c:613
+msgid "Text was empty (or contained only whitespace)"
+msgstr "Il test al jere vueit (o al contignive dome spazis vueits)"
+
+#: glib/gspawn.c:314
+#, c-format
+msgid "Failed to read data from child process (%s)"
+msgstr "No si è rivâts a lei dâts dal procès fi (%s)"
+
+#: glib/gspawn.c:466
+#, c-format
+msgid "Unexpected error in reading data from a child process (%s)"
+msgstr "Erôr inspietât tai dâts di leture di un procès fi (%s)"
+
+#: glib/gspawn.c:551
+#, c-format
+msgid "Unexpected error in waitpid() (%s)"
+msgstr "Erôr inspietât in waitpid() (%s)"
+
+#: glib/gspawn.c:1170 glib/gspawn-win32.c:1488
+#, c-format
+msgid "Child process exited with code %ld"
+msgstr "Procès fi jessût cul codiç %ld"
+
+#: glib/gspawn.c:1178
+#, c-format
+msgid "Child process killed by signal %ld"
+msgstr "Procès fi copât dal segnâl %ld"
+
+#: glib/gspawn.c:1185
+#, c-format
+msgid "Child process stopped by signal %ld"
+msgstr "Procès fi fermât dal segnâl %ld"
+
+#: glib/gspawn.c:1192
+#, c-format
+msgid "Child process exited abnormally"
+msgstr "Il procès fi al è jessût in maniere anormâl"
+
+#: glib/gspawn.c:1885 glib/gspawn-win32.c:393 glib/gspawn-win32.c:401
+#, c-format
+msgid "Failed to read from child pipe (%s)"
+msgstr "No si è rivâts a lei dal condot dal fi (%s)"
+
+#: glib/gspawn.c:2248
+#, c-format
+msgid "Failed to spawn child process “%s” (%s)"
+msgstr "No si è rivâts a creâ il procès fi “%s” (%s)"
+
+#: glib/gspawn.c:2365
+#, c-format
+msgid "Failed to fork (%s)"
+msgstr "No si è rivâts a inglovâ (%s)"
+
+#: glib/gspawn.c:2525 glib/gspawn-win32.c:424
+#, c-format
+msgid "Failed to change to directory “%s” (%s)"
+msgstr "No si è rivâts a lâ ae cartele “%s” (%s)"
+
+#: glib/gspawn.c:2535
+#, c-format
+msgid "Failed to execute child process “%s” (%s)"
+msgstr "No si è rivâts a eseguî il procès fi “%s” (%s)"
+
+#: glib/gspawn.c:2545
+#, c-format
+msgid "Failed to open file to remap file descriptor (%s)"
+msgstr "Impussibil vierzi il file par tornâ a mapâ il descritôr dal file (%s)"
+
+#: glib/gspawn.c:2553
+#, c-format
+msgid "Failed to duplicate file descriptor for child process (%s)"
+msgstr "Impussibil duplicâ il descritôr dal file pal procès fi (%s)"
+
+#: glib/gspawn.c:2562
+#, c-format
+msgid "Failed to fork child process (%s)"
+msgstr "No si è rivâts a inglovâ il procès fi (%s)"
+
+#: glib/gspawn.c:2570
+#, c-format
+msgid "Failed to close file descriptor for child process (%s)"
+msgstr "Impussibil sierâ il descritôr dal file pal procès fi (%s)"
+
+#: glib/gspawn.c:2578
+#, c-format
+msgid "Unknown error executing child process “%s”"
+msgstr "Erôr no cognossût tal eseguî il procès fi “%s”"
+
+#: glib/gspawn.c:2602
+#, c-format
+msgid "Failed to read enough data from child pid pipe (%s)"
+msgstr "No si è rivâts a lei vonde dâts dal condot dal pid dal fi (%s)"
+
+#: glib/gspawn-win32.c:337
+msgid "Failed to read data from child process"
+msgstr "No si è rivâts a lei dâts dal procès fi"
+
+#: glib/gspawn-win32.c:430 glib/gspawn-win32.c:435 glib/gspawn-win32.c:561
+#, c-format
+msgid "Failed to execute child process (%s)"
+msgstr "No si è rivâts a eseguî il procès fi (%s)"
+
+#: glib/gspawn-win32.c:440
+#, c-format
+msgid "Failed to dup() in child process (%s)"
+msgstr "Impussibil fâ il dup() tal procès fi (%s)"
+
+#: glib/gspawn-win32.c:511
+#, c-format
+msgid "Invalid program name: %s"
+msgstr "Non dal program no valit: %s"
+
+#: glib/gspawn-win32.c:521 glib/gspawn-win32.c:853
+#, c-format
+msgid "Invalid string in argument vector at %d: %s"
+msgstr "Stringhe no valide intal vetôr dal argoment su %d: %s"
+
+#: glib/gspawn-win32.c:532 glib/gspawn-win32.c:869
+#, c-format
+msgid "Invalid string in environment: %s"
+msgstr "Stringhe no valide intal ambient: %s"
+
+#: glib/gspawn-win32.c:849
+#, c-format
+msgid "Invalid working directory: %s"
+msgstr "Cartele di lavôr no valide: %s"
+
+#: glib/gspawn-win32.c:914
+#, c-format
+msgid "Failed to execute helper program (%s)"
+msgstr "No si è rivâts a eseguî il program judant (%s)"
+
+#: glib/gspawn-win32.c:1143
+msgid ""
+"Unexpected error in g_io_channel_win32_poll() reading data from a child "
+"process"
+msgstr "Erôr inspietât in g_io_channel_win32_poll() leint dâts di un procès fi"
+
+#: glib/gstrfuncs.c:3372 glib/gstrfuncs.c:3474
+msgid "Empty string is not a number"
+msgstr "La stringhe vueide no je un numar"
+
+#: glib/gstrfuncs.c:3396
+#, c-format
+msgid "“%s” is not a signed number"
+msgstr "“%s” nol è un numar cun segn"
+
+#: glib/gstrfuncs.c:3406 glib/gstrfuncs.c:3510
+#, c-format
+msgid "Number “%s” is out of bounds [%s, %s]"
+msgstr "Il numar “%s” al è fûr dai limits [%s, %s]"
+
+#: glib/gstrfuncs.c:3500
+#, c-format
+msgid "“%s” is not an unsigned number"
+msgstr "“%s” nol è un numar cence segn"
+
+#: glib/guri.c:317
+#, no-c-format
+msgid "Invalid %-encoding in URI"
+msgstr "%-encoding no valit tal URI"
+
+#: glib/guri.c:334
+msgid "Illegal character in URI"
+msgstr ""
+
+#: glib/guri.c:368
+msgid "Non-UTF-8 characters in URI"
+msgstr "Caratars no-UTF-8 tal URI"
+
+#: glib/guri.c:548
+#, c-format
+msgid "Invalid IPv6 address ‘%.*s’ in URI"
+msgstr ""
+
+#: glib/guri.c:603
+#, c-format
+msgid "Illegal encoded IP address ‘%.*s’ in URI"
+msgstr ""
+
+#: glib/guri.c:615
+#, c-format
+msgid "Illegal internationalized hostname ‘%.*s’ in URI"
+msgstr "Non ilegjitim dal host internazionalizât ‘%.*s’ tal URI"
+
+#: glib/guri.c:647 glib/guri.c:659
+#, c-format
+msgid "Could not parse port ‘%.*s’ in URI"
+msgstr "Impussibil analizâ la puarte ‘%.*s’ tal URI"
+
+#: glib/guri.c:666
+#, c-format
+msgid "Port ‘%.*s’ in URI is out of range"
+msgstr "La puarte ‘%.*s’ tal URI e je fûr dai limits"
+
+#: glib/guri.c:1226 glib/guri.c:1290
+#, c-format
+msgid "URI ‘%s’ is not an absolute URI"
+msgstr "L'URI ‘%s’ nol è un URI assolût"
+
+#: glib/guri.c:1232
+#, c-format
+msgid "URI ‘%s’ has no host component"
+msgstr "L'URI ‘%s’ nol à nissun component host"
+
+#: glib/guri.c:1462
+msgid "URI is not absolute, and no base URI was provided"
+msgstr "L'URI nol è assolût e nol è stât indicât nissun URI di base"
+
+#: glib/guri.c:2248
+msgid "Missing ‘=’ and parameter value"
+msgstr "Al mancje ‘=’ e il valôr dal parametri"
+
+#: glib/gutf8.c:834
+msgid "Failed to allocate memory"
+msgstr "No si è rivâts a assegnâ la memorie"
+
+#: glib/gutf8.c:967
+msgid "Character out of range for UTF-8"
+msgstr "Caratar fûr dal limit par UTF-8"
+
+#: glib/gutf8.c:1069 glib/gutf8.c:1078 glib/gutf8.c:1208 glib/gutf8.c:1217
+#: glib/gutf8.c:1356 glib/gutf8.c:1453
+msgid "Invalid sequence in conversion input"
+msgstr "Secuence no valide intal input di conversion"
+
+#: glib/gutf8.c:1367 glib/gutf8.c:1464
+msgid "Character out of range for UTF-16"
+msgstr "Caratar fûr dal limit par UTF-16"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 kB"
+#: glib/gutils.c:2857
+msgid "kB"
+msgstr "kB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 MB"
+#: glib/gutils.c:2859
+msgid "MB"
+msgstr "MB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 GB"
+#: glib/gutils.c:2861
+msgid "GB"
+msgstr "GB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 TB"
+#: glib/gutils.c:2863
+msgid "TB"
+msgstr "TB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 PB"
+#: glib/gutils.c:2865
+msgid "PB"
+msgstr "PB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 EB"
+#: glib/gutils.c:2867
+msgid "EB"
+msgstr "EB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 KiB"
+#: glib/gutils.c:2871
+msgid "KiB"
+msgstr "KiB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 MiB"
+#: glib/gutils.c:2873
+msgid "MiB"
+msgstr "MiB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 GiB"
+#: glib/gutils.c:2875
+msgid "GiB"
+msgstr "GiB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 TiB"
+#: glib/gutils.c:2877
+msgid "TiB"
+msgstr "TiB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 PiB"
+#: glib/gutils.c:2879
+msgid "PiB"
+msgstr "PiB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 EiB"
+#: glib/gutils.c:2881
+msgid "EiB"
+msgstr "EiB"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 kb"
+#: glib/gutils.c:2885
+msgid "kb"
+msgstr "kb"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Mb"
+#: glib/gutils.c:2887
+msgid "Mb"
+msgstr "Mb"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Gb"
+#: glib/gutils.c:2889
+msgid "Gb"
+msgstr "Gb"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Tb"
+#: glib/gutils.c:2891
+msgid "Tb"
+msgstr "Tb"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Pb"
+#: glib/gutils.c:2893
+msgid "Pb"
+msgstr "Pb"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Eb"
+#: glib/gutils.c:2895
+msgid "Eb"
+msgstr "Eb"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Kib"
+#: glib/gutils.c:2899
+msgid "Kib"
+msgstr "Kib"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Mib"
+#: glib/gutils.c:2901
+msgid "Mib"
+msgstr "Mib"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Gib"
+#: glib/gutils.c:2903
+msgid "Gib"
+msgstr "Gib"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Tib"
+#: glib/gutils.c:2905
+msgid "Tib"
+msgstr "Tib"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Pib"
+#: glib/gutils.c:2907
+msgid "Pib"
+msgstr "Pib"
+
+#. Translators: A unit symbol for size formatting, showing for example: "13.0 Eib"
+#: glib/gutils.c:2909
+msgid "Eib"
+msgstr "Eib"
+
+#: glib/gutils.c:2947
+#, fuzzy
+#| msgid "%u byte"
+#| msgid_plural "%u bytes"
+msgid "byte"
+msgid_plural "bytes"
+msgstr[0] "%u byte"
+msgstr[1] "%u byte"
+
+#: glib/gutils.c:2951
+#, fuzzy
+#| msgid "%u bit"
+#| msgid_plural "%u bits"
+msgid "bit"
+msgid_plural "bits"
+msgstr[0] "%u bit"
+msgstr[1] "%u bit"
+
+#. Translators: The "%u" is replaced with the size value, like "13"; it could
+#. * be part of "13 bytes", but only the number is requested this time.
+#: glib/gutils.c:2959
+#, c-format
+msgctxt "format-size"
+msgid "%u"
+msgstr "%u"
+
+#. Translators: The first "%u" is replaced with the value, the "%s" with a unit of the value.
+#. * The order can be changed with "%$2s %$1u". An example: "13 bytes"
+#: glib/gutils.c:2964
+#, c-format
+msgctxt "format-size"
+msgid "%u %s"
+msgstr "%u %s"
+
+#. Translators: The "%.1f" is replaced with the size value, like "13.0"; it could
+#. * be part of "13.0 MB", but only the number is requested this time.
+#: glib/gutils.c:3000
+#, fuzzy, c-format
+#| msgid "%.1f KB"
+msgctxt "format-size"
+msgid "%.1f"
+msgstr "%.1f KB"
+
+#. Translators: The first "%.1f" is replaced with the value, the "%s" with a unit of the value.
+#. * The order can be changed with "%$2s %$1.1f". Keep the no-break space between the value and
+#. * the unit symbol. An example: "13.0 MB"
+#: glib/gutils.c:3006
+#, fuzzy, c-format
+#| msgid "%.1f kB"
+msgctxt "format-size"
+msgid "%.1f %s"
+msgstr "%.1f kB"
+
+#. Translators: the %s in "%s bytes" will always be replaced by a number.
+#: glib/gutils.c:3046
+#, c-format
+msgid "%s byte"
+msgid_plural "%s bytes"
+msgstr[0] "%s byte"
+msgstr[1] "%s byte"
+
+#. Translators: the %s in "%s bits" will always be replaced by a number.
+#: glib/gutils.c:3051
+#, c-format
+msgid "%s bit"
+msgid_plural "%s bits"
+msgstr[0] "%s bit"
+msgstr[1] "%s bit"
+
+#: glib/gutils.c:3092
+#, c-format
+msgid "%u byte"
+msgid_plural "%u bytes"
+msgstr[0] "%u byte"
+msgstr[1] "%u byte"
+
+#. Translators: this is from the deprecated function g_format_size_for_display() which uses 'KB' to
+#. * mean 1024 bytes.  I am aware that 'KB' is not correct, but it has been preserved for reasons of
+#. * compatibility.  Users will not see this string unless a program is using this deprecated function.
+#. * Please translate as literally as possible.
+#.
+#: glib/gutils.c:3105
+#, c-format
+msgid "%.1f KB"
+msgstr "%.1f KB"
+
+#: glib/gutils.c:3110
+#, c-format
+msgid "%.1f MB"
+msgstr "%.1f MB"
+
+#: glib/gutils.c:3115
+#, c-format
+msgid "%.1f GB"
+msgstr "%.1f GB"
+
+#: glib/gutils.c:3120
+#, c-format
+msgid "%.1f TB"
+msgstr "%.1f TB"
+
+#: glib/gutils.c:3125
+#, c-format
+msgid "%.1f PB"
+msgstr "%.1f PB"
+
+#: glib/gutils.c:3130
+#, c-format
+msgid "%.1f EB"
+msgstr "%.1f EB"
+
+#, c-format
+#~ msgid "edit name: %s\n"
+#~ msgstr "non di modificâ: %s\n"
+
+#~ msgid "internal error or corrupted object"
+#~ msgstr "erôr interni o ogjet ruvinât"
+
+#~ msgid "unrecognized character after (?<"
+#~ msgstr "caratar no ricognossût dopo (?<"
+
+#~ msgid "invalid condition (?(0)"
+#~ msgstr "condizion no valide (?(0)"
+
+#~ msgid "too many forward references"
+#~ msgstr "masse riferiments intal indenant"
+
+#~ msgid "character value in \\u.... sequence is too large"
+#~ msgstr "valôr dal caratar inte secuence \\u.... al è masse grant"
+
+#, c-format
+#~ msgid "Error while optimizing regular expression %s: %s"
+#~ msgstr "Erôr intal otimizâ la espression regolâr %s: %s"
+
+#, c-format
+#~ msgid "%.1f MB"
+#~ msgstr "%.1f MB"
+
+#, c-format
+#~ msgid "%.1f GB"
+#~ msgstr "%.1f GB"
+
+#, c-format
+#~ msgid "%.1f TB"
+#~ msgstr "%.1f TB"
+
+#, c-format
+#~ msgid "%.1f PB"
+#~ msgstr "%.1f PB"
+
+#, c-format
+#~ msgid "%.1f EB"
+#~ msgstr "%.1f EB"
+
+#, c-format
+#~ msgid "%.1f KiB"
+#~ msgstr "%.1f KiB"
+
+#, c-format
+#~ msgid "%.1f MiB"
+#~ msgstr "%.1f MiB"
+
+#, c-format
+#~ msgid "%.1f GiB"
+#~ msgstr "%.1f GiB"
+
+#, c-format
+#~ msgid "%.1f TiB"
+#~ msgstr "%.1f TiB"
+
+#, c-format
+#~ msgid "%.1f PiB"
+#~ msgstr "%.1f PiB"
+
+#, c-format
+#~ msgid "%.1f EiB"
+#~ msgstr "%.1f EiB"
+
+#, c-format
+#~ msgid "%.1f kb"
+#~ msgstr "%.1f kb"
+
+#, c-format
+#~ msgid "%.1f Mb"
+#~ msgstr "%.1f Mb"
+
+#, c-format
+#~ msgid "%.1f Gb"
+#~ msgstr "%.1f Gb"
+
+#, c-format
+#~ msgid "%.1f Tb"
+#~ msgstr "%.1f Tb"
+
+#, c-format
+#~ msgid "%.1f Pb"
+#~ msgstr "%.1f Pb"
+
+#, c-format
+#~ msgid "%.1f Eb"
+#~ msgstr "%.1f Eb"
+
+#, c-format
+#~ msgid "%.1f Kib"
+#~ msgstr "%.1f Kib"
+
+#, c-format
+#~ msgid "%.1f Mib"
+#~ msgstr "%.1f Mib"
+
+#, c-format
+#~ msgid "%.1f Gib"
+#~ msgstr "%.1f Gib"
+
+#, c-format
+#~ msgid "%.1f Tib"
+#~ msgstr "%.1f Tib"
+
+#, c-format
+#~ msgid "%.1f Pib"
+#~ msgstr "%.1f Pib"
+
+#, c-format
+#~ msgid "%.1f Eib"
+#~ msgstr "%.1f Eib"
+
+#~ msgid "Unable to load /var/lib/dbus/machine-id or /etc/machine-id: "
+#~ msgstr "Impussibil cjariâ /var/lib/dbus/machine-id o /etc/machine-id: "
+
+#~ msgid "Unknown error on connect"
+#~ msgstr "Erôr no cognossût tal coneti"
+
+#~ msgid "Error in address “%s” — the family attribute is malformed"
+#~ msgstr "Erôr inte direzion “%s” — l'atribût famee al è malformât"
+
+#~ msgid " and --strict was specified; exiting.\n"
+#~ msgstr " e --strict al jere specificât; si jes.\n"
+
+#~ msgid "doing nothing.\n"
+#~ msgstr "no si fâs nuie.\n"
+
+#~ msgid ""
+#~ "Cannot determine bus address from DBUS_STARTER_BUS_TYPE environment "
+#~ "variable - unknown value '%s'"
+#~ msgstr ""
+#~ "Impussibil determinâ la direzion dal bus de variabile di ambient "
+#~ "DBUS_STARTER_BUS_TYPE — valôr '%s' no cognossût"
+
+#~ msgid "[ARGS...]"
+#~ msgstr "[ARGS...]"
+
+#~ msgid "Error: object path not specified.\n"
+#~ msgstr "Erôr: percors ogjet no specificât.\n"
+
+#~ msgid "Error: signal not specified.\n"
+#~ msgstr "Erôr: segnâl no specificât.\n"
+
+#~ msgid "Error: signal must be the fully-qualified name.\n"
+#~ msgstr "Erôr: il segnâl al scugne jessi il non cualificât ad implen.\n"
+
+#~ msgid "No files to open"
+#~ msgstr "Nissun file di vierzi"
+
+#~ msgid "No files to delete"
+#~ msgstr "Nissun file di eliminâ"

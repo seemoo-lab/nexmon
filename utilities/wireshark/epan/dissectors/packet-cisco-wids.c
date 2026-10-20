@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* With current IOS, you can use Cisco wireless Bridges/APs as
@@ -50,24 +38,23 @@
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/expert.h>
-#include <epan/prefs.h>
 #include <epan/show_exception.h>
 
-static guint global_udp_port = 0;
+static int proto_cwids;
+static int hf_cwids_version;
+static int hf_cwids_timestamp;
+static int hf_cwids_unknown1;
+static int hf_cwids_channel;
+static int hf_cwids_unknown2;
+static int hf_cwids_reallength;
+static int hf_cwids_capturelen;
+static int hf_cwids_unknown3;
 
-static int proto_cwids = -1;
-static int hf_cwids_version = -1;
-static int hf_cwids_timestamp = -1;
-static int hf_cwids_unknown1 = -1;
-static int hf_cwids_channel = -1;
-static int hf_cwids_unknown2 = -1;
-static int hf_cwids_reallength = -1;
-static int hf_cwids_capturelen = -1;
-static int hf_cwids_unknown3 = -1;
+static int ett_cwids;
 
-static gint ett_cwids = -1;
+static expert_field ei_ieee80211_subpacket;
 
-static expert_field ie_ieee80211_subpacket = EI_INIT;
+static dissector_handle_t cwids_handle;
 
 static dissector_handle_t ieee80211_radio_handle;
 
@@ -77,7 +64,7 @@ dissect_cwids(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	tvbuff_t *wlan_tvb;
 	proto_tree *ti, *cwids_tree;
 	volatile int offset = 0;
-	guint16 capturelen;
+	uint16_t capturelen;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "CWIDS");
 	col_set_str(pinfo->cinfo, COL_INFO, "Cwids: ");
@@ -93,8 +80,8 @@ dissect_cwids(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 
 		memset(&phdr, 0, sizeof(phdr));
 		phdr.fcs_len = 0;	/* no FCS */
-		phdr.decrypted = FALSE;
-		phdr.datapad = FALSE;
+		phdr.decrypted = false;
+		phdr.datapad = false;
 		phdr.phy = PHDR_802_11_PHY_UNKNOWN;
 		proto_tree_add_item(cwids_tree, hf_cwids_version, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
@@ -102,8 +89,8 @@ dissect_cwids(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 		offset += 6;
 		proto_tree_add_item(cwids_tree, hf_cwids_unknown1, tvb, offset, 1, ENC_NA);
 		offset += 1;
-		phdr.has_channel = TRUE;
-		phdr.channel = tvb_get_guint8(tvb, offset);
+		phdr.has_channel = true;
+		phdr.channel = tvb_get_uint8(tvb, offset);
 		proto_tree_add_item(cwids_tree, hf_cwids_channel, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset += 1;
 		proto_tree_add_item(cwids_tree, hf_cwids_unknown2, tvb, offset, 6, ENC_NA);
@@ -123,7 +110,7 @@ dissect_cwids(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 		} CATCH_BOUNDS_ERRORS {
 			show_exception(wlan_tvb, pinfo, tree, EXCEPT_CODE, GET_MESSAGE);
 
-			expert_add_info(pinfo, ti, &ie_ieee80211_subpacket);
+			expert_add_info(pinfo, ti, &ei_ieee80211_subpacket);
 		} ENDTRY;
 
 		offset += capturelen;
@@ -171,15 +158,14 @@ proto_register_cwids(void)
 			0x0, "3rd Unknown block", HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_cwids,
 	};
 
 	static ei_register_info ei[] = {
-		{ &ie_ieee80211_subpacket, { "cwids.ieee80211_malformed", PI_MALFORMED, PI_ERROR, "Malformed or short IEEE80211 subpacket", EXPFILL }},
+		{ &ei_ieee80211_subpacket, { "cwids.ieee80211_malformed", PI_MALFORMED, PI_ERROR, "Malformed or short IEEE80211 subpacket", EXPFILL }},
 	};
 
-	module_t *cwids_module;
 	expert_module_t* expert_cwids;
 
 	proto_cwids = proto_register_protocol("Cisco Wireless IDS Captures", "CWIDS", "cwids");
@@ -188,39 +174,18 @@ proto_register_cwids(void)
 	expert_cwids = expert_register_protocol(proto_cwids);
 	expert_register_field_array(expert_cwids, ei, array_length(ei));
 
-	cwids_module = prefs_register_protocol(proto_cwids, proto_reg_handoff_cwids);
-	prefs_register_uint_preference(cwids_module, "udp.port",
-		"CWIDS port",
-		"Set the destination UDP port Cisco wireless IDS messages",
-		10, &global_udp_port);
-
+	cwids_handle = register_dissector("cwids", dissect_cwids, proto_cwids);
 }
 
 void
 proto_reg_handoff_cwids(void)
 {
-	static dissector_handle_t cwids_handle;
-	static guint saved_udp_port;
-	static gboolean initialized = FALSE;
-
-	if (!initialized) {
-		cwids_handle = create_dissector_handle(dissect_cwids, proto_cwids);
-		dissector_add_for_decode_as("udp.port", cwids_handle);
-		ieee80211_radio_handle = find_dissector_add_dependency("wlan_noqos_radio", proto_cwids);
-		initialized = TRUE;
-	} else {
-		if (saved_udp_port != 0) {
-			dissector_delete_uint("udp.port", saved_udp_port, cwids_handle);
-		}
-	}
-	if (global_udp_port != 0) {
-		dissector_add_uint("udp.port", global_udp_port, cwids_handle);
-	}
-	saved_udp_port = global_udp_port;
+	dissector_add_for_decode_as_with_preference("udp.port", cwids_handle);
+	ieee80211_radio_handle = find_dissector_add_dependency("wlan_noqos_radio", proto_cwids);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

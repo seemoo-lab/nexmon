@@ -1,4 +1,5 @@
-/* tap-rtp-analysis.h
+/** @file
+ *
  * RTP analysis addition for Wireshark
  *
  * Copyright 2003, Alcatel Business Systems
@@ -12,19 +13,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation,  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __TAP_RTP_ANALYSIS_H__
@@ -42,46 +31,31 @@
 extern "C" {
 #endif /* __cplusplus */
 
-void rtp_analysis(
-    address *ip_src_fwd,
-    guint32  port_src_fwd,
-    address *ip_dst_fwd,
-    guint32  port_dst_fwd,
-    guint32  ssrc_fwd,
-    address *ip_src_rev,
-    guint32  port_src_rev,
-    address *ip_dst_rev,
-    guint32  port_dst_rev,
-    guint32 ssrc_rev
-    );
-
 /****************************************************************************/
 /* structure that holds the information about the forward and reversed direction */
 typedef struct _bw_history_item {
     double time;
-    guint32 bytes;
+    uint32_t bytes;
 } bw_history_item;
 
 #define BUFF_BW 300
 
 typedef struct _tap_rtp_stat_t {
-    gboolean        first_packet; /**< do not use in code that is called after rtp_packet_analyse */
+    bool            first_packet; /**< do not use in code that is called after rtppacket_analyse */
                                /* use (flags & STAT_FLAG_FIRST) instead */
     /* all of the following fields will be initialized after
-     * rtp_packet_analyse has been called
+     * rtppacket_analyse has been called
      */
-    address         first_packet_mac_addr; /**< MAC address of first packet, used to determine duplicates due to mirroring */
-    guint32         flags;      /* see STAT_FLAG-defines below */
-    guint16         seq_num;
-    guint32         timestamp;
-    guint32         first_timestamp;
-    guint32         delta_timestamp;
+    uint32_t        flags;      /* see STAT_FLAG-defines below */
+    uint16_t        seq_num;
+    uint64_t        timestamp;     /* The generated "extended" timestamp */
+    uint64_t        seq_timestamp; /* The last in-sequence extended timestamp */
     double          bandwidth;
     bw_history_item bw_history[BUFF_BW];
-    guint16         bw_start_index;
-    guint16         bw_index;
-    guint32         total_bytes;
-    guint32         clock_rate;
+    uint16_t        bw_start_index;
+    uint16_t        bw_index;
+    uint32_t        total_bytes;
+    uint32_t        clock_rate;
     double          delta;
     double          jitter;
     double          diff;
@@ -93,20 +67,30 @@ typedef struct _tap_rtp_stat_t {
     double          time;       /**< Unit is ms */
     double          start_time; /**< Unit is ms */
     double          lastnominaltime;
+    double          lastarrivaltime;
+    double          min_delta;
     double          max_delta;
+    double          mean_delta;
+    double          min_jitter;
     double          max_jitter;
     double          max_skew;
     double          mean_jitter;
-    guint32         max_nr;
-    guint16         start_seq_nr;
-    guint16         stop_seq_nr;
-    guint32         total_nr;
-    guint32         sequence;
-    gboolean        under;
-    gint            cycles;
-    guint16         pt;
+    uint32_t        max_nr; /**< The frame number of the last packet by timestamp */
+    uint32_t        start_seq_nr; /**< (extended) base_seq per RFC 3550 A.1 */
+    uint32_t        stop_seq_nr; /**< (extended) max_seq per RFC 3550 A.1 */
+    uint32_t        total_nr; /**< total number of received packets */
+    uint32_t        sequence; /**< total number of sequence errors */
+    uint16_t        pt;
     int             reg_pt;
+    uint32_t        first_packet_num;
+    unsigned        last_payload_len;
 } tap_rtp_stat_t;
+
+typedef struct _tap_rtp_save_data_t {
+    uint32_t timestamp;
+    unsigned int payload_type;
+    size_t payload_len;
+} tap_rtp_save_data_t;
 
 #define PT_UNDEFINED -1
 
@@ -126,8 +110,8 @@ typedef struct _tap_rtp_stat_t {
 struct _rtp_info;
 
 /* function for analysing an RTP packet. Called from rtp_analysis and rtp_streams */
-extern void rtp_packet_analyse(tap_rtp_stat_t *statinfo,
-                              packet_info *pinfo,
+extern void rtppacket_analyse(tap_rtp_stat_t *statinfo,
+                              const packet_info *pinfo,
                               const struct _rtp_info *rtpinfo);
 
 #ifdef __cplusplus
@@ -135,16 +119,3 @@ extern void rtp_packet_analyse(tap_rtp_stat_t *statinfo,
 #endif /* __cplusplus */
 
 #endif /* __TAP_RTP_ANALYSIS_H__ */
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

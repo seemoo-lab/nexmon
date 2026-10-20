@@ -1,0 +1,31 @@
+// Example for use of GNU gettext.
+// This file is in the public domain.
+
+// Source code of a Go program showing the use of a single-locale API.
+
+
+package main
+
+import (
+	// Documentation: https://pkg.go.dev/fmt
+	"fmt"
+	// Documentation: https://pkg.go.dev/github.com/gosexy/gettext
+	"github.com/gosexy/gettext"
+	// Documentation: https://pkg.go.dev/os
+	"os"
+)
+
+func main () {
+	// Specify domain, localedir.
+	domain := "hello-go"
+	gettext.BindTextdomain(domain, "@localedir@")
+	gettext.Textdomain(domain)
+
+	// Specify locale.
+	locale := "" // looks at the POSIX environment variables
+	gettext.SetLocale(gettext.LcAll, locale)
+
+	fmt.Println(gettext.Gettext("Hello, world!"))
+	fmt.Println(fmt.Sprintf(gettext.Gettext("This program is running as process number %d."),
+	                        os.Getpid()))
+}

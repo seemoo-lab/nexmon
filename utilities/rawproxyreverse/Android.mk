@@ -19,13 +19,13 @@ include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libargp
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libargp/local/armeabi/libargp.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libargp/local/$(TARGET_ARCH_ABI)/libargp.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libargp
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpcap
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libpcap/local/armeabi/libpcap.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libpcap/local/$(TARGET_ARCH_ABI)/libpcap.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libpcap
 include $(PREBUILT_STATIC_LIBRARY)

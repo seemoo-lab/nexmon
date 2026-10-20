@@ -4629,6 +4629,102 @@ msgstr "এন্ট্রি আড়াল করা হবে না"
 msgid "use a long listing format"
 msgstr "লং লিস্টিং বিন্যাস ব্যবহার করা হবে"
 
+msgctxt "full month name with day"
+msgid "January"
+msgstr "জানুয়ারি"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "ফেব্রুয়ারি"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "মার্চ"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "এপ্রিল"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "মে"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "জুন"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "জুলাই"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "আগস্ট"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "সেপ্টেমবর"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "অক্টোবর"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "নভেম্বর"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "ডিসেম্বর"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "জানুয়ারি"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "ফেব্রুয়ারি"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "মার্চ"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "এপ্রিল"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "মে"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "জুন"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "জুলাই"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "আগস্ট"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "সেপ্টেম্বর"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "অক্টোবর"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "নভেম্বর"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "ডিসেম্বর"
+
 #, fuzzy
 #~ msgid "Failed to open file '%s' for writing: fdopen() failed: %s"
 #~ msgstr "'%s' ফাইল খুলতে ব্যর্থ: fdopen() বিফল: %s"

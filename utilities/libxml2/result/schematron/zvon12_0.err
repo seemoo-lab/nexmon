@@ -1,0 +1,2 @@
+./test/schematron/zvon12_0.xml:2: element BBB: schematron error : /AAA/BBB line 2: There is not enough letters in the abbreviation
+./test/schematron/zvon12_0.xml fails to validate

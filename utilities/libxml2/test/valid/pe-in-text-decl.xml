@@ -1,0 +1,4 @@
+<!DOCTYPE doc SYSTEM "dtds/pe-in-text-decl.dtd" [
+  <!ENTITY % ent "foo">
+]>
+<doc/>

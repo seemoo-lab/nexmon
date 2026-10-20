@@ -1,27 +1,23 @@
 /* packet-loop.c
- * Routines for Ethernet loopback/Configuration Test Protocol dissection
+ * Routines for Ethernet loopback/Configuration Test Protocol dissection,
+ * as documented in section 8 "Ethernet Configuration Testing Protocol" of
+ * the v2.0 DIX Ethernet specification.
  *
  * See
  *
+ *    http://decnet.ipv7.net/docs/dundas/aa-k759b-tk.pdf
+ *
+ * for a copy of the DIX spec and
+ *
  *    http://stuff.mit.edu/people/jhawk/ctp.html
+ *
+ * for section 8.
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,14 +28,16 @@
 void proto_register_loop(void);
 void proto_reg_handoff_loop(void);
 
-static int proto_loop = -1;
-static int hf_loop_skipcount = -1;
-static int hf_loop_function = -1;
-static int hf_loop_relevant_function = -1;
-static int hf_loop_receipt_number = -1;
-static int hf_loop_forwarding_address = -1;
+static dissector_handle_t loop_handle;
 
-static gint ett_loop = -1;
+static int proto_loop;
+static int hf_loop_skipcount;
+static int hf_loop_function;
+static int hf_loop_relevant_function;
+static int hf_loop_receipt_number;
+static int hf_loop_forwarding_address;
+
+static int ett_loop;
 
 #define FUNC_REPLY              1
 #define FUNC_FORWARD_DATA       2
@@ -55,11 +53,11 @@ dissect_loop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 {
   proto_tree  *loop_tree = NULL;
   proto_item  *ti;
-  guint16     function;
+  uint16_t    function;
   int         offset = 0;
   int         skip_offset;
-  gboolean    set_info = TRUE;
-  gboolean    more_function;
+  bool        set_info = true;
+  bool        more_function;
   tvbuff_t    *next_tvb;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "LOOP");
@@ -78,10 +76,11 @@ dissect_loop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     function = tvb_get_letohs(tvb, offset);
     if (offset == skip_offset) {
       col_add_str(pinfo->cinfo, COL_INFO,
-                    val_to_str(function, function_vals, "Unknown function (%u)"));
+                    val_to_str(pinfo->pool, function, function_vals, "Unknown function (%u)"));
 
-      proto_tree_add_uint(loop_tree, hf_loop_relevant_function, tvb, offset, 2, function);
-      set_info = FALSE;
+      ti = proto_tree_add_uint(loop_tree, hf_loop_relevant_function, tvb, offset, 2, function);
+      proto_item_set_generated(ti);
+      set_info = false;
     }
     proto_tree_add_uint(loop_tree, hf_loop_function, tvb, offset, 2, function);
     offset += 2;
@@ -91,18 +90,18 @@ dissect_loop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
       proto_tree_add_item(loop_tree, hf_loop_receipt_number, tvb, offset, 2,
                             ENC_LITTLE_ENDIAN);
       offset += 2;
-      more_function = FALSE;
+      more_function = false;
       break;
 
     case FUNC_FORWARD_DATA:
       proto_tree_add_item(loop_tree, hf_loop_forwarding_address, tvb, offset,
                             6, ENC_NA);
       offset += 6;
-      more_function = TRUE;
+      more_function = true;
       break;
 
     default:
-      more_function = FALSE;
+      more_function = false;
       break;
     }
   } while (more_function);
@@ -148,7 +147,7 @@ proto_register_loop(void)
     FT_ETHER,   BASE_NONE,      NULL,   0x0,
       NULL, HFILL }},
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_loop,
   };
 
@@ -156,20 +155,18 @@ proto_register_loop(void)
                                        "LOOP", "loop");
   proto_register_field_array(proto_loop, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  loop_handle = register_dissector("loop", dissect_loop, proto_loop);
 }
 
 void
 proto_reg_handoff_loop(void)
 {
-  dissector_handle_t loop_handle;
-
-  loop_handle = create_dissector_handle(dissect_loop, proto_loop);
-
   dissector_add_uint("ethertype", ETHERTYPE_LOOP, loop_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

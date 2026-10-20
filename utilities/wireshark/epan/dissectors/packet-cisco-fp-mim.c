@@ -1,30 +1,17 @@
 /* packet-cisco-fp-mim.c
- * Routines for analyzing Cisco FabricPath MiM packets
+ * Routines for analyzing Cisco FabricPath MiM (MAC-in-MAA) packets
  * Copyright 2011, Leonard Tracy <letracy@cisco.com>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
- * See
- *
- *    http://www.cisco.com/c/en/us/products/collateral/switches/nexus-7000-series-switches/white_paper_c11-687554.html
+ *  https://clnv.s3.amazonaws.com/2016/usa/pdf/BRKDCT-3313.pdf
+ *  https://clnv.s3.amazonaws.com/2014/eur/pdf/BRKDCT-2081.pdf
  */
 
 #include "config.h"
@@ -33,31 +20,44 @@
 #include <epan/etypes.h>
 #include <epan/addr_resolv.h>
 #include <epan/prefs.h>
+#include <epan/expert.h>
+#include <epan/crc32-tvb.h>
+#include <epan/tfs.h>
 
 void proto_register_mim(void);
 void proto_reg_handoff_fabricpath(void);
 
-static int proto_fp = -1 ;
-static gint ett_mim = -1 ;
-static gint ett_hmac = -1 ;
+static bool fp_check_fcs;
+
+static int proto_fp;
+static int ett_mim;
+static int ett_hmac;
 
 /* Main protocol items */
-static int hf_s_hmac = -1;
-static int hf_d_hmac = -1;
-static int hf_d_hmac_mc = -1;
-static int hf_ftag = -1;
-static int hf_ttl = -1;
+static int hf_s_hmac;
+static int hf_d_hmac;
+static int hf_d_hmac_mc;
+static int hf_ftag;
+static int hf_ttl;
 
-
+static int hf_fp_etype;
+static int hf_fp_1ad_etype;
+static int hf_fp_1ad_priority;
+static int hf_fp_1ad_cfi;
+static int hf_fp_1ad_svid;
+static int hf_fp_fcs;
+static int hf_fp_fcs_status;
 
 /* HMAC subtrees */
-static int hf_swid = -1 ;
-static int hf_sswid = -1;
-static int hf_eid = -1;
-static int hf_lid = -1;
-static int hf_ul = -1;
-static int hf_ig = -1;
-static int hf_ooodl = -1;
+static int hf_swid;
+static int hf_sswid;
+static int hf_eid;
+static int hf_lid;
+static int hf_ul;
+static int hf_ig;
+static int hf_ooodl;
+
+static expert_field ei_fp_fcs_bad;
 
 static const true_false_string ig_tfs = {
   "Group address (multicast/broadcast)",
@@ -72,8 +72,7 @@ static const true_false_string ooodl_tfs = {
   "Deliver in order (If DA) or Learn (If SA)"
 };
 
-static dissector_handle_t eth_maybefcs_dissector ;
-
+static dissector_handle_t eth_withoutfcs_dissector;
 
 #define FP_PROTO_COL_NAME "FabricPath"
 #define FP_PROTO_COL_INFO "Cisco FabricPath MiM Encapsulated Frame"
@@ -98,25 +97,28 @@ static dissector_handle_t eth_maybefcs_dissector ;
 #define FP_FTAG_MASK     0xFFC0
 #define FP_TTL_MASK      0x003F
 
-#define FP_HMAC_IG_MASK    G_GINT64_CONSTANT(0x010000000000)
-#define FP_HMAC_SWID_MASK  G_GINT64_CONSTANT(0x000FFF000000)
-#define FP_HMAC_SSWID_MASK G_GINT64_CONSTANT(0x000000FF0000)
-#define FP_HMAC_LID_MASK   G_GINT64_CONSTANT(0x00000000FFFF)
-
+#define FP_HMAC_IG_MASK    INT64_C(0x010000000000)
+#define FP_HMAC_SWID_MASK  INT64_C(0x000FFF000000)
+#define FP_HMAC_SSWID_MASK INT64_C(0x000000FF0000)
+#define FP_HMAC_LID_MASK   INT64_C(0x00000000FFFF)
 
 #define FP_HMAC_LEN 6
 #define FP_HEADER_SIZE (16)
+#define FP_HEADER_WITH_1AD_SIZE (20)
 
+/* 0100.0000.0000 */
+#define MAC_MC_BC          INT64_C(0x010000000000)
 
-static int dissect_fp( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_ );
+/* proto */
+static int dissect_fp_common( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int header_size, int fcs_len );
 
 /*
  * These packets are a bit strange.
  *
  * They run over Ethernet, but, instead of a normal 14-octet Ethernet
- * header, they have a 16-octet header, which happens to have, in the
- * position occupied by the Type/Length field in an Ethernet header,
- * the Ethertype value reserved for FabricPath.
+ * header, they have a 16-octet or 20-octet header, which happens to
+ * have, in the position occupied by the Type/Length field in an
+ * Ethernet header, the Ethertype value reserved for FabricPath.
  *
  * The fields in the positions occupied by the destination and source
  * MAC addresses in an Ethernet header are occupied by addresses that
@@ -129,52 +131,65 @@ static int dissect_fp( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
  * So we register as a heuristic dissector, which gets called before
  * the regular code that checks Ethertypes.
  */
-static gboolean
-dissect_fp_heur (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+dissect_fp_heur (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
+  struct eth_phdr *eth = (struct eth_phdr *)data;
+  uint16_t etype = 0;
+  int header_size = 0;
+  int fcs_len = -1; // Unknown - we won't dissect it (see below)
 
-  guint16 type = 0;
-
-  /*
-   * Is ethertype ETHERTYPE_DCE
+  /* Use the FCS length reported from Ethernet, which might be reported from
+   * wiretap if it was in the pcapng (if we're lucky), but likely has fallen
+   * back to the Ethernet "fcs" preference.
    */
-
-  type = tvb_get_ntohs (tvb, 12);
-
-  if (type == ETHERTYPE_DCE) {
-    dissect_fp (tvb, pinfo, tree, NULL);
-    return TRUE;
-  } else {
-    return FALSE;
+  if (eth && eth->fcs_len != -1) {
+    fcs_len = eth->fcs_len;
   }
-}
 
-static gboolean
-fp_is_ig_set (guint64 hmac)
-{
-  if (hmac & FP_HMAC_IG_MASK) {
-    return TRUE;
-  } else {
-    return FALSE;
+  if ( ! tvb_bytes_exist( tvb, 12, 2 ) )
+     return false;
+
+  etype = tvb_get_ntohs( tvb, 12 );
+
+  switch ( etype ) {
+    case ETHERTYPE_DCE:
+      header_size = FP_HEADER_SIZE;
+      break;
+    case ETHERTYPE_IEEE_802_1AD:
+    case ETHERTYPE_VLAN:
+      if ( tvb_bytes_exist( tvb, 16, 2 ) && tvb_get_ntohs( tvb, 16 ) == ETHERTYPE_DCE ) {
+        header_size = FP_HEADER_WITH_1AD_SIZE;
+        break;
+      }
+      /* fall through */
+    default:
+      return false;
   }
+
+  if ( dissect_fp_common( tvb, pinfo, tree, header_size, fcs_len ) > 0 ) {
+    return true;
+  }
+
+  return false;
 }
 
 static void
-fp_get_hmac_addr (guint64 hmac, guint16 *swid, guint16 *sswid, guint16 *lid) {
+fp_get_hmac_addr (uint64_t hmac, uint16_t *swid, uint16_t *sswid, uint16_t *lid) {
 
   if (!swid || !sswid || !lid) {
     return;
   }
 
-  *swid  = (guint16) ((hmac & FP_HMAC_SWID_MASK) >> 24);
-  *sswid = (guint16) ((hmac & FP_HMAC_SSWID_MASK) >> 16);
-  *lid   = (guint16)  (hmac & FP_HMAC_LID_MASK);
+  *swid  = (uint16_t) ((hmac & FP_HMAC_SWID_MASK) >> 24);
+  *sswid = (uint16_t) ((hmac & FP_HMAC_SSWID_MASK) >> 16);
+  *lid   = (uint16_t)  (hmac & FP_HMAC_LID_MASK);
 }
 
 static void
 fp_add_hmac (tvbuff_t *tvb, proto_tree *tree, int offset) {
 
-  guint16 eid;
+  uint16_t eid;
 
   if (!tree) {
     return;
@@ -186,9 +201,9 @@ fp_add_hmac (tvbuff_t *tvb, proto_tree *tree, int offset) {
   eid = ((eid & 0x00C0) >> 6) + ((eid & 0xFC00) >> 8);
   proto_tree_add_uint(tree, hf_eid, tvb, offset, FP_BF_LEN, eid);
 
-  proto_tree_add_item (tree, hf_ul, tvb, offset, FP_BF_LEN, ENC_NA);
-  proto_tree_add_item (tree, hf_ig, tvb, offset, FP_BF_LEN, ENC_NA);
-  proto_tree_add_item (tree, hf_ooodl, tvb, offset, FP_BF_LEN, ENC_NA);
+  proto_tree_add_item (tree, hf_ul, tvb, offset, FP_BF_LEN, ENC_BIG_ENDIAN);
+  proto_tree_add_item (tree, hf_ig, tvb, offset, FP_BF_LEN, ENC_BIG_ENDIAN);
+  proto_tree_add_item (tree, hf_ooodl, tvb, offset, FP_BF_LEN, ENC_BIG_ENDIAN);
   proto_tree_add_item (tree, hf_swid, tvb, offset, FP_BF_LEN, ENC_BIG_ENDIAN);
   offset += FP_BF_LEN;
 
@@ -197,108 +212,174 @@ fp_add_hmac (tvbuff_t *tvb, proto_tree *tree, int offset) {
 
   proto_tree_add_item (tree, hf_lid, tvb, offset, FP_LID_LEN, ENC_BIG_ENDIAN);
   /*offset += FP_LID_LEN;*/
-
 }
+
 /* FabricPath MiM Dissector */
 static int
-dissect_fp( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_ )
+dissect_fp_common ( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int header_size, int fcs_len)
 {
-  proto_item   *ti ;
-  proto_tree   *fp_tree ;
-  proto_tree   *fp_addr_tree ;
-  tvbuff_t     *next_tvb ;
-  int           offset   = 0 ;
-  guint64       hmac_src;
-  guint64       hmac_dst;
-  guint16       sswid    = 0;
-  guint16       ssswid   = 0;
-  guint16       slid     = 0;
-  guint16       dswid    = 0;
-  guint16       dsswid   = 0;
-  guint16       dlid     = 0;
-  const guint8 *dst_addr = NULL;
-  gboolean      dest_ig  = FALSE;
+  proto_item   *ti;
+  proto_tree   *fp_tree;
+  proto_tree   *fp_addr_tree;
+  tvbuff_t     *next_tvb;
+  int           offset   = 0;
+  int           next_tvb_len = 0;
+  int           fcs_offset = 0;
+  uint64_t      hmac_src;
+  uint64_t      hmac_dst;
+  uint16_t      sswid    = 0;
+  uint16_t      ssswid   = 0;
+  uint16_t      slid     = 0;
+  uint16_t      dswid    = 0;
+  uint16_t      dsswid   = 0;
+  uint16_t      dlid     = 0;
+  uint16_t      etype    = 0;
+  const uint8_t *dst_addr = NULL;
+  bool          dest_as_mac  = false;
 
-  col_set_str( pinfo->cinfo, COL_PROTOCOL, FP_PROTO_COL_NAME ) ;
-  col_set_str( pinfo->cinfo, COL_INFO, FP_PROTO_COL_INFO ) ;
 
-  if (tree) {
+  col_set_str( pinfo->cinfo, COL_PROTOCOL, FP_PROTO_COL_NAME );
+  col_set_str( pinfo->cinfo, COL_INFO, FP_PROTO_COL_INFO );
 
-    hmac_dst = tvb_get_ntoh48 (tvb, 0);
-    hmac_src = tvb_get_ntoh48 (tvb, 6);
+  /*
+   * Outer SA:
+   * - SwitchID ingress FP switch system ID
+   * - SubswitchID is used in some cases of VPC+
+   * - LID (Local ID)  is specific to the implementation
+   *   + N7K the LID is generally the port index of the ingress interface
+   *   + N5K/N6K LID most of the time will be 0
+   *   + EndnodeID is not currently used
+   *
+   * Outer DA:
+   * - For known SA/DA is taken from MAC table for DMAC
+   * - For broadcast and multicast is the same as DMAC
+   * - For unknown unicast DA is 010f.ffc1.01c0 (flood to vlan)
+   * - For known unicast DA, but unknown SA is 010f.ffc1.02c0 (flood to fabric)
+   */
 
-    dest_ig = fp_is_ig_set(hmac_dst);
-    if (!dest_ig) {
-      fp_get_hmac_addr (hmac_dst, &dswid, &dsswid, &dlid);
+  hmac_dst = tvb_get_ntoh48 (tvb, 0);
+  hmac_src = tvb_get_ntoh48 (tvb, 6);
+
+  if (hmac_dst & MAC_MC_BC) {
+    dest_as_mac = true;
+  }
+  if (!dest_as_mac) {
+    fp_get_hmac_addr (hmac_dst, &dswid, &dsswid, &dlid);
+  } else {
+    hmac_dst = GUINT64_TO_BE (hmac_dst);
+    /* Get pointer to most sig byte of destination address
+       in network order
+    */
+    dst_addr = ((const uint8_t *) &hmac_dst) + 2;
+  }
+  fp_get_hmac_addr (hmac_src, &sswid, &ssswid, &slid);
+
+  /* FIXME: Does this make sense??? */
+  if (tree && PTREE_DATA(tree)->visible) {
+    if (dest_as_mac) {
+      address      ether_addr;
+
+      set_address(&ether_addr, AT_ETHER, 6, dst_addr);
+
+      ti = proto_tree_add_protocol_format(tree, proto_fp, tvb, 0, header_size,
+                                          "Cisco FabricPath, Src: %03x.%02x.%04x, Dst: %s",
+                                          sswid, ssswid, slid,
+                                          address_with_resolution_to_str(pinfo->pool, &ether_addr));
     } else {
-      hmac_dst = GUINT64_TO_BE (hmac_dst);
-      /* Get pointer to most sig byte of destination address
-         in network order
-      */
-      dst_addr = ((const guint8 *) &hmac_dst) + 2;
+      ti = proto_tree_add_protocol_format(tree, proto_fp, tvb, 0, header_size,
+                                          "Cisco FabricPath, Src: %03x.%02x.%04x, Dst: %03x.%02x.%04x",
+                                          sswid, ssswid, slid,
+                                          dswid, dsswid, dlid);
     }
+  } else {
+    ti = proto_tree_add_item( tree, proto_fp, tvb, 0, header_size, ENC_NA );
+  }
+  fp_tree = proto_item_add_subtree( ti, ett_mim );
 
-
-
-    fp_get_hmac_addr (hmac_src, &sswid, &ssswid, &slid);
-
-    if (PTREE_DATA(tree)->visible) {
-      if (dest_ig) {
-        address      ether_addr;
-
-        set_address(&ether_addr, AT_ETHER, 6, dst_addr);
-
-        ti = proto_tree_add_protocol_format(tree, proto_fp, tvb, 0, FP_HEADER_SIZE,
-                                            "Cisco FabricPath, Src: %03x.%02x.%04x, Dst: %s",
-                                            sswid, ssswid, slid,
-                                            address_with_resolution_to_str(wmem_packet_scope(), &ether_addr));
-      } else {
-        ti = proto_tree_add_protocol_format(tree, proto_fp, tvb, 0, FP_HEADER_SIZE,
-                                            "Cisco FabricPath, Src: %03x.%02x.%04x, Dst: %03x.%02x.%04x",
-                                            sswid, ssswid, slid,
-                                            dswid, dsswid, dlid);
-      }
-    } else {
-      ti = proto_tree_add_item( tree, proto_fp, tvb, 0, -1, ENC_NA ) ;
-    }
-    fp_tree = proto_item_add_subtree( ti, ett_mim ) ;
-
-    offset = 0;
-    /* Add dest and source heir. mac */
-    if (dest_ig) {
-      /* MCAST address */
-      proto_tree_add_ether( fp_tree,  hf_d_hmac_mc, tvb, offset, 6,
-                            dst_addr);
-    } else {
-      /* Unicast */
-      ti = proto_tree_add_none_format (fp_tree, hf_d_hmac, tvb, offset, 6, "Destination: %03x.%02x.%04x", dswid, dsswid, dlid);
-      fp_addr_tree = proto_item_add_subtree (ti, ett_hmac);
-      fp_add_hmac (tvb, fp_addr_tree, offset);
-    }
-
-    offset += FP_HMAC_LEN;
-    ti = proto_tree_add_none_format (fp_tree, hf_s_hmac, tvb, offset, 6,
-                                     "Source: %03x.%02x.%04x", sswid, ssswid, slid);
+  /* Add dest and source heir. mac */
+  if (dest_as_mac) {
+    /* MCAST address */
+    proto_tree_add_ether( fp_tree,  hf_d_hmac_mc, tvb, offset, 6, dst_addr);
+  } else {
+    /* Unicast */
+    ti = proto_tree_add_none_format (fp_tree, hf_d_hmac, tvb, offset, 6, "Destination: %03x.%02x.%04x", dswid, dsswid, dlid);
     fp_addr_tree = proto_item_add_subtree (ti, ett_hmac);
     fp_add_hmac (tvb, fp_addr_tree, offset);
-
-    offset += FP_HMAC_LEN;
-    /* Skip ethertype */
-    offset += 2;
-
-    proto_tree_add_item (fp_tree, hf_ftag, tvb, offset, FP_FTAG_LEN, ENC_BIG_ENDIAN);
-
-    proto_tree_add_item (fp_tree, hf_ttl, tvb, offset, FP_FTAG_LEN, ENC_BIG_ENDIAN);
-
   }
-  /* call the eth dissector */
-  next_tvb = tvb_new_subset_remaining( tvb, FP_HEADER_SIZE) ;
-  /*
-   * For now, we don't know whether there's an FCS in the captured data.
-   */
-  call_dissector( eth_maybefcs_dissector, next_tvb, pinfo, tree ) ;
+  offset += FP_HMAC_LEN;
 
-  return tvb_captured_length( tvb ) ;
+  ti = proto_tree_add_none_format (fp_tree, hf_s_hmac, tvb, offset, 6,
+                                   "Source: %03x.%02x.%04x", sswid, ssswid, slid);
+  fp_addr_tree = proto_item_add_subtree (ti, ett_hmac);
+  fp_add_hmac (tvb, fp_addr_tree, offset);
+  offset += FP_HMAC_LEN;
+
+  etype = tvb_get_ntohs(tvb, offset);
+  switch (etype) {
+  case ETHERTYPE_DCE:
+      proto_tree_add_item(fp_tree, hf_fp_etype, tvb, offset, 2, ENC_BIG_ENDIAN);
+      offset += 2;
+      break;
+  case ETHERTYPE_IEEE_802_1AD:
+  case ETHERTYPE_VLAN:
+      proto_tree_add_item(fp_tree, hf_fp_1ad_etype, tvb, offset, 2, ENC_BIG_ENDIAN);
+      offset += 2;
+      proto_tree_add_item(fp_tree, hf_fp_1ad_priority, tvb, offset, 2, ENC_BIG_ENDIAN);
+      proto_tree_add_item(fp_tree, hf_fp_1ad_cfi, tvb, offset, 2, ENC_BIG_ENDIAN);
+      proto_tree_add_item(fp_tree, hf_fp_1ad_svid, tvb, offset, 2, ENC_BIG_ENDIAN);
+      offset += 2;
+      proto_tree_add_item(fp_tree, hf_fp_etype, tvb, offset, 2, ENC_BIG_ENDIAN);
+      offset += 2;
+      break;
+  default:
+      /* The heuristics should prevent us from getting here */
+      DISSECTOR_ASSERT(0);
+  }
+
+  proto_tree_add_item (fp_tree, hf_ftag, tvb, offset, FP_FTAG_LEN, ENC_BIG_ENDIAN);
+  proto_tree_add_item (fp_tree, hf_ttl, tvb, offset, FP_FTAG_LEN, ENC_BIG_ENDIAN);
+
+  /* eval FCS */
+  /*
+   * These packets don't have a length field, and the Ethernet dissector
+   * always returns the full captured length (because it will consume
+   * unused bytes as a trailer), so we don't have a good way to heuristically
+   * detect if there's an FCS. So if we don't know if there's an FCS,
+   * don't dissect it here and don't slice it off (so that if there isn't
+   * one, the Ethernet dissector and dissectors it calls don't have errors
+   * from slicing off too many bytes - #19989), but also tell the Ethernet
+   * dissector that there definitely isn't an FCS so that it treats it as a
+   * generic trailer, because if there _is_ an FCS the calculation includes
+   * this header, so any calculation in the Ethernet dissector will be
+   * wrong - #15769).
+   */
+  if (fcs_len > 0) {
+    fcs_offset = tvb_reported_length(tvb) - fcs_len;
+
+    if ( tvb_bytes_exist(tvb, fcs_offset, fcs_len ) ) {
+      if ( fp_check_fcs ) {
+        uint32_t fcs = crc32_802_tvb(tvb, fcs_offset);
+        proto_tree_add_checksum(fp_tree, tvb, fcs_offset, hf_fp_fcs, hf_fp_fcs_status, &ei_fp_fcs_bad, pinfo, fcs, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY);
+      } else {
+        proto_tree_add_checksum(fp_tree, tvb, fcs_offset, hf_fp_fcs, hf_fp_fcs_status, &ei_fp_fcs_bad, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
+      }
+      proto_tree_set_appendix(fp_tree, tvb, fcs_offset, fcs_len);
+    }
+  } else {
+    fcs_len = 0;
+  }
+
+  /* call the eth dissector w/o the FCS */
+  next_tvb_len = tvb_reported_length_remaining( tvb, header_size ) - fcs_len;
+  next_tvb = tvb_new_subset_length( tvb, header_size, next_tvb_len );
+
+  /*
+   * We've already handled the replaced CFP checksum above.
+   * Therefore we call the Ethernet dissector without expecting a FCS.
+   */
+  call_dissector( eth_withoutfcs_dissector, next_tvb, pinfo, tree );
+
+  return tvb_captured_length( tvb );
 }
 
 /* Register the protocol with Wireshark */
@@ -320,6 +401,34 @@ proto_register_mim(void)
       { "MC Destination", "cfp.d_hmac_mc",
         FT_ETHER, BASE_NONE, NULL,
         0, "Multicast Destination Address", HFILL }},
+
+    { &hf_fp_etype,
+      { "FP Ethertype", "cfp.etype", FT_UINT16, BASE_HEX,
+        VALS(etype_vals), 0x0, NULL, HFILL }},
+
+    { &hf_fp_1ad_etype,
+      { "IEEE 802.1ad Ethertype", "cfp.1ad.etype", FT_UINT16, BASE_HEX,
+        VALS(etype_vals), 0x0, NULL, HFILL }},
+
+    { &hf_fp_1ad_priority,
+      { "Priority", "cfp.1ad.priority", FT_UINT16, BASE_DEC,
+        0, 0xE000, NULL, HFILL }},
+
+    { &hf_fp_1ad_cfi,
+      { "DEI", "cfp.1ad.dei", FT_UINT16, BASE_DEC,
+        0, 0x1000, "Drop Eligibility", HFILL }},
+
+    { &hf_fp_1ad_svid,
+      { "ID", "cfp.1ad.id", FT_UINT16, BASE_DEC,
+        0, 0x0FFF, "Vlan ID", HFILL }},
+
+    { &hf_fp_fcs,
+      { "Frame check sequence", "cfp.fcs", FT_UINT32, BASE_HEX,
+        NULL, 0x0, "FabricPath checksum", HFILL }},
+
+    { &hf_fp_fcs_status,
+      { "FCS status", "cfp.fcs.status", FT_UINT8, BASE_NONE,
+        VALS(proto_checksum_vals), 0x0, NULL, HFILL }},
 
     { &hf_ftag,
       { "FTAG", "cfp.ftag",
@@ -368,58 +477,57 @@ proto_register_mim(void)
 
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_mim,
     &ett_hmac
   };
 
+  static ei_register_info ei[] = {
+    { &ei_fp_fcs_bad, { "cfp.fcs_bad", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }}
+  };
+
   module_t *mim_module;
+  expert_module_t *expert_mim;
 
   proto_fp = proto_register_protocol("Cisco FabricPath", "CFP", "cfp");
 
-  mim_module = prefs_register_protocol (proto_fp, proto_reg_handoff_fabricpath);
+  mim_module = prefs_register_protocol (proto_fp, NULL);
 
   prefs_register_obsolete_preference (mim_module, "enable");
 
+  prefs_register_bool_preference(mim_module, "check_fcs",
+                                 "Validate the FabricPath checksum if possible",
+                                 "Whether to validate the Frame Check Sequence",
+                                 &fp_check_fcs);
+
   proto_register_field_array(proto_fp, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  expert_mim = expert_register_protocol(proto_fp);
+  expert_register_field_array(expert_mim, ei, array_length(ei));
 }
 
 void
 proto_reg_handoff_fabricpath(void)
 {
   /*
-    dissector_handle_t fp_handle;
-    fp_handle = create_dissector_handle(dissect_fp, proto_fp);
-    dissector_add_uint("ethertype", ETHERTYPE_DCE, fp_handle);
-  */
-  static gboolean prefs_initialized = FALSE;
+   * Using Heuristic dissector (As opposed to
+   * registering the ethertype) in order to
+   * get outer source and destination MAC
+   * before the standard ethernet dissector
+   */
+  heur_dissector_add ("eth", dissect_fp_heur, "Cisco FabricPath over Ethernet", "fp_eth", proto_fp, HEURISTIC_ENABLE);
 
-  if (!prefs_initialized) {
-    /*
-     * Using Heuristic dissector (As opposed to
-     * registering the ethertype) in order to
-     * get outer source and destination MAC
-     * before the standard ethernet dissector
-     */
-    heur_dissector_add ("eth", dissect_fp_heur, "Cisco FabricPath over Ethernet", "fp_eth", proto_fp, HEURISTIC_DISABLE);
-
-    /*
-     * The FCS in FabricPath frames covers the entire FabricPath frame,
-     * not the encapsulated Ethernet frame, so we don't want to treat
-     * the encapsulated frame as if it had an FCS.
-     *
-     * XXX - we probably need to do similar FCS checks to the ones done
-     * by the Ethernet dissector.  This needs more work, so we leave this
-     * as calling the "eth" dissector as a reminder.
-     */
-    eth_maybefcs_dissector = find_dissector_add_dependency( "eth_maybefcs", proto_fp );
-    prefs_initialized = TRUE;
-  }
+  /*
+   * The FCS in FabricPath frames covers the entire FabricPath frame,
+   * not the encapsulated Ethernet frame, so we don't want to treat
+   * the encapsulated frame as if it had an FCS.
+   */
+  eth_withoutfcs_dissector = find_dissector_add_dependency( "eth_withoutfcs", proto_fp );
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald[AT]wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,22 +18,24 @@
 void proto_register_redbackli(void);
 void proto_reg_handoff_redbackli(void);
 
-static int proto_redbackli = -1;
+static int proto_redbackli;
 
-static int hf_redbackli_avptype = -1;
-static int hf_redbackli_avplen = -1;
-static int hf_redbackli_seqno = -1;		/* Sequence No */
-static int hf_redbackli_liid = -1;		/* LI Id */
-static int hf_redbackli_sessid = -1;		/* Session Id */
-static int hf_redbackli_label = -1;		/* Label */
-static int hf_redbackli_acctid = -1;		/* Accounting Session Id */
-static int hf_redbackli_dir = -1;		/* Direction */
-static int hf_redbackli_eohpad = -1;		/* End Of Header Padding */
-static int hf_redbackli_unknownavp = -1;	/* Unknown AVP */
+static int hf_redbackli_avptype;
+static int hf_redbackli_avplen;
+static int hf_redbackli_seqno;		/* Sequence No */
+static int hf_redbackli_liid;		/* LI Id */
+static int hf_redbackli_sessid;		/* Session Id */
+static int hf_redbackli_label;		/* Label */
+static int hf_redbackli_acctid;		/* Accounting Session Id */
+static int hf_redbackli_dir;		/* Direction */
+static int hf_redbackli_eohpad;		/* End Of Header Padding */
+static int hf_redbackli_unknownavp;	/* Unknown AVP */
 
-static int ett_redbackli = -1;
+static int ett_redbackli;
 
 static dissector_handle_t ip_handle;
+static dissector_handle_t redbackli_handle;
+
 
 #define RB_AVP_SEQNO	1
 #define RB_AVP_LIID	2
@@ -67,7 +57,7 @@ static const value_string avp_names[] = {
 };
 
 static void
-redbackli_dissect_avp(guint8 avptype, guint8 avplen, tvbuff_t *tvb, gint offset, proto_tree *tree)
+redbackli_dissect_avp(uint8_t avptype, uint8_t avplen, tvbuff_t *tvb, int offset, proto_tree *tree)
 {
 	const char	*avpname;
 	proto_tree	*st = NULL;
@@ -103,7 +93,7 @@ redbackli_dissect_avp(guint8 avptype, guint8 avplen, tvbuff_t *tvb, gint offset,
 			break;
 		case(RB_AVP_LABEL):
 			proto_tree_add_item(st, hf_redbackli_label, tvb,
-					    offset+2, avplen, ENC_ASCII|ENC_NA);
+					    offset+2, avplen, ENC_ASCII);
 			break;
 		case(RB_AVP_EOH):
 			proto_tree_add_item(st, hf_redbackli_eohpad, tvb,
@@ -129,9 +119,9 @@ redbackli_dissect_avp(guint8 avptype, guint8 avplen, tvbuff_t *tvb, gint offset,
 static int
 redbackli_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint8		avptype, avplen;
-	gint		len, offset = 0;
-	gboolean	eoh;
+	uint8_t		avptype, avplen;
+	int		len, offset = 0;
+	bool	eoh;
 	proto_item	*ti;
 	proto_tree	*redbackli_tree = NULL;
 	tvbuff_t	*next_tvb;
@@ -144,10 +134,10 @@ redbackli_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 
 	len = tvb_reported_length(tvb);
 	offset = 0;
-	eoh = FALSE;
+	eoh = false;
 	while (!eoh && (len > 2)) {
-		avptype = tvb_get_guint8(tvb, offset+0);
-		avplen = tvb_get_guint8(tvb, offset+1);
+		avptype = tvb_get_uint8(tvb, offset+0);
+		avplen = tvb_get_uint8(tvb, offset+1);
 
 		if ((len-2) < avplen)		/* AVP Complete ? */
 			break;
@@ -156,7 +146,7 @@ redbackli_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 			redbackli_dissect_avp(avptype, avplen, tvb, offset, redbackli_tree);
 
 		if (avptype == RB_AVP_EOH)
-			eoh = TRUE;
+			eoh = true;
 
 		offset += 2 + avplen;
 		len    -= 2 + avplen;
@@ -173,17 +163,17 @@ redbackli_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 #define REDBACKLI_EOHSIZE	2
 #define MIN_REDBACKLI_SIZE	(3*REDBACKLI_INTSIZE+REDBACKLI_EOHSIZE)
 
-static gboolean
-redbackli_dissect_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+redbackli_dissect_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-	gint		len, offset = 0;
-	gboolean	eoh = FALSE;
-	guint8		avptype, avplen;
-	guint32		avpfound = 0;
+	int		len, offset = 0;
+	bool	eoh = false;
+	uint8_t		avptype, avplen;
+	uint32_t		avpfound = 0;
 
 	len = tvb_captured_length(tvb);
 	if (len < MIN_REDBACKLI_SIZE)
-		return FALSE;
+		return false;
 
 	/*
 	 * We scan the possible AVPs and look out for mismatches.
@@ -192,43 +182,43 @@ redbackli_dissect_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 	 *
 	 */
 	while ((len > 2) && !eoh) {
-		avptype = tvb_get_guint8(tvb, offset+0);
-		avplen = tvb_get_guint8(tvb, offset+1);
+		avptype = tvb_get_uint8(tvb, offset+0);
+		avplen = tvb_get_uint8(tvb, offset+1);
 
 		switch (avptype) {
 			case(RB_AVP_SEQNO):
 			case(RB_AVP_LIID):
 			case(RB_AVP_SESSID):
 				if (avplen != 4)
-					return FALSE;
+					return false;
 				avpfound |= 1<<avptype;
 				break;
 			case(RB_AVP_EOH):
 				if (avplen > 1 || offset == 0)
-					return FALSE;
-				eoh = TRUE;
+					return false;
+				eoh = true;
 				break;
 			case(RB_AVP_LABEL):
 			case(RB_AVP_DIR):   /* Is this correct? the hf_ originally had FT_UINT8 for DIR */
 			case(RB_AVP_ACCTID):
 				break;
 			default:
-				return FALSE;
+				return false;
 		}
 		offset += 2 + avplen;
 		len    -= 2 + avplen;
 	}
 
 	if (!(avpfound & (1<<RB_AVP_SEQNO)))
-		return FALSE;
+		return false;
 	if (!(avpfound & (1<<RB_AVP_SESSID)))
-		return FALSE;
+		return false;
 	if (!(avpfound & (1<<RB_AVP_LIID)))
-		return FALSE;
+		return false;
 
 	redbackli_dissect(tvb, pinfo, tree, data);
 
-	return TRUE;
+	return true;
 }
 void proto_register_redbackli(void) {
 	static hf_register_info hf[] = {
@@ -247,17 +237,13 @@ void proto_register_redbackli(void) {
 		{ &hf_redbackli_sessid,
 			{ "Session Id", "redbackli.sessid", FT_UINT32, BASE_DEC, NULL, 0x0,
 			"Session Identifier", HFILL }},
-#if 0 /* XXX: If one goes by the heuristic then this field can be variable length ??
-	 In the absence of any documentation We'll assume that's the case
-	 (even though 'direction' sounds like a fixed length field */
-		{ &hf_redbackli_dir,
-			{ "Direction", "redbackli.dir", FT_UINT8, BASE_DEC, NULL, 0x0,
-			NULL, HFILL }},
-#else
+		/* XXX: If one goes by the heuristic then this field can be variable length ??
+		 * In the absence of any documentation We'll assume that's the case
+		 * (even though 'direction' sounds like a fixed length field
+		 */
 		{ &hf_redbackli_dir,
 			{ "Direction", "redbackli.dir", FT_BYTES, BASE_NONE, NULL, 0x0,
 			NULL, HFILL }},
-#endif
 		{ &hf_redbackli_label,
 			{ "Label", "redbackli.label", FT_STRING, BASE_NONE, NULL, 0x0,
 			NULL, HFILL }},
@@ -272,33 +258,29 @@ void proto_register_redbackli(void) {
 			NULL, HFILL }}
 		};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_redbackli
 	};
 
-	proto_redbackli = proto_register_protocol("Redback Lawful Intercept",
-						  "RedbackLI", "redbackli");
+	proto_redbackli = proto_register_protocol("Redback Lawful Intercept", "RedbackLI", "redbackli");
 
 	proto_register_field_array(proto_redbackli, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-	register_dissector("redbackli", redbackli_dissect, proto_redbackli);
+	redbackli_handle = register_dissector("redbackli", redbackli_dissect, proto_redbackli);
 }
 
 void proto_reg_handoff_redbackli(void) {
-	dissector_handle_t redbackli_handle;
-
 	ip_handle = find_dissector_add_dependency("ip", proto_redbackli);
 
-	redbackli_handle = find_dissector("redbackli");
-	dissector_add_for_decode_as("udp.port", redbackli_handle);
+	dissector_add_for_decode_as_with_preference("udp.port", redbackli_handle);
 
 	heur_dissector_add("udp", redbackli_dissect_heur, "Redback Lawful Intercept over UDP", "redbackli_udp", proto_redbackli, HEURISTIC_ENABLE);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

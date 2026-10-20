@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #airodump parsing lib
 #returns in an array of client and Ap information
 #part of the airdrop-ng project
 from sys import exit as Exit
+
 class airDumpParse:
 	def parser(self,file):
 		"""
@@ -22,15 +23,12 @@ class airDumpParse:
 		try:
 			openedFile = open(file, "r")
 		except TypeError:
-			print "Missing Airodump-ng file"
+			print("Missing Airodump-ng file")
 			Exit(1)
 		except IOError:
-			print "Error Airodump File",file,"does not exist"
+			print("Error Airodump File",file,"does not exist")
 			Exit(1)
-		data = openedFile.xreadlines()
-		cleanedData = []
-		for line in data:
-			cleanedData.append(line.rstrip())
+		cleanedData = [line.rstrip() for line in openedFile]
 		openedFile.close()
 		return cleanedData
 	
@@ -50,7 +48,7 @@ class airDumpParse:
 			except Exception:
 				stationStart = cleanedDump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, ESSID')
 		except Exception:
-			print "You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap"
+			print("You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap")
 			Exit(1)
 	
 		del cleanedDump[stationStart] #Remove the heading line
@@ -69,7 +67,7 @@ class airDumpParse:
 		for entry in devices:
 			ap = {}
 			string_list = entry.split(',')
-			#sorry for the clusterfuck but i swear it all makse sense this is builiding a dic from our list so we dont have to do postion calls later
+			#sorry for the clusterfuck but I swear it all makes sense, this is building a dic from our list so we don't have to do position calls later
 			len(string_list)
 			if len(string_list) == 15:
 				ap = {"bssid":string_list[0].replace(' ',''),
@@ -129,20 +127,20 @@ class airDumpParse:
 		"""
 		clients = data[0]
 		AP = data[1]
-		NA = [] #create a var to keep the not associdated clients
-		NAP = [] #create a var to keep track of associated clients to AP's we cant see
+		NA = [] #create a var to keep the not associated clients
+		NAP = [] #create a var to keep track of associated clients to AP's we can't see
 		apCount = {} #count number of Aps dict is faster the list stored as BSSID:number of essids
 		apClient = {} #dict that stores bssid and clients as a nested list
 		for key in (clients):
 			mac = clients[key] #mac is the MAC address of the client
-			if mac["bssid"] != ' (notassociated) ': #one line of of our dictionary of clients
-				if AP.has_key(mac["bssid"]): # if it is check to see its an AP we can see and have info on
-					if apClient.has_key(mac["bssid"]): 
+			if mac["bssid"] != ' (notassociated) ': #one line of our dictionary of clients
+				if mac["bssid"] in AP: # if it is check to see it's an AP we can see and have info on
+					if mac["bssid"] in apClient: 
 						apClient[mac["bssid"]].extend([key]) #if key exists append new client
 					else: 
 						apClient[mac["bssid"]] = [key] #create new key and append the client
-				else: NAP.append(key) # stores the clients that are talking to an access point we cant see
-			else: NA.append(key) #stores the lines of the not assocated AP's in a list
+				else: NAP.append(key) # stores the clients that are talking to an access point we can't see
+			else: NA.append(key) #stores the lines of the not associated AP's in a list
 		return apClient
 	
 

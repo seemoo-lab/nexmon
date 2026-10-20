@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,12 +22,9 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
-#include <fcntl.h>
 
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -36,23 +35,21 @@
 #include "gasynchelper.h"
 #include "gfiledescriptorbased.h"
 #include "glibintl.h"
+#include "giounix-private.h"
 
 
 /**
- * SECTION:gunixinputstream
- * @short_description: Streaming input operations for UNIX file descriptors
- * @include: gio/gunixinputstream.h
- * @see_also: #GInputStream
+ * GUnixInputStream:
  *
- * #GUnixInputStream implements #GInputStream for reading from a UNIX
+ * `GUnixInputStream` implements [class@Gio.InputStream] for reading from a UNIX
  * file descriptor, including asynchronous operations. (If the file
- * descriptor refers to a socket or pipe, this will use poll() to do
+ * descriptor refers to a socket or pipe, this will use `poll()` to do
  * asynchronous I/O. If it refers to a regular file, it will fall back
  * to doing asynchronous I/O in another thread.)
  *
  * Note that `<gio/gunixinputstream.h>` belongs to the UNIX-specific GIO
  * interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config
- * file when using it.
+ * file or the `GioUnix-2.0` GIR namespace when using it.
  */
 
 enum {
@@ -64,7 +61,7 @@ enum {
 struct _GUnixInputStreamPrivate {
   int fd;
   guint close_fd : 1;
-  guint is_pipe_or_socket : 1;
+  guint can_poll : 1;
 };
 
 static void g_unix_input_stream_pollable_iface_init (GPollableInputStreamInterface *iface);
@@ -103,14 +100,6 @@ static void     g_unix_input_stream_skip_async   (GInputStream         *stream,
 static gssize   g_unix_input_stream_skip_finish  (GInputStream         *stream,
 						  GAsyncResult         *result,
 						  GError              **error);
-static void     g_unix_input_stream_close_async  (GInputStream         *stream,
-						  int                   io_priority,
-						  GCancellable         *cancellable,
-						  GAsyncReadyCallback   callback,
-						  gpointer              data);
-static gboolean g_unix_input_stream_close_finish (GInputStream         *stream,
-						  GAsyncResult         *result,
-						  GError              **error);
 
 static gboolean g_unix_input_stream_pollable_can_poll      (GPollableInputStream *stream);
 static gboolean g_unix_input_stream_pollable_is_readable   (GPollableInputStream *stream);
@@ -134,8 +123,6 @@ g_unix_input_stream_class_init (GUnixInputStreamClass *klass)
       stream_class->skip_async = g_unix_input_stream_skip_async;
       stream_class->skip_finish = g_unix_input_stream_skip_finish;
     }
-  stream_class->close_async = g_unix_input_stream_close_async;
-  stream_class->close_finish = g_unix_input_stream_close_finish;
 
   /**
    * GUnixInputStream:fd:
@@ -146,9 +133,7 @@ g_unix_input_stream_class_init (GUnixInputStreamClass *klass)
    */
   g_object_class_install_property (gobject_class,
 				   PROP_FD,
-				   g_param_spec_int ("fd",
-						     P_("File descriptor"),
-						     P_("The file descriptor to read from"),
+				   g_param_spec_int ("fd", NULL, NULL,
 						     G_MININT, G_MAXINT, -1,
 						     G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB));
 
@@ -161,9 +146,7 @@ g_unix_input_stream_class_init (GUnixInputStreamClass *klass)
    */
   g_object_class_install_property (gobject_class,
 				   PROP_CLOSE_FD,
-				   g_param_spec_boolean ("close-fd",
-							 P_("Close file descriptor"),
-							 P_("Whether to close the file descriptor when the stream is closed"),
+				   g_param_spec_boolean ("close-fd", NULL, NULL,
 							 TRUE,
 							 G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB));
 }
@@ -196,10 +179,7 @@ g_unix_input_stream_set_property (GObject         *object,
     {
     case PROP_FD:
       unix_stream->priv->fd = g_value_get_int (value);
-      if (lseek (unix_stream->priv->fd, 0, SEEK_CUR) == -1 && errno == ESPIPE)
-	unix_stream->priv->is_pipe_or_socket = TRUE;
-      else
-	unix_stream->priv->is_pipe_or_socket = FALSE;
+      unix_stream->priv->can_poll = _g_fd_is_pollable (unix_stream->priv->fd);
       break;
     case PROP_CLOSE_FD:
       unix_stream->priv->close_fd = g_value_get_boolean (value);
@@ -347,7 +327,7 @@ g_unix_input_stream_read (GInputStream  *stream,
 
   poll_fds[0].fd = unix_stream->priv->fd;
   poll_fds[0].events = G_IO_IN;
-  if (unix_stream->priv->is_pipe_or_socket &&
+  if (unix_stream->priv->can_poll &&
       g_cancellable_make_pollfd (cancellable, &poll_fds[1]))
     nfds = 2;
   else
@@ -355,15 +335,18 @@ g_unix_input_stream_read (GInputStream  *stream,
 
   while (1)
     {
+      int errsv;
+
       poll_fds[0].revents = poll_fds[1].revents = 0;
       do
-	poll_ret = g_poll (poll_fds, nfds, -1);
-      while (poll_ret == -1 && errno == EINTR);
+        {
+          poll_ret = g_poll (poll_fds, nfds, -1);
+          errsv = errno;
+        }
+      while (poll_ret == -1 && errsv == EINTR);
 
       if (poll_ret == -1)
 	{
-          int errsv = errno;
-
 	  g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
 		       _("Error reading from file descriptor: %s"),
@@ -449,40 +432,10 @@ g_unix_input_stream_skip_finish  (GInputStream  *stream,
   /* TODO: Not implemented */
 }
 
-static void
-g_unix_input_stream_close_async (GInputStream        *stream,
-				 int                  io_priority,
-				 GCancellable        *cancellable,
-				 GAsyncReadyCallback  callback,
-				 gpointer             user_data)
-{
-  GTask *task;
-  GError *error = NULL;
-
-  task = g_task_new (stream, cancellable, callback, user_data);
-  g_task_set_priority (task, io_priority);
-
-  if (g_unix_input_stream_close (stream, cancellable, &error))
-    g_task_return_boolean (task, TRUE);
-  else
-    g_task_return_error (task, error);
-  g_object_unref (task);
-}
-
-static gboolean
-g_unix_input_stream_close_finish (GInputStream  *stream,
-				  GAsyncResult  *result,
-				  GError       **error)
-{
-  g_return_val_if_fail (g_task_is_valid (result, stream), FALSE);
-
-  return g_task_propagate_boolean (G_TASK (result), error);
-}
-
 static gboolean
 g_unix_input_stream_pollable_can_poll (GPollableInputStream *stream)
 {
-  return G_UNIX_INPUT_STREAM (stream)->priv->is_pipe_or_socket;
+  return G_UNIX_INPUT_STREAM (stream)->priv->can_poll;
 }
 
 static gboolean

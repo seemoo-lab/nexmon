@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -54,8 +56,10 @@ typedef enum
 {
   G_HOOK_FLAG_ACTIVE	    = 1 << 0,
   G_HOOK_FLAG_IN_CALL	    = 1 << 1,
+  G_HOOK_FLAG_RESERVED1     = 1 << 2, /*< private >*/
+  G_HOOK_FLAG_RESERVED2     = 1 << 3, /*< private >*/
   G_HOOK_FLAG_MASK	    = 0x0f
-} GHookFlagMask;
+} G_GNUC_FLAG_ENUM GHookFlagMask;
 #define G_HOOK_FLAG_USER_SHIFT	(4)
 
 

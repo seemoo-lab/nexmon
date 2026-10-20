@@ -4,42 +4,45 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 # We should use CPack to generate the NSIS package. Even better,
-# we should use CPack to create a .msi using WIX.
+# we should use CPack to create a .msi using WiX.
 
-set(NSIS_GENERATED_FILES
-	${CMAKE_CURRENT_BINARY_DIR}/all-manifest.nsh
-	${CMAKE_CURRENT_BINARY_DIR}/config.nsh
-	${CMAKE_CURRENT_BINARY_DIR}/gtk-dll-manifest.nsh
-	${CMAKE_CURRENT_BINARY_DIR}/qt-dll-manifest.nsh
+set(WIRESHARK_NSIS_GENERATED_FILES
+	${CMAKE_CURRENT_BINARY_DIR}/wireshark-manifest.nsh
+	${CMAKE_CURRENT_BINARY_DIR}/wireshark-config.nsh
 )
-set(NSIS_GENERATED_FILES ${NSIS_GENERATED_FILES} PARENT_SCOPE)
+if(NOT SKIP_NSIS_QT_DLLS)
+	list(APPEND WIRESHARK_NSIS_GENERATED_FILES ${CMAKE_CURRENT_BINARY_DIR}/wireshark-qt-manifest.nsh)
+endif()
+set(WIRESHARK_NSIS_GENERATED_FILES ${WIRESHARK_NSIS_GENERATED_FILES} PARENT_SCOPE)
 
-set(NSIS_FILES
-	wireshark.nsi
-	uninstall.nsi
-	common.nsh
-	GetWindowsVersion.nsh
+set(WIRESHARK_NSIS_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/wireshark.nsi
+	${CMAKE_CURRENT_SOURCE_DIR}/wireshark-common.nsh
+	${CMAKE_CURRENT_SOURCE_DIR}/servicelib.nsh
+	${CMAKE_CURRENT_SOURCE_DIR}/NpcapPage.ini
+	${CMAKE_CURRENT_SOURCE_DIR}/USBPcapPage.ini
+	${WIRESHARK_NSIS_GENERATED_FILES}
+	PARENT_SCOPE
+)
+
+set(STRATOSHARK_NSIS_GENERATED_FILES
+	${CMAKE_CURRENT_BINARY_DIR}/stratoshark-manifest.nsh
+	${CMAKE_CURRENT_BINARY_DIR}/stratoshark-config.nsh
+	${CMAKE_CURRENT_BINARY_DIR}/stratoshark-qt-manifest.nsh
+)
+set(STRATOSHARK_NSIS_GENERATED_FILES ${STRATOSHARK_NSIS_GENERATED_FILES} PARENT_SCOPE)
+
+set(STRATOSHARK_NSIS_FILES
+	stratoshark.nsi
+	stratoshark-common.nsh
 	servicelib.nsh
-	AdditionalTasksPage.ini
-	WinPcapPage.ini
+	NpcapPage.ini
 	USBPcapPage.ini
-	${NSIS_GENERATED_FILES}
+	${STRATOSHARK_NSIS_GENERATED_FILES}
 	PARENT_SCOPE
 )
 
@@ -48,189 +51,318 @@ set(PROGRAM_NAME ${CMAKE_PROJECT_NAME})
 file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}" TOP_SRC_DIR)
 # STAGING_DIR depends on the build configuration so we pass it
 # on the command line below.
-file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/docbook" USER_GUIDE_DIR)
-if ("${WIRESHARK_TARGET_PLATFORM}" STREQUAL "win32")
-        set(TARGET_MACHINE x86)
-elseif ("${WIRESHARK_TARGET_PLATFORM}" STREQUAL "win64")
-        set(TARGET_MACHINE x64)
-else()
-        message(FATAL_ERROR "Your mysterious moon-man architecture \"${WIRESHARK_TARGET_PLATFORM}\" frightens and confuses us.")
-endif()
-
-# Path to the WinPcap installer.
-# XXX Come up with a better variable, e.g. cache WIRESHARK_LIB_DIR in FindWSWinLibs.
-file(TO_NATIVE_PATH "${GLIB2_DLL_DIR}/../.." _wireshark_lib_dir)
-set(WIRESHARK_LIB_DIR "${_wireshark_lib_dir}")
-
-# Must match ${WIRESHARK_LIB_DIR}/WinPcap_X_Y_Z.exe
-set(WINPCAP_PACKAGE_VERSION ${WINPCAP_VERSION})
-string(REPLACE "_" "." PCAP_DISPLAY_VERSION "${WINPCAP_PACKAGE_VERSION}")
-
-set(USBPCAP_DISPLAY_VERSION "1.1.0.0-g794bf26-5")
-
-set(PRODUCT_VERSION ${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_PATCH_VERSION}.${PROJECT_BUILD_VERSION})
+file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/doc" DOC_DIR)
+set (MMDBRESOLVE_EXE ${MAXMINDDB_FOUND})
 
 # To do:
 # - Sync the various version names between CMake and NSIS.
-# - Set CMakeLists.txt version strings in make-version.pl
+# - Set CMakeLists.txt version strings in tools/make-version.py
 # - Add a VERSION_EXTRA cmake option
-set (VERSION "${PROJECT_VERSION}")
-set (PRODUCT_VERSION=${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}.${VERSION_BUILD})
+set (PRODUCT_VERSION ${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_PATCH_VERSION}.${PROJECT_BUILD_VERSION})
+set (STRATOSHARK_PRODUCT_VERSION ${STRATOSHARK_MAJOR_VERSION}.${STRATOSHARK_MINOR_VERSION}.${PROJECT_PATCH_VERSION}.${PROJECT_BUILD_VERSION})
 
-#add_custom_target(build_nsis_package
-#	DEPENDS
-#		wireshark-$(WIRESHARK_TARGET_PLATFORM)-$(VERSION).exe
-#)
-
-if(BUILD_wireshark AND QT_FOUND)
+if((BUILD_wireshark OR BUILD_stratoshark) AND QT_FOUND)
 	set (QT_DIR "\${STAGING_DIR}")
-endif()
-
-if(BUILD_wireshark_gtk AND GTK_FOUND)
-	set (GTK_DIR "\${STAGING_DIR}")
 endif()
 
 # Look for the Visual C++ Redistributable packages in the following locations:
 # - _PROJECT_LIB_DIR
 # - _PROJECT_LIB_DIR/vcredist_MSVCxx
 # - %VCINSTALLDIR%
-# - %VCINSTALLDIR%/redist/1033
-set(_vcredist_name "vcredist_${TARGET_MACHINE}.exe")
-if(MSVC14)
-	set(_vcredist_subdir "vcredist_MSVC2015")
-elseif(MSVC12)
-	set(_vcredist_subdir "vcredist_MSVC2013")
+# - %VCINSTALLDIR%/redist/1033 (<= Visual Studio 2015)
+# - %VCINSTALLDIR%/Redist/MSVC/* (>= Visual Studio 2017)
+# MSVC_VERSION (_MSC_VER) = Visual Studio Version / MSVC Toolset Version
+# 1900 = VS2015 14.0        / 14.00
+# 1910 = VS2017 15.1, 15.2  / 14.10
+# 1911 = VS2017 15.3, 15.4  / 14.11
+# 1912 = VS2017 15.5        / 14.12
+# 1913 = VS2017 15.6        / 14.13
+# 1914 = VS2017 15.7        / 14.14
+if(MSVC_VERSION GREATER_EQUAL 1930)
+	set(_ws_vcredist_subdir "vcredist_MSVC2022")
+elseif(MSVC_VERSION GREATER_EQUAL 1920)
+	set(_ws_vcredist_subdir "vcredist_MSVC2019")
+	set(_msvs_version 15.0) # Doesn't appear to be set
+elseif(MSVC_VERSION GREATER_EQUAL 1910)
+	set(_ws_vcredist_subdir "vcredist_MSVC2017")
+	set(_msvs_version 15.0)
+elseif(MSVC_VERSION GREATER_EQUAL 1900)
+	set(_ws_vcredist_subdir "vcredist_MSVC2015")
+	set(_ms_vcredist_subdir "redist/1033")
+	set(_msvs_version 14.0)
 endif()
 
-find_program(VCREDIST_EXE "${_vcredist_name}"
-	PATHS "${_PROJECT_LIB_DIR}" ENV "VCINSTALLDIR"
-	PATH_SUFFIXES ${_vcredist_subdir} "redist/1033"
+# Try to find the Redist folder in VCINSTALLDIR which is set by vcvarsall.bat.
+# If it is not set, query it within the registry. VS2015 looks for the "VC7" key
+# in two locations (four if you count HKCU instead of HKLM). However, VS2017
+# does not use "VC7" (it sets a directory relative to vsdevcmd_start.bat). As
+# both versions do set "VS7", use that instead.
+find_path(VCINSTALLDIR Redist PATHS
+	"$ENV{VCINSTALLDIR}"
+	"[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\VisualStudio\\SxS\\VS7;${_msvs_version}]\\VC"
+	"[HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\VisualStudio\\SxS\\VS7;${_msvs_version}]\\VC"
+	NO_DEFAULT_PATH
 )
-if(VCREDIST_EXE)
-	file(TO_NATIVE_PATH "${VCREDIST_EXE}" VCREDIST_EXE)
-	message(STATUS "Using ${VCREDIST_EXE} for the installer")
+file(TO_NATIVE_PATH "${VCINSTALLDIR}" VCINSTALLDIR_NATIVE)
+message(STATUS "Using VCINSTALLDIR: ${VCINSTALLDIR_NATIVE}")
+
+# Visual Studio Community 2017 version 15.7.5 uses VCRT 14.14.26405, but an
+# earlier version used 14.10.25008. Let's just glob for the right value.
+if(MSVC_VERSION GREATER_EQUAL 1910 AND VCINSTALLDIR)
+	file(GLOB _ms_vcredist_subdir RELATIVE "${VCINSTALLDIR}"
+		"${VCINSTALLDIR}/Redist/MSVC/14.*.*")
 endif()
 
-if(NOT ENABLE_STATIC)
-	# XXX Replace ENABLE_LIBWIRESHARK with !ENABLE_STATIC everywhere.
-	set(ENABLE_LIBWIRESHARK 1)
+find_program(_vcredist
+	NAMES
+		"vc_redist.${WIRESHARK_TARGET_PLATFORM}.exe" # Visual Studio 2022 and later
+		"vcredist_${WIRESHARK_TARGET_PLATFORM}.exe" # Visual Studio 2019 and earlier
+	PATHS "${_PROJECT_LIB_DIR}" $ENV{VCToolsRedistDir} "${VCINSTALLDIR}"
+	PATH_SUFFIXES ${_ws_vcredist_subdir} ${_ms_vcredist_subdir}
+	NO_DEFAULT_PATH
+)
+if(_vcredist)
+	file(TO_NATIVE_PATH "${_vcredist}" _vcredist)
+	message(STATUS "Using ${_vcredist} for the NSIS installer.")
+	get_filename_component(VCREDIST_DIR ${_vcredist} DIRECTORY)
+	get_filename_component(VCREDIST_EXE ${_vcredist} NAME)
 endif()
 
-# Ideally we would generate this at compile time using a separate cmake
-# module, e.g. cmake/modules/configure_nsis_file.cmake. However we would
-# have to figure out a clean way to pass in the variables above.
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/config.nsh.in" _config_nsh_contents)
-string(REPLACE "!define" "#cmakedefine" _config_nsh_contents "${_config_nsh_contents}")
-string(CONFIGURE "${_config_nsh_contents}" _config_nsh_contents)
-string(REPLACE "#define" "!define" _config_nsh_contents "${_config_nsh_contents}")
-string(REPLACE "#undef" "!undef" _config_nsh_contents "${_config_nsh_contents}")
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/config.nsh" "${_config_nsh_contents}")
+if (BUILD_wireshark)
+	# Ideally we would generate this at compile time using a separate cmake
+	# module, e.g. cmake/modules/configure_nsis_file.cmake. However we would
+	# have to figure out a clean way to pass in the variables above.
+	file(READ "${CMAKE_CURRENT_SOURCE_DIR}/wireshark-config.nsh.in" _config_nsh_contents)
+	string(CONFIGURE "${_config_nsh_contents}" _config_nsh_contents)
+	string(REPLACE "#define" "!define" _config_nsh_contents "${_config_nsh_contents}")
+	string(REPLACE "#undef" "!undef" _config_nsh_contents "${_config_nsh_contents}")
+	file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/wireshark-config.nsh" "${_config_nsh_contents}")
 
-# all-manifest.nsh. Can be created at configure time.
-set(_all_manifest "${CMAKE_CURRENT_BINARY_DIR}/all-manifest.nsh")
-set(_all_manifest_contents "# Files required for all sections. Generated by CMake.\n")
-foreach(_dll ${GLIB2_DLLS} ${CARES_DLL} ${GCRYPT_DLLS} ${GEOIP_DLL}
-		${GNUTLS_DLLS} ${KERBEROS_DLLS} ${LUA_DLL} ${SMI_DLL} ${LIBSSH_DLL}
-		${WINSPARKLE_DLL} ${ZLIB_DLL}
-	)
-	set(_all_manifest_contents "${_all_manifest_contents}File \"\${STAGING_DIR}\\${_dll}\"\n")
-endforeach()
-foreach(_script "init.lua" "console.lua" "dtd_gen.lua")
-	set(_all_manifest_contents "${_all_manifest_contents}File \"\${STAGING_DIR}\\${_script}\"\n")
-endforeach()
-file(WRITE "${_all_manifest}" "${_all_manifest_contents}")
+	# wireshark-manifest.nsh. Can be created at configure time.
+	set(_all_manifest "${CMAKE_CURRENT_BINARY_DIR}/wireshark-manifest.nsh")
+	set(_all_manifest_contents "# Files required for all sections. Generated by CMake.\n")
+	if(USE_REPOSITORY)
+		set(_all_manifest_contents "${_all_manifest_contents}!ifdef BUNDLE_DEBUG_DLLS\n")
+		foreach(_dll ${GLIB2_DLLS_DEBUG})
+			set(_all_manifest_contents "${_all_manifest_contents}File \"\${STAGING_DIR}\\${_dll}\"\n")
+		endforeach()
+		set(_all_manifest_contents "${_all_manifest_contents}!else\n")
+		foreach(_dll ${GLIB2_DLLS_RELEASE})
+			set(_all_manifest_contents "${_all_manifest_contents}File \"\${STAGING_DIR}\\${_dll}\"\n")
+		endforeach()
+		set(_all_manifest_contents "${_all_manifest_contents}!endif\n")
+		foreach(_dll ${AMRNB_DLL} ${CARES_DLL} ${PCRE2_RELEASE_DLL} ${GCRYPT_DLLS}
+				${GNUTLS_DLLS} ${KERBEROS_DLLS} ${LIBSSH_DLLS} ${LUA_DLL}
+				${LZ4_DLL} ${MINIZIP_DLL} ${MINIZIPNG_DLLS} ${NGHTTP2_DLL} ${NGHTTP3_DLL} ${SBC_DLL} ${SMI_DLL}
+				${SNAPPY_DLL} ${SPANDSP_DLL} ${BCG729_DLL} ${LIBXML2_DLLS} ${WINSPARKLE_DLL}
+				${XXHASH_DLL} ${ZLIB_DLL} ${ZLIBNG_DLL} ${BROTLI_DLLS} ${ZSTD_DLL} ${ILBC_DLL} ${OPUS_DLL}
+				${SPEEXDSP_DLL}
+				# Needed for mmdbresolve
+				${MAXMINDDB_DLL}
+			)
+			set(_all_manifest_contents "${_all_manifest_contents}File \"\${STAGING_DIR}\\${_dll}\"\n")
+		endforeach()
+	elseif(USE_MSYSTEM)
+		include(${CMAKE_CURRENT_SOURCE_DIR}/InstallMSYS2.cmake)
+		foreach(_dll ${MINGW_DLLS})
+			file(TO_NATIVE_PATH ${_dll} _path)
+			set(_all_manifest_contents "${_all_manifest_contents}File \"${_path}\"\n")
+		endforeach()
+	else()
+		include(${CMAKE_CURRENT_SOURCE_DIR}/InstallMinGW.cmake)
+		foreach(_dll ${MINGW_DLLS})
+			file(TO_NATIVE_PATH ${_dll} _path)
+			set(_all_manifest_contents "${_all_manifest_contents}File \"${_path}\"\n")
+		endforeach()
+	endif()
+	file(WRITE "${_all_manifest}" "${_all_manifest_contents}")
+endif()
 
-# gtk-dll-manifest.nsh. Can be created at configure time.
-set(_gtk_dll_manifest "${CMAKE_CURRENT_BINARY_DIR}/gtk-dll-manifest.nsh")
-set(_gtk_dll_manifest_contents "# Files required for the GTK+ section. Generated by CMake.\n")
-if(BUILD_wireshark_gtk AND GTK_FOUND)
-	foreach(_dll ${GTK2_DLLS} ${GTK3_DLLS})
-		set(_gtk_dll_manifest_contents "${_gtk_dll_manifest_contents}File \"\${STAGING_DIR}\\${_dll}\"\n")
+if (BUILD_stratoshark)
+	# Ideally we would generate this at compile time using a separate cmake
+	# module, e.g. cmake/modules/configure_nsis_file.cmake. However we would
+	# have to figure out a clean way to pass in the variables above.
+	file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stratoshark-config.nsh.in" _config_nsh_contents)
+	string(CONFIGURE "${_config_nsh_contents}" _config_nsh_contents)
+	string(REPLACE "#define" "!define" _config_nsh_contents "${_config_nsh_contents}")
+	string(REPLACE "#undef" "!undef" _config_nsh_contents "${_config_nsh_contents}")
+	file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/stratoshark-config.nsh" "${_config_nsh_contents}")
+
+	# stratoshark-manifest.nsh. Can be created at configure time.
+	set(_all_manifest "${CMAKE_CURRENT_BINARY_DIR}/stratoshark-manifest.nsh")
+	set(_all_manifest_contents "# Files required for all sections. Generated by CMake.\n")
+	set(_all_manifest_contents "${_all_manifest_contents}!ifdef BUNDLE_DEBUG_DLLS\n")
+	foreach(_dll ${GLIB2_DLLS_DEBUG})
+		set(_all_manifest_contents "${_all_manifest_contents}File \"\${STAGING_DIR}\\${_dll}\"\n")
 	endforeach()
-	set(_gtk_dll_manifest_contents "${_gtk_dll_manifest_contents}# Subdirectories\n")
-	if(GTK2_ETC_DIR)
-		set(_gtk_dll_manifest_contents "${_gtk_dll_manifest_contents}SetOutPath \$INSTDIR\\etc\\gtk-2.0\n")
-		set(_gtk_dll_manifest_contents "${_gtk_dll_manifest_contents}File \"\${STAGING_DIR}\\etc\\gtk-2.0\\*.*\"\n")
-	endif()
-	if(GTK2_ENGINES_DLL_DIR)
-		set(_gtk_dll_manifest_contents "${_gtk_dll_manifest_contents}SetOutPath \$INSTDIR\\lib\\gtk-2.0\\2.10.0\\engines\n")
-		set(_gtk_dll_manifest_contents "${_gtk_dll_manifest_contents}File \"\${STAGING_DIR}\\lib\\gtk-2.0\\2.10.0\\engines\\*.*\"\n")
-	endif()
-	set(_gtk_dll_manifest_contents "${_gtk_dll_manifest_contents}SetOutPath \$INSTDIR\\lib\\gtk-2.0\\modules\n")
-	set(_gtk_dll_manifest_contents "${_gtk_dll_manifest_contents}File \"\${STAGING_DIR}\\lib\\gtk-2.0\\modules\\*.*\"\n")
-	# XXX Schemas (GTK3)
+	set(_all_manifest_contents "${_all_manifest_contents}!else\n")
+	foreach(_dll ${GLIB2_DLLS_RELEASE})
+		set(_all_manifest_contents "${_all_manifest_contents}File \"\${STAGING_DIR}\\${_dll}\"\n")
+	endforeach()
+	set(_all_manifest_contents "${_all_manifest_contents}!endif\n")
+	foreach(_dll ${AMRNB_DLL} ${CARES_DLL} ${PCRE2_RELEASE_DLL} ${GCRYPT_DLLS}
+			${GNUTLS_DLLS} ${KERBEROS_DLLS} ${LIBSSH_DLLS} ${LUA_DLL}
+			${LZ4_DLL} ${MINIZIP_DLL} ${MINIZIPNG_DLLS} ${NGHTTP2_DLL} ${NGHTTP3_DLL} ${SBC_DLL} ${SMI_DLL}
+			${SNAPPY_DLL} ${SPANDSP_DLL} ${BCG729_DLL} ${LIBXML2_DLLS} ${WINSPARKLE_DLL}
+			${XXHASH_DLL} ${ZLIB_DLL} ${ZLIBNG_DLL} ${BROTLI_DLLS} ${ZSTD_DLL} ${ILBC_DLL} ${OPUS_DLL}
+			${SPEEXDSP_DLL}
+			# Needed for mmdbresolve
+			${MAXMINDDB_DLL}
+		)
+		set(_all_manifest_contents "${_all_manifest_contents}File \"\${STAGING_DIR}\\${_dll}\"\n")
+	endforeach()
+	file(WRITE "${_all_manifest}" "${_all_manifest_contents}")
 endif()
-file(WRITE "${_gtk_dll_manifest}" "${_gtk_dll_manifest_contents}")
 
 file(TO_NATIVE_PATH "${DATAFILE_DIR}" _staging_dir)
+file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}" _outfile_dir)
 file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}" _nsis_include_dir)
 
 # Variables we can't set via config.nsh.
-set(NSIS_DEFINES
+set(NSIS_OPTIONS
 	-DSTAGING_DIR=${_staging_dir}
+	-DOUTFILE_DIR=${_outfile_dir}
 	-DNSIS_INCLUDE_DIR=${_nsis_include_dir}
+	-V2
 	PARENT_SCOPE
 )
 
-# We want to sign all of the executables that we ship in the official
-# installers. This means that uninstall.exe must be built separately AND
-# that building the installer itself won't overwrite uninstall.exe
-macro( ADD_NSIS_UNINSTALLER_TARGET )
+macro( ADD_NSIS_PACKAGE_TARGETS )
 	set (_nsis_source_dir ${CMAKE_SOURCE_DIR}/packaging/nsis )
 	set (_nsis_binary_dir ${CMAKE_BINARY_DIR}/packaging/nsis )
+	#
+	# XXX - if we're not building Wireshark, we can't build the
+	# manifest below.  On the other hand, if we're not building
+	# Wireshark, we have no need to include Qt in the installer,
+	# so it's not clear we need this manifest.
+	#
+	# This should probably be fixed, so that people can produce
+	# command-line-only installer packages.
+	if(BUILD_wireshark)
+		# wireshark-qt-manifest.nsh. Created using Wireshark.exe.
+		if(NOT SKIP_NSIS_QT_DLLS)
+			if (USE_REPOSITORY)
+				add_custom_command(OUTPUT ${_nsis_binary_dir}/wireshark-qt-manifest.nsh
+					COMMAND set "PATH=${QT_BIN_PATH};%PATH%"
+					COMMAND ${POWERSHELL_COMMAND} "${_nsis_source_dir}/windeployqt-to-nsis.ps1"
+						-Executable $<TARGET_FILE:wireshark>
+						-FilePath ${_nsis_binary_dir}/wireshark-qt-manifest.nsh
+						$<$<CONFIG:Debug>:-DebugConfig>
+					DEPENDS
+						"${_nsis_source_dir}/windeployqt-to-nsis.ps1"
+						$<TARGET_FILE:wireshark>
+				)
+			elseif(HAVE_MSYSTEM)
+				add_custom_command(OUTPUT ${_nsis_binary_dir}/wireshark-qt-manifest.nsh
+					COMMAND ${Python3_EXECUTABLE} "${_nsis_source_dir}/windeployqt-to-nsis.py"
+						--executable $<TARGET_FILE:wireshark>
+						${_nsis_binary_dir}/wireshark-qt-manifest.nsh
+						#$<$<CONFIG:Debug>:-DebugConfig>
+					DEPENDS
+						"${_nsis_source_dir}/windeployqt-to-nsis.py"
+						$<TARGET_FILE:wireshark>
+				)
+			elseif(MINGW AND CMAKE_CROSSCOMPILING)
+				add_custom_command(OUTPUT ${_nsis_binary_dir}/wireshark-qt-manifest.nsh
+					COMMAND ${Python3_EXECUTABLE} "${_nsis_source_dir}/windeployqt-to-nsis.py"
+						--sysroot "${MINGW_SYSROOT}"
+						--mapping "${_nsis_source_dir}/mingw64-qt-mapping.txt"
+						${_nsis_binary_dir}/wireshark-qt-manifest.nsh
+						#$<$<CONFIG:Debug>:-DebugConfig>
+					DEPENDS
+						"${_nsis_source_dir}/windeployqt-to-nsis.py"
+						"${_nsis_source_dir}/mingw64-qt-mapping.txt"
+				)
+			else()
+				message(FATAL_ERROR "Unknown Qt deployment method")
+			endif()
+		endif()
 
-	add_custom_command(OUTPUT ${DATAFILE_DIR}/uninstall.exe
-		DEPENDS ${_nsis_source_dir}/uninstall.nsi
-			${_nsis_source_dir}/common.nsh
-		COMMAND ${MAKENSIS_EXECUTABLE} ${NSIS_DEFINES}
-			uninstall.nsi
-		COMMAND ${DATAFILE_DIR}/uninstall_installer.exe
-		COMMAND ${CMAKE_COMMAND} -E remove ${DATAFILE_DIR}/uninstall_installer.exe
-		WORKING_DIRECTORY ${_nsis_source_dir}
-	)
-endmacro( ADD_NSIS_UNINSTALLER_TARGET )
+		# Build NSIS package dependencies. We build the package in
+		# two stages so that wireshark_nsis below doesn't trigger
+		# any dependencies that might clobber any signed executables.
+		add_custom_target(wireshark_nsis_prep
+			DEPENDS
+				${WIRESHARK_NSIS_FILES}
+				copy_data_files
+				user_guide_html
+				release_notes_html
+		)
+		set_target_properties(wireshark_nsis_prep PROPERTIES
+			FOLDER "Packaging"
+			EXCLUDE_FROM_DEFAULT_BUILD True
+		)
 
-macro( ADD_NSIS_PACKAGE_TARGET )
-	#set (_nsis_package ${CMAKE_BINARY_DIR}/packaging/nsis/Wireshark-$(WIRESHARK_TARGET_PLATFORM)-$(VERSION).exe)
+		# Make sure required blobs are available
+		FetchContent_MakeAvailable(Npcap USBPcap)
 
-	# qt-dll-manifest.nsh. Created using Wireshark.exe.
-	add_custom_command(OUTPUT ${_nsis_binary_dir}/qt-dll-manifest.nsh
-		COMMAND set "PATH=%PATH%;${QT_BIN_PATH}"
-		COMMAND ${POWERSHELL_COMMAND} "${_nsis_source_dir}/windeployqt-to-nsis.ps1"
-			-Executable $<TARGET_FILE:wireshark>
-			-FilePath ${_nsis_binary_dir}/qt-dll-manifest.nsh
-	)
+		# Dump the installer into
+		# ${CMAKE_CURRENT_SOURCE_DIR}/packaging/nsis
+		# Note that executables and DLLs *must* be built separately
+		add_custom_target(wireshark_nsis
+			COMMAND ${MAKENSIS_EXECUTABLE} ${NSIS_OPTIONS}
+				$<$<CONFIG:Debug>:-DBUNDLE_DEBUG_DLLS>
+				$<$<BOOL:${MSVC}>:-DUSE_VCREDIST>
+				wireshark.nsi
+			WORKING_DIRECTORY ${_nsis_source_dir}
+		)
+		set_target_properties(wireshark_nsis PROPERTIES
+			FOLDER "Packaging"
+			EXCLUDE_FROM_DEFAULT_BUILD True
+		)
+	endif()
 
-	# Build NSIS package dependencies. We build the package in two stages
-	# so that nsis_package below doesn't trigger any dependencies that
-	# might clobber any signed executables.
-	add_custom_target(nsis_package_prep
-		DEPENDS
-			${NSIS_FILES}
-			copy_data_files
-			user_guides
-			${CMAKE_BINARY_DIR}/docbook/user-guide.chm
-			${DATAFILE_DIR}/uninstall.exe
-	)
-	set_target_properties(nsis_package_prep PROPERTIES FOLDER "Packaging")
+	if(BUILD_stratoshark)
+		# stratoshark-qt-manifest.nsh. Created using Wireshark.exe.
+		add_custom_command(OUTPUT ${_nsis_binary_dir}/stratoshark-qt-manifest.nsh
+			COMMAND set "PATH=${QT_BIN_PATH};%PATH%"
+			COMMAND ${POWERSHELL_COMMAND} "${_nsis_source_dir}/windeployqt-to-nsis.ps1"
+				-Executable $<TARGET_FILE:stratoshark>
+				-FilePath ${_nsis_binary_dir}/stratoshark-qt-manifest.nsh
+				$<$<CONFIG:Debug>:-DebugConfig>
+			DEPENDS "${_nsis_source_dir}/windeployqt-to-nsis.ps1"
+		)
 
-	# Dump the installer into ${CMAKE_CURRENT_SOURCE_DIR}/packaging/nsis
-	# Note that executables and DLLs *must* be built separately
-	add_custom_target(nsis_package
-		COMMAND ${MAKENSIS_EXECUTABLE} ${NSIS_DEFINES}
-			wireshark.nsi
-		WORKING_DIRECTORY ${_nsis_source_dir}
-	)
-	set_target_properties(nsis_package PROPERTIES FOLDER "Packaging")
-endmacro( ADD_NSIS_PACKAGE_TARGET )
+		# Build NSIS package dependencies. We build the package in
+		# two stages so that stratoshark_nsis below doesn't trigger
+		# any dependencies that might clobber any signed executables.
+		add_custom_target(stratoshark_nsis_prep
+			DEPENDS
+				${STRATOSHARK_NSIS_FILES}
+				copy_data_files
+				user_guide_html
+				${DATAFILE_DIR}/uninstall-stratoshark.exe
+		)
+		set_target_properties(stratoshark_nsis_prep PROPERTIES
+			FOLDER "Packaging"
+			EXCLUDE_FROM_DEFAULT_BUILD True
+		)
+
+		# Dump the installer into
+		# ${CMAKE_CURRENT_SOURCE_DIR}/packaging/nsis
+		# Note that executables and DLLs *must* be built separately
+		add_custom_target(stratoshark_nsis
+			COMMAND ${MAKENSIS_EXECUTABLE} ${NSIS_OPTIONS}
+				$<$<CONFIG:Debug>:-DBUNDLE_DEBUG_DLLS>
+				stratoshark.nsi
+			WORKING_DIRECTORY ${_nsis_source_dir}
+		)
+		set_target_properties(stratoshark_nsis PROPERTIES
+			FOLDER "Packaging"
+			EXCLUDE_FROM_DEFAULT_BUILD True
+		)
+	endif()
+endmacro( ADD_NSIS_PACKAGE_TARGETS )
 
 set(CLEAN_FILES
-	all-manifest.nsh
-	config.nsh
-	gtk-dll-manifest.nsh
-	#NEWS.txt
-	qt-dll-manifest.nsh
-	#user-guide.chm
-	${DATAFILE_DIR}/uninstall.exe
-	wireshark-$(WIRESHARK_TARGET_PLATFORM)-$(VERSION).exe
+	${DATAFILE_DIR}/uninstall-wireshark.exe
+	wireshark-${VERSION}-${WIRESHARK_TARGET_PLATFORM}.exe
+	wireshark-config.nsh
+	wireshark-manifest.nsh
+	wireshark-qt-manifest.nsh
+	${DATAFILE_DIR}/uninstall-stratoshark.exe
+	stratoshark-${VERSION}-${WIRESHARK_TARGET_PLATFORM}.exe
+	stratoshark-config.nsh
+	stratoshark-manifest.nsh
+	stratoshark-qt-manifest.nsh
 )

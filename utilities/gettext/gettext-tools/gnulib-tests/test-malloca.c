@@ -1,9 +1,9 @@
 /* Test of safe automatic memory allocation.
-   Copyright (C) 2005, 2007, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2007, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2005.  */
 
@@ -25,7 +25,7 @@
 static void
 do_allocation (int n)
 {
-  void *ptr = malloca (n);
+  void *volatile ptr = malloca (n);
   freea (ptr);
   safe_alloca (n);
 }
@@ -35,13 +35,11 @@ void (*func) (int) = do_allocation;
 int
 main ()
 {
-  int i;
-
   /* This slows down malloc a lot.  */
   unsetenv ("MALLOC_PERTURB_");
 
   /* Repeat a lot of times, to make sure there's no memory leak.  */
-  for (i = 0; i < 50000; i++)
+  for (int i = 0; i < 50000; i++)
     {
       /* Try various values.
          n = 0 gave a crash on Alpha with gcc-2.5.8.

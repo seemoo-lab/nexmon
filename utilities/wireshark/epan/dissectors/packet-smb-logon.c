@@ -8,99 +8,89 @@
  *
  * Copied from packet-pop.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-windows-common.h"
 #include "packet-smb-common.h"
 
 void proto_register_smb_logon(void);
 
-static int proto_smb_logon = -1;
-static int hf_command = -1;
-static int hf_computer_name = -1;
-static int hf_unicode_computer_name = -1;
-static int hf_server_name = -1;
-static int hf_user_name = -1;
-static int hf_domain_name = -1;
-static int hf_server_dns_name = -1;
-static int hf_forest_dns_name = -1;
-static int hf_domain_dns_name = -1;
-static int hf_mailslot_name = -1;
-static int hf_pdc_name = -1;
-static int hf_unicode_pdc_name = -1;
-static int hf_script_name = -1;
-static int hf_nt_version = -1;
-static int hf_lmnt_token = -1;
-static int hf_lm_token = -1;
-static int hf_major_version = -1;
-static int hf_minor_version = -1;
-static int hf_os_version = -1;
-static int hf_signature = -1;
-static int hf_date_time = -1;
-static int hf_update_type = -1;
-static int hf_request_count = -1;
-static int hf_account_control = -1;
-static int hf_flags_autolock = -1;
-static int hf_flags_expire = -1;
-static int hf_flags_server_trust = -1;
-static int hf_flags_workstation_trust = -1;
-static int hf_flags_interdomain_trust = -1;
-static int hf_flags_mns_user = -1;
-static int hf_flags_normal_user = -1;
-static int hf_flags_temp_dup_user = -1;
-static int hf_flags_password_required = -1;
-static int hf_flags_homedir_required = -1;
-static int hf_flags_enabled = -1;
-static int hf_domain_sid_size = -1;
-static int hf_low_serial = -1;
-static int hf_pulse = -1;
-static int hf_random = -1;
-static int hf_db_count = -1;
-static int hf_db_index = -1;
-static int hf_large_serial = -1;
-static int hf_nt_date_time = -1;
+static int proto_smb_logon;
+static int hf_command;
+static int hf_computer_name;
+static int hf_unicode_computer_name;
+static int hf_server_name;
+static int hf_user_name;
+static int hf_domain_name;
+static int hf_server_dns_name;
+static int hf_forest_dns_name;
+static int hf_domain_dns_name;
+static int hf_mailslot_name;
+static int hf_pdc_name;
+static int hf_unicode_pdc_name;
+static int hf_script_name;
+static int hf_nt_version;
+static int hf_lmnt_token;
+static int hf_lm_token;
+static int hf_major_version;
+static int hf_minor_version;
+static int hf_os_version;
+static int hf_signature;
+static int hf_date_time;
+static int hf_update_type;
+static int hf_request_count;
+static int hf_account_control;
+static int hf_flags_autolock;
+static int hf_flags_expire;
+static int hf_flags_server_trust;
+static int hf_flags_workstation_trust;
+static int hf_flags_interdomain_trust;
+static int hf_flags_mns_user;
+static int hf_flags_normal_user;
+static int hf_flags_temp_dup_user;
+static int hf_flags_password_required;
+static int hf_flags_homedir_required;
+static int hf_flags_enabled;
+static int hf_domain_sid_size;
+static int hf_low_serial;
+static int hf_pulse;
+static int hf_random;
+static int hf_db_count;
+static int hf_db_index;
+static int hf_large_serial;
+static int hf_nt_date_time;
 
-static int hf_unknown8 = -1;
-static int hf_unknown32 = -1;
+static int hf_unknown8;
+static int hf_unknown32;
 
-static int hf_domain_guid = -1;
-static int hf_server_ip = -1;
+static int hf_domain_guid;
+static int hf_server_ip;
 
-static int hf_server_site_name = -1;
-static int hf_client_site_name = -1;
-static int hf_data = -1;
+static int hf_server_site_name;
+static int hf_client_site_name;
+static int hf_data;
 
-static int ett_smb_logon = -1;
-static int ett_smb_account_flags = -1;
-static int ett_smb_db_info = -1;
+static int ett_smb_logon;
+static int ett_smb_account_flags;
+static int ett_smb_db_info;
 
-#define	ACC_FLAG_AUTO_LOCKED			0x0400
-#define ACC_FLAG_EXPIRE				0x0200
-#define ACC_FLAG_SERVER_TRUST			0x0100
-#define ACC_FLAG_WORKSTATION_TRUST		0x0080
-#define ACC_FLAG_INTERDOMAIN_TRUST		0x0040
-#define ACC_FLAG_MNS_USER			0x0020
-#define ACC_FLAG_NORMAL_USER			0x0010
-#define ACC_FLAG_TEMP_DUP_USER			0x0008
-#define ACC_FLAG_PASSWORD_REQUIRED		0x0004
-#define ACC_FLAG_HOMEDIR_REQUIRED		0x0002
-#define ACC_FLAG_ENABLED			0x0001
+#define ACC_FLAG_AUTO_LOCKED        0x00000400
+#define ACC_FLAG_EXPIRE             0x00000200
+#define ACC_FLAG_SERVER_TRUST       0x00000100
+#define ACC_FLAG_WORKSTATION_TRUST  0x00000080
+#define ACC_FLAG_INTERDOMAIN_TRUST  0x00000040
+#define ACC_FLAG_MNS_USER           0x00000020
+#define ACC_FLAG_NORMAL_USER        0x00000010
+#define ACC_FLAG_TEMP_DUP_USER      0x00000008
+#define ACC_FLAG_PASSWORD_REQUIRED  0x00000004
+#define ACC_FLAG_HOMEDIR_REQUIRED   0x00000002
+#define ACC_FLAG_ENABLED            0x00000001
 
 static const true_false_string tfs_flags_autolock = {
 	"User account auto-locked",
@@ -153,7 +143,7 @@ static int
 dissect_account_control(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
 	/* display the Allowable Account control bits */
-	static const int * flags[] = {
+	static int * const flags[] = {
 		&hf_flags_autolock,
 		&hf_flags_expire,
 		&hf_flags_server_trust,
@@ -177,7 +167,7 @@ dissect_account_control(tvbuff_t *tvb, proto_tree *tree, int offset)
 static int
 display_LM_token(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-	guint16 Token;
+	uint16_t Token;
 
 	Token = tvb_get_letohs(tvb, offset);
 
@@ -204,7 +194,7 @@ display_LM_token(tvbuff_t *tvb, int offset, proto_tree *tree)
 static int
 display_LMNT_token(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-	guint16 Token;
+	uint16_t Token;
 
 	Token = tvb_get_letohs(tvb, offset);
 
@@ -227,18 +217,18 @@ display_LMNT_token(tvbuff_t *tvb, int offset, proto_tree *tree)
 }
 
 static int
-dissect_smb_logon_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_logon_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/*** 0x00 (LM1.0/LM2.0 LOGON Request) ***/
 
 	/* computer name */
-	offset = display_ms_string(tvb, tree, offset, hf_computer_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_computer_name, NULL);
 
 	/* user name */
-	offset = display_ms_string(tvb, tree, offset, hf_user_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_user_name, NULL);
 
 	/* mailslot name */
-	offset = display_ms_string(tvb, tree, offset, hf_mailslot_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_mailslot_name, NULL);
 
 	/*$$$$$ here add the Mailslot to the response list (if needed) */
 
@@ -259,22 +249,22 @@ dissect_smb_logon_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tre
 
 
 static int
-dissect_smb_logon_LM10_resp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_logon_LM10_resp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/*** 0x01 LanMan 1.0 Logon response ***/
 
 	/* user name */
-	offset = display_ms_string(tvb, tree, offset, hf_user_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_user_name, NULL);
 
 	/* script name */
-	offset = display_ms_string(tvb, tree, offset, hf_script_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_script_name, NULL);
 
 	return offset;
 }
 
 
 static int
-dissect_smb_logon_2(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_logon_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/*** 0x02  LM1.0 Query - Centralized Initialization ***/
 	/*** 0x03  LM1.0 Query - Distributed Initialization ***/
@@ -282,10 +272,10 @@ dissect_smb_logon_2(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int
 	/*** 0x04  LM1.0 Query - Distributed Query Response ***/
 
 	/* computer name */
-	offset = display_ms_string(tvb, tree, offset, hf_computer_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_computer_name, NULL);
 
 	/* mailslot name */
-	offset = display_ms_string(tvb, tree, offset, hf_mailslot_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_mailslot_name, NULL);
 
 	/* NT version */
 	proto_tree_add_item(tree, hf_nt_version, tvb, offset, 2, ENC_LITTLE_ENDIAN);
@@ -300,12 +290,12 @@ dissect_smb_logon_2(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int
 
 
 static int
-dissect_smb_logon_LM20_resp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_logon_LM20_resp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/*** 0x06 (LM2.0 LOGON Response)	***/
 
 	/* server name */
-	offset = display_ms_string(tvb, tree, offset, hf_server_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_server_name, NULL);
 
 	/* LM token */
 	offset = display_LM_token(tvb, offset, tree);
@@ -316,19 +306,19 @@ dissect_smb_logon_LM20_resp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 
 
 static int
-dissect_smb_pdc_query(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_pdc_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	char *name;
 
 	/*** 0x07 Query for Primary PDC  ***/
 
 	/* computer name */
-	offset = display_ms_string(tvb, tree, offset, hf_computer_name, &name);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_computer_name, &name);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, " from %s", name);
 
 	/* mailslot name */
-	offset = display_ms_string(tvb, tree, offset, hf_mailslot_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_mailslot_name, NULL);
 
 	if (tvb_reported_length_remaining(tvb, offset) > 2) {
 		/*
@@ -343,7 +333,7 @@ dissect_smb_pdc_query(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, i
 		if (offset % 2) offset++;      /* word align ... */
 
 		/* Unicode computer name */
-		offset = display_unicode_string(tvb, tree, offset, hf_unicode_computer_name, NULL);
+		offset = display_unicode_string(tvb, pinfo, tree, offset, hf_unicode_computer_name, NULL);
 
 		/* NT version */
 	  	proto_tree_add_item(tree, hf_nt_version, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -362,12 +352,12 @@ dissect_smb_pdc_query(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, i
 
 
 static int
-dissect_smb_pdc_startup(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_pdc_startup(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/*** 0x08  Announce startup of PDC ***/
 
 	/* pdc name */
-	offset = display_ms_string(tvb, tree, offset, hf_pdc_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_pdc_name, NULL);
 
 	/* A short Announce will not have the rest */
 
@@ -377,7 +367,7 @@ dissect_smb_pdc_startup(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 	  if (offset % 2) offset++;      /* word align ... */
 
 	  /* pdc name */
-	  offset = display_unicode_string(tvb, tree, offset, hf_unicode_pdc_name, &name);
+	  offset = display_unicode_string(tvb, pinfo, tree, offset, hf_unicode_pdc_name, &name);
 
 	  if (name) {
 		  col_append_fstr(pinfo->cinfo, COL_INFO, ": host %s", name);
@@ -387,7 +377,7 @@ dissect_smb_pdc_startup(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 	  if (offset % 2) offset++;
 
 	  /* domain name */
-	  offset = display_unicode_string(tvb, tree, offset, hf_domain_name, &name);
+	  offset = display_unicode_string(tvb, pinfo, tree, offset, hf_domain_name, &name);
 
 	  if (name) {
 		  col_append_fstr(pinfo->cinfo, COL_INFO, ", domain %s", name);
@@ -429,13 +419,13 @@ dissect_smb_pdc_failure(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 
 static int
-dissect_announce_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_announce_change(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/*** 0x0A ( Announce change to UAS or SAM ) ***/
-	guint32 info_count;
+	uint32_t info_count;
 	proto_tree *info_tree;
-	guint32 db_index;
-	guint32 domain_sid_size;
+	uint32_t db_index;
+	uint32_t domain_sid_size;
 
 	/* low serial number */
 	proto_tree_add_item(tree, hf_low_serial, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -456,10 +446,10 @@ dissect_announce_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 	offset += 4;
 
 	/* pdc name */
-	offset = display_ms_string(tvb, tree, offset, hf_pdc_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_pdc_name, NULL);
 
 	/* domain name */
-	offset = display_ms_string(tvb, tree, offset, hf_domain_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_domain_name, NULL);
 
 	if (offset % 2) offset++;      /* word align ... */
 
@@ -468,10 +458,10 @@ dissect_announce_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 		 * XXX - older protocol versions don't have this stuff?
 		 */
 		/* pdc name */
-		offset = display_unicode_string(tvb, tree, offset, hf_unicode_pdc_name, NULL);
+		offset = display_unicode_string(tvb, pinfo, tree, offset, hf_unicode_pdc_name, NULL);
 
 		/* domain name */
-		offset = display_unicode_string(tvb, tree, offset, hf_domain_name, NULL);
+		offset = display_unicode_string(tvb, pinfo, tree, offset, hf_domain_name, NULL);
 
 		/* DB count */
 		info_count = tvb_get_letohl(tvb, offset);
@@ -491,8 +481,9 @@ dissect_announce_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 			    ENC_LITTLE_ENDIAN);
 			offset += 8;
 
-			offset = dissect_nt_64bit_time(tvb, info_tree, offset,
-			    hf_nt_date_time);
+			dissect_nttime(tvb, info_tree, offset,
+			    hf_nt_date_time, ENC_LITTLE_ENDIAN);
+			offset += 8;
 
 			info_count--;
 		}
@@ -509,7 +500,7 @@ dissect_announce_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 			/* Domain SID */
 			offset = dissect_nt_sid(
-				tvb, offset, tree, "Domain", NULL, -1);
+				tvb, pinfo, offset, tree, "Domain", NULL, -1);
 		}
 
 		/* NT version */
@@ -528,24 +519,24 @@ dissect_announce_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 
 static int
-dissect_smb_sam_logon_req(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_sam_logon_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/* Netlogon command 0x12 - decode the SAM logon request from client */
 
-	guint32 domain_sid_size;
+	uint32_t domain_sid_size;
 
 	/* Request count */
 	proto_tree_add_item(tree, hf_request_count, tvb, offset, 2, ENC_LITTLE_ENDIAN);
 	offset += 2;
 
 	/* computer name */
-	offset = display_unicode_string(tvb, tree, offset, hf_unicode_computer_name, NULL);
+	offset = display_unicode_string(tvb, pinfo, tree, offset, hf_unicode_computer_name, NULL);
 
 	/* user name */
-	offset = display_unicode_string(tvb, tree, offset, hf_user_name, NULL);
+	offset = display_unicode_string(tvb, pinfo, tree, offset, hf_user_name, NULL);
 
 	/* mailslot name */
-	offset = display_ms_string(tvb, tree, offset, hf_mailslot_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_mailslot_name, NULL);
 
 	/* account control */
 	offset = dissect_account_control(tvb, tree, offset);
@@ -561,7 +552,7 @@ dissect_smb_sam_logon_req(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tre
 		offset = ((offset + 3)/4)*4;
 
 		/* Domain SID */
-		offset = dissect_nt_sid(tvb, offset, tree, "Domain", NULL, -1);
+		offset = dissect_nt_sid(tvb, pinfo, offset, tree, "Domain", NULL, -1);
 	}
 
 	/* NT version */
@@ -580,12 +571,12 @@ dissect_smb_sam_logon_req(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tre
 
 
 static int
-dissect_smb_no_user(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_no_user(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/* 0x0B (Announce no user on machine) */
 
 	/* computer name */
-	offset = display_ms_string(tvb, tree, offset, hf_computer_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_computer_name, NULL);
 
 	return offset;
 }
@@ -622,7 +613,7 @@ dissect_smb_relogon_resp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree
 
 
 static int
-dissect_smb_acc_update(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
+dissect_smb_acc_update(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
 	/*** 0x11  LM2.1 Announce Acc updates  ***/
 
@@ -637,10 +628,10 @@ dissect_smb_acc_update(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, 
 	offset += 4;
 
 	/* computer name */
-	offset = display_ms_string(tvb, tree, offset, hf_computer_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_computer_name, NULL);
 
 	/* user name */
-	offset = display_ms_string(tvb, tree, offset, hf_user_name, NULL);
+	offset = display_ms_string(tvb, pinfo, tree, offset, hf_user_name, NULL);
 
 	/* update type */
 	proto_tree_add_item(tree, hf_update_type, tvb, offset, 2, ENC_LITTLE_ENDIAN);
@@ -690,20 +681,20 @@ dissect_smb_inter_resp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, 
 
 
 static int
-dissect_smb_sam_logon_resp(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_smb_sam_logon_resp(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, int offset)
 {
 	/* Netlogon command 0x13 - decode the SAM logon response from server */
 	/* Netlogon command 0x15 - decode the SAM logon response from server unknown user */
 
 	/* server name */
-	offset = display_unicode_string(tvb, tree, offset, hf_server_name, NULL);
+	offset = display_unicode_string(tvb, pinfo, tree, offset, hf_server_name, NULL);
 
 	/* user name */
-	offset = display_unicode_string(tvb, tree, offset, hf_user_name, NULL);
+	offset = display_unicode_string(tvb, pinfo, tree, offset, hf_user_name, NULL);
 
 	/* domain name */
-	offset = display_unicode_string(tvb, tree, offset, hf_domain_name, NULL);
+	offset = display_unicode_string(tvb, pinfo, tree, offset, hf_domain_name, NULL);
 
 	/* NT version */
 	proto_tree_add_item(tree, hf_nt_version, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -719,7 +710,7 @@ dissect_smb_sam_logon_resp(tvbuff_t *tvb, packet_info *pinfo _U_,
 }
 
 static int
-dissect_smb_pdc_response_ads(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_smb_pdc_response_ads(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, int offset)
 {
 	/* Netlogon command 0x17 - decode the response from PDC ADS */
@@ -737,28 +728,28 @@ dissect_smb_pdc_response_ads(tvbuff_t *tvb, packet_info *pinfo _U_,
 	offset += 16;
 
 	/* forest dns name */
-	offset=dissect_ms_compressed_string(tvb, tree, offset, hf_forest_dns_name, NULL);
+	offset=dissect_ms_compressed_string(tvb, pinfo, tree, offset, hf_forest_dns_name, NULL);
 
 	/* domain dns name */
-	offset=dissect_ms_compressed_string(tvb, tree, offset, hf_domain_dns_name, NULL);
+	offset=dissect_ms_compressed_string(tvb, pinfo, tree, offset, hf_domain_dns_name, NULL);
 
 	/* server dns name */
-	offset=dissect_ms_compressed_string(tvb, tree, offset, hf_server_dns_name, NULL);
+	offset=dissect_ms_compressed_string(tvb, pinfo, tree, offset, hf_server_dns_name, NULL);
 
 	/* domain name */
-	offset=dissect_ms_compressed_string(tvb, tree, offset, hf_domain_name, NULL);
+	offset=dissect_ms_compressed_string(tvb, pinfo, tree, offset, hf_domain_name, NULL);
 
 	/* server name */
-	offset=dissect_ms_compressed_string(tvb, tree, offset, hf_server_name, NULL);
+	offset=dissect_ms_compressed_string(tvb, pinfo, tree, offset, hf_server_name, NULL);
 
 	/* user name */
-	offset=dissect_ms_compressed_string(tvb, tree, offset, hf_user_name, NULL);
+	offset=dissect_ms_compressed_string(tvb, pinfo, tree, offset, hf_user_name, NULL);
 
 	/* server_site name */
-	offset=dissect_ms_compressed_string(tvb, tree, offset, hf_server_site_name, NULL);
+	offset=dissect_ms_compressed_string(tvb, pinfo, tree, offset, hf_server_site_name, NULL);
 
 	/* client_site name */
-	offset=dissect_ms_compressed_string(tvb, tree, offset, hf_client_site_name, NULL);
+	offset=dissect_ms_compressed_string(tvb, pinfo, tree, offset, hf_client_site_name, NULL);
 
 	/* unknown uint8 type */
 	proto_tree_add_item(tree, hf_unknown8, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -895,7 +886,7 @@ static int
 dissect_smb_logon(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int        offset = 0;
-	guint8     cmd;
+	uint8_t    cmd;
 	proto_tree *smb_logon_tree = NULL;
 	proto_item *item = NULL;
 
@@ -903,9 +894,9 @@ dissect_smb_logon(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	/* get the Command field */
-	cmd = tvb_get_guint8(tvb, offset);
+	cmd = tvb_get_uint8(tvb, offset);
 
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(cmd, commands, "Unknown Command:%02x") );
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, cmd, commands, "Unknown Command:%02x") );
 
 	if (tree) {
 		item = proto_tree_add_item(tree, proto_smb_logon, tvb,
@@ -1139,14 +1130,13 @@ proto_register_smb_logon( void)
 			  NULL, 0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_smb_logon,
 		&ett_smb_account_flags,
 		&ett_smb_db_info
 	};
 
-	proto_smb_logon = proto_register_protocol(
-		"Microsoft Windows Logon Protocol (Old)", "SMB_NETLOGON", "smb_netlogon");
+	proto_smb_logon = proto_register_protocol("Microsoft Windows Logon Protocol (Old)", "SMB_NETLOGON", "smb_netlogon");
 
 	proto_register_field_array(proto_smb_logon, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
@@ -1155,7 +1145,7 @@ proto_register_smb_logon( void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

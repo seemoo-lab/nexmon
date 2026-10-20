@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,19 +21,19 @@
 void proto_register_rdaclif (void);
 void proto_reg_handoff_rdaclif (void);
 
-static int proto_rdaclif = -1;
-static int hf_rdaclif_opnum = -1;
+static int proto_rdaclif;
+static int hf_rdaclif_opnum;
 
 
-static gint ett_rdaclif = -1;
+static int ett_rdaclif;
 static e_guid_t uuid_rdaclif =
   { 0x47b33331, 0x8000, 0x0000, {0x0d, 0x00, 0x01, 0xdc, 0x6c, 0x00, 0x00,
                                  0x00} };
 
-static guint16 ver_rdaclif = 1;
+static uint16_t ver_rdaclif = 1;
 
 
-static dcerpc_sub_dissector rdaclif_dissectors[] = {
+static const dcerpc_sub_dissector rdaclif_dissectors[] = {
   {0, "lookup",                  NULL, NULL},
   {1, "replace",                 NULL, NULL},
   {2, "get_access",              NULL, NULL},
@@ -67,7 +55,7 @@ proto_register_rdaclif (void)
       NULL, HFILL}},
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_rdaclif,
   };
   proto_rdaclif =
@@ -86,7 +74,7 @@ proto_reg_handoff_rdaclif (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

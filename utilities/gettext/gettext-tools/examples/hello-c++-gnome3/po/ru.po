@@ -1,0 +1,54 @@
+# Translation of hello-c++-gnome3-0.14.1.po to Russian
+# Copyright (C) 2004 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Pavel Maryanov <acid_jack@ukr.net>, 2004.
+# SPDX-FileCopyrightText: 2014, 2015, 2023, 2025 Yuri Kozlov <yuray@komyakino.ru>
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c++-gnome3 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2025-10-21 04:30+0300\n"
+"Last-Translator: Yuri Kozlov <yuray@komyakino.ru>\n"
+"Language-Team: Russian <gnu@d07.ru>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Lokalize 25.04.0\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: hello.cc:69
+msgid "Hello world!"
+msgstr "Здравствуй мир!"
+
+#: hello.cc:71
+#, c-format
+msgid "This program is running as process number %s."
+msgstr "Эта программа выполняется как процесс под номером %s."
+
+#: hello.cc:75
+msgid "This is another text"
+msgstr "Ещё один текст"
+
+#: hello.cc:77
+msgid "This is yet another text"
+msgstr "И ещё один текст"
+
+#: hello.desktop.in.in:3
+msgid "Hello"
+msgstr "Здравствуйте"
+
+#: hello.desktop.in.in:4
+msgid "Hello, world!"
+msgstr "Здравствуй, мир!"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Пример приложения"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Обновить текст"

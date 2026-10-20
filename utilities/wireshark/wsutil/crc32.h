@@ -1,29 +1,17 @@
-/* crc32.h
+/** @file
  * Declaration of CRC-32 routine and table
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __CRC32_H__
 #define __CRC32_H__
 
-#include "ws_symbol_export.h"
+#include <wireshark.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,18 +32,18 @@ extern "C" {
 
 /** Lookup the crc value in the crc32_ccitt_table
  @param pos Position in the table. */
-WS_DLL_PUBLIC guint32 crc32_ccitt_table_lookup (guchar pos);
+WS_DLL_PUBLIC uint32_t crc32_ccitt_table_lookup (unsigned char pos);
 
 /** Lookup the crc value in the crc32c_table
  @param pos Position in the table. */
-WS_DLL_PUBLIC guint32 crc32c_table_lookup (guchar pos);
+WS_DLL_PUBLIC uint32_t crc32c_table_lookup (unsigned char pos);
 
 /** Compute CRC32C checksum of a buffer of data.
  @param buf The buffer containing the data.
  @param len The number of bytes to include in the computation.
  @param crc The preload value for the CRC32C computation.
  @return The CRC32C checksum. */
-WS_DLL_PUBLIC guint32 crc32c_calculate(const void *buf, int len, guint32 crc);
+WS_DLL_PUBLIC uint32_t crc32c_calculate(const void *buf, int len, uint32_t crc);
 
 /** Compute CRC32C checksum of a buffer of data without swapping seed crc
  or completed checksum
@@ -63,13 +51,13 @@ WS_DLL_PUBLIC guint32 crc32c_calculate(const void *buf, int len, guint32 crc);
  @param len The number of bytes to include in the computation.
  @param crc The preload value for the CRC32C computation.
  @return The CRC32C checksum. */
-WS_DLL_PUBLIC guint32 crc32c_calculate_no_swap(const void *buf, int len, guint32 crc);
+WS_DLL_PUBLIC uint32_t crc32c_calculate_no_swap(const void *buf, int len, uint32_t crc);
 
 /** Compute CRC32 CCITT checksum of a buffer of data.
  @param buf The buffer containing the data.
  @param len The number of bytes to include in the computation.
  @return The CRC32 CCITT checksum. */
-WS_DLL_PUBLIC guint32 crc32_ccitt(const guint8 *buf, guint len);
+WS_DLL_PUBLIC uint32_t crc32_ccitt(const uint8_t *buf, unsigned len);
 
 /** Compute CRC32 CCITT checksum of a buffer of data.  If computing the
  *  checksum over multiple buffers and you want to feed the partial CRC32
@@ -78,14 +66,14 @@ WS_DLL_PUBLIC guint32 crc32_ccitt(const guint8 *buf, guint len);
  @param len The number of bytes to include in the computation.
  @param seed The seed to use.
  @return The CRC32 CCITT checksum (using the given seed). */
-WS_DLL_PUBLIC guint32 crc32_ccitt_seed(const guint8 *buf, guint len, guint32 seed);
+WS_DLL_PUBLIC uint32_t crc32_ccitt_seed(const uint8_t *buf, unsigned len, uint32_t seed);
 
 /** Compute MPEG-2 CRC32 checksum of a buffer of data.
  @param buf The buffer containing the data.
  @param len The number of bytes to include in the computation.
  @param seed The seed to use.
  @return The CRC32 MPEG-2 checksum (using the given seed). */
-WS_DLL_PUBLIC guint32 crc32_mpeg2_seed(const guint8 *buf, guint len, guint32 seed);
+WS_DLL_PUBLIC uint32_t crc32_mpeg2_seed(const uint8_t *buf, unsigned len, uint32_t seed);
 
 /** Computes CRC32 checksum for the given data with the polynom 0x0AA725CF using
  *  precompiled CRC table
@@ -94,12 +82,21 @@ WS_DLL_PUBLIC guint32 crc32_mpeg2_seed(const guint8 *buf, guint len, guint32 see
  * @param seed The seed to use.
  * @return the CRC32 checksum for the buffer
  */
-WS_DLL_PUBLIC guint32 crc32_0x0AA725CF_seed(const guint8 *buf, guint len, guint32 seed);
+WS_DLL_PUBLIC uint32_t crc32_0x0AA725CF_seed(const uint8_t *buf, unsigned len, uint32_t seed);
 
-WS_DLL_PUBLIC int AirPDcapWepDecrypt(
-	const guchar *seed,
+/** Computes CRC32 checksum for the given data with the polynom 0x5D6DCB using
+ *  precompiled CRC table
+ * @param buf a pointer to a buffer of the given length
+ * @param len the length of the given buffer
+ * @param seed The seed to use.
+ * @return the CRC32 checksum for the buffer
+ */
+WS_DLL_PUBLIC uint32_t crc32_0x5D6DCB_seed(const uint8_t *buf, unsigned len, uint32_t seed);
+
+WS_DLL_PUBLIC int Dot11DecryptWepDecrypt(
+	const unsigned char *seed,
 	const size_t seed_len,
-	guchar *cypher_text,
+	unsigned char *cypher_text,
 	const size_t data_len);
 
 #ifdef __cplusplus

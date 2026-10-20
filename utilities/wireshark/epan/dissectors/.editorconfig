@@ -1,10 +1,19 @@
 #
 # Editor configuration
 #
-# http://editorconfig.org/
+# https://editorconfig.org/
 #
 
+# packet-ncp2222.inc
+[*.inc]
+indent_style = space
+indent_size = 4
+
 [file-file.[ch]]
+indent_style = tab
+indent_size = tab
+
+[file-rbm.[ch]]
 indent_style = tab
 indent_size = tab
 
@@ -54,77 +63,6 @@ indent_style = tab
 indent_size = tab
 
 [packet-agentx.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-admin.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-adverts.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-buddylist.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-chat.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-chatnav.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-directory.[ch]]
-indent_size = 2
-
-[packet-aim-email.[ch]]
-indent_size = 2
-
-[packet-aim-icq.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-invitation.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-location.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-messaging.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-oft.[ch]]
-indent_size = 2
-
-[packet-aim-popup.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-signon.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-ssi.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-sst.[ch]]
-indent_style = tab
-indent_size = tab
-
-[packet-aim-stats.[ch]]
-indent_size = 2
-
-[packet-aim-translate.[ch]]
-indent_size = 2
-
-[packet-aim-userlookup.[ch]]
 indent_style = tab
 indent_size = tab
 
@@ -252,10 +190,6 @@ indent_size = 3
 
 [packet-bjnp.[ch]]
 indent_size = 2
-
-[packet-bootp.[ch]]
-indent_style = tab
-indent_size = tab
 
 [packet-bootparams.[ch]]
 indent_style = tab
@@ -624,11 +558,19 @@ indent_size = 2
 indent_style = tab
 indent_size = tab
 
+[packet-dhcp.[ch]]
+indent_style = tab
+indent_size = tab
+
 [packet-dhcp-failover.[ch]]
 indent_style = tab
 indent_size = tab
 
 [packet-diameter.[ch]]
+indent_style = tab
+indent_size = tab
+
+[packet-discard.[ch]]
 indent_style = tab
 indent_size = tab
 
@@ -783,6 +725,13 @@ indent_size = tab
 [packet-extreme.[ch]]
 indent_style = tab
 indent_size = tab
+
+[packet-extrememesh.[ch]]
+indent_style = tab
+indent_size = tab
+
+[packet-f1ap.[ch]]
+indent_size = 2
 
 [packet-fcgi.[ch]]
 indent_size = 3
@@ -945,6 +894,10 @@ indent_size = tab
 indent_style = tab
 indent_size = tab
 
+[packet-gsmtap_log.[ch]]
+indent_style = tab
+indent_size = tab
+
 [packet-gssapi.[ch]]
 indent_style = tab
 indent_size = tab
@@ -1095,6 +1048,14 @@ indent_size = 2
 
 [packet-imf.[ch]]
 indent_size = 2
+
+[packet-indigocare-netrix.[ch]]
+indent_style = tab
+indent_size = tab
+
+[packet-indigocare-icall.[ch]]
+indent_style = tab
+indent_size = tab
 
 [packet-interlink.[ch]]
 indent_style = tab
@@ -1329,6 +1290,14 @@ indent_size = tab
 [packet-loop.[ch]]
 indent_size = 2
 
+[packet-loratap.[ch]]
+indent_style = tab
+indent_size = tab
+
+[packet-lorawan.[ch]]
+indent_style = tab
+indent_size = tab
+
 [packet-lpd.[ch]]
 indent_style = tab
 indent_size = tab
@@ -1368,6 +1337,10 @@ indent_size = 2
 
 [packet-mesh.[ch]]
 indent_size = 2
+
+[packet-messageanalyzer.[ch]]
+indent_style = tab
+indent_size = tab
 
 [packet-metamako.[ch]]
 indent_size = 2
@@ -1520,6 +1493,10 @@ indent_size = tab
 indent_style = tab
 indent_size = tab
 
+[packet-netmon.[ch]]
+indent_style = tab
+indent_size = tab
+
 [packet-netperfmeter.[ch]]
 indent_size = 2
 
@@ -1532,6 +1509,10 @@ indent_style = tab
 indent_size = tab
 
 [packet-newmail.[ch]]
+indent_style = tab
+indent_size = tab
+
+[packet-nfapi.c]
 indent_style = tab
 indent_size = tab
 
@@ -1964,7 +1945,7 @@ indent_size = tab
 [packet-sndcp.[ch]]
 indent_size = 2
 
-[packet-socketcan.[ch]]
+[packet-solaredge.[ch]]
 indent_style = tab
 indent_size = tab
 
@@ -2075,6 +2056,10 @@ indent_size = 2
 indent_style = tab
 indent_size = tab
 
+[packet-tpm20.c]
+indent_style = tab
+indent_size = tab
+
 [packet-tr.[ch]]
 indent_style = tab
 indent_size = tab
@@ -2097,9 +2082,6 @@ indent_size = tab
 [packet-tuxedo.[ch]]
 indent_style = tab
 indent_size = tab
-
-[packet-udp.[ch]]
-indent_size = 2
 
 [packet-udt.[ch]]
 indent_style = tab

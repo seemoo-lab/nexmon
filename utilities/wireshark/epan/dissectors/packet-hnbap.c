@@ -1,11 +1,8 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-hnbap.c                                                             */
-/* asn2wrs.py -p hnbap -c ./hnbap.cnf -s ./packet-hnbap-template -D . -O ../.. HNBAP-CommonDataTypes.asn HNBAP-Constants.asn HNBAP-Containers.asn HNBAP-IEs.asn HNBAP-PDU-Contents.asn HNBAP-PDU-Descriptions.asn */
+/* asn2wrs.py -q -L -p hnbap -c ./hnbap.cnf -s ./packet-hnbap-template -D . -O ../.. HNBAP-CommonDataTypes.asn HNBAP-Constants.asn HNBAP-Containers.asn HNBAP-IEs.asn HNBAP-PDU-Contents.asn HNBAP-PDU-Descriptions.asn */
 
-/* Input file: packet-hnbap-template.c */
-
-#line 1 "./asn1/hnbap/packet-hnbap-template.c"
 /* packet-hnbap-template.c
  * Routines for UMTS Node B Application Part(HNBAP) packet dissection
  * Copyright 2010 Neil Piercy, ip.access Limited <Neil.Piercy@ipaccess.com>
@@ -14,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref: 3GPP TS 25.469 version 8.4.0 Release 8
  */
@@ -37,8 +22,11 @@
 #include <epan/sctpppids.h>
 #include <epan/asn1.h>
 #include <epan/prefs.h>
+#include <epan/proto_data.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
+#include "packet-e212.h"
 
 #ifdef _MSC_VER
 /* disable: "warning C4146: unary minus operator applied to unsigned type, result still unsigned" */
@@ -53,9 +41,6 @@
 
 void proto_register_hnbap(void);
 
-
-/*--- Included file: packet-hnbap-val.h ---*/
-#line 1 "./asn1/hnbap/packet-hnbap-val.h"
 #define maxPrivateIEs                  65535
 #define maxProtocolExtensions          65535
 #define maxProtocolIEs                 65535
@@ -110,233 +95,221 @@ typedef enum _ProtocolIE_ID_enum {
   id_HNB_Cell_Identifier =  31
 } ProtocolIE_ID_enum;
 
-/*--- End of included file: packet-hnbap-val.h ---*/
-#line 49 "./asn1/hnbap/packet-hnbap-template.c"
-
 /* Initialize the protocol and registered fields */
-static int proto_hnbap = -1;
+static int proto_hnbap;
 
-
-/*--- Included file: packet-hnbap-hf.c ---*/
-#line 1 "./asn1/hnbap/packet-hnbap-hf.c"
-static int hf_hnbap_BackoffTimer_PDU = -1;        /* BackoffTimer */
-static int hf_hnbap_Cause_PDU = -1;               /* Cause */
-static int hf_hnbap_CellIdentity_PDU = -1;        /* CellIdentity */
-static int hf_hnbap_Context_ID_PDU = -1;          /* Context_ID */
-static int hf_hnbap_CriticalityDiagnostics_PDU = -1;  /* CriticalityDiagnostics */
-static int hf_hnbap_CSG_ID_PDU = -1;              /* CSG_ID */
-static int hf_hnbap_CSGMembershipStatus_PDU = -1;  /* CSGMembershipStatus */
-static int hf_hnbap_HNB_Cell_Access_Mode_PDU = -1;  /* HNB_Cell_Access_Mode */
-static int hf_hnbap_HNB_Location_Information_PDU = -1;  /* HNB_Location_Information */
-static int hf_hnbap_HNB_Identity_PDU = -1;        /* HNB_Identity */
-static int hf_hnbap_IP_Address_PDU = -1;          /* IP_Address */
-static int hf_hnbap_LAC_PDU = -1;                 /* LAC */
-static int hf_hnbap_MuxPortNumber_PDU = -1;       /* MuxPortNumber */
-static int hf_hnbap_NeighbourInfoList_PDU = -1;   /* NeighbourInfoList */
-static int hf_hnbap_NeighbourInfoRequestList_PDU = -1;  /* NeighbourInfoRequestList */
-static int hf_hnbap_PLMNidentity_PDU = -1;        /* PLMNidentity */
-static int hf_hnbap_PSC_PDU = -1;                 /* PSC */
-static int hf_hnbap_RABList_PDU = -1;             /* RABList */
-static int hf_hnbap_RAC_PDU = -1;                 /* RAC */
-static int hf_hnbap_Registration_Cause_PDU = -1;  /* Registration_Cause */
-static int hf_hnbap_RNC_ID_PDU = -1;              /* RNC_ID */
-static int hf_hnbap_SAC_PDU = -1;                 /* SAC */
-static int hf_hnbap_UE_Capabilities_PDU = -1;     /* UE_Capabilities */
-static int hf_hnbap_UE_Identity_PDU = -1;         /* UE_Identity */
-static int hf_hnbap_Update_cause_PDU = -1;        /* Update_cause */
-static int hf_hnbap_HNBRegisterRequest_PDU = -1;  /* HNBRegisterRequest */
-static int hf_hnbap_HNBRegisterAccept_PDU = -1;   /* HNBRegisterAccept */
-static int hf_hnbap_HNBRegisterReject_PDU = -1;   /* HNBRegisterReject */
-static int hf_hnbap_HNBDe_Register_PDU = -1;      /* HNBDe_Register */
-static int hf_hnbap_UERegisterRequest_PDU = -1;   /* UERegisterRequest */
-static int hf_hnbap_UERegisterAccept_PDU = -1;    /* UERegisterAccept */
-static int hf_hnbap_UERegisterReject_PDU = -1;    /* UERegisterReject */
-static int hf_hnbap_UEDe_Register_PDU = -1;       /* UEDe_Register */
-static int hf_hnbap_CSGMembershipUpdate_PDU = -1;  /* CSGMembershipUpdate */
-static int hf_hnbap_TNLUpdateRequest_PDU = -1;    /* TNLUpdateRequest */
-static int hf_hnbap_TNLUpdateResponse_PDU = -1;   /* TNLUpdateResponse */
-static int hf_hnbap_TNLUpdateFailure_PDU = -1;    /* TNLUpdateFailure */
-static int hf_hnbap_HNBConfigTransferRequest_PDU = -1;  /* HNBConfigTransferRequest */
-static int hf_hnbap_HNBConfigTransferResponse_PDU = -1;  /* HNBConfigTransferResponse */
-static int hf_hnbap_RelocationComplete_PDU = -1;  /* RelocationComplete */
-static int hf_hnbap_ErrorIndication_PDU = -1;     /* ErrorIndication */
-static int hf_hnbap_PrivateMessage_PDU = -1;      /* PrivateMessage */
-static int hf_hnbap_HNBAP_PDU_PDU = -1;           /* HNBAP_PDU */
-static int hf_hnbap_local = -1;                   /* INTEGER_0_65535 */
-static int hf_hnbap_global = -1;                  /* OBJECT_IDENTIFIER */
-static int hf_hnbap_ProtocolIE_Container_item = -1;  /* ProtocolIE_Field */
-static int hf_hnbap_protocol_ie_field_id = -1;    /* ProtocolIE_ID */
-static int hf_hnbap_criticality = -1;             /* Criticality */
-static int hf_hnbap_ie_field_value = -1;          /* ProtocolIE_Field_value */
-static int hf_hnbap_ProtocolExtensionContainer_item = -1;  /* ProtocolExtensionField */
-static int hf_hnbap_id = -1;                      /* ProtocolIE_ID */
-static int hf_hnbap_extensionValue = -1;          /* T_extensionValue */
-static int hf_hnbap_PrivateIE_Container_item = -1;  /* PrivateIE_Field */
-static int hf_hnbap_private_ie_field_id = -1;     /* PrivateIE_ID */
-static int hf_hnbap_private_value = -1;           /* PrivateIE_Field_value */
-static int hf_hnbap_directionOfAltitude = -1;     /* T_directionOfAltitude */
-static int hf_hnbap_altitude = -1;                /* INTEGER_0_32767 */
-static int hf_hnbap_radioNetwork = -1;            /* CauseRadioNetwork */
-static int hf_hnbap_transport = -1;               /* CauseTransport */
-static int hf_hnbap_protocol = -1;                /* CauseProtocol */
-static int hf_hnbap_misc = -1;                    /* CauseMisc */
-static int hf_hnbap_procedureCode = -1;           /* ProcedureCode */
-static int hf_hnbap_triggeringMessage = -1;       /* TriggeringMessage */
-static int hf_hnbap_procedureCriticality = -1;    /* Criticality */
-static int hf_hnbap_iEsCriticalityDiagnostics = -1;  /* CriticalityDiagnostics_IE_List */
-static int hf_hnbap_iE_Extensions = -1;           /* ProtocolExtensionContainer */
-static int hf_hnbap_CriticalityDiagnostics_IE_List_item = -1;  /* CriticalityDiagnostics_IE_List_item */
-static int hf_hnbap_iECriticality = -1;           /* Criticality */
-static int hf_hnbap_iE_ID = -1;                   /* ProtocolIE_ID */
-static int hf_hnbap_typeOfError = -1;             /* TypeOfError */
-static int hf_hnbap_pLMNidentity = -1;            /* PLMNidentity */
-static int hf_hnbap_lAC = -1;                     /* LAC */
-static int hf_hnbap_cI = -1;                      /* CI */
-static int hf_hnbap_geographical_location_geographical_coordinates = -1;  /* GeographicalCoordinates */
-static int hf_hnbap_altitudeAndDirection = -1;    /* AltitudeAndDirection */
-static int hf_hnbap_latitudeSign = -1;            /* T_latitudeSign */
-static int hf_hnbap_latitude = -1;                /* INTEGER_0_8388607 */
-static int hf_hnbap_longitude = -1;               /* INTEGER_M8388608_8388607 */
-static int hf_hnbap_cellIdentity = -1;            /* CellIdentity */
-static int hf_hnbap_hNB_Identity_as_Cell_Identifier = -1;  /* HNB_Cell_Identifier */
-static int hf_hnbap_hnb_RNL_Identity = -1;        /* HNB_RNL_Identity */
-static int hf_hnbap_configurationInformation = -1;  /* ConfigurationInformation */
-static int hf_hnbap_provided = -1;                /* HNBConfigurationInformationProvided */
-static int hf_hnbap_missing = -1;                 /* HNBConfigurationInformationMissing */
-static int hf_hnbap_psc = -1;                     /* PSC */
-static int hf_hnbap_cSG_ID = -1;                  /* CSG_ID */
-static int hf_hnbap_hNB_Cell_Access_Mode = -1;    /* HNB_Cell_Access_Mode */
-static int hf_hnbap_iurh_Signalling_TNL_AddressList = -1;  /* Iurh_Signalling_TNL_AddressList */
-static int hf_hnbap_cause = -1;                   /* Cause */
-static int hf_hnbap_macroCoverageInfo = -1;       /* MacroCoverageInformation */
-static int hf_hnbap_hnb_location_information_geographical_coordinates = -1;  /* GeographicalLocation */
-static int hf_hnbap_hNB_Identity_Info = -1;       /* HNB_Identity_Info */
-static int hf_hnbap_iMSIDS41 = -1;                /* IMSIDS41 */
-static int hf_hnbap_eSN = -1;                     /* ESN */
-static int hf_hnbap_ipaddress = -1;               /* T_ipaddress */
-static int hf_hnbap_ipv4info = -1;                /* Ipv4Address */
-static int hf_hnbap_ipv6info = -1;                /* Ipv6Address */
-static int hf_hnbap_Iurh_Signalling_TNL_AddressList_item = -1;  /* IP_Address */
-static int hf_hnbap_pLMNID = -1;                  /* PLMNidentity */
-static int hf_hnbap_cellIdentity_01 = -1;         /* MacroCellID */
-static int hf_hnbap_uTRANCellID = -1;             /* UTRANCellID */
-static int hf_hnbap_gERANCellID = -1;             /* CGI */
-static int hf_hnbap_NeighbourInfoList_item = -1;  /* HNBConfigInfo */
-static int hf_hnbap_NeighbourInfoRequestList_item = -1;  /* NeighbourInfoRequestItem */
-static int hf_hnbap_pTMSI = -1;                   /* PTMSI */
-static int hf_hnbap_rAI = -1;                     /* RAI */
-static int hf_hnbap_RABList_item = -1;            /* RABListItem */
-static int hf_hnbap_rAB_ID = -1;                  /* RAB_ID */
-static int hf_hnbap_old_transport_Info = -1;      /* TransportInfo */
-static int hf_hnbap_new_transport_Info = -1;      /* TransportInfo */
-static int hf_hnbap_cn_domain_indicator = -1;     /* CN_DomainIndicator */
-static int hf_hnbap_lAI = -1;                     /* LAI */
-static int hf_hnbap_rAC = -1;                     /* RAC */
-static int hf_hnbap_tMSI = -1;                    /* BIT_STRING_SIZE_32 */
-static int hf_hnbap_transportLayerAddress = -1;   /* TransportLayerAddress */
-static int hf_hnbap_transportAssociation = -1;    /* T_transportAssociation */
-static int hf_hnbap_gtp_TEI = -1;                 /* GTP_TEI */
-static int hf_hnbap_bindingID = -1;               /* BindingID */
-static int hf_hnbap_access_stratum_release_indicator = -1;  /* Access_stratum_release_indicator */
-static int hf_hnbap_csg_capability = -1;          /* CSG_Capability */
-static int hf_hnbap_uTRANcellID = -1;             /* CellIdentity */
-static int hf_hnbap_iMSI = -1;                    /* IMSI */
-static int hf_hnbap_tMSILAI = -1;                 /* TMSILAI */
-static int hf_hnbap_pTMSIRAI = -1;                /* PTMSIRAI */
-static int hf_hnbap_iMEI = -1;                    /* IMEI */
-static int hf_hnbap_iMSIESN = -1;                 /* IMSIESN */
-static int hf_hnbap_tMSIDS41 = -1;                /* TMSIDS41 */
-static int hf_hnbap_protocolIEs = -1;             /* ProtocolIE_Container */
-static int hf_hnbap_protocolExtensions = -1;      /* ProtocolExtensionContainer */
-static int hf_hnbap_privateIEs = -1;              /* PrivateIE_Container */
-static int hf_hnbap_initiatingMessage = -1;       /* InitiatingMessage */
-static int hf_hnbap_successfulOutcome = -1;       /* SuccessfulOutcome */
-static int hf_hnbap_unsuccessfulOutcome = -1;     /* UnsuccessfulOutcome */
-static int hf_hnbap_initiatingMessagevalue = -1;  /* InitiatingMessage_value */
-static int hf_hnbap_successfulOutcome_value = -1;  /* SuccessfulOutcome_value */
-static int hf_hnbap_unsuccessfulOutcome_value = -1;  /* UnsuccessfulOutcome_value */
-
-/*--- End of included file: packet-hnbap-hf.c ---*/
-#line 54 "./asn1/hnbap/packet-hnbap-template.c"
+static int hf_hnbap_BackoffTimer_PDU;             /* BackoffTimer */
+static int hf_hnbap_Cause_PDU;                    /* Cause */
+static int hf_hnbap_CellIdentity_PDU;             /* CellIdentity */
+static int hf_hnbap_Context_ID_PDU;               /* Context_ID */
+static int hf_hnbap_CriticalityDiagnostics_PDU;   /* CriticalityDiagnostics */
+static int hf_hnbap_CSG_ID_PDU;                   /* CSG_ID */
+static int hf_hnbap_CSGMembershipStatus_PDU;      /* CSGMembershipStatus */
+static int hf_hnbap_HNB_Cell_Access_Mode_PDU;     /* HNB_Cell_Access_Mode */
+static int hf_hnbap_HNB_Location_Information_PDU;  /* HNB_Location_Information */
+static int hf_hnbap_HNB_Identity_PDU;             /* HNB_Identity */
+static int hf_hnbap_IP_Address_PDU;               /* IP_Address */
+static int hf_hnbap_LAC_PDU;                      /* LAC */
+static int hf_hnbap_MuxPortNumber_PDU;            /* MuxPortNumber */
+static int hf_hnbap_NeighbourInfoList_PDU;        /* NeighbourInfoList */
+static int hf_hnbap_NeighbourInfoRequestList_PDU;  /* NeighbourInfoRequestList */
+static int hf_hnbap_PLMNidentity_PDU;             /* PLMNidentity */
+static int hf_hnbap_PSC_PDU;                      /* PSC */
+static int hf_hnbap_RABList_PDU;                  /* RABList */
+static int hf_hnbap_RAC_PDU;                      /* RAC */
+static int hf_hnbap_Registration_Cause_PDU;       /* Registration_Cause */
+static int hf_hnbap_RNC_ID_PDU;                   /* RNC_ID */
+static int hf_hnbap_SAC_PDU;                      /* SAC */
+static int hf_hnbap_UE_Capabilities_PDU;          /* UE_Capabilities */
+static int hf_hnbap_UE_Identity_PDU;              /* UE_Identity */
+static int hf_hnbap_Update_cause_PDU;             /* Update_cause */
+static int hf_hnbap_HNBRegisterRequest_PDU;       /* HNBRegisterRequest */
+static int hf_hnbap_HNBRegisterAccept_PDU;        /* HNBRegisterAccept */
+static int hf_hnbap_HNBRegisterReject_PDU;        /* HNBRegisterReject */
+static int hf_hnbap_HNBDe_Register_PDU;           /* HNBDe_Register */
+static int hf_hnbap_UERegisterRequest_PDU;        /* UERegisterRequest */
+static int hf_hnbap_UERegisterAccept_PDU;         /* UERegisterAccept */
+static int hf_hnbap_UERegisterReject_PDU;         /* UERegisterReject */
+static int hf_hnbap_UEDe_Register_PDU;            /* UEDe_Register */
+static int hf_hnbap_CSGMembershipUpdate_PDU;      /* CSGMembershipUpdate */
+static int hf_hnbap_TNLUpdateRequest_PDU;         /* TNLUpdateRequest */
+static int hf_hnbap_TNLUpdateResponse_PDU;        /* TNLUpdateResponse */
+static int hf_hnbap_TNLUpdateFailure_PDU;         /* TNLUpdateFailure */
+static int hf_hnbap_HNBConfigTransferRequest_PDU;  /* HNBConfigTransferRequest */
+static int hf_hnbap_HNBConfigTransferResponse_PDU;  /* HNBConfigTransferResponse */
+static int hf_hnbap_RelocationComplete_PDU;       /* RelocationComplete */
+static int hf_hnbap_ErrorIndication_PDU;          /* ErrorIndication */
+static int hf_hnbap_PrivateMessage_PDU;           /* PrivateMessage */
+static int hf_hnbap_HNBAP_PDU_PDU;                /* HNBAP_PDU */
+static int hf_hnbap_local;                        /* INTEGER_0_65535 */
+static int hf_hnbap_global;                       /* OBJECT_IDENTIFIER */
+static int hf_hnbap_ProtocolIE_Container_item;    /* ProtocolIE_Field */
+static int hf_hnbap_protocol_ie_field_id;         /* ProtocolIE_ID */
+static int hf_hnbap_criticality;                  /* Criticality */
+static int hf_hnbap_ie_field_value;               /* ProtocolIE_Field_value */
+static int hf_hnbap_ProtocolExtensionContainer_item;  /* ProtocolExtensionField */
+static int hf_hnbap_id;                           /* ProtocolIE_ID */
+static int hf_hnbap_extensionValue;               /* T_extensionValue */
+static int hf_hnbap_PrivateIE_Container_item;     /* PrivateIE_Field */
+static int hf_hnbap_private_ie_field_id;          /* PrivateIE_ID */
+static int hf_hnbap_private_value;                /* PrivateIE_Field_value */
+static int hf_hnbap_directionOfAltitude;          /* T_directionOfAltitude */
+static int hf_hnbap_altitude;                     /* INTEGER_0_32767 */
+static int hf_hnbap_radioNetwork;                 /* CauseRadioNetwork */
+static int hf_hnbap_transport;                    /* CauseTransport */
+static int hf_hnbap_protocol;                     /* CauseProtocol */
+static int hf_hnbap_misc;                         /* CauseMisc */
+static int hf_hnbap_procedureCode;                /* ProcedureCode */
+static int hf_hnbap_triggeringMessage;            /* TriggeringMessage */
+static int hf_hnbap_procedureCriticality;         /* Criticality */
+static int hf_hnbap_iEsCriticalityDiagnostics;    /* CriticalityDiagnostics_IE_List */
+static int hf_hnbap_iE_Extensions;                /* ProtocolExtensionContainer */
+static int hf_hnbap_CriticalityDiagnostics_IE_List_item;  /* CriticalityDiagnostics_IE_List_item */
+static int hf_hnbap_iECriticality;                /* Criticality */
+static int hf_hnbap_iE_ID;                        /* ProtocolIE_ID */
+static int hf_hnbap_typeOfError;                  /* TypeOfError */
+static int hf_hnbap_pLMNidentity;                 /* PLMNidentity */
+static int hf_hnbap_lAC;                          /* LAC */
+static int hf_hnbap_cI;                           /* CI */
+static int hf_hnbap_geographical_location_geographical_coordinates;  /* GeographicalCoordinates */
+static int hf_hnbap_altitudeAndDirection;         /* AltitudeAndDirection */
+static int hf_hnbap_latitudeSign;                 /* T_latitudeSign */
+static int hf_hnbap_latitude;                     /* INTEGER_0_8388607 */
+static int hf_hnbap_longitude;                    /* INTEGER_M8388608_8388607 */
+static int hf_hnbap_cellIdentity;                 /* CellIdentity */
+static int hf_hnbap_hNB_Identity_as_Cell_Identifier;  /* HNB_Cell_Identifier */
+static int hf_hnbap_hnb_RNL_Identity;             /* HNB_RNL_Identity */
+static int hf_hnbap_configurationInformation;     /* ConfigurationInformation */
+static int hf_hnbap_provided;                     /* HNBConfigurationInformationProvided */
+static int hf_hnbap_missing;                      /* HNBConfigurationInformationMissing */
+static int hf_hnbap_psc;                          /* PSC */
+static int hf_hnbap_cSG_ID;                       /* CSG_ID */
+static int hf_hnbap_hNB_Cell_Access_Mode;         /* HNB_Cell_Access_Mode */
+static int hf_hnbap_iurh_Signalling_TNL_AddressList;  /* Iurh_Signalling_TNL_AddressList */
+static int hf_hnbap_cause;                        /* Cause */
+static int hf_hnbap_macroCoverageInfo;            /* MacroCoverageInformation */
+static int hf_hnbap_hnb_location_information_geographical_coordinates;  /* GeographicalLocation */
+static int hf_hnbap_hNB_Identity_Info;            /* HNB_Identity_Info */
+static int hf_hnbap_iMSIDS41;                     /* IMSIDS41 */
+static int hf_hnbap_eSN;                          /* ESN */
+static int hf_hnbap_ipaddress;                    /* T_ipaddress */
+static int hf_hnbap_ipv4info;                     /* Ipv4Address */
+static int hf_hnbap_ipv6info;                     /* Ipv6Address */
+static int hf_hnbap_Iurh_Signalling_TNL_AddressList_item;  /* IP_Address */
+static int hf_hnbap_pLMNID;                       /* PLMNidentity */
+static int hf_hnbap_macroCellID;                  /* MacroCellID */
+static int hf_hnbap_uTRANCellID;                  /* UTRANCellID */
+static int hf_hnbap_gERANCellID;                  /* CGI */
+static int hf_hnbap_NeighbourInfoList_item;       /* HNBConfigInfo */
+static int hf_hnbap_NeighbourInfoRequestList_item;  /* NeighbourInfoRequestItem */
+static int hf_hnbap_pTMSI;                        /* PTMSI */
+static int hf_hnbap_rAI;                          /* RAI */
+static int hf_hnbap_RABList_item;                 /* RABListItem */
+static int hf_hnbap_rAB_ID;                       /* RAB_ID */
+static int hf_hnbap_old_transport_Info;           /* TransportInfo */
+static int hf_hnbap_new_transport_Info;           /* TransportInfo */
+static int hf_hnbap_cn_domain_indicator;          /* CN_DomainIndicator */
+static int hf_hnbap_lAI;                          /* LAI */
+static int hf_hnbap_rAC;                          /* RAC */
+static int hf_hnbap_tMSI;                         /* BIT_STRING_SIZE_32 */
+static int hf_hnbap_transportLayerAddress;        /* TransportLayerAddress */
+static int hf_hnbap_transportAssociation;         /* T_transportAssociation */
+static int hf_hnbap_gtp_TEI;                      /* GTP_TEI */
+static int hf_hnbap_bindingID;                    /* BindingID */
+static int hf_hnbap_access_stratum_release_indicator;  /* Access_stratum_release_indicator */
+static int hf_hnbap_csg_capability;               /* CSG_Capability */
+static int hf_hnbap_uTRANcellID;                  /* CellIdentity */
+static int hf_hnbap_iMSI;                         /* IMSI */
+static int hf_hnbap_tMSILAI;                      /* TMSILAI */
+static int hf_hnbap_pTMSIRAI;                     /* PTMSIRAI */
+static int hf_hnbap_iMEI;                         /* IMEI */
+static int hf_hnbap_iMSIESN;                      /* IMSIESN */
+static int hf_hnbap_tMSIDS41;                     /* TMSIDS41 */
+static int hf_hnbap_protocolIEs;                  /* ProtocolIE_Container */
+static int hf_hnbap_protocolExtensions;           /* ProtocolExtensionContainer */
+static int hf_hnbap_privateIEs;                   /* PrivateIE_Container */
+static int hf_hnbap_initiatingMessage;            /* InitiatingMessage */
+static int hf_hnbap_successfulOutcome;            /* SuccessfulOutcome */
+static int hf_hnbap_unsuccessfulOutcome;          /* UnsuccessfulOutcome */
+static int hf_hnbap_initiatingMessagevalue;       /* InitiatingMessage_value */
+static int hf_hnbap_successfulOutcome_value;      /* SuccessfulOutcome_value */
+static int hf_hnbap_unsuccessfulOutcome_value;    /* UnsuccessfulOutcome_value */
 
 /* Initialize the subtree pointers */
-static int ett_hnbap = -1;
+static int ett_hnbap;
+static int ett_hnbap_imsi;
+static int ett_hnbap_PrivateIE_ID;
+static int ett_hnbap_ProtocolIE_Container;
+static int ett_hnbap_ProtocolIE_Field;
+static int ett_hnbap_ProtocolExtensionContainer;
+static int ett_hnbap_ProtocolExtensionField;
+static int ett_hnbap_PrivateIE_Container;
+static int ett_hnbap_PrivateIE_Field;
+static int ett_hnbap_AltitudeAndDirection;
+static int ett_hnbap_Cause;
+static int ett_hnbap_CriticalityDiagnostics;
+static int ett_hnbap_CriticalityDiagnostics_IE_List;
+static int ett_hnbap_CriticalityDiagnostics_IE_List_item;
+static int ett_hnbap_CGI;
+static int ett_hnbap_GeographicalLocation;
+static int ett_hnbap_GeographicalCoordinates;
+static int ett_hnbap_HNB_Cell_Identifier;
+static int ett_hnbap_HNB_RNL_Identity;
+static int ett_hnbap_HNBConfigInfo;
+static int ett_hnbap_ConfigurationInformation;
+static int ett_hnbap_HNBConfigurationInformationProvided;
+static int ett_hnbap_HNBConfigurationInformationMissing;
+static int ett_hnbap_HNB_Location_Information;
+static int ett_hnbap_HNB_Identity;
+static int ett_hnbap_IMSIESN;
+static int ett_hnbap_IP_Address;
+static int ett_hnbap_T_ipaddress;
+static int ett_hnbap_Iurh_Signalling_TNL_AddressList;
+static int ett_hnbap_LAI;
+static int ett_hnbap_MacroCoverageInformation;
+static int ett_hnbap_MacroCellID;
+static int ett_hnbap_NeighbourInfoList;
+static int ett_hnbap_NeighbourInfoRequestList;
+static int ett_hnbap_NeighbourInfoRequestItem;
+static int ett_hnbap_PTMSIRAI;
+static int ett_hnbap_RABList;
+static int ett_hnbap_RABListItem;
+static int ett_hnbap_RAI;
+static int ett_hnbap_TMSILAI;
+static int ett_hnbap_TransportInfo;
+static int ett_hnbap_T_transportAssociation;
+static int ett_hnbap_UE_Capabilities;
+static int ett_hnbap_UTRANCellID;
+static int ett_hnbap_UE_Identity;
+static int ett_hnbap_HNBRegisterRequest;
+static int ett_hnbap_HNBRegisterAccept;
+static int ett_hnbap_HNBRegisterReject;
+static int ett_hnbap_HNBDe_Register;
+static int ett_hnbap_UERegisterRequest;
+static int ett_hnbap_UERegisterAccept;
+static int ett_hnbap_UERegisterReject;
+static int ett_hnbap_UEDe_Register;
+static int ett_hnbap_CSGMembershipUpdate;
+static int ett_hnbap_TNLUpdateRequest;
+static int ett_hnbap_TNLUpdateResponse;
+static int ett_hnbap_TNLUpdateFailure;
+static int ett_hnbap_HNBConfigTransferRequest;
+static int ett_hnbap_HNBConfigTransferResponse;
+static int ett_hnbap_RelocationComplete;
+static int ett_hnbap_ErrorIndication;
+static int ett_hnbap_PrivateMessage;
+static int ett_hnbap_HNBAP_PDU;
+static int ett_hnbap_InitiatingMessage;
+static int ett_hnbap_SuccessfulOutcome;
+static int ett_hnbap_UnsuccessfulOutcome;
 
-
-/*--- Included file: packet-hnbap-ett.c ---*/
-#line 1 "./asn1/hnbap/packet-hnbap-ett.c"
-static gint ett_hnbap_PrivateIE_ID = -1;
-static gint ett_hnbap_ProtocolIE_Container = -1;
-static gint ett_hnbap_ProtocolIE_Field = -1;
-static gint ett_hnbap_ProtocolExtensionContainer = -1;
-static gint ett_hnbap_ProtocolExtensionField = -1;
-static gint ett_hnbap_PrivateIE_Container = -1;
-static gint ett_hnbap_PrivateIE_Field = -1;
-static gint ett_hnbap_AltitudeAndDirection = -1;
-static gint ett_hnbap_Cause = -1;
-static gint ett_hnbap_CriticalityDiagnostics = -1;
-static gint ett_hnbap_CriticalityDiagnostics_IE_List = -1;
-static gint ett_hnbap_CriticalityDiagnostics_IE_List_item = -1;
-static gint ett_hnbap_CGI = -1;
-static gint ett_hnbap_GeographicalLocation = -1;
-static gint ett_hnbap_GeographicalCoordinates = -1;
-static gint ett_hnbap_HNB_Cell_Identifier = -1;
-static gint ett_hnbap_HNB_RNL_Identity = -1;
-static gint ett_hnbap_HNBConfigInfo = -1;
-static gint ett_hnbap_ConfigurationInformation = -1;
-static gint ett_hnbap_HNBConfigurationInformationProvided = -1;
-static gint ett_hnbap_HNBConfigurationInformationMissing = -1;
-static gint ett_hnbap_HNB_Location_Information = -1;
-static gint ett_hnbap_HNB_Identity = -1;
-static gint ett_hnbap_IMSIESN = -1;
-static gint ett_hnbap_IP_Address = -1;
-static gint ett_hnbap_T_ipaddress = -1;
-static gint ett_hnbap_Iurh_Signalling_TNL_AddressList = -1;
-static gint ett_hnbap_LAI = -1;
-static gint ett_hnbap_MacroCoverageInformation = -1;
-static gint ett_hnbap_MacroCellID = -1;
-static gint ett_hnbap_NeighbourInfoList = -1;
-static gint ett_hnbap_NeighbourInfoRequestList = -1;
-static gint ett_hnbap_NeighbourInfoRequestItem = -1;
-static gint ett_hnbap_PTMSIRAI = -1;
-static gint ett_hnbap_RABList = -1;
-static gint ett_hnbap_RABListItem = -1;
-static gint ett_hnbap_RAI = -1;
-static gint ett_hnbap_TMSILAI = -1;
-static gint ett_hnbap_TransportInfo = -1;
-static gint ett_hnbap_T_transportAssociation = -1;
-static gint ett_hnbap_UE_Capabilities = -1;
-static gint ett_hnbap_UTRANCellID = -1;
-static gint ett_hnbap_UE_Identity = -1;
-static gint ett_hnbap_HNBRegisterRequest = -1;
-static gint ett_hnbap_HNBRegisterAccept = -1;
-static gint ett_hnbap_HNBRegisterReject = -1;
-static gint ett_hnbap_HNBDe_Register = -1;
-static gint ett_hnbap_UERegisterRequest = -1;
-static gint ett_hnbap_UERegisterAccept = -1;
-static gint ett_hnbap_UERegisterReject = -1;
-static gint ett_hnbap_UEDe_Register = -1;
-static gint ett_hnbap_CSGMembershipUpdate = -1;
-static gint ett_hnbap_TNLUpdateRequest = -1;
-static gint ett_hnbap_TNLUpdateResponse = -1;
-static gint ett_hnbap_TNLUpdateFailure = -1;
-static gint ett_hnbap_HNBConfigTransferRequest = -1;
-static gint ett_hnbap_HNBConfigTransferResponse = -1;
-static gint ett_hnbap_RelocationComplete = -1;
-static gint ett_hnbap_ErrorIndication = -1;
-static gint ett_hnbap_PrivateMessage = -1;
-static gint ett_hnbap_HNBAP_PDU = -1;
-static gint ett_hnbap_InitiatingMessage = -1;
-static gint ett_hnbap_SuccessfulOutcome = -1;
-static gint ett_hnbap_UnsuccessfulOutcome = -1;
-
-/*--- End of included file: packet-hnbap-ett.c ---*/
-#line 59 "./asn1/hnbap/packet-hnbap-template.c"
+struct hnbap_private_data {
+  e212_number_type_t number_type;
+};
 
 /* Global variables */
-static guint32 ProcedureCode;
-static guint32 ProtocolIE_ID;
-static guint global_sctp_port = SCTP_PORT_HNBAP;
+static uint32_t ProcedureCode;
+static uint32_t ProtocolIE_ID;
 
 /* Dissector tables */
 static dissector_table_t hnbap_ies_dissector_table;
@@ -354,9 +327,38 @@ static int dissect_SuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, pro
 static int dissect_UnsuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *);
 void proto_reg_handoff_hnbap(void);
 
+static struct hnbap_private_data*
+hnbap_get_private_data(packet_info *pinfo)
+{
+  struct hnbap_private_data *hnbap_data = (struct hnbap_private_data*)p_get_proto_data(pinfo->pool, pinfo, proto_hnbap, 0);
+  if (!hnbap_data) {
+    hnbap_data = wmem_new0(pinfo->pool, struct hnbap_private_data);
+    p_add_proto_data(pinfo->pool, pinfo, proto_hnbap, 0, hnbap_data);
+  }
+  return hnbap_data;
+}
 
-/*--- Included file: packet-hnbap-fn.c ---*/
-#line 1 "./asn1/hnbap/packet-hnbap-fn.c"
+/*--- Cyclic dependencies ---*/
+
+/* ProtocolIE-Field/value -> ProtocolIE-Field/value */
+static int dissect_hnbap_ProtocolIE_Field_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* ProtocolExtensionField/extensionValue -> ProtocolExtensionField/extensionValue */
+static int dissect_hnbap_T_extensionValue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* PrivateIE-Field/value -> PrivateIE-Field/value */
+static int dissect_hnbap_PrivateIE_Field_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* InitiatingMessage/value -> InitiatingMessage/value */
+static int dissect_hnbap_InitiatingMessage_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* SuccessfulOutcome/value -> SuccessfulOutcome/value */
+static int dissect_hnbap_SuccessfulOutcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* UnsuccessfulOutcome/value -> UnsuccessfulOutcome/value */
+static int dissect_hnbap_UnsuccessfulOutcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+
 
 static const value_string hnbap_Criticality_vals[] = {
   {   0, "reject" },
@@ -369,7 +371,7 @@ static const value_string hnbap_Criticality_vals[] = {
 static int
 dissect_hnbap_Criticality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -379,7 +381,7 @@ dissect_hnbap_Criticality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_hnbap_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -434,14 +436,12 @@ static const value_string hnbap_ProcedureCode_vals[] = {
 static int
 dissect_hnbap_ProcedureCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, &ProcedureCode, FALSE);
+                                                            0U, 255U, &ProcedureCode, false);
 
-#line 61 "./asn1/hnbap/hnbap.cnf"
-  if (strcmp(val_to_str(ProcedureCode, hnbap_ProcedureCode_vals, "Unknown"), "Unknown") == 0) {
+  if (strcmp(val_to_str_const(ProcedureCode, hnbap_ProcedureCode_vals, "Unknown"), "Unknown") == 0) {
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                       "Unknown Message");
   } /* Known Procedures should be included below and broken out as ELEMENTARY names to avoid confusion */
-
 
   return offset;
 }
@@ -485,13 +485,12 @@ static const value_string hnbap_ProtocolIE_ID_vals[] = {
 static int
 dissect_hnbap_ProtocolIE_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, maxProtocolIEs, &ProtocolIE_ID, FALSE);
+                                                            0U, maxProtocolIEs, &ProtocolIE_ID, false);
 
-#line 50 "./asn1/hnbap/hnbap.cnf"
   if (tree) {
-    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s", val_to_str(ProtocolIE_ID, VALS(hnbap_ProtocolIE_ID_vals), "unknown (%d)"));
+    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s",
+                           val_to_str(actx->pinfo->pool, ProtocolIE_ID, VALS(hnbap_ProtocolIE_ID_vals), "unknown (%d)"));
   }
-
   return offset;
 }
 
@@ -507,7 +506,7 @@ static const value_string hnbap_TriggeringMessage_vals[] = {
 static int
 dissect_hnbap_TriggeringMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -516,8 +515,11 @@ dissect_hnbap_TriggeringMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 static int
 dissect_hnbap_ProtocolIE_Field_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // ProtocolIE-Field/value -> ProtocolIE-Field/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_ProtocolIEFieldValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -546,7 +548,7 @@ static int
 dissect_hnbap_ProtocolIE_Container(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_hnbap_ProtocolIE_Container, ProtocolIE_Container_sequence_of,
-                                                  0, maxProtocolIEs, FALSE);
+                                                  0, maxProtocolIEs, false);
 
   return offset;
 }
@@ -555,8 +557,11 @@ dissect_hnbap_ProtocolIE_Container(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 static int
 dissect_hnbap_T_extensionValue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // ProtocolExtensionField/extensionValue -> ProtocolExtensionField/extensionValue
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_ProtocolExtensionFieldExtensionValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -585,7 +590,7 @@ static int
 dissect_hnbap_ProtocolExtensionContainer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_hnbap_ProtocolExtensionContainer, ProtocolExtensionContainer_sequence_of,
-                                                  1, maxProtocolExtensions, FALSE);
+                                                  1, maxProtocolExtensions, false);
 
   return offset;
 }
@@ -594,8 +599,11 @@ dissect_hnbap_ProtocolExtensionContainer(tvbuff_t *tvb _U_, int offset _U_, asn1
 
 static int
 dissect_hnbap_PrivateIE_Field_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // PrivateIE-Field/value -> PrivateIE-Field/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type(tvb, offset, actx, tree, hf_index, NULL);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -624,7 +632,7 @@ static int
 dissect_hnbap_PrivateIE_Container(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_hnbap_PrivateIE_Container, PrivateIE_Container_sequence_of,
-                                                  1, maxPrivateIEs, FALSE);
+                                                  1, maxPrivateIEs, false);
 
   return offset;
 }
@@ -644,7 +652,7 @@ static const value_string hnbap_Access_stratum_release_indicator_vals[] = {
 static int
 dissect_hnbap_Access_stratum_release_indicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     6, NULL, TRUE, 0, NULL);
+                                     6, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -661,7 +669,7 @@ static const value_string hnbap_T_directionOfAltitude_vals[] = {
 static int
 dissect_hnbap_T_directionOfAltitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -671,7 +679,7 @@ dissect_hnbap_T_directionOfAltitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 static int
 dissect_hnbap_INTEGER_0_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32767U, NULL, FALSE);
+                                                            0U, 32767U, NULL, false);
 
   return offset;
 }
@@ -696,7 +704,7 @@ dissect_hnbap_AltitudeAndDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_hnbap_BackoffTimer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3600U, NULL, FALSE);
+                                                            0U, 3600U, NULL, false);
 
   return offset;
 }
@@ -706,7 +714,7 @@ dissect_hnbap_BackoffTimer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_hnbap_BindingID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 4, TRUE, NULL);
+                                       1, 4, true, NULL);
 
   return offset;
 }
@@ -734,7 +742,7 @@ static const value_string hnbap_CauseRadioNetwork_vals[] = {
 static int
 dissect_hnbap_CauseRadioNetwork(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     14, NULL, TRUE, 0, NULL);
+                                     14, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -750,7 +758,7 @@ static const value_string hnbap_CauseTransport_vals[] = {
 static int
 dissect_hnbap_CauseTransport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -771,7 +779,7 @@ static const value_string hnbap_CauseProtocol_vals[] = {
 static int
 dissect_hnbap_CauseProtocol(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     7, NULL, TRUE, 0, NULL);
+                                     7, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -789,7 +797,7 @@ static const value_string hnbap_CauseMisc_vals[] = {
 static int
 dissect_hnbap_CauseMisc(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -825,7 +833,7 @@ dissect_hnbap_Cause(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_hnbap_CellIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     28, 28, FALSE, NULL, NULL);
+                                     28, 28, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -835,7 +843,7 @@ dissect_hnbap_CellIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_hnbap_Context_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     24, 24, FALSE, NULL, NULL);
+                                     24, 24, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -851,7 +859,7 @@ static const value_string hnbap_TypeOfError_vals[] = {
 static int
 dissect_hnbap_TypeOfError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -882,7 +890,7 @@ static int
 dissect_hnbap_CriticalityDiagnostics_IE_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_hnbap_CriticalityDiagnostics_IE_List, CriticalityDiagnostics_IE_List_sequence_of,
-                                                  1, maxNrOfErrors, FALSE);
+                                                  1, maxNrOfErrors, false);
 
   return offset;
 }
@@ -910,7 +918,7 @@ dissect_hnbap_CriticalityDiagnostics(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_hnbap_CSG_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     27, 27, FALSE, NULL, NULL);
+                                     27, 27, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -926,7 +934,7 @@ static const value_string hnbap_CSG_Capability_vals[] = {
 static int
 dissect_hnbap_CSG_Capability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -942,7 +950,7 @@ static const value_string hnbap_CSGMembershipStatus_vals[] = {
 static int
 dissect_hnbap_CSGMembershipStatus(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -951,8 +959,16 @@ dissect_hnbap_CSGMembershipStatus(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 static int
 dissect_hnbap_PLMNidentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  tvbuff_t *parameter_tvb;
+  struct hnbap_private_data *hnbap_data = hnbap_get_private_data(actx->pinfo);
+  e212_number_type_t number_type = hnbap_data->number_type;
+  hnbap_data->number_type = E212_NONE;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       3, 3, FALSE, NULL);
+                                       3, 3, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    dissect_e212_mcc_mnc(parameter_tvb, actx->pinfo, tree, 0, number_type, false);
+  }
 
   return offset;
 }
@@ -961,8 +977,14 @@ dissect_hnbap_PLMNidentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 static int
 dissect_hnbap_LAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       2, 2, FALSE, NULL);
+  tvbuff_t *parameter_tvb = NULL;
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, -1,
+                                       2, 2, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 2, ENC_BIG_ENDIAN);
+  }
+
 
   return offset;
 }
@@ -972,7 +994,7 @@ dissect_hnbap_LAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_hnbap_CI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       2, 2, FALSE, NULL);
+                                       2, 2, false, NULL);
 
   return offset;
 }
@@ -988,8 +1010,12 @@ static const per_sequence_t CGI_sequence[] = {
 
 static int
 dissect_hnbap_CGI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  struct hnbap_private_data *hnbap_data = hnbap_get_private_data(actx->pinfo);
+  hnbap_data->number_type = E212_CGI;
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_CGI, CGI_sequence);
+
+
 
   return offset;
 }
@@ -1005,7 +1031,7 @@ static const value_string hnbap_CN_DomainIndicator_vals[] = {
 static int
 dissect_hnbap_CN_DomainIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -1015,7 +1041,7 @@ dissect_hnbap_CN_DomainIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_hnbap_ESN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     32, 32, FALSE, NULL, NULL);
+                                     32, 32, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1031,7 +1057,7 @@ static const value_string hnbap_T_latitudeSign_vals[] = {
 static int
 dissect_hnbap_T_latitudeSign(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -1041,7 +1067,7 @@ dissect_hnbap_T_latitudeSign(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_hnbap_INTEGER_0_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8388607U, NULL, FALSE);
+                                                            0U, 8388607U, NULL, false);
 
   return offset;
 }
@@ -1051,7 +1077,7 @@ dissect_hnbap_INTEGER_0_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_hnbap_INTEGER_M8388608_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -8388608, 8388607U, NULL, FALSE);
+                                                            -8388608, 8388607U, NULL, false);
 
   return offset;
 }
@@ -1094,7 +1120,7 @@ dissect_hnbap_GeographicalLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_hnbap_GTP_TEI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       4, 4, FALSE, NULL);
+                                       4, 4, false, NULL);
 
   return offset;
 }
@@ -1111,7 +1137,7 @@ static const value_string hnbap_HNB_Cell_Access_Mode_vals[] = {
 static int
 dissect_hnbap_HNB_Cell_Access_Mode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1157,7 +1183,7 @@ dissect_hnbap_HNB_RNL_Identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_hnbap_PSC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     9, 9, FALSE, NULL, NULL);
+                                     9, 9, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1167,7 +1193,7 @@ dissect_hnbap_PSC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_hnbap_Ipv4Address(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       4, 4, FALSE, NULL);
+                                       4, 4, false, NULL);
 
   return offset;
 }
@@ -1177,7 +1203,7 @@ dissect_hnbap_Ipv4Address(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_hnbap_Ipv6Address(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       16, 16, FALSE, NULL);
+                                       16, 16, false, NULL);
 
   return offset;
 }
@@ -1228,7 +1254,7 @@ static int
 dissect_hnbap_Iurh_Signalling_TNL_AddressList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_hnbap_Iurh_Signalling_TNL_AddressList, Iurh_Signalling_TNL_AddressList_sequence_of,
-                                                  1, maxnoofIurhAddresses, FALSE);
+                                                  1, maxnoofIurhAddresses, false);
 
   return offset;
 }
@@ -1308,8 +1334,14 @@ dissect_hnbap_HNBConfigInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 static int
 dissect_hnbap_RAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 1, FALSE, NULL);
+  tvbuff_t *parameter_tvb = NULL;
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, -1,
+                                       1, 1, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 1, ENC_BIG_ENDIAN);
+  }
+
 
   return offset;
 }
@@ -1356,7 +1388,7 @@ dissect_hnbap_MacroCellID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 static const per_sequence_t MacroCoverageInformation_sequence[] = {
-  { &hf_hnbap_cellIdentity_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_hnbap_MacroCellID },
+  { &hf_hnbap_macroCellID   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_hnbap_MacroCellID },
   { &hf_hnbap_iE_Extensions , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_hnbap_ProtocolExtensionContainer },
   { NULL, 0, 0, NULL }
 };
@@ -1390,7 +1422,7 @@ dissect_hnbap_HNB_Location_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_hnbap_HNB_Identity_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 255, FALSE, NULL);
+                                       1, 255, false, NULL);
 
   return offset;
 }
@@ -1415,7 +1447,7 @@ dissect_hnbap_HNB_Identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_hnbap_IMEI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     60, 60, FALSE, NULL, NULL);
+                                     60, 60, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1424,8 +1456,15 @@ dissect_hnbap_IMEI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 
 static int
 dissect_hnbap_IMSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  tvbuff_t *parameter_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       3, 8, FALSE, NULL);
+                                       3, 8, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_hnbap_imsi);
+    dissect_e212_imsi(parameter_tvb, actx->pinfo, subtree, 0, tvb_reported_length(parameter_tvb), false);
+  }
+
 
   return offset;
 }
@@ -1435,7 +1474,7 @@ dissect_hnbap_IMSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 static int
 dissect_hnbap_IMSIDS41(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       5, 7, FALSE, NULL);
+                                       5, 7, false, NULL);
 
   return offset;
 }
@@ -1464,8 +1503,17 @@ static const per_sequence_t LAI_sequence[] = {
 
 static int
 dissect_hnbap_LAI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  struct hnbap_private_data *hnbap_data = hnbap_get_private_data(actx->pinfo);
+  /* The RAI is defined in the ASN.1 as the LAI plus the RAC; don't override
+   * the MNC/MCC field types in that case.
+   */
+  if (hnbap_data->number_type != E212_RAI) {
+    hnbap_data->number_type = E212_LAI;
+  }
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_LAI, LAI_sequence);
+
+
 
   return offset;
 }
@@ -1475,7 +1523,7 @@ dissect_hnbap_LAI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_hnbap_MuxPortNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1024U, 65535U, NULL, FALSE);
+                                                            1024U, 65535U, NULL, false);
 
   return offset;
 }
@@ -1489,7 +1537,7 @@ static int
 dissect_hnbap_NeighbourInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_hnbap_NeighbourInfoList, NeighbourInfoList_sequence_of,
-                                                  1, maxnoofNeighbours, FALSE);
+                                                  1, maxnoofNeighbours, false);
 
   return offset;
 }
@@ -1518,7 +1566,7 @@ static int
 dissect_hnbap_NeighbourInfoRequestList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_hnbap_NeighbourInfoRequestList, NeighbourInfoRequestList_sequence_of,
-                                                  1, maxnoofNeighbours, FALSE);
+                                                  1, maxnoofNeighbours, false);
 
   return offset;
 }
@@ -1528,7 +1576,7 @@ dissect_hnbap_NeighbourInfoRequestList(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_hnbap_PTMSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     32, 32, FALSE, NULL, NULL);
+                                     32, 32, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1542,8 +1590,12 @@ static const per_sequence_t RAI_sequence[] = {
 
 static int
 dissect_hnbap_RAI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  struct hnbap_private_data *hnbap_data = hnbap_get_private_data(actx->pinfo);
+  hnbap_data->number_type = E212_RAI;
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_RAI, RAI_sequence);
+
+
 
   return offset;
 }
@@ -1568,7 +1620,7 @@ dissect_hnbap_PTMSIRAI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_hnbap_RAB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1578,7 +1630,7 @@ dissect_hnbap_RAB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int
 dissect_hnbap_TransportLayerAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     1, 160, TRUE, NULL, NULL);
+                                     1, 160, true, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1648,7 +1700,7 @@ static int
 dissect_hnbap_RABList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_hnbap_RABList, RABList_sequence_of,
-                                                  1, maxnoofRABs, FALSE);
+                                                  1, maxnoofRABs, false);
 
   return offset;
 }
@@ -1665,7 +1717,7 @@ static const value_string hnbap_Registration_Cause_vals[] = {
 static int
 dissect_hnbap_Registration_Cause(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 1, NULL);
+                                     2, NULL, true, 1, NULL);
 
   return offset;
 }
@@ -1675,7 +1727,7 @@ dissect_hnbap_Registration_Cause(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_hnbap_RNC_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -1684,8 +1736,14 @@ dissect_hnbap_RNC_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 static int
 dissect_hnbap_SAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       2, 2, FALSE, NULL);
+  tvbuff_t *parameter_tvb = NULL;
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, -1,
+                                       2, 2, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 2, ENC_BIG_ENDIAN);
+  }
+
 
   return offset;
 }
@@ -1695,7 +1753,7 @@ dissect_hnbap_SAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_hnbap_BIT_STRING_SIZE_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     32, 32, FALSE, NULL, NULL);
+                                     32, 32, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1720,7 +1778,7 @@ dissect_hnbap_TMSILAI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_hnbap_TMSIDS41(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       2, 17, FALSE, NULL);
+                                       2, 17, false, NULL);
 
   return offset;
 }
@@ -1785,7 +1843,7 @@ static const value_string hnbap_Update_cause_vals[] = {
 static int
 dissect_hnbap_Update_cause(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     1, NULL, TRUE, 0, NULL);
+                                     1, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1799,12 +1857,10 @@ static const per_sequence_t HNBRegisterRequest_sequence[] = {
 
 static int
 dissect_hnbap_HNBRegisterRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 74 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "HNB_REGISTER_REQUEST ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_HNBRegisterRequest, HNBRegisterRequest_sequence);
-
 
 
 
@@ -1820,12 +1876,10 @@ static const per_sequence_t HNBRegisterAccept_sequence[] = {
 
 static int
 dissect_hnbap_HNBRegisterAccept(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 79 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "HNB_REGISTER_ACCEPT ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_HNBRegisterAccept, HNBRegisterAccept_sequence);
-
 
 
 
@@ -1841,12 +1895,10 @@ static const per_sequence_t HNBRegisterReject_sequence[] = {
 
 static int
 dissect_hnbap_HNBRegisterReject(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 84 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "HNB_REGISTER_REJECT ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_HNBRegisterReject, HNBRegisterReject_sequence);
-
 
 
 
@@ -1862,12 +1914,10 @@ static const per_sequence_t HNBDe_Register_sequence[] = {
 
 static int
 dissect_hnbap_HNBDe_Register(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 109 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "HNB_DE-REGISTER ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_HNBDe_Register, HNBDe_Register_sequence);
-
 
 
 
@@ -1883,12 +1933,10 @@ static const per_sequence_t UERegisterRequest_sequence[] = {
 
 static int
 dissect_hnbap_UERegisterRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 89 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "UE_REGISTER_REQUEST ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_UERegisterRequest, UERegisterRequest_sequence);
-
 
 
 
@@ -1904,12 +1952,10 @@ static const per_sequence_t UERegisterAccept_sequence[] = {
 
 static int
 dissect_hnbap_UERegisterAccept(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 94 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "UE_REGISTER_ACCEPT ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_UERegisterAccept, UERegisterAccept_sequence);
-
 
 
 
@@ -1925,12 +1971,10 @@ static const per_sequence_t UERegisterReject_sequence[] = {
 
 static int
 dissect_hnbap_UERegisterReject(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 99 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "UE_REGISTER_REJECT ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_UERegisterReject, UERegisterReject_sequence);
-
 
 
 
@@ -1946,12 +1990,10 @@ static const per_sequence_t UEDe_Register_sequence[] = {
 
 static int
 dissect_hnbap_UEDe_Register(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 104 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "UE_DE-REGISTER ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_UEDe_Register, UEDe_Register_sequence);
-
 
 
 
@@ -1967,12 +2009,10 @@ static const per_sequence_t CSGMembershipUpdate_sequence[] = {
 
 static int
 dissect_hnbap_CSGMembershipUpdate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 120 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "CSG_MEMBERSHIP_UPDATE_MESSAGE ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_CSGMembershipUpdate, CSGMembershipUpdate_sequence);
-
 
 
 
@@ -1988,12 +2028,10 @@ static const per_sequence_t TNLUpdateRequest_sequence[] = {
 
 static int
 dissect_hnbap_TNLUpdateRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 130 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "TNL_UPDATE_REQUEST_MESSAGE ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_TNLUpdateRequest, TNLUpdateRequest_sequence);
-
 
 
   return offset;
@@ -2008,12 +2046,10 @@ static const per_sequence_t TNLUpdateResponse_sequence[] = {
 
 static int
 dissect_hnbap_TNLUpdateResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 134 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "TNL_UPDATE_RESPONSE_MESSAGE ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_TNLUpdateResponse, TNLUpdateResponse_sequence);
-
 
 
   return offset;
@@ -2028,12 +2064,10 @@ static const per_sequence_t TNLUpdateFailure_sequence[] = {
 
 static int
 dissect_hnbap_TNLUpdateFailure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 138 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "TNL_UPDATE_FAILURE_MESSAGE ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_TNLUpdateFailure, TNLUpdateFailure_sequence);
-
 
 
   return offset;
@@ -2048,12 +2082,10 @@ static const per_sequence_t HNBConfigTransferRequest_sequence[] = {
 
 static int
 dissect_hnbap_HNBConfigTransferRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 142 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "HNB_CONFIG_TRANSFER_REQUEST_MESSAGE ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_HNBConfigTransferRequest, HNBConfigTransferRequest_sequence);
-
 
 
   return offset;
@@ -2068,12 +2100,10 @@ static const per_sequence_t HNBConfigTransferResponse_sequence[] = {
 
 static int
 dissect_hnbap_HNBConfigTransferResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 146 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "HNB_CONFIG_TRANSFER_RESPONSE_MESSAGE ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_HNBConfigTransferResponse, HNBConfigTransferResponse_sequence);
-
 
 
   return offset;
@@ -2088,12 +2118,10 @@ static const per_sequence_t RelocationComplete_sequence[] = {
 
 static int
 dissect_hnbap_RelocationComplete(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 150 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "RELOCATION_COMPLETE_MESSAGE ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_RelocationComplete, RelocationComplete_sequence);
-
 
 
 
@@ -2109,13 +2137,11 @@ static const per_sequence_t ErrorIndication_sequence[] = {
 
 static int
 dissect_hnbap_ErrorIndication(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 114 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "ERROR_INDICATION ");
     col_set_fence(actx->pinfo->cinfo, COL_INFO); /* Protect info from CriticalityDiagnostics decodes */
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_ErrorIndication, ErrorIndication_sequence);
-
 
 
 
@@ -2130,12 +2156,10 @@ static const per_sequence_t PrivateMessage_sequence[] = {
 
 static int
 dissect_hnbap_PrivateMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 125 "./asn1/hnbap/hnbap.cnf"
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                "PRIVATE_MESSAGE ");
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_hnbap_PrivateMessage, PrivateMessage_sequence);
-
 
 
 
@@ -2146,8 +2170,11 @@ dissect_hnbap_PrivateMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 static int
 dissect_hnbap_InitiatingMessage_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // InitiatingMessage/value -> InitiatingMessage/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_InitiatingMessageValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -2171,8 +2198,11 @@ dissect_hnbap_InitiatingMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 static int
 dissect_hnbap_SuccessfulOutcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // SuccessfulOutcome/value -> SuccessfulOutcome/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_SuccessfulOutcomeValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -2196,8 +2226,11 @@ dissect_hnbap_SuccessfulOutcome(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 static int
 dissect_hnbap_UnsuccessfulOutcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // UnsuccessfulOutcome/value -> UnsuccessfulOutcome/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_UnsuccessfulOutcomeValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -2246,7 +2279,7 @@ dissect_hnbap_HNBAP_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int dissect_BackoffTimer_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_BackoffTimer(tvb, offset, &asn1_ctx, tree, hf_hnbap_BackoffTimer_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2254,7 +2287,7 @@ static int dissect_BackoffTimer_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
 static int dissect_Cause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_Cause(tvb, offset, &asn1_ctx, tree, hf_hnbap_Cause_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2262,7 +2295,7 @@ static int dissect_Cause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tr
 static int dissect_CellIdentity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_CellIdentity(tvb, offset, &asn1_ctx, tree, hf_hnbap_CellIdentity_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2270,7 +2303,7 @@ static int dissect_CellIdentity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
 static int dissect_Context_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_Context_ID(tvb, offset, &asn1_ctx, tree, hf_hnbap_Context_ID_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2278,7 +2311,7 @@ static int dissect_Context_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pro
 static int dissect_CriticalityDiagnostics_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_CriticalityDiagnostics(tvb, offset, &asn1_ctx, tree, hf_hnbap_CriticalityDiagnostics_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2286,7 +2319,7 @@ static int dissect_CriticalityDiagnostics_PDU(tvbuff_t *tvb _U_, packet_info *pi
 static int dissect_CSG_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_CSG_ID(tvb, offset, &asn1_ctx, tree, hf_hnbap_CSG_ID_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2294,7 +2327,7 @@ static int dissect_CSG_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_t
 static int dissect_CSGMembershipStatus_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_CSGMembershipStatus(tvb, offset, &asn1_ctx, tree, hf_hnbap_CSGMembershipStatus_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2302,7 +2335,7 @@ static int dissect_CSGMembershipStatus_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_HNB_Cell_Access_Mode_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNB_Cell_Access_Mode(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNB_Cell_Access_Mode_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2310,7 +2343,7 @@ static int dissect_HNB_Cell_Access_Mode_PDU(tvbuff_t *tvb _U_, packet_info *pinf
 static int dissect_HNB_Location_Information_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNB_Location_Information(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNB_Location_Information_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2318,7 +2351,7 @@ static int dissect_HNB_Location_Information_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_HNB_Identity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNB_Identity(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNB_Identity_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2326,7 +2359,7 @@ static int dissect_HNB_Identity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
 static int dissect_IP_Address_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_IP_Address(tvb, offset, &asn1_ctx, tree, hf_hnbap_IP_Address_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2334,7 +2367,7 @@ static int dissect_IP_Address_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pro
 static int dissect_LAC_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_LAC(tvb, offset, &asn1_ctx, tree, hf_hnbap_LAC_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2342,7 +2375,7 @@ static int dissect_LAC_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree
 static int dissect_MuxPortNumber_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_MuxPortNumber(tvb, offset, &asn1_ctx, tree, hf_hnbap_MuxPortNumber_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2350,7 +2383,7 @@ static int dissect_MuxPortNumber_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
 static int dissect_NeighbourInfoList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_NeighbourInfoList(tvb, offset, &asn1_ctx, tree, hf_hnbap_NeighbourInfoList_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2358,7 +2391,7 @@ static int dissect_NeighbourInfoList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_NeighbourInfoRequestList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_NeighbourInfoRequestList(tvb, offset, &asn1_ctx, tree, hf_hnbap_NeighbourInfoRequestList_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2366,7 +2399,7 @@ static int dissect_NeighbourInfoRequestList_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_PLMNidentity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_PLMNidentity(tvb, offset, &asn1_ctx, tree, hf_hnbap_PLMNidentity_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2374,7 +2407,7 @@ static int dissect_PLMNidentity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
 static int dissect_PSC_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_PSC(tvb, offset, &asn1_ctx, tree, hf_hnbap_PSC_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2382,7 +2415,7 @@ static int dissect_PSC_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree
 static int dissect_RABList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_RABList(tvb, offset, &asn1_ctx, tree, hf_hnbap_RABList_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2390,7 +2423,7 @@ static int dissect_RABList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_
 static int dissect_RAC_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_RAC(tvb, offset, &asn1_ctx, tree, hf_hnbap_RAC_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2398,7 +2431,7 @@ static int dissect_RAC_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree
 static int dissect_Registration_Cause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_Registration_Cause(tvb, offset, &asn1_ctx, tree, hf_hnbap_Registration_Cause_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2406,7 +2439,7 @@ static int dissect_Registration_Cause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo 
 static int dissect_RNC_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_RNC_ID(tvb, offset, &asn1_ctx, tree, hf_hnbap_RNC_ID_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2414,7 +2447,7 @@ static int dissect_RNC_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_t
 static int dissect_SAC_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_SAC(tvb, offset, &asn1_ctx, tree, hf_hnbap_SAC_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2422,7 +2455,7 @@ static int dissect_SAC_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree
 static int dissect_UE_Capabilities_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_UE_Capabilities(tvb, offset, &asn1_ctx, tree, hf_hnbap_UE_Capabilities_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2430,7 +2463,7 @@ static int dissect_UE_Capabilities_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
 static int dissect_UE_Identity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_UE_Identity(tvb, offset, &asn1_ctx, tree, hf_hnbap_UE_Identity_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2438,7 +2471,7 @@ static int dissect_UE_Identity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pr
 static int dissect_Update_cause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_Update_cause(tvb, offset, &asn1_ctx, tree, hf_hnbap_Update_cause_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2446,7 +2479,7 @@ static int dissect_Update_cause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
 static int dissect_HNBRegisterRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNBRegisterRequest(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNBRegisterRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2454,7 +2487,7 @@ static int dissect_HNBRegisterRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo 
 static int dissect_HNBRegisterAccept_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNBRegisterAccept(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNBRegisterAccept_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2462,7 +2495,7 @@ static int dissect_HNBRegisterAccept_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_HNBRegisterReject_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNBRegisterReject(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNBRegisterReject_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2470,7 +2503,7 @@ static int dissect_HNBRegisterReject_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_HNBDe_Register_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNBDe_Register(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNBDe_Register_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2478,7 +2511,7 @@ static int dissect_HNBDe_Register_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
 static int dissect_UERegisterRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_UERegisterRequest(tvb, offset, &asn1_ctx, tree, hf_hnbap_UERegisterRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2486,7 +2519,7 @@ static int dissect_UERegisterRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_UERegisterAccept_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_UERegisterAccept(tvb, offset, &asn1_ctx, tree, hf_hnbap_UERegisterAccept_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2494,7 +2527,7 @@ static int dissect_UERegisterAccept_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_UERegisterReject_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_UERegisterReject(tvb, offset, &asn1_ctx, tree, hf_hnbap_UERegisterReject_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2502,7 +2535,7 @@ static int dissect_UERegisterReject_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_UEDe_Register_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_UEDe_Register(tvb, offset, &asn1_ctx, tree, hf_hnbap_UEDe_Register_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2510,7 +2543,7 @@ static int dissect_UEDe_Register_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
 static int dissect_CSGMembershipUpdate_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_CSGMembershipUpdate(tvb, offset, &asn1_ctx, tree, hf_hnbap_CSGMembershipUpdate_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2518,7 +2551,7 @@ static int dissect_CSGMembershipUpdate_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_TNLUpdateRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_TNLUpdateRequest(tvb, offset, &asn1_ctx, tree, hf_hnbap_TNLUpdateRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2526,7 +2559,7 @@ static int dissect_TNLUpdateRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_TNLUpdateResponse_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_TNLUpdateResponse(tvb, offset, &asn1_ctx, tree, hf_hnbap_TNLUpdateResponse_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2534,7 +2567,7 @@ static int dissect_TNLUpdateResponse_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_TNLUpdateFailure_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_TNLUpdateFailure(tvb, offset, &asn1_ctx, tree, hf_hnbap_TNLUpdateFailure_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2542,7 +2575,7 @@ static int dissect_TNLUpdateFailure_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_HNBConfigTransferRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNBConfigTransferRequest(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNBConfigTransferRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2550,7 +2583,7 @@ static int dissect_HNBConfigTransferRequest_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_HNBConfigTransferResponse_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNBConfigTransferResponse(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNBConfigTransferResponse_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2558,7 +2591,7 @@ static int dissect_HNBConfigTransferResponse_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_RelocationComplete_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_RelocationComplete(tvb, offset, &asn1_ctx, tree, hf_hnbap_RelocationComplete_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2566,7 +2599,7 @@ static int dissect_RelocationComplete_PDU(tvbuff_t *tvb _U_, packet_info *pinfo 
 static int dissect_ErrorIndication_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_ErrorIndication(tvb, offset, &asn1_ctx, tree, hf_hnbap_ErrorIndication_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2574,7 +2607,7 @@ static int dissect_ErrorIndication_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
 static int dissect_PrivateMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_PrivateMessage(tvb, offset, &asn1_ctx, tree, hf_hnbap_PrivateMessage_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -2582,58 +2615,55 @@ static int dissect_PrivateMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
 static int dissect_HNBAP_PDU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_hnbap_HNBAP_PDU(tvb, offset, &asn1_ctx, tree, hf_hnbap_HNBAP_PDU_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 
 
-/*--- End of included file: packet-hnbap-fn.c ---*/
-#line 82 "./asn1/hnbap/packet-hnbap-template.c"
-
 static int dissect_ProtocolIEFieldValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(hnbap_ies_dissector_table, ProtocolIE_ID, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(hnbap_ies_dissector_table, ProtocolIE_ID, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_ProtocolExtensionFieldExtensionValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(hnbap_extension_dissector_table, ProtocolIE_ID, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(hnbap_extension_dissector_table, ProtocolIE_ID, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 #if 0
 static int dissect_InitiatingMessageValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
   if (!ProcedureCode) return 0;
-  return (dissector_try_string(hnbap_proc_imsg_dissector_table, ProcedureCode, tvb, pinfo, tree, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_string_with_data(hnbap_proc_imsg_dissector_table, ProcedureCode, tvb, pinfo, tree, true, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_SuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
   if (!ProcedureCode) return 0;
-  return (dissector_try_string(hnbap_proc_sout_dissector_table, ProcedureCode, tvb, pinfo, tree, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_string_with_data(hnbap_proc_sout_dissector_table, ProcedureCode, tvb, pinfo, tree, true, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_UnsuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
   if (!ProcedureCode) return 0;
-  return (dissector_try_string(hnbap_proc_uout_dissector_table, ProcedureCode, tvb, pinfo, tree, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_string_with_data(hnbap_proc_uout_dissector_table, ProcedureCode, tvb, pinfo, tree, true, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 #endif
 
 static int dissect_InitiatingMessageValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(hnbap_proc_imsg_dissector_table, ProcedureCode, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(hnbap_proc_imsg_dissector_table, ProcedureCode, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_SuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(hnbap_proc_sout_dissector_table, ProcedureCode, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(hnbap_proc_sout_dissector_table, ProcedureCode, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_UnsuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(hnbap_proc_uout_dissector_table, ProcedureCode, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(hnbap_proc_uout_dissector_table, ProcedureCode, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int
@@ -2654,15 +2684,11 @@ dissect_hnbap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
 /*--- proto_register_hnbap -------------------------------------------*/
 void proto_register_hnbap(void) {
-module_t *hnbap_module;
 
   /* List of fields */
 
   static hf_register_info hf[] = {
 
-
-/*--- Included file: packet-hnbap-hfarr.c ---*/
-#line 1 "./asn1/hnbap/packet-hnbap-hfarr.c"
     { &hf_hnbap_BackoffTimer_PDU,
       { "BackoffTimer", "hnbap.BackoffTimer",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -2709,7 +2735,7 @@ module_t *hnbap_module;
         NULL, HFILL }},
     { &hf_hnbap_LAC_PDU,
       { "LAC", "hnbap.LAC",
-        FT_BYTES, BASE_NONE, NULL, 0,
+        FT_UINT16, BASE_DEC_HEX, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_MuxPortNumber_PDU,
       { "MuxPortNumber", "hnbap.MuxPortNumber",
@@ -2737,7 +2763,7 @@ module_t *hnbap_module;
         NULL, HFILL }},
     { &hf_hnbap_RAC_PDU,
       { "RAC", "hnbap.RAC",
-        FT_BYTES, BASE_NONE, NULL, 0,
+        FT_UINT8, BASE_DEC_HEX, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_Registration_Cause_PDU,
       { "Registration-Cause", "hnbap.Registration_Cause",
@@ -2749,7 +2775,7 @@ module_t *hnbap_module;
         NULL, HFILL }},
     { &hf_hnbap_SAC_PDU,
       { "SAC", "hnbap.SAC",
-        FT_BYTES, BASE_NONE, NULL, 0,
+        FT_UINT16, BASE_DEC_HEX, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_UE_Capabilities_PDU,
       { "UE-Capabilities", "hnbap.UE_Capabilities_element",
@@ -2848,7 +2874,7 @@ module_t *hnbap_module;
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_protocol_ie_field_id,
-      { "id", "hnbap.id",
+      { "id", "hnbap.protocol_ie_field_id",
         FT_UINT32, BASE_DEC, VALS(hnbap_ProtocolIE_ID_vals), 0,
         "ProtocolIE_ID", HFILL }},
     { &hf_hnbap_criticality,
@@ -2856,7 +2882,7 @@ module_t *hnbap_module;
         FT_UINT32, BASE_DEC, VALS(hnbap_Criticality_vals), 0,
         NULL, HFILL }},
     { &hf_hnbap_ie_field_value,
-      { "value", "hnbap.value_element",
+      { "value", "hnbap.ie_field_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ProtocolIE_Field_value", HFILL }},
     { &hf_hnbap_ProtocolExtensionContainer_item,
@@ -2876,11 +2902,11 @@ module_t *hnbap_module;
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_private_ie_field_id,
-      { "id", "hnbap.id",
+      { "id", "hnbap.private_ie_field_id",
         FT_UINT32, BASE_DEC, VALS(hnbap_PrivateIE_ID_vals), 0,
         "PrivateIE_ID", HFILL }},
     { &hf_hnbap_private_value,
-      { "value", "hnbap.value_element",
+      { "value", "hnbap.private_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "PrivateIE_Field_value", HFILL }},
     { &hf_hnbap_directionOfAltitude,
@@ -2949,14 +2975,14 @@ module_t *hnbap_module;
         NULL, HFILL }},
     { &hf_hnbap_lAC,
       { "lAC", "hnbap.lAC",
-        FT_BYTES, BASE_NONE, NULL, 0,
+        FT_UINT16, BASE_DEC_HEX, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_cI,
       { "cI", "hnbap.cI",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_geographical_location_geographical_coordinates,
-      { "geographicalCoordinates", "hnbap.geographicalCoordinates_element",
+      { "geographicalCoordinates", "hnbap.geographical_location_geographical_coordinates_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_altitudeAndDirection,
@@ -3024,7 +3050,7 @@ module_t *hnbap_module;
         FT_NONE, BASE_NONE, NULL, 0,
         "MacroCoverageInformation", HFILL }},
     { &hf_hnbap_hnb_location_information_geographical_coordinates,
-      { "geographicalCoordinates", "hnbap.geographicalCoordinates_element",
+      { "geographicalCoordinates", "hnbap.hnb_location_information_geographical_coordinates_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "GeographicalLocation", HFILL }},
     { &hf_hnbap_hNB_Identity_Info,
@@ -3059,8 +3085,8 @@ module_t *hnbap_module;
       { "pLMNID", "hnbap.pLMNID",
         FT_BYTES, BASE_NONE, NULL, 0,
         "PLMNidentity", HFILL }},
-    { &hf_hnbap_cellIdentity_01,
-      { "cellIdentity", "hnbap.cellIdentity",
+    { &hf_hnbap_macroCellID,
+      { "cellIdentity", "hnbap.macroCellID",
         FT_UINT32, BASE_DEC, VALS(hnbap_MacroCellID_vals), 0,
         "MacroCellID", HFILL }},
     { &hf_hnbap_uTRANCellID,
@@ -3113,7 +3139,7 @@ module_t *hnbap_module;
         NULL, HFILL }},
     { &hf_hnbap_rAC,
       { "rAC", "hnbap.rAC",
-        FT_BYTES, BASE_NONE, NULL, 0,
+        FT_UINT8, BASE_DEC_HEX, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_tMSI,
       { "tMSI", "hnbap.tMSI",
@@ -3196,28 +3222,23 @@ module_t *hnbap_module;
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_hnbap_initiatingMessagevalue,
-      { "value", "hnbap.value_element",
+      { "value", "hnbap.initiatingMessagevalue_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "InitiatingMessage_value", HFILL }},
     { &hf_hnbap_successfulOutcome_value,
-      { "value", "hnbap.value_element",
+      { "value", "hnbap.successfulOutcome_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "SuccessfulOutcome_value", HFILL }},
     { &hf_hnbap_unsuccessfulOutcome_value,
-      { "value", "hnbap.value_element",
+      { "value", "hnbap.unsuccessfulOutcome_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "UnsuccessfulOutcome_value", HFILL }},
-
-/*--- End of included file: packet-hnbap-hfarr.c ---*/
-#line 152 "./asn1/hnbap/packet-hnbap-template.c"
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
           &ett_hnbap,
-
-/*--- Included file: packet-hnbap-ettarr.c ---*/
-#line 1 "./asn1/hnbap/packet-hnbap-ettarr.c"
+          &ett_hnbap_imsi,
     &ett_hnbap_PrivateIE_ID,
     &ett_hnbap_ProtocolIE_Container,
     &ett_hnbap_ProtocolIE_Field,
@@ -3282,9 +3303,6 @@ module_t *hnbap_module;
     &ett_hnbap_InitiatingMessage,
     &ett_hnbap_SuccessfulOutcome,
     &ett_hnbap_UnsuccessfulOutcome,
-
-/*--- End of included file: packet-hnbap-ettarr.c ---*/
-#line 158 "./asn1/hnbap/packet-hnbap-template.c"
   };
 
 
@@ -3304,8 +3322,7 @@ module_t *hnbap_module;
   hnbap_proc_sout_dissector_table = register_dissector_table("hnbap.proc.sout", "HNBAP-ELEMENTARY-PROCEDURE SuccessfulOutcome", proto_hnbap, FT_UINT32, BASE_DEC);
   hnbap_proc_uout_dissector_table = register_dissector_table("hnbap.proc.uout", "HNBAP-ELEMENTARY-PROCEDURE UnsuccessfulOutcome", proto_hnbap, FT_UINT32, BASE_DEC);
 
-  hnbap_module = prefs_register_protocol(proto_hnbap, proto_reg_handoff_hnbap);
-  prefs_register_uint_preference(hnbap_module, "port", "HNBAP SCTP Port", "Set the port for HNBAP messages (Default of 29169)", 10, &global_sctp_port);
+  /* hnbap_module = prefs_register_protocol(proto_hnbap, NULL); */
 }
 
 
@@ -3313,15 +3330,8 @@ module_t *hnbap_module;
 void
 proto_reg_handoff_hnbap(void)
 {
-        static gboolean initialized = FALSE;
-        static guint sctp_port;
-
-        if (!initialized) {
-                dissector_add_uint("sctp.ppi", HNBAP_PAYLOAD_PROTOCOL_ID, hnbap_handle);
-                initialized = TRUE;
-
-/*--- Included file: packet-hnbap-dis-tab.c ---*/
-#line 1 "./asn1/hnbap/packet-hnbap-dis-tab.c"
+        dissector_add_uint("sctp.ppi", HNBAP_PAYLOAD_PROTOCOL_ID, hnbap_handle);
+        dissector_add_uint_with_preference("sctp.port", SCTP_PORT_HNBAP, hnbap_handle);
   dissector_add_uint("hnbap.ies", id_Cause, create_dissector_handle(dissect_Cause_PDU, proto_hnbap));
   dissector_add_uint("hnbap.ies", id_CriticalityDiagnostics, create_dissector_handle(dissect_CriticalityDiagnostics_PDU, proto_hnbap));
   dissector_add_uint("hnbap.ies", id_HNB_Identity, create_dissector_handle(dissect_HNB_Identity_PDU, proto_hnbap));
@@ -3368,13 +3378,4 @@ proto_reg_handoff_hnbap(void)
   dissector_add_uint("hnbap.proc.imsg", id_privateMessage, create_dissector_handle(dissect_PrivateMessage_PDU, proto_hnbap));
 
 
-/*--- End of included file: packet-hnbap-dis-tab.c ---*/
-#line 193 "./asn1/hnbap/packet-hnbap-template.c"
-
-        } else {
-                dissector_delete_uint("sctp.port", sctp_port, hnbap_handle);
-        }
-        /* Set our port number for future use */
-        sctp_port = global_sctp_port;
-        dissector_add_uint("sctp.port", sctp_port, hnbap_handle);
 }

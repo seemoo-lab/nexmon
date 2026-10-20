@@ -1,0 +1,868 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaNodeInfo" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaNodeInfo</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a6570c134d7bba96ba75d15b71b3ca417" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodeType</definition>
+        <argsstring></argsstring>
+        <name>nodeType</name>
+        <qualifiedname>_xmlSchemaNodeInfo::nodeType</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="853" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="853" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1af22243a9342e852a5bcc0b878913a289" prot="public" static="no" mutable="no">
+        <type>xmlNodePtr</type>
+        <definition>xmlNodePtr node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>_xmlSchemaNodeInfo::node</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="854" column="16" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="854" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a0a9c633e49443910cff6e73e40eda6b8" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodeLine</definition>
+        <argsstring></argsstring>
+        <name>nodeLine</name>
+        <qualifiedname>_xmlSchemaNodeInfo::nodeLine</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="855" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="855" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a671b6e256db1dac84e4e701c17222aaa" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* localName</definition>
+        <argsstring></argsstring>
+        <name>localName</name>
+        <qualifiedname>_xmlSchemaNodeInfo::localName</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="856" column="19" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="856" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a6ac8784a927ab13c9770bca27467d2a9" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* nsName</definition>
+        <argsstring></argsstring>
+        <name>nsName</name>
+        <qualifiedname>_xmlSchemaNodeInfo::nsName</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="857" column="19" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="857" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a3e19d0b7c498da553db7c10f46fcf307" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>_xmlSchemaNodeInfo::value</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="858" column="19" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="858" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a8dac12a20f5fa0a696f7cc31fde6a135" prot="public" static="no" mutable="no">
+        <type>xmlSchemaValPtr</type>
+        <definition>xmlSchemaValPtr val</definition>
+        <argsstring></argsstring>
+        <name>val</name>
+        <qualifiedname>_xmlSchemaNodeInfo::val</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="859" column="21" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="859" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1afa57ffe3a221463e73aa59abdf770b54" prot="public" static="no" mutable="no">
+        <type>xmlSchemaTypePtr</type>
+        <definition>xmlSchemaTypePtr typeDef</definition>
+        <argsstring></argsstring>
+        <name>typeDef</name>
+        <qualifiedname>_xmlSchemaNodeInfo::typeDef</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="860" column="22" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="860" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlSchemaNodeInfo::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="862" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="862" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a41f242ab95a3cd27e0221dbc6db92e26" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int valNeeded</definition>
+        <argsstring></argsstring>
+        <name>valNeeded</name>
+        <qualifiedname>_xmlSchemaNodeInfo::valNeeded</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="864" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="864" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a32e109a67e8afa1c9e51e5553d4a3cdf" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int normVal</definition>
+        <argsstring></argsstring>
+        <name>normVal</name>
+        <qualifiedname>_xmlSchemaNodeInfo::normVal</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="865" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="865" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1ad0c67a83dc557bbe6858d4ba34095484" prot="public" static="no" mutable="no">
+        <type>xmlSchemaElementPtr</type>
+        <definition>xmlSchemaElementPtr decl</definition>
+        <argsstring></argsstring>
+        <name>decl</name>
+        <qualifiedname>_xmlSchemaNodeInfo::decl</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="867" column="25" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="867" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1acb5ba97551079e0b072c62c21d784ac5" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int depth</definition>
+        <argsstring></argsstring>
+        <name>depth</name>
+        <qualifiedname>_xmlSchemaNodeInfo::depth</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="868" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="868" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1afff5a2acc474614c8773f9985aa6b44e" prot="public" static="no" mutable="no">
+        <type>xmlSchemaPSVIIDCBindingPtr</type>
+        <definition>xmlSchemaPSVIIDCBindingPtr idcTable</definition>
+        <argsstring></argsstring>
+        <name>idcTable</name>
+        <qualifiedname>_xmlSchemaNodeInfo::idcTable</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="869" column="32" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="869" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a31105b0313a780b2da95a0930636c8af" prot="public" static="no" mutable="no">
+        <type>xmlSchemaIDCMatcherPtr</type>
+        <definition>xmlSchemaIDCMatcherPtr idcMatchers</definition>
+        <argsstring></argsstring>
+        <name>idcMatchers</name>
+        <qualifiedname>_xmlSchemaNodeInfo::idcMatchers</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="871" column="28" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="871" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a13f3802ccaf741f6e22452eb3b626141" prot="public" static="no" mutable="no">
+        <type>xmlRegExecCtxtPtr</type>
+        <definition>xmlRegExecCtxtPtr regexCtxt</definition>
+        <argsstring></argsstring>
+        <name>regexCtxt</name>
+        <qualifiedname>_xmlSchemaNodeInfo::regexCtxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="873" column="23" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="873" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a988eefb5d23f2074f2e4842f5f19d060" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+        <definition>const xmlChar** nsBindings</definition>
+        <argsstring></argsstring>
+        <name>nsBindings</name>
+        <qualifiedname>_xmlSchemaNodeInfo::nsBindings</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="875" column="19" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="875" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a7eb4173d2bdbf90a89d7f6458a71b612" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbNsBindings</definition>
+        <argsstring></argsstring>
+        <name>nbNsBindings</name>
+        <qualifiedname>_xmlSchemaNodeInfo::nbNsBindings</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="876" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="876" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a9a909d77c19434ab2557956aee4d7caf" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int sizeNsBindings</definition>
+        <argsstring></argsstring>
+        <name>sizeNsBindings</name>
+        <qualifiedname>_xmlSchemaNodeInfo::sizeNsBindings</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="877" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="877" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1aa54d2a2f9292d5f317d544a2892008b6" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int hasKeyrefs</definition>
+        <argsstring></argsstring>
+        <name>hasKeyrefs</name>
+        <qualifiedname>_xmlSchemaNodeInfo::hasKeyrefs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="879" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="879" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaNodeInfo_1a42a8a53fbe1018cfdd9bacb52afb1a8d" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int appliedXPath</definition>
+        <argsstring></argsstring>
+        <name>appliedXPath</name>
+        <qualifiedname>_xmlSchemaNodeInfo::appliedXPath</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="880" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="880" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Holds information of an element node. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="8">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="22">
+        <label>_xmlAutomataState</label>
+        <childnode refid="23" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlDict</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDictStrings</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="43">
+        <label>_xmlHashTable</label>
+        <childnode refid="44" relation="usage">
+          <edgelabel>table</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="24">
+        <label>_xmlRegAtom</label>
+        <childnode refid="22" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="25" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="26">
+        <label>_xmlRegCounter</label>
+      </node>
+      <node id="45">
+        <label>_xmlRegExecCtxt</label>
+        <childnode refid="21" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+        <childnode refid="45" relation="usage">
+          <edgelabel>callback</edgelabel>
+        </childnode>
+        <childnode refid="22" relation="usage">
+          <edgelabel>errState</edgelabel>
+          <edgelabel>state</edgelabel>
+        </childnode>
+        <childnode refid="46" relation="usage">
+          <edgelabel>rollbacks</edgelabel>
+        </childnode>
+        <childnode refid="47" relation="usage">
+          <edgelabel>inputStack</edgelabel>
+        </childnode>
+      </node>
+      <node id="46">
+        <label>_xmlRegExecRollback</label>
+        <childnode refid="22" relation="usage">
+          <edgelabel>state</edgelabel>
+        </childnode>
+      </node>
+      <node id="47">
+        <label>_xmlRegInputToken</label>
+      </node>
+      <node id="25">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="23">
+        <label>_xmlRegTrans</label>
+        <childnode refid="24" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+      <node id="21">
+        <label>_xmlRegexp</label>
+        <childnode refid="22" relation="usage">
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="24" relation="usage">
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="26" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+      <node id="18">
+        <label>_xmlSchemaAnnot</label>
+        <link refid="struct__xmlSchemaAnnot"/>
+        <childnode refid="18" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>content</edgelabel>
+        </childnode>
+      </node>
+      <node id="19">
+        <label>_xmlSchemaAttribute</label>
+        <link refid="struct__xmlSchemaAttribute"/>
+        <childnode refid="19" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>refDecl</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>base</edgelabel>
+          <edgelabel>subtypes</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>defVal</edgelabel>
+        </childnode>
+      </node>
+      <node id="27">
+        <label>_xmlSchemaAttributeLink</label>
+        <link refid="struct__xmlSchemaAttributeLink"/>
+        <childnode refid="27" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+      </node>
+      <node id="37">
+        <label>_xmlSchemaBasicItem</label>
+      </node>
+      <node id="32">
+        <label>_xmlSchemaElement</label>
+        <link refid="struct__xmlSchemaElement"/>
+        <childnode refid="17" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>subtypes</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>attributes</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="32" relation="usage">
+          <edgelabel>refDecl</edgelabel>
+        </childnode>
+        <childnode refid="21" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>defVal</edgelabel>
+        </childnode>
+      </node>
+      <node id="20">
+        <label>_xmlSchemaFacet</label>
+        <link refid="struct__xmlSchemaFacet"/>
+        <childnode refid="20" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>val</edgelabel>
+        </childnode>
+        <childnode refid="21" relation="usage">
+          <edgelabel>regexp</edgelabel>
+        </childnode>
+      </node>
+      <node id="31">
+        <label>_xmlSchemaFacetLink</label>
+        <link refid="struct__xmlSchemaFacetLink"/>
+        <childnode refid="31" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>facet</edgelabel>
+        </childnode>
+      </node>
+      <node id="34">
+        <label>_xmlSchemaIDC</label>
+        <childnode refid="18" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="34" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="35" relation="usage">
+          <edgelabel>fields</edgelabel>
+          <edgelabel>selector</edgelabel>
+        </childnode>
+        <childnode refid="36" relation="usage">
+          <edgelabel>ref</edgelabel>
+        </childnode>
+      </node>
+      <node id="42">
+        <label>_xmlSchemaIDCAug</label>
+        <childnode refid="42" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="34" relation="usage">
+          <edgelabel>def</edgelabel>
+        </childnode>
+      </node>
+      <node id="41">
+        <label>_xmlSchemaIDCMatcher</label>
+        <childnode refid="41" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>nextCached</edgelabel>
+        </childnode>
+        <childnode refid="42" relation="usage">
+          <edgelabel>aidc</edgelabel>
+        </childnode>
+        <childnode refid="39" relation="usage">
+          <edgelabel>keySeqs</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>targets</edgelabel>
+        </childnode>
+        <childnode refid="43" relation="usage">
+          <edgelabel>htab</edgelabel>
+        </childnode>
+      </node>
+      <node id="35">
+        <label>_xmlSchemaIDCSelect</label>
+        <childnode refid="35" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="34" relation="usage">
+          <edgelabel>idc</edgelabel>
+        </childnode>
+      </node>
+      <node id="40">
+        <label>_xmlSchemaItemList</label>
+      </node>
+      <node id="1">
+        <label>_xmlSchemaNodeInfo</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>val</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>typeDef</edgelabel>
+        </childnode>
+        <childnode refid="32" relation="usage">
+          <edgelabel>decl</edgelabel>
+        </childnode>
+        <childnode refid="33" relation="usage">
+          <edgelabel>idcTable</edgelabel>
+        </childnode>
+        <childnode refid="41" relation="usage">
+          <edgelabel>idcMatchers</edgelabel>
+        </childnode>
+        <childnode refid="45" relation="usage">
+          <edgelabel>regexCtxt</edgelabel>
+        </childnode>
+      </node>
+      <node id="33">
+        <label>_xmlSchemaPSVIIDCBinding</label>
+        <childnode refid="33" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="34" relation="usage">
+          <edgelabel>definition</edgelabel>
+        </childnode>
+        <childnode refid="38" relation="usage">
+          <edgelabel>nodeTable</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>dupls</edgelabel>
+        </childnode>
+      </node>
+      <node id="39">
+        <label>_xmlSchemaPSVIIDCKey</label>
+        <childnode refid="17" relation="usage">
+          <edgelabel>type</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>val</edgelabel>
+        </childnode>
+      </node>
+      <node id="38">
+        <label>_xmlSchemaPSVIIDCNode</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="39" relation="usage">
+          <edgelabel>keys</edgelabel>
+        </childnode>
+      </node>
+      <node id="36">
+        <label>_xmlSchemaQNameRef</label>
+        <childnode refid="37" relation="usage">
+          <edgelabel>item</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+      </node>
+      <node id="17">
+        <label>_xmlSchemaType</label>
+        <link refid="struct__xmlSchemaType"/>
+        <childnode refid="17" relation="usage">
+          <edgelabel>baseType</edgelabel>
+          <edgelabel>contentTypeDef</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>redef</edgelabel>
+          <edgelabel>subtypes</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>attributes</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>facets</edgelabel>
+        </childnode>
+        <childnode refid="27" relation="usage">
+          <edgelabel>attributeUses</edgelabel>
+        </childnode>
+        <childnode refid="28" relation="usage">
+          <edgelabel>attributeWildcard</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>memberTypes</edgelabel>
+        </childnode>
+        <childnode refid="31" relation="usage">
+          <edgelabel>facetSet</edgelabel>
+        </childnode>
+        <childnode refid="21" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+      </node>
+      <node id="30">
+        <label>_xmlSchemaTypeLink</label>
+        <link refid="struct__xmlSchemaTypeLink"/>
+        <childnode refid="30" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>type</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlSchemaVal</label>
+        <childnode refid="10" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>decimal</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>date</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>dur</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>qname</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>hex</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>base64</edgelabel>
+        </childnode>
+      </node>
+      <node id="16">
+        <label>_xmlSchemaValBase64</label>
+      </node>
+      <node id="12">
+        <label>_xmlSchemaValDate</label>
+      </node>
+      <node id="11">
+        <label>_xmlSchemaValDecimal</label>
+      </node>
+      <node id="13">
+        <label>_xmlSchemaValDuration</label>
+      </node>
+      <node id="15">
+        <label>_xmlSchemaValHex</label>
+      </node>
+      <node id="14">
+        <label>_xmlSchemaValQName</label>
+      </node>
+      <node id="28">
+        <label>_xmlSchemaWildcard</label>
+        <link refid="struct__xmlSchemaWildcard"/>
+        <childnode refid="18" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="29" relation="usage">
+          <edgelabel>negNsSet</edgelabel>
+          <edgelabel>nsSet</edgelabel>
+        </childnode>
+      </node>
+      <node id="29">
+        <label>_xmlSchemaWildcardNs</label>
+        <link refid="struct__xmlSchemaWildcardNs"/>
+        <childnode refid="29" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="44">
+        <label>xmlHashEntry</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlschemas.c" line="852" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="852" bodyend="881"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaNodeInfo_1a42a8a53fbe1018cfdd9bacb52afb1a8d" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>appliedXPath</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1ad0c67a83dc557bbe6858d4ba34095484" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>decl</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1acb5ba97551079e0b072c62c21d784ac5" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>depth</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>flags</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1aa54d2a2f9292d5f317d544a2892008b6" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>hasKeyrefs</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a31105b0313a780b2da95a0930636c8af" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>idcMatchers</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1afff5a2acc474614c8773f9985aa6b44e" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>idcTable</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a671b6e256db1dac84e4e701c17222aaa" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>localName</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a7eb4173d2bdbf90a89d7f6458a71b612" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>nbNsBindings</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1af22243a9342e852a5bcc0b878913a289" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>node</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a0a9c633e49443910cff6e73e40eda6b8" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>nodeLine</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a6570c134d7bba96ba75d15b71b3ca417" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>nodeType</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a32e109a67e8afa1c9e51e5553d4a3cdf" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>normVal</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a988eefb5d23f2074f2e4842f5f19d060" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>nsBindings</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a6ac8784a927ab13c9770bca27467d2a9" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>nsName</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a13f3802ccaf741f6e22452eb3b626141" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>regexCtxt</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a9a909d77c19434ab2557956aee4d7caf" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>sizeNsBindings</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1afa57ffe3a221463e73aa59abdf770b54" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>typeDef</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a8dac12a20f5fa0a696f7cc31fde6a135" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>val</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a41f242ab95a3cd27e0221dbc6db92e26" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>valNeeded</name></member>
+      <member refid="struct__xmlSchemaNodeInfo_1a3e19d0b7c498da553db7c10f46fcf307" prot="public" virt="non-virtual"><scope>_xmlSchemaNodeInfo</scope><name>value</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

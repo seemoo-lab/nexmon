@@ -1,54 +1,46 @@
 /* packet-nt-tpcp.c
-* Routines for Transparent Proxy Cache Protocol packet disassembly
-* (c) Copyright Giles Scott <giles.scott1 [AT] btinternet.com>
-*
-* Wireshark - Network traffic analyzer
-* By Gerald Combs <gerald@wireshark.org>
-* Copyright 1998 Gerald Combs
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ * Routines for Transparent Proxy Cache Protocol packet disassembly
+ * (c) Copyright Giles Scott <giles.scott1 [AT] btinternet.com>
+ *
+ * Wireshark - Network traffic analyzer
+ * By Gerald Combs <gerald@wireshark.org>
+ * Copyright 1998 Gerald Combs
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
 #include "config.h"
 
 
 #include <epan/packet.h>
 #include <epan/addr_resolv.h> /* this is for get_hostname and udp_port_to_display */
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_tpcp(void);
 void proto_reg_handoff_tpcp(void);
 
-#define UDP_PORT_TPCP   3121
+static dissector_handle_t tpcp_handle;
+
+#define UDP_PORT_TPCP   3121 /* Not IANA registered */
 
 /* TPCP version1/2 PDU format */
 typedef struct _tpcppdu_t {
-	guint8	version;     /* PDU version 1 */
-	guint8	type;	     /* PDU type: 1=request, 2=reply, 3=add filter, 4=rem  filter */
+	uint8_t	version;     /* PDU version 1 */
+	uint8_t	type;	     /* PDU type: 1=request, 2=reply, 3=add filter, 4=rem  filter */
 	                     /* Version 2 adds 5=add session 6= remove session */
-	guint16	flags;	     /* 0x0001: 0=UDP, 1=TCP*/
+	uint16_t	flags;	     /* 0x0001: 0=UDP, 1=TCP*/
 	                     /* 0x0002: 0=NONE, 1=DONT_REDIRECT */
 	                     /* 0x0004: 0=NONE, 1=Xon */
 	                     /* 0x0008: 0=NONE, 1=Xoff */
-	guint16	id;	     /* request/response identification or TTL */
-	guint16	cport;	     /* client UDP or TCP port number */
-	guint32	caddr;	     /* client IPv4 address */
-	guint32	saddr;	     /* server IPV4 address */
+	uint16_t	id;	     /* request/response identification or TTL */
+	uint16_t	cport;	     /* client UDP or TCP port number */
+	uint32_t	caddr;	     /* client IPv4 address */
+	uint32_t	saddr;	     /* server IPV4 address */
 	/* tpcp version 2 only*/
-	guint32 vaddr;	     /* Virtual Server IPv4 address */
-	guint32 rasaddr;     /* RAS server IPv4 address */
-	guint32 signature;   /* 0x74706370 - tpcp */
+	uint32_t vaddr;	     /* Virtual Server IPv4 address */
+	uint32_t rasaddr;     /* RAS server IPv4 address */
+	uint32_t signature;   /* 0x74706370 - tpcp */
 } tpcpdu_t;
 
 
@@ -64,10 +56,10 @@ static const value_string type_vals[] = {
 };
 
 /* TPCP Flags */
-#define TF_TPCP_UDPTCP 0x0001
-#define TF_TPCP_DONTREDIRECT 0x0002
-#define TF_TPCP_XON 0x0004
-#define TF_TPCP_XOFF 0x0008
+#define TF_TPCP_UDPTCP       0x01
+#define TF_TPCP_DONTREDIRECT 0x02
+#define TF_TPCP_XON          0x04
+#define TF_TPCP_XOFF         0x08
 
 
 /* Version info */
@@ -78,25 +70,25 @@ static const value_string type_vals[] = {
 #define TPCP_VER_2_LENGTH 28
 
 /* things we can do filters on */
-static int hf_tpcp_version = -1;
-static int hf_tpcp_type = -1;
-static int hf_tpcp_flags = -1;
-static int hf_tpcp_flags_tcp = -1;
-static int hf_tpcp_flags_redir = -1;
-static int hf_tpcp_flags_xon = -1;
-static int hf_tpcp_flags_xoff = -1;
-static int hf_tpcp_id = -1;
-static int hf_tpcp_cport = -1;
-static int hf_tpcp_caddr = -1;
-static int hf_tpcp_saddr = -1;
-static int hf_tpcp_vaddr = -1;
-static int hf_tpcp_rasaddr = -1;
-static int hf_tpcp_signature = -1;
+static int hf_tpcp_version;
+static int hf_tpcp_type;
+static int hf_tpcp_flags;
+static int hf_tpcp_flags_tcp;
+static int hf_tpcp_flags_redir;
+static int hf_tpcp_flags_xon;
+static int hf_tpcp_flags_xoff;
+static int hf_tpcp_id;
+static int hf_tpcp_cport;
+static int hf_tpcp_caddr;
+static int hf_tpcp_saddr;
+static int hf_tpcp_vaddr;
+static int hf_tpcp_rasaddr;
+static int hf_tpcp_signature;
 
-static int proto_tpcp = -1;
+static int proto_tpcp;
 
-static gint ett_tpcp = -1;
-static gint ett_tpcp_flags = -1;
+static int ett_tpcp;
+static int ett_tpcp_flags;
 
 
 static int
@@ -104,10 +96,10 @@ dissect_tpcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 {
 	proto_tree *tpcp_tree = NULL;
 	proto_item *ti;
-	guint8	version, type;
-	guint16	id, cport;
+	uint8_t	version, type;
+	uint16_t	id, cport;
 
-	static const int * tpcp_flags[] = {
+	static int * const tpcp_flags[] = {
 		&hf_tpcp_flags_tcp,
 		&hf_tpcp_flags_redir,
 		&hf_tpcp_flags_xon,
@@ -119,7 +111,7 @@ dissect_tpcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	/* need to find out which version!! */
-	version = tvb_get_guint8(tvb, 0);
+	version = tvb_get_uint8(tvb, 0);
 	if ((version != TPCP_VER_1) && (version != TPCP_VER_2)) {
 		/* Not us */
 		return 0;
@@ -131,17 +123,19 @@ dissect_tpcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	tpcp_tree = proto_item_add_subtree(ti, ett_tpcp);
 
 	proto_tree_add_item(tpcp_tree, hf_tpcp_version, tvb, 0, 1, ENC_BIG_ENDIAN);
-	type = tvb_get_guint8(tvb, 1);
+	type = tvb_get_uint8(tvb, 1);
 	proto_tree_add_item(tpcp_tree, hf_tpcp_type, tvb, 1, 1, ENC_BIG_ENDIAN);
 
-	proto_tree_add_bitmask(tpcp_tree, tvb, 2, hf_tpcp_flags, ett_tpcp_flags, tpcp_flags, ENC_NA);
+	proto_tree_add_bitmask(tpcp_tree, tvb, 2, hf_tpcp_flags, ett_tpcp_flags, tpcp_flags, ENC_BIG_ENDIAN);
+
+	/* N.B., flags are 8 bits, so byte at offset 3 skipped.. */
 
 	id = tvb_get_ntohs(tvb, 4);
 	proto_tree_add_item(tpcp_tree, hf_tpcp_id, tvb, 4, 2, ENC_BIG_ENDIAN);
 
 	cport = tvb_get_ntohs(tvb, 6);
 	proto_tree_add_uint_format_value(tpcp_tree, hf_tpcp_cport, tvb, 6, 2, cport,
-					 "%s", udp_port_to_display(wmem_packet_scope(), cport));
+					 "%s", udp_port_to_display(pinfo->pool, cport));
 
 	proto_tree_add_item(tpcp_tree, hf_tpcp_caddr, tvb, 8, 4, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tpcp_tree, hf_tpcp_saddr, tvb, 12, 4, ENC_BIG_ENDIAN);
@@ -155,9 +149,9 @@ dissect_tpcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	col_add_fstr(pinfo->cinfo, COL_INFO,"%s id %d CPort %s CIP %s SIP %s",
 			val_to_str_const(type, type_vals, "Unknown"),
 			id,
-			udp_port_to_display(wmem_packet_scope(), cport),
-			tvb_ip_to_str(tvb, 8),
-			tvb_ip_to_str(tvb, 12));
+			udp_port_to_display(pinfo->pool, cport),
+			tvb_ip_to_str(pinfo->pool, tvb, 8),
+			tvb_ip_to_str(pinfo->pool, tvb, 12));
 
 	if (version == TPCP_VER_1)
 		return TPCP_VER_1_LENGTH;
@@ -227,28 +221,26 @@ proto_register_tpcp(void)
 	};
 
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_tpcp,
 		&ett_tpcp_flags,
 	};
 
-	proto_tpcp = proto_register_protocol("Alteon - Transparent Proxy Cache Protocol",
-					     "TPCP", "tpcp");
+	proto_tpcp = proto_register_protocol("Alteon - Transparent Proxy Cache Protocol", "TPCP", "tpcp");
 	proto_register_field_array(proto_tpcp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	tpcp_handle = register_dissector("tpcp", dissect_tpcp, proto_tpcp);
 }
 
 void
 proto_reg_handoff_tpcp(void)
 {
-	dissector_handle_t tpcp_handle;
-
-	tpcp_handle = create_dissector_handle(dissect_tpcp, proto_tpcp);
-	dissector_add_uint("udp.port", UDP_PORT_TPCP, tpcp_handle);
+	dissector_add_uint_with_preference("udp.port", UDP_PORT_TPCP, tpcp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

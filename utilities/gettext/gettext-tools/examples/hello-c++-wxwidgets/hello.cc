@@ -7,7 +7,12 @@
 #include <wx/intl.h>
 
 /* Get getpid() declaration.  */
-#if HAVE_UNISTD_H
+#if defined _WIN32 && !defined __CYGWIN__
+/* native Windows API */
+# include <process.h>
+# define getpid _getpid
+#else
+/* POSIX API */
 # include <unistd.h>
 #endif
 

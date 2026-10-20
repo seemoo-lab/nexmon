@@ -7,28 +7,17 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
-#include <wsutil/sha1.h>
+#include <wsutil/wsgcrypt.h>
 #include <wsutil/sober128.h>
 
+static dissector_handle_t corosync_totemnet_handle;
 static dissector_handle_t corosync_totemsrp_handle;
 
 /* This dissector deals packets defined in totemnet.c of corosync
@@ -40,31 +29,29 @@ static dissector_handle_t corosync_totemsrp_handle;
  * Dissector body
  */
 
-#define PORT_COROSYNC_TOTEMNET 5405
+#define PORT_COROSYNC_TOTEMNET_RANGE "5404-5405" /* Not IANA registered */
 
 /* Forward declaration we need below */
 void proto_register_corosync_totemnet(void);
 void proto_reg_handoff_corosync_totemnet(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_corosync_totemnet = -1;
+static int proto_corosync_totemnet;
 
 /* field of struct security_header */
-static int hf_corosync_totemnet_security_header_hash_digest    = -1;
-static int hf_corosync_totemnet_security_header_salt           = -1;
-static int hf_corosync_totemnet_security_crypto_type           = -1;
-static int hf_corosync_totemnet_security_crypto_key            = -1;
+static int hf_corosync_totemnet_security_header_hash_digest;
+static int hf_corosync_totemnet_security_header_salt;
+static int hf_corosync_totemnet_security_crypto_type;
+static int hf_corosync_totemnet_security_crypto_key;
 
 /* configurable parameters */
-static guint   corosync_totemnet_port              = PORT_COROSYNC_TOTEMNET;
-static gchar*  corosync_totemnet_private_keys      = NULL;
-static gchar** corosync_totemnet_private_keys_list = NULL;
+static char*  corosync_totemnet_private_keys;
+static char** corosync_totemnet_private_keys_list;
 
 /* Initialize the subtree pointers */
-static gint ett_corosync_totemnet_security_header              = -1;
+static int ett_corosync_totemnet_security_header;
 
-
-#define SALT_SIZE      16
+#define SALT_SIZE          16
 
 #define TOTEM_CRYPTO_SOBER 0
 #define TOTEM_CRYPTO_NSS   1
@@ -79,8 +66,8 @@ static const value_string corosync_totemnet_crypto_type[] = {
 static int
 dissect_corosync_totemnet_security_header(tvbuff_t *tvb,
                                           packet_info *pinfo, proto_tree *parent_tree,
-                                          gboolean check_crypt_type,
-                                          const gchar* key)
+                                          bool check_crypt_type,
+                                          const char* key)
 {
   proto_item *item;
   proto_tree *tree;
@@ -96,10 +83,10 @@ dissect_corosync_totemnet_security_header(tvbuff_t *tvb,
 
       proto_tree_add_item(tree,
                           hf_corosync_totemnet_security_header_hash_digest,
-                          tvb, 0, SHA1_DIGEST_LEN, ENC_NA);
+                          tvb, 0, HASH_SHA1_LENGTH, ENC_NA);
       proto_tree_add_item(tree,
                           hf_corosync_totemnet_security_header_salt,
-                          tvb, SHA1_DIGEST_LEN, SALT_SIZE, ENC_NA);
+                          tvb, HASH_SHA1_LENGTH, SALT_SIZE, ENC_NA);
 
       if (check_crypt_type)
         {
@@ -112,10 +99,10 @@ dissect_corosync_totemnet_security_header(tvbuff_t *tvb,
           key_item = proto_tree_add_string(tree,
                                            hf_corosync_totemnet_security_crypto_key,
                                            tvb, 0, 0, key);
-          PROTO_ITEM_SET_GENERATED(key_item);
+          proto_item_set_generated(key_item);
         }
     }
-  return SHA1_DIGEST_LEN + SALT_SIZE;
+  return HASH_SHA1_LENGTH + SALT_SIZE;
 }
 
 /* About totemnet.c of corosync cluster engine:
@@ -151,7 +138,7 @@ On 12/14/2010 08:04 AM, Masatake YAMATO wrote:
 >>>>   Honza
 >>> I got the similar comment from wireshark developer.
 >>> Please, read the discussion:
->>>     https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=3232
+>>>     https://gitlab.com/wireshark/wireshark/-/issues/3232
 >>>
 >>
 >> I've read that thread long time before I've sent previous mail, so
@@ -228,7 +215,7 @@ nnn>>
 >
 >>> licensed in 3-clause BSD, as you know. I'd like to change the license
 >>> to merge my code to upstream project. I cannot do it in this context.
->>> See https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=3232#c13
+>>> See https://gitlab.com/wireshark/wireshark/-/issues/3232#c13
 >>> Thank you.
 >>
 >> Regards,
@@ -255,57 +242,55 @@ Regards
 static int
 dissect_corosynec_totemnet_with_decryption(tvbuff_t *tvb,
                                            packet_info *pinfo, proto_tree *parent_tree,
-                                           gboolean check_crypt_type,
-                                           const gchar* key_for_trial)
+                                           bool check_crypt_type,
+                                           const char* key_for_trial)
 {
   unsigned char  keys[48];
-  sober128_prng     keygen_prng_state;
-  sober128_prng     stream_prng_state;
+  sober128_prng  keygen_prng_state;
+  sober128_prng  stream_prng_state;
   unsigned char *hmac_key       = &keys[32];
   unsigned char *cipher_key     = &keys[16];
   unsigned char *initial_vector = &keys[0];
-  unsigned char  digest_comparison[SHA1_DIGEST_LEN];
+  unsigned char  digest_comparison[HASH_SHA1_LENGTH];
 
   int            io_len;
-  guint8        *io_base;
+  uint8_t       *io_base;
 
 #define PRIVATE_KEY_LEN_MAX 256
-  gchar          private_key[PRIVATE_KEY_LEN_MAX];
-  gsize          private_key_len;
+  char           private_key[PRIVATE_KEY_LEN_MAX];
+  size_t         private_key_len;
   unsigned char* hash_digest;
   unsigned char* salt;
 
   io_len = tvb_reported_length(tvb) - (check_crypt_type? 1: 0);
-  if (io_len < SHA1_DIGEST_LEN + SALT_SIZE) {
+  if (io_len < HASH_SHA1_LENGTH + SALT_SIZE) {
     return 0;
   }
 
-  io_base = (guint8 *)tvb_memdup(pinfo->pool, tvb, 0, io_len + (check_crypt_type? 1: 0));
+  io_base = (uint8_t *)tvb_memdup(pinfo->pool, tvb, 0, io_len + (check_crypt_type? 1: 0));
   if (check_crypt_type &&
       ( io_base[io_len] != TOTEM_CRYPTO_SOBER )) {
     return 0;
   }
 
   hash_digest = io_base;
-  salt        = io_base + SHA1_DIGEST_LEN;
+  salt        = io_base + HASH_SHA1_LENGTH;
 
 
   memset(private_key, 0, sizeof(private_key));
 
   private_key_len = (strlen(key_for_trial)+4) & 0xFC;
-  if (private_key_len > PRIVATE_KEY_LEN_MAX)
-    private_key_len = PRIVATE_KEY_LEN_MAX;
-  g_strlcpy(private_key, key_for_trial, private_key_len);
+  (void) g_strlcpy(private_key, key_for_trial, private_key_len);
 
   /*
    * Generate MAC, CIPHER, IV keys from private key
    */
-  memset (keys, 0, sizeof(keys));
-  sober128_start (&keygen_prng_state);
+  memset(keys, 0, sizeof(keys));
+  sober128_start(&keygen_prng_state);
   sober128_add_entropy(private_key,
-                                  (unsigned long)private_key_len, &keygen_prng_state);
-  sober128_add_entropy (salt, SALT_SIZE, &keygen_prng_state);
-  sober128_read (keys, sizeof (keys), &keygen_prng_state);
+                       (unsigned long)private_key_len, &keygen_prng_state);
+  sober128_add_entropy(salt, SALT_SIZE, &keygen_prng_state);
+  sober128_read(keys, sizeof (keys), &keygen_prng_state);
 
   /*
    * Setup stream cipher
@@ -317,20 +302,20 @@ dissect_corosynec_totemnet_with_decryption(tvbuff_t *tvb,
   /*
    * Authenticate contents of message
    */
-  sha1_hmac(hmac_key, 16,
-            io_base + SHA1_DIGEST_LEN, io_len - SHA1_DIGEST_LEN,
-            digest_comparison);
+  if (ws_hmac_buffer(GCRY_MD_SHA1, digest_comparison, io_base + HASH_SHA1_LENGTH, io_len - HASH_SHA1_LENGTH, hmac_key, 16)) {
+    return 0;
+  }
 
-  if (memcmp (digest_comparison, hash_digest, SHA1_DIGEST_LEN) != 0)
+  if (memcmp (digest_comparison, hash_digest, HASH_SHA1_LENGTH) != 0)
       return 0;
 
   /*
    * Decrypt the contents of the message with the cipher key
    */
 
-  sober128_read (io_base + SHA1_DIGEST_LEN + SALT_SIZE,
-                            io_len - (SHA1_DIGEST_LEN + SALT_SIZE),
-                            &stream_prng_state);
+  sober128_read(io_base + HASH_SHA1_LENGTH + SALT_SIZE,
+                io_len - (HASH_SHA1_LENGTH + SALT_SIZE),
+                &stream_prng_state);
 
 
   /*
@@ -350,12 +335,11 @@ dissect_corosynec_totemnet_with_decryption(tvbuff_t *tvb,
     dissect_corosync_totemnet_security_header(decrypted_tvb, pinfo, parent_tree,
                                               check_crypt_type, key_for_trial);
 
-    next_tvb = tvb_new_subset(decrypted_tvb,
-                              SHA1_DIGEST_LEN + SALT_SIZE,
-                              io_len - (SHA1_DIGEST_LEN + SALT_SIZE),
-                              io_len - (SHA1_DIGEST_LEN + SALT_SIZE));
+    next_tvb = tvb_new_subset_length(decrypted_tvb,
+                              HASH_SHA1_LENGTH + SALT_SIZE,
+                              io_len - (HASH_SHA1_LENGTH + SALT_SIZE));
 
-    return call_dissector(corosync_totemsrp_handle, next_tvb, pinfo, parent_tree) + SHA1_DIGEST_LEN + SALT_SIZE;
+    return call_dissector(corosync_totemsrp_handle, next_tvb, pinfo, parent_tree) + HASH_SHA1_LENGTH + SALT_SIZE;
   }
 }
 
@@ -371,7 +355,7 @@ dissect_corosynec_totemnet(tvbuff_t *tvb,
 
       static int last_check_crypt_type_index;
       int check_crypt_type_index = -1;
-      gboolean check_crypt_type_list[] = {FALSE, TRUE};
+      bool check_crypt_type_list[] = {false, true};
 
 
       if (last_key_index != -1)
@@ -421,6 +405,11 @@ dissect_corosynec_totemnet(tvbuff_t *tvb,
   return call_dissector(corosync_totemsrp_handle, tvb, pinfo, parent_tree);
 }
 
+static void
+corosync_totemnet_shutdown(void)
+{
+  g_strfreev(corosync_totemnet_private_keys_list);
+}
 
 void
 proto_register_corosync_totemnet(void)
@@ -445,7 +434,7 @@ proto_register_corosync_totemnet(void)
         FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
   };
 
-  static gint *ett_corosync_totemnet[] = {
+  static int *ett_corosync_totemnet[] = {
     &ett_corosync_totemnet_security_header,
   };
 
@@ -457,52 +446,34 @@ proto_register_corosync_totemnet(void)
   corosync_totemnet_module = prefs_register_protocol(proto_corosync_totemnet,
                                                      proto_reg_handoff_corosync_totemnet);
 
-  prefs_register_uint_preference(corosync_totemnet_module, "udp.port",
-                                 "UDP Port",
-                                 "Set the UDP port for totem ring protocol implemented in corosync cluster engine",
-                                 10,
-                                 &corosync_totemnet_port);
   prefs_register_string_preference(corosync_totemnet_module, "private_keys", "Private keys",
                                    "Semicolon-separated  list of keys for decryption(e.g. key1;key2;..." ,
-                                   (const gchar **)&corosync_totemnet_private_keys);
+                                   (const char **)&corosync_totemnet_private_keys);
+
+  register_shutdown_routine(corosync_totemnet_shutdown);
+
+  corosync_totemnet_handle = register_dissector("corosync_totemnet", dissect_corosynec_totemnet, proto_corosync_totemnet);
 }
 
 void
 proto_reg_handoff_corosync_totemnet(void)
 {
-  static gboolean initialized = FALSE;
-  static dissector_handle_t corosync_totemnet_handle;
-  static int port = 0;
+  static bool initialized = false;
 
+  if (!initialized)
+  {
+    corosync_totemsrp_handle = find_dissector_add_dependency("corosync_totemsrp", proto_corosync_totemnet);
 
-  if (initialized)
-    {
-      dissector_delete_uint("udp.port", port, corosync_totemnet_handle);
-      dissector_delete_uint("udp.port", port - 1, corosync_totemnet_handle);
-    }
-  else
-    {
-      corosync_totemnet_handle = create_dissector_handle(dissect_corosynec_totemnet,
-                                                             proto_corosync_totemnet);
-      corosync_totemsrp_handle = find_dissector_add_dependency("corosync_totemsrp", proto_corosync_totemnet);
-
-      initialized = TRUE;
-    }
-
-  if (corosync_totemnet_private_keys_list) {
-    g_strfreev(corosync_totemnet_private_keys_list);
-    corosync_totemnet_private_keys_list = NULL;
+    dissector_add_uint_range_with_preference("udp.port", PORT_COROSYNC_TOTEMNET_RANGE, corosync_totemnet_handle);
+    initialized = true;
   }
-  corosync_totemnet_private_keys_list = g_strsplit(corosync_totemnet_private_keys,
-                                                   ";",
-                                                   0);
-  port  = corosync_totemnet_port;
-  dissector_add_uint("udp.port", port,     corosync_totemnet_handle);
-  dissector_add_uint("udp.port", port - 1, corosync_totemnet_handle);
+
+  g_strfreev(corosync_totemnet_private_keys_list);
+  corosync_totemnet_private_keys_list = g_strsplit(corosync_totemnet_private_keys, ";", 0);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

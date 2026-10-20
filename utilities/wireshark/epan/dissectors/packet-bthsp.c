@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,43 +15,46 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/strutil.h>
+#include <epan/unit_strings.h>
+
 #include "packet-btrfcomm.h"
 #include "packet-btsdp.h"
 
-static int proto_bthsp = -1;
+static int proto_bthsp;
 
-static int hf_command                                                      = -1;
-static int hf_parameters                                                   = -1;
-static int hf_command_in                                                   = -1;
-static int hf_unsolicited                                                  = -1;
-static int hf_role                                                         = -1;
-static int hf_at_cmd                                                       = -1;
-static int hf_at_cmd_type                                                  = -1;
-static int hf_at_command_line_prefix                                       = -1;
-static int hf_at_ignored                                                   = -1;
-static int hf_parameter                                                    = -1;
-static int hf_unknown_parameter                                            = -1;
-static int hf_data                                                         = -1;
-static int hf_fragment                                                     = -1;
-static int hf_fragmented                                                   = -1;
-static int hf_vgs                                                          = -1;
-static int hf_vgm                                                          = -1;
-static int hf_ckpd                                                         = -1;
+static int hf_command;
+static int hf_parameters;
+static int hf_command_in;
+static int hf_unsolicited;
+static int hf_role;
+static int hf_at_cmd;
+static int hf_at_cmd_type;
+static int hf_at_command_line_prefix;
+static int hf_at_ignored;
+static int hf_parameter;
+static int hf_unknown_parameter;
+static int hf_data;
+static int hf_fragment;
+static int hf_fragmented;
+static int hf_vgs;
+static int hf_vgm;
+static int hf_ckpd;
 
-static expert_field ei_non_mandatory_command                          = EI_INIT;
-static expert_field ei_invalid_usage                                  = EI_INIT;
-static expert_field ei_unknown_parameter                              = EI_INIT;
-static expert_field ei_vgm_gain                                       = EI_INIT;
-static expert_field ei_vgs_gain                                       = EI_INIT;
-static expert_field ei_ckpd                                           = EI_INIT;
+static expert_field ei_non_mandatory_command;
+static expert_field ei_invalid_usage;
+static expert_field ei_unknown_parameter;
+static expert_field ei_vgm_gain;
+static expert_field ei_vgs_gain;
+static expert_field ei_ckpd;
 
-static gint ett_bthsp            = -1;
-static gint ett_bthsp_command    = -1;
-static gint ett_bthsp_parameters = -1;
+static int ett_bthsp;
+static int ett_bthsp_command;
+static int ett_bthsp_parameters;
 
 static dissector_handle_t bthsp_handle;
 
-static wmem_tree_t *fragments = NULL;
+static wmem_tree_t *fragments;
 
 #define ROLE_UNKNOWN  0
 #define ROLE_AG       1
@@ -77,7 +68,7 @@ static wmem_tree_t *fragments = NULL;
 #define TYPE_READ          0x003f
 #define TYPE_TEST          0x3d3f
 
-static gint hsp_role = ROLE_UNKNOWN;
+static int hsp_role = ROLE_UNKNOWN;
 
 enum reassemble_state_t {
     REASSEMBLE_FRAGMENT,
@@ -86,31 +77,31 @@ enum reassemble_state_t {
 };
 
 typedef struct _fragment_t {
-    guint32                  interface_id;
-    guint32                  adapter_id;
-    guint32                  chandle;
-    guint32                  dlci;
-    guint32                  role;
+    uint32_t                 interface_id;
+    uint32_t                 adapter_id;
+    uint32_t                 chandle;
+    uint32_t                 dlci;
+    uint32_t                 role;
 
-    guint                    idx;
-    guint                    length;
-    guint8                  *data;
+    unsigned                 idx;
+    unsigned                 length;
+    uint8_t                 *data;
     struct _fragment_t      *previous_fragment;
 
-    guint                    reassemble_start_offset;
-    guint                    reassemble_end_offset;
+    unsigned                 reassemble_start_offset;
+    unsigned                 reassemble_end_offset;
     enum reassemble_state_t  reassemble_state;
 } fragment_t;
 
 typedef struct _at_cmd_t {
-    const guint8 *name;
-    const guint8 *long_name;
+    const char *name;
+    const char *long_name;
 
-    gboolean (*check_command)(gint role, guint16 type);
-    gboolean (*dissect_parameter)(tvbuff_t *tvb, packet_info *pinfo,
-            proto_tree *tree, gint offset, gint role, guint16 type,
-            guint8 *parameter_stream, guint parameter_number,
-            gint parameter_length, void **data);
+    bool (*check_command)(int role, uint16_t type);
+    bool (*dissect_parameter)(tvbuff_t *tvb, packet_info *pinfo,
+            proto_tree *tree, int offset, int role, uint16_t type,
+            uint8_t *parameter_stream, unsigned parameter_number,
+            int parameter_length, void **data);
 } at_cmd_t;
 
 static const value_string role_vals[] = {
@@ -137,110 +128,110 @@ static const enum_val_t pref_hsp_role[] = {
     { NULL, NULL, 0 }
 };
 
+static const unit_name_string units_slash15 = { "/15", NULL };
+
 void proto_register_bthsp(void);
 void proto_reg_handoff_bthsp(void);
 
-static guint32 get_uint_parameter(guint8 *parameter_stream, gint parameter_length)
+static uint32_t get_uint_parameter(wmem_allocator_t* scope, uint8_t *parameter_stream, int parameter_length)
 {
-    guint32      value;
-    guint8      *val;
+    uint32_t     value;
+    char *val;
 
-    val = (guint8 *) wmem_alloc(wmem_packet_scope(), parameter_length + 1);
+    val = (uint8_t *) wmem_alloc(scope, parameter_length + 1);
     memcpy(val, parameter_stream, parameter_length);
     val[parameter_length] = '\0';
-    value = (guint32) g_ascii_strtoull(val, NULL, 10);
+    value = (uint32_t) g_ascii_strtoull(val, NULL, 10);
 
     return value;
 }
 
-static gboolean check_vgs(gint role, guint16 type) {
-    if (role == ROLE_HS && type == TYPE_ACTION) return TRUE;
-    if (role == ROLE_AG && type == TYPE_RESPONSE) return TRUE;
+static bool check_vgs(int role, uint16_t type) {
+    if (role == ROLE_HS && type == TYPE_ACTION) return true;
+    if (role == ROLE_AG && type == TYPE_RESPONSE) return true;
 
-    return FALSE;
+    return false;
 }
 
-static gboolean check_vgm(gint role, guint16 type) {
-    if (role == ROLE_HS && type == TYPE_ACTION) return TRUE;
-    if (role == ROLE_AG && type == TYPE_RESPONSE) return TRUE;
+static bool check_vgm(int role, uint16_t type) {
+    if (role == ROLE_HS && type == TYPE_ACTION) return true;
+    if (role == ROLE_AG && type == TYPE_RESPONSE) return true;
 
-    return FALSE;
+    return false;
 }
 
-static gboolean check_ckpd(gint role, guint16 type) {
-    if (role == ROLE_HS && type == TYPE_ACTION) return TRUE;
+static bool check_ckpd(int role, uint16_t type) {
+    if (role == ROLE_HS && type == TYPE_ACTION) return true;
 
-    return FALSE;
+    return false;
 }
 
-static gboolean check_only_ag_role(gint role, guint16 type) {
-    if (role == ROLE_AG && type == TYPE_RESPONSE_ACK) return TRUE;
+static bool check_only_ag_role(int role, uint16_t type) {
+    if (role == ROLE_AG && type == TYPE_RESPONSE_ACK) return true;
 
-    return FALSE;
+    return false;
 }
 
-static gint
+static bool
 dissect_vgs_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        gint offset, gint role, guint16 type, guint8 *parameter_stream,
-        guint parameter_number, gint parameter_length, void **data _U_)
+        int offset, int role, uint16_t type, uint8_t *parameter_stream,
+        unsigned parameter_number, int parameter_length, void **data _U_)
 {
     proto_item  *pitem;
-    guint32      value;
+    uint32_t     value;
 
-    if (!check_vgs(role, type)) return FALSE;
+    if (!check_vgs(role, type)) return false;
 
-    if (parameter_number > 0) return FALSE;
+    if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(parameter_stream, parameter_length);
+    value = get_uint_parameter(pinfo->pool, parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_vgs, tvb, offset, parameter_length, value);
-    proto_item_append_text(pitem, "/15");
 
     if (value > 15) {
         expert_add_info(pinfo, pitem, &ei_vgs_gain);
     }
 
-    return TRUE;
+    return true;
 }
 
-static gint
+static bool
 dissect_vgm_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        gint offset, gint role, guint16 type, guint8 *parameter_stream,
-        guint parameter_number, gint parameter_length, void **data _U_)
+        int offset, int role, uint16_t type, uint8_t *parameter_stream,
+        unsigned parameter_number, int parameter_length, void **data _U_)
 {
     proto_item  *pitem;
-    guint32      value;
+    uint32_t     value;
 
-    if (!check_vgm(role, type)) return FALSE;
+    if (!check_vgm(role, type)) return false;
 
-    if (parameter_number > 0) return FALSE;
+    if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(parameter_stream, parameter_length);
+    value = get_uint_parameter(pinfo->pool, parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_vgm, tvb, offset, parameter_length, value);
-    proto_item_append_text(pitem, "/15");
 
     if (value > 15) {
         expert_add_info(pinfo, pitem, &ei_vgm_gain);
     }
 
-    return TRUE;
+    return true;
 }
 
-static gint
+static bool
 dissect_ckpd_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        gint offset, gint role, guint16 type, guint8 *parameter_stream,
-        guint parameter_number, gint parameter_length, void **data _U_)
+        int offset, int role, uint16_t type, uint8_t *parameter_stream,
+        unsigned parameter_number, int parameter_length, void **data _U_)
 {
     proto_item  *pitem;
-    guint32      value;
+    uint32_t     value;
 
-    if (!check_ckpd(role, type)) return FALSE;
+    if (!check_ckpd(role, type)) return false;
 
 
-    if (parameter_number > 0) return FALSE;
+    if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(parameter_stream, parameter_length);
+    value = get_uint_parameter(pinfo->pool, parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_ckpd, tvb, offset, parameter_length, value);
 
@@ -248,15 +239,15 @@ dissect_ckpd_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         expert_add_info(pinfo, pitem, &ei_ckpd);
     }
 
-    return TRUE;
+    return true;
 }
 
-static gint
+static bool
 dissect_no_parameter(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_,
-        gint offset _U_, gint role _U_, guint16 type _U_, guint8 *parameter_stream _U_,
-        guint parameter_number _U_, gint parameter_length _U_, void **data _U_)
+        int offset _U_, int role _U_, uint16_t type _U_, uint8_t *parameter_stream _U_,
+        unsigned parameter_number _U_, int parameter_length _U_, void **data _U_)
 {
-    return FALSE;
+    return false;
 }
 
 static const at_cmd_t at_cmds[] = {
@@ -270,30 +261,30 @@ static const at_cmd_t at_cmds[] = {
 };
 
 
-static gint
+static int
 dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        gint offset, guint32 role, gint command_number)
+        int offset, uint32_t role, int command_number)
 {
     proto_item      *pitem;
     proto_tree      *command_item;
     proto_item      *command_tree;
     proto_tree      *parameters_item = NULL;
     proto_item      *parameters_tree = NULL;
-    guint8          *col_str = NULL;
-    guint8          *at_stream;
-    guint8          *at_command = NULL;
-    gint             i_char = 0;
-    guint            i_char_fix = 0;
-    gint             length;
+    char            *col_str = NULL;
+    char            *at_stream;
+    char            *at_command = NULL;
+    int              i_char = 0;
+    unsigned         i_char_fix = 0;
+    int              length;
     const at_cmd_t  *i_at_cmd;
-    gint             parameter_length;
-    guint            parameter_number = 0;
-    gint             first_parameter_offset = offset;
-    gint             last_parameter_offset  = offset;
-    guint16          type = TYPE_UNKNOWN;
-    guint32          brackets;
-    gboolean         quotation;
-    gboolean         next;
+    int              parameter_length;
+    unsigned         parameter_number = 0;
+    int              first_parameter_offset = offset;
+    int              last_parameter_offset  = offset;
+    uint16_t         type = TYPE_UNKNOWN;
+    uint32_t         brackets;
+    bool             quotation;
+    bool             next;
     void            *data;
 
     length = tvb_reported_length_remaining(tvb, offset);
@@ -301,13 +292,13 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         return tvb_reported_length(tvb);
 
     if (!command_number) {
-        proto_tree_add_item(tree, hf_data, tvb, offset, length, ENC_NA | ENC_ASCII);
-        col_str = (guint8 *) wmem_alloc(wmem_packet_scope(), length + 1);
+        proto_tree_add_item(tree, hf_data, tvb, offset, length, ENC_ASCII);
+        col_str = (char *) wmem_alloc(pinfo->pool, length + 1);
         tvb_memcpy(tvb, col_str, offset, length);
         col_str[length] = '\0';
     }
 
-    at_stream = (guint8 *) wmem_alloc(wmem_packet_scope(), length + 1);
+    at_stream = (char *) wmem_alloc(pinfo->pool, length + 1);
     tvb_memcpy(tvb, at_stream, offset, length);
     at_stream[length] = '\0';
     while (at_stream[i_char]) {
@@ -323,7 +314,7 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             offset, 0, "Command %u", command_number);
     command_tree = proto_item_add_subtree(command_item, ett_bthsp_command);
 
-    if (!command_number) col_append_fstr(pinfo->cinfo, COL_INFO, "%s", col_str);
+    if (!command_number) col_append_str(pinfo->cinfo, COL_INFO, col_str);
 
     if (role == ROLE_HS) {
         if (command_number) {
@@ -333,16 +324,16 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             at_command = g_strstr_len(at_stream, length, "AT");
 
             if (at_command) {
-                i_char = (guint) (at_command - at_stream);
+                i_char = (int) (at_command - at_stream);
 
                 if (i_char) {
                     proto_tree_add_item(command_tree, hf_at_ignored, tvb, offset,
-                        i_char, ENC_NA | ENC_ASCII);
+                        i_char, ENC_NA);
                     offset += i_char;
                 }
 
                 proto_tree_add_item(command_tree, hf_at_command_line_prefix,
-                        tvb, offset, 2, ENC_NA | ENC_ASCII);
+                        tvb, offset, 2, ENC_ASCII);
                 offset += 2;
                 i_char += 2;
                 at_command = at_stream;
@@ -382,14 +373,14 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         i_at_cmd = at_cmds;
         if (at_command[0] == '\r') {
             pitem = proto_tree_add_item(command_tree, hf_at_cmd, tvb, offset - 2,
-                    2, ENC_NA | ENC_ASCII);
+                    2, ENC_ASCII);
             i_at_cmd = NULL;
         } else {
             pitem = NULL;
             while (i_at_cmd->name) {
                 if (g_str_has_prefix(&at_command[0], i_at_cmd->name)) {
                     pitem = proto_tree_add_item(command_tree, hf_at_cmd, tvb, offset,
-                            (gint) strlen(i_at_cmd->name), ENC_NA | ENC_ASCII);
+                            (int) strlen(i_at_cmd->name), ENC_ASCII);
                     proto_item_append_text(pitem, " (%s)", i_at_cmd->long_name);
                     break;
                 }
@@ -398,7 +389,7 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
             if (!pitem) {
                 pitem = proto_tree_add_item(command_tree, hf_at_cmd, tvb, offset,
-                        i_char, ENC_NA | ENC_ASCII);
+                        i_char, ENC_ASCII);
             }
         }
 
@@ -406,9 +397,7 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         if (i_at_cmd && i_at_cmd->name == NULL) {
             char *name;
 
-            name = (char *) wmem_alloc(wmem_packet_scope(), i_char + 2);
-            g_strlcpy(name, at_command, i_char + 1);
-            name[i_char + 1] = '\0';
+            name = format_text(pinfo->pool, at_command, i_char + 1);
             proto_item_append_text(command_item, ": %s (Unknown)", name);
             proto_item_append_text(pitem, " (Unknown - Non-Standard HSP Command)");
             expert_add_info(pinfo, pitem, &ei_non_mandatory_command);
@@ -461,23 +450,23 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
             parameter_length = 0;
             brackets = 0;
-            quotation = FALSE;
-            next = FALSE;
+            quotation = false;
+            next = false;
 
             if (at_command[i_char + parameter_length] != '\r') {
                 while (i_char + parameter_length < length &&
                         at_command[i_char + parameter_length] != '\r') {
 
                     if (at_command[i_char + parameter_length] == ';') {
-                        next = TRUE;
+                        next = true;
                         break;
                     }
 
                     if (at_command[i_char + parameter_length] == '"') {
-                        quotation = quotation ? FALSE : TRUE;
+                        quotation = quotation ? false : true;
                     }
 
-                    if (quotation == TRUE) {
+                    if (quotation == true) {
                         parameter_length += 1;
                         continue;
                     }
@@ -498,7 +487,7 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 /* TODO: Save bthsp.at_cmd, bthsp.at_cmd.type, frame_time  and frame_num here in
 
-                if (role == ROLE_HS && pinfo->fd->flags.visited == 0) {
+                if (role == ROLE_HS && pinfo->fd->visited == 0) {
 
     at_cmd_db = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
 
@@ -562,11 +551,11 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                             type, &at_command[i_char], parameter_number, parameter_length, &data) )) {
                         pitem = proto_tree_add_item(parameters_tree,
                                 hf_unknown_parameter, tvb, offset,
-                                parameter_length, ENC_NA | ENC_ASCII);
+                                parameter_length, ENC_ASCII);
                         expert_add_info(pinfo, pitem, &ei_unknown_parameter);
                     } else if (i_at_cmd && i_at_cmd->dissect_parameter == NULL) {
                         proto_tree_add_item(parameters_tree, hf_parameter, tvb, offset,
-                                parameter_length, ENC_NA | ENC_ASCII);
+                                parameter_length, ENC_ASCII);
                     }
                 }
             }
@@ -610,49 +599,49 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         proto_item_append_text(parameters_item, ": No");
 
     if (role == ROLE_AG) {
-        guint command_frame_number = 0;
+        unsigned command_frame_number = 0;
 
         if (command_frame_number) {
             pitem = proto_tree_add_uint(command_tree, hf_command_in, tvb, offset,
                     0, command_frame_number);
-            PROTO_ITEM_SET_GENERATED(pitem);
+            proto_item_set_generated(pitem);
         } else {
             pitem = proto_tree_add_item(command_tree, hf_unsolicited, tvb, offset, 0, ENC_NA);
-            PROTO_ITEM_SET_GENERATED(pitem);
+            proto_item_set_generated(pitem);
         }
     }
 
     return offset;
 }
 
-static gint
+static int
 dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item       *main_item;
     proto_tree       *main_tree;
     proto_item       *pitem;
-    gint              offset = 0;
-    guint32           role = ROLE_UNKNOWN;
+    int               offset = 0;
+    uint32_t          role = ROLE_UNKNOWN;
     wmem_tree_key_t   key[10];
-    guint32           interface_id;
-    guint32           adapter_id;
-    guint32           chandle;
-    guint32           dlci;
-    guint32           frame_number;
-    guint32           direction;
-    guint32           bd_addr_oui;
-    guint32           bd_addr_id;
+    uint32_t          interface_id;
+    uint32_t          adapter_id;
+    uint32_t          chandle;
+    uint32_t          dlci;
+    uint32_t          frame_number;
+    uint32_t          direction;
+    uint32_t          bd_addr_oui;
+    uint32_t          bd_addr_id;
     fragment_t       *fragment;
     fragment_t       *previous_fragment;
     fragment_t       *i_fragment;
-    guint8           *at_stream;
-    gint              length;
-    gint              command_number;
-    gint              i_length;
+    uint8_t          *at_stream;
+    int               length;
+    int               command_number;
+    int               i_length;
     tvbuff_t         *reassembled_tvb = NULL;
-    guint             reassemble_start_offset = 0;
-    guint             reassemble_end_offset   = 0;
-    gint              previous_proto;
+    unsigned          reassemble_start_offset = 0;
+    unsigned          reassemble_end_offset   = 0;
+    int               previous_proto;
 
     previous_proto = (GPOINTER_TO_INT(wmem_list_frame_data(wmem_list_frame_prev(wmem_list_tail(pinfo->layers)))));
     if (data && previous_proto == proto_btrfcomm) {
@@ -709,9 +698,9 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     }
 
     if (role == ROLE_UNKNOWN) {
-        guint32          sdp_psm;
-        guint32          service_type;
-        guint32          service_channel;
+        uint32_t         sdp_psm;
+        uint32_t         service_type;
+        uint32_t         service_channel;
         service_info_t  *service_info;
 
         sdp_psm         = SDP_PSM_DEFAULT;
@@ -765,17 +754,17 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     }
 
     pitem = proto_tree_add_uint(main_tree, hf_role, tvb, 0, 0, role);
-    PROTO_ITEM_SET_GENERATED(pitem);
+    proto_item_set_generated(pitem);
 
     if (role == ROLE_UNKNOWN) {
         col_append_fstr(pinfo->cinfo, COL_INFO, "Data: %s",
-                tvb_format_text(tvb, 0, tvb_reported_length(tvb)));
-        proto_tree_add_item(main_tree, hf_data, tvb, 0, tvb_captured_length(tvb), ENC_NA | ENC_ASCII);
+                tvb_format_text(pinfo->pool, tvb, 0, tvb_reported_length(tvb)));
+        proto_tree_add_item(main_tree, hf_data, tvb, 0, tvb_captured_length(tvb), ENC_ASCII);
         return tvb_reported_length(tvb);
     }
 
     /* save fragments */
-    if (!pinfo->fd->flags.visited) {
+    if (!pinfo->fd->visited) {
         frame_number = pinfo->num - 1;
 
         key[0].length = 1;
@@ -829,7 +818,7 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         fragment->idx               = previous_fragment ? previous_fragment->idx + previous_fragment->length : 0;
         fragment->reassemble_state  = REASSEMBLE_FRAGMENT;
         fragment->length            = tvb_reported_length(tvb);
-        fragment->data              = (guint8 *) wmem_alloc(wmem_file_scope(), fragment->length);
+        fragment->data              = (uint8_t *) wmem_alloc(wmem_file_scope(), fragment->length);
         fragment->previous_fragment = previous_fragment;
         tvb_memcpy(tvb, fragment->data, offset, fragment->length);
 
@@ -837,7 +826,7 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
         /* Detect reassemble end character: \r for HS or \n for AG */
         length = tvb_reported_length(tvb);
-        at_stream = tvb_get_string_enc(wmem_packet_scope(), tvb, 0, length, ENC_ASCII);
+        at_stream = tvb_get_string_enc(pinfo->pool, tvb, 0, length, ENC_ASCII);
 
         reassemble_start_offset = 0;
 
@@ -942,11 +931,11 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             fragment->dlci == dlci &&
             fragment->role == role &&
             fragment->reassemble_state != REASSEMBLE_FRAGMENT) {
-        guint8    *at_data;
-        guint      i_data_offset;
+        uint8_t   *at_data;
+        unsigned   i_data_offset;
 
         i_data_offset = fragment->idx + fragment->length;
-        at_data = (guint8 *) wmem_alloc(pinfo->pool, fragment->idx + fragment->length);
+        at_data = (uint8_t *) wmem_alloc(pinfo->pool, fragment->idx + fragment->length);
 
         i_fragment = fragment;
 
@@ -975,7 +964,7 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
         if (fragment->idx > 0 && fragment->length > 0) {
             proto_tree_add_item(main_tree, hf_fragment, tvb, offset,
-                    tvb_captured_length_remaining(tvb, offset), ENC_ASCII | ENC_NA);
+                    tvb_captured_length_remaining(tvb, offset), ENC_ASCII);
             reassembled_tvb = tvb_new_child_real_data(tvb, at_data,
                     fragment->idx + fragment->length, fragment->idx + fragment->length);
             add_new_data_source(pinfo, reassembled_tvb, "Reassembled HSP");
@@ -983,7 +972,7 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
         command_number = 0;
         if (reassembled_tvb) {
-            guint reassembled_offset = 0;
+            unsigned reassembled_offset = 0;
 
             while (tvb_reported_length(reassembled_tvb) > reassembled_offset) {
                 reassembled_offset = dissect_at_command(reassembled_tvb,
@@ -992,18 +981,17 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             }
             offset = tvb_captured_length(tvb);
         } else {
-            while (tvb_reported_length(tvb) > (guint) offset) {
+            while (tvb_reported_length(tvb) > (unsigned) offset) {
                 offset = dissect_at_command(tvb, pinfo, main_tree, offset, role, command_number);
                 command_number += 1;
             }
         }
     } else {
-        col_append_fstr(pinfo->cinfo, COL_INFO, "Fragment: %s",
-                tvb_format_text_wsp(tvb, offset, tvb_captured_length_remaining(tvb, offset)));
         pitem = proto_tree_add_item(main_tree, hf_fragmented, tvb, 0, 0, ENC_NA);
-        PROTO_ITEM_SET_GENERATED(pitem);
-        proto_tree_add_item(main_tree, hf_fragment, tvb, offset,
-                tvb_captured_length_remaining(tvb, offset), ENC_ASCII | ENC_NA);
+        proto_item_set_generated(pitem);
+        char *display_str;
+        proto_tree_add_item_ret_display_string(main_tree, hf_fragment, tvb, offset, -1, ENC_ASCII, pinfo->pool, &display_str);
+        col_append_fstr(pinfo->cinfo, COL_INFO, "Fragment: %s", display_str);
         offset = tvb_captured_length(tvb);
     }
 
@@ -1089,12 +1077,12 @@ proto_register_bthsp(void)
         },
         { &hf_vgs,
            { "Gain",                             "bthsp.vgs",
-           FT_UINT8, BASE_DEC, NULL, 0,
+           FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_slash15), 0,
            NULL, HFILL}
         },
         { &hf_vgm,
            { "Gain",                             "bthsp.vgm",
-           FT_UINT8, BASE_DEC, NULL, 0,
+           FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_slash15), 0,
            NULL, HFILL}
         },
         { &hf_ckpd,
@@ -1112,7 +1100,7 @@ proto_register_bthsp(void)
         { &ei_vgs_gain,              { "bthsp.expert.vgs", PI_PROTOCOL, PI_WARN, "Gain of speaker exceeds range 0-15", EXPFILL }},
         { &ei_ckpd,              { "bthsp.expert.ckpd", PI_PROTOCOL, PI_WARN, "Only key 200 is covered in HSP", EXPFILL }}    };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_bthsp,
         &ett_bthsp_command,
         &ett_bthsp_parameters
@@ -1126,7 +1114,7 @@ proto_register_bthsp(void)
     proto_register_field_array(proto_bthsp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    module = prefs_register_protocol(proto_bthsp, NULL);
+    module = prefs_register_protocol_subtree("Bluetooth", proto_bthsp, NULL);
     prefs_register_static_text_preference(module, "hsp.version",
             "Bluetooth Profile HSP version: 1.2",
             "Version of profile supported by this dissector.");
@@ -1134,7 +1122,7 @@ proto_register_bthsp(void)
     prefs_register_enum_preference(module, "hsp.hsp_role",
             "Force treat packets as AG or HS role",
             "Force treat packets as AG or HS role",
-            &hsp_role, pref_hsp_role, TRUE);
+            &hsp_role, pref_hsp_role, true);
 
     expert_bthsp = expert_register_protocol(proto_bthsp);
     expert_register_field_array(expert_bthsp, ei, array_length(ei));
@@ -1151,7 +1139,7 @@ proto_reg_handoff_bthsp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -1,24 +1,12 @@
 /* packet-mbim.h
  * Routines for MBIM dissection
- * Copyright 2013, Pascal Quantin <pascal.quantin@gmail.com>
+ * Copyright 2013, Pascal Quantin <pascal@wireshark.org>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_MBIM_H__
@@ -30,12 +18,12 @@
 #define MBIM_COMMAND_SET   1
 
 struct mbim_info {
-    guint32 req_frame;
-    guint32 resp_frame;
-    guint32 cmd_type;
+    uint32_t req_frame;
+    uint32_t resp_frame;
+    uint32_t cmd_type;
 };
 
-typedef void (*mbim_dissect_fct) (tvbuff_t *, packet_info *, proto_tree *, gint /* offset */, struct mbim_info *);
+typedef void (*mbim_dissect_fct) (tvbuff_t *, packet_info *, proto_tree *, int /* offset */, struct mbim_info *);
 
 /* Structure listing the dissection function to be called for a given CID */
 struct mbim_cid_dissect {
@@ -48,9 +36,9 @@ struct mbim_cid_dissect {
 /* Structure handling the description of the UUID extension to be registered */
 struct mbim_uuid_ext {
     /* UUID value stored in network byte order */
-    guint32 uuid[4];
+    uint32_t uuid[4];
     /* UUID name to be displayed during dissection */
-    const gchar *uuid_name;
+    const char *uuid_name;
     /* value_string array containing the CID list for this UUID */
     const value_string *uuid_cid_list;
     /* Array of the dissection functions per CID. Pointers can be NULL when no dissection is expected */

@@ -1,0 +1,254 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
+@node Go
+@subsection Go
+@cindex Go
+
+@ignore
+Remarks about the Go language:
+
+The language is multithreaded and especially targeted at building web servers
+(see <https://en.wikipedia.org/wiki/Go_(programming_language)#Applications>).
+So, there are two use-cases:
+  - Single-locale programs (SL), possibly single-threaded or multi-threaded,
+    such as command-line programs,
+  - Multi-locale programs (ML), one locale per thread,
+    such as web servers, but also possibly GUI programs.
+Some of the localization packages provide API for SL and ML; others only
+support the SL case.
+Note that due to the lack of a "thread-local" variable type (like in C or Java),
+an API for the SL case cannot easily be used for the ML case. For the ML case,
+an explicitly object-oriented API is necessary (and e.g. in web servers,
+such objects can be stuffed into a "context" that is attached to the HTTP
+request).
+
+There are no locales; instead packages use
+  - either a locale string ("ll_CC" or in BCP 47 syntax),
+  - or the language 'Tag' data type
+    https://pkg.go.dev/golang.org/x/text/language
+@end ignore
+
+@ignore
+There are three general approaches for localization in Go.
+
+1) The semi-standard golang/x/text package.
+URLs: https://pkg.go.dev/golang.org/x/text
+      https://cs.opensource.google/go/x/text
+This is an internationalization framework that covers number formatting,
+collation, and more.
+
+It has a subpackage for localized messages:
+URL:  https://pkg.go.dev/golang.org/x/text/message
+However, this subpackage is an unfinished prototype:
+* It supports *only* the translation via a hash table in memory.
+  Translation via message catalogs as separate files is not supported!
+* https://pkg.go.dev/golang.org/x/text@v0.21.0/message/catalog
+  says "This package is UNDER CONSTRUCTION and its API may change."
+* https://github.com/golang/go/issues/63173
+  https://github.com/golang/go/issues/12750
+  https://github.com/golang/proposal/blob/master/design/12750-localization.md
+
+The message extractor here is 'gotext'.
+Installable through "go install golang.org/x/text/cmd/gotext".
+
+2) The nonstandard but widely used nicksnyder package.
+URLs: https://pkg.go.dev/github.com/nicksnyder/go-i18n/v2/i18n
+      https://github.com/nicksnyder/go-i18n
+Its advantages:
+  - Lots of flexibility for special cases.
+Its drawbacks:
+  - The code to use this is quite verbose: several lines of code for each message.
+  - Uses a programmer-assigned ID as key (defaults to "", not to the value of 'Other').
+    Thus, no PO files, and no support from GNU gettext is possible here.
+
+The message extractor here is 'goi18n'.
+Installable through "go install github.com/nicksnyder/go-i18n/goi18n".
+
+3) Various packages that provide for string to string translation.
+This is what we support.
+@end ignore
+
+Three packages are available,
+that can be used for message localization with PO files:
+@itemize @bullet
+@item
+The @code{github.com/leonelquinteros/gotext} package.
+
+Documentation: @url{https://pkg.go.dev/github.com/leonelquinteros/gotext}
+
+Source code: @url{https://github.com/leonelquinteros/gotext}
+@item
+The @code{github.com/gosexy/gettext} package.
+
+Documentation: @url{https://pkg.go.dev/github.com/gosexy/gettext}
+
+Source code: @url{https://github.com/gosexy/gettext}
+@item
+The @code{github.com/snapcore/go-gettext} package.
+
+Documentation: @url{https://pkg.go.dev/github.com/snapcore/go-gettext}
+
+Source code: @url{https://github.com/canonical/go-gettext}
+@end itemize
+
+Go programs can be classified as one of:
+@itemize @bullet
+@item
+@emph{Single-locale} programs,
+that use the same locale across all threads of the program.
+Example: Most command-line programs.
+@item
+@emph{Multi-locale} programs,
+that use one locale per thread.
+Example: Web servers.
+@end itemize
+
+The three different packages support these two classes of programs differently:
+@itemize @bullet
+@item
+@code{github.com/leonelquinteros/gotext} package:
+It has two different APIs,
+one for the single-locale case and one for the multi-locale case.
+@item
+@code{github.com/gosexy/gettext} package:
+Its API supports only the single-locale case.
+@item
+@code{github.com/snapcore/go-gettext} package:
+Its API supports the single-locale case and the multi-locale case in the same way.
+@end itemize
+
+@subheading Gettext support characteristics:
+
+@table @asis
+@item RPMs
+golang
+
+@item Ubuntu packages
+golang-go (which provides the @command{go} program),
+or gccgo (which provides a @command{go-@var{version}} command).@*
+gccgo has better portability; for example it works on SPARC CPUs.
+
+@item File extension
+@code{go}
+
+@item String syntax
+@code{"abc"}, @code{`abc`}
+
+@item gettext shorthand
+---
+
+@item gettext/ngettext functions
+This depends on the API:
+@itemize @bullet
+@item
+@code{github.com/leonelquinteros/gotext} API:
+@code{Get}, @code{GetD}, @code{GetN}, @code{GetND}
+@item
+@code{github.com/gosexy/gettext} API:
+@code{Gettext}, @code{DGettext}, @code{DCGettext}, @code{NGettext},
+@code{DNGettext}, @code{DCNGettext}
+@item
+@code{github.com/snapcore/go-gettext} API:
+@code{Gettext}, @code{NGettext}
+@end itemize
+
+Note that the @code{ngettext}-like functions need to take
+two argument strings that consume the same number of arguments.
+For example, you cannot write
+@code{fmt.Sprintf(gotext.GetN("a piece", "%d pieces", n), n)}
+because in the singular case,
+@code{fmt.Sprintf} would treat the unused argument as an error and
+produce @code{"a piece%!(EXTRA int=1)"} instead of the desired @code{"a piece"}.
+As a workaround, you need to convert @code{n} to a string and
+format that string with precision zero:
+@code{fmt.Sprintf(gotext.GetN("%.0sa piece", "%s pieces", n), strconv.Itoa(n))}
+
+@item textdomain
+This depends on the API:
+@itemize @bullet
+@item
+@code{github.com/leonelquinteros/gotext} API:
+@code{Locale.AddDomain} method or @code{gotext.Configure} function
+@item
+@code{github.com/gosexy/gettext} API:
+@code{Textdomain} function
+@item
+@code{github.com/snapcore/go-gettext} API:
+@code{TextDomain} constructor
+@end itemize
+
+@item bindtextdomain
+This depends on the API:
+@itemize @bullet
+@item
+@code{github.com/leonelquinteros/gotext} API:
+@code{gotext.NewLocale} function or @code{gotext.Configure} function
+@item
+@code{github.com/gosexy/gettext} API:
+@code{BindTextdomain} function
+@item
+@code{github.com/snapcore/go-gettext} API:
+@code{TextDomain} constructor
+@end itemize
+
+@item setlocale
+This depends on the API:
+@itemize @bullet
+@item
+@code{github.com/leonelquinteros/gotext} API:
+Programmer must determine the appropriate locale and pass it to the
+@code{gotext.NewLocale} function or @code{gotext.Configure} function.
+@item
+@code{github.com/gosexy/gettext} API:
+Programmer must call @code{gettext.SetLocale(gettext.LcAll, "")}.
+@item
+@code{github.com/snapcore/go-gettext} API:
+Programmer must determine the appropriate locale and pass it to the
+@code{TextDomain.Locale} method.
+@end itemize
+
+@item Prerequisite
+This depends on the API:
+@itemize @bullet
+@item
+@code{github.com/leonelquinteros/gotext} API:
+@code{import ("github.com/leonelquinteros/gotext")}
+@item
+@code{github.com/gosexy/gettext} API:
+@code{import ("github.com/gosexy/gettext")}
+@item
+@code{github.com/snapcore/go-gettext} API:
+@code{import ("github.com/snapcore/go-gettext")}
+@end itemize
+
+@item Use or emulate GNU gettext
+This depends on the API:
+@itemize @bullet
+@item
+@code{github.com/leonelquinteros/gotext} API:
+Emulate
+@item
+@code{github.com/gosexy/gettext} API:
+Use
+@item
+@code{github.com/snapcore/go-gettext} API:
+Emulate
+@end itemize
+
+@item Extractor
+@code{xgettext}
+
+@item Formatting with positions
+@code{fmt.Sprintf("%[2]d %[1]d", ...)}
+
+@item Portability
+fully portable
+
+@item po-mode marking
+---
+@end table
+
+Two examples are available in the @file{examples} directory:
+@code{hello-go} and @code{hello-go-http}.

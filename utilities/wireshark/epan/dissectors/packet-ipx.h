@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -37,10 +25,10 @@
 
 #define IPX_NODE_LEN	6
 
-typedef guint32	IPXNet;
-typedef guint16	IPXPort;
-typedef guint8	IPXNode[IPX_NODE_LEN];
-typedef const guint8	CIPXNode[IPX_NODE_LEN];
+typedef uint32_t	IPXNet;
+typedef uint16_t	IPXPort;
+typedef uint8_t	IPXNode[IPX_NODE_LEN];
+typedef const uint8_t	CIPXNode[IPX_NODE_LEN];
 
 #define IPX_USER_PTYPE (0x00)
 #define IPX_RIP_PTYPE (0x01)
@@ -58,8 +46,8 @@ typedef const guint8	CIPXNode[IPX_NODE_LEN];
 
 struct sap_query
 {
-	guint16	query_type;	/* net order */
-	guint16	server_type;	/* net order */
+	uint16_t	query_type;	/* net order */
+	uint16_t	server_type;	/* net order */
 };
 
 #define IPX_RIP_REQUEST (0x1)
@@ -67,14 +55,14 @@ struct sap_query
 
 typedef struct _ipx_rt_def
 {
-	guint32 network ;
-	guint16 hops ;
-	guint16 ticks ;
+	uint32_t network ;
+	uint16_t hops ;
+	uint16_t ticks ;
 } ipx_rt_def_t;
 
 struct ipx_rip_packet
 {
-	guint16 operation ;
+	uint16_t operation ;
 	ipx_rt_def_t rt[1] ;
 };
 
@@ -147,15 +135,13 @@ struct ipx_rip_packet
 extern value_string_ext ipx_socket_vals_ext;
 extern value_string_ext novell_server_vals_ext;
 
-gboolean capture_ipx(const guchar *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header);
-
 /*
  * Structure passed to SPX subdissectors, containing information from
  * the SPX header that might be useful to the subdissector.
  */
 typedef struct {
-	gboolean eom;			/* end-of-message flag in SPX header */
-	guint8	datastream_type;	/* datastream type from SPX header */
+	bool eom;			/* end-of-message flag in SPX header */
+	uint8_t	datastream_type;	/* datastream type from SPX header */
 } spx_info;
 
 
@@ -164,10 +150,10 @@ typedef struct {
    tap listeners needs */
 typedef struct _ipxhdr_t
 {
-	guint16 ipx_ssocket;
-	guint16 ipx_dsocket;
-	guint16 ipx_length;
-	guint8  ipx_type;
+	uint16_t ipx_ssocket;
+	uint16_t ipx_dsocket;
+	uint16_t ipx_length;
+	uint8_t ipx_type;
 	address ipx_src;
 	address ipx_dst;
 } ipxhdr_t;

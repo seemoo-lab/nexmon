@@ -1,6 +1,8 @@
 /* Unit tests for gprintf
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -24,6 +26,13 @@
 #include <string.h>
 #include "glib.h"
 #include "gstdio.h"
+#ifdef G_OS_UNIX
+#include <glib-unix.h>
+#endif
+#ifdef G_OS_WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 static void
 test_retval_and_trunc (void)
@@ -409,7 +418,7 @@ test_f (void)
   gchar buf[128];
   gint res;
 
-  /* %f, basic formattting */
+  /* %f, basic formatting */
 
   res = g_snprintf (buf, 128, "%f", G_PI);
   g_assert_cmpint (res, ==, 8);
@@ -635,13 +644,9 @@ test_positional_params2 (void)
       g_assert_cmpint (res, ==, 7);
       return;
     }
-  g_test_trap_subprocess (NULL, 0, 0);
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
   g_test_trap_assert_passed ();
-#ifndef G_OS_WIN32
   g_test_trap_assert_stdout ("a b\n   ab\nabcabc\n");
-#else
-  g_test_trap_assert_stdout ("a b\r\n   ab\r\nabcabc\r\n");
-#endif
 }
 
 static void
@@ -674,7 +679,7 @@ test_percent2 (void)
       g_assert_cmpint (res, ==, 1);
       return;
     }
-  g_test_trap_subprocess (NULL, 0, 0);
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
   g_test_trap_assert_passed ();
   g_test_trap_assert_stdout ("*%*");
 }
@@ -728,7 +733,7 @@ test_64bit (void)
   /* However, gcc doesn't know about this, so we need to disable printf
    * format warnings...
    */
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#if G_GNUC_CHECK_VERSION(4, 6)
 _Pragma ("GCC diagnostic push")
 _Pragma ("GCC diagnostic ignored \"-Wformat\"")
 _Pragma ("GCC diagnostic ignored \"-Wformat-extra-args\"")
@@ -766,7 +771,7 @@ _Pragma ("GCC diagnostic ignored \"-Wformat-extra-args\"")
   g_assert_cmpint (res, ==, 5);
   g_assert_cmpstr (buf, ==, "1E240");
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#if G_GNUC_CHECK_VERSION(4, 6)
 _Pragma ("GCC diagnostic pop")
 #endif
 
@@ -819,7 +824,7 @@ test_64bit2_win32 (void)
   /* However, gcc doesn't know about this, so we need to disable printf
    * format warnings...
    */
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#if G_GNUC_CHECK_VERSION(4, 6)
 _Pragma ("GCC diagnostic push")
 _Pragma ("GCC diagnostic ignored \"-Wformat\"")
 _Pragma ("GCC diagnostic ignored \"-Wformat-extra-args\"")
@@ -849,7 +854,7 @@ _Pragma ("GCC diagnostic ignored \"-Wformat-extra-args\"")
   res = g_printf ("%" "ll" "X\n", (gint64)123456);
   g_assert_cmpint (res, ==, 6);
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#if G_GNUC_CHECK_VERSION(4, 6)
 _Pragma ("GCC diagnostic pop")
 #endif
 }
@@ -858,26 +863,124 @@ _Pragma ("GCC diagnostic pop")
 static void
 test_64bit2 (void)
 {
-#ifndef G_OS_WIN32
-  g_test_trap_subprocess ("/printf/test-64bit/subprocess/base", 0, 0);
+  g_test_trap_subprocess ("/printf/test-64bit/subprocess/base", 0,
+                          G_TEST_SUBPROCESS_DEFAULT);
   g_test_trap_assert_passed ();
   g_test_trap_assert_stdout ("123456\n-123456\n123456\n"
                              "361100\n0361100\n1e240\n"
                              "0x1e240\n1E240\n");
-
-#else
-  g_test_trap_subprocess ("/printf/test-64bit/subprocess/base", 0, 0);
+#ifdef G_OS_WIN32
+  g_test_trap_subprocess ("/printf/test-64bit/subprocess/win32", 0,
+                          G_TEST_SUBPROCESS_DEFAULT);
   g_test_trap_assert_passed ();
-  g_test_trap_assert_stdout ("123456\r\n-123456\r\n123456\r\n"
-                             "361100\r\n0361100\r\n1e240\r\n"
-                             "0x1e240\r\n1E240\r\n");
-
-  g_test_trap_subprocess ("/printf/test-64bit/subprocess/win32", 0, 0);
-  g_test_trap_assert_passed ();
-  g_test_trap_assert_stdout ("123456\r\n-123456\r\n123456\r\n"
-                             "361100\r\n0361100\r\n1e240\r\n"
-                             "0x1e240\r\n1E240\r\n");
+  g_test_trap_assert_stdout ("123456\n-123456\n123456\n"
+                             "361100\n0361100\n1e240\n"
+                             "0x1e240\n1E240\n");
 #endif
+}
+
+static void
+test_produce_embedded_nulls (void)
+{
+  char buf[4];
+  int length;
+  unsigned int i = 0;
+
+  length = g_snprintf (buf, sizeof (buf), "%s%c%s", "a", '\0', "b");
+  g_assert_cmpint (length, ==, 3);
+  g_assert_cmpint (buf[i++], ==, 'a');
+  g_assert_cmpint (buf[i++], ==, '\0');
+  g_assert_cmpint (buf[i++], ==, 'b');
+  g_assert_cmpint (buf[i++], ==, '\0');
+}
+
+typedef struct
+{
+  FILE *stream;
+  size_t written;
+} TestProduceEmbeddedNulls2ThreadData;
+
+static gpointer
+test_produce_embedded_nulls2_writing_thread (gpointer user_data)
+{
+  TestProduceEmbeddedNulls2ThreadData *data;
+
+  data = (TestProduceEmbeddedNulls2ThreadData *) user_data;
+  data->written = g_fprintf (data->stream, "%s%c%s", "a", '\0', "b");
+
+  g_assert_false (ferror (data->stream));
+  g_assert_no_errno (fclose (data->stream));
+
+  return NULL;
+}
+
+static void
+test_produce_embedded_nulls2 (void)
+{
+  int fds[2] = { -1, -1 };
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3761");
+  g_test_summary ("printf() functions can produce strings with embedded null "
+                  "characters. That happens when passing individual characters "
+                  "(%c) with value '\0'. Test that printing such strings via "
+                  "g_fprintf() works as expected.");
+
+#ifdef G_OS_UNIX
+  GError *error = NULL;
+  g_unix_open_pipe (fds, O_CLOEXEC, &error);
+  g_assert_no_error (error);
+#else
+  g_assert_no_errno (_pipe (fds, 0, _O_BINARY | _O_NOINHERIT));
+#endif
+
+#ifdef G_OS_UNIX
+#define MODE_EXTRA ""
+#else
+#define MODE_EXTRA "b"
+#endif
+
+  FILE *streams[2] = { NULL, NULL };
+  streams[0] = fdopen (fds[0], "r" MODE_EXTRA);
+  streams[1] = fdopen (fds[1], "w" MODE_EXTRA);
+  g_assert_nonnull (streams[0]);
+  g_assert_nonnull (streams[1]);
+
+  TestProduceEmbeddedNulls2ThreadData data = { streams[1], 3 };
+
+  /* Do the writing on a separate thread to avoid any
+   * possibility of deadlocks */
+  GThread *writing_thread = g_thread_new ("pipe writing thread",
+                                          test_produce_embedded_nulls2_writing_thread,
+                                          &data);
+
+  char buf[3];
+  char *iter = buf;
+  size_t size = sizeof (buf);
+  size_t read_bytes;
+  do
+    {
+      read_bytes = fread (iter, 1, size, streams[0]);
+      g_assert_cmpuint (read_bytes, >, 0U);
+      g_assert_cmpuint (read_bytes, <=, size);
+      iter += read_bytes;
+      size -= read_bytes;
+    }
+  while (size > 0);
+
+  char dummy;
+  read_bytes = fread (&dummy, 1, 1, streams[0]);
+  g_assert_cmpuint (read_bytes, ==, 0U);
+
+  g_assert_false (ferror (streams[0]));
+
+  g_thread_join (g_steal_pointer (&writing_thread));
+
+  g_assert_cmpuint (data.written, ==, 3U);
+  g_assert_cmpint (buf[0], ==, 'a');
+  g_assert_cmpint (buf[1], ==, '\0');
+  g_assert_cmpint (buf[2], ==, 'b');
+
+  g_assert_no_errno (fclose (streams[0]));
 }
 
 G_GNUC_PRINTF(1, 2)
@@ -901,12 +1004,92 @@ test_upper_bound (void)
 
   res = upper_bound ("bla %s %d: %g\n", "bla", 123, 0.123);
   g_assert_cmpint (res, ==, 20);
+
+  res = upper_bound ("Invalid case: %ls", L"\xD800" /* incomplete surrogate pair */);
+  g_assert_cmpint (res, ==, 0);
+}
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
+static gint test_vasprintf_va (gchar       **string,
+                               const gchar  *format,
+                               ...) G_GNUC_PRINTF (2, 3);
+
+/* Wrapper around g_vasprintf() which takes varargs */
+static gint
+test_vasprintf_va (gchar       **string,
+                   const gchar  *format,
+                   ...)
+{
+  va_list args;
+  gint len;
+
+  va_start (args, format);
+  len = g_vasprintf (string, format, args);
+  va_end (args);
+
+  return len;
+}
+#endif  /* !defined(__APPLE__) && !defined(__FreeBSD__) */
+
+static void
+test_vasprintf_invalid_format_placeholder (void)
+{
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
+  gint len = 0;
+  gchar *buf = "some non-null string";
+#endif
+
+  g_test_summary ("Test error handling for invalid format placeholder in g_vasprintf()");
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+  len = test_vasprintf_va (&buf, "%l", "nope");
+#pragma GCC diagnostic pop
+
+  g_assert_cmpint (len, ==, -1);
+  g_assert_null (buf);
+#else
+  g_test_skip ("vasprintf() placeholder checks on BSDs are less strict");
+#endif
+}
+
+static void
+test_vasprintf_invalid_wide_string (void)
+{
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
+  gint len = 0;
+  gchar *buf = "some non-null string";
+#endif
+
+  g_test_summary ("Test error handling for invalid wide strings in g_vasprintf()");
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+  len = test_vasprintf_va (&buf, "%ls", L"\xD800"  /* incomplete surrogate pair */);
+#pragma GCC diagnostic pop
+
+  g_assert_cmpint (len, ==, -1);
+  g_assert_null (buf);
+#else
+  g_test_skip ("vasprintf() placeholder checks on BSDs are less strict");
+#endif
 }
 
 int
 main (int   argc,
       char *argv[])
 {
+#ifdef G_OS_WIN32
+  /* Ensure binary mode for stdout, this way
+   * tests produce \n line endings on Windows instead of the
+   * default \r\n.
+   */
+  _setmode (fileno (stdout), _O_BINARY);
+#endif
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/snprintf/retval-and-trunc", test_retval_and_trunc);
@@ -924,6 +1107,7 @@ main (int   argc,
   g_test_add_func ("/snprintf/test-percent", test_percent);
   g_test_add_func ("/snprintf/test-positional-params", test_positional_params);
   g_test_add_func ("/snprintf/test-64bit", test_64bit);
+  g_test_add_func ("/snprintf/produce-embedded-nulls", test_produce_embedded_nulls);
 
   g_test_add_func ("/printf/test-percent", test_percent2);
   g_test_add_func ("/printf/test-positional-params", test_positional_params2);
@@ -933,8 +1117,13 @@ main (int   argc,
   g_test_add_func ("/printf/test-64bit/subprocess/win32", test_64bit2_win32);
 #endif
 
+  g_test_add_func ("/fprintf/produce-embedded-nulls", test_produce_embedded_nulls2);
+
   g_test_add_func ("/sprintf/test-positional-params", test_positional_params3);
   g_test_add_func ("/sprintf/upper-bound", test_upper_bound);
+
+  g_test_add_func ("/vasprintf/invalid-format-placeholder", test_vasprintf_invalid_format_placeholder);
+  g_test_add_func ("/vasprintf/invalid-wide-string", test_vasprintf_invalid_wide_string);
 
   return g_test_run();
 }

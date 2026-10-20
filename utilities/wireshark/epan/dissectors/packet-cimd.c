@@ -15,25 +15,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "config.h"
 
 #include <stdlib.h>
 
 #include <epan/packet.h>
+#include <epan/charsets.h>
 #define CIMD_STX   0x02 /* Start of CIMD PDU */
 #define CIMD_ETX   0x03 /* End of CIMD PDU */
 #define CIMD_COLON 0x3A /* CIMD colon */
@@ -118,40 +107,42 @@
 
 typedef struct cimd_parameter_t cimd_parameter_t;
 
-typedef void (*cimd_pdissect)(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset);
+typedef void (*cimd_pdissect)(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int pindex, int startOffset, int endOffset);
 
 struct cimd_parameter_t {
   cimd_pdissect  diss;
-  gint          *ett_p;
-  gint          *hf_p;
+  int           *ett_p;
+  int           *hf_p;
 };
 
 void proto_register_cimd(void);
 void proto_reg_handoff_cimd(void);
-static void dissect_cimd_parameter(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset);
-static void dissect_cimd_ud(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset);
-static void dissect_cimd_dcs(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset);
-static void dissect_cimd_error_code(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset);
+static void dissect_cimd_parameter(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int pindex, int startOffset, int endOffset);
+static void dissect_cimd_ud(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int pindex, int startOffset, int endOffset);
+static void dissect_cimd_dcs(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int pindex, int startOffset, int endOffset);
+static void dissect_cimd_error_code(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int pindex, int startOffset, int endOffset);
 
-static int proto_cimd = -1;
+static dissector_handle_t cimd_handle;
+
+static int proto_cimd;
 /* Initialize the subtree pointers */
-static gint ett_cimd = -1;
+static int ett_cimd;
 
 /* Initialize the protocol and registered fields */
-static int hf_cimd_opcode_indicator = -1;
-static int hf_cimd_packet_number_indicator = -1;
-static int hf_cimd_checksum_indicator = -1;
-static int hf_cimd_pcode_indicator = -1;
+static int hf_cimd_opcode_indicator;
+static int hf_cimd_packet_number_indicator;
+static int hf_cimd_checksum_indicator;
+static int hf_cimd_pcode_indicator;
 
-static int hf_cimd_dcs_coding_group_indicatorC0 = -1;
-static int hf_cimd_dcs_coding_group_indicatorF0 = -1;
-static int hf_cimd_dcs_compressed_indicator = -1;
-static int hf_cimd_dcs_message_class_meaning_indicator = -1;
-static int hf_cimd_dcs_message_class_indicator = -1;
-static int hf_cimd_dcs_character_set_indicator0C = -1;
-static int hf_cimd_dcs_character_set_indicator04 = -1;
-static int hf_cimd_dcs_indication_sense = -1;
-static int hf_cimd_dcs_indication_type = -1;
+static int hf_cimd_dcs_coding_group_indicatorC0;
+static int hf_cimd_dcs_coding_group_indicatorF0;
+static int hf_cimd_dcs_compressed_indicator;
+static int hf_cimd_dcs_message_class_meaning_indicator;
+static int hf_cimd_dcs_message_class_indicator;
+static int hf_cimd_dcs_character_set_indicator0C;
+static int hf_cimd_dcs_character_set_indicator04;
+static int hf_cimd_dcs_indication_sense;
+static int hf_cimd_dcs_indication_type;
 
 static const value_string vals_hdr_OC[] = {
   /* operation codes array */
@@ -442,10 +433,10 @@ static const cimd_pdissect cimd_pc_handles[] = {
 
 /* Parameters */
 static cimd_parameter_t vals_hdr_PC[MAXPARAMSCOUNT + 1];
-static gint ett_index[MAXPARAMSCOUNT];
-static gint hf_index[MAXPARAMSCOUNT];
+static int ett_index[MAXPARAMSCOUNT];
+static int hf_index[MAXPARAMSCOUNT];
 
-static void dissect_cimd_parameter(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset)
+static void dissect_cimd_parameter(tvbuff_t *tvb, packet_info* pinfo _U_, proto_tree *tree, int pindex, int startOffset, int endOffset)
 {
   /* Set up structures needed to add the param subtree and manage it */
   proto_tree *param_tree;
@@ -454,32 +445,114 @@ static void dissect_cimd_parameter(tvbuff_t *tvb, proto_tree *tree, gint pindex,
                                    (*vals_hdr_PC[pindex].ett_p), NULL, cimd_vals_PC[pindex].strptr);
 
   proto_tree_add_item(param_tree, hf_cimd_pcode_indicator, tvb,
-    startOffset + 1, CIMD_PC_LENGTH, ENC_ASCII|ENC_NA);
+    startOffset + 1, CIMD_PC_LENGTH, ENC_ASCII);
   proto_tree_add_item(param_tree, (*vals_hdr_PC[pindex].hf_p), tvb,
     startOffset + 1 + CIMD_PC_LENGTH + 1, endOffset - (startOffset + 1 + CIMD_PC_LENGTH + 1), ENC_ASCII|ENC_NA);
 }
 
-static void dissect_cimd_ud(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset)
+static void dissect_cimd_ud(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int pindex, int startOffset, int endOffset)
 {
   /* Set up structures needed to add the param subtree and manage it */
   proto_tree *param_tree;
 
-  gchar *payloadText, *tmpBuffer, *tmpBuffer1;
-  int    loop,i,poz, bufPoz = 0, bufPoz1 = 0, size, size1, resch;
-  gint   g_offset, g_size;
-  gchar  token[4];
-  gchar  ch;
-  static const char* mapping[128]  = {
-    "_Oa" , "_L-", ""    , "_Y-", "_e`", "_e'", "_u`", "_i`", "_o`", "_C,",        /*10*/
-    ""    , "_O/", "_o/" , ""   , "_A*", "_a*", "_gd", "_--", "_gf", "_gg", "_gl", /*21*/
-    "_go" , "_gp", "_gi" , "_gs", "_gt", "_gx", "_XX", "_AE", "_ae", "_ss", "_E'", /*32*/
-    ""    , ""   , "_qq" , ""   , "_ox", ""   , ""   , ""   , ""   , ""   , ""   , ""    , ""    , ""   , "", "",
-    ""    , ""   , ""    , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""    , ""    , ""   , "", "",
-    "_!!" , ""   , ""    , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""    , ""    , ""   , "", "",
-    ""    , ""   , ""    , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""   , "_A\"", "_O\"", "_N~",
-    "_U\"", "_so", "_??" , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""    , ""    , ""   ,
-    ""    , ""   , ""    , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""   , ""    , ""    , ""   , "", "_a\"",
-    "_o\"", "_n~", "_n\"","_a`"
+  uint8_t *tmpBuffer1;
+  const uint8_t* payloadText;
+  wmem_strbuf_t *tmpBuffer;
+  int    loop;
+  int    g_offset, g_size;
+  char   token[4];
+
+  /* The user data (33) parameter is used when the data coding scheme (30)
+   * indicates that the default GSM character set is being used.
+   * It is not transmitted directly as the 23.038 GSM encoding (packed
+   * or unpacked), but rather each character is converted to ASCII
+   * or Latin-1 (ISO-8859-1).
+   *
+   * (XXX: It is possible that the UDH indicates that a national
+   * language shift table is to be used, but we don't implement that.
+   * It is also theoretically possible for some encoding other than
+   * Latin-1 to be used.)
+   *
+   * It is simplest to first convert back to the GSM 7 bit encoding (unpacked),
+   * and then convert that to UTF-8, since the GSM extension table characters
+   * require a second level of escape handling. We will use '\xff' as a
+   * placeholder for illegal characters that will be replaced with Unicode
+   * REPLACEMENT CHARACTERS upon final conversion.
+   */
+  static const value_string combining_mapping[] = {
+    {  0, "_Oa"},
+    {  1, "_L-"},
+    {  3, "_Y-"},
+    {  4, "_e`"},
+    {  5, "_e'"},
+    {  6, "_u`"},
+    {  7, "_i`"},
+    {  8, "_o`"},
+    {  9, "_C,"},
+    { 11, "_O/"},
+    { 12, "_o/"},
+    { 14, "_A*"},
+    { 15, "_a*"},
+    { 16, "_gd"},
+    { 17, "_--"},
+    { 18, "_gf"},
+    { 19, "_gg"},
+    { 20, "_gl"},
+    { 21, "_go"},
+    { 22, "_gp"},
+    { 23, "_gi"},
+    { 24, "_gs"},
+    { 25, "_gt"},
+    { 26, "_gx"},
+    { 27, "_XX"},
+    { 28, "_AE"},
+    { 29, "_ae"},
+    { 30, "_ss"},
+    { 31, "_E'"},
+    { 34, "_qq"},
+    { 36, "_ox"},
+    { 40, "_!!"},
+    { 91, "_A\""},
+    { 92, "_O\""},
+    { 93, "_N~"},
+    { 94, "_U\""},
+    { 95, "_so"},
+    { 96, "_??"},
+    {123, "_a\""},
+    {124, "_o\""},
+    {125, "_n~"},
+    {126, "_n\""},
+    {127, "_a`"},
+    {  0, NULL }
+  };
+
+  static const char latin_mapping[256] = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /* 0x00 -       */
+    0xff, 0xff, 0x0a, 0xff, 0xff, 0x0d, 0xff, 0xff,     /*      - 0x0F  */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /* 0x10 -       */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /*      - 0x1F  */
+    0x20, 0x21, 0x22, 0x23, 0x02, 0x25, 0x26, 0x27,     /* 0x20 -       */
+    0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,     /*      - 0x2F  */
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,     /* 0x30 -       */
+    0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,     /*      - 0x3F  */
+    0x00, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,     /* 0x40 -       */
+    0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,     /*      - 0x4F  */
+    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,     /* 0x50 -       */
+    0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x0e, 0x5e, 0xff,     /*      - 0x5F  */
+    0xff, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,     /* 0x60 -       */
+    0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,     /*      - 0x6F  */
+    0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,     /* 0x70 -       */
+    0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x0f, 0x7e, 0xff,     /*      - 0x7F  */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /* 0x80 -       */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /*      - 0x8F  */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /* 0x90 -       */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /*      - 0x9F  */
+    0xff, 0x40, 0xff, 0x01, 0x24, 0x03, 0xff, 0x5f,     /* 0xA0 -       */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /*      - 0xAF  */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /* 0xB0 -       */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x60,     /*      - 0xBF  */
+    0xff, 0xff, 0xff, 0xff, 0x5b, 0x0e, 0x1c, 0x09,     /* 0xC0 -       */
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,     /*      - 0xCF  */
   };
 
   param_tree = proto_tree_add_subtree(tree, tvb,
@@ -487,204 +560,49 @@ static void dissect_cimd_ud(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint s
     (*vals_hdr_PC[pindex].ett_p), NULL, cimd_vals_PC[pindex].strptr
   );
   proto_tree_add_item(param_tree, hf_cimd_pcode_indicator, tvb,
-    startOffset + 1, CIMD_PC_LENGTH, ENC_ASCII|ENC_NA);
+    startOffset + 1, CIMD_PC_LENGTH, ENC_ASCII);
 
   g_offset = startOffset + 1 + CIMD_PC_LENGTH + 1;
   g_size   = endOffset - g_offset;
 
-  payloadText = tvb_format_text(tvb, g_offset, g_size);
-  size = (int)strlen(payloadText);
-  tmpBuffer = (gchar*)wmem_alloc(wmem_packet_scope(), size+1);
-  for (loop = 0; loop < size; loop++)
+  payloadText = tvb_get_ptr(tvb, g_offset, g_size);
+  tmpBuffer = wmem_strbuf_new_sized(pinfo->pool, g_size+1);
+  for (loop = 0; loop < g_size; loop++)
   {
     if (payloadText[loop] == '_')
     {
-      if (loop < size - 2)
+      if (loop < g_size - 2)
       {
         token[0] = payloadText[loop++];
         token[1] = payloadText[loop++];
         token[2] = payloadText[loop];
         token[3] = '\0';
-        poz = -1;
-        for (i = 0; i < 128; i++)
-        {
-          if (strcmp(token, mapping[i]) == 0)
-          {
-            poz = i;
-            break;
-          }
-        }
-        if (poz > 0)
-        {
-          tmpBuffer[bufPoz++] = poz;
-        }
-        else
-        {
-          tmpBuffer[bufPoz++] = payloadText[loop-2];
-          tmpBuffer[bufPoz++] = payloadText[loop-1];
-          tmpBuffer[bufPoz++] = payloadText[loop];
-        }
+        wmem_strbuf_append_c(tmpBuffer, str_to_val(token, combining_mapping, 0xff));
       }
       else
       {
-        if (loop < size) tmpBuffer[bufPoz++] = payloadText[loop++];
-        if (loop < size) tmpBuffer[bufPoz++] = payloadText[loop++];
-        if (loop < size) tmpBuffer[bufPoz++] = payloadText[loop++];
+        /* Not enough room for a combining sequence. */
+        wmem_strbuf_append_c(tmpBuffer, 0xff);
       }
     }
     else
     {
-      tmpBuffer[bufPoz++] = payloadText[loop];
+      wmem_strbuf_append_c(tmpBuffer, latin_mapping[payloadText[loop]]);
     }
   }
-  tmpBuffer[bufPoz] = '\0';
 
-  size1 = (int)strlen(tmpBuffer);
-  tmpBuffer1 = (gchar*)wmem_alloc(wmem_packet_scope(), size1+1);
-  for (loop=0; loop<size1; loop++)
-  {
-    ch = tmpBuffer[loop];
-    switch ((gint)ch)
-    {
-    case 0x40: resch = 0x0040; break;
-    case 0x01: resch = 0x00A3; break;
-    case 0x02: resch = 0x0024; break;
-    case 0x03: resch = 0x00A5; break;
-    case 0x04: resch = 0x00E8; break;
-    case 0x05: resch = 0x00E9; break;
-    case 0x06: resch = 0x00F9; break;
-    case 0x07: resch = 0x00EC; break;
-    case 0x08: resch = 0x00F2; break;
-    case 0x09: resch = 0x00E7; break;
-    case 0x0B: resch = 0x00D8; break;
-    case 0x0C: resch = 0x00F8; break;
-    case 0x0E: resch = 0x00C5; break;
-    case 0x0F: resch = 0x00E5; break;
-    case 0x11: resch = 0x005F; break;
-/*  case 0x1B14: resch = 0x005E; break; */
-/*  case 0x1B28: resch = 0x007B; break; */
-/*  case 0x1B29: resch = 0x007D; break; */
-/*  case 0x1B2F: resch = 0x005C; break; */
-/*  case 0x1B3C: resch = 0x005B; break; */
-/*  case 0x1B3D: resch = 0x007E; break; */
-/*  case 0x1B3E: resch = 0x005D; break; */
-/*  case 0x1B40: resch = 0x007C; break; */
-    case 0x1C: resch = 0x00C6; break;
-    case 0x1D: resch = 0x00E6; break;
-    case 0x1E: resch = 0x00DF; break;
-    case 0x1F: resch = 0x00C9; break;
-    case 0x20: resch = 0x0020; break;
-    case 0x21: resch = 0x0021; break;
-    case 0x22: resch = 0x0022; break;
-    case 0x23: resch = 0x0023; break;
-    case 0xA4: resch = 0x00A4; break;
-    case 0x25: resch = 0x0025; break;
-    case 0x26: resch = 0x0026; break;
-    case 0x27: resch = 0x0027; break;
-    case 0x28: resch = 0x0028; break;
-    case 0x29: resch = 0x0029; break;
-    case 0x2A: resch = 0x002A; break;
-    case 0x2B: resch = 0x002B; break;
-    case 0x2C: resch = 0x002C; break;
-    case 0x2D: resch = 0x002D; break;
-    case 0x2E: resch = 0x002E; break;
-    case 0x2F: resch = 0x002F; break;
-    case 0x30: resch = 0x0030; break;
-    case 0x31: resch = 0x0031; break;
-    case 0x32: resch = 0x0032; break;
-    case 0x33: resch = 0x0033; break;
-    case 0x34: resch = 0x0034; break;
-    case 0x35: resch = 0x0035; break;
-    case 0x36: resch = 0x0036; break;
-    case 0x37: resch = 0x0037; break;
-    case 0x38: resch = 0x0038; break;
-    case 0x39: resch = 0x0039; break;
-    case 0x3A: resch = 0x003A; break;
-    case 0x3B: resch = 0x003B; break;
-    case 0x3C: resch = 0x003C; break;
-    case 0x3D: resch = 0x003D; break;
-    case 0x3E: resch = 0x003E; break;
-    case 0x3F: resch = 0x003F; break;
-/*  case 0x40: resch = 0x00A1; break; */
-    case 0x41: resch = 0x0041; break;
-    case 0x42: resch = 0x0042; break;
-/*  case 0x42: resch = 0x0392; break; */
-    case 0x43: resch = 0x0043; break;
-    case 0x44: resch = 0x0044; break;
-    case 0x45: resch = 0x0045; break;
-    case 0x46: resch = 0x0046; break;
-    case 0x47: resch = 0x0047; break;
-    case 0x48: resch = 0x0048; break;
-    case 0x49: resch = 0x0049; break;
-    case 0x4A: resch = 0x004A; break;
-    case 0x4B: resch = 0x004B; break;
-    case 0x4C: resch = 0x004C; break;
-    case 0x4D: resch = 0x004D; break;
-    case 0x4E: resch = 0x004E; break;
-    case 0x4F: resch = 0x004F; break;
-    case 0x50: resch = 0x0050; break;
-    case 0x51: resch = 0x0051; break;
-    case 0x52: resch = 0x0052; break;
-    case 0x53: resch = 0x0053; break;
-    case 0x54: resch = 0x0054; break;
-    case 0x55: resch = 0x0055; break;
-    case 0x56: resch = 0x0056; break;
-    case 0x57: resch = 0x0057; break;
-    case 0x58: resch = 0x0058; break;
-    case 0x59: resch = 0x0059; break;
-    case 0x5A: resch = 0x005A; break;
-    case 0x5B: resch = 0x00C4; break;
-    case 0x5C: resch = 0x00D6; break;
-    case 0x5D: resch = 0x00D1; break;
-    case 0x5E: resch = 0x00DC; break;
-    case 0x5F: resch = 0x00A7; break;
-    case 0x60: resch = 0x00BF; break;
-    case 0x61: resch = 0x0061; break;
-    case 0x62: resch = 0x0062; break;
-    case 0x63: resch = 0x0063; break;
-    case 0x64: resch = 0x0064; break;
-    case 0x65: resch = 0x0065; break;
-    case 0x66: resch = 0x0066; break;
-    case 0x67: resch = 0x0067; break;
-    case 0x68: resch = 0x0068; break;
-    case 0x69: resch = 0x0069; break;
-    case 0x6A: resch = 0x006A; break;
-    case 0x6B: resch = 0x006B; break;
-    case 0x6C: resch = 0x006C; break;
-    case 0x6D: resch = 0x006D; break;
-    case 0x6E: resch = 0x006E; break;
-    case 0x6F: resch = 0x006F; break;
-    case 0x70: resch = 0x0070; break;
-    case 0x71: resch = 0x0071; break;
-    case 0x72: resch = 0x0072; break;
-    case 0x73: resch = 0x0073; break;
-    case 0x74: resch = 0x0074; break;
-    case 0x75: resch = 0x0075; break;
-    case 0x76: resch = 0x0076; break;
-    case 0x77: resch = 0x0077; break;
-    case 0x78: resch = 0x0078; break;
-    case 0x79: resch = 0x0079; break;
-    case 0x7A: resch = 0x007A; break;
-    case 0x7B: resch = 0x00E4; break;
-    case 0x7C: resch = 0x00F6; break;
-    case 0x7D: resch = 0x00F1; break;
-    case 0x7F: resch = 0x00E0; break;
-    default:resch = ch; break;
-    }
-    tmpBuffer1[bufPoz1++] = (gchar)resch;
-  }
-
-  tmpBuffer1[bufPoz1] = '\0';
+  tmpBuffer1 = get_ts_23_038_7bits_string_unpacked(pinfo->pool, wmem_strbuf_get_str(tmpBuffer), (int)wmem_strbuf_get_len(tmpBuffer));
+  wmem_strbuf_destroy(tmpBuffer);
   proto_tree_add_string(param_tree, (*vals_hdr_PC[pindex].hf_p), tvb, g_offset, g_size, tmpBuffer1);
 }
 
-static void dissect_cimd_dcs(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset)
+static void dissect_cimd_dcs(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int pindex, int startOffset, int endOffset)
 {
   /* Set up structures needed to add the param subtree and manage it */
   proto_tree *param_tree;
-  gint        offset;
-  guint32     dcs;
-  guint32     dcs_cg;           /* coding group */
+  int         offset;
+  uint32_t    dcs;
+  uint32_t    dcs_cg;           /* coding group */
 
   param_tree = proto_tree_add_subtree(tree, tvb,
     startOffset + 1, endOffset - (startOffset + 1),
@@ -692,10 +610,10 @@ static void dissect_cimd_dcs(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint 
   );
 
   proto_tree_add_item(param_tree, hf_cimd_pcode_indicator, tvb,
-    startOffset + 1, CIMD_PC_LENGTH, ENC_ASCII|ENC_NA);
+    startOffset + 1, CIMD_PC_LENGTH, ENC_ASCII);
 
   offset = startOffset + 1 + CIMD_PC_LENGTH + 1;
-  dcs    = (guint32) strtoul(tvb_get_string_enc(wmem_packet_scope(), tvb, offset, endOffset - offset, ENC_ASCII), NULL, 10);
+  dcs    = (uint32_t) strtoul(tvb_get_string_enc(pinfo->pool, tvb, offset, endOffset - offset, ENC_ASCII), NULL, 10);
   proto_tree_add_uint(param_tree, (*vals_hdr_PC[pindex].hf_p), tvb, offset, endOffset - offset, dcs);
 
   dcs_cg = (dcs & 0xF0) >> 4;
@@ -731,30 +649,30 @@ static void dissect_cimd_dcs(tvbuff_t *tvb, proto_tree *tree, gint pindex, gint 
   }
 }
 
-static void dissect_cimd_error_code( tvbuff_t *tvb, proto_tree *tree, gint pindex, gint startOffset, gint endOffset )
+static void dissect_cimd_error_code( tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int pindex, int startOffset, int endOffset )
 {
   /* Same routine can be used to dissect CIMD Error,Status and Status Error Codes */
   proto_tree *param_tree;
-  guint32 err_code;
+  uint32_t err_code;
 
   param_tree = proto_tree_add_subtree(tree, tvb, startOffset + 1, endOffset - (startOffset + 1),
                                       (*vals_hdr_PC[pindex].ett_p), NULL, cimd_vals_PC[pindex].strptr);
 
-  proto_tree_add_item(param_tree, hf_cimd_pcode_indicator, tvb, startOffset + 1, CIMD_PC_LENGTH, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(param_tree, hf_cimd_pcode_indicator, tvb, startOffset + 1, CIMD_PC_LENGTH, ENC_ASCII);
 
-  err_code = (guint32) strtoul(tvb_get_string_enc(wmem_packet_scope(), tvb,
+  err_code = (uint32_t) strtoul(tvb_get_string_enc(pinfo->pool, tvb,
                                                   startOffset + 1 + CIMD_PC_LENGTH + 1, endOffset - (startOffset + 1 + CIMD_PC_LENGTH + 1), ENC_ASCII),
                                NULL, 10);
   proto_tree_add_uint(param_tree, (*vals_hdr_PC[pindex].hf_p), tvb, startOffset + 1 + CIMD_PC_LENGTH + 1, endOffset - (startOffset + 1 + CIMD_PC_LENGTH + 1), err_code);
 }
 
 static void
-dissect_cimd_operation(tvbuff_t *tvb, proto_tree *tree, gint etxp, guint16 checksum, guint8 last1,guint8 OC, guint8 PN)
+dissect_cimd_operation(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int etxp, uint16_t checksum, uint8_t last1,uint8_t OC, uint8_t PN)
 {
-  guint32     PC        = 0;    /* Parameter code */
-  gint        idx;
-  gint        offset    = 0;
-  gint        endOffset = 0;
+  uint32_t    PC        = 0;    /* Parameter code */
+  int         idx;
+  int         offset    = 0;
+  int         endOffset = 0;
   proto_item *cimd_item;
   proto_tree *cimd_tree;
 
@@ -765,17 +683,17 @@ dissect_cimd_operation(tvbuff_t *tvb, proto_tree *tree, gint etxp, guint16 check
   proto_tree_add_uint(cimd_tree, hf_cimd_packet_number_indicator, tvb, CIMD_PN_OFFSET, CIMD_PN_LENGTH, PN);
 
   offset = CIMD_PN_OFFSET + CIMD_PN_LENGTH;
-  while (offset < etxp && tvb_get_guint8(tvb, offset) == CIMD_DELIM)
+  while (offset < etxp && tvb_get_uint8(tvb, offset) == CIMD_DELIM)
   {
-    endOffset = tvb_find_guint8(tvb, offset + 1, etxp, CIMD_DELIM);
+    endOffset = tvb_find_uint8(tvb, offset + 1, etxp, CIMD_DELIM);
     if (endOffset == -1)
       break;
 
-    PC = (guint32) strtoul(tvb_get_string_enc(wmem_packet_scope(), tvb, offset + 1, CIMD_PC_LENGTH, ENC_ASCII), NULL, 10);
+    PC = (uint32_t) strtoul(tvb_get_string_enc(pinfo->pool, tvb, offset + 1, CIMD_PC_LENGTH, ENC_ASCII), NULL, 10);
     try_val_to_str_idx(PC, cimd_vals_PC, &idx);
     if (idx != -1 && tree)
     {
-      (vals_hdr_PC[idx].diss)(tvb, cimd_tree, idx, offset, endOffset);
+      (vals_hdr_PC[idx].diss)(tvb, pinfo, cimd_tree, idx, offset, endOffset);
     }
     offset = endOffset;
   }
@@ -790,50 +708,52 @@ dissect_cimd_operation(tvbuff_t *tvb, proto_tree *tree, gint etxp, guint16 check
 static int
 dissect_cimd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  guint8   OC;                  /* Operation Code */
-  guint8   PN;                  /* Packet number */
-  guint16  checksum        = 0; /* Checksum */
-  guint16  pkt_check       = 0;
-  gint     etxp            = 0; /* ETX position */
-  gint     offset          = 0;
-  gboolean checksumIsValid = TRUE;
-  guint8   last1, last2, last3;
+  uint8_t  OC;                  /* Operation Code */
+  uint8_t  PN;                  /* Packet number */
+  uint16_t checksum        = 0; /* Checksum */
+  uint16_t pkt_check       = 0;
+  int      etxp            = 0; /* ETX position */
+  int      offset          = 0;
+  bool checksumIsValid = true;
+  uint8_t  last1, last2, last3;
+  char* str_OC;
 
-  etxp = tvb_find_guint8(tvb, CIMD_PN_OFFSET + CIMD_PN_LENGTH, -1, CIMD_ETX);
+  etxp = tvb_find_uint8(tvb, CIMD_PN_OFFSET + CIMD_PN_LENGTH, -1, CIMD_ETX);
   if (etxp == -1) return 0;
 
-  OC = (guint8)strtoul(tvb_get_string_enc(wmem_packet_scope(), tvb, CIMD_OC_OFFSET, CIMD_OC_LENGTH, ENC_ASCII), NULL, 10);
-  PN = (guint8)strtoul(tvb_get_string_enc(wmem_packet_scope(), tvb, CIMD_PN_OFFSET, CIMD_PN_LENGTH, ENC_ASCII), NULL, 10);
+  OC = (uint8_t)strtoul(tvb_get_string_enc(pinfo->pool, tvb, CIMD_OC_OFFSET, CIMD_OC_LENGTH, ENC_ASCII), NULL, 10);
+  PN = (uint8_t)strtoul(tvb_get_string_enc(pinfo->pool, tvb, CIMD_PN_OFFSET, CIMD_PN_LENGTH, ENC_ASCII), NULL, 10);
 
-  last1 = tvb_get_guint8(tvb, etxp - 1);
-  last2 = tvb_get_guint8(tvb, etxp - 2);
-  last3 = tvb_get_guint8(tvb, etxp - 3);
+  last1 = tvb_get_uint8(tvb, etxp - 1);
+  last2 = tvb_get_uint8(tvb, etxp - 2);
+  last3 = tvb_get_uint8(tvb, etxp - 3);
 
   if (last1 == CIMD_DELIM) {
     /* valid packet, CC is missing */
   } else if (last1 != CIMD_DELIM && last2 != CIMD_DELIM && last3 == CIMD_DELIM) {
     /* looks valid, it would be nice to check that last1 and last2 are HEXA */
     /* CC is present */
-    checksum = (guint16)strtoul(tvb_get_string_enc(wmem_packet_scope(), tvb, etxp - 2, 2, ENC_ASCII), NULL, 16);
+    checksum = (uint16_t)strtoul(tvb_get_string_enc(pinfo->pool, tvb, etxp - 2, 2, ENC_ASCII), NULL, 16);
     for (; offset < (etxp - 2); offset++)
     {
-      pkt_check += tvb_get_guint8(tvb, offset);
+      pkt_check += tvb_get_uint8(tvb, offset);
       pkt_check &= 0xFF;
     }
     checksumIsValid = (checksum == pkt_check);
   } else {
-    checksumIsValid = FALSE;
+    checksumIsValid = false;
   }
 
   /* Make entries in Protocol column on summary display */
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "CIMD");
 
+  str_OC = val_to_str(pinfo->pool, OC, vals_hdr_OC, "Unknown (%d)");
   if (checksumIsValid)
-    col_add_str(pinfo->cinfo, COL_INFO, val_to_str(OC, vals_hdr_OC, "Unknown (%d)"));
+    col_add_str(pinfo->cinfo, COL_INFO, str_OC);
   else
-    col_add_fstr(pinfo->cinfo, COL_INFO, "%s - %s", val_to_str(OC, vals_hdr_OC, "Unknown (%d)"), "invalid checksum");
+    col_add_fstr(pinfo->cinfo, COL_INFO, "%s - %s", str_OC, "invalid checksum");
 
-  dissect_cimd_operation(tvb, tree, etxp, checksum, last1, OC, PN);
+  dissect_cimd_operation(tvb, pinfo, tree, etxp, checksum, last1, OC, PN);
   return tvb_captured_length(tvb);
 }
 
@@ -841,38 +761,38 @@ dissect_cimd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
  * A 'heuristic dissector' that attemtps to establish whether we have
  * a CIMD MSU here.
  */
-static gboolean
+static bool
 dissect_cimd_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
   int    etxp;
-  guint8 opcode = 0;            /* Operation code */
+  uint8_t opcode = 0;            /* Operation code */
 
   if (tvb_captured_length(tvb) < CIMD_MIN_LENGTH)
-    return FALSE;
+    return false;
 
-  if (tvb_get_guint8(tvb, 0) != CIMD_STX)
-    return FALSE;
+  if (tvb_get_uint8(tvb, 0) != CIMD_STX)
+    return false;
 
-  etxp = tvb_find_guint8(tvb, CIMD_OC_OFFSET, -1, CIMD_ETX);
+  etxp = tvb_find_uint8(tvb, CIMD_OC_OFFSET, -1, CIMD_ETX);
   if (etxp == -1)
   { /* XXX - should we have an option to request reassembly? */
-    return FALSE;
+    return false;
   }
 
   /* Try getting the operation-code */
-  opcode = (guint8)strtoul(tvb_get_string_enc(wmem_packet_scope(), tvb, CIMD_OC_OFFSET, CIMD_OC_LENGTH, ENC_ASCII), NULL, 10);
+  opcode = (uint8_t)strtoul(tvb_get_string_enc(pinfo->pool, tvb, CIMD_OC_OFFSET, CIMD_OC_LENGTH, ENC_ASCII), NULL, 10);
   if (try_val_to_str(opcode, vals_hdr_OC) == NULL)
-    return FALSE;
+    return false;
 
-  if (tvb_get_guint8(tvb, CIMD_OC_OFFSET + CIMD_OC_LENGTH) != CIMD_COLON)
-    return FALSE;
+  if (tvb_get_uint8(tvb, CIMD_OC_OFFSET + CIMD_OC_LENGTH) != CIMD_COLON)
+    return false;
 
-  if (tvb_get_guint8(tvb, CIMD_PN_OFFSET + CIMD_PN_LENGTH) != CIMD_DELIM)
-    return FALSE;
+  if (tvb_get_uint8(tvb, CIMD_PN_OFFSET + CIMD_PN_LENGTH) != CIMD_DELIM)
+    return false;
 
   /* Ok, looks like a valid packet, go dissect. */
   dissect_cimd(tvb, pinfo, tree, data);
-  return TRUE;
+  return true;
 }
 
 void
@@ -1132,14 +1052,13 @@ proto_register_cimd(void)
   };
 
   /* Setup protocol subtree array */
-  gint *ett[MAXPARAMSCOUNT + 1];
+  int *ett[MAXPARAMSCOUNT + 1];
   int i;
 
   ett[0] = &ett_cimd;
 
   for(i=0;i<MAXPARAMSCOUNT;i++)
   {
-    ett_index[i]         = -1;
     ett[i + 1]           = &(ett_index[i]);
     vals_hdr_PC[i].ett_p = &(ett_index[i]);
     vals_hdr_PC[i].hf_p  = &(hf_index[i]);
@@ -1151,13 +1070,14 @@ proto_register_cimd(void)
   /* Required function calls to register the header fields and subtrees used */
   proto_register_field_array(proto_cimd, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  /* Register the dissector */
+  cimd_handle = register_dissector("cimd", dissect_cimd, proto_cimd);
 }
 
 void
 proto_reg_handoff_cimd(void)
 {
-  dissector_handle_t cimd_handle;
-
   /**
    * CIMD can be spoken on any port so, when not on a specific port, try this
    * one whenever TCP is spoken.
@@ -1167,12 +1087,11 @@ proto_reg_handoff_cimd(void)
   /**
    * Also register as one that can be selected by a TCP port number.
    */
-  cimd_handle = create_dissector_handle(dissect_cimd, proto_cimd);
-  dissector_add_for_decode_as("tcp.port", cimd_handle);
+  dissector_add_for_decode_as_with_preference("tcp.port", cimd_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

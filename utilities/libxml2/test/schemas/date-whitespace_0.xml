@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<test>
+  <date> 2000-01-01</date>
+  <date>2000-01-01 </date>
+  <date>2000-01-01Z </date>
+  <dateTime> 2000-01-01T00:00:00</dateTime>
+  <dateTime>2000-01-01T00:00:00 </dateTime>
+  <dateTime>2000-01-01T00:00:00Z </dateTime>
+  <time> 00:00:00</time>
+  <time>00:00:00 </time>
+  <time>00:00:00Z </time>
+  <gYear> 2000</gYear>
+  <gYear>2000 </gYear>
+  <gYear>2000Z </gYear>
+  <gYearMonth> 2000-01</gYearMonth>
+  <gYearMonth>2000-01 </gYearMonth>
+  <gYearMonth>2000-01Z </gYearMonth>
+  <gMonth> --01</gMonth>
+  <gMonth>--01 </gMonth>
+  <gMonth>--01Z </gMonth>
+  <gMonthDay> --01-01</gMonthDay>
+  <gMonthDay>--01-01 </gMonthDay>
+  <gMonthDay>--01-01Z </gMonthDay>
+  <gDay> ---01</gDay>
+  <gDay>---01 </gDay>
+  <gDay>---01Z </gDay>
+  <duration> P1Y</duration>
+  <duration>P1Y </duration>
+</test>

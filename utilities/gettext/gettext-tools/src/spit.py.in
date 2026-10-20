@@ -1,0 +1,800 @@
+#! /usr/bin/env python3
+#
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# Written by Bruno Haible.
+
+# This program passes an input to an ollama instance and prints the response.
+#
+# Dependencies: request.
+
+import sys
+
+# Documentation: https://docs.python.org/3/library/argparse.html
+import argparse
+
+# Documentation: https://requests.readthedocs.io/en/latest/
+import requests
+
+# Documentation: https://docs.python.org/3/library/json.html
+import json
+
+# Documentation: https://docs.python.org/3/library/subprocess.html
+import subprocess
+
+# Converted from lang-table.c:
+language_table = {
+    "aa": "Afar",
+    "ab": "Abkhazian",
+    "ace": "Achinese",
+    "ae": "Avestan",
+    "af": "Afrikaans",
+    "ak": "Akan",
+    "am": "Amharic",
+    "an": "Aragonese",
+    "ang": "Old English",
+    "ar": "Arabic",
+    "arn": "Mapudungun",
+    "as": "Assamese",
+    "ast": "Asturian",
+    "av": "Avaric",
+    "awa": "Awadhi",
+    "ay": "Aymara",
+    "az": "Azerbaijani",
+    "ba": "Bashkir",
+    "bal": "Baluchi",
+    "ban": "Balinese",
+    "be": "Belarusian",
+    "bej": "Beja",
+    "bem": "Bemba",
+    "bg": "Bulgarian",
+    "bh": "Bihari",
+    "bho": "Bhojpuri",
+    "bi": "Bislama",
+    "bik": "Bikol",
+    "bin": "Bini",
+    "bm": "Bambara",
+    "bn": "Bengali",
+    "bo": "Tibetan",
+    "br": "Breton",
+    "bs": "Bosnian",
+    "bug": "Buginese",
+    "ca": "Catalan",
+    "ce": "Chechen",
+    "ceb": "Cebuano",
+    "ch": "Chamorro",
+    "co": "Corsican",
+    "cr": "Cree",
+    "crh": "Crimean Tatar",
+    "cs": "Czech",
+    "csb": "Kashubian",
+    "cu": "Church Slavic",
+    "cv": "Chuvash",
+    "cy": "Welsh",
+    "da": "Danish",
+    "de": "German",
+    "din": "Dinka",
+    "doi": "Dogri",
+    "dsb": "Lower Sorbian",
+    "dv": "Divehi",
+    "dz": "Dzongkha",
+    "ee": "Ewe",
+    "el": "Greek",
+    "en": "English",
+    "eo": "Esperanto",
+    "es": "Spanish",
+    "et": "Estonian",
+    "eu": "Basque",
+    "fa": "Persian",
+    "ff": "Fulah",
+    "fi": "Finnish",
+    "fil": "Filipino",
+    "fj": "Fijian",
+    "fo": "Faroese",
+    "fon": "Fon",
+    "fr": "French",
+    "fur": "Friulian",
+    "fy": "Western Frisian",
+    "ga": "Irish",
+    "gd": "Scottish Gaelic",
+    "gl": "Galician",
+    "gn": "Guarani",
+    "gon": "Gondi",
+    "gsw": "Swiss German", # can also be "Alsatian"
+    "gu": "Gujarati",
+    "gv": "Manx",
+    "ha": "Hausa",
+    "he": "Hebrew",
+    "hi": "Hindi",
+    "hil": "Hiligaynon",
+    "hmn": "Hmong",
+    "ho": "Hiri Motu",
+    "hr": "Croatian",
+    "hsb": "Upper Sorbian",
+    "ht": "Haitian",
+    "hu": "Hungarian",
+    "hy": "Armenian",
+    "hz": "Herero",
+    "ia": "Interlingua",
+    "id": "Indonesian",
+    "ie": "Interlingue",
+    "ig": "Igbo",
+    "ii": "Sichuan Yi",
+    "ik": "Inupiak",
+    "ilo": "Iloko",
+    "is": "Icelandic",
+    "it": "Italian",
+    "iu": "Inuktitut",
+    "ja": "Japanese",
+    "jab": "Hyam",
+    "jv": "Javanese",
+    "ka": "Georgian",
+    "kab": "Kabyle",
+    "kaj": "Jju",
+    "kam": "Kamba",
+    "kbd": "Kabardian",
+    "kcg": "Tyap",
+    "kdm": "Kagoma",
+    "kg": "Kongo",
+    "ki": "Kikuyu",
+    "kj": "Kuanyama",
+    "kk": "Kazakh",
+    "kl": "Kalaallisut",
+    "km": "Central Khmer",
+    "kmb": "Kimbundu",
+    "kn": "Kannada",
+    "ko": "Korean",
+    "kr": "Kanuri",
+    "kru": "Kurukh",
+    "ks": "Kashmiri",
+    "ku": "Kurdish",
+    "kv": "Komi",
+    "kw": "Cornish",
+    "ky": "Kirghiz",
+    "kok": "Konkani",
+    "la": "Latin",
+    "lb": "Letzeburgesch",
+    "lg": "Ganda",
+    "li": "Limburgish",
+    "ln": "Lingala",
+    "lo": "Laotian",
+    "lt": "Lithuanian",
+    "lu": "Luba-Katanga",
+    "lua": "Luba-Lulua",
+    "luo": "Luo",
+    "lv": "Latvian",
+    "mad": "Madurese",
+    "mag": "Magahi",
+    "mai": "Maithili",
+    "mak": "Makasar",
+    "man": "Mandingo",
+    "men": "Mende",
+    "mg": "Malagasy",
+    "mh": "Marshallese",
+    "mi": "Maori",
+    "min": "Minangkabau",
+    "mk": "Macedonian",
+    "ml": "Malayalam",
+    "mn": "Mongolian",
+    "mni": "Manipuri",
+    "mo": "Moldavian",
+    "moh": "Mohawk",
+    "mos": "Mossi",
+    "mr": "Marathi",
+    "ms": "Malay",
+    "mt": "Maltese",
+    "mwr": "Marwari",
+    "my": "Burmese",
+    "myn": "Mayan",
+    "na": "Nauru",
+    "nap": "Neapolitan",
+    "nah": "Nahuatl",
+    "nb": "Norwegian Bokmal",
+    "nd": "North Ndebele",
+    "nds": "Low Saxon",
+    "ne": "Nepali",
+    "ng": "Ndonga",
+    "nl": "Dutch",
+    "nn": "Norwegian Nynorsk",
+    "no": "Norwegian",
+    "nr": "South Ndebele",
+    "nso": "Northern Sotho",
+    "nv": "Navajo",
+    "ny": "Nyanja",
+    "nym": "Nyamwezi",
+    "nyn": "Nyankole",
+    "oc": "Occitan",
+    "oj": "Ojibwa",
+    "om": "(Afan) Oromo",
+    "or": "Oriya",
+    "os": "Ossetian",
+    "pa": "Punjabi",
+    "pag": "Pangasinan",
+    "pam": "Pampanga",
+    "pap": "Papiamento",
+    "pbb": "Páez",
+    "pi": "Pali",
+    "pl": "Polish",
+    "ps": "Pashto",
+    "pt": "Portuguese",
+    "qu": "Quechua",
+    "raj": "Rajasthani",
+    "rm": "Romansh",
+    "rn": "Kirundi",
+    "ro": "Romanian",
+    "ru": "Russian",
+    "rw": "Kinyarwanda",
+    "sa": "Sanskrit",
+    "sah": "Yakut",
+    "sas": "Sasak",
+    "sat": "Santali",
+    "sc": "Sardinian",
+    "scn": "Sicilian",
+    "sd": "Sindhi",
+    "se": "Northern Sami",
+    "sg": "Sango",
+    "shn": "Shan",
+    "si": "Sinhala",
+    "sid": "Sidamo",
+    "sk": "Slovak",
+    "sl": "Slovenian",
+    "sm": "Samoan",
+    "sma": "Southern Sami",
+    "smj": "Lule Sami",
+    "smn": "Inari Sami",
+    "sms": "Skolt Sami",
+    "sn": "Shona",
+    "so": "Somali",
+    "sq": "Albanian",
+    "sr": "Serbian",
+    "srr": "Serer",
+    "ss": "Siswati",
+    "st": "Sesotho",
+    "su": "Sundanese",
+    "suk": "Sukuma",
+    "sus": "Susu",
+    "sv": "Swedish",
+    "sw": "Swahili",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "tem": "Timne",
+    "tet": "Tetum",
+    "tg": "Tajik",
+    "th": "Thai",
+    "ti": "Tigrinya",
+    "tiv": "Tiv",
+    "tk": "Turkmen",
+    "tl": "Tagalog",
+    "tn": "Setswana",
+    "to": "Tonga",
+    "tr": "Turkish",
+    "ts": "Tsonga",
+    "tt": "Tatar",
+    "tum": "Tumbuka",
+    "tw": "Twi",
+    "ty": "Tahitian",
+    "ug": "Uighur",
+    "uk": "Ukrainian",
+    "umb": "Umbundu",
+    "ur": "Urdu",
+    "uz": "Uzbek",
+    "ve": "Venda",
+    "vi": "Vietnamese",
+    "vo": "Volapuk",
+    "wal": "Walamo",
+    "war": "Waray",
+    "wen": "Sorbian",
+    "wo": "Wolof",
+    "xh": "Xhosa",
+    "yao": "Yao",
+    "yi": "Yiddish",
+    "yo": "Yoruba",
+    "za": "Zhuang",
+    "zh": "Chinese",
+    "zu": "Zulu",
+    "zap": "Zapotec",
+}
+language_variant_table = {
+    "de_AT": "Austrian",
+    "en_GB": "English (British)",
+    "es_AR": "Argentinian",
+    "es_IC": "Spanish (Canary Islands)",
+    "pt_BR": "Brazilian Portuguese",
+    "zh_CN": "Chinese (simplified)",
+    "zh_HK": "Chinese (Hong Kong)",
+    "zh_TW": "Chinese (traditional)",
+}
+
+# Converted from country-table.c:
+country_table = {
+    "AD": "Andorra",
+    "AE": "United Arab Emirates",
+    "AF": "Afghanistan",
+    "AG": "Antigua and Barbuda",
+    "AI": "Anguilla",
+    "AL": "Albania",
+    "AM": "Armenia",
+    "AO": "Angola",
+    "AQ": "Antarctica",
+    "AR": "Argentina",
+    "AS": "American Samoa",
+    "AT": "Austria",
+    "AU": "Australia",
+    "AW": "Aruba",
+    "AX": "Åland Islands",
+    "AZ": "Azerbaijan",
+    "BA": "Bosnia and Herzegovina",
+    "BB": "Barbados",
+    "BD": "Bangladesh",
+    "BE": "Belgium",
+    "BF": "Burkina Faso",
+    "BG": "Bulgaria",
+    "BH": "Bahrain",
+    "BI": "Burundi",
+    "BJ": "Benin",
+    "BL": "Saint Barthélemy",
+    "BM": "Bermuda",
+    "BN": "Brunei Darussalam",
+    "BO": "Bolivia, Plurinational State of",
+    "BQ": "Bonaire, Sint Eustatius and Saba",
+    "BR": "Brazil",
+    "BS": "Bahamas",
+    "BT": "Bhutan",
+    "BV": "Bouvet Island",
+    "BW": "Botswana",
+    "BY": "Belarus",
+    "BZ": "Belize",
+    "CA": "Canada",
+    "CC": "Cocos (Keeling) Islands",
+    "CD": "Congo, Democratic Republic of the",
+    "CF": "Central African Republic",
+    "CG": "Congo",
+    "CH": "Switzerland",
+    "CI": "Côte d'Ivoire",
+    "CK": "Cook Islands",
+    "CL": "Chile",
+    "CM": "Cameroon",
+    "CN": "China",
+    "CO": "Colombia",
+    "CR": "Costa Rica",
+    "CU": "Cuba",
+    "CV": "Cabo Verde",
+    "CW": "Curaçao",
+    "CX": "Christmas Island",
+    "CY": "Cyprus",
+    "CZ": "Czechia",
+    "DE": "Germany",
+    "DJ": "Djibouti",
+    "DK": "Denmark",
+    "DM": "Dominica",
+    "DO": "Dominican Republic",
+    "DZ": "Algeria",
+    "EC": "Ecuador",
+    "EE": "Estonia",
+    "EG": "Egypt",
+    "EH": "Western Sahara",
+    "ER": "Eritrea",
+    "ES": "Spain",
+    "ET": "Ethiopia",
+    "FI": "Finland",
+    "FJ": "Fiji",
+    "FK": "Falkland Islands (Malvinas)",
+    "FM": "Micronesia, Federated States of",
+    "FO": "Faroe Islands",
+    "FR": "France",
+    "GA": "Gabon",
+    "GB": "United Kingdom of Great Britain and Northern Ireland",
+    "GD": "Grenada",
+    "GE": "Georgia",
+    "GF": "French Guiana",
+    "GG": "Guernsey",
+    "GH": "Ghana",
+    "GI": "Gibraltar",
+    "GL": "Greenland",
+    "GM": "Gambia",
+    "GN": "Guinea",
+    "GP": "Guadeloupe",
+    "GQ": "Equatorial Guinea",
+    "GR": "Greece",
+    "GS": "South Georgia and the South Sandwich Islands",
+    "GT": "Guatemala",
+    "GU": "Guam",
+    "GW": "Guinea-Bissau",
+    "GY": "Guyana",
+    "HK": "Hong Kong",
+    "HM": "Heard Island and McDonald Islands",
+    "HN": "Honduras",
+    "HR": "Croatia",
+    "HT": "Haiti",
+    "HU": "Hungary",
+    "ID": "Indonesia",
+    "IE": "Ireland",
+    "IL": "Israel",
+    "IM": "Isle of Man",
+    "IN": "India",
+    "IO": "British Indian Ocean Territory",
+    "IQ": "Iraq",
+    "IR": "Iran, Islamic Republic of",
+    "IS": "Iceland",
+    "IT": "Italy",
+    "JE": "Jersey",
+    "JM": "Jamaica",
+    "JO": "Jordan",
+    "JP": "Japan",
+    "KE": "Kenya",
+    "KG": "Kyrgyzstan",
+    "KH": "Cambodia",
+    "KI": "Kiribati",
+    "KM": "Comoros",
+    "KN": "Saint Kitts and Nevis",
+    "KP": "Korea, Democratic People's Republic of",
+    "KR": "Korea, Republic of",
+    "KW": "Kuwait",
+    "KY": "Cayman Islands",
+    "KZ": "Kazakhstan",
+    "LA": "Lao People's Democratic Republic",
+    "LB": "Lebanon",
+    "LC": "Saint Lucia",
+    "LI": "Liechtenstein",
+    "LK": "Sri Lanka",
+    "LR": "Liberia",
+    "LS": "Lesotho",
+    "LT": "Lithuania",
+    "LU": "Luxembourg",
+    "LV": "Latvia",
+    "LY": "Libya",
+    "MA": "Morocco",
+    "MC": "Monaco",
+    "MD": "Moldova, Republic of",
+    "ME": "Montenegro",
+    "MF": "Saint Martin (French part)",
+    "MG": "Madagascar",
+    "MH": "Marshall Islands",
+    "MK": "North Macedonia",
+    "ML": "Mali",
+    "MM": "Myanmar",
+    "MN": "Mongolia",
+    "MO": "Macao",
+    "MP": "Northern Mariana Islands",
+    "MQ": "Martinique",
+    "MR": "Mauritania",
+    "MS": "Montserrat",
+    "MT": "Malta",
+    "MU": "Mauritius",
+    "MV": "Maldives",
+    "MW": "Malawi",
+    "MX": "Mexico",
+    "MY": "Malaysia",
+    "MZ": "Mozambique",
+    "NA": "Namibia",
+    "NC": "New Caledonia",
+    "NE": "Niger",
+    "NF": "Norfolk Island",
+    "NG": "Nigeria",
+    "NI": "Nicaragua",
+    "NL": "Netherlands, Kingdom of the",
+    "NO": "Norway",
+    "NP": "Nepal",
+    "NR": "Nauru",
+    "NU": "Niue",
+    "NZ": "New Zealand",
+    "OM": "Oman",
+    "PA": "Panama",
+    "PE": "Peru",
+    "PF": "French Polynesia",
+    "PG": "Papua New Guinea",
+    "PH": "Philippines",
+    "PK": "Pakistan",
+    "PL": "Poland",
+    "PM": "Saint Pierre and Miquelon",
+    "PN": "Pitcairn",
+    "PR": "Puerto Rico",
+    "PS": "Palestine, State of",
+    "PT": "Portugal",
+    "PW": "Palau",
+    "PY": "Paraguay",
+    "QA": "Qatar",
+    "RE": "Réunion",
+    "RO": "Romania",
+    "RS": "Serbia",
+    "RU": "Russian Federation",
+    "RW": "Rwanda",
+    "SA": "Saudi Arabia",
+    "SB": "Solomon Islands",
+    "SC": "Seychelles",
+    "SD": "Sudan",
+    "SE": "Sweden",
+    "SG": "Singapore",
+    "SH": "Saint Helena, Ascension and Tristan da Cunha",
+    "SI": "Slovenia",
+    "SJ": "Svalbard and Jan Mayen",
+    "SK": "Slovakia",
+    "SL": "Sierra Leone",
+    "SM": "San Marino",
+    "SN": "Senegal",
+    "SO": "Somalia",
+    "SR": "Suriname",
+    "SS": "South Sudan",
+    "ST": "Sao Tome and Principe",
+    "SV": "El Salvador",
+    "SX": "Sint Maarten (Dutch part)",
+    "SY": "Syrian Arab Republic",
+    "SZ": "Eswatini",
+    "TC": "Turks and Caicos Islands",
+    "TD": "Chad",
+    "TF": "French Southern Territories",
+    "TG": "Togo",
+    "TH": "Thailand",
+    "TJ": "Tajikistan",
+    "TK": "Tokelau",
+    "TL": "Timor-Leste",
+    "TM": "Turkmenistan",
+    "TN": "Tunisia",
+    "TO": "Tonga",
+    "TR": "Türkiye",
+    "TT": "Trinidad and Tobago",
+    "TV": "Tuvalu",
+    "TW": "Taiwan, Province of China",
+    "TZ": "Tanzania, United Republic of",
+    "UA": "Ukraine",
+    "UG": "Uganda",
+    "UM": "United States Minor Outlying Islands",
+    "US": "United States of America",
+    "UY": "Uruguay",
+    "UZ": "Uzbekistan",
+    "VA": "Holy See",
+    "VC": "Saint Vincent and the Grenadines",
+    "VE": "Venezuela, Bolivarian Republic of",
+    "VG": "Virgin Islands (British)",
+    "VI": "Virgin Islands (U.S.)",
+    "VN": "Viet Nam",
+    "VU": "Vanuatu",
+    "WF": "Wallis and Futuna",
+    "WS": "Samoa",
+    "YE": "Yemen",
+    "YT": "Mayotte",
+    "ZA": "South Africa",
+    "ZM": "Zambia",
+    "ZW": "Zimbabwe",
+}
+
+def englishname_of_language(language):
+    '''Returns the English name of a language (lowercase ISO 639 code),
+       or None if unknown.'''
+    return language_table.get(language, None)
+
+def englishname_of_country(country):
+    '''Returns the English name of a country (uppercase ISO 3166 code),
+       or None if unknown.'''
+    return country_table.get(country, None)
+
+def language_in_english(catalogname):
+    '''Returns a name or description of a catalog name.'''
+    underscore = catalogname.find('_')
+    if underscore >= 0:
+        # Treat a few cases specially.
+        english = language_variant_table.get(catalogname, None)
+        if english != None:
+            return english
+        # Decompose "ll_CC" into "ll" and "CC".
+        language = catalogname[:underscore]
+        country = catalogname[underscore+1:]
+        english_language = englishname_of_language(language)
+        if english_language != None:
+            english_country = englishname_of_country(country)
+            if english_country != None:
+                return "%s (as spoken in %s)" % (english_language, english_country)
+            else:
+                return english_language
+        else:
+            return catalogname
+    else:
+        # It's a simple language name.
+        english_language = englishname_of_language(catalogname)
+        if english_language != None:
+            return english_language
+        else:
+            return catalogname
+
+def do_request(url, payload, stream):
+    '''Make the HTTP POST request to the given URL, sending its output
+       to the stream STREAM.'''
+    response = requests.post(url, data=payload, stream=True)
+    if response.status_code != 200:
+        print('Status:', response.status_code, file=sys.stderr)
+    if response.status_code >= 400:
+        print('Body:', response.text, file=sys.stderr)
+        sys.exit(1)
+    # Not needed any more:
+    #response.raise_for_status()
+
+    for line in response.iter_lines():
+        part = json.loads(line.decode('utf-8'))
+        print(part.get('response', ''), end='', flush=True, file=stream)
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='spit',
+        usage='spit --help',
+        add_help=False)
+
+    parser.add_argument('--species',
+                        dest='species',
+                        default='ollama')
+    parser.add_argument('--url',
+                        dest='url',
+                        default='http://localhost:11434')
+    parser.add_argument('--model', '-m',
+                        dest='model',
+                        default=None,
+                        nargs=1)
+    parser.add_argument('--to',
+                        dest='to_language',
+                        default=None,
+                        nargs=1)
+    parser.add_argument('--prompt',
+                        dest='prompt',
+                        default=None,
+                        nargs=1)
+    parser.add_argument('--postprocess',
+                        dest='postprocess',
+                        default=None,
+                        nargs=1)
+    parser.add_argument('--help', '--hel', '--he', '--h', '-h',
+                        dest='help',
+                        default=None,
+                        action='store_true')
+    parser.add_argument('--version', '--versio', '--versi', '--vers', '--ver', '--ve', '--v', '-V',
+                        dest='version',
+                        default=None,
+                        action='store_true')
+    # All other arguments are collected.
+    parser.add_argument('non_option_arguments',
+                        nargs='*')
+
+    # Parse the given arguments. Don't signal an error if non-option arguments
+    # occur between or after options.
+    cmdargs, unhandled = parser.parse_known_args()
+
+    # Handle --version, ignoring all other options.
+    if cmdargs.version != None:
+        print('''
+spit (GNU gettext-tools) @VERSION@
+Copyright (C) 2025-2026 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Written by Bruno Haible.
+''')
+        sys.exit(0)
+
+    # Handle --help, ignoring all other options.
+    if cmdargs.help != None:
+        print('''
+Usage: spit [OPTION...]
+
+Passes standard input to a Large Language Model (LLM) instance and prints
+the response.
+With the --to option, it translates standard input to the specified language
+through a Large Language Model (LLM) and prints the translation.
+
+Warning: The output might not be what you expect.
+It might be of the wrong form, be of poor quality, or reflect some biases.
+
+Options:
+      --species=TYPE          Specifies the type of LLM.  The default and only
+                              valid value is 'ollama'.
+      --url=URL               Specifies the URL of the server that runs the LLM.
+  -m, --model=MODEL           Specifies the model to use.
+      --to=LANGUAGE           Specifies the target language.
+      --prompt=TEXT           Specifies the prompt to use before standard input.
+                              This option overrides the --to option.
+      --postprocess=COMMAND   Specifies a command to post-process the output.
+
+Informative output:
+
+  -h, --help                  Display this help and exit.
+  -V, --version               Output version information and exit.
+
+Report bugs in the bug tracker at <https://savannah.gnu.org/projects/gettext>
+or by email to <bug-gettext@gnu.org>.
+''')
+        sys.exit(0)
+
+    # Report unhandled arguments.
+    for arg in unhandled:
+        if arg.startswith('-'):
+            message = '%s: Unrecognized option \'%s\'.\n' % ('spit', arg)
+            message += 'Try \'spit --help\' for more information.\n'
+            sys.stderr.write(message)
+            sys.exit(1)
+    # By now, all unhandled arguments were non-options.
+    cmdargs.non_option_arguments += unhandled
+
+    # Test for extraneous arguments.
+    if len(cmdargs.non_option_arguments) > 0:
+        message = '%s: too many arguments\n' % 'spit'
+        message += 'Try \'spit --help\' for more information.\n'
+        sys.stderr.write(message)
+        sys.exit(1)
+
+    # Check --species option.
+    if cmdargs.species != 'ollama':
+        sys.stderr.write('%s: invalid value for --species option: %s' % ('spit', cmdargs.species))
+        sys.exit(1)
+
+    # Check --model option.
+    if cmdargs.model == None:
+        sys.stderr.write('%s: missing --model option\n' % 'spit')
+        sys.exit(1)
+
+    model = cmdargs.model[0]
+
+    to_language = None
+    if cmdargs.to_language != None:
+        to_language = cmdargs.to_language[0]
+
+    prompt = None
+    if cmdargs.prompt != None:
+        prompt = cmdargs.prompt[0]
+
+    postprocess = None
+    if cmdargs.postprocess != None:
+        postprocess = cmdargs.postprocess[0]
+
+    # Sanitize URL.
+    url = cmdargs.url
+    if not url.endswith('/'):
+        url += '/'
+
+    # Read the contents of standard input.
+    input = sys.stdin.read()
+
+    # Compute a default prompt.
+    if prompt == None and to_language != None:
+        prompt = 'Translate into ' + language_in_english(to_language) + ':'
+
+    # Prepend the prompt.
+    if prompt != None:
+        input = prompt + '\n' + input
+
+    # For debugging.
+    #print(input)
+
+    # Documentation of the ollama API:
+    # <https://docs.ollama.com/api/generate>
+
+    url = url + 'api/generate'
+
+    payload = { 'model': model, 'prompt': input }
+    # We need the payload in JSON syntax (with double-quotes around the strings),
+    # not in Python syntax (with single-quotes around the strings):
+    payload = json.dumps(payload)
+
+    # Make the request to the ollama server.
+    if postprocess != None:
+        pipe = subprocess.Popen(["sh", "-c", postprocess],
+                                stdin=subprocess.PIPE, text=True)
+        try:
+            do_request(url, payload, pipe.stdin)
+        finally:
+            pipe.stdin.close()
+        pipe.wait()
+    else:
+        do_request(url, payload, sys.stdout)
+
+if __name__ == '__main__':
+    main()

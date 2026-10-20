@@ -17,23 +17,11 @@
  *  - Wireshark - Network traffic analyzer,
  *    By Gerald Combs <gerald@wireshark.org>, Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
- * Generated Automatically Using (from wireshark base directory):
+ * Generated automatically Using (from wireshark base directory):
  *   cog.py -D xmlfile=tools/SkinnyProtocolOptimized.xml -d -c -o epan/dissectors/packet-skinny.c epan/dissectors/packet-skinny.c.in
  */
 
@@ -42,23 +30,31 @@
  * :indentSize=2:tabSize=8:noTabs=true:
  */
 
+
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/conversation.h>
+#include <epan/wmem_scopes.h>
+#include <epan/to_str.h>
 #include <epan/tap.h>
 #include <epan/ptvcursor.h>
-
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-rtp.h"
 #include "packet-tcp.h"
-#include "packet-ssl.h"
+#include "packet-tls.h"
 #include "packet-skinny.h"
+
+/* un-comment the following as well as this line in conversation.c, to enable debug printing */
+/* #define DEBUG_CONVERSATION */
+#include "conversation_debug.h"
 
 void proto_register_skinny(void);
 void proto_reg_handoff_skinny(void);
 
-
-#define TCP_PORT_SKINNY 2000
+#define TCP_PORT_SKINNY 2000 /* Not IANA registered */
 #define SSL_PORT_SKINNY 2443 /* IANA assigned to PowerClient Central Storage Facility */
 
 #define BASIC_MSG_TYPE 0x00
@@ -89,9 +85,9 @@ static const value_string header_version[] = {
 };
 
 /* Declare MessageId */
-static const value_string  message_id[] = {
-  { 0x0000, "KeepAlive" },
-  { 0x0001, "Register" },
+static const value_string message_id[] = {
+  { 0x0000, "KeepAliveReq" },
+  { 0x0001, "RegisterReq" },
   { 0x0002, "IpPort" },
   { 0x0003, "KeypadButton" },
   { 0x0004, "EnblocCall" },
@@ -112,10 +108,10 @@ static const value_string  message_id[] = {
   { 0x0021, "MulticastMediaReceptionAck" },
   { 0x0022, "OpenReceiveChannelAck" },
   { 0x0023, "ConnectionStatisticsRes" },
-  { 0x0024, "OffHookWithCgpn" },
+  { 0x0024, "OffHookWithCallingPartyNumber" },
   { 0x0025, "SoftKeySetReq" },
   { 0x0026, "SoftKeyEvent" },
-  { 0x0027, "Unregister" },
+  { 0x0027, "UnregisterReq" },
   { 0x0028, "SoftKeyTemplateReq" },
   { 0x0029, "RegisterTokenReq" },
   { 0x002a, "MediaTransmissionFailure" },
@@ -137,8 +133,8 @@ static const value_string  message_id[] = {
   { 0x0040, "AuditParticipantRes" },
   { 0x0041, "DeviceToUserDataVersion1" },
   { 0x0042, "DeviceToUserDataResponseVersion1" },
-  { 0x0043, "UpdateCapabilitiesV2" },
-  { 0x0044, "UpdateCapabilitiesV3" },
+  { 0x0043, "CapabilitiesV2Res" },
+  { 0x0044, "CapabilitiesV3Res" },
   { 0x0045, "PortRes" },
   { 0x0046, "QoSResvNotify" },
   { 0x0047, "QoSErrorNotify" },
@@ -151,20 +147,21 @@ static const value_string  message_id[] = {
   { 0x0083, "StopTone" },
   { 0x0085, "SetRinger" },
   { 0x0086, "SetLamp" },
+  { 0x0087, "SetHookFlashDetect" },
   { 0x0088, "SetSpeakerMode" },
   { 0x0089, "SetMicroMode" },
   { 0x008a, "StartMediaTransmission" },
   { 0x008b, "StopMediaTransmission" },
   { 0x008f, "CallInfo" },
-  { 0x0090, "ForwardStat" },
-  { 0x0091, "SpeedDialStat" },
-  { 0x0092, "LineStat" },
-  { 0x0093, "ConfigStat" },
-  { 0x0094, "DefineTimeDate" },
+  { 0x0090, "ForwardStatRes" },
+  { 0x0091, "SpeedDialStatRes" },
+  { 0x0092, "LineStatRes" },
+  { 0x0093, "ConfigStatRes" },
+  { 0x0094, "TimeDateRes" },
   { 0x0095, "StartSessionTransmission" },
   { 0x0096, "StopSessionTransmission" },
-  { 0x0097, "ButtonTemplate" },
-  { 0x0098, "Version" },
+  { 0x0097, "ButtonTemplateRes" },
+  { 0x0098, "VersionRes" },
   { 0x0099, "DisplayText" },
   { 0x009a, "ClearDisplay" },
   { 0x009b, "CapabilitiesReq" },
@@ -190,13 +187,13 @@ static const value_string  message_id[] = {
   { 0x0116, "ActivateCallPlane" },
   { 0x0117, "DeactivateCallPlane" },
   { 0x0118, "UnregisterAck" },
-  { 0x0119, "BackSpaceReq" },
+  { 0x0119, "BackSpaceRes" },
   { 0x011a, "RegisterTokenAck" },
   { 0x011b, "RegisterTokenReject" },
   { 0x011c, "StartMediaFailureDetection" },
   { 0x011d, "DialedNumber" },
   { 0x011e, "UserToDeviceData" },
-  { 0x011f, "FeatureStat" },
+  { 0x011f, "FeatureStatRes" },
   { 0x0120, "DisplayPriNotify" },
   { 0x0121, "ClearPriNotify" },
   { 0x0122, "StartAnnouncement" },
@@ -210,8 +207,8 @@ static const value_string  message_id[] = {
   { 0x012c, "UnSubscribeDtmfPayloadReq" },
   { 0x012d, "UnSubscribeDtmfPayloadRes" },
   { 0x012e, "UnSubscribeDtmfPayloadErr" },
-  { 0x012f, "ServiceURLStat" },
-  { 0x0130, "CallSelectStat" },
+  { 0x012f, "ServiceURLStatRes" },
+  { 0x0130, "CallSelectStatRes" },
   { 0x0131, "OpenMultiMediaReceiveChannel" },
   { 0x0132, "StartMultiMediaTransmission" },
   { 0x0133, "StopMultiMediaTransmission" },
@@ -229,14 +226,14 @@ static const value_string  message_id[] = {
   { 0x013f, "UserToDeviceDataVersion1" },
   { 0x0140, "VideoDisplayCommand" },
   { 0x0141, "FlowControlNotify" },
-  { 0x0142, "ConfigStatV2" },
+  { 0x0142, "ConfigStatV2Res" },
   { 0x0143, "DisplayNotifyV2" },
   { 0x0144, "DisplayPriNotifyV2" },
   { 0x0145, "DisplayPromptStatusV2" },
-  { 0x0146, "FeatureStatV2" },
-  { 0x0147, "LineStatV2" },
-  { 0x0148, "ServiceURLStatV2" },
-  { 0x0149, "SpeedDialStatV2" },
+  { 0x0146, "FeatureStatV2Res" },
+  { 0x0147, "LineStatV2Res" },
+  { 0x0148, "ServiceURLStatV2Res" },
+  { 0x0149, "SpeedDialStatV2Res" },
   { 0x014a, "CallInfoV2" },
   { 0x014b, "PortReq" },
   { 0x014c, "PortClose" },
@@ -245,13 +242,13 @@ static const value_string  message_id[] = {
   { 0x014f, "QoSTeardown" },
   { 0x0150, "UpdateDSCP" },
   { 0x0151, "QoSModify" },
-  { 0x0152, "SubscriptionStat" },
+  { 0x0152, "SubscriptionStatRes" },
   { 0x0153, "Notification" },
   { 0x0154, "StartMediaTransmissionAck" },
   { 0x0155, "StartMultiMediaTransmissionAck" },
   { 0x0156, "CallHistoryInfo" },
-  { 0x0156, "LocationInfo" },
-  { 0x0158, "MwiResponse" },
+  { 0x0157, "LocationInfo" },
+  { 0x0158, "MwiRes" },
   { 0x0159, "AddOnDeviceCapabilities" },
   { 0x015a, "EnhancedAlarm" },
   { 0x015e, "CallCountReq" },
@@ -263,7 +260,6 @@ static const value_string  message_id[] = {
   {0     , NULL}
 };
 static value_string_ext message_id_ext = VALUE_STRING_EXT_INIT(message_id);
-
 
 /* Declare Enums and Defines */
 static const value_string DisplayLabels_36[] = {
@@ -366,7 +362,7 @@ static const value_string DisplayLabels_200[] = {
   { 0x00014, "Off Hook" },
   { 0x00015, "On Hook" },
   { 0x00016, "Ring Out" },
-  { 0x00017, "From" },
+  { 0x00017, "From " },
   { 0x00018, "Connected" },
   { 0x00019, "Busy" },
   { 0x0001a, "Line In Use" },
@@ -480,12 +476,9 @@ static const value_string DeviceType[] = {
   { 0x00003, "Station12SP" },
   { 0x00004, "Station12" },
   { 0x00005, "Station30VIP" },
-  { 0x00006, "StationTelecaster" },
   { 0x00006, "Cisco 7910" },
   { 0x00007, "StationTelecasterMgr" },
-  { 0x00008, "StationTelecasterBus" },
   { 0x00008, "Cisco 7940" },
-  { 0x00009, "StationPolycom" },
   { 0x00009, "Cisco 7935" },
   { 0x0000a, "StationVGC" },
   { 0x0000b, "VGCVirtualPhone" },
@@ -543,22 +536,19 @@ static const value_string DeviceType[] = {
   { 0x00085, "WsmTrunk" },
   { 0x00086, "RemoteDestination" },
   { 0x000e3, "Cisco 7915 AddOn" },
-  { 0x000e4, "Cisco 7915 AddOn" },
+  { 0x000e4, "Cisco 7915 AddOn 24" },
   { 0x000e5, "Cisco 7916 AddOn" },
-  { 0x000e6, "Cisco 7916 AddOn" },
+  { 0x000e6, "Cisco 7916 AddOn 24" },
   { 0x000fd, "GenericDevice" },
   { 0x000fe, "UnknownMGCPGateway" },
   { 0x000ff, "NotDefined" },
   { 0x00113, "Nokia E Series" },
-  { 0x0012e, "7989" },
   { 0x0012e, "Cisco 7985" },
   { 0x00133, "7911" },
-  { 0x00134, "7941G_GE" },
   { 0x00134, "Cisco 7961 GE" },
   { 0x00135, "7961G_GE" },
   { 0x0014f, "MotorolaCN622" },
   { 0x00150, "3rdPartySipBasic" },
-  { 0x0015c, "StationGoPed" },
   { 0x0015c, "Cisco 7931" },
   { 0x00166, "UnifiedCommunicator" },
   { 0x0016d, "7921" },
@@ -595,7 +585,6 @@ static const value_string DeviceType[] = {
   { 0x07536, "7970" },
   { 0x07537, "7912" },
   { 0x07538, "7902" },
-  { 0x07540, "SoftPhone" },
   { 0x07540, "Cisco IP Communicator" },
   { 0x07542, "7961G" },
   { 0x07543, "7936" },
@@ -637,6 +626,28 @@ static const value_string KeyPadButton[] = {
   { 0x00000, NULL }
 };
 static value_string_ext KeyPadButton_ext = VALUE_STRING_EXT_INIT(KeyPadButton);
+
+static const value_string KeyPadButton_short[] = {
+  { 0x00000, "0" },
+  { 0x00001, "1" },
+  { 0x00002, "2" },
+  { 0x00003, "3" },
+  { 0x00004, "4" },
+  { 0x00005, "5" },
+  { 0x00006, "6" },
+  { 0x00007, "7" },
+  { 0x00008, "8" },
+  { 0x00009, "9" },
+  { 0x0000a, "A" },
+  { 0x0000b, "B" },
+  { 0x0000c, "C" },
+  { 0x0000d, "D" },
+  { 0x0000e, "*" },
+  { 0x0000f, "#" },
+  { 0x00010, "+" },
+  { 0x00000, NULL }
+};
+static value_string_ext KeyPadButton_short_ext = VALUE_STRING_EXT_INIT(KeyPadButton_short);
 
 static const value_string DeviceStimulus[] = {
   { 0x00001, "LastNumberRedial" },
@@ -685,7 +696,7 @@ static const value_string DeviceStimulus[] = {
   { 0x0008a, "EndCall" },
   { 0x0008b, "HLog" },
   { 0x0008f, "Queuing" },
-  { 0x0008f, "MaxStimulusValue" },
+  { 0x000ff, "MaxStimulusValue" },
   { 0x00000, NULL }
 };
 static value_string_ext DeviceStimulus_ext = VALUE_STRING_EXT_INIT(DeviceStimulus);
@@ -902,7 +913,7 @@ static const value_string SoftKeySet[] = {
   { 0x00002, "On Hold" },
   { 0x00003, "Ring In" },
   { 0x00004, "Off Hook" },
-  { 0x00005, "Connected Transfeable" },
+  { 0x00005, "Connected Transferable" },
   { 0x00006, "Digits Following" },
   { 0x00007, "Connected Conference" },
   { 0x00008, "Ring Out" },
@@ -1706,7 +1717,7 @@ static const value_string CallHistoryDisposition[] = {
   { 0x00001, "PlacedCalls" },
   { 0x00002, "ReceivedCalls" },
   { 0x00003, "MissedCalls" },
-  { 0xffffffff, "UnknownDisp" },
+  { 0x0ffff, "UnknownDisp" },
   { 0x00000, NULL }
 };
 static value_string_ext CallHistoryDisposition_ext = VALUE_STRING_EXT_INIT(CallHistoryDisposition);
@@ -1732,490 +1743,491 @@ static value_string_ext RecordingStatus_ext = VALUE_STRING_EXT_INIT(RecordingSta
 
 
 /* Staticly Declared Variables */
-static int proto_skinny                 = -1;
-static int hf_skinny_messageId          = -1;
-static int hf_skinny_data_length        = -1;
-static int hf_skinny_hdr_version        = -1;
-static int hf_skinny_xmlData            = -1;
-static int hf_skinny_ipv4or6            = -1;
+static int proto_skinny;
+static int hf_skinny_messageId;
+static int hf_skinny_data_length;
+static int hf_skinny_hdr_version;
+static int hf_skinny_xmlData;
+static int hf_skinny_ipv4or6;
+static int hf_skinny_response_in;
+static int hf_skinny_response_to;
+static int hf_skinny_response_time;
 
-static int hf_skinny_AlternateCallingParty = -1;
-static int hf_skinny_CallingPartyName = -1;
-static int hf_skinny_CallingPartyNumber = -1;
-static int hf_skinny_DSCPValue = -1;
-static int hf_skinny_DeviceName = -1;
-static int hf_skinny_FutureUse1 = -1;
-static int hf_skinny_FutureUse2 = -1;
-static int hf_skinny_FutureUse3 = -1;
-static int hf_skinny_Generic_Bitfield_Bit1 = -1;
-static int hf_skinny_Generic_Bitfield_Bit10 = -1;
-static int hf_skinny_Generic_Bitfield_Bit11 = -1;
-static int hf_skinny_Generic_Bitfield_Bit12 = -1;
-static int hf_skinny_Generic_Bitfield_Bit13 = -1;
-static int hf_skinny_Generic_Bitfield_Bit14 = -1;
-static int hf_skinny_Generic_Bitfield_Bit15 = -1;
-static int hf_skinny_Generic_Bitfield_Bit16 = -1;
-static int hf_skinny_Generic_Bitfield_Bit17 = -1;
-static int hf_skinny_Generic_Bitfield_Bit18 = -1;
-static int hf_skinny_Generic_Bitfield_Bit19 = -1;
-static int hf_skinny_Generic_Bitfield_Bit2 = -1;
-static int hf_skinny_Generic_Bitfield_Bit20 = -1;
-static int hf_skinny_Generic_Bitfield_Bit21 = -1;
-static int hf_skinny_Generic_Bitfield_Bit22 = -1;
-static int hf_skinny_Generic_Bitfield_Bit23 = -1;
-static int hf_skinny_Generic_Bitfield_Bit24 = -1;
-static int hf_skinny_Generic_Bitfield_Bit25 = -1;
-static int hf_skinny_Generic_Bitfield_Bit26 = -1;
-static int hf_skinny_Generic_Bitfield_Bit27 = -1;
-static int hf_skinny_Generic_Bitfield_Bit28 = -1;
-static int hf_skinny_Generic_Bitfield_Bit29 = -1;
-static int hf_skinny_Generic_Bitfield_Bit3 = -1;
-static int hf_skinny_Generic_Bitfield_Bit30 = -1;
-static int hf_skinny_Generic_Bitfield_Bit31 = -1;
-static int hf_skinny_Generic_Bitfield_Bit32 = -1;
-static int hf_skinny_Generic_Bitfield_Bit4 = -1;
-static int hf_skinny_Generic_Bitfield_Bit5 = -1;
-static int hf_skinny_Generic_Bitfield_Bit6 = -1;
-static int hf_skinny_Generic_Bitfield_Bit7 = -1;
-static int hf_skinny_Generic_Bitfield_Bit8 = -1;
-static int hf_skinny_Generic_Bitfield_Bit9 = -1;
-static int hf_skinny_HuntPilotName = -1;
-static int hf_skinny_HuntPilotNumber = -1;
-static int hf_skinny_MPI = -1;
-static int hf_skinny_OrigDialed = -1;
-static int hf_skinny_PhoneFeatures_Abbreviated_Dial = -1;
-static int hf_skinny_PhoneFeatures_Bit1 = -1;
-static int hf_skinny_PhoneFeatures_Bit11 = -1;
-static int hf_skinny_PhoneFeatures_Bit12 = -1;
-static int hf_skinny_PhoneFeatures_Bit13 = -1;
-static int hf_skinny_PhoneFeatures_Bit14 = -1;
-static int hf_skinny_PhoneFeatures_Bit15 = -1;
-static int hf_skinny_PhoneFeatures_Bit2 = -1;
-static int hf_skinny_PhoneFeatures_Bit3 = -1;
-static int hf_skinny_PhoneFeatures_Bit4 = -1;
-static int hf_skinny_PhoneFeatures_Bit6 = -1;
-static int hf_skinny_PhoneFeatures_Bit7 = -1;
-static int hf_skinny_PhoneFeatures_Bit9 = -1;
-static int hf_skinny_PhoneFeatures_DynamicMessages = -1;
-static int hf_skinny_PhoneFeatures_RFC2833 = -1;
-static int hf_skinny_PhoneFeatures_UTF8 = -1;
-static int hf_skinny_RFC2833PayloadType = -1;
-static int hf_skinny_RTCPPortNumber = -1;
-static int hf_skinny_RTPPayloadFormat = -1;
-static int hf_skinny_RedirDialed = -1;
-static int hf_skinny_RestrictInformationType_BitsReserved = -1;
-static int hf_skinny_RestrictInformationType_CalledParty = -1;
-static int hf_skinny_RestrictInformationType_CalledPartyName = -1;
-static int hf_skinny_RestrictInformationType_CalledPartyNumber = -1;
-static int hf_skinny_RestrictInformationType_CallingParty = -1;
-static int hf_skinny_RestrictInformationType_CallingPartyName = -1;
-static int hf_skinny_RestrictInformationType_CallingPartyNumber = -1;
-static int hf_skinny_RestrictInformationType_LastRedirectParty = -1;
-static int hf_skinny_RestrictInformationType_LastRedirectPartyName = -1;
-static int hf_skinny_RestrictInformationType_LastRedirectPartyNumber = -1;
-static int hf_skinny_RestrictInformationType_OriginalCalledParty = -1;
-static int hf_skinny_RestrictInformationType_OriginalCalledPartyName = -1;
-static int hf_skinny_RestrictInformationType_OriginalCalledPartyNumber = -1;
-static int hf_skinny_ServerName = -1;
-static int hf_skinny_SoftKeyMask_SoftKey1 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey10 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey11 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey12 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey13 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey14 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey15 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey16 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey2 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey3 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey4 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey5 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey6 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey7 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey8 = -1;
-static int hf_skinny_SoftKeyMask_SoftKey9 = -1;
-static int hf_skinny_active = -1;
-static int hf_skinny_activeConferenceOnRegistration = -1;
-static int hf_skinny_activeConferences = -1;
-static int hf_skinny_activeForward = -1;
-static int hf_skinny_activeStreams = -1;
-static int hf_skinny_activeStreamsOnRegistration = -1;
-static int hf_skinny_add_participant_result = -1;
-static int hf_skinny_alarmInfo = -1;
-static int hf_skinny_alarmSeverity = -1;
-static int hf_skinny_algorithmID = -1;
-static int hf_skinny_alignmentPadding = -1;
-static int hf_skinny_annAckReq = -1;
-static int hf_skinny_annPlayMode = -1;
-static int hf_skinny_annStatus = -1;
-static int hf_skinny_annexNandWFutureUse = -1;
-static int hf_skinny_appConfID = -1;
-static int hf_skinny_appData = -1;
-static int hf_skinny_appID = -1;
-static int hf_skinny_appInstanceID = -1;
-static int hf_skinny_appName = -1;
-static int hf_skinny_applicationID = -1;
-static int hf_skinny_areMessagesWaiting = -1;
-static int hf_skinny_associatedStreamID = -1;
-static int hf_skinny_audioCapCount = -1;
-static int hf_skinny_audioLevelAdjustment = -1;
-static int hf_skinny_audit_participant_result = -1;
-static int hf_skinny_averageBitRate = -1;
-static int hf_skinny_bandwidth = -1;
-static int hf_skinny_bitRate = -1;
-static int hf_skinny_bridgeParticipantId = -1;
-static int hf_skinny_burstSize = -1;
-static int hf_skinny_busyTrigger = -1;
-static int hf_skinny_buttonCount = -1;
-static int hf_skinny_buttonDefinition = -1;
-static int hf_skinny_buttonOffset = -1;
-static int hf_skinny_callHistoryDisposition = -1;
-static int hf_skinny_callInstance = -1;
-static int hf_skinny_callReference = -1;
-static int hf_skinny_callSecurityStatus = -1;
-static int hf_skinny_callSelectStat = -1;
-static int hf_skinny_callState = -1;
-static int hf_skinny_callType = -1;
-static int hf_skinny_calledParty = -1;
-static int hf_skinny_calledPartyName = -1;
-static int hf_skinny_callingParty = -1;
-static int hf_skinny_callingPartyName = -1;
-static int hf_skinny_callingPartyNumber = -1;
-static int hf_skinny_capAndVer = -1;
-static int hf_skinny_capCount = -1;
-static int hf_skinny_cause = -1;
-static int hf_skinny_cdpnVoiceMailbox = -1;
-static int hf_skinny_cgpnVoiceMailbox = -1;
-static int hf_skinny_chan0MaxPayload = -1;
-static int hf_skinny_chan2MaxPayload = -1;
-static int hf_skinny_chan2MaxWindow = -1;
-static int hf_skinny_chan3MaxPayload = -1;
-static int hf_skinny_clockConversionCode = -1;
-static int hf_skinny_clockDivisor = -1;
-static int hf_skinny_codecMode = -1;
-static int hf_skinny_codecParam1 = -1;
-static int hf_skinny_codecParam2 = -1;
-static int hf_skinny_command = -1;
-static int hf_skinny_compressionType = -1;
-static int hf_skinny_confServiceNum = -1;
-static int hf_skinny_conferenceID = -1;
-static int hf_skinny_conferenceName = -1;
-static int hf_skinny_configVersionStamp = -1;
-static int hf_skinny_confirmRequired = -1;
-static int hf_skinny_country = -1;
-static int hf_skinny_customMaxBRandCPB = -1;
-static int hf_skinny_customMaxDPB = -1;
-static int hf_skinny_customMaxFS = -1;
-static int hf_skinny_customMaxMBPS = -1;
-static int hf_skinny_customPictureFormatCount = -1;
-static int hf_skinny_data = -1;
-static int hf_skinny_dataCapCount = -1;
-static int hf_skinny_dataCapabilityDirection = -1;
-static int hf_skinny_dataLength = -1;
-static int hf_skinny_dataSize = -1;
-static int hf_skinny_dateTemplate = -1;
-static int hf_skinny_defendingPriority = -1;
-static int hf_skinny_delete_conf_result = -1;
-static int hf_skinny_deviceType = -1;
-static int hf_skinny_dialedNumber = -1;
-static int hf_skinny_direction = -1;
-static int hf_skinny_directoryNum = -1;
-static int hf_skinny_displayPriority = -1;
-static int hf_skinny_dtmfType = -1;
-static int hf_skinny_dynamicPayload = -1;
-static int hf_skinny_ecValue = -1;
-static int hf_skinny_encryptionCapability = -1;
-static int hf_skinny_errorCode = -1;
-static int hf_skinny_failureNodeIpAddr = -1;
-static int hf_skinny_featureCapabilities = -1;
-static int hf_skinny_featureID = -1;
-static int hf_skinny_featureIndex = -1;
-static int hf_skinny_featureStatus = -1;
-static int hf_skinny_featureTextLabel = -1;
-static int hf_skinny_features = -1;
-static int hf_skinny_firmwareLoadName = -1;
-static int hf_skinny_firstGOB = -1;
-static int hf_skinny_firstMB = -1;
-static int hf_skinny_format = -1;
-static int hf_skinny_forwardAllActive = -1;
-static int hf_skinny_forwardAllDirnum = -1;
-static int hf_skinny_forwardBusyActive = -1;
-static int hf_skinny_forwardBusyDirnum = -1;
-static int hf_skinny_forwardNoAnswerActive = -1;
-static int hf_skinny_forwardNoAnswerlDirnum = -1;
-static int hf_skinny_g723BitRate = -1;
-static int hf_skinny_headsetStatus = -1;
-static int hf_skinny_hearingConfPartyMask = -1;
-static int hf_skinny_instance = -1;
-static int hf_skinny_instanceNumber = -1;
-static int hf_skinny_ipAddr_ipv4 = -1;
-static int hf_skinny_ipAddr_ipv6 = -1;
-static int hf_skinny_ipAddressType = -1;
-static int hf_skinny_ipAddressingMode = -1;
-static int hf_skinny_ipV4AddressScope = -1;
-static int hf_skinny_ipV6AddressScope = -1;
-static int hf_skinny_isConferenceCreator = -1;
-static int hf_skinny_isMKIPresent = -1;
-static int hf_skinny_jitter = -1;
-static int hf_skinny_keepAliveInterval = -1;
-static int hf_skinny_key = -1;
-static int hf_skinny_keyDerivationRate = -1;
-static int hf_skinny_keylen = -1;
-static int hf_skinny_kpButton = -1;
-static int hf_skinny_lampMode = -1;
-static int hf_skinny_last = -1;
-static int hf_skinny_lastRedirectingParty = -1;
-static int hf_skinny_lastRedirectingPartyName = -1;
-static int hf_skinny_lastRedirectingReason = -1;
-static int hf_skinny_lastRedirectingVoiceMailbox = -1;
-static int hf_skinny_latency = -1;
-static int hf_skinny_layoutCount = -1;
-static int hf_skinny_layoutID = -1;
-static int hf_skinny_layouts = -1;
-static int hf_skinny_level = -1;
-static int hf_skinny_levelPreferenceCount = -1;
-static int hf_skinny_lineDataEntries = -1;
-static int hf_skinny_lineDirNumber = -1;
-static int hf_skinny_lineDisplayOptions = -1;
-static int hf_skinny_lineFullyQualifiedDisplayName = -1;
-static int hf_skinny_lineInstance = -1;
-static int hf_skinny_lineNumber = -1;
-static int hf_skinny_lineTextLabel = -1;
-static int hf_skinny_locale = -1;
-static int hf_skinny_locationInfo = -1;
-static int hf_skinny_longTermPictureIndex = -1;
-static int hf_skinny_macAddress = -1;
-static int hf_skinny_matrixConfPartyID = -1;
-static int hf_skinny_maxBW = -1;
-static int hf_skinny_maxBitRate = -1;
-static int hf_skinny_maxConferences = -1;
-static int hf_skinny_maxFramesPerPacket = -1;
-static int hf_skinny_maxNumCalls = -1;
-static int hf_skinny_maxNumOfAvailLines = -1;
-static int hf_skinny_maxNumberOfLines = -1;
-static int hf_skinny_maxProtocolVer = -1;
-static int hf_skinny_maxRetryNumber = -1;
-static int hf_skinny_maxStreams = -1;
-static int hf_skinny_maxStreamsPerConf = -1;
-static int hf_skinny_maximumBitRate = -1;
-static int hf_skinny_mediaPathCapabilities = -1;
-static int hf_skinny_mediaPathEvent = -1;
-static int hf_skinny_mediaPathID = -1;
-static int hf_skinny_mediaTransportType = -1;
-static int hf_skinny_mediaType = -1;
-static int hf_skinny_micMode = -1;
-static int hf_skinny_millisecondPacketSize = -1;
-static int hf_skinny_minBitRate = -1;
-static int hf_skinny_mixingMode = -1;
-static int hf_skinny_modAnd2833 = -1;
-static int hf_skinny_modelNumber = -1;
-static int hf_skinny_modify_conf_result = -1;
-static int hf_skinny_multicastIpAddr_ipv4 = -1;
-static int hf_skinny_multicastIpAddr_ipv6 = -1;
-static int hf_skinny_multicastPortNumber = -1;
-static int hf_skinny_multimediaOpenReceiveChannelStatus = -1;
-static int hf_skinny_mwiControlNumber = -1;
-static int hf_skinny_mwiTargetNumber = -1;
-static int hf_skinny_mwi_notification_result = -1;
-static int hf_skinny_noaudio = -1;
-static int hf_skinny_none = -1;
-static int hf_skinny_notify = -1;
-static int hf_skinny_nse = -1;
-static int hf_skinny_numNewMsgs = -1;
-static int hf_skinny_numOldMsgs = -1;
-static int hf_skinny_numberOctetsReceived = -1;
-static int hf_skinny_numberOctetsSent = -1;
-static int hf_skinny_numberOfActiveParticipants = -1;
-static int hf_skinny_numberOfEntries = -1;
-static int hf_skinny_numberOfGOBs = -1;
-static int hf_skinny_numberOfInServiceStreams = -1;
-static int hf_skinny_numberOfLines = -1;
-static int hf_skinny_numberOfMBs = -1;
-static int hf_skinny_numberOfOutOfServiceStreams = -1;
-static int hf_skinny_numberOfReservedParticipants = -1;
-static int hf_skinny_numberOfSpeedDials = -1;
-static int hf_skinny_numberPacketsLost = -1;
-static int hf_skinny_numberPacketsReceived = -1;
-static int hf_skinny_numberPacketsSent = -1;
-static int hf_skinny_openReceiveChannelStatus = -1;
-static int hf_skinny_originalCalledParty = -1;
-static int hf_skinny_originalCalledPartyName = -1;
-static int hf_skinny_originalCdpnRedirectReason = -1;
-static int hf_skinny_originalCdpnVoiceMailbox = -1;
-static int hf_skinny_padding = -1;
-static int hf_skinny_parm1 = -1;
-static int hf_skinny_parm2 = -1;
-static int hf_skinny_participantEntry = -1;
-static int hf_skinny_participantName = -1;
-static int hf_skinny_participantNumber = -1;
-static int hf_skinny_partyDirection = -1;
-static int hf_skinny_passThruData = -1;
-static int hf_skinny_passThruPartyID = -1;
-static int hf_skinny_passthruPartyID = -1;
-static int hf_skinny_payloadCapability = -1;
-static int hf_skinny_payloadDtmf = -1;
-static int hf_skinny_payloadType = -1;
-static int hf_skinny_payload_rfc_number = -1;
-static int hf_skinny_peakRate = -1;
-static int hf_skinny_pictureFormatCount = -1;
-static int hf_skinny_pictureHeight = -1;
-static int hf_skinny_pictureNumber = -1;
-static int hf_skinny_pictureWidth = -1;
-static int hf_skinny_pixelAspectRatio = -1;
-static int hf_skinny_portHandlingFlag = -1;
-static int hf_skinny_portNumber = -1;
-static int hf_skinny_precedenceDomain = -1;
-static int hf_skinny_precedenceLevel = -1;
-static int hf_skinny_precedenceValue = -1;
-static int hf_skinny_preemptionPriority = -1;
-static int hf_skinny_priority = -1;
-static int hf_skinny_privacy = -1;
-static int hf_skinny_profile = -1;
-static int hf_skinny_promptStatus = -1;
-static int hf_skinny_protocolDependentData = -1;
-static int hf_skinny_protocolVer = -1;
-static int hf_skinny_receptionStatus = -1;
-static int hf_skinny_recording_status = -1;
-static int hf_skinny_recoveryReferencePictureCount = -1;
-static int hf_skinny_remoteIpAddr_ipv4 = -1;
-static int hf_skinny_remoteIpAddr_ipv6 = -1;
-static int hf_skinny_remotePortNumber = -1;
-static int hf_skinny_requestedIpAddrType = -1;
-static int hf_skinny_reserved_for_future_use = -1;
-static int hf_skinny_resetType = -1;
-static int hf_skinny_resourceType = -1;
-static int hf_skinny_result = -1;
-static int hf_skinny_resultCode = -1;
-static int hf_skinny_resvStyle = -1;
-static int hf_skinny_retryTimer = -1;
-static int hf_skinny_rfc2833 = -1;
-static int hf_skinny_ringDuration = -1;
-static int hf_skinny_ringMode = -1;
-static int hf_skinny_routingID = -1;
-static int hf_skinny_rsvpErrorCode = -1;
-static int hf_skinny_rsvpErrorFlag = -1;
-static int hf_skinny_rsvpErrorSubCodeVal = -1;
-static int hf_skinny_rtpMediaPort = -1;
-static int hf_skinny_salt = -1;
-static int hf_skinny_saltlen = -1;
-static int hf_skinny_secondaryKeepAliveInterval = -1;
-static int hf_skinny_sequenceFlag = -1;
-static int hf_skinny_serverName = -1;
-static int hf_skinny_serverTcpListenPort = -1;
-static int hf_skinny_serviceNum = -1;
-static int hf_skinny_serviceNumber = -1;
-static int hf_skinny_serviceResourceCount = -1;
-static int hf_skinny_serviceURL = -1;
-static int hf_skinny_serviceURLDisplayName = -1;
-static int hf_skinny_serviceURLIndex = -1;
-static int hf_skinny_sessionType = -1;
-static int hf_skinny_softKeyCount = -1;
-static int hf_skinny_softKeyEvent = -1;
-static int hf_skinny_softKeyInfoIndex = -1;
-static int hf_skinny_softKeyLabel = -1;
-static int hf_skinny_softKeyOffset = -1;
-static int hf_skinny_softKeySetCount = -1;
-static int hf_skinny_softKeySetIndex = -1;
-static int hf_skinny_softKeySetOffset = -1;
-static int hf_skinny_softKeyTemplateIndex = -1;
-static int hf_skinny_sourceIpAddr_ipv4 = -1;
-static int hf_skinny_sourceIpAddr_ipv6 = -1;
-static int hf_skinny_sourcePortNumber = -1;
-static int hf_skinny_speakerMode = -1;
-static int hf_skinny_speedDialDirNumber = -1;
-static int hf_skinny_speedDialDisplayName = -1;
-static int hf_skinny_speedDialNumber = -1;
-static int hf_skinny_ssValue = -1;
-static int hf_skinny_sse = -1;
-static int hf_skinny_standard = -1;
-static int hf_skinny_startMediaTransmissionStatus = -1;
-static int hf_skinny_startingLineInstance = -1;
-static int hf_skinny_stationIpAddr = -1;
-static int hf_skinny_stationIpAddr_ipv4 = -1;
-static int hf_skinny_stationIpAddr_ipv6 = -1;
-static int hf_skinny_stationIpV6Addr = -1;
-static int hf_skinny_stationIpV6Addr_ipv4 = -1;
-static int hf_skinny_stationIpV6Addr_ipv6 = -1;
-static int hf_skinny_statsProcessingMode = -1;
-static int hf_skinny_status = -1;
-static int hf_skinny_stillImageTransmission = -1;
-static int hf_skinny_stimulus = -1;
-static int hf_skinny_stimulusInstance = -1;
-static int hf_skinny_stimulusStatus = -1;
-static int hf_skinny_streamPassThroughID = -1;
-static int hf_skinny_subAppID = -1;
-static int hf_skinny_subcriptionFeatureID = -1;
-static int hf_skinny_subscriptionFeatureID = -1;
-static int hf_skinny_subscriptionID = -1;
-static int hf_skinny_subscriptionoFeatureID = -1;
-static int hf_skinny_systemTime = -1;
-static int hf_skinny_temporalSpatialTradeOff = -1;
-static int hf_skinny_temporalSpatialTradeOffCapability = -1;
-static int hf_skinny_text = -1;
-static int hf_skinny_timeOutValue = -1;
-static int hf_skinny_timer = -1;
-static int hf_skinny_tone = -1;
-static int hf_skinny_toneAnnouncement = -1;
-static int hf_skinny_tone_output_direction = -1;
-static int hf_skinny_totalButtonCount = -1;
-static int hf_skinny_totalNumOfConfiguredLines = -1;
-static int hf_skinny_totalSoftKeyCount = -1;
-static int hf_skinny_totalSoftKeySetCount = -1;
-static int hf_skinny_transactionID = -1;
-static int hf_skinny_transmitIpAddr_ipv4 = -1;
-static int hf_skinny_transmitIpAddr_ipv6 = -1;
-static int hf_skinny_transmitPort = -1;
-static int hf_skinny_transmitPreference = -1;
-static int hf_skinny_unRegReasonCode = -1;
-static int hf_skinny_unknown = -1;
-static int hf_skinny_unknown1_0159 = -1;
-static int hf_skinny_unknown2_0159 = -1;
-static int hf_skinny_unknown3_0159 = -1;
-static int hf_skinny_unknownString_0159 = -1;
-static int hf_skinny_userName = -1;
-static int hf_skinny_v150sprt = -1;
-static int hf_skinny_vendor = -1;
-static int hf_skinny_vendorID = -1;
-static int hf_skinny_version = -1;
-static int hf_skinny_videoCapCount = -1;
-static int hf_skinny_videoCapabilityDirection = -1;
-static int hf_skinny_wDay = -1;
-static int hf_skinny_wDayOfWeek = -1;
-static int hf_skinny_wHour = -1;
-static int hf_skinny_wMilliseconds = -1;
-static int hf_skinny_wMinute = -1;
-static int hf_skinny_wMonth = -1;
-static int hf_skinny_wSecond = -1;
-static int hf_skinny_wYear = -1;
-static int hf_skinny_waitTimeBeforeNextReq = -1;
-static int hf_skinny_xmldata = -1;
+static int hf_skinny_AlternateCallingParty;
+static int hf_skinny_CallingPartyName;
+static int hf_skinny_CallingPartyNumber;
+static int hf_skinny_DSCPValue;
+static int hf_skinny_DeviceName;
+static int hf_skinny_FutureUse1;
+static int hf_skinny_FutureUse2;
+static int hf_skinny_FutureUse3;
+static int hf_skinny_Generic_Bitfield_Bit1;
+static int hf_skinny_Generic_Bitfield_Bit10;
+static int hf_skinny_Generic_Bitfield_Bit11;
+static int hf_skinny_Generic_Bitfield_Bit12;
+static int hf_skinny_Generic_Bitfield_Bit13;
+static int hf_skinny_Generic_Bitfield_Bit14;
+static int hf_skinny_Generic_Bitfield_Bit15;
+static int hf_skinny_Generic_Bitfield_Bit16;
+static int hf_skinny_Generic_Bitfield_Bit17;
+static int hf_skinny_Generic_Bitfield_Bit18;
+static int hf_skinny_Generic_Bitfield_Bit19;
+static int hf_skinny_Generic_Bitfield_Bit2;
+static int hf_skinny_Generic_Bitfield_Bit20;
+static int hf_skinny_Generic_Bitfield_Bit21;
+static int hf_skinny_Generic_Bitfield_Bit22;
+static int hf_skinny_Generic_Bitfield_Bit23;
+static int hf_skinny_Generic_Bitfield_Bit24;
+static int hf_skinny_Generic_Bitfield_Bit25;
+static int hf_skinny_Generic_Bitfield_Bit26;
+static int hf_skinny_Generic_Bitfield_Bit27;
+static int hf_skinny_Generic_Bitfield_Bit28;
+static int hf_skinny_Generic_Bitfield_Bit29;
+static int hf_skinny_Generic_Bitfield_Bit3;
+static int hf_skinny_Generic_Bitfield_Bit30;
+static int hf_skinny_Generic_Bitfield_Bit31;
+static int hf_skinny_Generic_Bitfield_Bit32;
+static int hf_skinny_Generic_Bitfield_Bit4;
+static int hf_skinny_Generic_Bitfield_Bit5;
+static int hf_skinny_Generic_Bitfield_Bit6;
+static int hf_skinny_Generic_Bitfield_Bit7;
+static int hf_skinny_Generic_Bitfield_Bit8;
+static int hf_skinny_Generic_Bitfield_Bit9;
+static int hf_skinny_HuntPilotName;
+static int hf_skinny_HuntPilotNumber;
+static int hf_skinny_MPI;
+static int hf_skinny_OrigDialed;
+static int hf_skinny_PhoneFeatures_Abbreviated_Dial;
+static int hf_skinny_PhoneFeatures_Bit1;
+static int hf_skinny_PhoneFeatures_Bit11;
+static int hf_skinny_PhoneFeatures_Bit12;
+static int hf_skinny_PhoneFeatures_Bit13;
+static int hf_skinny_PhoneFeatures_Bit14;
+static int hf_skinny_PhoneFeatures_Bit15;
+static int hf_skinny_PhoneFeatures_Bit2;
+static int hf_skinny_PhoneFeatures_Bit3;
+static int hf_skinny_PhoneFeatures_Bit4;
+static int hf_skinny_PhoneFeatures_Bit6;
+static int hf_skinny_PhoneFeatures_Bit7;
+static int hf_skinny_PhoneFeatures_Bit9;
+static int hf_skinny_PhoneFeatures_DynamicMessages;
+static int hf_skinny_PhoneFeatures_RFC2833;
+static int hf_skinny_PhoneFeatures_UTF8;
+static int hf_skinny_RFC2833PayloadType;
+static int hf_skinny_RTCPPortNumber;
+static int hf_skinny_RedirDialed;
+static int hf_skinny_RestrictInformationType_BitsReserved;
+static int hf_skinny_RestrictInformationType_CalledParty;
+static int hf_skinny_RestrictInformationType_CalledPartyName;
+static int hf_skinny_RestrictInformationType_CalledPartyNumber;
+static int hf_skinny_RestrictInformationType_CallingParty;
+static int hf_skinny_RestrictInformationType_CallingPartyName;
+static int hf_skinny_RestrictInformationType_CallingPartyNumber;
+static int hf_skinny_RestrictInformationType_LastRedirectParty;
+static int hf_skinny_RestrictInformationType_LastRedirectPartyName;
+static int hf_skinny_RestrictInformationType_LastRedirectPartyNumber;
+static int hf_skinny_RestrictInformationType_OriginalCalledParty;
+static int hf_skinny_RestrictInformationType_OriginalCalledPartyName;
+static int hf_skinny_RestrictInformationType_OriginalCalledPartyNumber;
+static int hf_skinny_ServerName;
+static int hf_skinny_SoftKeyMask_SoftKey1;
+static int hf_skinny_SoftKeyMask_SoftKey10;
+static int hf_skinny_SoftKeyMask_SoftKey11;
+static int hf_skinny_SoftKeyMask_SoftKey12;
+static int hf_skinny_SoftKeyMask_SoftKey13;
+static int hf_skinny_SoftKeyMask_SoftKey14;
+static int hf_skinny_SoftKeyMask_SoftKey15;
+static int hf_skinny_SoftKeyMask_SoftKey16;
+static int hf_skinny_SoftKeyMask_SoftKey2;
+static int hf_skinny_SoftKeyMask_SoftKey3;
+static int hf_skinny_SoftKeyMask_SoftKey4;
+static int hf_skinny_SoftKeyMask_SoftKey5;
+static int hf_skinny_SoftKeyMask_SoftKey6;
+static int hf_skinny_SoftKeyMask_SoftKey7;
+static int hf_skinny_SoftKeyMask_SoftKey8;
+static int hf_skinny_SoftKeyMask_SoftKey9;
+static int hf_skinny_active;
+static int hf_skinny_activeConferenceOnRegistration;
+static int hf_skinny_activeConferences;
+static int hf_skinny_activeForward;
+static int hf_skinny_activeStreams;
+static int hf_skinny_activeStreamsOnRegistration;
+static int hf_skinny_add_participant_result;
+static int hf_skinny_alarmInfo;
+static int hf_skinny_alarmSeverity;
+static int hf_skinny_algorithmID;
+static int hf_skinny_alignmentPadding;
+static int hf_skinny_annAckReq;
+static int hf_skinny_annPlayMode;
+static int hf_skinny_annStatus;
+static int hf_skinny_annexNandWFutureUse;
+static int hf_skinny_appConfID;
+static int hf_skinny_appData;
+static int hf_skinny_appInstanceID;
+static int hf_skinny_appName;
+static int hf_skinny_applicationId;
+static int hf_skinny_areMessagesWaiting;
+static int hf_skinny_associatedStreamId;
+static int hf_skinny_audioCapCount;
+static int hf_skinny_audioLevelAdjustment;
+static int hf_skinny_audit_participant_result;
+static int hf_skinny_averageBitRate;
+static int hf_skinny_bandwidth;
+static int hf_skinny_bitRate;
+static int hf_skinny_bridgeParticipantId;
+static int hf_skinny_burstSize;
+static int hf_skinny_busyTrigger;
+static int hf_skinny_buttonCount;
+static int hf_skinny_buttonDefinition;
+static int hf_skinny_buttonOffset;
+static int hf_skinny_callHistoryDisposition;
+static int hf_skinny_callInstance;
+static int hf_skinny_callReference;
+static int hf_skinny_callSecurityStatus;
+static int hf_skinny_callSelectStat;
+static int hf_skinny_callState;
+static int hf_skinny_callType;
+static int hf_skinny_calledParty;
+static int hf_skinny_calledPartyName;
+static int hf_skinny_callingParty;
+static int hf_skinny_callingPartyName;
+static int hf_skinny_callingPartyNumber;
+static int hf_skinny_capAndVer;
+static int hf_skinny_capCount;
+static int hf_skinny_cause;
+static int hf_skinny_cdpnVoiceMailbox;
+static int hf_skinny_cgpnVoiceMailbox;
+static int hf_skinny_chan0MaxPayload;
+static int hf_skinny_chan2MaxPayload;
+static int hf_skinny_chan2MaxWindow;
+static int hf_skinny_chan3MaxPayload;
+static int hf_skinny_clockConversionCode;
+static int hf_skinny_clockDivisor;
+static int hf_skinny_codecMode;
+static int hf_skinny_codecParam1;
+static int hf_skinny_codecParam2;
+static int hf_skinny_command;
+static int hf_skinny_compressionType;
+static int hf_skinny_confServiceNum;
+static int hf_skinny_conferenceId;
+static int hf_skinny_conferenceName;
+static int hf_skinny_configVersionStamp;
+static int hf_skinny_confirmRequired;
+static int hf_skinny_country;
+static int hf_skinny_customMaxBRandCPB;
+static int hf_skinny_customMaxDPB;
+static int hf_skinny_customMaxFS;
+static int hf_skinny_customMaxMBPS;
+static int hf_skinny_customPictureFormatCount;
+static int hf_skinny_data;
+static int hf_skinny_dataCapCount;
+static int hf_skinny_dataCapabilityDirection;
+static int hf_skinny_dataLength;
+static int hf_skinny_dataSize;
+static int hf_skinny_dateTemplate;
+static int hf_skinny_defendingPriority;
+static int hf_skinny_delete_conf_result;
+static int hf_skinny_deviceType;
+static int hf_skinny_dialedNumber;
+static int hf_skinny_direction;
+static int hf_skinny_directoryNum;
+static int hf_skinny_displayPriority;
+static int hf_skinny_dtmfType;
+static int hf_skinny_dynamicPayload;
+static int hf_skinny_ecValue;
+static int hf_skinny_encryptionCapability;
+static int hf_skinny_errorCode;
+static int hf_skinny_failureNodeIpAddr;
+static int hf_skinny_featureCapabilities;
+static int hf_skinny_featureID;
+static int hf_skinny_featureIndex;
+static int hf_skinny_featureStatus;
+static int hf_skinny_featureTextLabel;
+static int hf_skinny_features;
+static int hf_skinny_firmwareLoadName;
+static int hf_skinny_firstGOB;
+static int hf_skinny_firstMB;
+static int hf_skinny_format;
+static int hf_skinny_forwardAllActive;
+static int hf_skinny_forwardAllDirnum;
+static int hf_skinny_forwardBusyActive;
+static int hf_skinny_forwardBusyDirnum;
+static int hf_skinny_forwardNoAnswerActive;
+static int hf_skinny_forwardNoAnswerlDirnum;
+static int hf_skinny_g723BitRate;
+static int hf_skinny_headsetStatus;
+static int hf_skinny_hearingConfPartyMask;
+static int hf_skinny_instance;
+static int hf_skinny_instanceNumber;
+static int hf_skinny_ipAddr_ipv4;
+static int hf_skinny_ipAddr_ipv6;
+static int hf_skinny_ipAddressType;
+static int hf_skinny_ipAddressingMode;
+static int hf_skinny_ipV4AddressScope;
+static int hf_skinny_ipV6AddressScope;
+static int hf_skinny_isConferenceCreator;
+static int hf_skinny_isMKIPresent;
+static int hf_skinny_jitter;
+static int hf_skinny_keepAliveInterval;
+static int hf_skinny_key;
+static int hf_skinny_keyDerivationRate;
+static int hf_skinny_keylen;
+static int hf_skinny_kpButton;
+static int hf_skinny_lampMode;
+static int hf_skinny_last;
+static int hf_skinny_lastRedirectingParty;
+static int hf_skinny_lastRedirectingPartyName;
+static int hf_skinny_lastRedirectingReason;
+static int hf_skinny_lastRedirectingVoiceMailbox;
+static int hf_skinny_latency;
+static int hf_skinny_layoutCount;
+static int hf_skinny_layoutID;
+static int hf_skinny_layouts;
+static int hf_skinny_level;
+static int hf_skinny_levelPreferenceCount;
+static int hf_skinny_lineDataEntries;
+static int hf_skinny_lineDirNumber;
+static int hf_skinny_lineDisplayOptions;
+static int hf_skinny_lineFullyQualifiedDisplayName;
+static int hf_skinny_lineInstance;
+static int hf_skinny_lineNumber;
+static int hf_skinny_lineTextLabel;
+static int hf_skinny_locale;
+static int hf_skinny_locationInfo;
+static int hf_skinny_longTermPictureIndex;
+static int hf_skinny_macAddress;
+static int hf_skinny_matrixConfPartyID;
+static int hf_skinny_maxBW;
+static int hf_skinny_maxBitRate;
+static int hf_skinny_maxConferences;
+static int hf_skinny_maxFramesPerPacket;
+static int hf_skinny_maxNumCalls;
+static int hf_skinny_maxNumOfAvailLines;
+static int hf_skinny_maxNumberOfLines;
+static int hf_skinny_maxProtocolVer;
+static int hf_skinny_maxRetryNumber;
+static int hf_skinny_maxStreams;
+static int hf_skinny_maxStreamsPerConf;
+static int hf_skinny_maximumBitRate;
+static int hf_skinny_mediaPathCapabilities;
+static int hf_skinny_mediaPathEvent;
+static int hf_skinny_mediaPathID;
+static int hf_skinny_mediaReceptionStatus;
+static int hf_skinny_mediaTransmissionStatus;
+static int hf_skinny_mediaTransportType;
+static int hf_skinny_mediaType;
+static int hf_skinny_micMode;
+static int hf_skinny_milliSecondPacketSize;
+static int hf_skinny_minBitRate;
+static int hf_skinny_mixingMode;
+static int hf_skinny_modAnd2833;
+static int hf_skinny_modelNumber;
+static int hf_skinny_modify_conf_result;
+static int hf_skinny_multicastIpAddr_ipv4;
+static int hf_skinny_multicastIpAddr_ipv6;
+static int hf_skinny_multicastPortNumber;
+static int hf_skinny_multicastReceptionStatus;
+static int hf_skinny_multimediaReceptionStatus;
+static int hf_skinny_multimediaTransmissionStatus;
+static int hf_skinny_mwiControlNumber;
+static int hf_skinny_mwiTargetNumber;
+static int hf_skinny_mwi_notification_result;
+static int hf_skinny_noaudio;
+static int hf_skinny_none;
+static int hf_skinny_notificationStatus;
+static int hf_skinny_notify;
+static int hf_skinny_nse;
+static int hf_skinny_numNewMsgs;
+static int hf_skinny_numOldMsgs;
+static int hf_skinny_numberOctetsReceived;
+static int hf_skinny_numberOctetsSent;
+static int hf_skinny_numberOfActiveParticipants;
+static int hf_skinny_numberOfEntries;
+static int hf_skinny_numberOfGOBs;
+static int hf_skinny_numberOfInServiceStreams;
+static int hf_skinny_numberOfLines;
+static int hf_skinny_numberOfMBs;
+static int hf_skinny_numberOfOutOfServiceStreams;
+static int hf_skinny_numberOfReservedParticipants;
+static int hf_skinny_numberOfSpeedDials;
+static int hf_skinny_numberPacketsLost;
+static int hf_skinny_numberPacketsReceived;
+static int hf_skinny_numberPacketsSent;
+static int hf_skinny_originalCalledParty;
+static int hf_skinny_originalCalledPartyName;
+static int hf_skinny_originalCdpnRedirectReason;
+static int hf_skinny_originalCdpnVoiceMailbox;
+static int hf_skinny_padding;
+static int hf_skinny_parm1;
+static int hf_skinny_parm2;
+static int hf_skinny_participantEntry;
+static int hf_skinny_participantName;
+static int hf_skinny_participantNumber;
+static int hf_skinny_partyDirection;
+static int hf_skinny_passThroughPartyId;
+static int hf_skinny_passThruData;
+static int hf_skinny_passthruPartyID;
+static int hf_skinny_payloadCapability;
+static int hf_skinny_payloadDtmf;
+static int hf_skinny_payloadType;
+static int hf_skinny_payload_rfc_number;
+static int hf_skinny_peakRate;
+static int hf_skinny_pictureFormatCount;
+static int hf_skinny_pictureHeight;
+static int hf_skinny_pictureNumber;
+static int hf_skinny_pictureWidth;
+static int hf_skinny_pixelAspectRatio;
+static int hf_skinny_portHandlingFlag;
+static int hf_skinny_portNumber;
+static int hf_skinny_precedenceDomain;
+static int hf_skinny_precedenceLevel;
+static int hf_skinny_precedenceValue;
+static int hf_skinny_preemptionPriority;
+static int hf_skinny_priority;
+static int hf_skinny_privacy;
+static int hf_skinny_profile;
+static int hf_skinny_promptStatus;
+static int hf_skinny_protocolDependentData;
+static int hf_skinny_protocolVer;
+static int hf_skinny_recording_status;
+static int hf_skinny_recoveryReferencePictureCount;
+static int hf_skinny_remoteIpAddr_ipv4;
+static int hf_skinny_remoteIpAddr_ipv6;
+static int hf_skinny_remotePortNumber;
+static int hf_skinny_requestedIpAddrType;
+static int hf_skinny_reserved_for_future_use;
+static int hf_skinny_resetType;
+static int hf_skinny_resourceType;
+static int hf_skinny_result;
+static int hf_skinny_resvStyle;
+static int hf_skinny_retryTimer;
+static int hf_skinny_rfc2833;
+static int hf_skinny_ringDuration;
+static int hf_skinny_ringMode;
+static int hf_skinny_routingID;
+static int hf_skinny_rsvpErrorCode;
+static int hf_skinny_rsvpErrorFlag;
+static int hf_skinny_rsvpErrorSubCodeVal;
+static int hf_skinny_rtpMediaPort;
+static int hf_skinny_rtpPayloadFormat;
+static int hf_skinny_salt;
+static int hf_skinny_saltlen;
+static int hf_skinny_secondaryKeepAliveInterval;
+static int hf_skinny_sequenceFlag;
+static int hf_skinny_serverName;
+static int hf_skinny_serverTcpListenPort;
+static int hf_skinny_serviceNum;
+static int hf_skinny_serviceNumber;
+static int hf_skinny_serviceResourceCount;
+static int hf_skinny_serviceURL;
+static int hf_skinny_serviceURLDisplayName;
+static int hf_skinny_serviceURLIndex;
+static int hf_skinny_sessionType;
+static int hf_skinny_softKeyCount;
+static int hf_skinny_softKeyEvent;
+static int hf_skinny_softKeyInfoIndex;
+static int hf_skinny_softKeyLabel;
+static int hf_skinny_softKeyOffset;
+static int hf_skinny_softKeySetCount;
+static int hf_skinny_softKeySetIndex;
+static int hf_skinny_softKeySetOffset;
+static int hf_skinny_softKeyTemplateIndex;
+static int hf_skinny_sourceIpAddr_ipv4;
+static int hf_skinny_sourceIpAddr_ipv6;
+static int hf_skinny_sourcePortNumber;
+static int hf_skinny_speakerMode;
+static int hf_skinny_speedDialDirNumber;
+static int hf_skinny_speedDialDisplayName;
+static int hf_skinny_speedDialNumber;
+static int hf_skinny_ssValue;
+static int hf_skinny_sse;
+static int hf_skinny_standard;
+static int hf_skinny_startingLineInstance;
+static int hf_skinny_stationIpAddr;
+static int hf_skinny_stationIpAddr_ipv4;
+static int hf_skinny_stationIpAddr_ipv6;
+static int hf_skinny_stationIpV6Addr;
+static int hf_skinny_stationIpV6Addr_ipv4;
+static int hf_skinny_stationIpV6Addr_ipv6;
+static int hf_skinny_statsProcessingMode;
+static int hf_skinny_status;
+static int hf_skinny_stillImageTransmission;
+static int hf_skinny_stimulus;
+static int hf_skinny_stimulusInstance;
+static int hf_skinny_stimulusStatus;
+static int hf_skinny_streamPassThroughId;
+static int hf_skinny_subAppID;
+static int hf_skinny_subscriptionFeatureID;
+static int hf_skinny_subscriptionID;
+static int hf_skinny_systemTime;
+static int hf_skinny_temporalSpatialTradeOff;
+static int hf_skinny_temporalSpatialTradeOffCapability;
+static int hf_skinny_text;
+static int hf_skinny_timeOutValue;
+static int hf_skinny_timer;
+static int hf_skinny_tone;
+static int hf_skinny_toneAnnouncement;
+static int hf_skinny_tone_output_direction;
+static int hf_skinny_totalButtonCount;
+static int hf_skinny_totalNumOfConfiguredLines;
+static int hf_skinny_totalSoftKeyCount;
+static int hf_skinny_totalSoftKeySetCount;
+static int hf_skinny_transactionId;
+static int hf_skinny_transmitIpAddr_ipv4;
+static int hf_skinny_transmitIpAddr_ipv6;
+static int hf_skinny_transmitPreference;
+static int hf_skinny_unRegReasonCode;
+static int hf_skinny_unknown;
+static int hf_skinny_unknown1_0159;
+static int hf_skinny_unknown2_0159;
+static int hf_skinny_unknown3_0159;
+static int hf_skinny_unknownString_0159;
+static int hf_skinny_userName;
+static int hf_skinny_v150sprt;
+static int hf_skinny_vendor;
+static int hf_skinny_vendorID;
+static int hf_skinny_version;
+static int hf_skinny_versionStr;
+static int hf_skinny_videoCapCount;
+static int hf_skinny_videoCapabilityDirection;
+static int hf_skinny_wDay;
+static int hf_skinny_wDayOfWeek;
+static int hf_skinny_wHour;
+static int hf_skinny_wMilliseconds;
+static int hf_skinny_wMinute;
+static int hf_skinny_wMonth;
+static int hf_skinny_wSecond;
+static int hf_skinny_wYear;
+static int hf_skinny_waitTimeBeforeNextReq;
+static int hf_skinny_xmldata;
 
-static dissector_table_t media_type_dissector_table;
+static dissector_handle_t xml_handle;
 
 /* Initialize the subtree pointers */
-static gint ett_skinny          = -1;
-static gint ett_skinny_tree     = -1;
+static int ett_skinny;
+static int ett_skinny_tree;
 
-/* desegmentation of SCCP */
-static gboolean skinny_desegment = TRUE;
+/* preference globals */
+static bool global_skinny_desegment = true;
 
 /* tap register id */
-static int skinny_tap = -1;
+static int skinny_tap;
 
 /* skinny protocol tap info */
 #define MAX_SKINNY_MESSAGES_IN_PACKET 10
 static skinny_info_t pi_arr[MAX_SKINNY_MESSAGES_IN_PACKET];
-static int pi_current = 0;
+static int pi_current;
 static skinny_info_t *si;
 
 dissector_handle_t skinny_handle;
 
-/* Get the length of a single SCCP PDU */
-static guint
+/* Get the length of a single SKINNY PDU */
+static unsigned
 get_skinny_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-  guint32 hdr_data_length;
+  uint32_t hdr_data_length;
 
-  /* Get the length of the SCCP packet. */
+  /* Get the length of the SKINNY packet. */
   hdr_data_length = tvb_get_letohl(tvb, offset);
 
   /* That length doesn't include the length of the header itself. */
@@ -2223,13 +2235,12 @@ get_skinny_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data
 }
 
 static void
-dissect_skinny_xml(ptvcursor_t *cursor, int hfindex, packet_info *pinfo, guint32 length, guint32 maxlength)
+dissect_skinny_xml(ptvcursor_t *cursor, int hfindex, packet_info *pinfo, uint32_t length, uint32_t maxlength)
 {
   proto_item         *item       = NULL;
   proto_tree         *subtree    = NULL;
-  dissector_handle_t handle      = NULL;
   proto_tree         *tree       = ptvcursor_tree(cursor);
-  guint32            offset      = ptvcursor_current_offset(cursor);
+  uint32_t           offset      = ptvcursor_current_offset(cursor);
   tvbuff_t           *tvb        = ptvcursor_tvbuff(cursor);
   tvbuff_t           *next_tvb;
 
@@ -2240,27 +2251,24 @@ dissect_skinny_xml(ptvcursor_t *cursor, int hfindex, packet_info *pinfo, guint32
     length = maxlength;
   }
 
-  ptvcursor_add_no_advance(cursor, hfindex, length, ENC_ASCII|ENC_NA);
+  ptvcursor_add_no_advance(cursor, hfindex, length, ENC_ASCII);
 
-  item = proto_tree_add_item(tree, hf_skinny_xmlData, tvb, offset, length, ENC_ASCII|ENC_NA);
+  item = proto_tree_add_item(tree, hf_skinny_xmlData, tvb, offset, length, ENC_ASCII);
   subtree = proto_item_add_subtree(item, 0);
-  next_tvb = tvb_new_subset(tvb, offset, length, -1);
-  handle = dissector_get_string_handle(media_type_dissector_table, "text/xml");
-  if (handle != NULL) {
-    call_dissector(handle, next_tvb, pinfo, subtree);
+  next_tvb = tvb_new_subset_length_caplen(tvb, offset, length, -1);
+  if (xml_handle != NULL) {
+    call_dissector(xml_handle, next_tvb, pinfo, subtree);
   }
   ptvcursor_advance(cursor, maxlength);
 }
 
 static void
-dissect_skinny_ipv4or6(ptvcursor_t *cursor, int hfindex_ipv4, int hfindex_ipv6, packet_info *pinfo)
+dissect_skinny_ipv4or6(ptvcursor_t *cursor, int hfindex_ipv4, int hfindex_ipv6)
 {
-  address            src_addr;
-  guint32            ipversion   = 0;
-  guint32            offset      = ptvcursor_current_offset(cursor);
+  uint32_t           ipversion   = 0;
+  uint32_t           offset      = ptvcursor_current_offset(cursor);
   tvbuff_t           *tvb        = ptvcursor_tvbuff(cursor);
-  guint32            hdr_version = tvb_get_letohl(tvb, 4);
-  gboolean           is_video    = FALSE;
+  uint32_t           hdr_version = tvb_get_letohl(tvb, 4);
 
   /* ProtocolVersion > 18 include and extra field to declare IPv4 (0) / IPv6 (1) */
   if (hdr_version >= V17_MSG_TYPE) {
@@ -2268,24 +2276,12 @@ dissect_skinny_ipv4or6(ptvcursor_t *cursor, int hfindex_ipv4, int hfindex_ipv6, 
     ptvcursor_add(cursor, hf_skinny_ipv4or6, 4, ENC_LITTLE_ENDIAN);
   }
   if (ipversion == IPADDRTYPE_IPV4) {
-    guint32 ip_address;
-    src_addr.type = AT_IPv4;
-    src_addr.len = 4;
-    src_addr.data = (guint8 *)&ip_address;
-    ip_address = tvb_get_ipv4(tvb, offset);
-    rtp_add_address(pinfo, &src_addr, tvb_get_letohl(tvb, offset), 0, "Skinny", pinfo->num, is_video, NULL);
     ptvcursor_add(cursor, hfindex_ipv4, 4, ENC_BIG_ENDIAN);
     if (hdr_version >= V17_MSG_TYPE) {
       /* skip over the extra room for ipv6 addresses */
       ptvcursor_advance(cursor, 12);
     }
   } else if (ipversion == IPADDRTYPE_IPV6 || ipversion == IPADDRTYPE_IPV4_V6) {
-    struct e_in6_addr IPv6;
-    src_addr.type = AT_IPv6;
-    src_addr.len = 16;
-    src_addr.data = (guint8 *)&IPv6;
-    tvb_get_ipv6(tvb, offset, &IPv6);
-    rtp_add_address(pinfo, &src_addr, tvb_get_letohl(tvb, offset), 0, "Skinny", pinfo->num, is_video, NULL);
     ptvcursor_add(cursor, hfindex_ipv6, 16, ENC_NA);
   } else {
     /* Invalid : skip over ipv6 space completely */
@@ -2293,21 +2289,45 @@ dissect_skinny_ipv4or6(ptvcursor_t *cursor, int hfindex_ipv4, int hfindex_ipv6, 
   }
 }
 
+/* Reads address to provided variable */
+static void
+read_skinny_ipv4or6(ptvcursor_t *cursor, address *media_addr)
+{
+  uint32_t           ipversion   = IPADDRTYPE_IPV4;
+  uint32_t           offset      = ptvcursor_current_offset(cursor);
+  uint32_t           offset2     = 0;
+  tvbuff_t           *tvb        = ptvcursor_tvbuff(cursor);
+  uint32_t           hdr_version = tvb_get_letohl(tvb, 4);
+
+  /* ProtocolVersion > 18 include and extra field to declare IPv4 (0) / IPv6 (1) */
+  if (hdr_version >= V17_MSG_TYPE) {
+    ipversion = tvb_get_letohl(tvb, offset);
+    offset2 = 4;
+  }
+  if (ipversion == IPADDRTYPE_IPV4) {
+    set_address_tvb(media_addr, AT_IPv4, 4, tvb, offset+offset2);
+  } else if (ipversion == IPADDRTYPE_IPV6 || ipversion == IPADDRTYPE_IPV4_V6) {
+    set_address_tvb(media_addr, AT_IPv6, 16, tvb, offset+offset2);
+  } else {
+    clear_address(media_addr);
+  }
+}
+
 /**
  * Parse a displayLabel string and check if it is using any embedded labels, if so lookup the label and add a user readable translation to the item_tree
  */
 static void
-dissect_skinny_displayLabel(ptvcursor_t *cursor, int hfindex, gint length)
+dissect_skinny_displayLabel(ptvcursor_t *cursor, packet_info *pinfo, int hfindex, int length)
 {
   proto_item    *item             = NULL;
   proto_tree    *tree             = ptvcursor_tree(cursor);
-  guint32       offset            = ptvcursor_current_offset(cursor);
+  uint32_t      offset            = ptvcursor_current_offset(cursor);
   tvbuff_t      *tvb              = ptvcursor_tvbuff(cursor);
   wmem_strbuf_t *wmem_new         = NULL;
-  gchar         *disp_string      = NULL;
-  const gchar   *replacestr       = NULL;
-  gboolean      show_replaced_str = FALSE;
-  gint          x                 = 0;
+  char          *disp_string      = NULL;
+  const char    *replacestr       = NULL;
+  bool          show_replaced_str = false;
+  int           x                 = 0;
 
   if (length == 0) {
     length = tvb_strnlen(tvb, offset, -1);
@@ -2317,10 +2337,10 @@ dissect_skinny_displayLabel(ptvcursor_t *cursor, int hfindex, gint length)
     }
   }
 
-  item = proto_tree_add_item(tree, hfindex, tvb, offset, length, ENC_ASCII | ENC_NA);
+  item = proto_tree_add_item(tree, hfindex, tvb, offset, length, ENC_ASCII);
 
-  wmem_new = wmem_strbuf_sized_new(wmem_packet_scope(), length + 1, 0);
-  disp_string = (gchar*) wmem_alloc(wmem_packet_scope(), length + 1);
+  wmem_new = wmem_strbuf_new_sized(pinfo->pool, length + 1);
+  disp_string = (char*) wmem_alloc(pinfo->pool, length + 1);
   disp_string[length] = '\0';
   tvb_memcpy(tvb, (void*)disp_string, offset, length);
 
@@ -2336,39 +2356,102 @@ dissect_skinny_displayLabel(ptvcursor_t *cursor, int hfindex, gint length)
     if (replacestr) {
       x++;        /* swallow replaced characters */
       wmem_strbuf_append(wmem_new, replacestr);
-      show_replaced_str = TRUE;
+      show_replaced_str = true;
+    } else if (disp_string[x] & 0x80) {
+      wmem_strbuf_append_unichar_repl(wmem_new);
     } else {
       wmem_strbuf_append_c(wmem_new, disp_string[x]);
     }
   }
   if (show_replaced_str) {
+    si->additionalInfo = ws_strdup_printf("\"%s\"", wmem_strbuf_get_str(wmem_new));
     proto_item_append_text(item, " => \"%s\"" , wmem_strbuf_get_str(wmem_new));
   }
   ptvcursor_advance(cursor, length);
 }
 
-/*** Messages Handlers ***/
+/*** Request / Response helper functions */
+static void skinny_reqrep_add_request(ptvcursor_t *cursor, packet_info * pinfo, skinny_conv_info_t * skinny_conv, const int request_key)
+{
+  proto_tree *tree = ptvcursor_tree(cursor);
+  tvbuff_t *tvb = ptvcursor_tvbuff(cursor);
+  skinny_req_resp_t *req_resp = NULL;
 
+  if (!PINFO_FD_VISITED(pinfo)) {
+    req_resp = wmem_new0(wmem_file_scope(), skinny_req_resp_t);
+    req_resp->request_frame = pinfo->num;
+    req_resp->response_frame = 0;
+    req_resp->request_time = pinfo->abs_ts;
+    wmem_map_insert(skinny_conv->pending_req_resp, GINT_TO_POINTER(request_key), (void *)req_resp);
+    DPRINT(("SKINNY: setup_request: frame=%d add key=%d to map\n", pinfo->num, request_key));
+  }
+
+  req_resp = (skinny_req_resp_t *) wmem_map_lookup(skinny_conv->requests, GUINT_TO_POINTER(pinfo->num));
+  if (req_resp && req_resp->response_frame) {
+    DPRINT(("SKINNY: show request in tree: frame/key=%d\n", pinfo->num));
+    proto_item *it;
+    it = proto_tree_add_uint(tree, hf_skinny_response_in, tvb, 0, 0, req_resp->response_frame);
+    proto_item_set_generated(it);
+  } else {
+    DPRINT(("SKINNY: no request found for frame/key=%d\n", pinfo->num));
+  }
+}
+
+
+static void skinny_reqrep_add_response(ptvcursor_t *cursor, packet_info * pinfo, skinny_conv_info_t * skinny_conv, const int request_key)
+{
+  proto_tree *tree = ptvcursor_tree(cursor);
+  tvbuff_t *tvb = ptvcursor_tvbuff(cursor);
+  skinny_req_resp_t *req_resp = NULL;
+
+  if (!PINFO_FD_VISITED(pinfo)) {
+    req_resp = (skinny_req_resp_t *) wmem_map_remove(skinny_conv->pending_req_resp, GINT_TO_POINTER(request_key));
+    if (req_resp) {
+      DPRINT(("SKINNY: match request:%d with response:%d for key=%d\n", req_resp->request_frame, pinfo->num, request_key));
+      req_resp->response_frame = pinfo->num;
+      wmem_map_insert(skinny_conv->requests, GUINT_TO_POINTER(req_resp->request_frame), (void *)req_resp);
+      wmem_map_insert(skinny_conv->responses, GUINT_TO_POINTER(pinfo->num), (void *)req_resp);
+    } else {
+      DPRINT(("SKINNY: no match found for response frame=%d and key=%d\n", pinfo->num, request_key));
+    }
+  }
+
+  req_resp = (skinny_req_resp_t *) wmem_map_lookup(skinny_conv->responses, GUINT_TO_POINTER(pinfo->num));
+  if (req_resp && req_resp->request_frame) {
+    DPRINT(("SKINNY: show response in tree: frame/key=%d\n", pinfo->num));
+    proto_item *it;
+    nstime_t ns;
+    it = proto_tree_add_uint(tree, hf_skinny_response_to, tvb, 0, 0, req_resp->request_frame);
+    proto_item_set_generated(it);
+
+    nstime_delta(&ns, &pinfo->abs_ts, &req_resp->request_time);
+    it = proto_tree_add_time(tree, hf_skinny_response_time, tvb, 0, 0, &ns);
+    proto_item_set_generated(it);
+  } else {
+    DPRINT(("SKINNY: no response found for frame/key=%d\n", pinfo->num));
+  }
+}
+
+/*** Messages Handlers ***/
 /*
- * Message:   RegisterMessage
+ * Message:   RegisterReqMessage
  * Opcode:    0x0001
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_RegisterMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_RegisterReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
 
   {
-    /* start struct : sid / size: 24 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sid");
-    ptvcursor_add(cursor, hf_skinny_DeviceName, 16, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_DeviceName, 16, ENC_ASCII);
     ptvcursor_add(cursor, hf_skinny_reserved_for_future_use, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_instance, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: sid */
   }
   ptvcursor_add(cursor, hf_skinny_stationIpAddr, 4, ENC_BIG_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_deviceType, 4, ENC_LITTLE_ENDIAN);
@@ -2377,7 +2460,7 @@ handle_RegisterMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
     ptvcursor_add(cursor, hf_skinny_activeStreams, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_protocolVer, 1, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_unknown, 1, ENC_LITTLE_ENDIAN);
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "PhoneFeatures");
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "phoneFeatures");
     ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Bit1, 2, ENC_LITTLE_ENDIAN);
     ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Bit2, 2, ENC_LITTLE_ENDIAN);
     ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Bit3, 2, ENC_LITTLE_ENDIAN);
@@ -2395,7 +2478,7 @@ handle_RegisterMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
     ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Bit15, 2, ENC_LITTLE_ENDIAN);
     ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Abbreviated_Dial, 2, ENC_LITTLE_ENDIAN);
     ptvcursor_advance(cursor, 2);
-    ptvcursor_pop_subtree(cursor); /* end bitfield: PhoneFeatures */
+    ptvcursor_pop_subtree(cursor); /* end bitfield: phoneFeatures */
     ptvcursor_add(cursor, hf_skinny_maxConferences, 4, ENC_LITTLE_ENDIAN);
   }
   if (hdr_data_length > 100) {
@@ -2406,11 +2489,12 @@ handle_RegisterMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
     ptvcursor_add(cursor, hf_skinny_maxNumberOfLines, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_stationIpV6Addr, 16, ENC_NA);
     ptvcursor_add(cursor, hf_skinny_ipV6AddressScope, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_firmwareLoadName, 32, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_firmwareLoadName, 32, ENC_ASCII);
   }
   if (hdr_data_length > 191) {
-    ptvcursor_add(cursor, hf_skinny_configVersionStamp, 48, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_configVersionStamp, 48, ENC_ASCII);
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0001);
 }
 
 /*
@@ -2419,9 +2503,10 @@ handle_RegisterMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_IpPortMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_IpPortMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_rtpMediaPort, 4, ENC_LITTLE_ENDIAN);
 }
@@ -2432,12 +2517,19 @@ handle_IpPortMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_KeypadButtonMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_KeypadButtonMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
 
+  si->additionalInfo = ws_strdup_printf("\"%s\"",
+    try_val_to_str_ext(
+      tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor)),
+      &KeyPadButton_short_ext
+    )
+  );
   ptvcursor_add(cursor, hf_skinny_kpButton, 4, ENC_LITTLE_ENDIAN);
   if (hdr_data_length > 8) {
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -2453,16 +2545,17 @@ handle_KeypadButtonMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_EnblocCallMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_EnblocCallMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
 
-  si->calledParty = g_strdup(tvb_format_stringzpad(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), VariableDirnumSize));
-  ptvcursor_add(cursor, hf_skinny_calledParty, VariableDirnumSize, ENC_ASCII|ENC_NA);
+  si->calledParty = g_strdup(tvb_format_stringzpad(pinfo->pool, ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), VariableDirnumSize));
+  ptvcursor_add(cursor, hf_skinny_calledParty, VariableDirnumSize, ENC_ASCII);
   if (hdr_data_length > 28) {
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
@@ -2475,9 +2568,10 @@ handle_EnblocCallMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StimulusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StimulusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_stimulus, 4, ENC_LITTLE_ENDIAN);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -2493,11 +2587,12 @@ handle_StimulusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_OffHookMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_OffHookMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
 
   if (hdr_data_length > 4) {
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -2513,11 +2608,12 @@ handle_OffHookMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_OnHookMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_OnHookMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
 
   if (hdr_data_length > 4) {
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -2533,9 +2629,10 @@ handle_OnHookMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_HookFlashMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_HookFlashMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
@@ -2549,11 +2646,15 @@ handle_HookFlashMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_ForwardStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ForwardStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t lineNumber = 0;
+  lineNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineNumber, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0009 ^ lineNumber);
 }
 
 /*
@@ -2562,11 +2663,15 @@ handle_ForwardStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_SpeedDialStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SpeedDialStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t speedDialNumber = 0;
+  speedDialNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_speedDialNumber, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x000a ^ speedDialNumber);
 }
 
 /*
@@ -2575,106 +2680,100 @@ handle_SpeedDialStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_LineStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_LineStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t lineNumber = 0;
+  lineNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineNumber, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x000b ^ lineNumber);
 }
 
 /*
- * Message:   CapabilitiesRes
+ * Message:   CapabilitiesResMessage
  * Opcode:    0x0010
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_CapabilitiesRes(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CapabilitiesResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 capCount = 0;
-  guint32 payloadCapability = 0;
+  uint32_t capCount = 0;
+  uint32_t payloadCapability = 0;
   capCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_capCount, 4, ENC_LITTLE_ENDIAN);
-  {
-    /* start struct : caps / size: 16 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "caps [ref: capCount = %d, max:18]", capCount);
-    for (counter_1 = 0; counter_1 < 18; counter_1++) {
-      if (counter_1 < capCount) {
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "caps [%d / %d]", counter_1 + 1, capCount);
-        payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-        ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_maxFramesPerPacket, 4, ENC_LITTLE_ENDIAN);
-        if (payloadCapability == MEDIA_PAYLOAD_G7231)         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_G7231");
-          ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          ptvcursor_advance(cursor, 4);
-        } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_MODEMRELAY)         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_ModemRelay");
-          {
-            /* start struct : modemRelay / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
-            ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
+  if (capCount <= 18) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "caps [ref:capCount = %d, max:18]", capCount);
+    if (capCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (capCount * 16) && capCount <= 18) {
+      for (counter_1 = 0; counter_1 < 18; counter_1++) {
+        if (counter_1 < capCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "caps [%d / %d]", counter_1 + 1, capCount);
+          payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+          ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_maxFramesPerPacket, 4, ENC_LITTLE_ENDIAN);
+          if (payloadCapability == MEDIA_PAYLOAD_G7231)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_G7231");
+            ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: modemRelay */
-          }
-          ptvcursor_pop_subtree(cursor);
-        } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SPRT)         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SPRT");
-          {
-            /* start struct : sprtPayload / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
-            ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
+            ptvcursor_advance(cursor, 4);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_MODEMRELAY)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_ModemRelay");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
+              ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
             ptvcursor_pop_subtree(cursor);
-            /* end struct: sprtPayload */
-          }
-          ptvcursor_pop_subtree(cursor);
-        } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SSE)         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SSE");
-          {
-            /* start struct : sse / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
-            ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SPRT)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SPRT");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
+              ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
             ptvcursor_pop_subtree(cursor);
-            /* end struct: sse */
-          }
-          ptvcursor_pop_subtree(cursor);
-        } else         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any payloadCapability");
-          {
-            /* start struct : codecParams / size: 4 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
-            ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SSE)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SSE");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
+              ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
             ptvcursor_pop_subtree(cursor);
-            /* end struct: codecParams */
+          } else           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any payloadCapability");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
+              ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+            ptvcursor_advance(cursor, 4);
           }
-          ptvcursor_pop_subtree(cursor);
-          ptvcursor_advance(cursor, 4);
+        } else {
+          ptvcursor_advance(cursor, 16);
         }
-      } else {
-        ptvcursor_advance(cursor, 16);
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: caps */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: caps */
+  } else {
+    ptvcursor_advance(cursor, (capCount * 16));
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x009b);
 }
 
 /*
@@ -2683,12 +2782,13 @@ handle_CapabilitiesRes(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_AlarmMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_AlarmMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_alarmSeverity, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_text, 80, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_text, 80, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_parm1, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_parm2, 4, ENC_LITTLE_ENDIAN);
 }
@@ -2699,14 +2799,20 @@ handle_AlarmMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_MulticastMediaReceptionAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_MulticastMediaReceptionAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_receptionStatus, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t passThroughPartyId = 0;
+  si->multicastReceptionStatus = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_multicastReceptionStatus, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0101 ^ passThroughPartyId);
 }
 
 /*
@@ -2715,21 +2821,35 @@ handle_MulticastMediaReceptionAckMessage(ptvcursor_t *cursor, packet_info * pinf
  * Type:      MediaControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_OpenReceiveChannelAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_OpenReceiveChannelAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  address ipAddr;
+  char *ipAddr_str = NULL;
+  uint32_t portNumber = 0;
+  uint32_t passThroughPartyId = 0;
 
-  si->openreceiveStatus = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_openReceiveChannelStatus, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_ipAddr_ipv4, hf_skinny_ipAddr_ipv6, pinfo);
+  si->mediaReceptionStatus = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_mediaReceptionStatus, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &ipAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_ipAddr_ipv4, hf_skinny_ipAddr_ipv6);
+  portNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_portNumber, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &ipAddr, portNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  ipAddr_str = address_to_display(NULL, &ipAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", ipAddr_str, portNumber);
+  wmem_free(NULL, ipAddr_str);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   if (hdr_data_length > 20) {
     si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0105 ^ passThroughPartyId);
 }
 
 /*
@@ -2738,19 +2858,30 @@ handle_OpenReceiveChannelAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_ConnectionStatisticsResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ConnectionStatisticsResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
-  guint32 dataSize = 0;
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t callReference = 0;
+  uint32_t dataSize = 0;
 
-  ptvcursor_add(cursor, hf_skinny_directoryNum, VariableDirnumSize, ENC_ASCII|ENC_NA);
-  si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_statsProcessingMode, 4, ENC_LITTLE_ENDIAN);
+  if (hdr_version <= V17_MSG_TYPE) {
+    ptvcursor_add(cursor, hf_skinny_directoryNum, 24, ENC_ASCII);
+    callReference = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_statsProcessingMode, 4, ENC_LITTLE_ENDIAN);
+  }
+  if (hdr_version >= V18_MSG_TYPE) {
+    ptvcursor_add(cursor, hf_skinny_directoryNum, 28, ENC_ASCII);
+    callReference = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_statsProcessingMode, 1, ENC_LITTLE_ENDIAN);
+  }
   ptvcursor_add(cursor, hf_skinny_numberPacketsSent, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_numberOctetsSent, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_numberPacketsReceived, 4, ENC_LITTLE_ENDIAN);
@@ -2761,24 +2892,26 @@ handle_ConnectionStatisticsResMessage(ptvcursor_t *cursor, packet_info * pinfo _
   if (hdr_data_length > 64) {
     dataSize = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_dataSize, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_data, dataSize, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_data, dataSize, ENC_ASCII);
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0107 ^ callReference);
 }
 
 /*
- * Message:   OffHookWithCgpnMessage
+ * Message:   OffHookWithCallingPartyNumberMessage
  * Opcode:    0x0024
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_OffHookWithCgpnMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_OffHookWithCallingPartyNumberMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
-  ptvcursor_add(cursor, hf_skinny_callingPartyNumber, VariableDirnumSize, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_cgpnVoiceMailbox, VariableDirnumSize, ENC_ASCII|ENC_NA);
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
+  ptvcursor_add(cursor, hf_skinny_callingPartyNumber, VariableDirnumSize, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_cgpnVoiceMailbox, VariableDirnumSize, ENC_ASCII);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
 }
@@ -2789,9 +2922,10 @@ handle_OffHookWithCgpnMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_SoftKeyEventMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SoftKeyEventMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_softKeyEvent, 4, ENC_LITTLE_ENDIAN);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -2801,20 +2935,22 @@ handle_SoftKeyEventMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
 }
 
 /*
- * Message:   UnregisterMessage
+ * Message:   UnregisterReqMessage
  * Opcode:    0x0027
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_UnregisterMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UnregisterReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
 
   if (hdr_data_length > 12) {
     ptvcursor_add(cursor, hf_skinny_unRegReasonCode, 4, ENC_LITTLE_ENDIAN);
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0027);
 }
 
 /*
@@ -2823,22 +2959,22 @@ handle_UnregisterMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_RegisterTokenReq(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_RegisterTokenReq(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   {
-    /* start struct : sid / size: 24 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sid");
-    ptvcursor_add(cursor, hf_skinny_DeviceName, 16, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_DeviceName, 16, ENC_ASCII);
     ptvcursor_add(cursor, hf_skinny_reserved_for_future_use, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_instance, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: sid */
   }
   ptvcursor_add(cursor, hf_skinny_stationIpAddr, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_deviceType, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_stationIpV6Addr_ipv4, hf_skinny_stationIpV6Addr_ipv6, pinfo);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_stationIpV6Addr_ipv4, hf_skinny_stationIpV6Addr_ipv6);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0029);
 }
 
 /*
@@ -2847,16 +2983,30 @@ handle_RegisterTokenReq(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_MediaTransmissionFailureMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_MediaTransmissionFailureMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  uint32_t passThroughPartyId = 0;
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x008a ^ passThroughPartyId);
 }
 
 /*
@@ -2865,9 +3015,10 @@ handle_MediaTransmissionFailureMessage(ptvcursor_t *cursor, packet_info * pinfo 
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_HeadsetStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_HeadsetStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_headsetStatus, 4, ENC_LITTLE_ENDIAN);
 }
@@ -2878,9 +3029,10 @@ handle_HeadsetStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_MediaResourceNotificationMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_MediaResourceNotificationMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_deviceType, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_numberOfInServiceStreams, 4, ENC_LITTLE_ENDIAN);
@@ -2894,9 +3046,10 @@ handle_MediaResourceNotificationMessage(ptvcursor_t *cursor, packet_info * pinfo
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_RegisterAvailableLinesMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_RegisterAvailableLinesMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_maxNumOfAvailLines, 4, ENC_LITTLE_ENDIAN);
 }
@@ -2907,26 +3060,26 @@ handle_RegisterAvailableLinesMessage(ptvcursor_t *cursor, packet_info * pinfo _U
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_DeviceToUserDataMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DeviceToUserDataMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
+  uint32_t dataLength = 0;
   {
-    /* start struct : deviceToUserData / size: 2020 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "deviceToUserData");
-    ptvcursor_add(cursor, hf_skinny_applicationID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
     si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
     dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
     dissect_skinny_xml(cursor, hf_skinny_xmldata, pinfo, dataLength, 2000);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: deviceToUserData */
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x002e);
 }
 
 /*
@@ -2935,26 +3088,26 @@ handle_DeviceToUserDataMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_DeviceToUserDataResponseMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DeviceToUserDataResponseMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
+  uint32_t dataLength = 0;
   {
-    /* start struct : deviceToUserData / size: 2020 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "deviceToUserData");
-    ptvcursor_add(cursor, hf_skinny_applicationID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
     si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
     dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
     dissect_skinny_xml(cursor, hf_skinny_xmldata, pinfo, dataLength, 2000);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: deviceToUserData */
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x002e);
 }
 
 /*
@@ -2963,304 +3116,289 @@ handle_DeviceToUserDataResponseMessage(ptvcursor_t *cursor, packet_info * pinfo 
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_UpdateCapabilitiesMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UpdateCapabilitiesMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 audioCapCount = 0;
-  guint32 videoCapCount = 0;
-  guint32 dataCapCount = 0;
-  guint32 customPictureFormatCount = 0;
-  guint32 serviceResourceCount = 0;
-  guint32 layoutCount = 0;
-  guint32 payloadCapability = 0;
-  guint32 levelPreferenceCount = 0;
+  uint32_t audioCapCount = 0;
+  uint32_t videoCapCount = 0;
+  uint32_t dataCapCount = 0;
+  uint32_t customPictureFormatCount = 0;
+  uint32_t serviceResourceCount = 0;
+  uint32_t layoutCount = 0;
+  uint32_t payloadCapability = 0;
+  uint32_t levelPreferenceCount = 0;
   audioCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_audioCapCount, 4, ENC_LITTLE_ENDIAN);
   videoCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_videoCapCount, 4, ENC_LITTLE_ENDIAN);
   dataCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_dataCapCount, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_RTPPayloadFormat, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_rtpPayloadFormat, 4, ENC_LITTLE_ENDIAN);
   customPictureFormatCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_customPictureFormatCount, 4, ENC_LITTLE_ENDIAN);
-  {
-    /* start struct : customPictureFormat / size: 20 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [ref: customPictureFormatCount = %d, max:6]", customPictureFormatCount);
-    for (counter_1 = 0; counter_1 < 6; counter_1++) {
-      if (counter_1 < customPictureFormatCount) {
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [%d / %d]", counter_1 + 1, customPictureFormatCount);
-        ptvcursor_add(cursor, hf_skinny_pictureWidth, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_pictureHeight, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_pixelAspectRatio, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_clockConversionCode, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_clockDivisor, 4, ENC_LITTLE_ENDIAN);
-      } else {
-        ptvcursor_advance(cursor, 20);
+  if (customPictureFormatCount <= 6) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [ref:customPictureFormatCount = %d, max:6]", customPictureFormatCount);
+    if (customPictureFormatCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (customPictureFormatCount * 20) && customPictureFormatCount <= 6) {
+      for (counter_1 = 0; counter_1 < 6; counter_1++) {
+        if (counter_1 < customPictureFormatCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [%d / %d]", counter_1 + 1, customPictureFormatCount);
+          ptvcursor_add(cursor, hf_skinny_pictureWidth, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_pictureHeight, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_pixelAspectRatio, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_clockConversionCode, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_clockDivisor, 4, ENC_LITTLE_ENDIAN);
+        } else {
+          ptvcursor_advance(cursor, 20);
+        }
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: customPictureFormat */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: customPictureFormat */
+  } else {
+    ptvcursor_advance(cursor, (customPictureFormatCount * 20));
   }
   {
-    /* start struct : confResources / size: 36 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "confResources");
     ptvcursor_add(cursor, hf_skinny_activeStreamsOnRegistration, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_maxBW, 4, ENC_LITTLE_ENDIAN);
     serviceResourceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_serviceResourceCount, 4, ENC_LITTLE_ENDIAN);
-    {
-      /* start struct : serviceResource / size: 24 */
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [ref: serviceResourceCount = %d, max:4]", serviceResourceCount);
-      for (counter_2 = 0; counter_2 < 4; counter_2++) {
-        if (counter_2 < serviceResourceCount) {
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [%d / %d]", counter_2 + 1, serviceResourceCount);
-          layoutCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-          ptvcursor_add(cursor, hf_skinny_layoutCount, 4, ENC_LITTLE_ENDIAN);
-          {
-            guint32 counter_5 = 0;
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "layouts [ref: layoutCount = %d, max:5]", layoutCount);
-            for (counter_5 = 0; counter_5 < 5; counter_5++) {
-              if (counter_5 < layoutCount) {
-                ptvcursor_add(cursor, hf_skinny_layouts, 4, ENC_LITTLE_ENDIAN);
-              } else {
-                ptvcursor_advance(cursor, 4);
+    if (serviceResourceCount <= 4) {
+      uint32_t counter_2 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [ref:serviceResourceCount = %d, max:4]", serviceResourceCount);
+      if (serviceResourceCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (serviceResourceCount * 24) && serviceResourceCount <= 4) {
+        for (counter_2 = 0; counter_2 < 4; counter_2++) {
+          if (counter_2 < serviceResourceCount) {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [%d / %d]", counter_2 + 1, serviceResourceCount);
+            layoutCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+            ptvcursor_add(cursor, hf_skinny_layoutCount, 4, ENC_LITTLE_ENDIAN);
+            if (layoutCount <= 5) { /* tvb enum size guard */
+              uint32_t counter_7 = 0;
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "layouts [ref: layoutCount = %d, max:5]", layoutCount);
+              for (counter_7 = 0; counter_7 < 5; counter_7++) {
+                if (counter_7 < layoutCount) {
+                  ptvcursor_add(cursor, hf_skinny_layouts, 4, ENC_LITTLE_ENDIAN);
+                } else {
+                  ptvcursor_advance(cursor, 4);
+                }
               }
+              ptvcursor_pop_subtree(cursor);
+            } else {
+              ptvcursor_advance(cursor, (5 * 4)); /* guard kicked in -> skip the rest */;
             }
-            ptvcursor_pop_subtree(cursor); /* end for loop tree: layouts */
+            ptvcursor_add(cursor, hf_skinny_serviceNum, 4, ENC_LITTLE_ENDIAN);
+            ptvcursor_add(cursor, hf_skinny_maxStreams, 4, ENC_LITTLE_ENDIAN);
+            ptvcursor_add(cursor, hf_skinny_maxConferences, 4, ENC_LITTLE_ENDIAN);
+            ptvcursor_add(cursor, hf_skinny_activeConferenceOnRegistration, 4, ENC_LITTLE_ENDIAN);
+          } else {
+            ptvcursor_advance(cursor, 24);
           }
-          ptvcursor_add(cursor, hf_skinny_serviceNum, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_maxStreams, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_maxConferences, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_activeConferenceOnRegistration, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_pop_subtree(cursor);
+        }
+      }
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (serviceResourceCount * 24));
+    }
+    ptvcursor_pop_subtree(cursor);
+  }
+  if (audioCapCount <= 18) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [ref:audioCapCount = %d, max:18]", audioCapCount);
+    if (audioCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (audioCapCount * 16) && audioCapCount <= 18) {
+      for (counter_1 = 0; counter_1 < 18; counter_1++) {
+        if (counter_1 < audioCapCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [%d / %d]", counter_1 + 1, audioCapCount);
+          payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+          ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_maxFramesPerPacket, 4, ENC_LITTLE_ENDIAN);
+          if (payloadCapability == MEDIA_PAYLOAD_G7231)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_G7231");
+            ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
+            ptvcursor_pop_subtree(cursor);
+            ptvcursor_advance(cursor, 4);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_MODEMRELAY)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_ModemRelay");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
+              ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SPRT)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SPRT");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
+              ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SSE)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SSE");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
+              ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any payloadCapability");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
+              ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+            ptvcursor_advance(cursor, 4);
+          }
         } else {
-          ptvcursor_advance(cursor, 24);
+          ptvcursor_advance(cursor, 16);
         }
         ptvcursor_pop_subtree(cursor);
-        /* end for loop tree: serviceResource */
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end struct: serviceResource */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: confResources */
+  } else {
+    ptvcursor_advance(cursor, (audioCapCount * 16));
   }
-  {
-    /* start struct : audiocaps / size: 16 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [ref: audioCapCount = %d, max:18]", audioCapCount);
-    for (counter_1 = 0; counter_1 < 18; counter_1++) {
-      if (counter_1 < audioCapCount) {
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [%d / %d]", counter_1 + 1, audioCapCount);
-        payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-        ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_maxFramesPerPacket, 4, ENC_LITTLE_ENDIAN);
-        if (payloadCapability == MEDIA_PAYLOAD_G7231)         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_G7231");
-          ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          ptvcursor_advance(cursor, 4);
-        } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_MODEMRELAY)         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_ModemRelay");
-          {
-            /* start struct : modemRelay / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
-            ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_pop_subtree(cursor);
-            /* end struct: modemRelay */
-          }
-          ptvcursor_pop_subtree(cursor);
-        } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SPRT)         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SPRT");
-          {
-            /* start struct : sprtPayload / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
-            ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
-            ptvcursor_pop_subtree(cursor);
-            /* end struct: sprtPayload */
-          }
-          ptvcursor_pop_subtree(cursor);
-        } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SSE)         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SSE");
-          {
-            /* start struct : sse / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
-            ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_pop_subtree(cursor);
-            /* end struct: sse */
-          }
-          ptvcursor_pop_subtree(cursor);
-        } else         {
-          /* start union : PAYLOADS / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any payloadCapability");
-          {
-            /* start struct : codecParams / size: 4 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
-            ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
-            ptvcursor_pop_subtree(cursor);
-            /* end struct: codecParams */
-          }
-          ptvcursor_pop_subtree(cursor);
-          ptvcursor_advance(cursor, 4);
-        }
-      } else {
-        ptvcursor_advance(cursor, 16);
-      }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: audiocaps */
-    }
-    ptvcursor_pop_subtree(cursor);
-    /* end struct: audiocaps */
-  }
-  {
-    /* start struct : vidCaps / size: 44 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [ref: videoCapCount = %d, max:10]", videoCapCount);
-    for (counter_1 = 0; counter_1 < 10; counter_1++) {
-      if (counter_1 < videoCapCount) {
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [%d / %d]", counter_1 + 1, videoCapCount);
-        payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-        ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_videoCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
-        levelPreferenceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-        ptvcursor_add(cursor, hf_skinny_levelPreferenceCount, 4, ENC_LITTLE_ENDIAN);
-        {
-          /* start struct : levelPreference / size: 24 */
-          guint32 counter_4 = 0;
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [ref: levelPreferenceCount = %d, max:4]", levelPreferenceCount);
-          for (counter_4 = 0; counter_4 < 4; counter_4++) {
-            if (counter_4 < levelPreferenceCount) {
-              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [%d / %d]", counter_4 + 1, levelPreferenceCount);
-              ptvcursor_add(cursor, hf_skinny_transmitPreference, 4, ENC_LITTLE_ENDIAN);
-              ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
-              ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
-              ptvcursor_add(cursor, hf_skinny_minBitRate, 4, ENC_LITTLE_ENDIAN);
-              ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
-              ptvcursor_add(cursor, hf_skinny_serviceNumber, 4, ENC_LITTLE_ENDIAN);
-            } else {
-              ptvcursor_advance(cursor, 24);
+  if (videoCapCount <= 10) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [ref:videoCapCount = %d, max:10]", videoCapCount);
+    if (videoCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (videoCapCount * 44) && videoCapCount <= 10) {
+      for (counter_1 = 0; counter_1 < 10; counter_1++) {
+        if (counter_1 < videoCapCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [%d / %d]", counter_1 + 1, videoCapCount);
+          payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+          ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_videoCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
+          levelPreferenceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+          ptvcursor_add(cursor, hf_skinny_levelPreferenceCount, 4, ENC_LITTLE_ENDIAN);
+          if (levelPreferenceCount <= 4) {
+            uint32_t counter_5 = 0;
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [ref:levelPreferenceCount = %d, max:4]", levelPreferenceCount);
+            if (levelPreferenceCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (levelPreferenceCount * 24) && levelPreferenceCount <= 4) {
+              for (counter_5 = 0; counter_5 < 4; counter_5++) {
+                if (counter_5 < levelPreferenceCount) {
+                  ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [%d / %d]", counter_5 + 1, levelPreferenceCount);
+                  ptvcursor_add(cursor, hf_skinny_transmitPreference, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_minBitRate, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_serviceNumber, 4, ENC_LITTLE_ENDIAN);
+                } else {
+                  ptvcursor_advance(cursor, 24);
+                }
+                ptvcursor_pop_subtree(cursor);
+              }
             }
             ptvcursor_pop_subtree(cursor);
-            /* end for loop tree: levelPreference */
+          } else {
+            ptvcursor_advance(cursor, (levelPreferenceCount * 24));
           }
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: levelPreference */
+          if (payloadCapability == MEDIA_PAYLOAD_H261)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H261");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h261VideoCapability");
+              ptvcursor_add(cursor, hf_skinny_temporalSpatialTradeOffCapability, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_stillImageTransmission, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else if (payloadCapability == MEDIA_PAYLOAD_H263)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H263");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263VideoCapability");
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263_capability_bitfield");
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit1, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit2, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit3, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit4, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit5, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit6, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit7, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit8, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit9, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit10, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit11, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit12, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit13, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit14, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit15, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit16, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit17, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit18, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit19, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit20, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit21, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit22, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit23, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit24, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit25, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit26, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit27, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit28, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit29, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit30, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit31, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit32, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_advance(cursor, 4);
+              ptvcursor_pop_subtree(cursor); /* end bitfield: h263_capability_bitfield */
+              ptvcursor_add(cursor, hf_skinny_annexNandWFutureUse, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else if (payloadCapability == MEDIA_PAYLOAD_VIEO)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_Vieo");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vieoVideoCapability");
+              ptvcursor_add(cursor, hf_skinny_modelNumber, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_bandwidth, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          }
+        } else {
+          ptvcursor_advance(cursor, 44);
         }
-        if (payloadCapability == MEDIA_PAYLOAD_H261)         {
-          /* start union : capability / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H261");
-          {
-            /* start struct : h261VideoCapability / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h261VideoCapability");
-            ptvcursor_add(cursor, hf_skinny_temporalSpatialTradeOffCapability, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_stillImageTransmission, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_pop_subtree(cursor);
-            /* end struct: h261VideoCapability */
-          }
-          ptvcursor_pop_subtree(cursor);
-        } else if (payloadCapability == MEDIA_PAYLOAD_H263)         {
-          /* start union : capability / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H263");
-          {
-            /* start struct : h263VideoCapability / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263VideoCapability");
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263_capability_bitfield");
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit1, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit2, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit3, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit4, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit5, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit6, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit7, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit8, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit9, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit10, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit11, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit12, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit13, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit14, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit15, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit16, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit17, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit18, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit19, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit20, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit21, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit22, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit23, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit24, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit25, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit26, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit27, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit28, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit29, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit30, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit31, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit32, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_advance(cursor, 4);
-            ptvcursor_pop_subtree(cursor); /* end bitfield: h263_capability_bitfield */
-            ptvcursor_add(cursor, hf_skinny_annexNandWFutureUse, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_pop_subtree(cursor);
-            /* end struct: h263VideoCapability */
-          }
-          ptvcursor_pop_subtree(cursor);
-        } else if (payloadCapability == MEDIA_PAYLOAD_VIEO)         {
-          /* start union : capability / maxsize: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_Vieo");
-          {
-            /* start struct : vieoVideoCapability / size: 8 */
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vieoVideoCapability");
-            ptvcursor_add(cursor, hf_skinny_modelNumber, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_bandwidth, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_pop_subtree(cursor);
-            /* end struct: vieoVideoCapability */
-          }
-          ptvcursor_pop_subtree(cursor);
-        }
-      } else {
-        ptvcursor_advance(cursor, 44);
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: vidCaps */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: vidCaps */
+  } else {
+    ptvcursor_advance(cursor, (videoCapCount * 44));
   }
-  {
-    /* start struct : dataCaps / size: 16 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [ref: dataCapCount = %d, max:5]", dataCapCount);
-    for (counter_1 = 0; counter_1 < 5; counter_1++) {
-      if (counter_1 < dataCapCount) {
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [%d / %d]", counter_1 + 1, dataCapCount);
-        ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_dataCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_protocolDependentData, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
-      } else {
-        ptvcursor_advance(cursor, 16);
+  if (dataCapCount <= 5) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [ref:dataCapCount = %d, max:5]", dataCapCount);
+    if (dataCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (dataCapCount * 16) && dataCapCount <= 5) {
+      for (counter_1 = 0; counter_1 < 5; counter_1++) {
+        if (counter_1 < dataCapCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [%d / %d]", counter_1 + 1, dataCapCount);
+          ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_dataCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_protocolDependentData, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
+        } else {
+          ptvcursor_advance(cursor, 16);
+        }
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: dataCaps */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: dataCaps */
+  } else {
+    ptvcursor_advance(cursor, (dataCapCount * 16));
   }
 }
 
@@ -3270,16 +3408,31 @@ handle_UpdateCapabilitiesMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_OpenMultiMediaReceiveChannelAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_OpenMultiMediaReceiveChannelAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_multimediaOpenReceiveChannelStatus, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_ipAddr_ipv4, hf_skinny_ipAddr_ipv6, pinfo);
+  address ipAddr;
+  char *ipAddr_str = NULL;
+  uint32_t portNumber = 0;
+  uint32_t passThroughPartyId = 0;
+  si->multimediaReceptionStatus = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_multimediaReceptionStatus, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &ipAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_ipAddr_ipv4, hf_skinny_ipAddr_ipv6);
+  portNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_portNumber, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &ipAddr, portNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  ipAddr_str = address_to_display(NULL, &ipAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", ipAddr_str, portNumber);
+  wmem_free(NULL, ipAddr_str);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0131 ^ passThroughPartyId);
 }
 
 /*
@@ -3288,11 +3441,12 @@ handle_OpenMultiMediaReceiveChannelAckMessage(ptvcursor_t *cursor, packet_info *
  * Type:      Conference
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_ClearConferenceMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ClearConferenceMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_serviceNum, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -3302,11 +3456,15 @@ handle_ClearConferenceMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_ServiceURLStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ServiceURLStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t serviceURLIndex = 0;
+  serviceURLIndex = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_serviceURLIndex, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0033 ^ serviceURLIndex);
 }
 
 /*
@@ -3315,16 +3473,20 @@ handle_ServiceURLStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_FeatureStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_FeatureStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t featureIndex = 0;
 
+  featureIndex = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_featureIndex, 4, ENC_LITTLE_ENDIAN);
   if (hdr_data_length > 16) {
     ptvcursor_add(cursor, hf_skinny_featureCapabilities, 4, ENC_LITTLE_ENDIAN);
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0034 ^ featureIndex);
 }
 
 /*
@@ -3333,16 +3495,20 @@ handle_FeatureStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_CreateConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CreateConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  uint32_t dataLength = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_result, 4, ENC_LITTLE_ENDIAN);
   dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruData, dataLength, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_passThruData, dataLength, ENC_ASCII);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0137 ^ conferenceId);
 }
 
 /*
@@ -3351,12 +3517,16 @@ handle_CreateConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_DeleteConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DeleteConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_delete_conf_result, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0138 ^ conferenceId);
 }
 
 /*
@@ -3365,16 +3535,20 @@ handle_DeleteConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_ModifyConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ModifyConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  uint32_t dataLength = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_modify_conf_result, 4, ENC_LITTLE_ENDIAN);
   dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruData, dataLength, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_passThruData, dataLength, ENC_ASCII);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0139 ^ conferenceId);
 }
 
 /*
@@ -3383,15 +3557,19 @@ handle_ModifyConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_AddParticipantResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_AddParticipantResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_add_participant_result, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_bridgeParticipantId, 257, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_bridgeParticipantId, 257, ENC_ASCII);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x013a ^ conferenceId);
 }
 
 /*
@@ -3400,37 +3578,40 @@ handle_AddParticipantResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_AuditConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_AuditConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 numberOfEntries = 0;
+  uint32_t numberOfEntries = 0;
   ptvcursor_add(cursor, hf_skinny_last, 4, ENC_LITTLE_ENDIAN);
   numberOfEntries = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_numberOfEntries, 4, ENC_LITTLE_ENDIAN);
-  {
-    /* start struct : conferenceEntry / size: 76 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "conferenceEntry [ref: numberOfEntries = %d, max:32]", numberOfEntries);
-    for (counter_1 = 0; counter_1 < 32; counter_1++) {
-      if (counter_1 < numberOfEntries) {
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "conferenceEntry [%d / %d]", counter_1 + 1, numberOfEntries);
-        ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_resourceType, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_numberOfReservedParticipants, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_numberOfActiveParticipants, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_appID, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_appConfID, 32, ENC_ASCII|ENC_NA);
-        ptvcursor_add(cursor, hf_skinny_appData, 24, ENC_ASCII|ENC_NA);
-      } else {
-        ptvcursor_advance(cursor, 76);
+  if (numberOfEntries <= 32) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "conferenceEntry [ref:numberOfEntries = %d, max:32]", numberOfEntries);
+    if (numberOfEntries && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (numberOfEntries * 76) && numberOfEntries <= 32) {
+      for (counter_1 = 0; counter_1 < 32; counter_1++) {
+        if (counter_1 < numberOfEntries) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "conferenceEntry [%d / %d]", counter_1 + 1, numberOfEntries);
+          ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_resourceType, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_numberOfReservedParticipants, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_numberOfActiveParticipants, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_appConfID, 32, ENC_ASCII);
+          ptvcursor_add(cursor, hf_skinny_appData, 24, ENC_ASCII);
+        } else {
+          ptvcursor_advance(cursor, 76);
+        }
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: conferenceEntry */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: conferenceEntry */
+  } else {
+    ptvcursor_advance(cursor, (numberOfEntries * 76));
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x013c);
 }
 
 /*
@@ -3439,28 +3620,34 @@ handle_AuditConferenceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_AuditParticipantResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_AuditParticipantResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 numberOfEntries = 0;
+  uint32_t conferenceId = 0;
+  uint32_t numberOfEntries = 0;
   ptvcursor_add(cursor, hf_skinny_audit_participant_result, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_last, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   numberOfEntries = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_numberOfEntries, 4, ENC_LITTLE_ENDIAN);
-  {
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "participantEntry [ref: numberOfEntries = %d, max:256]", numberOfEntries);
-    for (counter_1 = 0; counter_1 < 256; counter_1++) {
-      if (counter_1 < numberOfEntries) {
+  if (numberOfEntries <= 256) {
+    uint32_t counter_2 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "participantEntry [ref:numberOfEntries = %d, max:256]", numberOfEntries);
+    for (counter_2 = 0; counter_2 < 256; counter_2++) {
+      if (counter_2 < numberOfEntries) {
         ptvcursor_add(cursor, hf_skinny_participantEntry, 4, ENC_LITTLE_ENDIAN);
       } else {
         ptvcursor_advance(cursor, 4);
       }
     }
-    ptvcursor_pop_subtree(cursor); /* end for loop tree: participantEntry */
+    ptvcursor_pop_subtree(cursor);
+  } else {
+    ptvcursor_advance(cursor, (256 * 4));
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x013d ^ conferenceId);
 }
 
 /*
@@ -3469,31 +3656,31 @@ handle_AuditParticipantResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_DeviceToUserDataMessageVersion1(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DeviceToUserDataMessageVersion1(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
+  uint32_t dataLength = 0;
   {
-    /* start struct : deviceToUserDataVersion1 / size: 2040 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "deviceToUserDataVersion1");
-    ptvcursor_add(cursor, hf_skinny_applicationID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
     si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
     dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_sequenceFlag, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_displayPriority, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_appInstanceID, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_routingID, 4, ENC_LITTLE_ENDIAN);
     dissect_skinny_xml(cursor, hf_skinny_xmldata, pinfo, dataLength, 2000);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: deviceToUserDataVersion1 */
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0041);
 }
 
 /*
@@ -3502,222 +3689,505 @@ handle_DeviceToUserDataMessageVersion1(ptvcursor_t *cursor, packet_info * pinfo 
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_DeviceToUserDataResponseMessageVersion1(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DeviceToUserDataResponseMessageVersion1(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
+  uint32_t dataLength = 0;
   {
-    /* start struct : deviceToUserDataVersion1 / size: 2040 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "deviceToUserDataVersion1");
-    ptvcursor_add(cursor, hf_skinny_applicationID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
     si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
     dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_sequenceFlag, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_displayPriority, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_appInstanceID, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_routingID, 4, ENC_LITTLE_ENDIAN);
     dissect_skinny_xml(cursor, hf_skinny_xmldata, pinfo, dataLength, 2000);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: deviceToUserDataVersion1 */
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0041);
 }
 
 /*
- * Message:   UpdateCapabilitiesV2Message
+ * Message:   CapabilitiesV2ResMessage
  * Opcode:    0x0043
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_UpdateCapabilitiesV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CapabilitiesV2ResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 audioCapCount = 0;
-  guint32 videoCapCount = 0;
-  guint32 dataCapCount = 0;
-  guint32 customPictureFormatCount = 0;
-  guint32 serviceResourceCount = 0;
-  guint32 layoutCount = 0;
-  guint32 payloadCapability = 0;
-  guint32 levelPreferenceCount = 0;
+  uint32_t audioCapCount = 0;
+  uint32_t videoCapCount = 0;
+  uint32_t dataCapCount = 0;
+  uint32_t customPictureFormatCount = 0;
+  uint32_t serviceResourceCount = 0;
+  uint32_t layoutCount = 0;
+  uint32_t payloadCapability = 0;
+  uint32_t levelPreferenceCount = 0;
   audioCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_audioCapCount, 4, ENC_LITTLE_ENDIAN);
   videoCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_videoCapCount, 4, ENC_LITTLE_ENDIAN);
   dataCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_dataCapCount, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_RTPPayloadFormat, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_rtpPayloadFormat, 4, ENC_LITTLE_ENDIAN);
   customPictureFormatCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_customPictureFormatCount, 4, ENC_LITTLE_ENDIAN);
+  if (customPictureFormatCount <= 6) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [ref:customPictureFormatCount = %d, max:6]", customPictureFormatCount);
+    if (customPictureFormatCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (customPictureFormatCount * 20) && customPictureFormatCount <= 6) {
+      for (counter_1 = 0; counter_1 < 6; counter_1++) {
+        if (counter_1 < customPictureFormatCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [%d / %d]", counter_1 + 1, customPictureFormatCount);
+          ptvcursor_add(cursor, hf_skinny_pictureWidth, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_pictureHeight, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_pixelAspectRatio, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_clockConversionCode, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_clockDivisor, 4, ENC_LITTLE_ENDIAN);
+        } else {
+          ptvcursor_advance(cursor, 20);
+        }
+        ptvcursor_pop_subtree(cursor);
+      }
+    }
+    ptvcursor_pop_subtree(cursor);
+  } else {
+    ptvcursor_advance(cursor, (customPictureFormatCount * 20));
+  }
   {
-    /* start struct : customPictureFormat / size: 20 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [ref: customPictureFormatCount = %d, max:6]", customPictureFormatCount);
-    for (counter_1 = 0; counter_1 < 6; counter_1++) {
-      if (counter_1 < customPictureFormatCount) {
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "confResources");
+    ptvcursor_add(cursor, hf_skinny_activeStreamsOnRegistration, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_maxBW, 4, ENC_LITTLE_ENDIAN);
+    serviceResourceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    ptvcursor_add(cursor, hf_skinny_serviceResourceCount, 4, ENC_LITTLE_ENDIAN);
+    if (serviceResourceCount <= 4) {
+      uint32_t counter_2 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [ref:serviceResourceCount = %d, max:4]", serviceResourceCount);
+      if (serviceResourceCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (serviceResourceCount * 24) && serviceResourceCount <= 4) {
+        for (counter_2 = 0; counter_2 < 4; counter_2++) {
+          if (counter_2 < serviceResourceCount) {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [%d / %d]", counter_2 + 1, serviceResourceCount);
+            layoutCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+            ptvcursor_add(cursor, hf_skinny_layoutCount, 4, ENC_LITTLE_ENDIAN);
+            if (layoutCount <= 5) { /* tvb enum size guard */
+              uint32_t counter_7 = 0;
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "layouts [ref: layoutCount = %d, max:5]", layoutCount);
+              for (counter_7 = 0; counter_7 < 5; counter_7++) {
+                if (counter_7 < layoutCount) {
+                  ptvcursor_add(cursor, hf_skinny_layouts, 4, ENC_LITTLE_ENDIAN);
+                } else {
+                  ptvcursor_advance(cursor, 4);
+                }
+              }
+              ptvcursor_pop_subtree(cursor);
+            } else {
+              ptvcursor_advance(cursor, (5 * 4)); /* guard kicked in -> skip the rest */;
+            }
+            ptvcursor_add(cursor, hf_skinny_serviceNum, 4, ENC_LITTLE_ENDIAN);
+            ptvcursor_add(cursor, hf_skinny_maxStreams, 4, ENC_LITTLE_ENDIAN);
+            ptvcursor_add(cursor, hf_skinny_maxConferences, 4, ENC_LITTLE_ENDIAN);
+            ptvcursor_add(cursor, hf_skinny_activeConferenceOnRegistration, 4, ENC_LITTLE_ENDIAN);
+          } else {
+            ptvcursor_advance(cursor, 24);
+          }
+          ptvcursor_pop_subtree(cursor);
+        }
+      }
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (serviceResourceCount * 24));
+    }
+    ptvcursor_pop_subtree(cursor);
+  }
+  if (audioCapCount <= 18) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [ref:audioCapCount = %d, max:18]", audioCapCount);
+    if (audioCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (audioCapCount * 16) && audioCapCount <= 18) {
+      for (counter_1 = 0; counter_1 < 18; counter_1++) {
+        if (counter_1 < audioCapCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [%d / %d]", counter_1 + 1, audioCapCount);
+          payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+          ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_maxFramesPerPacket, 4, ENC_LITTLE_ENDIAN);
+          if (payloadCapability == MEDIA_PAYLOAD_G7231)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_G7231");
+            ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
+            ptvcursor_pop_subtree(cursor);
+            ptvcursor_advance(cursor, 4);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_MODEMRELAY)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_ModemRelay");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
+              ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SPRT)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SPRT");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
+              ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SSE)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SSE");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
+              ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any payloadCapability");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
+              ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+            ptvcursor_advance(cursor, 4);
+          }
+        } else {
+          ptvcursor_advance(cursor, 16);
+        }
+        ptvcursor_pop_subtree(cursor);
+      }
+    }
+    ptvcursor_pop_subtree(cursor);
+  } else {
+    ptvcursor_advance(cursor, (audioCapCount * 16));
+  }
+  if (videoCapCount <= 10) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [ref:videoCapCount = %d, max:10]", videoCapCount);
+    if (videoCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (videoCapCount * 60) && videoCapCount <= 10) {
+      for (counter_1 = 0; counter_1 < 10; counter_1++) {
+        if (counter_1 < videoCapCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [%d / %d]", counter_1 + 1, videoCapCount);
+          payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+          ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_videoCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
+          levelPreferenceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+          ptvcursor_add(cursor, hf_skinny_levelPreferenceCount, 4, ENC_LITTLE_ENDIAN);
+          if (levelPreferenceCount <= 4) {
+            uint32_t counter_5 = 0;
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [ref:levelPreferenceCount = %d, max:4]", levelPreferenceCount);
+            if (levelPreferenceCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (levelPreferenceCount * 24) && levelPreferenceCount <= 4) {
+              for (counter_5 = 0; counter_5 < 4; counter_5++) {
+                if (counter_5 < levelPreferenceCount) {
+                  ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [%d / %d]", counter_5 + 1, levelPreferenceCount);
+                  ptvcursor_add(cursor, hf_skinny_transmitPreference, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_minBitRate, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
+                  ptvcursor_add(cursor, hf_skinny_serviceNumber, 4, ENC_LITTLE_ENDIAN);
+                } else {
+                  ptvcursor_advance(cursor, 24);
+                }
+                ptvcursor_pop_subtree(cursor);
+              }
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else {
+            ptvcursor_advance(cursor, (levelPreferenceCount * 24));
+          }
+          if (payloadCapability == MEDIA_PAYLOAD_H261)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H261");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h261VideoCapability");
+              ptvcursor_add(cursor, hf_skinny_temporalSpatialTradeOffCapability, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_stillImageTransmission, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+            ptvcursor_advance(cursor, 16);
+          } else if (payloadCapability == MEDIA_PAYLOAD_H263)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H263");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263VideoCapability");
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263_capability_bitfield");
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit1, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit2, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit3, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit4, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit5, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit6, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit7, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit8, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit9, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit10, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit11, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit12, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit13, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit14, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit15, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit16, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit17, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit18, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit19, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit20, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit21, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit22, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit23, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit24, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit25, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit26, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit27, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit28, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit29, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit30, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit31, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit32, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_advance(cursor, 4);
+              ptvcursor_pop_subtree(cursor); /* end bitfield: h263_capability_bitfield */
+              ptvcursor_add(cursor, hf_skinny_annexNandWFutureUse, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+            ptvcursor_advance(cursor, 16);
+          } else if (payloadCapability == MEDIA_PAYLOAD_H264)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H264");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h264VideoCapability");
+              ptvcursor_add(cursor, hf_skinny_profile, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_level, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_customMaxMBPS, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_customMaxFS, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_customMaxDPB, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_customMaxBRandCPB, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+          } else if (payloadCapability == MEDIA_PAYLOAD_VIEO)           {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_Vieo");
+            {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vieoVideoCapability");
+              ptvcursor_add(cursor, hf_skinny_modelNumber, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_bandwidth, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_pop_subtree(cursor);
+            }
+            ptvcursor_pop_subtree(cursor);
+            ptvcursor_advance(cursor, 16);
+          }
+        } else {
+          ptvcursor_advance(cursor, 60);
+        }
+        ptvcursor_pop_subtree(cursor);
+      }
+    }
+    ptvcursor_pop_subtree(cursor);
+  } else {
+    ptvcursor_advance(cursor, (videoCapCount * 60));
+  }
+  if (dataCapCount <= 5) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [ref:dataCapCount = %d, max:5]", dataCapCount);
+    if (dataCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (dataCapCount * 16) && dataCapCount <= 5) {
+      for (counter_1 = 0; counter_1 < 5; counter_1++) {
+        if (counter_1 < dataCapCount) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [%d / %d]", counter_1 + 1, dataCapCount);
+          ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_dataCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_protocolDependentData, 4, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
+        } else {
+          ptvcursor_advance(cursor, 16);
+        }
+        ptvcursor_pop_subtree(cursor);
+      }
+    }
+    ptvcursor_pop_subtree(cursor);
+  } else {
+    ptvcursor_advance(cursor, (dataCapCount * 16));
+  }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x009b);
+}
+
+/*
+ * Message:   CapabilitiesV3ResMessage
+ * Opcode:    0x0044
+ * Type:      RegistrationAndManagement
+ * Direction: dev2pbx
+ * VarLength: yes
+ * MsgType:   response
+ */
+static void
+handle_CapabilitiesV3ResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
+{
+  uint32_t audioCapCount = 0;
+  uint32_t videoCapCount = 0;
+  uint32_t dataCapCount = 0;
+  uint32_t customPictureFormatCount = 0;
+  uint32_t serviceResourceCount = 0;
+  uint32_t layoutCount = 0;
+  uint32_t payloadCapability = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t levelPreferenceCount = 0;
+  audioCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_audioCapCount, 4, ENC_LITTLE_ENDIAN);
+  videoCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_videoCapCount, 4, ENC_LITTLE_ENDIAN);
+  dataCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_dataCapCount, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_rtpPayloadFormat, 4, ENC_LITTLE_ENDIAN);
+  customPictureFormatCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_customPictureFormatCount, 4, ENC_LITTLE_ENDIAN);
+  if (customPictureFormatCount <= 6) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [ref:customPictureFormatCount = %d, max:6]", customPictureFormatCount);
+    if (customPictureFormatCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (customPictureFormatCount * 20) && customPictureFormatCount <= 6) {
+      for (counter_1 = 0; counter_1 < 6; counter_1++) {
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [%d / %d]", counter_1 + 1, customPictureFormatCount);
         ptvcursor_add(cursor, hf_skinny_pictureWidth, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_pictureHeight, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_pixelAspectRatio, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_clockConversionCode, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_clockDivisor, 4, ENC_LITTLE_ENDIAN);
-      } else {
-        ptvcursor_advance(cursor, 20);
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: customPictureFormat */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: customPictureFormat */
+  } else {
+    ptvcursor_advance(cursor, (customPictureFormatCount * 20));
   }
   {
-    /* start struct : confResources / size: 36 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "confResources");
     ptvcursor_add(cursor, hf_skinny_activeStreamsOnRegistration, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_maxBW, 4, ENC_LITTLE_ENDIAN);
     serviceResourceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_serviceResourceCount, 4, ENC_LITTLE_ENDIAN);
-    {
-      /* start struct : serviceResource / size: 24 */
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [ref: serviceResourceCount = %d, max:4]", serviceResourceCount);
-      for (counter_2 = 0; counter_2 < 4; counter_2++) {
-        if (counter_2 < serviceResourceCount) {
+    if (serviceResourceCount <= 4) {
+      uint32_t counter_2 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [ref:serviceResourceCount = %d, max:4]", serviceResourceCount);
+      if (serviceResourceCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (serviceResourceCount * 24) && serviceResourceCount <= 4) {
+        for (counter_2 = 0; counter_2 < 4; counter_2++) {
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [%d / %d]", counter_2 + 1, serviceResourceCount);
           layoutCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
           ptvcursor_add(cursor, hf_skinny_layoutCount, 4, ENC_LITTLE_ENDIAN);
-          {
-            guint32 counter_5 = 0;
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "layouts [ref: layoutCount = %d, max:5]", layoutCount);
-            for (counter_5 = 0; counter_5 < 5; counter_5++) {
-              if (counter_5 < layoutCount) {
-                ptvcursor_add(cursor, hf_skinny_layouts, 4, ENC_LITTLE_ENDIAN);
-              } else {
-                ptvcursor_advance(cursor, 4);
-              }
+          if (layoutCount <= 5) { /* tvb enum size guard */
+            uint32_t counter_6 = 0;
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "layouts [ref: layoutCount = %d, max:layoutCount]", layoutCount);
+            for (counter_6 = 0; counter_6 < layoutCount; counter_6++) {
+              ptvcursor_add(cursor, hf_skinny_layouts, 4, ENC_LITTLE_ENDIAN);
             }
-            ptvcursor_pop_subtree(cursor); /* end for loop tree: layouts */
+            ptvcursor_pop_subtree(cursor);
+          } else {
+            ptvcursor_advance(cursor, (layoutCount * 4)); /* guard kicked in -> skip the rest */;
           }
           ptvcursor_add(cursor, hf_skinny_serviceNum, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_maxStreams, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_maxConferences, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_activeConferenceOnRegistration, 4, ENC_LITTLE_ENDIAN);
-        } else {
-          ptvcursor_advance(cursor, 24);
+          ptvcursor_pop_subtree(cursor);
         }
-        ptvcursor_pop_subtree(cursor);
-        /* end for loop tree: serviceResource */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: serviceResource */
+    } else {
+      ptvcursor_advance(cursor, (serviceResourceCount * 24));
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: confResources */
   }
-  {
-    /* start struct : audiocaps / size: 16 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [ref: audioCapCount = %d, max:18]", audioCapCount);
-    for (counter_1 = 0; counter_1 < 18; counter_1++) {
-      if (counter_1 < audioCapCount) {
+  if (audioCapCount <= 18) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [ref:audioCapCount = %d, max:18]", audioCapCount);
+    if (audioCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (audioCapCount * 16) && audioCapCount <= 18) {
+      for (counter_1 = 0; counter_1 < 18; counter_1++) {
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [%d / %d]", counter_1 + 1, audioCapCount);
         payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
         ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_maxFramesPerPacket, 4, ENC_LITTLE_ENDIAN);
         if (payloadCapability == MEDIA_PAYLOAD_G7231)         {
-          /* start union : PAYLOADS / maxsize: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_G7231");
           ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
           ptvcursor_advance(cursor, 4);
         } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_MODEMRELAY)         {
-          /* start union : PAYLOADS / maxsize: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_ModemRelay");
           {
-            /* start struct : modemRelay / size: 8 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
             ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: modemRelay */
           }
           ptvcursor_pop_subtree(cursor);
         } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SPRT)         {
-          /* start union : PAYLOADS / maxsize: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SPRT");
           {
-            /* start struct : sprtPayload / size: 8 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
             ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: sprtPayload */
           }
           ptvcursor_pop_subtree(cursor);
         } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SSE)         {
-          /* start union : PAYLOADS / maxsize: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SSE");
           {
-            /* start struct : sse / size: 8 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
             ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: sse */
           }
           ptvcursor_pop_subtree(cursor);
         } else         {
-          /* start union : PAYLOADS / maxsize: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any payloadCapability");
           {
-            /* start struct : codecParams / size: 4 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
             ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: codecParams */
           }
           ptvcursor_pop_subtree(cursor);
           ptvcursor_advance(cursor, 4);
         }
-      } else {
-        ptvcursor_advance(cursor, 16);
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: audiocaps */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: audiocaps */
+  } else {
+    ptvcursor_advance(cursor, (audioCapCount * 16));
   }
-  {
-    /* start struct : vidCaps / size: 60 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [ref: videoCapCount = %d, max:10]", videoCapCount);
-    for (counter_1 = 0; counter_1 < 10; counter_1++) {
-      if (counter_1 < videoCapCount) {
+  if (videoCapCount <= 10) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [ref:videoCapCount = %d, max:10]", videoCapCount);
+    if (videoCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (videoCapCount * 4) && videoCapCount <= 10) {
+      for (counter_1 = 0; counter_1 < 10; counter_1++) {
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [%d / %d]", counter_1 + 1, videoCapCount);
         payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
         ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_videoCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
         levelPreferenceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
         ptvcursor_add(cursor, hf_skinny_levelPreferenceCount, 4, ENC_LITTLE_ENDIAN);
-        {
-          /* start struct : levelPreference / size: 24 */
-          guint32 counter_4 = 0;
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [ref: levelPreferenceCount = %d, max:4]", levelPreferenceCount);
-          for (counter_4 = 0; counter_4 < 4; counter_4++) {
-            if (counter_4 < levelPreferenceCount) {
+        if (levelPreferenceCount <= 4) {
+          uint32_t counter_4 = 0;
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [ref:levelPreferenceCount = %d, max:4]", levelPreferenceCount);
+          if (levelPreferenceCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (levelPreferenceCount * 24) && levelPreferenceCount <= 4) {
+            for (counter_4 = 0; counter_4 < 4; counter_4++) {
               ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [%d / %d]", counter_4 + 1, levelPreferenceCount);
               ptvcursor_add(cursor, hf_skinny_transmitPreference, 4, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
@@ -3725,33 +4195,27 @@ handle_UpdateCapabilitiesV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
               ptvcursor_add(cursor, hf_skinny_minBitRate, 4, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_serviceNumber, 4, ENC_LITTLE_ENDIAN);
-            } else {
-              ptvcursor_advance(cursor, 24);
+              ptvcursor_pop_subtree(cursor);
             }
-            ptvcursor_pop_subtree(cursor);
-            /* end for loop tree: levelPreference */
           }
           ptvcursor_pop_subtree(cursor);
-          /* end struct: levelPreference */
+        } else {
+          ptvcursor_advance(cursor, (levelPreferenceCount * 24));
         }
+        ptvcursor_add(cursor, hf_skinny_encryptionCapability, 4, ENC_LITTLE_ENDIAN);
         if (payloadCapability == MEDIA_PAYLOAD_H261)         {
-          /* start union : capability / maxsize: 24 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H261");
           {
-            /* start struct : h261VideoCapability / size: 8 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h261VideoCapability");
             ptvcursor_add(cursor, hf_skinny_temporalSpatialTradeOffCapability, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_stillImageTransmission, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: h261VideoCapability */
           }
           ptvcursor_pop_subtree(cursor);
           ptvcursor_advance(cursor, 16);
         } else if (payloadCapability == MEDIA_PAYLOAD_H263)         {
-          /* start union : capability / maxsize: 24 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H263");
           {
-            /* start struct : h263VideoCapability / size: 8 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263VideoCapability");
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263_capability_bitfield");
             ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit1, 4, ENC_LITTLE_ENDIAN);
@@ -3790,15 +4254,12 @@ handle_UpdateCapabilitiesV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
             ptvcursor_pop_subtree(cursor); /* end bitfield: h263_capability_bitfield */
             ptvcursor_add(cursor, hf_skinny_annexNandWFutureUse, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: h263VideoCapability */
           }
           ptvcursor_pop_subtree(cursor);
           ptvcursor_advance(cursor, 16);
         } else if (payloadCapability == MEDIA_PAYLOAD_H264)         {
-          /* start union : capability / maxsize: 24 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H264");
           {
-            /* start struct : h264VideoCapability / size: 24 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h264VideoCapability");
             ptvcursor_add(cursor, hf_skinny_profile, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_level, 4, ENC_LITTLE_ENDIAN);
@@ -3807,357 +4268,49 @@ handle_UpdateCapabilitiesV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
             ptvcursor_add(cursor, hf_skinny_customMaxDPB, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_customMaxBRandCPB, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: h264VideoCapability */
           }
           ptvcursor_pop_subtree(cursor);
         } else if (payloadCapability == MEDIA_PAYLOAD_VIEO)         {
-          /* start union : capability / maxsize: 24 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_Vieo");
           {
-            /* start struct : vieoVideoCapability / size: 8 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vieoVideoCapability");
             ptvcursor_add(cursor, hf_skinny_modelNumber, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_add(cursor, hf_skinny_bandwidth, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
-            /* end struct: vieoVideoCapability */
           }
           ptvcursor_pop_subtree(cursor);
           ptvcursor_advance(cursor, 16);
         }
-      } else {
-        ptvcursor_advance(cursor, 60);
+        ptvcursor_add(cursor, hf_skinny_ipAddressingMode, 4, ENC_LITTLE_ENDIAN);
+        if (hdr_version >= V16_MSG_TYPE) {
+          ptvcursor_add(cursor, hf_skinny_ipAddressingMode, 4, ENC_LITTLE_ENDIAN);
+        }
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: vidCaps */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: vidCaps */
+  } else {
+    ptvcursor_advance(cursor, (videoCapCount * 4));
   }
-  {
-    /* start struct : dataCaps / size: 16 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [ref: dataCapCount = %d, max:5]", dataCapCount);
-    for (counter_1 = 0; counter_1 < 5; counter_1++) {
-      if (counter_1 < dataCapCount) {
+  if (dataCapCount <= 5) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [ref:dataCapCount = %d, max:5]", dataCapCount);
+    if (dataCapCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (dataCapCount * 20) && dataCapCount <= 5) {
+      for (counter_1 = 0; counter_1 < 5; counter_1++) {
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [%d / %d]", counter_1 + 1, dataCapCount);
         ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_dataCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_protocolDependentData, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
-      } else {
-        ptvcursor_advance(cursor, 16);
+        ptvcursor_add(cursor, hf_skinny_encryptionCapability, 4, ENC_LITTLE_ENDIAN);
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: dataCaps */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: dataCaps */
+  } else {
+    ptvcursor_advance(cursor, (dataCapCount * 20));
   }
-}
-
-/*
- * Message:   UpdateCapabilitiesV3Message
- * Opcode:    0x0044
- * Type:      RegistrationAndManagement
- * Direction: dev2pbx
- * VarLength: yes
- */
-static void
-handle_UpdateCapabilitiesV3Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
-{
-  guint32 audioCapCount = 0;
-  guint32 videoCapCount = 0;
-  guint32 dataCapCount = 0;
-  guint32 customPictureFormatCount = 0;
-  guint32 serviceResourceCount = 0;
-  guint32 layoutCount = 0;
-  guint32 payloadCapability = 0;
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 levelPreferenceCount = 0;
-  audioCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_audioCapCount, 4, ENC_LITTLE_ENDIAN);
-  videoCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_videoCapCount, 4, ENC_LITTLE_ENDIAN);
-  dataCapCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_dataCapCount, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_RTPPayloadFormat, 4, ENC_LITTLE_ENDIAN);
-  customPictureFormatCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_customPictureFormatCount, 4, ENC_LITTLE_ENDIAN);
-  {
-    /* start struct : customPictureFormat / size: 20 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [ref: customPictureFormatCount = %d, max:customPictureFormatCount]", customPictureFormatCount);
-    for (counter_1 = 0; counter_1 < customPictureFormatCount; counter_1++) {
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "customPictureFormat [%d / %d]", counter_1 + 1, customPictureFormatCount);
-      ptvcursor_add(cursor, hf_skinny_pictureWidth, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_pictureHeight, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_pixelAspectRatio, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_clockConversionCode, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_clockDivisor, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: customPictureFormat */
-    }
-    ptvcursor_pop_subtree(cursor);
-    /* end struct: customPictureFormat */
-  }
-  {
-    /* start struct : confResources / size: 36 */
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "confResources");
-    ptvcursor_add(cursor, hf_skinny_activeStreamsOnRegistration, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_maxBW, 4, ENC_LITTLE_ENDIAN);
-    serviceResourceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-    ptvcursor_add(cursor, hf_skinny_serviceResourceCount, 4, ENC_LITTLE_ENDIAN);
-    {
-      /* start struct : serviceResource / size: 24 */
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [ref: serviceResourceCount = %d, max:serviceResourceCount]", serviceResourceCount);
-      for (counter_2 = 0; counter_2 < serviceResourceCount; counter_2++) {
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serviceResource [%d / %d]", counter_2 + 1, serviceResourceCount);
-        layoutCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-        ptvcursor_add(cursor, hf_skinny_layoutCount, 4, ENC_LITTLE_ENDIAN);
-        {
-          guint32 counter_4 = 0;
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "layouts [ref: layoutCount = %d, max:layoutCount]", layoutCount);
-          for (counter_4 = 0; counter_4 < layoutCount; counter_4++) {
-            ptvcursor_add(cursor, hf_skinny_layouts, 4, ENC_LITTLE_ENDIAN);
-          }
-          ptvcursor_pop_subtree(cursor); /* end for loop tree: layouts */
-        }
-        ptvcursor_add(cursor, hf_skinny_serviceNum, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_maxStreams, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_maxConferences, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_activeConferenceOnRegistration, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_pop_subtree(cursor);
-        /* end for loop tree: serviceResource */
-      }
-      ptvcursor_pop_subtree(cursor);
-      /* end struct: serviceResource */
-    }
-    ptvcursor_pop_subtree(cursor);
-    /* end struct: confResources */
-  }
-  {
-    /* start struct : audiocaps / size: 16 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [ref: audioCapCount = %d, max:audioCapCount]", audioCapCount);
-    for (counter_1 = 0; counter_1 < audioCapCount; counter_1++) {
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audiocaps [%d / %d]", counter_1 + 1, audioCapCount);
-      payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-      ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_maxFramesPerPacket, 4, ENC_LITTLE_ENDIAN);
-      if (payloadCapability == MEDIA_PAYLOAD_G7231)       {
-        /* start union : PAYLOADS / maxsize: 8 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_G7231");
-        ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
-        ptvcursor_pop_subtree(cursor);
-        ptvcursor_advance(cursor, 4);
-      } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_MODEMRELAY)       {
-        /* start union : PAYLOADS / maxsize: 8 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_ModemRelay");
-        {
-          /* start struct : modemRelay / size: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
-          ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: modemRelay */
-        }
-        ptvcursor_pop_subtree(cursor);
-      } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SPRT)       {
-        /* start union : PAYLOADS / maxsize: 8 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SPRT");
-        {
-          /* start struct : sprtPayload / size: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
-          ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: sprtPayload */
-        }
-        ptvcursor_pop_subtree(cursor);
-      } else if (payloadCapability == MEDIA_PAYLOAD_V150_LC_SSE)       {
-        /* start union : PAYLOADS / maxsize: 8 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_v150_LC_SSE");
-        {
-          /* start struct : sse / size: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
-          ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: sse */
-        }
-        ptvcursor_pop_subtree(cursor);
-      } else       {
-        /* start union : PAYLOADS / maxsize: 8 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any payloadCapability");
-        {
-          /* start struct : codecParams / size: 4 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
-          ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: codecParams */
-        }
-        ptvcursor_pop_subtree(cursor);
-        ptvcursor_advance(cursor, 4);
-      }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: audiocaps */
-    }
-    ptvcursor_pop_subtree(cursor);
-    /* end struct: audiocaps */
-  }
-  {
-    /* start struct : vidCaps / size: 72 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [ref: videoCapCount = %d, max:videoCapCount]", videoCapCount);
-    for (counter_1 = 0; counter_1 < videoCapCount; counter_1++) {
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidCaps [%d / %d]", counter_1 + 1, videoCapCount);
-      payloadCapability = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-      ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_videoCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
-      levelPreferenceCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-      ptvcursor_add(cursor, hf_skinny_levelPreferenceCount, 4, ENC_LITTLE_ENDIAN);
-      {
-        /* start struct : levelPreference / size: 24 */
-        guint32 counter_3 = 0;
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [ref: levelPreferenceCount = %d, max:levelPreferenceCount]", levelPreferenceCount);
-        for (counter_3 = 0; counter_3 < levelPreferenceCount; counter_3++) {
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "levelPreference [%d / %d]", counter_3 + 1, levelPreferenceCount);
-          ptvcursor_add(cursor, hf_skinny_transmitPreference, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_minBitRate, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_serviceNumber, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end for loop tree: levelPreference */
-        }
-        ptvcursor_pop_subtree(cursor);
-        /* end struct: levelPreference */
-      }
-      ptvcursor_add(cursor, hf_skinny_encryptionCapability, 4, ENC_LITTLE_ENDIAN);
-      if (payloadCapability == MEDIA_PAYLOAD_H261)       {
-        /* start union : capability / maxsize: 24 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H261");
-        {
-          /* start struct : h261VideoCapability / size: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h261VideoCapability");
-          ptvcursor_add(cursor, hf_skinny_temporalSpatialTradeOffCapability, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_stillImageTransmission, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: h261VideoCapability */
-        }
-        ptvcursor_pop_subtree(cursor);
-        ptvcursor_advance(cursor, 16);
-      } else if (payloadCapability == MEDIA_PAYLOAD_H263)       {
-        /* start union : capability / maxsize: 24 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H263");
-        {
-          /* start struct : h263VideoCapability / size: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263VideoCapability");
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263_capability_bitfield");
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit1, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit2, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit3, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit4, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit5, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit6, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit7, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit8, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit9, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit10, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit11, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit12, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit13, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit14, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit15, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit16, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit17, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit18, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit19, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit20, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit21, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit22, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit23, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit24, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit25, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit26, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit27, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit28, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit29, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit30, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit31, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit32, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_advance(cursor, 4);
-          ptvcursor_pop_subtree(cursor); /* end bitfield: h263_capability_bitfield */
-          ptvcursor_add(cursor, hf_skinny_annexNandWFutureUse, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: h263VideoCapability */
-        }
-        ptvcursor_pop_subtree(cursor);
-        ptvcursor_advance(cursor, 16);
-      } else if (payloadCapability == MEDIA_PAYLOAD_H264)       {
-        /* start union : capability / maxsize: 24 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_H264");
-        {
-          /* start struct : h264VideoCapability / size: 24 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h264VideoCapability");
-          ptvcursor_add(cursor, hf_skinny_profile, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_level, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_customMaxMBPS, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_customMaxFS, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_customMaxDPB, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_customMaxBRandCPB, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: h264VideoCapability */
-        }
-        ptvcursor_pop_subtree(cursor);
-      } else if (payloadCapability == MEDIA_PAYLOAD_VIEO)       {
-        /* start union : capability / maxsize: 24 */
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadCapability is Media_Payload_Vieo");
-        {
-          /* start struct : vieoVideoCapability / size: 8 */
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vieoVideoCapability");
-          ptvcursor_add(cursor, hf_skinny_modelNumber, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_bandwidth, 4, ENC_LITTLE_ENDIAN);
-          ptvcursor_pop_subtree(cursor);
-          /* end struct: vieoVideoCapability */
-        }
-        ptvcursor_pop_subtree(cursor);
-        ptvcursor_advance(cursor, 16);
-      }
-      ptvcursor_add(cursor, hf_skinny_ipAddressingMode, 4, ENC_LITTLE_ENDIAN);
-      if (hdr_version >= V16_MSG_TYPE) {
-        ptvcursor_add(cursor, hf_skinny_ipAddressingMode, 4, ENC_LITTLE_ENDIAN);
-      }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: vidCaps */
-    }
-    ptvcursor_pop_subtree(cursor);
-    /* end struct: vidCaps */
-  }
-  {
-    /* start struct : dataCaps / size: 20 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [ref: dataCapCount = %d, max:dataCapCount]", dataCapCount);
-    for (counter_1 = 0; counter_1 < dataCapCount; counter_1++) {
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataCaps [%d / %d]", counter_1 + 1, dataCapCount);
-      ptvcursor_add(cursor, hf_skinny_payloadCapability, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_dataCapabilityDirection, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_protocolDependentData, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_add(cursor, hf_skinny_encryptionCapability, 4, ENC_LITTLE_ENDIAN);
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: dataCaps */
-    }
-    ptvcursor_pop_subtree(cursor);
-    /* end struct: dataCaps */
-  }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x009b);
 }
 
 /*
@@ -4166,22 +4319,36 @@ handle_UpdateCapabilitiesV3Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_PortResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_PortResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t callReference = 0;
+  address ipAddr;
+  char *ipAddr_str = NULL;
+  uint32_t portNumber = 0;
 
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  callReference = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_ipAddr_ipv4, hf_skinny_ipAddr_ipv6, pinfo);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &ipAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_ipAddr_ipv4, hf_skinny_ipAddr_ipv6);
+  portNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_portNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &ipAddr, portNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  ipAddr_str = address_to_display(NULL, &ipAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", ipAddr_str, portNumber);
+  wmem_free(NULL, ipAddr_str);
   ptvcursor_add(cursor, hf_skinny_RTCPPortNumber, 4, ENC_LITTLE_ENDIAN);
   if (hdr_version >= V19_MSG_TYPE) {
     ptvcursor_add(cursor, hf_skinny_mediaType, 4, ENC_LITTLE_ENDIAN);
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x014b ^ callReference);
 }
 
 /*
@@ -4190,16 +4357,27 @@ handle_PortResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_QoSResvNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_QoSResvNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
   ptvcursor_add(cursor, hf_skinny_direction, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -4209,16 +4387,27 @@ handle_QoSResvNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_QoSErrorNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_QoSErrorNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
   ptvcursor_add(cursor, hf_skinny_direction, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_errorCode, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_failureNodeIpAddr, 4, ENC_LITTLE_ENDIAN);
@@ -4233,14 +4422,18 @@ handle_QoSErrorNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_SubscriptionStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SubscriptionStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_subcriptionFeatureID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t transactionId = 0;
+  transactionId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_subscriptionFeatureID, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_timer, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_subscriptionID, 64, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_subscriptionID, 64, ENC_ASCII);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0048 ^ transactionId);
 }
 
 /*
@@ -4249,9 +4442,10 @@ handle_SubscriptionStatReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_MediaPathEventMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_MediaPathEventMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_mediaPathID, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_mediaPathEvent, 4, ENC_LITTLE_ENDIAN);
@@ -4263,9 +4457,10 @@ handle_MediaPathEventMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_MediaPathCapabilityMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_MediaPathCapabilityMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_mediaPathID, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_mediaPathCapabilities, 4, ENC_LITTLE_ENDIAN);
@@ -4275,47 +4470,41 @@ handle_MediaPathCapabilityMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Message:   MwiNotificationMessage
  * Opcode:    0x004c
  * Type:      RegistrationAndManagement
- * Direction: dev2pbx
+ * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_MwiNotificationMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_MwiNotificationMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_mwiTargetNumber, 25, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_mwiControlNumber, 25, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_mwiTargetNumber, 25, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_mwiControlNumber, 25, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_areMessagesWaiting, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : totalVmCounts / size: 8 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "totalVmCounts");
     ptvcursor_add(cursor, hf_skinny_numNewMsgs, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_numOldMsgs, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: totalVmCounts */
   }
   {
-    /* start struct : priorityVmCounts / size: 8 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "priorityVmCounts");
     ptvcursor_add(cursor, hf_skinny_numNewMsgs, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_numOldMsgs, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: priorityVmCounts */
   }
   {
-    /* start struct : totalFaxCounts / size: 8 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "totalFaxCounts");
     ptvcursor_add(cursor, hf_skinny_numNewMsgs, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_numOldMsgs, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: totalFaxCounts */
   }
   {
-    /* start struct : priorityFaxCounts / size: 8 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "priorityFaxCounts");
     ptvcursor_add(cursor, hf_skinny_numNewMsgs, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_numOldMsgs, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: priorityFaxCounts */
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x004c);
 }
 
 /*
@@ -4324,17 +4513,18 @@ handle_MwiNotificationMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_RegisterAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_RegisterAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_keepAliveInterval, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_dateTemplate, 6, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_dateTemplate, 6, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_alignmentPadding, 2, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_secondaryKeepAliveInterval, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_maxProtocolVer, 1, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_unknown, 1, ENC_LITTLE_ENDIAN);
-  ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "PhoneFeatures");
+  ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "phoneFeatures");
   ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Bit1, 2, ENC_LITTLE_ENDIAN);
   ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Bit2, 2, ENC_LITTLE_ENDIAN);
   ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Bit3, 2, ENC_LITTLE_ENDIAN);
@@ -4352,7 +4542,8 @@ handle_RegisterAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Bit15, 2, ENC_LITTLE_ENDIAN);
   ptvcursor_add_no_advance(cursor, hf_skinny_PhoneFeatures_Abbreviated_Dial, 2, ENC_LITTLE_ENDIAN);
   ptvcursor_advance(cursor, 2);
-  ptvcursor_pop_subtree(cursor); /* end bitfield: PhoneFeatures */
+  ptvcursor_pop_subtree(cursor); /* end bitfield: phoneFeatures */
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0001);
 }
 
 /*
@@ -4361,10 +4552,17 @@ handle_RegisterAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StartToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  si->additionalInfo = ws_strdup_printf("\"%s\"",
+    try_val_to_str_ext(
+      tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor)),
+      &DeviceTone_ext
+    )
+  );
   ptvcursor_add(cursor, hf_skinny_tone, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_tone_output_direction, 4, ENC_LITTLE_ENDIAN);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -4379,11 +4577,12 @@ handle_StartToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StopToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StopToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
 
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
@@ -4400,9 +4599,10 @@ handle_StopToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_SetRingerMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SetRingerMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_ringMode, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_ringDuration, 4, ENC_LITTLE_ENDIAN);
@@ -4418,9 +4618,10 @@ handle_SetRingerMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_SetLampMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SetLampMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_stimulus, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_stimulusInstance, 4, ENC_LITTLE_ENDIAN);
@@ -4433,9 +4634,10 @@ handle_SetLampMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_SetSpeakerModeMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SetSpeakerModeMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_speakerMode, 4, ENC_LITTLE_ENDIAN);
 }
@@ -4446,9 +4648,10 @@ handle_SetSpeakerModeMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_SetMicroModeMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SetMicroModeMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_micMode, 4, ENC_LITTLE_ENDIAN);
 }
@@ -4459,24 +4662,36 @@ handle_SetMicroModeMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_StartMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 compressionType = 0;
-  guint16 keylen = 0;
-  guint16 saltlen = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t passThroughPartyId = 0;
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  uint32_t compressionType = 0;
+  uint16_t keylen = 0;
+  uint16_t saltlen = 0;
 
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_millisecondPacketSize, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
+  ptvcursor_add(cursor, hf_skinny_milliSecondPacketSize, 4, ENC_LITTLE_ENDIAN);
   compressionType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_compressionType, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : qualifierOut / size: 20 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "qualifierOut");
     ptvcursor_add(cursor, hf_skinny_precedenceValue, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_ssValue, 4, ENC_LITTLE_ENDIAN);
@@ -4487,70 +4702,67 @@ handle_StartMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U
     }
     if (hdr_version >= V11_MSG_TYPE) {
       if (compressionType == MEDIA_PAYLOAD_G7231)       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "compressionType is Media_Payload_G7231");
         ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
       } else       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any compressionType");
         {
-          /* start struct : codecParams / size: 4 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
           ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: codecParams */
         }
         ptvcursor_pop_subtree(cursor);
       }
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: qualifierOut */
   }
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : mTxMediaEncryptionKeyInfo / size: 18 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "mTxMediaEncryptionKeyInfo");
     ptvcursor_add(cursor, hf_skinny_algorithmID, 4, ENC_LITTLE_ENDIAN);
     keylen = tvb_get_letohs(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_keylen, 2, ENC_LITTLE_ENDIAN);
     saltlen = tvb_get_letohs(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_saltlen, 2, ENC_LITTLE_ENDIAN);
-    {
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "key [ref: keylen = %d, max:16]", keylen);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < keylen) {
+    if (keylen <= 16) {
+      uint32_t counter_3 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "key [ref:keylen = %d, max:16]", keylen);
+      for (counter_3 = 0; counter_3 < 16; counter_3++) {
+        if (counter_3 < keylen) {
           ptvcursor_add(cursor, hf_skinny_key, 1, ENC_LITTLE_ENDIAN);
         } else {
           ptvcursor_advance(cursor, 1);
         }
       }
-      ptvcursor_pop_subtree(cursor); /* end for loop tree: key */
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (16 * 1));
     }
-    {
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "salt [ref: saltlen = %d, max:16]", saltlen);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < saltlen) {
+    if (saltlen <= 16) {
+      uint32_t counter_3 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "salt [ref:saltlen = %d, max:16]", saltlen);
+      for (counter_3 = 0; counter_3 < 16; counter_3++) {
+        if (counter_3 < saltlen) {
           ptvcursor_add(cursor, hf_skinny_salt, 1, ENC_LITTLE_ENDIAN);
         } else {
           ptvcursor_advance(cursor, 1);
         }
       }
-      ptvcursor_pop_subtree(cursor); /* end for loop tree: salt */
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (16 * 1));
     }
     ptvcursor_add(cursor, hf_skinny_isMKIPresent, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_keyDerivationRate, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: mTxMediaEncryptionKeyInfo */
   }
-  ptvcursor_add(cursor, hf_skinny_streamPassThroughID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_associatedStreamID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_streamPassThroughId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_associatedStreamId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_RFC2833PayloadType, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_dtmfType, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_mixingMode, 4, ENC_LITTLE_ENDIAN);
@@ -4559,37 +4771,29 @@ handle_StartMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U
   }
   if (hdr_version >= V21_MSG_TYPE) {
     {
-      /* start struct : latentCapsInfo / size: 36 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "latentCapsInfo");
       ptvcursor_add(cursor, hf_skinny_active, 4, ENC_LITTLE_ENDIAN);
       {
-        /* start struct : modemRelay / size: 8 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
         ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
-        /* end struct: modemRelay */
       }
       {
-        /* start struct : sprtPayload / size: 8 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
         ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
-        /* end struct: sprtPayload */
       }
       {
-        /* start struct : sse / size: 8 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
         ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
-        /* end struct: sse */
       }
       {
-        /* start struct : payloadParam / size: 8 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadParam");
         ptvcursor_add(cursor, hf_skinny_nse, 1, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_rfc2833, 1, ENC_LITTLE_ENDIAN);
@@ -4600,12 +4804,11 @@ handle_StartMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U
         ptvcursor_add(cursor, hf_skinny_FutureUse2, 1, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_FutureUse3, 1, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
-        /* end struct: payloadParam */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: latentCapsInfo */
     }
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x008a ^ passThroughPartyId);
 }
 
 /*
@@ -4614,12 +4817,14 @@ handle_StartMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StopMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StopMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_portHandlingFlag, 4, ENC_LITTLE_ENDIAN);
@@ -4631,31 +4836,32 @@ handle_StopMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_CallInfoMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CallInfoMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_callingPartyName, 40, ENC_ASCII|ENC_NA);
-  si->callingParty = g_strdup(tvb_format_stringzpad(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), 24));
-  ptvcursor_add(cursor, hf_skinny_callingParty, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_calledPartyName, 40, ENC_ASCII|ENC_NA);
-  si->calledParty = g_strdup(tvb_format_stringzpad(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), 24));
-  ptvcursor_add(cursor, hf_skinny_calledParty, 24, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_callingPartyName, 40, ENC_ASCII);
+  si->callingParty = g_strdup(tvb_format_stringzpad(pinfo->pool, ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), 24));
+  ptvcursor_add(cursor, hf_skinny_callingParty, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_calledPartyName, 40, ENC_ASCII);
+  si->calledParty = g_strdup(tvb_format_stringzpad(pinfo->pool, ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), 24));
+  ptvcursor_add(cursor, hf_skinny_calledParty, 24, ENC_ASCII);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_callType, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_originalCalledPartyName, 40, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_originalCalledParty, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_lastRedirectingPartyName, 40, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_lastRedirectingParty, 24, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_originalCalledPartyName, 40, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_originalCalledParty, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_lastRedirectingPartyName, 40, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_lastRedirectingParty, 24, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_originalCdpnRedirectReason, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_lastRedirectingReason, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_cgpnVoiceMailbox, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_cdpnVoiceMailbox, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_originalCdpnVoiceMailbox, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_lastRedirectingVoiceMailbox, 24, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_cgpnVoiceMailbox, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_cdpnVoiceMailbox, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_originalCdpnVoiceMailbox, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_lastRedirectingVoiceMailbox, 24, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_callInstance, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_callSecurityStatus, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "partyPIRestrictionBits");
@@ -4674,99 +4880,114 @@ handle_CallInfoMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_add_no_advance(cursor, hf_skinny_RestrictInformationType_BitsReserved, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_advance(cursor, 4);
   ptvcursor_pop_subtree(cursor); /* end bitfield: partyPIRestrictionBits */
+  if (si->callingParty && si->calledParty) {
+    si->additionalInfo = ws_strdup_printf("\"%s -> %s\"", si->callingParty, si->calledParty);
+  }
 }
 
 /*
- * Message:   ForwardStatMessage
+ * Message:   ForwardStatResMessage
  * Opcode:    0x0090
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_ForwardStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ForwardStatResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
+  uint32_t lineNumber = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
   ptvcursor_add(cursor, hf_skinny_activeForward, 4, ENC_LITTLE_ENDIAN);
+  lineNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineNumber, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_forwardAllActive, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_forwardAllDirnum, VariableDirnumSize, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_forwardAllDirnum, VariableDirnumSize, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_forwardBusyActive, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_forwardBusyDirnum, VariableDirnumSize, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_forwardBusyDirnum, VariableDirnumSize, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_forwardNoAnswerActive, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_forwardNoAnswerlDirnum, VariableDirnumSize, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_forwardNoAnswerlDirnum, VariableDirnumSize, ENC_ASCII);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0009 ^ lineNumber);
 }
 
 /*
- * Message:   SpeedDialStatMessage
+ * Message:   SpeedDialStatResMessage
  * Opcode:    0x0091
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_SpeedDialStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SpeedDialStatResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t speedDialNumber = 0;
+  speedDialNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_speedDialNumber, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_speedDialDirNumber, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_speedDialDisplayName, 40, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_speedDialDirNumber, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_speedDialDisplayName, 40, ENC_ASCII);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000a ^ speedDialNumber);
 }
 
 /*
- * Message:   LineStatMessage
+ * Message:   LineStatResMessage
  * Opcode:    0x0092
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_LineStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_LineStatResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t lineNumber = 0;
+  lineNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineNumber, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_lineDirNumber, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_lineFullyQualifiedDisplayName, 40, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_lineTextLabel, 40, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_lineDirNumber, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_lineFullyQualifiedDisplayName, 40, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_lineTextLabel, 40, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_lineDisplayOptions, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000b ^ lineNumber);
 }
 
 /*
- * Message:   ConfigStatMessage
+ * Message:   ConfigStatResMessage
  * Opcode:    0x0093
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_ConfigStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ConfigStatResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   {
-    /* start struct : sid / size: 24 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sid");
-    ptvcursor_add(cursor, hf_skinny_DeviceName, 16, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_DeviceName, 16, ENC_ASCII);
     ptvcursor_add(cursor, hf_skinny_reserved_for_future_use, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_instance, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: sid */
   }
-  ptvcursor_add(cursor, hf_skinny_userName, 40, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_serverName, 40, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_userName, 40, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_serverName, 40, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_numberOfLines, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_numberOfSpeedDials, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000c);
 }
 
 /*
- * Message:   DefineTimeDate
+ * Message:   TimeDateResMessage
  * Opcode:    0x0094
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_DefineTimeDate(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_TimeDateResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   {
-    /* start struct : timeDataInfo / size: 32 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "timeDataInfo");
     ptvcursor_add(cursor, hf_skinny_wYear, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_wMonth, 4, ENC_LITTLE_ENDIAN);
@@ -4777,9 +4998,9 @@ handle_DefineTimeDate(ptvcursor_t *cursor, packet_info * pinfo _U_)
     ptvcursor_add(cursor, hf_skinny_wSecond, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_wMilliseconds, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: timeDataInfo */
   }
   ptvcursor_add(cursor, hf_skinny_systemTime, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000d);
 }
 
 /*
@@ -4788,11 +5009,12 @@ handle_DefineTimeDate(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StartSessionTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartSessionTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
   ptvcursor_add(cursor, hf_skinny_sessionType, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -4802,66 +5024,70 @@ handle_StartSessionTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo 
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StopSessionTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StopSessionTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
   ptvcursor_add(cursor, hf_skinny_sessionType, 4, ENC_LITTLE_ENDIAN);
 }
 
 /*
- * Message:   ButtonTemplateMessage
+ * Message:   ButtonTemplateResMessage
  * Opcode:    0x0097
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_ButtonTemplateMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ButtonTemplateResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 totalButtonCount = 0;
+  uint32_t totalButtonCount = 0;
   {
-    /* start struct : buttonTemplate / size: 14 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "buttonTemplate");
     ptvcursor_add(cursor, hf_skinny_buttonOffset, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_buttonCount, 4, ENC_LITTLE_ENDIAN);
     totalButtonCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_totalButtonCount, 4, ENC_LITTLE_ENDIAN);
-    {
-      /* start struct : definition / size: 2 */
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [ref: totalButtonCount = %d, max:42]", totalButtonCount);
-      for (counter_2 = 0; counter_2 < 42; counter_2++) {
-        if (counter_2 < totalButtonCount) {
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [%d / %d]", counter_2 + 1, totalButtonCount);
-          ptvcursor_add(cursor, hf_skinny_instanceNumber, 1, ENC_LITTLE_ENDIAN);
-          ptvcursor_add(cursor, hf_skinny_buttonDefinition, 1, ENC_LITTLE_ENDIAN);
-        } else {
-          ptvcursor_advance(cursor, 2);
+    if (totalButtonCount <= 42) {
+      uint32_t counter_2 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [ref:totalButtonCount = %d, max:42]", totalButtonCount);
+      if (totalButtonCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (totalButtonCount * 2) && totalButtonCount <= 42) {
+        for (counter_2 = 0; counter_2 < 42; counter_2++) {
+          if (counter_2 < totalButtonCount) {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [%d / %d]", counter_2 + 1, totalButtonCount);
+            ptvcursor_add(cursor, hf_skinny_instanceNumber, 1, ENC_LITTLE_ENDIAN);
+            ptvcursor_add(cursor, hf_skinny_buttonDefinition, 1, ENC_LITTLE_ENDIAN);
+          } else {
+            ptvcursor_advance(cursor, 2);
+          }
+          ptvcursor_pop_subtree(cursor);
         }
-        ptvcursor_pop_subtree(cursor);
-        /* end for loop tree: definition */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: definition */
+    } else {
+      ptvcursor_advance(cursor, (totalButtonCount * 2));
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: buttonTemplate */
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000e);
 }
 
 /*
- * Message:   VersionMessage
+ * Message:   VersionResMessage
  * Opcode:    0x0098
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_VersionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_VersionResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_version, 16, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_versionStr, 16, ENC_ASCII);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000f);
 }
 
 /*
@@ -4870,11 +5096,12 @@ handle_VersionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_DisplayTextMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DisplayTextMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_text, 32, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_text, 32, ENC_ASCII);
 }
 
 /*
@@ -4883,11 +5110,12 @@ handle_DisplayTextMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_RegisterRejectMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_RegisterRejectMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_text, 32, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_text, 32, ENC_ASCII);
 }
 
 /*
@@ -4896,63 +5124,56 @@ handle_RegisterRejectMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_ServerResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ServerResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
 
   {
-    /* start struct : server / size: 48 */
-    guint32 counter_1 = 0;
+    uint32_t counter_1 = 0;
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "server [max:5]");
     for (counter_1 = 0; counter_1 < 5; counter_1++) {
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "server [%d / %d]", counter_1 + 1, 5);
-      ptvcursor_add(cursor, hf_skinny_ServerName, 48, ENC_ASCII|ENC_NA);
+      ptvcursor_add(cursor, hf_skinny_ServerName, 48, ENC_ASCII);
       ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: server */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: server */
   }
   {
-    guint32 counter_1 = 0;
+    uint32_t counter_2 = 0;
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serverTcpListenPort [max:5]");
-    for (counter_1 = 0; counter_1 < 5; counter_1++) {
+    for (counter_2 = 0; counter_2 < 5; counter_2++) {
       ptvcursor_add(cursor, hf_skinny_serverTcpListenPort, 4, ENC_LITTLE_ENDIAN);
     }
-    ptvcursor_pop_subtree(cursor); /* end for loop tree: serverTcpListenPort */
+    ptvcursor_pop_subtree(cursor);
   }
   if (hdr_data_length < 293) {
     {
-      /* start struct : serverIpAddr / size: 4 */
-      guint32 counter_2 = 0;
+      uint32_t counter_2 = 0;
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serverIpAddr [max:5]");
       for (counter_2 = 0; counter_2 < 5; counter_2++) {
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serverIpAddr [%d / %d]", counter_2 + 1, 5);
         ptvcursor_add(cursor, hf_skinny_stationIpAddr, 4, ENC_BIG_ENDIAN);
         ptvcursor_pop_subtree(cursor);
-        /* end for loop tree: serverIpAddr */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: serverIpAddr */
     }
   }
   if (hdr_data_length > 292) {
     {
-      /* start struct : serverIpAddr / size: 20 */
-      guint32 counter_2 = 0;
+      uint32_t counter_2 = 0;
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serverIpAddr [max:5]");
       for (counter_2 = 0; counter_2 < 5; counter_2++) {
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "serverIpAddr [%d / %d]", counter_2 + 1, 5);
-        dissect_skinny_ipv4or6(cursor, hf_skinny_stationIpAddr_ipv4, hf_skinny_stationIpAddr_ipv6, pinfo);
+        dissect_skinny_ipv4or6(cursor, hf_skinny_stationIpAddr_ipv4, hf_skinny_stationIpAddr_ipv6);
         ptvcursor_pop_subtree(cursor);
-        /* end for loop tree: serverIpAddr */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: serverIpAddr */
     }
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0012);
 }
 
 /*
@@ -4961,9 +5182,10 @@ handle_ServerResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_Reset(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_Reset(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_resetType, 4, ENC_LITTLE_ENDIAN);
 }
@@ -4974,21 +5196,33 @@ handle_Reset(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_StartMulticastMediaReceptionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartMulticastMediaReceptionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 compressionType = 0;
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_multicastIpAddr_ipv4, hf_skinny_multicastIpAddr_ipv6, pinfo);
+  uint32_t passThroughPartyId = 0;
+  address multicastIpAddr;
+  char *multicastIpAddr_str = NULL;
+  uint32_t multicastPortNumber = 0;
+  uint32_t compressionType = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &multicastIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_multicastIpAddr_ipv4, hf_skinny_multicastIpAddr_ipv6);
+  multicastPortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_multicastPortNumber, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_millisecondPacketSize, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &multicastIpAddr, multicastPortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  multicastIpAddr_str = address_to_display(NULL, &multicastIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", multicastIpAddr_str, multicastPortNumber);
+  wmem_free(NULL, multicastIpAddr_str);
+  ptvcursor_add(cursor, hf_skinny_milliSecondPacketSize, 4, ENC_LITTLE_ENDIAN);
   compressionType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_compressionType, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : qualifierIn / size: 12 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "qualifierIn");
     ptvcursor_add(cursor, hf_skinny_ecValue, 4, ENC_LITTLE_ENDIAN);
     if (hdr_version <= V10_MSG_TYPE) {
@@ -4996,31 +5230,27 @@ handle_StartMulticastMediaReceptionMessage(ptvcursor_t *cursor, packet_info * pi
     }
     if (hdr_version >= V11_MSG_TYPE) {
       if (compressionType == MEDIA_PAYLOAD_G7231)       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "compressionType is Media_Payload_G7231");
         ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
       } else       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any compressionType");
         {
-          /* start struct : codecParams / size: 4 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
           ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: codecParams */
         }
         ptvcursor_pop_subtree(cursor);
       }
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: qualifierIn */
   }
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0101 ^ passThroughPartyId);
 }
 
 /*
@@ -5029,21 +5259,33 @@ handle_StartMulticastMediaReceptionMessage(ptvcursor_t *cursor, packet_info * pi
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_StartMulticastMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartMulticastMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 compressionType = 0;
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_multicastIpAddr_ipv4, hf_skinny_multicastIpAddr_ipv6, pinfo);
+  uint32_t passThroughPartyId = 0;
+  address multicastIpAddr;
+  char *multicastIpAddr_str = NULL;
+  uint32_t multicastPortNumber = 0;
+  uint32_t compressionType = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &multicastIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_multicastIpAddr_ipv4, hf_skinny_multicastIpAddr_ipv6);
+  multicastPortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_multicastPortNumber, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_millisecondPacketSize, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &multicastIpAddr, multicastPortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  multicastIpAddr_str = address_to_display(NULL, &multicastIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", multicastIpAddr_str, multicastPortNumber);
+  wmem_free(NULL, multicastIpAddr_str);
+  ptvcursor_add(cursor, hf_skinny_milliSecondPacketSize, 4, ENC_LITTLE_ENDIAN);
   compressionType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_compressionType, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : qualifierOut / size: 20 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "qualifierOut");
     ptvcursor_add(cursor, hf_skinny_precedenceValue, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_ssValue, 4, ENC_LITTLE_ENDIAN);
@@ -5054,31 +5296,27 @@ handle_StartMulticastMediaTransmissionMessage(ptvcursor_t *cursor, packet_info *
     }
     if (hdr_version >= V11_MSG_TYPE) {
       if (compressionType == MEDIA_PAYLOAD_G7231)       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "compressionType is Media_Payload_G7231");
         ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
       } else       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any compressionType");
         {
-          /* start struct : codecParams / size: 4 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
           ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: codecParams */
         }
         ptvcursor_pop_subtree(cursor);
       }
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: qualifierOut */
   }
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0102 ^ passThroughPartyId);
 }
 
 /*
@@ -5087,12 +5325,14 @@ handle_StartMulticastMediaTransmissionMessage(ptvcursor_t *cursor, packet_info *
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StopMulticastMediaReceptionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StopMulticastMediaReceptionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
 }
@@ -5103,12 +5343,14 @@ handle_StopMulticastMediaReceptionMessage(ptvcursor_t *cursor, packet_info * pin
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StopMulticastMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StopMulticastMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
 }
@@ -5119,23 +5361,29 @@ handle_StopMulticastMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * 
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_OpenReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_OpenReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
-  guint32 compressionType = 0;
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint16 keylen = 0;
-  guint16 saltlen = 0;
+  uint32_t hdr_data_length = tvb_get_letohl(ptvcursor_tvbuff(cursor), 0);
+  uint32_t passThroughPartyId = 0;
+  uint32_t compressionType = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint16_t keylen = 0;
+  uint16_t saltlen = 0;
+  address sourceIpAddr;
+  char *sourceIpAddr_str = NULL;
+  uint32_t sourcePortNumber = 0;
 
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_millisecondPacketSize, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_milliSecondPacketSize, 4, ENC_LITTLE_ENDIAN);
   compressionType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_compressionType, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : qualifierIn / size: 12 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "qualifierIn");
     ptvcursor_add(cursor, hf_skinny_ecValue, 4, ENC_LITTLE_ENDIAN);
     if (hdr_version <= V10_MSG_TYPE) {
@@ -5143,77 +5391,80 @@ handle_OpenReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
     }
     if (hdr_version >= V11_MSG_TYPE) {
       if (compressionType == MEDIA_PAYLOAD_G7231)       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "compressionType is Media_Payload_G7231");
         ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
       } else       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any compressionType");
         {
-          /* start struct : codecParams / size: 4 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
           ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: codecParams */
         }
         ptvcursor_pop_subtree(cursor);
       }
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: qualifierIn */
   }
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : mRxMediaEncryptionKeyInfo / size: 18 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "mRxMediaEncryptionKeyInfo");
     ptvcursor_add(cursor, hf_skinny_algorithmID, 4, ENC_LITTLE_ENDIAN);
     keylen = tvb_get_letohs(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_keylen, 2, ENC_LITTLE_ENDIAN);
     saltlen = tvb_get_letohs(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_saltlen, 2, ENC_LITTLE_ENDIAN);
-    {
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "key [ref: keylen = %d, max:16]", keylen);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < keylen) {
+    if (keylen <= 16) {
+      uint32_t counter_3 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "key [ref:keylen = %d, max:16]", keylen);
+      for (counter_3 = 0; counter_3 < 16; counter_3++) {
+        if (counter_3 < keylen) {
           ptvcursor_add(cursor, hf_skinny_key, 1, ENC_LITTLE_ENDIAN);
         } else {
           ptvcursor_advance(cursor, 1);
         }
       }
-      ptvcursor_pop_subtree(cursor); /* end for loop tree: key */
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (16 * 1));
     }
-    {
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "salt [ref: saltlen = %d, max:16]", saltlen);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < saltlen) {
+    if (saltlen <= 16) {
+      uint32_t counter_3 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "salt [ref:saltlen = %d, max:16]", saltlen);
+      for (counter_3 = 0; counter_3 < 16; counter_3++) {
+        if (counter_3 < saltlen) {
           ptvcursor_add(cursor, hf_skinny_salt, 1, ENC_LITTLE_ENDIAN);
         } else {
           ptvcursor_advance(cursor, 1);
         }
       }
-      ptvcursor_pop_subtree(cursor); /* end for loop tree: salt */
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (16 * 1));
     }
     ptvcursor_add(cursor, hf_skinny_isMKIPresent, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_keyDerivationRate, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: mRxMediaEncryptionKeyInfo */
   }
-  ptvcursor_add(cursor, hf_skinny_streamPassThroughID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_associatedStreamID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_streamPassThroughId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_associatedStreamId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_RFC2833PayloadType, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_dtmfType, 4, ENC_LITTLE_ENDIAN);
   if (hdr_version >= V11_MSG_TYPE) {
     ptvcursor_add(cursor, hf_skinny_mixingMode, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_partyDirection, 4, ENC_LITTLE_ENDIAN);
-    dissect_skinny_ipv4or6(cursor, hf_skinny_sourceIpAddr_ipv4, hf_skinny_sourceIpAddr_ipv6, pinfo);
+    read_skinny_ipv4or6(cursor, &sourceIpAddr);
+    dissect_skinny_ipv4or6(cursor, hf_skinny_sourceIpAddr_ipv4, hf_skinny_sourceIpAddr_ipv6);
+    sourcePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_sourcePortNumber, 4, ENC_LITTLE_ENDIAN);
+    srtp_add_address(pinfo, PT_UDP, &sourceIpAddr, sourcePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+    sourceIpAddr_str = address_to_display(NULL, &sourceIpAddr);
+    si->additionalInfo = ws_strdup_printf("%s:%d", sourceIpAddr_str, sourcePortNumber);
+    wmem_free(NULL, sourceIpAddr_str);
   }
   if (hdr_version >= V16_MSG_TYPE) {
     ptvcursor_add(cursor, hf_skinny_requestedIpAddrType, 4, ENC_LITTLE_ENDIAN);
@@ -5226,37 +5477,29 @@ handle_OpenReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
   if (hdr_version >= V21_MSG_TYPE) {
     if (hdr_data_length > 132) {
       {
-        /* start struct : latentCapsInfo / size: 36 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "latentCapsInfo");
         ptvcursor_add(cursor, hf_skinny_active, 4, ENC_LITTLE_ENDIAN);
         {
-          /* start struct : modemRelay / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "modemRelay");
           ptvcursor_add(cursor, hf_skinny_capAndVer, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_modAnd2833, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: modemRelay */
         }
         {
-          /* start struct : sprtPayload / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sprtPayload");
           ptvcursor_add(cursor, hf_skinny_chan0MaxPayload, 2, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_chan2MaxPayload, 2, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_chan3MaxPayload, 2, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_chan2MaxWindow, 2, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: sprtPayload */
         }
         {
-          /* start struct : sse / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sse");
           ptvcursor_add(cursor, hf_skinny_standard, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_vendor, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: sse */
         }
         {
-          /* start struct : payloadParam / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadParam");
           ptvcursor_add(cursor, hf_skinny_nse, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_rfc2833, 1, ENC_LITTLE_ENDIAN);
@@ -5267,13 +5510,12 @@ handle_OpenReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
           ptvcursor_add(cursor, hf_skinny_FutureUse2, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_FutureUse3, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: payloadParam */
         }
         ptvcursor_pop_subtree(cursor);
-        /* end struct: latentCapsInfo */
       }
     }
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0105 ^ passThroughPartyId);
 }
 
 /*
@@ -5282,12 +5524,14 @@ handle_OpenReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_CloseReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CloseReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_portHandlingFlag, 4, ENC_LITTLE_ENDIAN);
@@ -5299,16 +5543,25 @@ handle_CloseReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_ConnectionStatisticsReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ConnectionStatisticsReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
-  ptvcursor_add(cursor, hf_skinny_directoryNum, VariableDirnumSize, ENC_ASCII|ENC_NA);
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t callReference = 0;
+
+  if (hdr_version <= V17_MSG_TYPE) {
+    ptvcursor_add(cursor, hf_skinny_directoryNum, 24, ENC_ASCII);
+  }
+  if (hdr_version >= V18_MSG_TYPE) {
+    ptvcursor_add(cursor, hf_skinny_directoryNum, 28, ENC_ASCII);
+  }
+  callReference = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_statsProcessingMode, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0107 ^ callReference);
 }
 
 /*
@@ -5317,39 +5570,40 @@ handle_ConnectionStatisticsReqMessage(ptvcursor_t *cursor, packet_info * pinfo _
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_SoftKeyTemplateResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SoftKeyTemplateResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 totalSoftKeyCount = 0;
+  uint32_t totalSoftKeyCount = 0;
   {
-    /* start struct : softKeyTemplate / size: 32 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "softKeyTemplate");
     ptvcursor_add(cursor, hf_skinny_softKeyOffset, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_softKeyCount, 4, ENC_LITTLE_ENDIAN);
     totalSoftKeyCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_totalSoftKeyCount, 4, ENC_LITTLE_ENDIAN);
-    {
-      /* start struct : definition / size: 20 */
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [ref: totalSoftKeyCount = %d, max:32]", totalSoftKeyCount);
-      for (counter_2 = 0; counter_2 < 32; counter_2++) {
-        if (counter_2 < totalSoftKeyCount) {
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [%d / %d]", counter_2 + 1, totalSoftKeyCount);
-          dissect_skinny_displayLabel(cursor, hf_skinny_softKeyLabel, 16);
-          ptvcursor_add(cursor, hf_skinny_softKeyEvent, 4, ENC_LITTLE_ENDIAN);
-        } else {
-          ptvcursor_advance(cursor, 20);
+    if (totalSoftKeyCount <= 32) {
+      uint32_t counter_2 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [ref:totalSoftKeyCount = %d, max:32]", totalSoftKeyCount);
+      if (totalSoftKeyCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (totalSoftKeyCount * 20) && totalSoftKeyCount <= 32) {
+        for (counter_2 = 0; counter_2 < 32; counter_2++) {
+          if (counter_2 < totalSoftKeyCount) {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [%d / %d]", counter_2 + 1, totalSoftKeyCount);
+            dissect_skinny_displayLabel(cursor, pinfo, hf_skinny_softKeyLabel, 16);
+            ptvcursor_add(cursor, hf_skinny_softKeyEvent, 4, ENC_LITTLE_ENDIAN);
+          } else {
+            ptvcursor_advance(cursor, 20);
+          }
+          ptvcursor_pop_subtree(cursor);
         }
-        ptvcursor_pop_subtree(cursor);
-        /* end for loop tree: definition */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: definition */
+    } else {
+      ptvcursor_advance(cursor, (totalSoftKeyCount * 20));
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: softKeyTemplate */
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0028);
 }
 
 /*
@@ -5358,53 +5612,54 @@ handle_SoftKeyTemplateResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_SoftKeySetResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SoftKeySetResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 totalSoftKeySetCount = 0;
+  uint32_t totalSoftKeySetCount = 0;
   {
-    /* start struct : softKeySets / size: 15 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "softKeySets");
     ptvcursor_add(cursor, hf_skinny_softKeySetOffset, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_softKeySetCount, 4, ENC_LITTLE_ENDIAN);
     totalSoftKeySetCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_totalSoftKeySetCount, 4, ENC_LITTLE_ENDIAN);
-    {
-      /* start struct : definition / size: 3 */
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [ref: totalSoftKeySetCount = %d, max:16]", totalSoftKeySetCount);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < totalSoftKeySetCount) {
-          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [%d / %d]", counter_2 + 1, totalSoftKeySetCount);
-          {
-            guint32 counter_5 = 0;
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "softKeyTemplateIndex [max:16]");
-            for (counter_5 = 0; counter_5 < 16; counter_5++) {
-              ptvcursor_add(cursor, hf_skinny_softKeyTemplateIndex, 1, ENC_LITTLE_ENDIAN);
+    if (totalSoftKeySetCount <= 16) {
+      uint32_t counter_2 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [ref:totalSoftKeySetCount = %d, max:16]", totalSoftKeySetCount);
+      if (totalSoftKeySetCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (totalSoftKeySetCount * 3) && totalSoftKeySetCount <= 16) {
+        for (counter_2 = 0; counter_2 < 16; counter_2++) {
+          if (counter_2 < totalSoftKeySetCount) {
+            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "definition [%d / %d]", counter_2 + 1, totalSoftKeySetCount);
+            {
+              uint32_t counter_7 = 0;
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "softKeyTemplateIndex [max:16]");
+              for (counter_7 = 0; counter_7 < 16; counter_7++) {
+                ptvcursor_add(cursor, hf_skinny_softKeyTemplateIndex, 1, ENC_LITTLE_ENDIAN);
+              }
+              ptvcursor_pop_subtree(cursor);
             }
-            ptvcursor_pop_subtree(cursor); /* end for loop tree: softKeyTemplateIndex */
-          }
-          {
-            guint32 counter_5 = 0;
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "softKeyInfoIndex [max:16]");
-            for (counter_5 = 0; counter_5 < 16; counter_5++) {
-              ptvcursor_add(cursor, hf_skinny_softKeyInfoIndex, 2, ENC_LITTLE_ENDIAN);
+            {
+              uint32_t counter_7 = 0;
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "softKeyInfoIndex [max:16]");
+              for (counter_7 = 0; counter_7 < 16; counter_7++) {
+                ptvcursor_add(cursor, hf_skinny_softKeyInfoIndex, 2, ENC_LITTLE_ENDIAN);
+              }
+              ptvcursor_pop_subtree(cursor);
             }
-            ptvcursor_pop_subtree(cursor); /* end for loop tree: softKeyInfoIndex */
+          } else {
+            ptvcursor_advance(cursor, 3);
           }
-        } else {
-          ptvcursor_advance(cursor, 3);
+          ptvcursor_pop_subtree(cursor);
         }
-        ptvcursor_pop_subtree(cursor);
-        /* end for loop tree: definition */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: definition */
+    } else {
+      ptvcursor_advance(cursor, (totalSoftKeySetCount * 3));
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: softKeySets */
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0025);
 }
 
 /*
@@ -5413,9 +5668,10 @@ handle_SoftKeySetResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_SelectSoftKeysMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SelectSoftKeysMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
@@ -5449,10 +5705,17 @@ handle_SelectSoftKeysMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_CallStateMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CallStateMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  si->additionalInfo = ws_strdup_printf("\"%s\"",
+    try_val_to_str_ext(
+      tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor)),
+      &DCallState_ext
+    )
+  );
   si->callState = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callState, 4, ENC_LITTLE_ENDIAN);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -5461,12 +5724,10 @@ handle_CallStateMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_privacy, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : precedence / size: 8 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "precedence");
     ptvcursor_add(cursor, hf_skinny_precedenceLevel, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_precedenceDomain, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: precedence */
   }
 }
 
@@ -5476,12 +5737,13 @@ handle_CallStateMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_DisplayPromptStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DisplayPromptStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_timeOutValue, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_displayLabel(cursor, hf_skinny_promptStatus, 32);
+  dissect_skinny_displayLabel(cursor, pinfo, hf_skinny_promptStatus, 32);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -5494,9 +5756,10 @@ handle_DisplayPromptStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_ClearPromptStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ClearPromptStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
@@ -5510,12 +5773,13 @@ handle_ClearPromptStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_DisplayNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DisplayNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_timeOutValue, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_displayLabel(cursor, hf_skinny_notify, 32);
+  dissect_skinny_displayLabel(cursor, pinfo, hf_skinny_notify, 32);
 }
 
 /*
@@ -5524,9 +5788,10 @@ handle_DisplayNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_ActivateCallPlaneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ActivateCallPlaneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
@@ -5538,22 +5803,25 @@ handle_ActivateCallPlaneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_UnregisterAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UnregisterAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_status, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0027);
 }
 
 /*
- * Message:   BackSpaceReqMessage
+ * Message:   BackSpaceResMessage
  * Opcode:    0x0119
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_BackSpaceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_BackSpaceResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
@@ -5567,11 +5835,13 @@ handle_BackSpaceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_RegisterTokenReject(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_RegisterTokenReject(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_waitTimeBeforeNextReq, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0029);
 }
 
 /*
@@ -5580,19 +5850,20 @@ handle_RegisterTokenReject(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StartMediaFailureDetectionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartMediaFailureDetectionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 compressionType = 0;
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_millisecondPacketSize, 4, ENC_LITTLE_ENDIAN);
+  uint32_t compressionType = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_milliSecondPacketSize, 4, ENC_LITTLE_ENDIAN);
   compressionType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_compressionType, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : qualifierIn / size: 12 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "qualifierIn");
     ptvcursor_add(cursor, hf_skinny_ecValue, 4, ENC_LITTLE_ENDIAN);
     if (hdr_version <= V10_MSG_TYPE) {
@@ -5600,28 +5871,23 @@ handle_StartMediaFailureDetectionMessage(ptvcursor_t *cursor, packet_info * pinf
     }
     if (hdr_version >= V11_MSG_TYPE) {
       if (compressionType == MEDIA_PAYLOAD_G7231)       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "compressionType is Media_Payload_G7231");
         ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
       } else       {
-        /* start union : codecParamsUnion / maxsize: 4 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any compressionType");
         {
-          /* start struct : codecParams / size: 4 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
           ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: codecParams */
         }
         ptvcursor_pop_subtree(cursor);
       }
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: qualifierIn */
   }
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
@@ -5633,17 +5899,38 @@ handle_StartMediaFailureDetectionMessage(ptvcursor_t *cursor, packet_info * pinf
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_DialedNumberMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DialedNumberMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
-  ptvcursor_add(cursor, hf_skinny_dialedNumber, VariableDirnumSize, ENC_ASCII|ENC_NA);
-  si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
-  si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t VariableDirnumSize = (hdr_version >= V18_MSG_TYPE) ? 25 : 24;
+
+  if (hdr_version <= V17_MSG_TYPE) {
+    uint32_t dialedNumber_len;
+    dialedNumber_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), 24)+1;
+    if (dialedNumber_len > 1) {
+      si->additionalInfo = ws_strdup_printf("\"%s\"", tvb_format_stringzpad(pinfo->pool, ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), dialedNumber_len));
+    }
+    ptvcursor_add(cursor, hf_skinny_dialedNumber, 24, ENC_ASCII);
+    si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
+    si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  }
+  if (hdr_version >= V18_MSG_TYPE) {
+    uint32_t dialedNumber_len;
+    dialedNumber_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), VariableDirnumSize)+1;
+    if (dialedNumber_len > 1) {
+      si->additionalInfo = ws_strdup_printf("\"%s\"", tvb_format_stringzpad(pinfo->pool, ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), dialedNumber_len));
+    }
+    ptvcursor_add(cursor, hf_skinny_dialedNumber, VariableDirnumSize, ENC_ASCII);
+    si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
+    si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+    ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  }
 }
 
 /*
@@ -5652,42 +5939,45 @@ handle_DialedNumberMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_UserToDeviceDataMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UserToDeviceDataMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
+  uint32_t dataLength = 0;
   {
-    /* start struct : userToDeviceData / size: 2020 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "userToDeviceData");
-    ptvcursor_add(cursor, hf_skinny_applicationID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
     si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
     dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
     dissect_skinny_xml(cursor, hf_skinny_xmldata, pinfo, dataLength, 2000);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: userToDeviceData */
   }
 }
 
 /*
- * Message:   FeatureStatMessage
+ * Message:   FeatureStatResMessage
  * Opcode:    0x011f
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_FeatureStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_FeatureStatResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t featureIndex = 0;
+  featureIndex = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_featureIndex, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_featureID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_featureTextLabel, 40, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_featureTextLabel, 40, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_featureStatus, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0034 ^ featureIndex);
 }
 
 /*
@@ -5696,13 +5986,14 @@ handle_FeatureStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_DisplayPriNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DisplayPriNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_timeOutValue, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_priority, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_displayLabel(cursor, hf_skinny_notify, 32);
+  dissect_skinny_displayLabel(cursor, pinfo, hf_skinny_notify, 32);
 }
 
 /*
@@ -5711,9 +6002,10 @@ handle_DisplayPriNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_ClearPriNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ClearPriNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_priority, 4, ENC_LITTLE_ENDIAN);
 }
@@ -5724,13 +6016,13 @@ handle_ClearPriNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StartAnnouncementMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartAnnouncementMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   {
-    /* start struct : AnnList / size: 12 */
-    guint32 counter_1 = 0;
+    uint32_t counter_1 = 0;
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "AnnList [max:32]");
     for (counter_1 = 0; counter_1 < 32; counter_1++) {
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "AnnList [%d / %d]", counter_1 + 1, 32);
@@ -5738,20 +6030,18 @@ handle_StartAnnouncementMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
       ptvcursor_add(cursor, hf_skinny_country, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_toneAnnouncement, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: AnnList */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: AnnList */
   }
   ptvcursor_add(cursor, hf_skinny_annAckReq, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   {
-    guint32 counter_1 = 0;
+    uint32_t counter_2 = 0;
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "matrixConfPartyID [max:16]");
-    for (counter_1 = 0; counter_1 < 16; counter_1++) {
+    for (counter_2 = 0; counter_2 < 16; counter_2++) {
       ptvcursor_add(cursor, hf_skinny_matrixConfPartyID, 4, ENC_LITTLE_ENDIAN);
     }
-    ptvcursor_pop_subtree(cursor); /* end for loop tree: matrixConfPartyID */
+    ptvcursor_pop_subtree(cursor);
   }
   ptvcursor_add(cursor, hf_skinny_hearingConfPartyMask, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_annPlayMode, 4, ENC_LITTLE_ENDIAN);
@@ -5763,11 +6053,12 @@ handle_StartAnnouncementMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StopAnnouncementMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StopAnnouncementMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
 }
 
 /*
@@ -5776,11 +6067,12 @@ handle_StopAnnouncementMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_AnnouncementFinishMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_AnnouncementFinishMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_annStatus, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -5790,12 +6082,13 @@ handle_AnnouncementFinishMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_NotifyDtmfToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_NotifyDtmfToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_tone, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -5805,12 +6098,13 @@ handle_NotifyDtmfToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_SendDtmfToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SendDtmfToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_tone, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -5820,14 +6114,16 @@ handle_SendDtmfToneMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_SubscribeDtmfPayloadReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SubscribeDtmfPayloadReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_payloadDtmf, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_dtmfType, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0129);
 }
 
 /*
@@ -5836,13 +6132,17 @@ handle_SubscribeDtmfPayloadReqMessage(ptvcursor_t *cursor, packet_info * pinfo _
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_SubscribeDtmfPayloadResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SubscribeDtmfPayloadResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t passthruPartyID = 0;
   ptvcursor_add(cursor, hf_skinny_payloadDtmf, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passthruPartyID = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0129 ^ passthruPartyID);
 }
 
 /*
@@ -5851,13 +6151,17 @@ handle_SubscribeDtmfPayloadResMessage(ptvcursor_t *cursor, packet_info * pinfo _
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_SubscribeDtmfPayloadErrMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SubscribeDtmfPayloadErrMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t passthruPartyID = 0;
   ptvcursor_add(cursor, hf_skinny_payloadDtmf, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passthruPartyID = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0129 ^ passthruPartyID);
 }
 
 /*
@@ -5866,14 +6170,18 @@ handle_SubscribeDtmfPayloadErrMessage(ptvcursor_t *cursor, packet_info * pinfo _
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_UnSubscribeDtmfPayloadReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UnSubscribeDtmfPayloadReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t passthruPartyID = 0;
   ptvcursor_add(cursor, hf_skinny_payloadDtmf, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passthruPartyID = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_dtmfType, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x012c ^ passthruPartyID);
 }
 
 /*
@@ -5882,13 +6190,17 @@ handle_UnSubscribeDtmfPayloadReqMessage(ptvcursor_t *cursor, packet_info * pinfo
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_UnSubscribeDtmfPayloadResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UnSubscribeDtmfPayloadResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t passthruPartyID = 0;
   ptvcursor_add(cursor, hf_skinny_payloadDtmf, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passthruPartyID = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x012d ^ passthruPartyID);
 }
 
 /*
@@ -5897,39 +6209,48 @@ handle_UnSubscribeDtmfPayloadResMessage(ptvcursor_t *cursor, packet_info * pinfo
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_UnSubscribeDtmfPayloadErrMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UnSubscribeDtmfPayloadErrMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t passthruPartyID = 0;
   ptvcursor_add(cursor, hf_skinny_payloadDtmf, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passthruPartyID = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x012d ^ passthruPartyID);
 }
 
 /*
- * Message:   ServiceURLStatMessage
+ * Message:   ServiceURLStatResMessage
  * Opcode:    0x012f
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_ServiceURLStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ServiceURLStatResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t serviceURLIndex = 0;
+  serviceURLIndex = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_serviceURLIndex, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_serviceURL, 256, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_serviceURLDisplayName, 40, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_serviceURL, 256, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_serviceURLDisplayName, 40, ENC_ASCII);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0033 ^ serviceURLIndex);
 }
 
 /*
- * Message:   CallSelectStatMessage
+ * Message:   CallSelectStatResMessage
  * Opcode:    0x0130
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_CallSelectStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CallSelectStatResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_callSelectStat, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -5944,19 +6265,26 @@ handle_CallSelectStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_OpenMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_OpenMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 compressionType = 0;
-  guint32 payloadType = 0;
-  guint32 pictureFormatCount = 0;
-  guint16 keylen = 0;
-  guint16 saltlen = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t passThroughPartyId = 0;
+  uint32_t compressionType = 0;
+  uint32_t payloadType = 0;
+  uint32_t pictureFormatCount = 0;
+  uint16_t keylen = 0;
+  uint16_t saltlen = 0;
+  address sourceIpAddr;
+  char *sourceIpAddr_str = NULL;
+  uint32_t sourcePortNumber = 0;
 
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   compressionType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_compressionType, 4, ENC_LITTLE_ENDIAN);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -5964,24 +6292,19 @@ handle_OpenMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pi
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : payloadType / size: 8 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType");
     ptvcursor_add(cursor, hf_skinny_payload_rfc_number, 4, ENC_LITTLE_ENDIAN);
     payloadType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_payloadType, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: payloadType */
   }
   ptvcursor_add(cursor, hf_skinny_isConferenceCreator, 4, ENC_LITTLE_ENDIAN);
   if (payloadType <= MEDIA_PAYLOAD_AMR_WB)   {
-    /* start union : capability / maxsize: 44 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType <= Media_Payload_AMR_WB");
     {
-      /* start struct : audioParameters / size: 16 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audioParameters");
-      ptvcursor_add(cursor, hf_skinny_millisecondPacketSize, 4, ENC_LITTLE_ENDIAN);
+      ptvcursor_add(cursor, hf_skinny_milliSecondPacketSize, 4, ENC_LITTLE_ENDIAN);
       {
-        /* start struct : qualifierIn / size: 12 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "qualifierIn");
         ptvcursor_add(cursor, hf_skinny_ecValue, 4, ENC_LITTLE_ENDIAN);
         if (hdr_version <= V10_MSG_TYPE) {
@@ -5989,80 +6312,68 @@ handle_OpenMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pi
         }
         if (hdr_version >= V11_MSG_TYPE) {
           if (compressionType == MEDIA_PAYLOAD_G7231)           {
-            /* start union : codecParamsUnion / maxsize: 4 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "compressionType is Media_Payload_G7231");
             ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
           } else           {
-            /* start union : codecParamsUnion / maxsize: 4 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any compressionType");
             {
-              /* start struct : codecParams / size: 4 */
               ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
               ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
               ptvcursor_pop_subtree(cursor);
-              /* end struct: codecParams */
             }
             ptvcursor_pop_subtree(cursor);
           }
         }
         ptvcursor_pop_subtree(cursor);
-        /* end struct: qualifierIn */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: audioParameters */
     }
     ptvcursor_pop_subtree(cursor);
-    ptvcursor_advance(cursor, 28);
+    ptvcursor_advance(cursor, 36);
   } else if (payloadType >= MEDIA_PAYLOAD_H261 && payloadType <= MEDIA_PAYLOAD_H264_FEC)   {
-    /* start union : capability / maxsize: 44 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "Media_Payload_H261 <= payloadType <= Media_Payload_H264_FEC");
     {
-      /* start struct : vidParameters / size: 44 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidParameters");
       ptvcursor_add(cursor, hf_skinny_bitRate, 4, ENC_LITTLE_ENDIAN);
       pictureFormatCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
       ptvcursor_add(cursor, hf_skinny_pictureFormatCount, 4, ENC_LITTLE_ENDIAN);
-      {
-        /* start struct : pictureFormat / size: 8 */
-        guint32 counter_3 = 0;
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureFormat [ref: pictureFormatCount = %d, max:5]", pictureFormatCount);
-        for (counter_3 = 0; counter_3 < 5; counter_3++) {
-          if (counter_3 < pictureFormatCount) {
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureFormat [%d / %d]", counter_3 + 1, pictureFormatCount);
-            ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
-          } else {
-            ptvcursor_advance(cursor, 8);
+      if (pictureFormatCount <= 5) {
+        uint32_t counter_3 = 0;
+        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureFormat [ref:pictureFormatCount = %d, max:5]", pictureFormatCount);
+        if (pictureFormatCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (pictureFormatCount * 8) && pictureFormatCount <= 5) {
+          for (counter_3 = 0; counter_3 < 5; counter_3++) {
+            if (counter_3 < pictureFormatCount) {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureFormat [%d / %d]", counter_3 + 1, pictureFormatCount);
+              ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
+            } else {
+              ptvcursor_advance(cursor, 8);
+            }
+            ptvcursor_pop_subtree(cursor);
           }
-          ptvcursor_pop_subtree(cursor);
-          /* end for loop tree: pictureFormat */
         }
         ptvcursor_pop_subtree(cursor);
-        /* end struct: pictureFormat */
+      } else {
+        ptvcursor_advance(cursor, (pictureFormatCount * 8));
       }
       ptvcursor_add(cursor, hf_skinny_confServiceNum, 4, ENC_LITTLE_ENDIAN);
       if (payloadType == MEDIA_PAYLOAD_H261)       {
-        /* start union : capability / maxsize: 24 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType is Media_Payload_H261");
         {
-          /* start struct : h261VideoCapability / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h261VideoCapability");
           ptvcursor_add(cursor, hf_skinny_temporalSpatialTradeOffCapability, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_stillImageTransmission, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: h261VideoCapability */
         }
         ptvcursor_pop_subtree(cursor);
         ptvcursor_advance(cursor, 16);
       } else if (payloadType == MEDIA_PAYLOAD_H263)       {
-        /* start union : capability / maxsize: 24 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType is Media_Payload_H263");
         {
-          /* start struct : h263VideoCapability / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263VideoCapability");
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263_capability_bitfield");
           ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit1, 4, ENC_LITTLE_ENDIAN);
@@ -6101,15 +6412,12 @@ handle_OpenMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pi
           ptvcursor_pop_subtree(cursor); /* end bitfield: h263_capability_bitfield */
           ptvcursor_add(cursor, hf_skinny_annexNandWFutureUse, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: h263VideoCapability */
         }
         ptvcursor_pop_subtree(cursor);
         ptvcursor_advance(cursor, 16);
       } else if (payloadType == MEDIA_PAYLOAD_H264)       {
-        /* start union : capability / maxsize: 24 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType is Media_Payload_H264");
         {
-          /* start struct : h264VideoCapability / size: 24 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h264VideoCapability");
           ptvcursor_add(cursor, hf_skinny_profile, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_level, 4, ENC_LITTLE_ENDIAN);
@@ -6118,87 +6426,88 @@ handle_OpenMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pi
           ptvcursor_add(cursor, hf_skinny_customMaxDPB, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_customMaxBRandCPB, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: h264VideoCapability */
         }
         ptvcursor_pop_subtree(cursor);
       } else if (payloadType == MEDIA_PAYLOAD_VIEO)       {
-        /* start union : capability / maxsize: 24 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType is Media_Payload_Vieo");
         {
-          /* start struct : vieoVideoCapability / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vieoVideoCapability");
           ptvcursor_add(cursor, hf_skinny_modelNumber, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_bandwidth, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: vieoVideoCapability */
         }
         ptvcursor_pop_subtree(cursor);
         ptvcursor_advance(cursor, 16);
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: vidParameters */
     }
     ptvcursor_pop_subtree(cursor);
   } else if (payloadType >= MEDIA_PAYLOAD_CLEAR_CHAN)   {
-    /* start union : capability / maxsize: 44 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType >= Media_Payload_Clear_Chan");
     {
-      /* start struct : dataParameters / size: 8 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataParameters");
       ptvcursor_add(cursor, hf_skinny_protocolDependentData, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_pop_subtree(cursor);
-      /* end struct: dataParameters */
     }
     ptvcursor_pop_subtree(cursor);
     ptvcursor_advance(cursor, 36);
   }
   {
-    /* start struct : mRxMediaEncryptionKeyInfo / size: 18 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "mRxMediaEncryptionKeyInfo");
     ptvcursor_add(cursor, hf_skinny_algorithmID, 4, ENC_LITTLE_ENDIAN);
     keylen = tvb_get_letohs(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_keylen, 2, ENC_LITTLE_ENDIAN);
     saltlen = tvb_get_letohs(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_saltlen, 2, ENC_LITTLE_ENDIAN);
-    {
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "key [ref: keylen = %d, max:16]", keylen);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < keylen) {
+    if (keylen <= 16) {
+      uint32_t counter_3 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "key [ref:keylen = %d, max:16]", keylen);
+      for (counter_3 = 0; counter_3 < 16; counter_3++) {
+        if (counter_3 < keylen) {
           ptvcursor_add(cursor, hf_skinny_key, 1, ENC_LITTLE_ENDIAN);
         } else {
           ptvcursor_advance(cursor, 1);
         }
       }
-      ptvcursor_pop_subtree(cursor); /* end for loop tree: key */
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (16 * 1));
     }
-    {
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "salt [ref: saltlen = %d, max:16]", saltlen);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < saltlen) {
+    if (saltlen <= 16) {
+      uint32_t counter_3 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "salt [ref:saltlen = %d, max:16]", saltlen);
+      for (counter_3 = 0; counter_3 < 16; counter_3++) {
+        if (counter_3 < saltlen) {
           ptvcursor_add(cursor, hf_skinny_salt, 1, ENC_LITTLE_ENDIAN);
         } else {
           ptvcursor_advance(cursor, 1);
         }
       }
-      ptvcursor_pop_subtree(cursor); /* end for loop tree: salt */
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (16 * 1));
     }
     ptvcursor_add(cursor, hf_skinny_isMKIPresent, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_keyDerivationRate, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: mRxMediaEncryptionKeyInfo */
   }
-  ptvcursor_add(cursor, hf_skinny_streamPassThroughID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_associatedStreamID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_streamPassThroughId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_associatedStreamId, 4, ENC_LITTLE_ENDIAN);
   if (hdr_version >= V11_MSG_TYPE) {
-    dissect_skinny_ipv4or6(cursor, hf_skinny_sourceIpAddr_ipv4, hf_skinny_sourceIpAddr_ipv6, pinfo);
+    read_skinny_ipv4or6(cursor, &sourceIpAddr);
+    dissect_skinny_ipv4or6(cursor, hf_skinny_sourceIpAddr_ipv4, hf_skinny_sourceIpAddr_ipv6);
+    sourcePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_sourcePortNumber, 4, ENC_LITTLE_ENDIAN);
+    srtp_add_address(pinfo, PT_UDP, &sourceIpAddr, sourcePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+    sourceIpAddr_str = address_to_display(NULL, &sourceIpAddr);
+    si->additionalInfo = ws_strdup_printf("%s:%d", sourceIpAddr_str, sourcePortNumber);
+    wmem_free(NULL, sourceIpAddr_str);
   }
   if (hdr_version >= V16_MSG_TYPE) {
     ptvcursor_add(cursor, hf_skinny_requestedIpAddrType, 4, ENC_LITTLE_ENDIAN);
   }
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0131 ^ passThroughPartyId);
 }
 
 /*
@@ -6207,43 +6516,41 @@ handle_OpenMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pi
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_StartMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 compressionType = 0;
-  guint32 payloadType = 0;
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 pictureFormatCount = 0;
-  guint16 keylen = 0;
-  guint16 saltlen = 0;
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t passthruPartyID = 0;
+  uint32_t compressionType = 0;
+  uint32_t payloadType = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t pictureFormatCount = 0;
+  uint16_t keylen = 0;
+  uint16_t saltlen = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passthruPartyID = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
   compressionType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_compressionType, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : payloadType / size: 8 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType");
     ptvcursor_add(cursor, hf_skinny_payload_rfc_number, 4, ENC_LITTLE_ENDIAN);
     payloadType = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_payloadType, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: payloadType */
   }
   ptvcursor_add(cursor, hf_skinny_DSCPValue, 4, ENC_LITTLE_ENDIAN);
   if (payloadType <= MEDIA_PAYLOAD_AMR_WB)   {
-    /* start union : capability / maxsize: 44 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType <= Media_Payload_AMR_WB");
     {
-      /* start struct : audioParameters / size: 16 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "audioParameters");
-      ptvcursor_add(cursor, hf_skinny_millisecondPacketSize, 4, ENC_LITTLE_ENDIAN);
+      ptvcursor_add(cursor, hf_skinny_milliSecondPacketSize, 4, ENC_LITTLE_ENDIAN);
       {
-        /* start struct : qualifierIn / size: 12 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "qualifierIn");
         ptvcursor_add(cursor, hf_skinny_ecValue, 4, ENC_LITTLE_ENDIAN);
         if (hdr_version <= V10_MSG_TYPE) {
@@ -6251,80 +6558,68 @@ handle_StartMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pin
         }
         if (hdr_version >= V11_MSG_TYPE) {
           if (compressionType == MEDIA_PAYLOAD_G7231)           {
-            /* start union : codecParamsUnion / maxsize: 4 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "compressionType is Media_Payload_G7231");
             ptvcursor_add(cursor, hf_skinny_g723BitRate, 4, ENC_LITTLE_ENDIAN);
             ptvcursor_pop_subtree(cursor);
           } else           {
-            /* start union : codecParamsUnion / maxsize: 4 */
             ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any compressionType");
             {
-              /* start struct : codecParams / size: 4 */
               ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "codecParams");
               ptvcursor_add(cursor, hf_skinny_codecMode, 1, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_dynamicPayload, 1, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_codecParam1, 1, ENC_LITTLE_ENDIAN);
               ptvcursor_add(cursor, hf_skinny_codecParam2, 1, ENC_LITTLE_ENDIAN);
               ptvcursor_pop_subtree(cursor);
-              /* end struct: codecParams */
             }
             ptvcursor_pop_subtree(cursor);
           }
         }
         ptvcursor_pop_subtree(cursor);
-        /* end struct: qualifierIn */
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: audioParameters */
     }
     ptvcursor_pop_subtree(cursor);
-    ptvcursor_advance(cursor, 28);
+    ptvcursor_advance(cursor, 36);
   } else if (payloadType >= MEDIA_PAYLOAD_H261 && payloadType <= MEDIA_PAYLOAD_H264_FEC)   {
-    /* start union : capability / maxsize: 44 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "Media_Payload_H261 <= payloadType <= Media_Payload_H264_FEC");
     {
-      /* start struct : vidParameters / size: 44 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vidParameters");
       ptvcursor_add(cursor, hf_skinny_bitRate, 4, ENC_LITTLE_ENDIAN);
       pictureFormatCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
       ptvcursor_add(cursor, hf_skinny_pictureFormatCount, 4, ENC_LITTLE_ENDIAN);
-      {
-        /* start struct : pictureFormat / size: 8 */
-        guint32 counter_3 = 0;
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureFormat [ref: pictureFormatCount = %d, max:5]", pictureFormatCount);
-        for (counter_3 = 0; counter_3 < 5; counter_3++) {
-          if (counter_3 < pictureFormatCount) {
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureFormat [%d / %d]", counter_3 + 1, pictureFormatCount);
-            ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
-          } else {
-            ptvcursor_advance(cursor, 8);
+      if (pictureFormatCount <= 5) {
+        uint32_t counter_3 = 0;
+        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureFormat [ref:pictureFormatCount = %d, max:5]", pictureFormatCount);
+        if (pictureFormatCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (pictureFormatCount * 8) && pictureFormatCount <= 5) {
+          for (counter_3 = 0; counter_3 < 5; counter_3++) {
+            if (counter_3 < pictureFormatCount) {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureFormat [%d / %d]", counter_3 + 1, pictureFormatCount);
+              ptvcursor_add(cursor, hf_skinny_format, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_MPI, 4, ENC_LITTLE_ENDIAN);
+            } else {
+              ptvcursor_advance(cursor, 8);
+            }
+            ptvcursor_pop_subtree(cursor);
           }
-          ptvcursor_pop_subtree(cursor);
-          /* end for loop tree: pictureFormat */
         }
         ptvcursor_pop_subtree(cursor);
-        /* end struct: pictureFormat */
+      } else {
+        ptvcursor_advance(cursor, (pictureFormatCount * 8));
       }
       ptvcursor_add(cursor, hf_skinny_confServiceNum, 4, ENC_LITTLE_ENDIAN);
       if (payloadType == MEDIA_PAYLOAD_H261)       {
-        /* start union : capability / maxsize: 24 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType is Media_Payload_H261");
         {
-          /* start struct : h261VideoCapability / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h261VideoCapability");
           ptvcursor_add(cursor, hf_skinny_temporalSpatialTradeOffCapability, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_stillImageTransmission, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: h261VideoCapability */
         }
         ptvcursor_pop_subtree(cursor);
         ptvcursor_advance(cursor, 16);
       } else if (payloadType == MEDIA_PAYLOAD_H263)       {
-        /* start union : capability / maxsize: 24 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType is Media_Payload_H263");
         {
-          /* start struct : h263VideoCapability / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263VideoCapability");
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h263_capability_bitfield");
           ptvcursor_add_no_advance(cursor, hf_skinny_Generic_Bitfield_Bit1, 4, ENC_LITTLE_ENDIAN);
@@ -6363,15 +6658,12 @@ handle_StartMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pin
           ptvcursor_pop_subtree(cursor); /* end bitfield: h263_capability_bitfield */
           ptvcursor_add(cursor, hf_skinny_annexNandWFutureUse, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: h263VideoCapability */
         }
         ptvcursor_pop_subtree(cursor);
         ptvcursor_advance(cursor, 16);
       } else if (payloadType == MEDIA_PAYLOAD_H264)       {
-        /* start union : capability / maxsize: 24 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType is Media_Payload_H264");
         {
-          /* start struct : h264VideoCapability / size: 24 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "h264VideoCapability");
           ptvcursor_add(cursor, hf_skinny_profile, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_level, 4, ENC_LITTLE_ENDIAN);
@@ -6380,80 +6672,75 @@ handle_StartMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pin
           ptvcursor_add(cursor, hf_skinny_customMaxDPB, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_customMaxBRandCPB, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: h264VideoCapability */
         }
         ptvcursor_pop_subtree(cursor);
       } else if (payloadType == MEDIA_PAYLOAD_VIEO)       {
-        /* start union : capability / maxsize: 24 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType is Media_Payload_Vieo");
         {
-          /* start struct : vieoVideoCapability / size: 8 */
           ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "vieoVideoCapability");
           ptvcursor_add(cursor, hf_skinny_modelNumber, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_add(cursor, hf_skinny_bandwidth, 4, ENC_LITTLE_ENDIAN);
           ptvcursor_pop_subtree(cursor);
-          /* end struct: vieoVideoCapability */
         }
         ptvcursor_pop_subtree(cursor);
         ptvcursor_advance(cursor, 16);
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: vidParameters */
     }
     ptvcursor_pop_subtree(cursor);
   } else if (payloadType >= MEDIA_PAYLOAD_CLEAR_CHAN)   {
-    /* start union : capability / maxsize: 44 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "payloadType >= Media_Payload_Clear_Chan");
     {
-      /* start struct : dataParameters / size: 8 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "dataParameters");
       ptvcursor_add(cursor, hf_skinny_protocolDependentData, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_maxBitRate, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_pop_subtree(cursor);
-      /* end struct: dataParameters */
     }
     ptvcursor_pop_subtree(cursor);
     ptvcursor_advance(cursor, 36);
   }
   {
-    /* start struct : mTxMediaEncryptionKeyInfo / size: 18 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "mTxMediaEncryptionKeyInfo");
     ptvcursor_add(cursor, hf_skinny_algorithmID, 4, ENC_LITTLE_ENDIAN);
     keylen = tvb_get_letohs(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_keylen, 2, ENC_LITTLE_ENDIAN);
     saltlen = tvb_get_letohs(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_saltlen, 2, ENC_LITTLE_ENDIAN);
-    {
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "key [ref: keylen = %d, max:16]", keylen);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < keylen) {
+    if (keylen <= 16) {
+      uint32_t counter_3 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "key [ref:keylen = %d, max:16]", keylen);
+      for (counter_3 = 0; counter_3 < 16; counter_3++) {
+        if (counter_3 < keylen) {
           ptvcursor_add(cursor, hf_skinny_key, 1, ENC_LITTLE_ENDIAN);
         } else {
           ptvcursor_advance(cursor, 1);
         }
       }
-      ptvcursor_pop_subtree(cursor); /* end for loop tree: key */
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (16 * 1));
     }
-    {
-      guint32 counter_2 = 0;
-      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "salt [ref: saltlen = %d, max:16]", saltlen);
-      for (counter_2 = 0; counter_2 < 16; counter_2++) {
-        if (counter_2 < saltlen) {
+    if (saltlen <= 16) {
+      uint32_t counter_3 = 0;
+      ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "salt [ref:saltlen = %d, max:16]", saltlen);
+      for (counter_3 = 0; counter_3 < 16; counter_3++) {
+        if (counter_3 < saltlen) {
           ptvcursor_add(cursor, hf_skinny_salt, 1, ENC_LITTLE_ENDIAN);
         } else {
           ptvcursor_advance(cursor, 1);
         }
       }
-      ptvcursor_pop_subtree(cursor); /* end for loop tree: salt */
+      ptvcursor_pop_subtree(cursor);
+    } else {
+      ptvcursor_advance(cursor, (16 * 1));
     }
     ptvcursor_add(cursor, hf_skinny_isMKIPresent, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_keyDerivationRate, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: mTxMediaEncryptionKeyInfo */
   }
-  ptvcursor_add(cursor, hf_skinny_streamPassThroughID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_associatedStreamID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_streamPassThroughId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_associatedStreamId, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0132 ^ passthruPartyID);
 }
 
 /*
@@ -6462,12 +6749,14 @@ handle_StartMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pin
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_StopMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StopMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_portHandlingFlag, 4, ENC_LITTLE_ENDIAN);
@@ -6479,130 +6768,110 @@ handle_StopMultiMediaTransmissionMessage(ptvcursor_t *cursor, packet_info * pinf
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_MiscellaneousCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_MiscellaneousCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 command = 0;
-  guint32 recoveryReferencePictureCount = 0;
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t command = 0;
+  uint32_t recoveryReferencePictureCount = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   command = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_command, 4, ENC_LITTLE_ENDIAN);
   if (command == MISCCOMMANDTYPE_VIDEOFASTUPDATEPICTURE)   {
-    /* start union : u / maxsize: 16 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "command is MiscCommandType_videoFastUpdatePicture");
     {
-      /* start struct : videoFastUpdatePicture / size: 8 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "videoFastUpdatePicture");
       ptvcursor_add(cursor, hf_skinny_firstGOB, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_numberOfGOBs, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_pop_subtree(cursor);
-      /* end struct: videoFastUpdatePicture */
     }
     ptvcursor_pop_subtree(cursor);
     ptvcursor_advance(cursor, 8);
   } else if (command == MISCCOMMANDTYPE_VIDEOFASTUPDATEGOB)   {
-    /* start union : u / maxsize: 16 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "command is MiscCommandType_videoFastUpdateGOB");
     {
-      /* start struct : videoFastUpdateGOB / size: 8 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "videoFastUpdateGOB");
       ptvcursor_add(cursor, hf_skinny_firstGOB, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_numberOfGOBs, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_pop_subtree(cursor);
-      /* end struct: videoFastUpdateGOB */
     }
     ptvcursor_pop_subtree(cursor);
     ptvcursor_advance(cursor, 8);
   } else if (command == MISCCOMMANDTYPE_VIDEOFASTUPDATEMB)   {
-    /* start union : u / maxsize: 16 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "command is MiscCommandType_videoFastUpdateMB");
     {
-      /* start struct : videoFastUpdateMB / size: 12 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "videoFastUpdateMB");
       ptvcursor_add(cursor, hf_skinny_firstGOB, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_firstMB, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_numberOfMBs, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_pop_subtree(cursor);
-      /* end struct: videoFastUpdateMB */
     }
     ptvcursor_pop_subtree(cursor);
     ptvcursor_advance(cursor, 4);
   } else if (command == MISCCOMMANDTYPE_LOSTPICTURE)   {
-    /* start union : u / maxsize: 16 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "command is MiscCommandType_lostPicture");
     {
-      /* start struct : lostPicture / size: 8 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "lostPicture");
       ptvcursor_add(cursor, hf_skinny_pictureNumber, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_longTermPictureIndex, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_pop_subtree(cursor);
-      /* end struct: lostPicture */
     }
     ptvcursor_pop_subtree(cursor);
     ptvcursor_advance(cursor, 8);
   } else if (command == MISCCOMMANDTYPE_LOSTPARTIALPICTURE)   {
-    /* start union : u / maxsize: 16 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "command is MiscCommandType_lostPartialPicture");
     {
-      /* start struct : lostPartialPicture / size: 16 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "lostPartialPicture");
       {
-        /* start struct : pictureReference / size: 8 */
         ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "pictureReference");
         ptvcursor_add(cursor, hf_skinny_pictureNumber, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_add(cursor, hf_skinny_longTermPictureIndex, 4, ENC_LITTLE_ENDIAN);
         ptvcursor_pop_subtree(cursor);
-        /* end struct: pictureReference */
       }
       ptvcursor_add(cursor, hf_skinny_firstMB, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_add(cursor, hf_skinny_numberOfMBs, 4, ENC_LITTLE_ENDIAN);
       ptvcursor_pop_subtree(cursor);
-      /* end struct: lostPartialPicture */
     }
     ptvcursor_pop_subtree(cursor);
   } else if (command == MISCCOMMANDTYPE_RECOVERYREFERENCEPICTURE)   {
-    /* start union : u / maxsize: 16 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "command is MiscCommandType_recoveryReferencePicture");
     {
-      /* start struct : recoveryReferencePictureValue / size: 12 */
       ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "recoveryReferencePictureValue");
       recoveryReferencePictureCount = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
       ptvcursor_add(cursor, hf_skinny_recoveryReferencePictureCount, 4, ENC_LITTLE_ENDIAN);
-      {
-        /* start struct : recoveryReferencePicture / size: 8 */
-        guint32 counter_3 = 0;
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "recoveryReferencePicture [ref: recoveryReferencePictureCount = %d, max:4]", recoveryReferencePictureCount);
-        for (counter_3 = 0; counter_3 < 4; counter_3++) {
-          if (counter_3 < recoveryReferencePictureCount) {
-            ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "recoveryReferencePicture [%d / %d]", counter_3 + 1, recoveryReferencePictureCount);
-            ptvcursor_add(cursor, hf_skinny_pictureNumber, 4, ENC_LITTLE_ENDIAN);
-            ptvcursor_add(cursor, hf_skinny_longTermPictureIndex, 4, ENC_LITTLE_ENDIAN);
-          } else {
-            ptvcursor_advance(cursor, 8);
+      if (recoveryReferencePictureCount <= 4) {
+        uint32_t counter_3 = 0;
+        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "recoveryReferencePicture [ref:recoveryReferencePictureCount = %d, max:4]", recoveryReferencePictureCount);
+        if (recoveryReferencePictureCount && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (recoveryReferencePictureCount * 8) && recoveryReferencePictureCount <= 4) {
+          for (counter_3 = 0; counter_3 < 4; counter_3++) {
+            if (counter_3 < recoveryReferencePictureCount) {
+              ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "recoveryReferencePicture [%d / %d]", counter_3 + 1, recoveryReferencePictureCount);
+              ptvcursor_add(cursor, hf_skinny_pictureNumber, 4, ENC_LITTLE_ENDIAN);
+              ptvcursor_add(cursor, hf_skinny_longTermPictureIndex, 4, ENC_LITTLE_ENDIAN);
+            } else {
+              ptvcursor_advance(cursor, 8);
+            }
+            ptvcursor_pop_subtree(cursor);
           }
-          ptvcursor_pop_subtree(cursor);
-          /* end for loop tree: recoveryReferencePicture */
         }
         ptvcursor_pop_subtree(cursor);
-        /* end struct: recoveryReferencePicture */
+      } else {
+        ptvcursor_advance(cursor, (recoveryReferencePictureCount * 8));
       }
       ptvcursor_pop_subtree(cursor);
-      /* end struct: recoveryReferencePictureValue */
     }
     ptvcursor_pop_subtree(cursor);
     ptvcursor_advance(cursor, 4);
   } else if (command == MISCCOMMANDTYPE_TEMPORALSPATIALTRADEOFF)   {
-    /* start union : u / maxsize: 16 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "command is MiscCommandType_temporalSpatialTradeOff");
     ptvcursor_add(cursor, hf_skinny_temporalSpatialTradeOff, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
     ptvcursor_advance(cursor, 12);
   } else   {
-    /* start union : u / maxsize: 16 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "any command");
     ptvcursor_add(cursor, hf_skinny_none, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
@@ -6616,11 +6885,12 @@ handle_MiscellaneousCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_FlowControlCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_FlowControlCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
@@ -6633,12 +6903,14 @@ handle_FlowControlCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_CloseMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CloseMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_portHandlingFlag, 4, ENC_LITTLE_ENDIAN);
@@ -6650,20 +6922,24 @@ handle_CloseMultiMediaReceiveChannelMessage(ptvcursor_t *cursor, packet_info * p
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_CreateConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CreateConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  uint32_t dataLength = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_numberOfReservedParticipants, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_resourceType, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_appID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_appConfID, 32, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_appData, 24, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_appConfID, 32, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_appData, 24, ENC_ASCII);
   dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruData, dataLength, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_passThruData, dataLength, ENC_ASCII);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0137 ^ conferenceId);
 }
 
 /*
@@ -6672,11 +6948,15 @@ handle_CreateConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_DeleteConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DeleteConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0138 ^ conferenceId);
 }
 
 /*
@@ -6685,19 +6965,23 @@ handle_DeleteConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_ModifyConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ModifyConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  uint32_t dataLength = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_numberOfReservedParticipants, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_appID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_appConfID, 32, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_appData, 24, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_appConfID, 32, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_appData, 24, ENC_ASCII);
   dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruData, dataLength, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_passThruData, dataLength, ENC_ASCII);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x0139 ^ conferenceId);
 }
 
 /*
@@ -6706,11 +6990,14 @@ handle_ModifyConferenceReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_AddParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_AddParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "partyPIRestrictionBits");
@@ -6729,9 +7016,10 @@ handle_AddParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_add_no_advance(cursor, hf_skinny_RestrictInformationType_BitsReserved, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_advance(cursor, 4);
   ptvcursor_pop_subtree(cursor); /* end bitfield: partyPIRestrictionBits */
-  ptvcursor_add(cursor, hf_skinny_participantName, 40, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_participantNumber, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_conferenceName, 32, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_participantName, 40, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_participantNumber, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_conferenceName, 32, ENC_ASCII);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x013a ^ conferenceId);
 }
 
 /*
@@ -6740,13 +7028,17 @@ handle_AddParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_DropParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DropParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x013b ^ conferenceId);
 }
 
 /*
@@ -6755,11 +7047,15 @@ handle_DropParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_AuditParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_AuditParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x013d ^ conferenceId);
 }
 
 /*
@@ -6768,11 +7064,14 @@ handle_AuditParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_ChangeParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ChangeParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t conferenceId = 0;
+  conferenceId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "partyPIRestrictionBits");
@@ -6791,9 +7090,10 @@ handle_ChangeParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_add_no_advance(cursor, hf_skinny_RestrictInformationType_BitsReserved, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_advance(cursor, 4);
   ptvcursor_pop_subtree(cursor); /* end bitfield: partyPIRestrictionBits */
-  ptvcursor_add(cursor, hf_skinny_participantName, 40, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_participantNumber, 24, ENC_ASCII|ENC_NA);
-  ptvcursor_add(cursor, hf_skinny_conferenceName, 32, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_participantName, 40, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_participantNumber, 24, ENC_ASCII);
+  ptvcursor_add(cursor, hf_skinny_conferenceName, 32, ENC_ASCII);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x013e ^ conferenceId);
 }
 
 /*
@@ -6802,30 +7102,29 @@ handle_ChangeParticipantReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_UserToDeviceDataMessageVersion1(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UserToDeviceDataMessageVersion1(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 dataLength = 0;
+  uint32_t dataLength = 0;
   {
-    /* start struct : userToDeviceDataVersion1 / size: 2040 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "userToDeviceDataVersion1");
-    ptvcursor_add(cursor, hf_skinny_applicationID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_applicationId, 4, ENC_LITTLE_ENDIAN);
     si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
     si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
     dataLength = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
     ptvcursor_add(cursor, hf_skinny_dataLength, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_sequenceFlag, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_displayPriority, 4, ENC_LITTLE_ENDIAN);
-    ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+    ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_appInstanceID, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_routingID, 4, ENC_LITTLE_ENDIAN);
     dissect_skinny_xml(cursor, hf_skinny_xmldata, pinfo, dataLength, 2000);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: userToDeviceDataVersion1 */
   }
 }
 
@@ -6835,11 +7134,12 @@ handle_UserToDeviceDataMessageVersion1(ptvcursor_t *cursor, packet_info * pinfo 
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_VideoDisplayCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_VideoDisplayCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_layoutID, 4, ENC_LITTLE_ENDIAN);
@@ -6851,11 +7151,12 @@ handle_VideoDisplayCommandMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_FlowControlNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_FlowControlNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_passthruPartyID, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
@@ -6863,46 +7164,46 @@ handle_FlowControlNotifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
 }
 
 /*
- * Message:   ConfigStatV2Message
+ * Message:   ConfigStatV2ResMessage
  * Opcode:    0x0142
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   response
  */
 static void
-handle_ConfigStatV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ConfigStatV2ResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 DeviceName_len = 0;
-  guint32 userName_len = 0;
-  guint32 serverName_len = 0;
+  uint32_t DeviceName_len = 0;
+  uint32_t userName_len = 0;
+  uint32_t serverName_len = 0;
   {
-    /* start struct : sid / size: 24 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sid");
     DeviceName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
     if (DeviceName_len > 1) {
-      ptvcursor_add(cursor, hf_skinny_DeviceName, DeviceName_len, ENC_ASCII|ENC_NA);
+      ptvcursor_add(cursor, hf_skinny_DeviceName, DeviceName_len, ENC_ASCII);
     } else {
       ptvcursor_advance(cursor, 1);
     }
     ptvcursor_add(cursor, hf_skinny_reserved_for_future_use, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_instance, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: sid */
   }
   ptvcursor_add(cursor, hf_skinny_numberOfLines, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_numberOfSpeedDials, 4, ENC_LITTLE_ENDIAN);
   userName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (userName_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_userName, userName_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_userName, userName_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   serverName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (serverName_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_serverName, serverName_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_serverName, serverName_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000c);
 }
 
 /*
@@ -6911,12 +7212,13 @@ handle_ConfigStatV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   event
  */
 static void
-handle_DisplayNotifyV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DisplayNotifyV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_timeOutValue, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_displayLabel(cursor, hf_skinny_notify, 0);
+  dissect_skinny_displayLabel(cursor, pinfo, hf_skinny_notify, 0);
 }
 
 /*
@@ -6925,13 +7227,14 @@ handle_DisplayNotifyV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   event
  */
 static void
-handle_DisplayPriNotifyV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DisplayPriNotifyV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_timeOutValue, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_priority, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_displayLabel(cursor, hf_skinny_notify, 0);
+  dissect_skinny_displayLabel(cursor, pinfo, hf_skinny_notify, 0);
 }
 
 /*
@@ -6940,53 +7243,59 @@ handle_DisplayPriNotifyV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   event
  */
 static void
-handle_DisplayPromptStatusV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_DisplayPromptStatusV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_timeOutValue, 4, ENC_LITTLE_ENDIAN);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_displayLabel(cursor, hf_skinny_promptStatus, 0);
+  dissect_skinny_displayLabel(cursor, pinfo, hf_skinny_promptStatus, 0);
 }
 
 /*
- * Message:   FeatureStatV2Message
+ * Message:   FeatureStatV2ResMessage
  * Opcode:    0x0146
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   response
  */
 static void
-handle_FeatureStatV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_FeatureStatV2ResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 featureTextLabel_len = 0;
+  uint32_t featureTextLabel_len = 0;
   ptvcursor_add(cursor, hf_skinny_featureIndex, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_featureID, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_featureStatus, 4, ENC_LITTLE_ENDIAN);
   featureTextLabel_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (featureTextLabel_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_featureTextLabel, featureTextLabel_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_featureTextLabel, featureTextLabel_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0034);
 }
 
 /*
- * Message:   LineStatV2Message
+ * Message:   LineStatV2ResMessage
  * Opcode:    0x0147
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   response
  */
 static void
-handle_LineStatV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_LineStatV2ResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 lineDirNumber_len = 0;
-  guint32 lineFullyQualifiedDisplayName_len = 0;
-  guint32 lineTextLabel_len = 0;
+  uint32_t lineNumber = 0;
+  uint32_t lineDirNumber_len = 0;
+  uint32_t lineFullyQualifiedDisplayName_len = 0;
+  uint32_t lineTextLabel_len = 0;
+  lineNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineNumber, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "lineType");
   ptvcursor_add_no_advance(cursor, hf_skinny_OrigDialed, 4, ENC_LITTLE_ENDIAN);
@@ -6997,62 +7306,71 @@ handle_LineStatV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_pop_subtree(cursor); /* end bitfield: lineType */
   lineDirNumber_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (lineDirNumber_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_lineDirNumber, lineDirNumber_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_lineDirNumber, lineDirNumber_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   lineFullyQualifiedDisplayName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (lineFullyQualifiedDisplayName_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_lineFullyQualifiedDisplayName, lineFullyQualifiedDisplayName_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_lineFullyQualifiedDisplayName, lineFullyQualifiedDisplayName_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   lineTextLabel_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (lineTextLabel_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_lineTextLabel, lineTextLabel_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_lineTextLabel, lineTextLabel_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000b ^ lineNumber);
 }
 
 /*
- * Message:   ServiceURLStatV2Message
+ * Message:   ServiceURLStatV2ResMessage
  * Opcode:    0x0148
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   response
  */
 static void
-handle_ServiceURLStatV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_ServiceURLStatV2ResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
+  uint32_t serviceURLIndex = 0;
+  serviceURLIndex = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_serviceURLIndex, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0033 ^ serviceURLIndex);
 }
 
 /*
- * Message:   SpeedDialStatV2Message
+ * Message:   SpeedDialStatV2ResMessage
  * Opcode:    0x0149
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   response
  */
 static void
-handle_SpeedDialStatV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SpeedDialStatV2ResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 speedDialDirNumber_len = 0;
-  guint32 speedDialDisplayName_len = 0;
+  uint32_t speedDialNumber = 0;
+  uint32_t speedDialDirNumber_len = 0;
+  uint32_t speedDialDisplayName_len = 0;
+  speedDialNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_speedDialNumber, 4, ENC_LITTLE_ENDIAN);
   speedDialDirNumber_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (speedDialDirNumber_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_speedDialDirNumber, speedDialDirNumber_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_speedDialDirNumber, speedDialDirNumber_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   speedDialDisplayName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (speedDialDisplayName_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_speedDialDisplayName, speedDialDisplayName_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_speedDialDisplayName, speedDialDisplayName_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x000a ^ speedDialNumber);
 }
 
 /*
@@ -7061,26 +7379,27 @@ handle_SpeedDialStatV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: yes
+ * MsgType:   event
  */
 static void
-handle_CallInfoV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CallInfoV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
-  guint32 callingParty_len = 0;
-  guint32 AlternateCallingParty_len = 0;
-  guint32 calledParty_len = 0;
-  guint32 originalCalledParty_len = 0;
-  guint32 lastRedirectingParty_len = 0;
-  guint32 cgpnVoiceMailbox_len = 0;
-  guint32 cdpnVoiceMailbox_len = 0;
-  guint32 originalCdpnVoiceMailbox_len = 0;
-  guint32 lastRedirectingVoiceMailbox_len = 0;
-  guint32 callingPartyName_len = 0;
-  guint32 calledPartyName_len = 0;
-  guint32 originalCalledPartyName_len = 0;
-  guint32 lastRedirectingPartyName_len = 0;
-  guint32 HuntPilotNumber_len = 0;
-  guint32 HuntPilotName_len = 0;
+  uint32_t hdr_version = tvb_get_letohl(ptvcursor_tvbuff(cursor), 4);
+  uint32_t callingParty_len = 0;
+  uint32_t AlternateCallingParty_len = 0;
+  uint32_t calledParty_len = 0;
+  uint32_t originalCalledParty_len = 0;
+  uint32_t lastRedirectingParty_len = 0;
+  uint32_t cgpnVoiceMailbox_len = 0;
+  uint32_t cdpnVoiceMailbox_len = 0;
+  uint32_t originalCdpnVoiceMailbox_len = 0;
+  uint32_t lastRedirectingVoiceMailbox_len = 0;
+  uint32_t callingPartyName_len = 0;
+  uint32_t calledPartyName_len = 0;
+  uint32_t originalCalledPartyName_len = 0;
+  uint32_t lastRedirectingPartyName_len = 0;
+  uint32_t HuntPilotNumber_len = 0;
+  uint32_t HuntPilotName_len = 0;
 
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineInstance, 4, ENC_LITTLE_ENDIAN);
@@ -7109,97 +7428,100 @@ handle_CallInfoV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_pop_subtree(cursor); /* end bitfield: partyPIRestrictionBits */
   callingParty_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (callingParty_len > 1) {
-    si->callingParty = g_strdup(tvb_format_stringzpad(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), callingParty_len));
-    ptvcursor_add(cursor, hf_skinny_callingParty, callingParty_len, ENC_ASCII|ENC_NA);
+    si->callingParty = g_strdup(tvb_format_stringzpad(pinfo->pool, ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), callingParty_len));
+    ptvcursor_add(cursor, hf_skinny_callingParty, callingParty_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   AlternateCallingParty_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (AlternateCallingParty_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_AlternateCallingParty, AlternateCallingParty_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_AlternateCallingParty, AlternateCallingParty_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   calledParty_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (calledParty_len > 1) {
-    si->calledParty = g_strdup(tvb_format_stringzpad(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), calledParty_len));
-    ptvcursor_add(cursor, hf_skinny_calledParty, calledParty_len, ENC_ASCII|ENC_NA);
+    si->calledParty = g_strdup(tvb_format_stringzpad(pinfo->pool, ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), calledParty_len));
+    ptvcursor_add(cursor, hf_skinny_calledParty, calledParty_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   originalCalledParty_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (originalCalledParty_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_originalCalledParty, originalCalledParty_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_originalCalledParty, originalCalledParty_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   lastRedirectingParty_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (lastRedirectingParty_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_lastRedirectingParty, lastRedirectingParty_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_lastRedirectingParty, lastRedirectingParty_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   cgpnVoiceMailbox_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (cgpnVoiceMailbox_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_cgpnVoiceMailbox, cgpnVoiceMailbox_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_cgpnVoiceMailbox, cgpnVoiceMailbox_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   cdpnVoiceMailbox_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (cdpnVoiceMailbox_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_cdpnVoiceMailbox, cdpnVoiceMailbox_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_cdpnVoiceMailbox, cdpnVoiceMailbox_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   originalCdpnVoiceMailbox_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (originalCdpnVoiceMailbox_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_originalCdpnVoiceMailbox, originalCdpnVoiceMailbox_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_originalCdpnVoiceMailbox, originalCdpnVoiceMailbox_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   lastRedirectingVoiceMailbox_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (lastRedirectingVoiceMailbox_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_lastRedirectingVoiceMailbox, lastRedirectingVoiceMailbox_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_lastRedirectingVoiceMailbox, lastRedirectingVoiceMailbox_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   callingPartyName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (callingPartyName_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_callingPartyName, callingPartyName_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_callingPartyName, callingPartyName_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   calledPartyName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (calledPartyName_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_calledPartyName, calledPartyName_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_calledPartyName, calledPartyName_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   originalCalledPartyName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (originalCalledPartyName_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_originalCalledPartyName, originalCalledPartyName_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_originalCalledPartyName, originalCalledPartyName_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   lastRedirectingPartyName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
   if (lastRedirectingPartyName_len > 1) {
-    ptvcursor_add(cursor, hf_skinny_lastRedirectingPartyName, lastRedirectingPartyName_len, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_lastRedirectingPartyName, lastRedirectingPartyName_len, ENC_ASCII);
   } else {
     ptvcursor_advance(cursor, 1);
   }
   if (hdr_version >= V17_MSG_TYPE) {
     HuntPilotNumber_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
     if (HuntPilotNumber_len > 1) {
-      ptvcursor_add(cursor, hf_skinny_HuntPilotNumber, HuntPilotNumber_len, ENC_ASCII|ENC_NA);
+      ptvcursor_add(cursor, hf_skinny_HuntPilotNumber, HuntPilotNumber_len, ENC_ASCII);
     } else {
       ptvcursor_advance(cursor, 1);
     }
     HuntPilotName_len = tvb_strnlen(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor), -1)+1;
     if (HuntPilotName_len > 1) {
-      ptvcursor_add(cursor, hf_skinny_HuntPilotName, HuntPilotName_len, ENC_ASCII|ENC_NA);
+      ptvcursor_add(cursor, hf_skinny_HuntPilotName, HuntPilotName_len, ENC_ASCII);
     } else {
       ptvcursor_advance(cursor, 1);
     }
+  }
+  if (si->callingParty && si->calledParty) {
+    si->additionalInfo = ws_strdup_printf("\"%s -> %s\"", si->callingParty, si->calledParty);
   }
 }
 
@@ -7209,17 +7531,20 @@ handle_CallInfoV2Message(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_PortReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_PortReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_mediaTransportType, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_ipAddressType, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_mediaType, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x014b);
 }
 
 /*
@@ -7228,14 +7553,16 @@ handle_PortReqMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_PortCloseMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_PortCloseMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_mediaType, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -7245,16 +7572,27 @@ handle_PortCloseMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_QoSListenMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_QoSListenMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
   ptvcursor_add(cursor, hf_skinny_resvStyle, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_maxRetryNumber, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_retryTimer, 4, ENC_LITTLE_ENDIAN);
@@ -7266,14 +7604,12 @@ handle_QoSListenMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_add(cursor, hf_skinny_burstSize, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_peakRate, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : appID / size: 112 */
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "appID");
-    ptvcursor_add(cursor, hf_skinny_vendorID, 32, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_version, 16, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_appName, 32, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_subAppID, 32, ENC_ASCII|ENC_NA);
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "applicationID");
+    ptvcursor_add(cursor, hf_skinny_vendorID, 32, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_version, 16, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_appName, 32, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_subAppID, 32, ENC_ASCII);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: appID */
   }
 }
 
@@ -7283,16 +7619,27 @@ handle_QoSListenMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_QoSPathMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_QoSPathMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
   ptvcursor_add(cursor, hf_skinny_resvStyle, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_maxRetryNumber, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_retryTimer, 4, ENC_LITTLE_ENDIAN);
@@ -7303,14 +7650,12 @@ handle_QoSPathMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
   ptvcursor_add(cursor, hf_skinny_burstSize, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_peakRate, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : appID / size: 112 */
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "appID");
-    ptvcursor_add(cursor, hf_skinny_vendorID, 32, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_version, 16, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_appName, 32, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_subAppID, 32, ENC_ASCII|ENC_NA);
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "applicationID");
+    ptvcursor_add(cursor, hf_skinny_vendorID, 32, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_version, 16, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_appName, 32, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_subAppID, 32, ENC_ASCII);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: appID */
   }
 }
 
@@ -7320,16 +7665,27 @@ handle_QoSPathMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_QoSTeardownMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_QoSTeardownMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
   ptvcursor_add(cursor, hf_skinny_direction, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -7339,16 +7695,27 @@ handle_QoSTeardownMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_UpdateDSCPMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_UpdateDSCPMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
   ptvcursor_add(cursor, hf_skinny_DSCPValue, 4, ENC_LITTLE_ENDIAN);
 }
 
@@ -7358,47 +7725,60 @@ handle_UpdateDSCPMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      IntraCCM
  * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_QoSModifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_QoSModifyMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
+  address remoteIpAddr;
+  char *remoteIpAddr_str = NULL;
+  uint32_t remotePortNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6, pinfo);
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &remoteIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_remoteIpAddr_ipv4, hf_skinny_remoteIpAddr_ipv6);
+  remotePortNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_remotePortNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &remoteIpAddr, remotePortNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  remoteIpAddr_str = address_to_display(NULL, &remoteIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", remoteIpAddr_str, remotePortNumber);
+  wmem_free(NULL, remoteIpAddr_str);
   ptvcursor_add(cursor, hf_skinny_direction, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_compressionType, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_averageBitRate, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_burstSize, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_peakRate, 4, ENC_LITTLE_ENDIAN);
   {
-    /* start struct : appID / size: 112 */
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "appID");
-    ptvcursor_add(cursor, hf_skinny_vendorID, 32, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_version, 16, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_appName, 32, ENC_ASCII|ENC_NA);
-    ptvcursor_add(cursor, hf_skinny_subAppID, 32, ENC_ASCII|ENC_NA);
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "applicationID");
+    ptvcursor_add(cursor, hf_skinny_vendorID, 32, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_version, 16, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_appName, 32, ENC_ASCII);
+    ptvcursor_add(cursor, hf_skinny_subAppID, 32, ENC_ASCII);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: appID */
   }
 }
 
 /*
- * Message:   SubscriptionStatMessage
+ * Message:   SubscriptionStatResMessage
  * Opcode:    0x0152
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_SubscriptionStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SubscriptionStatResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_subscriptionoFeatureID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t transactionId = 0;
+  transactionId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_subscriptionFeatureID, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_timer, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_cause, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0048 ^ transactionId);
 }
 
 /*
@@ -7407,14 +7787,15 @@ handle_SubscriptionStatMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_NotificationMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_NotificationMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_transactionID, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_transactionId, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_subscriptionFeatureID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_status, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_text, 97, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_notificationStatus, 4, ENC_LITTLE_ENDIAN);
+  ptvcursor_add(cursor, hf_skinny_text, 97, ENC_ASCII);
 }
 
 /*
@@ -7423,18 +7804,32 @@ handle_NotificationMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_StartMediaTransmissionAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartMediaTransmissionAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t passThroughPartyId = 0;
+  address transmitIpAddr;
+  char *transmitIpAddr_str = NULL;
+  uint32_t portNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_transmitIpAddr_ipv4, hf_skinny_transmitIpAddr_ipv6, pinfo);
-  ptvcursor_add(cursor, hf_skinny_transmitPort, 4, ENC_LITTLE_ENDIAN);
-  si->startmediatransmisionStatus = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
-  ptvcursor_add(cursor, hf_skinny_startMediaTransmissionStatus, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &transmitIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_transmitIpAddr_ipv4, hf_skinny_transmitIpAddr_ipv6);
+  portNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_portNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &transmitIpAddr, portNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  transmitIpAddr_str = address_to_display(NULL, &transmitIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", transmitIpAddr_str, portNumber);
+  wmem_free(NULL, transmitIpAddr_str);
+  si->mediaTransmissionStatus = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_mediaTransmissionStatus, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x008a ^ passThroughPartyId);
 }
 
 /*
@@ -7443,17 +7838,32 @@ handle_StartMediaTransmissionAckMessage(ptvcursor_t *cursor, packet_info * pinfo
  * Type:      MediaControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_StartMultiMediaTransmissionAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_StartMultiMediaTransmissionAckMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_conferenceID, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_passThruPartyID, 4, ENC_LITTLE_ENDIAN);
+  uint32_t passThroughPartyId = 0;
+  address transmitIpAddr;
+  char *transmitIpAddr_str = NULL;
+  uint32_t portNumber = 0;
+  ptvcursor_add(cursor, hf_skinny_conferenceId, 4, ENC_LITTLE_ENDIAN);
+  passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  si->passThroughPartyId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_passThroughPartyId, 4, ENC_LITTLE_ENDIAN);
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
-  dissect_skinny_ipv4or6(cursor, hf_skinny_transmitIpAddr_ipv4, hf_skinny_transmitIpAddr_ipv6, pinfo);
-  ptvcursor_add(cursor, hf_skinny_transmitPort, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_resultCode, 4, ENC_LITTLE_ENDIAN);
+  read_skinny_ipv4or6(cursor, &transmitIpAddr);
+  dissect_skinny_ipv4or6(cursor, hf_skinny_transmitIpAddr_ipv4, hf_skinny_transmitIpAddr_ipv6);
+  portNumber = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_portNumber, 4, ENC_LITTLE_ENDIAN);
+  srtp_add_address(pinfo, PT_UDP, &transmitIpAddr, portNumber, 0, "SKINNY", pinfo->num, false, NULL, NULL, NULL);
+  transmitIpAddr_str = address_to_display(NULL, &transmitIpAddr);
+  si->additionalInfo = ws_strdup_printf("%s:%d", transmitIpAddr_str, portNumber);
+  wmem_free(NULL, transmitIpAddr_str);
+  si->multimediaTransmissionStatus = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
+  ptvcursor_add(cursor, hf_skinny_multimediaTransmissionStatus, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x0132 ^ passThroughPartyId);
 }
 
 /*
@@ -7462,9 +7872,10 @@ handle_StartMultiMediaTransmissionAckMessage(ptvcursor_t *cursor, packet_info * 
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_CallHistoryInfoMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CallHistoryInfoMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_callHistoryDisposition, 4, ENC_LITTLE_ENDIAN);
   si->lineId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
@@ -7475,30 +7886,33 @@ handle_CallHistoryInfoMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
 
 /*
  * Message:   LocationInfoMessage
- * Opcode:    0x0156
+ * Opcode:    0x0157
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  * Comment: Sent by wifi devices, contains xml information about connected SSID
  */
 static void
-handle_LocationInfoMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_LocationInfoMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_locationInfo, 2401, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_locationInfo, 2401, ENC_ASCII);
 }
 
 /*
- * Message:   MwiResponseMessage
+ * Message:   MwiResMessage
  * Opcode:    0x0158
  * Type:      RegistrationAndManagement
- * Direction: pbx2dev
+ * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_MwiResponseMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_MwiResMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  ptvcursor_add(cursor, hf_skinny_mwiTargetNumber, 25, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_mwiTargetNumber, 25, ENC_ASCII);
   ptvcursor_add(cursor, hf_skinny_mwi_notification_result, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x004c);
 }
 
 /*
@@ -7507,14 +7921,15 @@ handle_MwiResponseMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_AddOnDeviceCapabilitiesMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_AddOnDeviceCapabilitiesMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_unknown1_0159, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_unknown2_0159, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_unknown3_0159, 4, ENC_LITTLE_ENDIAN);
-  ptvcursor_add(cursor, hf_skinny_unknownString_0159, 152, ENC_ASCII|ENC_NA);
+  ptvcursor_add(cursor, hf_skinny_unknownString_0159, 152, ENC_ASCII);
 }
 
 /*
@@ -7523,9 +7938,10 @@ handle_AddOnDeviceCapabilitiesMessage(ptvcursor_t *cursor, packet_info * pinfo _
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_EnhancedAlarmMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_EnhancedAlarmMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   dissect_skinny_xml(cursor, hf_skinny_alarmInfo, pinfo, 0, 2048);
 }
@@ -7534,35 +7950,38 @@ handle_EnhancedAlarmMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Message:   CallCountRespMessage
  * Opcode:    0x015f
  * Type:      CallControl
- * Direction: pbx2dev
+ * Direction: pbx2pbx
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_CallCountRespMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_CallCountRespMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
-  guint32 lineDataEntries = 0;
+  uint32_t lineDataEntries = 0;
   ptvcursor_add(cursor, hf_skinny_totalNumOfConfiguredLines, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_startingLineInstance, 4, ENC_LITTLE_ENDIAN);
   lineDataEntries = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_lineDataEntries, 4, ENC_LITTLE_ENDIAN);
-  {
-    /* start struct : lineData / size: 4 */
-    guint32 counter_1 = 0;
-    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "lineData [ref: lineDataEntries = %d, max:42]", lineDataEntries);
-    for (counter_1 = 0; counter_1 < 42; counter_1++) {
-      if (counter_1 < lineDataEntries) {
-        ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "lineData [%d / %d]", counter_1 + 1, lineDataEntries);
-        ptvcursor_add(cursor, hf_skinny_maxNumCalls, 2, ENC_LITTLE_ENDIAN);
-        ptvcursor_add(cursor, hf_skinny_busyTrigger, 2, ENC_LITTLE_ENDIAN);
-      } else {
-        ptvcursor_advance(cursor, 4);
+  if (lineDataEntries <= 42) {
+    uint32_t counter_1 = 0;
+    ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "lineData [ref:lineDataEntries = %d, max:42]", lineDataEntries);
+    if (lineDataEntries && tvb_get_letohl(ptvcursor_tvbuff(cursor), 0) + 8 >= ptvcursor_current_offset(cursor) + (lineDataEntries * 4) && lineDataEntries <= 42) {
+      for (counter_1 = 0; counter_1 < 42; counter_1++) {
+        if (counter_1 < lineDataEntries) {
+          ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "lineData [%d / %d]", counter_1 + 1, lineDataEntries);
+          ptvcursor_add(cursor, hf_skinny_maxNumCalls, 2, ENC_LITTLE_ENDIAN);
+          ptvcursor_add(cursor, hf_skinny_busyTrigger, 2, ENC_LITTLE_ENDIAN);
+        } else {
+          ptvcursor_advance(cursor, 4);
+        }
+        ptvcursor_pop_subtree(cursor);
       }
-      ptvcursor_pop_subtree(cursor);
-      /* end for loop tree: lineData */
     }
     ptvcursor_pop_subtree(cursor);
-    /* end struct: lineData */
+  } else {
+    ptvcursor_advance(cursor, (lineDataEntries * 4));
   }
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x015e);
 }
 
 /*
@@ -7571,9 +7990,10 @@ handle_CallCountRespMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      CallControl
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   event
  */
 static void
-handle_RecordingStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_RecordingStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   si->callId = tvb_get_letohl(ptvcursor_tvbuff(cursor), ptvcursor_current_offset(cursor));
   ptvcursor_add(cursor, hf_skinny_callReference, 4, ENC_LITTLE_ENDIAN);
@@ -7586,22 +8006,22 @@ handle_RecordingStatusMessage(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: dev2pbx
  * VarLength: no
+ * MsgType:   request
  */
 static void
-handle_SPCPRegisterTokenReq(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SPCPRegisterTokenReq(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   {
-    /* start struct : sid / size: 24 */
     ptvcursor_add_text_with_subtree(cursor, SUBTREE_UNDEFINED_LENGTH, ett_skinny_tree, "sid");
-    ptvcursor_add(cursor, hf_skinny_DeviceName, 16, ENC_ASCII|ENC_NA);
+    ptvcursor_add(cursor, hf_skinny_DeviceName, 16, ENC_ASCII);
     ptvcursor_add(cursor, hf_skinny_reserved_for_future_use, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_add(cursor, hf_skinny_instance, 4, ENC_LITTLE_ENDIAN);
     ptvcursor_pop_subtree(cursor);
-    /* end struct: sid */
   }
   ptvcursor_add(cursor, hf_skinny_stationIpAddr, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_deviceType, 4, ENC_LITTLE_ENDIAN);
   ptvcursor_add(cursor, hf_skinny_maxStreams, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_request(cursor, pinfo, skinny_conv, 0x8000);
 }
 
 /*
@@ -7610,11 +8030,13 @@ handle_SPCPRegisterTokenReq(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_SPCPRegisterTokenAck(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SPCPRegisterTokenAck(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_features, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x8000);
 }
 
 /*
@@ -7623,221 +8045,245 @@ handle_SPCPRegisterTokenAck(ptvcursor_t *cursor, packet_info * pinfo _U_)
  * Type:      RegistrationAndManagement
  * Direction: pbx2dev
  * VarLength: no
+ * MsgType:   response
  */
 static void
-handle_SPCPRegisterTokenReject(ptvcursor_t *cursor, packet_info * pinfo _U_)
+handle_SPCPRegisterTokenReject(ptvcursor_t *cursor, packet_info * pinfo _U_, skinny_conv_info_t * skinny_conv _U_)
 {
   ptvcursor_add(cursor, hf_skinny_waitTimeBeforeNextReq, 4, ENC_LITTLE_ENDIAN);
+  skinny_reqrep_add_response(cursor, pinfo, skinny_conv, 0x8000);
 }
 
 
-/* Messages Handler Array */
-typedef void (*message_handler) (ptvcursor_t * cursor, packet_info *pinfo);
-static const struct opcode2handler {
-  guint16 opcode;
+typedef void (*message_handler) (ptvcursor_t * cursor, packet_info *pinfo, skinny_conv_info_t * skinny_conv);
+
+typedef struct _skinny_opcode_map_t {
+  uint32_t opcode;
   message_handler handler;
+  skinny_message_type_t type;
   const char *name;
-} skinny_opcode2handler[] = {
-  {0x0000, NULL                                           , "KeepAliveMessage"},
-  {0x0001, handle_RegisterMessage                         , "RegisterMessage"},
-  {0x0002, handle_IpPortMessage                           , "IpPortMessage"},
-  {0x0003, handle_KeypadButtonMessage                     , "KeypadButtonMessage"},
-  {0x0004, handle_EnblocCallMessage                       , "EnblocCallMessage"},
-  {0x0005, handle_StimulusMessage                         , "StimulusMessage"},
-  {0x0006, handle_OffHookMessage                          , "OffHookMessage"},
-  {0x0007, handle_OnHookMessage                           , "OnHookMessage"},
-  {0x0008, handle_HookFlashMessage                        , "HookFlashMessage"},
-  {0x0009, handle_ForwardStatReqMessage                   , "ForwardStatReqMessage"},
-  {0x000a, handle_SpeedDialStatReqMessage                 , "SpeedDialStatReqMessage"},
-  {0x000b, handle_LineStatReqMessage                      , "LineStatReqMessage"},
-  {0x000c, NULL                                           , "ConfigStatReqMessage"},
-  {0x000d, NULL                                           , "TimeDateReqMessage"},
-  {0x000e, NULL                                           , "ButtonTemplateReqMessage"},
-  {0x000f, NULL                                           , "VersionReqMessage"},
-  {0x0010, handle_CapabilitiesRes                         , "CapabilitiesRes"},
-  {0x0012, NULL                                           , "ServerReqMessage"},
-  {0x0020, handle_AlarmMessage                            , "AlarmMessage"},
-  {0x0021, handle_MulticastMediaReceptionAckMessage       , "MulticastMediaReceptionAckMessage"},
-  {0x0022, handle_OpenReceiveChannelAckMessage            , "OpenReceiveChannelAckMessage"},
-  {0x0023, handle_ConnectionStatisticsResMessage          , "ConnectionStatisticsResMessage"},
-  {0x0024, handle_OffHookWithCgpnMessage                  , "OffHookWithCgpnMessage"},
-  {0x0025, NULL                                           , "SoftKeySetReqMessage"},
-  {0x0026, handle_SoftKeyEventMessage                     , "SoftKeyEventMessage"},
-  {0x0027, handle_UnregisterMessage                       , "UnregisterMessage"},
-  {0x0028, NULL                                           , "SoftKeyTemplateReqMessage"},
-  {0x0029, handle_RegisterTokenReq                        , "RegisterTokenReq"},
-  {0x002a, handle_MediaTransmissionFailureMessage         , "MediaTransmissionFailureMessage"},
-  {0x002b, handle_HeadsetStatusMessage                    , "HeadsetStatusMessage"},
-  {0x002c, handle_MediaResourceNotificationMessage        , "MediaResourceNotificationMessage"},
-  {0x002d, handle_RegisterAvailableLinesMessage           , "RegisterAvailableLinesMessage"},
-  {0x002e, handle_DeviceToUserDataMessage                 , "DeviceToUserDataMessage"},
-  {0x002f, handle_DeviceToUserDataResponseMessage         , "DeviceToUserDataResponseMessage"},
-  {0x0030, handle_UpdateCapabilitiesMessage               , "UpdateCapabilitiesMessage"},
-  {0x0031, handle_OpenMultiMediaReceiveChannelAckMessage  , "OpenMultiMediaReceiveChannelAckMessage"},
-  {0x0032, handle_ClearConferenceMessage                  , "ClearConferenceMessage"},
-  {0x0033, handle_ServiceURLStatReqMessage                , "ServiceURLStatReqMessage"},
-  {0x0034, handle_FeatureStatReqMessage                   , "FeatureStatReqMessage"},
-  {0x0035, handle_CreateConferenceResMessage              , "CreateConferenceResMessage"},
-  {0x0036, handle_DeleteConferenceResMessage              , "DeleteConferenceResMessage"},
-  {0x0037, handle_ModifyConferenceResMessage              , "ModifyConferenceResMessage"},
-  {0x0038, handle_AddParticipantResMessage                , "AddParticipantResMessage"},
-  {0x0039, handle_AuditConferenceResMessage               , "AuditConferenceResMessage"},
-  {0x0040, handle_AuditParticipantResMessage              , "AuditParticipantResMessage"},
-  {0x0041, handle_DeviceToUserDataMessageVersion1         , "DeviceToUserDataMessageVersion1"},
-  {0x0042, handle_DeviceToUserDataResponseMessageVersion1 , "DeviceToUserDataResponseMessageVersion1"},
-  {0x0043, handle_UpdateCapabilitiesV2Message             , "UpdateCapabilitiesV2Message"},
-  {0x0044, handle_UpdateCapabilitiesV3Message             , "UpdateCapabilitiesV3Message"},
-  {0x0045, handle_PortResMessage                          , "PortResMessage"},
-  {0x0046, handle_QoSResvNotifyMessage                    , "QoSResvNotifyMessage"},
-  {0x0047, handle_QoSErrorNotifyMessage                   , "QoSErrorNotifyMessage"},
-  {0x0048, handle_SubscriptionStatReqMessage              , "SubscriptionStatReqMessage"},
-  {0x0049, handle_MediaPathEventMessage                   , "MediaPathEventMessage"},
-  {0x004a, handle_MediaPathCapabilityMessage              , "MediaPathCapabilityMessage"},
-  {0x004c, handle_MwiNotificationMessage                  , "MwiNotificationMessage"},
-  {0x0081, handle_RegisterAckMessage                      , "RegisterAckMessage"},
-  {0x0082, handle_StartToneMessage                        , "StartToneMessage"},
-  {0x0083, handle_StopToneMessage                         , "StopToneMessage"},
-  {0x0085, handle_SetRingerMessage                        , "SetRingerMessage"},
-  {0x0086, handle_SetLampMessage                          , "SetLampMessage"},
-  {0x0088, handle_SetSpeakerModeMessage                   , "SetSpeakerModeMessage"},
-  {0x0089, handle_SetMicroModeMessage                     , "SetMicroModeMessage"},
-  {0x008a, handle_StartMediaTransmissionMessage           , "StartMediaTransmissionMessage"},
-  {0x008b, handle_StopMediaTransmissionMessage            , "StopMediaTransmissionMessage"},
-  {0x008f, handle_CallInfoMessage                         , "CallInfoMessage"},
-  {0x0090, handle_ForwardStatMessage                      , "ForwardStatMessage"},
-  {0x0091, handle_SpeedDialStatMessage                    , "SpeedDialStatMessage"},
-  {0x0092, handle_LineStatMessage                         , "LineStatMessage"},
-  {0x0093, handle_ConfigStatMessage                       , "ConfigStatMessage"},
-  {0x0094, handle_DefineTimeDate                          , "DefineTimeDate"},
-  {0x0095, handle_StartSessionTransmissionMessage         , "StartSessionTransmissionMessage"},
-  {0x0096, handle_StopSessionTransmissionMessage          , "StopSessionTransmissionMessage"},
-  {0x0097, handle_ButtonTemplateMessage                   , "ButtonTemplateMessage"},
-  {0x0098, handle_VersionMessage                          , "VersionMessage"},
-  {0x0099, handle_DisplayTextMessage                      , "DisplayTextMessage"},
-  {0x009a, NULL                                           , "ClearDisplay"},
-  {0x009b, NULL                                           , "CapabilitiesReq"},
-  {0x009d, handle_RegisterRejectMessage                   , "RegisterRejectMessage"},
-  {0x009e, handle_ServerResMessage                        , "ServerResMessage"},
-  {0x009f, handle_Reset                                   , "Reset"},
-  {0x0100, NULL                                           , "KeepAliveAckMessage"},
-  {0x0101, handle_StartMulticastMediaReceptionMessage     , "StartMulticastMediaReceptionMessage"},
-  {0x0102, handle_StartMulticastMediaTransmissionMessage  , "StartMulticastMediaTransmissionMessage"},
-  {0x0103, handle_StopMulticastMediaReceptionMessage      , "StopMulticastMediaReceptionMessage"},
-  {0x0104, handle_StopMulticastMediaTransmissionMessage   , "StopMulticastMediaTransmissionMessage"},
-  {0x0105, handle_OpenReceiveChannelMessage               , "OpenReceiveChannelMessage"},
-  {0x0106, handle_CloseReceiveChannelMessage              , "CloseReceiveChannelMessage"},
-  {0x0107, handle_ConnectionStatisticsReqMessage          , "ConnectionStatisticsReqMessage"},
-  {0x0108, handle_SoftKeyTemplateResMessage               , "SoftKeyTemplateResMessage"},
-  {0x0109, handle_SoftKeySetResMessage                    , "SoftKeySetResMessage"},
-  {0x0110, handle_SelectSoftKeysMessage                   , "SelectSoftKeysMessage"},
-  {0x0111, handle_CallStateMessage                        , "CallStateMessage"},
-  {0x0112, handle_DisplayPromptStatusMessage              , "DisplayPromptStatusMessage"},
-  {0x0113, handle_ClearPromptStatusMessage                , "ClearPromptStatusMessage"},
-  {0x0114, handle_DisplayNotifyMessage                    , "DisplayNotifyMessage"},
-  {0x0115, NULL                                           , "ClearNotifyMessage"},
-  {0x0116, handle_ActivateCallPlaneMessage                , "ActivateCallPlaneMessage"},
-  {0x0117, NULL                                           , "DeactivateCallPlaneMessage"},
-  {0x0118, handle_UnregisterAckMessage                    , "UnregisterAckMessage"},
-  {0x0119, handle_BackSpaceReqMessage                     , "BackSpaceReqMessage"},
-  {0x011a, NULL                                           , "RegisterTokenAck"},
-  {0x011b, handle_RegisterTokenReject                     , "RegisterTokenReject"},
-  {0x011c, handle_StartMediaFailureDetectionMessage       , "StartMediaFailureDetectionMessage"},
-  {0x011d, handle_DialedNumberMessage                     , "DialedNumberMessage"},
-  {0x011e, handle_UserToDeviceDataMessage                 , "UserToDeviceDataMessage"},
-  {0x011f, handle_FeatureStatMessage                      , "FeatureStatMessage"},
-  {0x0120, handle_DisplayPriNotifyMessage                 , "DisplayPriNotifyMessage"},
-  {0x0121, handle_ClearPriNotifyMessage                   , "ClearPriNotifyMessage"},
-  {0x0122, handle_StartAnnouncementMessage                , "StartAnnouncementMessage"},
-  {0x0123, handle_StopAnnouncementMessage                 , "StopAnnouncementMessage"},
-  {0x0124, handle_AnnouncementFinishMessage               , "AnnouncementFinishMessage"},
-  {0x0127, handle_NotifyDtmfToneMessage                   , "NotifyDtmfToneMessage"},
-  {0x0128, handle_SendDtmfToneMessage                     , "SendDtmfToneMessage"},
-  {0x0129, handle_SubscribeDtmfPayloadReqMessage          , "SubscribeDtmfPayloadReqMessage"},
-  {0x012a, handle_SubscribeDtmfPayloadResMessage          , "SubscribeDtmfPayloadResMessage"},
-  {0x012b, handle_SubscribeDtmfPayloadErrMessage          , "SubscribeDtmfPayloadErrMessage"},
-  {0x012c, handle_UnSubscribeDtmfPayloadReqMessage        , "UnSubscribeDtmfPayloadReqMessage"},
-  {0x012d, handle_UnSubscribeDtmfPayloadResMessage        , "UnSubscribeDtmfPayloadResMessage"},
-  {0x012e, handle_UnSubscribeDtmfPayloadErrMessage        , "UnSubscribeDtmfPayloadErrMessage"},
-  {0x012f, handle_ServiceURLStatMessage                   , "ServiceURLStatMessage"},
-  {0x0130, handle_CallSelectStatMessage                   , "CallSelectStatMessage"},
-  {0x0131, handle_OpenMultiMediaReceiveChannelMessage     , "OpenMultiMediaReceiveChannelMessage"},
-  {0x0132, handle_StartMultiMediaTransmissionMessage      , "StartMultiMediaTransmissionMessage"},
-  {0x0133, handle_StopMultiMediaTransmissionMessage       , "StopMultiMediaTransmissionMessage"},
-  {0x0134, handle_MiscellaneousCommandMessage             , "MiscellaneousCommandMessage"},
-  {0x0135, handle_FlowControlCommandMessage               , "FlowControlCommandMessage"},
-  {0x0136, handle_CloseMultiMediaReceiveChannelMessage    , "CloseMultiMediaReceiveChannelMessage"},
-  {0x0137, handle_CreateConferenceReqMessage              , "CreateConferenceReqMessage"},
-  {0x0138, handle_DeleteConferenceReqMessage              , "DeleteConferenceReqMessage"},
-  {0x0139, handle_ModifyConferenceReqMessage              , "ModifyConferenceReqMessage"},
-  {0x013a, handle_AddParticipantReqMessage                , "AddParticipantReqMessage"},
-  {0x013b, handle_DropParticipantReqMessage               , "DropParticipantReqMessage"},
-  {0x013c, NULL                                           , "AuditConferenceReqMessage"},
-  {0x013d, handle_AuditParticipantReqMessage              , "AuditParticipantReqMessage"},
-  {0x013e, handle_ChangeParticipantReqMessage             , "ChangeParticipantReqMessage"},
-  {0x013f, handle_UserToDeviceDataMessageVersion1         , "UserToDeviceDataMessageVersion1"},
-  {0x0140, handle_VideoDisplayCommandMessage              , "VideoDisplayCommandMessage"},
-  {0x0141, handle_FlowControlNotifyMessage                , "FlowControlNotifyMessage"},
-  {0x0142, handle_ConfigStatV2Message                     , "ConfigStatV2Message"},
-  {0x0143, handle_DisplayNotifyV2Message                  , "DisplayNotifyV2Message"},
-  {0x0144, handle_DisplayPriNotifyV2Message               , "DisplayPriNotifyV2Message"},
-  {0x0145, handle_DisplayPromptStatusV2Message            , "DisplayPromptStatusV2Message"},
-  {0x0146, handle_FeatureStatV2Message                    , "FeatureStatV2Message"},
-  {0x0147, handle_LineStatV2Message                       , "LineStatV2Message"},
-  {0x0148, handle_ServiceURLStatV2Message                 , "ServiceURLStatV2Message"},
-  {0x0149, handle_SpeedDialStatV2Message                  , "SpeedDialStatV2Message"},
-  {0x014a, handle_CallInfoV2Message                       , "CallInfoV2Message"},
-  {0x014b, handle_PortReqMessage                          , "PortReqMessage"},
-  {0x014c, handle_PortCloseMessage                        , "PortCloseMessage"},
-  {0x014d, handle_QoSListenMessage                        , "QoSListenMessage"},
-  {0x014e, handle_QoSPathMessage                          , "QoSPathMessage"},
-  {0x014f, handle_QoSTeardownMessage                      , "QoSTeardownMessage"},
-  {0x0150, handle_UpdateDSCPMessage                       , "UpdateDSCPMessage"},
-  {0x0151, handle_QoSModifyMessage                        , "QoSModifyMessage"},
-  {0x0152, handle_SubscriptionStatMessage                 , "SubscriptionStatMessage"},
-  {0x0153, handle_NotificationMessage                     , "NotificationMessage"},
-  {0x0154, handle_StartMediaTransmissionAckMessage        , "StartMediaTransmissionAckMessage"},
-  {0x0155, handle_StartMultiMediaTransmissionAckMessage   , "StartMultiMediaTransmissionAckMessage"},
-  {0x0156, handle_CallHistoryInfoMessage                  , "CallHistoryInfoMessage"},
-  {0x0156, handle_LocationInfoMessage                     , "LocationInfoMessage"},
-  {0x0158, handle_MwiResponseMessage                      , "MwiResponseMessage"},
-  {0x0159, handle_AddOnDeviceCapabilitiesMessage          , "AddOnDeviceCapabilitiesMessage"},
-  {0x015a, handle_EnhancedAlarmMessage                    , "EnhancedAlarmMessage"},
-  {0x015e, NULL                                           , "CallCountReqMessage"},
-  {0x015f, handle_CallCountRespMessage                    , "CallCountRespMessage"},
-  {0x0160, handle_RecordingStatusMessage                  , "RecordingStatusMessage"},
-  {0x8000, handle_SPCPRegisterTokenReq                    , "SPCPRegisterTokenReq"},
-  {0x8100, handle_SPCPRegisterTokenAck                    , "SPCPRegisterTokenAck"},
-  {0x8101, handle_SPCPRegisterTokenReject                 , "SPCPRegisterTokenReject"},
+} skinny_opcode_map_t;
+
+/* Messages Handler Array */
+static const skinny_opcode_map_t skinny_opcode_map[] = {
+  {0x0000, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "KeepAliveReqMessage"},
+  {0x0001, handle_RegisterReqMessage                      , SKINNY_MSGTYPE_REQUEST  , "RegisterReqMessage"},
+  {0x0002, handle_IpPortMessage                           , SKINNY_MSGTYPE_EVENT    , "IpPortMessage"},
+  {0x0003, handle_KeypadButtonMessage                     , SKINNY_MSGTYPE_EVENT    , "KeypadButtonMessage"},
+  {0x0004, handle_EnblocCallMessage                       , SKINNY_MSGTYPE_EVENT    , "EnblocCallMessage"},
+  {0x0005, handle_StimulusMessage                         , SKINNY_MSGTYPE_EVENT    , "StimulusMessage"},
+  {0x0006, handle_OffHookMessage                          , SKINNY_MSGTYPE_EVENT    , "OffHookMessage"},
+  {0x0007, handle_OnHookMessage                           , SKINNY_MSGTYPE_EVENT    , "OnHookMessage"},
+  {0x0008, handle_HookFlashMessage                        , SKINNY_MSGTYPE_EVENT    , "HookFlashMessage"},
+  {0x0009, handle_ForwardStatReqMessage                   , SKINNY_MSGTYPE_REQUEST  , "ForwardStatReqMessage"},
+  {0x000a, handle_SpeedDialStatReqMessage                 , SKINNY_MSGTYPE_REQUEST  , "SpeedDialStatReqMessage"},
+  {0x000b, handle_LineStatReqMessage                      , SKINNY_MSGTYPE_REQUEST  , "LineStatReqMessage"},
+  {0x000c, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "ConfigStatReqMessage"},
+  {0x000d, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "TimeDateReqMessage"},
+  {0x000e, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "ButtonTemplateReqMessage"},
+  {0x000f, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "VersionReqMessage"},
+  {0x0010, handle_CapabilitiesResMessage                  , SKINNY_MSGTYPE_RESPONSE , "CapabilitiesResMessage"},
+  {0x0012, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "ServerReqMessage"},
+  {0x0020, handle_AlarmMessage                            , SKINNY_MSGTYPE_EVENT    , "AlarmMessage"},
+  {0x0021, handle_MulticastMediaReceptionAckMessage       , SKINNY_MSGTYPE_RESPONSE , "MulticastMediaReceptionAckMessage"},
+  {0x0022, handle_OpenReceiveChannelAckMessage            , SKINNY_MSGTYPE_RESPONSE , "OpenReceiveChannelAckMessage"},
+  {0x0023, handle_ConnectionStatisticsResMessage          , SKINNY_MSGTYPE_RESPONSE , "ConnectionStatisticsResMessage"},
+  {0x0024, handle_OffHookWithCallingPartyNumberMessage    , SKINNY_MSGTYPE_EVENT    , "OffHookWithCallingPartyNumberMessage"},
+  {0x0025, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "SoftKeySetReqMessage"},
+  {0x0026, handle_SoftKeyEventMessage                     , SKINNY_MSGTYPE_EVENT    , "SoftKeyEventMessage"},
+  {0x0027, handle_UnregisterReqMessage                    , SKINNY_MSGTYPE_REQUEST  , "UnregisterReqMessage"},
+  {0x0028, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "SoftKeyTemplateReqMessage"},
+  {0x0029, handle_RegisterTokenReq                        , SKINNY_MSGTYPE_REQUEST  , "RegisterTokenReq"},
+  {0x002a, handle_MediaTransmissionFailureMessage         , SKINNY_MSGTYPE_RESPONSE , "MediaTransmissionFailureMessage"},
+  {0x002b, handle_HeadsetStatusMessage                    , SKINNY_MSGTYPE_EVENT    , "HeadsetStatusMessage"},
+  {0x002c, handle_MediaResourceNotificationMessage        , SKINNY_MSGTYPE_EVENT    , "MediaResourceNotificationMessage"},
+  {0x002d, handle_RegisterAvailableLinesMessage           , SKINNY_MSGTYPE_EVENT    , "RegisterAvailableLinesMessage"},
+  {0x002e, handle_DeviceToUserDataMessage                 , SKINNY_MSGTYPE_REQUEST  , "DeviceToUserDataMessage"},
+  {0x002f, handle_DeviceToUserDataResponseMessage         , SKINNY_MSGTYPE_RESPONSE , "DeviceToUserDataResponseMessage"},
+  {0x0030, handle_UpdateCapabilitiesMessage               , SKINNY_MSGTYPE_EVENT    , "UpdateCapabilitiesMessage"},
+  {0x0031, handle_OpenMultiMediaReceiveChannelAckMessage  , SKINNY_MSGTYPE_RESPONSE , "OpenMultiMediaReceiveChannelAckMessage"},
+  {0x0032, handle_ClearConferenceMessage                  , SKINNY_MSGTYPE_EVENT    , "ClearConferenceMessage"},
+  {0x0033, handle_ServiceURLStatReqMessage                , SKINNY_MSGTYPE_REQUEST  , "ServiceURLStatReqMessage"},
+  {0x0034, handle_FeatureStatReqMessage                   , SKINNY_MSGTYPE_REQUEST  , "FeatureStatReqMessage"},
+  {0x0035, handle_CreateConferenceResMessage              , SKINNY_MSGTYPE_RESPONSE , "CreateConferenceResMessage"},
+  {0x0036, handle_DeleteConferenceResMessage              , SKINNY_MSGTYPE_RESPONSE , "DeleteConferenceResMessage"},
+  {0x0037, handle_ModifyConferenceResMessage              , SKINNY_MSGTYPE_RESPONSE , "ModifyConferenceResMessage"},
+  {0x0038, handle_AddParticipantResMessage                , SKINNY_MSGTYPE_RESPONSE , "AddParticipantResMessage"},
+  {0x0039, handle_AuditConferenceResMessage               , SKINNY_MSGTYPE_RESPONSE , "AuditConferenceResMessage"},
+  {0x0040, handle_AuditParticipantResMessage              , SKINNY_MSGTYPE_RESPONSE , "AuditParticipantResMessage"},
+  {0x0041, handle_DeviceToUserDataMessageVersion1         , SKINNY_MSGTYPE_REQUEST  , "DeviceToUserDataMessageVersion1"},
+  {0x0042, handle_DeviceToUserDataResponseMessageVersion1 , SKINNY_MSGTYPE_RESPONSE , "DeviceToUserDataResponseMessageVersion1"},
+  {0x0043, handle_CapabilitiesV2ResMessage                , SKINNY_MSGTYPE_RESPONSE , "CapabilitiesV2ResMessage"},
+  {0x0044, handle_CapabilitiesV3ResMessage                , SKINNY_MSGTYPE_RESPONSE , "CapabilitiesV3ResMessage"},
+  {0x0045, handle_PortResMessage                          , SKINNY_MSGTYPE_RESPONSE , "PortResMessage"},
+  {0x0046, handle_QoSResvNotifyMessage                    , SKINNY_MSGTYPE_EVENT    , "QoSResvNotifyMessage"},
+  {0x0047, handle_QoSErrorNotifyMessage                   , SKINNY_MSGTYPE_EVENT    , "QoSErrorNotifyMessage"},
+  {0x0048, handle_SubscriptionStatReqMessage              , SKINNY_MSGTYPE_REQUEST  , "SubscriptionStatReqMessage"},
+  {0x0049, handle_MediaPathEventMessage                   , SKINNY_MSGTYPE_EVENT    , "MediaPathEventMessage"},
+  {0x004a, handle_MediaPathCapabilityMessage              , SKINNY_MSGTYPE_EVENT    , "MediaPathCapabilityMessage"},
+  {0x004c, handle_MwiNotificationMessage                  , SKINNY_MSGTYPE_REQUEST  , "MwiNotificationMessage"},
+  {0x0081, handle_RegisterAckMessage                      , SKINNY_MSGTYPE_RESPONSE , "RegisterAckMessage"},
+  {0x0082, handle_StartToneMessage                        , SKINNY_MSGTYPE_EVENT    , "StartToneMessage"},
+  {0x0083, handle_StopToneMessage                         , SKINNY_MSGTYPE_EVENT    , "StopToneMessage"},
+  {0x0085, handle_SetRingerMessage                        , SKINNY_MSGTYPE_EVENT    , "SetRingerMessage"},
+  {0x0086, handle_SetLampMessage                          , SKINNY_MSGTYPE_EVENT    , "SetLampMessage"},
+  {0x0087, NULL                                           , SKINNY_MSGTYPE_EVENT    , "SetHookFlashDetectMessage"},
+  {0x0088, handle_SetSpeakerModeMessage                   , SKINNY_MSGTYPE_EVENT    , "SetSpeakerModeMessage"},
+  {0x0089, handle_SetMicroModeMessage                     , SKINNY_MSGTYPE_EVENT    , "SetMicroModeMessage"},
+  {0x008a, handle_StartMediaTransmissionMessage           , SKINNY_MSGTYPE_REQUEST  , "StartMediaTransmissionMessage"},
+  {0x008b, handle_StopMediaTransmissionMessage            , SKINNY_MSGTYPE_EVENT    , "StopMediaTransmissionMessage"},
+  {0x008f, handle_CallInfoMessage                         , SKINNY_MSGTYPE_EVENT    , "CallInfoMessage"},
+  {0x0090, handle_ForwardStatResMessage                   , SKINNY_MSGTYPE_RESPONSE , "ForwardStatResMessage"},
+  {0x0091, handle_SpeedDialStatResMessage                 , SKINNY_MSGTYPE_RESPONSE , "SpeedDialStatResMessage"},
+  {0x0092, handle_LineStatResMessage                      , SKINNY_MSGTYPE_RESPONSE , "LineStatResMessage"},
+  {0x0093, handle_ConfigStatResMessage                    , SKINNY_MSGTYPE_RESPONSE , "ConfigStatResMessage"},
+  {0x0094, handle_TimeDateResMessage                      , SKINNY_MSGTYPE_RESPONSE , "TimeDateResMessage"},
+  {0x0095, handle_StartSessionTransmissionMessage         , SKINNY_MSGTYPE_EVENT    , "StartSessionTransmissionMessage"},
+  {0x0096, handle_StopSessionTransmissionMessage          , SKINNY_MSGTYPE_EVENT    , "StopSessionTransmissionMessage"},
+  {0x0097, handle_ButtonTemplateResMessage                , SKINNY_MSGTYPE_RESPONSE , "ButtonTemplateResMessage"},
+  {0x0098, handle_VersionResMessage                       , SKINNY_MSGTYPE_RESPONSE , "VersionResMessage"},
+  {0x0099, handle_DisplayTextMessage                      , SKINNY_MSGTYPE_EVENT    , "DisplayTextMessage"},
+  {0x009a, NULL                                           , SKINNY_MSGTYPE_EVENT    , "ClearDisplay"},
+  {0x009b, NULL                                           , SKINNY_MSGTYPE_EVENT    , "CapabilitiesReq"},
+  {0x009d, handle_RegisterRejectMessage                   , SKINNY_MSGTYPE_EVENT    , "RegisterRejectMessage"},
+  {0x009e, handle_ServerResMessage                        , SKINNY_MSGTYPE_RESPONSE , "ServerResMessage"},
+  {0x009f, handle_Reset                                   , SKINNY_MSGTYPE_EVENT    , "Reset"},
+  {0x0100, NULL                                           , SKINNY_MSGTYPE_RESPONSE , "KeepAliveAckMessage"},
+  {0x0101, handle_StartMulticastMediaReceptionMessage     , SKINNY_MSGTYPE_REQUEST  , "StartMulticastMediaReceptionMessage"},
+  {0x0102, handle_StartMulticastMediaTransmissionMessage  , SKINNY_MSGTYPE_REQUEST  , "StartMulticastMediaTransmissionMessage"},
+  {0x0103, handle_StopMulticastMediaReceptionMessage      , SKINNY_MSGTYPE_EVENT    , "StopMulticastMediaReceptionMessage"},
+  {0x0104, handle_StopMulticastMediaTransmissionMessage   , SKINNY_MSGTYPE_EVENT    , "StopMulticastMediaTransmissionMessage"},
+  {0x0105, handle_OpenReceiveChannelMessage               , SKINNY_MSGTYPE_REQUEST  , "OpenReceiveChannelMessage"},
+  {0x0106, handle_CloseReceiveChannelMessage              , SKINNY_MSGTYPE_EVENT    , "CloseReceiveChannelMessage"},
+  {0x0107, handle_ConnectionStatisticsReqMessage          , SKINNY_MSGTYPE_REQUEST  , "ConnectionStatisticsReqMessage"},
+  {0x0108, handle_SoftKeyTemplateResMessage               , SKINNY_MSGTYPE_RESPONSE , "SoftKeyTemplateResMessage"},
+  {0x0109, handle_SoftKeySetResMessage                    , SKINNY_MSGTYPE_RESPONSE , "SoftKeySetResMessage"},
+  {0x0110, handle_SelectSoftKeysMessage                   , SKINNY_MSGTYPE_EVENT    , "SelectSoftKeysMessage"},
+  {0x0111, handle_CallStateMessage                        , SKINNY_MSGTYPE_EVENT    , "CallStateMessage"},
+  {0x0112, handle_DisplayPromptStatusMessage              , SKINNY_MSGTYPE_EVENT    , "DisplayPromptStatusMessage"},
+  {0x0113, handle_ClearPromptStatusMessage                , SKINNY_MSGTYPE_EVENT    , "ClearPromptStatusMessage"},
+  {0x0114, handle_DisplayNotifyMessage                    , SKINNY_MSGTYPE_EVENT    , "DisplayNotifyMessage"},
+  {0x0115, NULL                                           , SKINNY_MSGTYPE_EVENT    , "ClearNotifyMessage"},
+  {0x0116, handle_ActivateCallPlaneMessage                , SKINNY_MSGTYPE_EVENT    , "ActivateCallPlaneMessage"},
+  {0x0117, NULL                                           , SKINNY_MSGTYPE_EVENT    , "DeactivateCallPlaneMessage"},
+  {0x0118, handle_UnregisterAckMessage                    , SKINNY_MSGTYPE_RESPONSE , "UnregisterAckMessage"},
+  {0x0119, handle_BackSpaceResMessage                     , SKINNY_MSGTYPE_EVENT    , "BackSpaceResMessage"},
+  {0x011a, NULL                                           , SKINNY_MSGTYPE_RESPONSE , "RegisterTokenAck"},
+  {0x011b, handle_RegisterTokenReject                     , SKINNY_MSGTYPE_RESPONSE , "RegisterTokenReject"},
+  {0x011c, handle_StartMediaFailureDetectionMessage       , SKINNY_MSGTYPE_EVENT    , "StartMediaFailureDetectionMessage"},
+  {0x011d, handle_DialedNumberMessage                     , SKINNY_MSGTYPE_EVENT    , "DialedNumberMessage"},
+  {0x011e, handle_UserToDeviceDataMessage                 , SKINNY_MSGTYPE_EVENT    , "UserToDeviceDataMessage"},
+  {0x011f, handle_FeatureStatResMessage                   , SKINNY_MSGTYPE_RESPONSE , "FeatureStatResMessage"},
+  {0x0120, handle_DisplayPriNotifyMessage                 , SKINNY_MSGTYPE_EVENT    , "DisplayPriNotifyMessage"},
+  {0x0121, handle_ClearPriNotifyMessage                   , SKINNY_MSGTYPE_EVENT    , "ClearPriNotifyMessage"},
+  {0x0122, handle_StartAnnouncementMessage                , SKINNY_MSGTYPE_EVENT    , "StartAnnouncementMessage"},
+  {0x0123, handle_StopAnnouncementMessage                 , SKINNY_MSGTYPE_EVENT    , "StopAnnouncementMessage"},
+  {0x0124, handle_AnnouncementFinishMessage               , SKINNY_MSGTYPE_EVENT    , "AnnouncementFinishMessage"},
+  {0x0127, handle_NotifyDtmfToneMessage                   , SKINNY_MSGTYPE_EVENT    , "NotifyDtmfToneMessage"},
+  {0x0128, handle_SendDtmfToneMessage                     , SKINNY_MSGTYPE_EVENT    , "SendDtmfToneMessage"},
+  {0x0129, handle_SubscribeDtmfPayloadReqMessage          , SKINNY_MSGTYPE_REQUEST  , "SubscribeDtmfPayloadReqMessage"},
+  {0x012a, handle_SubscribeDtmfPayloadResMessage          , SKINNY_MSGTYPE_RESPONSE , "SubscribeDtmfPayloadResMessage"},
+  {0x012b, handle_SubscribeDtmfPayloadErrMessage          , SKINNY_MSGTYPE_RESPONSE , "SubscribeDtmfPayloadErrMessage"},
+  {0x012c, handle_UnSubscribeDtmfPayloadReqMessage        , SKINNY_MSGTYPE_REQUEST  , "UnSubscribeDtmfPayloadReqMessage"},
+  {0x012d, handle_UnSubscribeDtmfPayloadResMessage        , SKINNY_MSGTYPE_RESPONSE , "UnSubscribeDtmfPayloadResMessage"},
+  {0x012e, handle_UnSubscribeDtmfPayloadErrMessage        , SKINNY_MSGTYPE_RESPONSE , "UnSubscribeDtmfPayloadErrMessage"},
+  {0x012f, handle_ServiceURLStatResMessage                , SKINNY_MSGTYPE_RESPONSE , "ServiceURLStatResMessage"},
+  {0x0130, handle_CallSelectStatResMessage                , SKINNY_MSGTYPE_EVENT    , "CallSelectStatResMessage"},
+  {0x0131, handle_OpenMultiMediaReceiveChannelMessage     , SKINNY_MSGTYPE_REQUEST  , "OpenMultiMediaReceiveChannelMessage"},
+  {0x0132, handle_StartMultiMediaTransmissionMessage      , SKINNY_MSGTYPE_REQUEST  , "StartMultiMediaTransmissionMessage"},
+  {0x0133, handle_StopMultiMediaTransmissionMessage       , SKINNY_MSGTYPE_EVENT    , "StopMultiMediaTransmissionMessage"},
+  {0x0134, handle_MiscellaneousCommandMessage             , SKINNY_MSGTYPE_EVENT    , "MiscellaneousCommandMessage"},
+  {0x0135, handle_FlowControlCommandMessage               , SKINNY_MSGTYPE_EVENT    , "FlowControlCommandMessage"},
+  {0x0136, handle_CloseMultiMediaReceiveChannelMessage    , SKINNY_MSGTYPE_EVENT    , "CloseMultiMediaReceiveChannelMessage"},
+  {0x0137, handle_CreateConferenceReqMessage              , SKINNY_MSGTYPE_REQUEST  , "CreateConferenceReqMessage"},
+  {0x0138, handle_DeleteConferenceReqMessage              , SKINNY_MSGTYPE_REQUEST  , "DeleteConferenceReqMessage"},
+  {0x0139, handle_ModifyConferenceReqMessage              , SKINNY_MSGTYPE_REQUEST  , "ModifyConferenceReqMessage"},
+  {0x013a, handle_AddParticipantReqMessage                , SKINNY_MSGTYPE_REQUEST  , "AddParticipantReqMessage"},
+  {0x013b, handle_DropParticipantReqMessage               , SKINNY_MSGTYPE_REQUEST  , "DropParticipantReqMessage"},
+  {0x013c, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "AuditConferenceReqMessage"},
+  {0x013d, handle_AuditParticipantReqMessage              , SKINNY_MSGTYPE_REQUEST  , "AuditParticipantReqMessage"},
+  {0x013e, handle_ChangeParticipantReqMessage             , SKINNY_MSGTYPE_REQUEST  , "ChangeParticipantReqMessage"},
+  {0x013f, handle_UserToDeviceDataMessageVersion1         , SKINNY_MSGTYPE_EVENT    , "UserToDeviceDataMessageVersion1"},
+  {0x0140, handle_VideoDisplayCommandMessage              , SKINNY_MSGTYPE_EVENT    , "VideoDisplayCommandMessage"},
+  {0x0141, handle_FlowControlNotifyMessage                , SKINNY_MSGTYPE_EVENT    , "FlowControlNotifyMessage"},
+  {0x0142, handle_ConfigStatV2ResMessage                  , SKINNY_MSGTYPE_RESPONSE , "ConfigStatV2ResMessage"},
+  {0x0143, handle_DisplayNotifyV2Message                  , SKINNY_MSGTYPE_EVENT    , "DisplayNotifyV2Message"},
+  {0x0144, handle_DisplayPriNotifyV2Message               , SKINNY_MSGTYPE_EVENT    , "DisplayPriNotifyV2Message"},
+  {0x0145, handle_DisplayPromptStatusV2Message            , SKINNY_MSGTYPE_EVENT    , "DisplayPromptStatusV2Message"},
+  {0x0146, handle_FeatureStatV2ResMessage                 , SKINNY_MSGTYPE_RESPONSE , "FeatureStatV2ResMessage"},
+  {0x0147, handle_LineStatV2ResMessage                    , SKINNY_MSGTYPE_RESPONSE , "LineStatV2ResMessage"},
+  {0x0148, handle_ServiceURLStatV2ResMessage              , SKINNY_MSGTYPE_RESPONSE , "ServiceURLStatV2ResMessage"},
+  {0x0149, handle_SpeedDialStatV2ResMessage               , SKINNY_MSGTYPE_RESPONSE , "SpeedDialStatV2ResMessage"},
+  {0x014a, handle_CallInfoV2Message                       , SKINNY_MSGTYPE_EVENT    , "CallInfoV2Message"},
+  {0x014b, handle_PortReqMessage                          , SKINNY_MSGTYPE_REQUEST  , "PortReqMessage"},
+  {0x014c, handle_PortCloseMessage                        , SKINNY_MSGTYPE_EVENT    , "PortCloseMessage"},
+  {0x014d, handle_QoSListenMessage                        , SKINNY_MSGTYPE_EVENT    , "QoSListenMessage"},
+  {0x014e, handle_QoSPathMessage                          , SKINNY_MSGTYPE_EVENT    , "QoSPathMessage"},
+  {0x014f, handle_QoSTeardownMessage                      , SKINNY_MSGTYPE_EVENT    , "QoSTeardownMessage"},
+  {0x0150, handle_UpdateDSCPMessage                       , SKINNY_MSGTYPE_EVENT    , "UpdateDSCPMessage"},
+  {0x0151, handle_QoSModifyMessage                        , SKINNY_MSGTYPE_EVENT    , "QoSModifyMessage"},
+  {0x0152, handle_SubscriptionStatResMessage              , SKINNY_MSGTYPE_RESPONSE , "SubscriptionStatResMessage"},
+  {0x0153, handle_NotificationMessage                     , SKINNY_MSGTYPE_EVENT    , "NotificationMessage"},
+  {0x0154, handle_StartMediaTransmissionAckMessage        , SKINNY_MSGTYPE_RESPONSE , "StartMediaTransmissionAckMessage"},
+  {0x0155, handle_StartMultiMediaTransmissionAckMessage   , SKINNY_MSGTYPE_RESPONSE , "StartMultiMediaTransmissionAckMessage"},
+  {0x0156, handle_CallHistoryInfoMessage                  , SKINNY_MSGTYPE_EVENT    , "CallHistoryInfoMessage"},
+  {0x0157, handle_LocationInfoMessage                     , SKINNY_MSGTYPE_EVENT    , "LocationInfoMessage"},
+  {0x0158, handle_MwiResMessage                           , SKINNY_MSGTYPE_RESPONSE , "MwiResMessage"},
+  {0x0159, handle_AddOnDeviceCapabilitiesMessage          , SKINNY_MSGTYPE_EVENT    , "AddOnDeviceCapabilitiesMessage"},
+  {0x015a, handle_EnhancedAlarmMessage                    , SKINNY_MSGTYPE_EVENT    , "EnhancedAlarmMessage"},
+  {0x015e, NULL                                           , SKINNY_MSGTYPE_REQUEST  , "CallCountReqMessage"},
+  {0x015f, handle_CallCountRespMessage                    , SKINNY_MSGTYPE_RESPONSE , "CallCountRespMessage"},
+  {0x0160, handle_RecordingStatusMessage                  , SKINNY_MSGTYPE_EVENT    , "RecordingStatusMessage"},
+  {0x8000, handle_SPCPRegisterTokenReq                    , SKINNY_MSGTYPE_REQUEST  , "SPCPRegisterTokenReq"},
+  {0x8100, handle_SPCPRegisterTokenAck                    , SKINNY_MSGTYPE_RESPONSE , "SPCPRegisterTokenAck"},
+  {0x8101, handle_SPCPRegisterTokenReject                 , SKINNY_MSGTYPE_RESPONSE , "SPCPRegisterTokenReject"},
 };
 
-/* Dissect a single SCCP PDU */
+/* Dissect a single SKINNY PDU */
 static int dissect_skinny_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  guint    offset   = 0;
-  /*gboolean is_video = FALSE;*/    /* FIX ME: need to indicate video or not */
+  unsigned offset   = 0;
+  /*bool is_video = false;*/    /* FIX ME: need to indicate video or not */
   ptvcursor_t* cursor;
+  conversation_t *conversation;
+  skinny_conv_info_t *skinny_conv;
+  const skinny_opcode_map_t *opcode_entry = NULL;
 
   /* Header fields */
-  guint32  hdr_data_length;
-  guint32  hdr_version;
-  guint32  data_messageid;
-  guint16  i;
+  uint32_t hdr_data_length;
+  uint32_t hdr_version;
+  uint32_t hdr_opcode;
 
   /* Set up structures we will need to add the protocol subtree and manage it */
   proto_tree *skinny_tree = NULL;
   proto_item *ti = NULL;
 
   /* Initialization */
-  /*
-  hdr_data_length = tvb_get_letohl(tvb, offset);
-  hdr_version     = tvb_get_letohl(tvb, offset+4);
-  data_messageid  = tvb_get_letohl(tvb, offset+8);
-  */
   hdr_data_length = tvb_get_letohl(tvb, 0);
   hdr_version     = tvb_get_letohl(tvb, 4);
-  data_messageid  = tvb_get_letohl(tvb, 8);
+  hdr_opcode      = tvb_get_letohl(tvb, 8);
+
+  for (size_t i = 0; i < array_length(skinny_opcode_map); i++) {
+    if (skinny_opcode_map[i].opcode == hdr_opcode) {
+      opcode_entry = &skinny_opcode_map[i];
+    }
+  }
+
+  conversation = find_or_create_conversation(pinfo);
+  skinny_conv = (skinny_conv_info_t *)conversation_get_proto_data(conversation, proto_skinny);
+  if (!skinny_conv) {
+    skinny_conv = wmem_new0(wmem_file_scope(), skinny_conv_info_t);
+    //skinny_conv->pending_req_resp = wmem_map_new(wmem_file_scope(), wmem_str_hash, g_str_equal);
+    skinny_conv->pending_req_resp = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
+    skinny_conv->requests = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
+    skinny_conv->responses = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
+    skinny_conv->lineId = -1;
+    skinny_conv->mtype = SKINNY_MSGTYPE_EVENT;
+    conversation_add_proto_data(conversation, proto_skinny, skinny_conv);
+  }
 
   /* Initialise stat info for passing to tap */
+  /* WIP: will be (partially) replaced in favor of conversionation, dependents: ui/voip_calls.c */
   pi_current++;
   if (pi_current == MAX_SKINNY_MESSAGES_IN_PACKET)
   {
@@ -7845,49 +8291,56 @@ static int dissect_skinny_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     pi_current = 0;
   }
   si = &pi_arr[pi_current];
-  si->messId = data_messageid;
-  si->messageName = val_to_str_ext(data_messageid, &message_id_ext, "0x%08X (Unknown)");
+  si->messId = hdr_opcode;
+  si->messageName = val_to_str_ext(pinfo->pool, hdr_opcode, &message_id_ext, "0x%08X (Unknown)");
   si->callId = 0;
   si->lineId = 0;
-  si->passThruId = 0;
+  si->passThroughPartyId = 0;
   si->callState = 0;
   g_free(si->callingParty);
   si->callingParty = NULL;
   g_free(si->calledParty);
   si->calledParty = NULL;
-  si->openreceiveStatus = 0;
-  si->startmediatransmisionStatus = 0;
-
-  /* In the interest of speed, if "tree" is NULL, don't do any work not
-   * necessary to generate protocol tree items.
-   */
-  if (tree) {
-    ti = proto_tree_add_item(tree, proto_skinny, tvb, offset, hdr_data_length+8, ENC_NA);
-    skinny_tree = proto_item_add_subtree(ti, ett_skinny);
-    proto_tree_add_uint(skinny_tree, hf_skinny_data_length, tvb, offset, 4, hdr_data_length);
-    proto_tree_add_uint(skinny_tree, hf_skinny_hdr_version, tvb, offset+4, 4, hdr_version);
-  }
+  si->mediaReceptionStatus = -1;
+  si->mediaTransmissionStatus = -1;
+  si->multimediaReceptionStatus = -1;
+  si->multimediaTransmissionStatus = -1;
+  si->multicastReceptionStatus = -1;
+  g_free(si->additionalInfo);
+  si->additionalInfo = NULL;
 
   col_add_fstr(pinfo->cinfo, COL_INFO,"%s ", si->messageName);
   col_set_fence(pinfo->cinfo, COL_INFO);
 
-  /*offset += 8;*/
-  /*cursor = ptvcursor_new(skinny_tree, tvb, offset);*/
+  if (tree) {
+    ti = proto_tree_add_item(tree, proto_skinny, tvb, offset, hdr_data_length+8, ENC_NA);
+    skinny_tree = proto_item_add_subtree(ti, ett_skinny);
+  }
 
-  proto_tree_add_uint(skinny_tree, hf_skinny_messageId, tvb,offset+8, 4, data_messageid );
-  /*ptvcursor_add(cursor, hf_skinny_messageId, 4, data_messageid);*/
-
-  offset += 12;
-  cursor = ptvcursor_new(skinny_tree, tvb, offset);
-
-  for (i = 0; i < sizeof(skinny_opcode2handler)/sizeof(struct opcode2handler) ; i++) {
-    if (skinny_opcode2handler[i].opcode == data_messageid && skinny_opcode2handler[i].handler) {
-      skinny_opcode2handler[i].handler(cursor, pinfo);
+  if (opcode_entry && opcode_entry->type != SKINNY_MSGTYPE_EVENT) {
+    skinny_conv->mtype = opcode_entry->type;
+    if (opcode_entry->type == SKINNY_MSGTYPE_REQUEST) {
+      col_set_str(pinfo->cinfo, COL_PROTOCOL, "SKINNY/REQ");
+    } else {
+      col_set_str(pinfo->cinfo, COL_PROTOCOL, "SKINNY/RESP");
     }
+  }
+
+  if (skinny_tree) {
+    proto_tree_add_uint(skinny_tree, hf_skinny_data_length, tvb, offset  , 4, hdr_data_length);
+    proto_tree_add_uint(skinny_tree, hf_skinny_hdr_version, tvb, offset+4, 4, hdr_version);
+    proto_tree_add_uint(skinny_tree, hf_skinny_messageId,   tvb, offset+8, 4, hdr_opcode );
+  }
+  offset += 12;
+
+  cursor = ptvcursor_new(pinfo->pool, skinny_tree, tvb, offset);
+  if (opcode_entry && opcode_entry->handler) {
+    opcode_entry->handler(cursor, pinfo, skinny_conv);
   }
   ptvcursor_free(cursor);
 
   tap_queue_packet(skinny_tap, pinfo, si);
+
   return tvb_captured_length(tvb);
 }
 
@@ -7899,8 +8352,8 @@ dissect_skinny(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
    * SKINNY-Packet: {Header(Size, Reserved)|Data(MessageID, Message-Data)}
    */
   /* Header fields */
-  guint32 hdr_data_length;
-  guint32 hdr_version;
+  uint32_t hdr_data_length;
+  uint32_t hdr_version;
 
   /* check, if this is really an SKINNY packet, they start with a length + 0 */
 
@@ -7938,7 +8391,7 @@ dissect_skinny(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
   col_set_str(pinfo->cinfo, COL_INFO, "Skinny Client Control Protocol");
 
-  tcp_dissect_pdus(tvb, pinfo, tree, skinny_desegment, 4, get_skinny_pdu_len, dissect_skinny_pdu, data);
+  tcp_dissect_pdus(tvb, pinfo, tree, global_skinny_desegment, 4, get_skinny_pdu_len, dissect_skinny_pdu, data);
 
   return tvb_captured_length(tvb);
 }
@@ -7969,13 +8422,25 @@ proto_register_skinny(void)
       {
         "IPv4or6", "skinny.ipv4or6", FT_UINT32, BASE_DEC|BASE_EXT_STRING, &IpAddrType_ext, 0x0,
         NULL, HFILL }},
+    { &hf_skinny_response_in,
+      {
+        "Response In", "skinny.response_in", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
+        "The response to this SKINNY request is in this frame", HFILL }},
+    { &hf_skinny_response_to,
+      {
+        "Request In", "skinny.response_to", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
+        "This is a response to the SKINNY request in this frame", HFILL }},
+    { &hf_skinny_response_time,
+      {
+        "Response Time", "skinny.response_time", FT_RELATIVE_TIME, BASE_NONE, NULL, 0x0,
+        "The time between the Call and the Reply", HFILL }},
     { &hf_skinny_CallingPartyName,
       {
-        "CallingName", "skinny.CallingPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0008,
+        "CallingName", "skinny.CallingPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000008,
         NULL, HFILL }},
     { &hf_skinny_CallingPartyNumber,
       {
-        "CallingNum", "skinny.CallingPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0004,
+        "CallingNum", "skinny.CallingPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000004,
         NULL, HFILL }},
     { &hf_skinny_DSCPValue,
       {
@@ -7995,87 +8460,87 @@ proto_register_skinny(void)
         NULL, HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit1,
       {
-        "Bit1", "skinny.Generic.Bitfield.Bit1", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0001,
+        "Bit1", "skinny.Generic.Bitfield.Bit1", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000001,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit10,
       {
-        "Bit10", "skinny.Generic.Bitfield.Bit10", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0200,
+        "Bit10", "skinny.Generic.Bitfield.Bit10", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000200,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit11,
       {
-        "Bit11", "skinny.Generic.Bitfield.Bit11", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0400,
+        "Bit11", "skinny.Generic.Bitfield.Bit11", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000400,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit12,
       {
-        "Bit12", "skinny.Generic.Bitfield.Bit12", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0800,
+        "Bit12", "skinny.Generic.Bitfield.Bit12", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000800,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit13,
       {
-        "Bit13", "skinny.Generic.Bitfield.Bit13", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x1000,
+        "Bit13", "skinny.Generic.Bitfield.Bit13", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00001000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit14,
       {
-        "Bit14", "skinny.Generic.Bitfield.Bit14", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x2000,
+        "Bit14", "skinny.Generic.Bitfield.Bit14", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00002000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit15,
       {
-        "Bit14", "skinny.Generic.Bitfield.Bit15", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x4000,
+        "Bit15", "skinny.Generic.Bitfield.Bit15", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00004000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit16,
       {
-        "Bit15", "skinny.Generic.Bitfield.Bit16", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x8000,
+        "Bit16", "skinny.Generic.Bitfield.Bit16", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00008000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit17,
       {
-        "Bit17", "skinny.Generic.Bitfield.Bit17", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x10000,
+        "Bit17", "skinny.Generic.Bitfield.Bit17", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00010000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit18,
       {
-        "Bit18", "skinny.Generic.Bitfield.Bit18", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x20000,
+        "Bit18", "skinny.Generic.Bitfield.Bit18", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00020000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit19,
       {
-        "Bit19", "skinny.Generic.Bitfield.Bit19", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x40000,
+        "Bit19", "skinny.Generic.Bitfield.Bit19", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00040000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit2,
       {
-        "Bit2", "skinny.Generic.Bitfield.Bit2", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0002,
+        "Bit2", "skinny.Generic.Bitfield.Bit2", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000002,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit20,
       {
-        "Bit20", "skinny.Generic.Bitfield.Bit20", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x80000,
+        "Bit20", "skinny.Generic.Bitfield.Bit20", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00080000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit21,
       {
-        "Bit21", "skinny.Generic.Bitfield.Bit21", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x100000,
+        "Bit21", "skinny.Generic.Bitfield.Bit21", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00100000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit22,
       {
-        "Bit22", "skinny.Generic.Bitfield.Bit22", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x200000,
+        "Bit22", "skinny.Generic.Bitfield.Bit22", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00200000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit23,
       {
-        "Bit23", "skinny.Generic.Bitfield.Bit23", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x400000,
+        "Bit23", "skinny.Generic.Bitfield.Bit23", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00400000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit24,
       {
-        "Bit24", "skinny.Generic.Bitfield.Bit24", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x800000,
+        "Bit24", "skinny.Generic.Bitfield.Bit24", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00800000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit25,
       {
-        "Bit25", "skinny.Generic.Bitfield.Bit25", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x1000000,
+        "Bit25", "skinny.Generic.Bitfield.Bit25", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x01000000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit26,
       {
-        "Bit26", "skinny.Generic.Bitfield.Bit26", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x2000000,
+        "Bit26", "skinny.Generic.Bitfield.Bit26", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x02000000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit27,
       {
-        "Bit27", "skinny.Generic.Bitfield.Bit27", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x4000000,
+        "Bit27", "skinny.Generic.Bitfield.Bit27", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x04000000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit28,
       {
-        "Bit28", "skinny.Generic.Bitfield.Bit28", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x8000000,
+        "Bit28", "skinny.Generic.Bitfield.Bit28", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x08000000,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit29,
       {
@@ -8083,7 +8548,7 @@ proto_register_skinny(void)
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit3,
       {
-        "Bit3", "skinny.Generic.Bitfield.Bit3", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0004,
+        "Bit3", "skinny.Generic.Bitfield.Bit3", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000004,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit30,
       {
@@ -8099,27 +8564,27 @@ proto_register_skinny(void)
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit4,
       {
-        "Bit4", "skinny.Generic.Bitfield.Bit4", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0008,
+        "Bit4", "skinny.Generic.Bitfield.Bit4", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000008,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit5,
       {
-        "Bit5", "skinny.Generic.Bitfield.Bit5", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0010,
+        "Bit5", "skinny.Generic.Bitfield.Bit5", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000010,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit6,
       {
-        "Bit6", "skinny.Generic.Bitfield.Bit6", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0020,
+        "Bit6", "skinny.Generic.Bitfield.Bit6", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000020,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit7,
       {
-        "Bit7", "skinny.Generic.Bitfield.Bit7", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0040,
+        "Bit7", "skinny.Generic.Bitfield.Bit7", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000040,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit8,
       {
-        "Bit8", "skinny.Generic.Bitfield.Bit8", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0080,
+        "Bit8", "skinny.Generic.Bitfield.Bit8", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000080,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_Generic_Bitfield_Bit9,
       {
-        "Bit9", "skinny.Generic.Bitfield.Bit9", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0100,
+        "Bit9", "skinny.Generic.Bitfield.Bit9", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000100,
         "H263 Capability BitField", HFILL }},
     { &hf_skinny_MPI,
       {
@@ -8127,7 +8592,7 @@ proto_register_skinny(void)
         NULL, HFILL }},
     { &hf_skinny_OrigDialed,
       {
-        "Originaly Dialed", "skinny.OrigDialed", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0001,
+        "Originally Dialed", "skinny.OrigDialed", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000001,
         NULL, HFILL }},
     { &hf_skinny_PhoneFeatures_Abbreviated_Dial,
       {
@@ -8201,13 +8666,9 @@ proto_register_skinny(void)
       {
         "RTCPPortNumber", "skinny.RTCPPortNumber", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
-    { &hf_skinny_RTPPayloadFormat,
-      {
-        "RTPPayloadFormat", "skinny.RTPPayloadFormat", FT_UINT32, BASE_DEC, NULL, 0x0,
-        NULL, HFILL }},
     { &hf_skinny_RedirDialed,
       {
-        "Redirected Dialed", "skinny.RedirDialed", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0002,
+        "Redirected Dialed", "skinny.RedirDialed", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000002,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_BitsReserved,
       {
@@ -8215,115 +8676,115 @@ proto_register_skinny(void)
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_CalledParty,
       {
-        "CalledParty", "skinny.RestrictInformationType.CalledParty", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x000c,
+        "CalledParty", "skinny.RestrictInformationType.CalledParty", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0000000c,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_CalledPartyName,
       {
-        "CalledPartyName", "skinny.RestrictInformationType.CalledPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0004,
+        "CalledPartyName", "skinny.RestrictInformationType.CalledPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000004,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_CalledPartyNumber,
       {
-        "CalledPartyNumber", "skinny.RestrictInformationType.CalledPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0008,
+        "CalledPartyNumber", "skinny.RestrictInformationType.CalledPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000008,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_CallingParty,
       {
-        "CallingParty", "skinny.RestrictInformationType.CallingParty", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0003,
+        "CallingParty", "skinny.RestrictInformationType.CallingParty", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000003,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_CallingPartyName,
       {
-        "CallingPartyName", "skinny.RestrictInformationType.CallingPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0001,
+        "CallingPartyName", "skinny.RestrictInformationType.CallingPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000001,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_CallingPartyNumber,
       {
-        "CallingPartyNumber", "skinny.RestrictInformationType.CallingPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0002,
+        "CallingPartyNumber", "skinny.RestrictInformationType.CallingPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000002,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_LastRedirectParty,
       {
-        "LastRedirectParty", "skinny.RestrictInformationType.LastRedirectParty", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00c0,
+        "LastRedirectParty", "skinny.RestrictInformationType.LastRedirectParty", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x000000c0,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_LastRedirectPartyName,
       {
-        "LastRedirectPartyName", "skinny.RestrictInformationType.LastRedirectPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0040,
+        "LastRedirectPartyName", "skinny.RestrictInformationType.LastRedirectPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000040,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_LastRedirectPartyNumber,
       {
-        "LastRedirectPartyNumber", "skinny.RestrictInformationType.LastRedirectPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0080,
+        "LastRedirectPartyNumber", "skinny.RestrictInformationType.LastRedirectPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000080,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_OriginalCalledParty,
       {
-        "OriginalCalledParty", "skinny.RestrictInformationType.OriginalCalledParty", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0030,
+        "OriginalCalledParty", "skinny.RestrictInformationType.OriginalCalledParty", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000030,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_OriginalCalledPartyName,
       {
-        "OriginalCalledPartyName", "skinny.RestrictInformationType.OriginalCalledPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0010,
+        "OriginalCalledPartyName", "skinny.RestrictInformationType.OriginalCalledPartyName", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000010,
         NULL, HFILL }},
     { &hf_skinny_RestrictInformationType_OriginalCalledPartyNumber,
       {
-        "OriginalCalledPartyNumber", "skinny.RestrictInformationType.OriginalCalledPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0020,
+        "OriginalCalledPartyNumber", "skinny.RestrictInformationType.OriginalCalledPartyNumber", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000020,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey1,
       {
-        "SoftKey1", "skinny.SoftKeyMask.SoftKey1", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0001,
+        "SoftKey1", "skinny.SoftKeyMask.SoftKey1", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000001,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey10,
       {
-        "SoftKey10", "skinny.SoftKeyMask.SoftKey10", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0200,
+        "SoftKey10", "skinny.SoftKeyMask.SoftKey10", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000200,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey11,
       {
-        "SoftKey11", "skinny.SoftKeyMask.SoftKey11", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0400,
+        "SoftKey11", "skinny.SoftKeyMask.SoftKey11", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000400,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey12,
       {
-        "SoftKey12", "skinny.SoftKeyMask.SoftKey12", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0800,
+        "SoftKey12", "skinny.SoftKeyMask.SoftKey12", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000800,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey13,
       {
-        "SoftKey13", "skinny.SoftKeyMask.SoftKey13", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x1000,
+        "SoftKey13", "skinny.SoftKeyMask.SoftKey13", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00001000,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey14,
       {
-        "SoftKey14", "skinny.SoftKeyMask.SoftKey14", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x2000,
+        "SoftKey14", "skinny.SoftKeyMask.SoftKey14", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00002000,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey15,
       {
-        "SoftKey15", "skinny.SoftKeyMask.SoftKey15", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x4000,
+        "SoftKey15", "skinny.SoftKeyMask.SoftKey15", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00004000,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey16,
       {
-        "SoftKey16", "skinny.SoftKeyMask.SoftKey16", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x8000,
+        "SoftKey16", "skinny.SoftKeyMask.SoftKey16", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00008000,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey2,
       {
-        "SoftKey2", "skinny.SoftKeyMask.SoftKey2", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0002,
+        "SoftKey2", "skinny.SoftKeyMask.SoftKey2", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000002,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey3,
       {
-        "SoftKey3", "skinny.SoftKeyMask.SoftKey3", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0004,
+        "SoftKey3", "skinny.SoftKeyMask.SoftKey3", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000004,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey4,
       {
-        "SoftKey4", "skinny.SoftKeyMask.SoftKey4", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0008,
+        "SoftKey4", "skinny.SoftKeyMask.SoftKey4", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000008,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey5,
       {
-        "SoftKey5", "skinny.SoftKeyMask.SoftKey5", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0010,
+        "SoftKey5", "skinny.SoftKeyMask.SoftKey5", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000010,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey6,
       {
-        "SoftKey6", "skinny.SoftKeyMask.SoftKey6", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0020,
+        "SoftKey6", "skinny.SoftKeyMask.SoftKey6", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000020,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey7,
       {
-        "SoftKey7", "skinny.SoftKeyMask.SoftKey7", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0040,
+        "SoftKey7", "skinny.SoftKeyMask.SoftKey7", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000040,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey8,
       {
-        "SoftKey8", "skinny.SoftKeyMask.SoftKey8", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0080,
+        "SoftKey8", "skinny.SoftKeyMask.SoftKey8", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000080,
         NULL, HFILL }},
     { &hf_skinny_SoftKeyMask_SoftKey9,
       {
-        "SoftKey9", "skinny.SoftKeyMask.SoftKey9", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x0100,
+        "SoftKey9", "skinny.SoftKeyMask.SoftKey9", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000100,
         NULL, HFILL }},
     { &hf_skinny_active,
       {
@@ -8361,25 +8822,21 @@ proto_register_skinny(void)
       {
         "annexNandWFutureUse", "skinny.annexNandWFutureUse", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
-    { &hf_skinny_appID,
-      {
-        "appID", "skinny.appID", FT_UINT32, BASE_DEC, NULL, 0x0,
-        NULL, HFILL }},
     { &hf_skinny_appInstanceID,
       {
         "appInstanceID", "skinny.appInstanceID", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
-    { &hf_skinny_applicationID,
+    { &hf_skinny_applicationId,
       {
-        "applicationID", "skinny.applicationID", FT_UINT32, BASE_DEC, NULL, 0x0,
+        "applicationId", "skinny.applicationId", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
     { &hf_skinny_areMessagesWaiting,
       {
         "areMessagesWaiting", "skinny.areMessagesWaiting", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
-    { &hf_skinny_associatedStreamID,
+    { &hf_skinny_associatedStreamId,
       {
-        "associatedStreamID", "skinny.associatedStreamID", FT_UINT32, BASE_DEC, NULL, 0x0,
+        "associatedStreamId", "skinny.associatedStreamId", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
     { &hf_skinny_audioCapCount,
       {
@@ -8477,9 +8934,9 @@ proto_register_skinny(void)
       {
         "confServiceNum", "skinny.confServiceNum", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
-    { &hf_skinny_conferenceID,
+    { &hf_skinny_conferenceId,
       {
-        "conferenceID", "skinny.conferenceID", FT_UINT32, BASE_DEC, NULL, 0x0,
+        "conferenceId", "skinny.conferenceId", FT_UINT32, BASE_DEC, NULL, 0x0,
         "Conference ID", HFILL }},
     { &hf_skinny_confirmRequired,
       {
@@ -8708,7 +9165,7 @@ proto_register_skinny(void)
     { &hf_skinny_maxConferences,
       {
         "Maximum Number of Concurrent Conferences", "skinny.maxConferences", FT_UINT32, BASE_DEC, NULL, 0x0,
-        "Indicates the maximum number of simultansous Conferences, which this client/appliance can handle", HFILL }},
+        "Indicates the maximum number of simultaneous Conferences, which this client/appliance can handle", HFILL }},
     { &hf_skinny_maxFramesPerPacket,
       {
         "maxFramesPerPacket", "skinny.maxFramesPerPacket", FT_UINT32, BASE_DEC, NULL, 0x0,
@@ -8736,7 +9193,7 @@ proto_register_skinny(void)
     { &hf_skinny_maxStreams,
       {
         "Maximum Number of Concurrent RTP Streams", "skinny.maxStreams", FT_UINT32, BASE_DEC, NULL, 0x0,
-        "Indicates the maximum number of simultansous RTP duplex streams, which this client/appliance can handle.", HFILL }},
+        "Indicates the maximum number of simultaneous RTP duplex streams, which this client/appliance can handle.", HFILL }},
     { &hf_skinny_maxStreamsPerConf,
       {
         "maxStreamsPerConf", "skinny.maxStreamsPerConf", FT_UINT32, BASE_DEC, NULL, 0x0,
@@ -8745,9 +9202,9 @@ proto_register_skinny(void)
       {
         "maximumBitRate", "skinny.maximumBitRate", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
-    { &hf_skinny_millisecondPacketSize,
+    { &hf_skinny_milliSecondPacketSize,
       {
-        "millisecondPacketSize", "skinny.millisecondPacketSize", FT_UINT32, BASE_DEC, NULL, 0x0,
+        "milliSecondPacketSize", "skinny.milliSecondPacketSize", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
     { &hf_skinny_minBitRate,
       {
@@ -8784,6 +9241,10 @@ proto_register_skinny(void)
     { &hf_skinny_none,
       {
         "none", "skinny.none", FT_UINT32, BASE_DEC, NULL, 0x0,
+        NULL, HFILL }},
+    { &hf_skinny_notificationStatus,
+      {
+        "notificationStatus", "skinny.notificationStatus", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
     { &hf_skinny_nse,
       {
@@ -8877,9 +9338,9 @@ proto_register_skinny(void)
       {
         "partyDirection", "skinny.partyDirection", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
-    { &hf_skinny_passThruPartyID,
+    { &hf_skinny_passThroughPartyId,
       {
-        "passThruPartyID", "skinny.passThruPartyID", FT_UINT32, BASE_DEC, NULL, 0x0,
+        "passThroughPartyId", "skinny.passThroughPartyId", FT_UINT32, BASE_DEC, NULL, 0x0,
         "PassThrough PartyId", HFILL }},
     { &hf_skinny_passthruPartyID,
       {
@@ -9001,6 +9462,10 @@ proto_register_skinny(void)
       {
         "rtpMediaPort", "skinny.rtpMediaPort", FT_UINT32, BASE_DEC, NULL, 0x0,
         "RTP Media Port", HFILL }},
+    { &hf_skinny_rtpPayloadFormat,
+      {
+        "rtpPayloadFormat", "skinny.rtpPayloadFormat", FT_UINT32, BASE_DEC, NULL, 0x0,
+        NULL, HFILL }},
     { &hf_skinny_salt,
       {
         "salt", "skinny.salt", FT_UINT8, BASE_DEC, NULL, 0x0,
@@ -9113,9 +9578,9 @@ proto_register_skinny(void)
       {
         "stimulusStatus", "skinny.stimulusStatus", FT_UINT32, BASE_DEC, NULL, 0x0,
         "Stimulus Status", HFILL }},
-    { &hf_skinny_streamPassThroughID,
+    { &hf_skinny_streamPassThroughId,
       {
-        "streamPassThroughID", "skinny.streamPassThroughID", FT_UINT32, BASE_DEC, NULL, 0x0,
+        "streamPassThroughId", "skinny.streamPassThroughId", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
     { &hf_skinny_systemTime,
       {
@@ -9153,9 +9618,9 @@ proto_register_skinny(void)
       {
         "totalSoftKeySetCount", "skinny.totalSoftKeySetCount", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
-    { &hf_skinny_transactionID,
+    { &hf_skinny_transactionId,
       {
-        "transactionID", "skinny.transactionID", FT_UINT32, BASE_DEC, NULL, 0x0,
+        "transactionId", "skinny.transactionId", FT_UINT32, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
     { &hf_skinny_transmitIpAddr_ipv4,
      {
@@ -9165,10 +9630,6 @@ proto_register_skinny(void)
      {
         "transmitIpAddr IPv6 Address", "skinny.transmitIpAddr.ipv6", FT_IPv6, BASE_NONE, NULL, 0x0,
         "ipaddress in big endian", HFILL }},
-    { &hf_skinny_transmitPort,
-      {
-        "transmitPort", "skinny.transmitPort", FT_UINT32, BASE_DEC, NULL, 0x0,
-        NULL, HFILL }},
     { &hf_skinny_transmitPreference,
       {
         "transmitPreference", "skinny.transmitPreference", FT_UINT32, BASE_DEC, NULL, 0x0,
@@ -9320,7 +9781,7 @@ proto_register_skinny(void)
     {&hf_skinny_callState,
       {
         "callState", "skinny.callState", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &DCallState_ext, 0x0,
-        "CallState", HFILL }},
+        NULL, HFILL }},
     {&hf_skinny_callType,
       {
         "callType", "skinny.callType", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &CallType_ext, 0x0,
@@ -9404,7 +9865,7 @@ proto_register_skinny(void)
     {&hf_skinny_directoryNum,
       {
         "directoryNum", "skinny.directoryNum", FT_STRING, BASE_NONE, NULL, 0x0,
-        "Directory Number", HFILL }},
+        NULL, HFILL }},
     {&hf_skinny_ecValue,
       {
         "ecValue", "skinny.ecValue", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &Media_EchoCancellation_ext, 0x0,
@@ -9509,6 +9970,14 @@ proto_register_skinny(void)
       {
         "mediaPathID", "skinny.mediaPathID", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MediaPathID_ext, 0x0,
         NULL, HFILL }},
+    {&hf_skinny_mediaReceptionStatus,
+      {
+        "mediaReceptionStatus", "skinny.mediaReceptionStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MediaStatus_ext, 0x0,
+        NULL, HFILL }},
+    {&hf_skinny_mediaTransmissionStatus,
+      {
+        "mediaTransmissionStatus", "skinny.mediaTransmissionStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MediaStatus_ext, 0x0,
+        NULL, HFILL }},
     {&hf_skinny_mediaTransportType,
       {
         "mediaTransportType", "skinny.mediaTransportType", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MediaTransportType_ext, 0x0,
@@ -9525,9 +9994,17 @@ proto_register_skinny(void)
       {
         "modify_conf_result", "skinny.modify.conf.result", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &ModifyConfResult_ext, 0x0,
         NULL, HFILL }},
-    {&hf_skinny_multimediaOpenReceiveChannelStatus,
+    {&hf_skinny_multicastReceptionStatus,
       {
-        "multimediaOpenReceiveChannelStatus", "skinny.multimediaOpenReceiveChannelStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &OpenReceiveChanStatus_ext, 0x0,
+        "multicastReceptionStatus", "skinny.multicastReceptionStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MulticastMediaReceptionStatus_ext, 0x0,
+        NULL, HFILL }},
+    {&hf_skinny_multimediaReceptionStatus,
+      {
+        "multimediaReceptionStatus", "skinny.multimediaReceptionStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &OpenReceiveChanStatus_ext, 0x0,
+        NULL, HFILL }},
+    {&hf_skinny_multimediaTransmissionStatus,
+      {
+        "multimediaTransmissionStatus", "skinny.multimediaTransmissionStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MediaStatus_ext, 0x0,
         NULL, HFILL }},
     {&hf_skinny_mwiControlNumber,
       {
@@ -9544,10 +10021,6 @@ proto_register_skinny(void)
     {&hf_skinny_notify,
       {
         "notify", "skinny.notify", FT_STRING, BASE_NONE, NULL, 0x0,
-        NULL, HFILL }},
-    {&hf_skinny_openReceiveChannelStatus,
-      {
-        "openReceiveChannelStatus", "skinny.openReceiveChannelStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MediaStatus_ext, 0x0,
         NULL, HFILL }},
     {&hf_skinny_originalCalledParty,
       {
@@ -9589,10 +10062,6 @@ proto_register_skinny(void)
       {
         "promptStatus", "skinny.promptStatus", FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL }},
-    {&hf_skinny_receptionStatus,
-      {
-        "receptionStatus", "skinny.receptionStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MulticastMediaReceptionStatus_ext, 0x0,
-        NULL, HFILL }},
     {&hf_skinny_recording_status,
       {
         "recording_status", "skinny.recording.status", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &RecordingStatus_ext, 0x0,
@@ -9612,10 +10081,6 @@ proto_register_skinny(void)
     {&hf_skinny_result,
       {
         "result", "skinny.result", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &CreateConfResult_ext, 0x0,
-        NULL, HFILL }},
-    {&hf_skinny_resultCode,
-      {
-        "resultCode", "skinny.resultCode", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MediaStatus_ext, 0x0,
         NULL, HFILL }},
     {&hf_skinny_resvStyle,
       {
@@ -9689,14 +10154,10 @@ proto_register_skinny(void)
       {
         "ssValue", "skinny.ssValue", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &Media_SilenceSuppression_ext, 0x0,
         NULL, HFILL }},
-    {&hf_skinny_startMediaTransmissionStatus,
-      {
-        "startMediaTransmissionStatus", "skinny.startMediaTransmissionStatus", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &MediaStatus_ext, 0x0,
-        NULL, HFILL }},
     {&hf_skinny_statsProcessingMode,
       {
         "Stats Processing Mode", "skinny.statsProcessingMode", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &StatsProcessingType_ext, 0x0,
-        "What do do after you send the stats", HFILL }},
+        "What to do after you send the stats", HFILL }},
     {&hf_skinny_status,
       {
         "status", "skinny.status", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &DeviceUnregisterStatus_ext, 0x0,
@@ -9709,10 +10170,6 @@ proto_register_skinny(void)
       {
         "subAppID", "skinny.subAppID", FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL }},
-    {&hf_skinny_subcriptionFeatureID,
-      {
-        "subcriptionFeatureID", "skinny.subcriptionFeatureID", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &SubscriptionFeatureID_ext, 0x0,
-        NULL, HFILL }},
     {&hf_skinny_subscriptionFeatureID,
       {
         "subscriptionFeatureID", "skinny.subscriptionFeatureID", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &SubscriptionFeatureID_ext, 0x0,
@@ -9720,10 +10177,6 @@ proto_register_skinny(void)
     {&hf_skinny_subscriptionID,
       {
         "subscriptionID", "skinny.subscriptionID", FT_STRING, BASE_NONE, NULL, 0x0,
-        NULL, HFILL }},
-    {&hf_skinny_subscriptionoFeatureID,
-      {
-        "subscriptionoFeatureID", "skinny.subscriptionoFeatureID", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &SubscriptionFeatureID_ext, 0x0,
         NULL, HFILL }},
     {&hf_skinny_text,
       {
@@ -9761,6 +10214,10 @@ proto_register_skinny(void)
       {
         "version", "skinny.version", FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL }},
+    {&hf_skinny_versionStr,
+      {
+        "versionStr", "skinny.versionStr", FT_STRING, BASE_NONE, NULL, 0x0,
+        NULL, HFILL }},
     {&hf_skinny_videoCapabilityDirection,
       {
         "videoCapabilityDirection", "skinny.videoCapabilityDirection", FT_UINT32, BASE_HEX | BASE_EXT_STRING, &TransmitOrReceive_ext, 0x0,
@@ -9768,7 +10225,7 @@ proto_register_skinny(void)
   };
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_skinny,
     &ett_skinny_tree,
   };
@@ -9785,11 +10242,11 @@ proto_register_skinny(void)
 
   skinny_module = prefs_register_protocol(proto_skinny, NULL);
   prefs_register_bool_preference(skinny_module, "desegment",
-    "Reassemble SCCP messages spanning multiple TCP segments",
-    "Whether the SCCP dissector should reassemble messages spanning multiple TCP segments."
+    "Reassemble SKINNY messages spanning multiple TCP segments",
+    "Whether the SKINNY dissector should reassemble messages spanning multiple TCP segments."
     " To use this option, you must also enable"
     " \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
-    &skinny_desegment);
+    &global_skinny_desegment);
 
   skinny_handle = register_dissector("skinny", dissect_skinny, proto_skinny);
 
@@ -9800,13 +10257,13 @@ void
 proto_reg_handoff_skinny(void)
 {
   /* Skinny content type and internet media type used by other dissectors are the same */
-  media_type_dissector_table = find_dissector_table("media_type");
-  dissector_add_uint("tcp.port", TCP_PORT_SKINNY, skinny_handle);
+  xml_handle = find_dissector_add_dependency("xml", proto_skinny);
+  dissector_add_uint_with_preference("tcp.port", TCP_PORT_SKINNY, skinny_handle);
   ssl_dissector_add(SSL_PORT_SKINNY, skinny_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

@@ -40,6 +40,25 @@
     __attribute__((naked)) void \
     b_ ## name(void) { asm("b " #func "\n"); }
 
+/* Like BPatch, but for raw numeric ROM/RAM addresses rather than symbol
+ * names. Modern binutils refuses to emit a Thumb branch to a bare *ABS*
+ * value ("Unknown destination type (ARM/Thumb)") because it can't tell
+ * whether the target is ARM or Thumb code. Since this target is Cortex-M
+ * (Thumb-only), we define a local alias symbol equal to addr+1 (the
+ * standard ELF convention for tagging a symbol value as a Thumb address)
+ * and type it as a function so the linker treats it like any other Thumb
+ * call target. The branch must precede the .equ/.type so the assembler
+ * keeps it as a real (non-folded) symbol rather than substituting the
+ * literal value directly.
+ */
+#define BPatchAddr(name, addr) \
+    __attribute__((naked)) void \
+    b_ ## name(void) { asm( \
+        "b __bpatch_addr_" #name "\n" \
+        ".equ __bpatch_addr_" #name ", (" #addr ") + 1\n" \
+        ".type __bpatch_addr_" #name ", %function\n" \
+    ); }
+
 #define HookPatch4(name, func, inst) \
     void b_ ## name(void); \
     __attribute__((naked)) void \

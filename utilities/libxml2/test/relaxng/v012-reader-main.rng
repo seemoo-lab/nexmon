@@ -1,0 +1,4 @@
+<grammar xmlns='http://relaxng.org/ns/structure/1.0'>
+  <include href='http://example.invalid/imported.rng'/>
+  <start><ref name='docdef'/></start>
+</grammar>

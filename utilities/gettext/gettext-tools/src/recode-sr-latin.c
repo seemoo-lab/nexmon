@@ -1,7 +1,5 @@
 /* Recode Serbian text from Cyrillic to Latin script.
-   Copyright (C) 2006-2007, 2010, 2012, 2015-2016 Free Software Foundation,
-   Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2006.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,14 +12,13 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 #include <errno.h>
-#include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,11 +28,13 @@
 #include <iconv.h>
 #endif
 
+#include <error.h>
+#include "options.h"
+#include "noreturn.h"
 #include "closeout.h"
-#include "error.h"
 #include "progname.h"
 #include "relocatable.h"
-#include "basename.h"
+#include "basename-lgpl.h"
 #include "xalloc.h"
 #include "localcharset.h"
 #include "c-strcase.h"
@@ -47,73 +46,70 @@
 #define _(str) gettext (str)
 
 
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "help", no_argument, NULL, 'h' },
-  { "version", no_argument, NULL, 'V' },
-  { NULL, 0, NULL, 0 }
-};
-
 /* Forward declaration of local functions.  */
-static void usage (int status)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-     __attribute__ ((noreturn))
-#endif
-;
+_GL_NORETURN_FUNC static void usage (int status);
 static void process (FILE *stream);
 
 int
 main (int argc, char *argv[])
 {
-  /* Default values for command line options.  */
-  bool do_help = false;
-  bool do_version = false;
-
-  int opt;
-
   /* Set program name for message texts.  */
   set_program_name (argv[0]);
 
-#ifdef HAVE_SETLOCALE
   /* Set locale via LC_ALL.  */
   setlocale (LC_ALL, "");
-#endif
 
   /* Set the text message domain.  */
   bindtextdomain (PACKAGE, relocate (LOCALEDIR));
+  bindtextdomain ("gnulib", relocate (GNULIB_LOCALEDIR));
   textdomain (PACKAGE);
 
   /* Ensure that write errors on stdout are detected.  */
   atexit (close_stdout);
 
+  /* Default values for command line options.  */
+  bool do_help = false;
+  bool do_version = false;
+
   /* Parse command line options.  */
-  while ((opt = getopt_long (argc, argv, "hV", long_options, NULL)) != EOF)
-    switch (opt)
-    {
-    case '\0':          /* Long option.  */
-      break;
-    case 'h':
-      do_help = true;
-      break;
-    case 'V':
-      do_version = true;
-      break;
-    default:
-      usage (EXIT_FAILURE);
-    }
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "help",    'h', no_argument },
+    { "version", 'V', no_argument },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  start_options (argc, argv, options, MOVE_OPTIONS_FIRST, 0);
+  {
+    int opt;
+    while ((opt = get_next_option ()) != -1)
+      switch (opt)
+        {
+        case '\0':          /* Long option with key == 0.  */
+          break;
+        case 'h':
+          do_help = true;
+          break;
+        case 'V':
+          do_version = true;
+          break;
+        default:
+          usage (EXIT_FAILURE);
+        }
+  }
 
   /* Version information is requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "2006-2007");
+              "2006-2026", "https://gnu.org/licenses/gpl.html");
       printf (_("Written by %s and %s.\n"),
               /* TRANSLATORS: This is a proper name. The last name is
                  (with Unicode escapes) "\u0160egan" or (with HTML entities)
@@ -168,11 +164,16 @@ Informative output:\n"));
       printf (_("\
   -V, --version               output version information and exit\n"));
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"), stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+             "https://savannah.gnu.org/projects/gettext",
+             "bug-gettext@gnu.org");
     }
 
   exit (status);
@@ -258,6 +259,8 @@ static void
 process (FILE *stream)
 {
   struct linebuffer lb;
+  init_linebuffer (&lb);
+
   const char *locale_code = locale_charset ();
   bool need_code_conversion = (c_strcasecmp (locale_code, "UTF-8") != 0);
 #if HAVE_ICONV
@@ -269,41 +272,29 @@ process (FILE *stream)
   size_t last_backconv_line_len;
 #endif
 
-  init_linebuffer (&lb);
-
   /* Initialize the conversion descriptors.  */
   if (need_code_conversion)
     {
 #if HAVE_ICONV
-      /* Avoid glibc-2.1 bug with EUC-KR.  */
-# if ((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
-     && !defined _LIBICONV_VERSION
-      if (strcmp (locale_code, "EUC-KR") != 0)
-# endif
-        {
-          conv_to_utf8 = iconv_open ("UTF-8", locale_code);
-          /* TODO:  Maybe append //TRANSLIT here?  */
-          conv_from_utf8 = iconv_open (locale_code, "UTF-8");
-        }
+      conv_to_utf8 = iconv_open ("UTF-8", locale_code);
+      /* TODO:  Maybe append //TRANSLIT here?  */
+      conv_from_utf8 = iconv_open (locale_code, "UTF-8");
       if (conv_to_utf8 == (iconv_t)(-1))
-        error (EXIT_FAILURE, 0, _("\
-Cannot convert from \"%s\" to \"%s\". %s relies on iconv(), \
-and iconv() does not support this conversion."),
-               locale_code, "UTF-8", basename (program_name));
+        error (EXIT_FAILURE, 0,
+               _("Cannot convert from \"%s\" to \"%s\". %s relies on iconv(), and iconv() does not support this conversion."),
+               locale_code, "UTF-8", last_component (program_name));
       if (conv_from_utf8 == (iconv_t)(-1))
-        error (EXIT_FAILURE, 0, _("\
-Cannot convert from \"%s\" to \"%s\". %s relies on iconv(), \
-and iconv() does not support this conversion."),
-               "UTF-8", locale_code, basename (program_name));
+        error (EXIT_FAILURE, 0,
+               _("Cannot convert from \"%s\" to \"%s\". %s relies on iconv(), and iconv() does not support this conversion."),
+               "UTF-8", locale_code, last_component (program_name));
       last_utf8_line = NULL;
       last_utf8_line_len = 0;
       last_backconv_line = NULL;
       last_backconv_line_len = 0;
 #else
-      error (EXIT_FAILURE, 0, _("\
-Cannot convert from \"%s\" to \"%s\". %s relies on iconv(). \
-This version was built without iconv()."),
-             locale_code, "UTF-8", basename (program_name));
+      error (EXIT_FAILURE, 0,
+             _("Cannot convert from \"%s\" to \"%s\". %s relies on iconv(). This version was built without iconv()."),
+             locale_code, "UTF-8", last_component (program_name));
 #endif
     }
 
@@ -313,16 +304,11 @@ This version was built without iconv()."),
      in a whole chunk would take an excessive amount of memory.  */
   for (;;)
     {
-      char *line;
-      size_t line_len;
-      char *filtered_line;
-      size_t filtered_line_len;
-
       /* Read a line.  */
       if (read_linebuffer (&lb, stream) == NULL)
         break;
-      line = lb.buffer;
-      line_len = lb.length;
+      char *line = lb.buffer;
+      size_t line_len = lb.length;
       /* read_linebuffer always returns a non-void result.  */
       if (line_len == 0)
         abort ();
@@ -353,6 +339,8 @@ This version was built without iconv()."),
 #endif
 
       /* Apply the filter.  */
+      char *filtered_line;
+      size_t filtered_line_len;
       serbian_to_latin (line, line_len, &filtered_line, &filtered_line_len);
 
 #if HAVE_ICONV

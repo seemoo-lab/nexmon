@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,20 +39,20 @@ static void
 lookup_funcs (void)
 {
   HMODULE winhttp = NULL;
-  char winhttp_dll[MAX_PATH + 100];
+  WCHAR winhttp_dll[MAX_PATH + 100];
   int n;
 
   if (lookup_done)
     return;
 
-  n = GetSystemDirectory (winhttp_dll, MAX_PATH);
+  n = GetSystemDirectoryW (winhttp_dll, MAX_PATH);
   if (n > 0 && n < MAX_PATH)
     {
-        if (winhttp_dll[n-1] != '\\' &&
-            winhttp_dll[n-1] != '/')
-            strcat (winhttp_dll, "\\");
-        strcat (winhttp_dll, "winhttp.dll");
-        winhttp = LoadLibrary (winhttp_dll);
+        if (winhttp_dll[n-1] != L'\\' &&
+            winhttp_dll[n-1] != L'/')
+            wcscat (winhttp_dll, L"\\");
+        wcscat (winhttp_dll, L"winhttp.dll");
+        winhttp = LoadLibraryW (winhttp_dll);
     }
 
   if (winhttp != NULL)
@@ -121,12 +121,13 @@ static void
 g_winhttp_vfs_init (GWinHttpVfs *vfs)
 {
   wchar_t *wagent;
+  const gchar *prgname = g_get_prgname ();
 
   vfs->wrapped_vfs = g_vfs_get_local ();
 
-  wagent = g_utf8_to_utf16 (g_get_prgname (), -1, NULL, NULL, NULL);
-
-  if (!wagent)
+  if (prgname)
+    wagent = g_utf8_to_utf16 (prgname, -1, NULL, NULL, NULL);
+  else
     wagent = g_utf8_to_utf16 ("GWinHttpVfs", -1, NULL, NULL, NULL);
 
   vfs->session = (G_WINHTTP_VFS_GET_CLASS (vfs)->funcs->pWinHttpOpen)
@@ -164,16 +165,26 @@ g_winhttp_vfs_get_file_for_uri (GVfs       *vfs,
                                 const char *uri)
 {
   GWinHttpVfs *winhttp_vfs = G_WINHTTP_VFS (vfs);
-  int i;
+  gsize i;
+  GFile *ret = NULL;
 
   /* If it matches one of "our" schemes, handle it */
   for (i = 0; i < G_N_ELEMENTS (winhttp_uri_schemes); i++)
-    if (g_ascii_strncasecmp (uri, winhttp_uri_schemes[i], strlen (winhttp_uri_schemes[i])) == 0 &&
-        uri[strlen (winhttp_uri_schemes[i])] == ':')
-      return _g_winhttp_file_new (winhttp_vfs, uri);
+    {
+      if (g_ascii_strncasecmp (uri, winhttp_uri_schemes[i], strlen (winhttp_uri_schemes[i])) == 0 &&
+          uri[strlen (winhttp_uri_schemes[i])] == ':')
+        {
+          ret = _g_winhttp_file_new (winhttp_vfs, uri);
+        }
+    }
 
   /* For other URIs fallback to the wrapped GVfs */
-  return g_vfs_parse_name (winhttp_vfs->wrapped_vfs, uri);
+  if (ret == NULL)
+    ret = g_vfs_get_file_for_uri (winhttp_vfs->wrapped_vfs, uri);
+
+  g_assert (ret != NULL);
+
+  return g_steal_pointer (&ret);
 }
 
 static const gchar * const *
@@ -181,7 +192,7 @@ g_winhttp_vfs_get_supported_uri_schemes (GVfs *vfs)
 {
   GWinHttpVfs *winhttp_vfs = G_WINHTTP_VFS (vfs);
   const gchar * const *wrapped_vfs_uri_schemes = g_vfs_get_supported_uri_schemes (winhttp_vfs->wrapped_vfs);
-  int i, n;
+  gsize i, n;
   const gchar **retval;
 
   n = 0;

@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,16 +38,7 @@
 
 G_BEGIN_DECLS
 
-/* GDate
- *
- * Date calculations (not time for now, to be resolved). These are a
- * mutant combination of Steffen Beyer's DateCalc routines
- * (http://www.perl.com/CPAN/authors/id/STBEY/) and Jon Trowbridge's
- * date routines (written for in-house software).  Written by Havoc
- * Pennington <hp@pobox.com>
- */
-
-typedef gint32  GTime;
+typedef gint32  GTime GLIB_DEPRECATED_TYPE_IN_2_62_FOR(GDateTime);
 typedef guint16 GDateYear;
 typedef guint8  GDateDay;   /* day of the month */
 typedef struct _GDate GDate;
@@ -127,6 +120,8 @@ GLIB_AVAILABLE_IN_ALL
 GDate*       g_date_new_julian            (guint32      julian_day);
 GLIB_AVAILABLE_IN_ALL
 void         g_date_free                  (GDate       *date);
+GLIB_AVAILABLE_IN_2_56
+GDate*       g_date_copy                  (const GDate *date);
 
 /* check g_date_valid() after doing an operation that might fail, like
  * _parse.  Almost all g_date operations are undefined on invalid
@@ -166,17 +161,20 @@ guint        g_date_get_day_of_year       (const GDate *date);
  * that day, return 0. These are not ISO weeks of the year; that
  * routine needs to be added.
  * these functions return the number of weeks, starting on the
- * corrsponding day
+ * corresponding day
  */
 GLIB_AVAILABLE_IN_ALL
 guint        g_date_get_monday_week_of_year (const GDate *date);
 GLIB_AVAILABLE_IN_ALL
 guint        g_date_get_sunday_week_of_year (const GDate *date);
+GLIB_AVAILABLE_IN_2_86
+guint        g_date_get_week_of_year        (const GDate  *date,
+                                             GDateWeekday  first_day_of_week);
 GLIB_AVAILABLE_IN_ALL
 guint        g_date_get_iso8601_week_of_year (const GDate *date);
 
 /* If you create a static date struct you need to clear it to get it
- * in a sane state before use. You can clear a whole array at
+ * in a safe state before use. You can clear a whole array at
  * once with the ndates argument.
  */
 GLIB_AVAILABLE_IN_ALL
@@ -193,14 +191,14 @@ void         g_date_set_parse             (GDate       *date,
 GLIB_AVAILABLE_IN_ALL
 void         g_date_set_time_t            (GDate       *date,
 					   time_t       timet);
-GLIB_AVAILABLE_IN_ALL
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+GLIB_DEPRECATED_IN_2_62_FOR(g_date_set_time_t)
 void         g_date_set_time_val          (GDate       *date,
 					   GTimeVal    *timeval);
-#ifndef G_DISABLE_DEPRECATED
 GLIB_DEPRECATED_FOR(g_date_set_time_t)
 void         g_date_set_time              (GDate       *date,
                                            GTime        time_);
-#endif
+G_GNUC_END_IGNORE_DEPRECATIONS
 GLIB_AVAILABLE_IN_ALL
 void         g_date_set_month             (GDate       *date,
                                            GDateMonth   month);
@@ -255,6 +253,9 @@ GLIB_AVAILABLE_IN_ALL
 guint8       g_date_get_monday_weeks_in_year  (GDateYear    year) G_GNUC_CONST;
 GLIB_AVAILABLE_IN_ALL
 guint8       g_date_get_sunday_weeks_in_year  (GDateYear    year) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_86
+guint8       g_date_get_weeks_in_year         (GDateYear    year,
+                                               GDateWeekday first_day_of_week) G_GNUC_CONST;
 
 /* Returns the number of days between the two dates.  If date2 comes
    before date1, a negative value is return. */
@@ -288,21 +289,17 @@ gsize        g_date_strftime              (gchar       *s,
                                            const gchar *format,
                                            const GDate *date);
 
-#ifndef G_DISABLE_DEPRECATED
-
-#define g_date_weekday 			g_date_get_weekday
-#define g_date_month 			g_date_get_month
-#define g_date_year 			g_date_get_year
-#define g_date_day 			g_date_get_day
-#define g_date_julian 			g_date_get_julian
-#define g_date_day_of_year 		g_date_get_day_of_year
-#define g_date_monday_week_of_year 	g_date_get_monday_week_of_year
-#define g_date_sunday_week_of_year 	g_date_get_sunday_week_of_year
-#define g_date_days_in_month 		g_date_get_days_in_month
-#define g_date_monday_weeks_in_year 	g_date_get_monday_weeks_in_year
-#define g_date_sunday_weeks_in_year	g_date_get_sunday_weeks_in_year
-
-#endif /* G_DISABLE_DEPRECATED */
+#define g_date_weekday 			g_date_get_weekday GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_weekday)
+#define g_date_month 			g_date_get_month GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_month)
+#define g_date_year 			g_date_get_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_year)
+#define g_date_day 			g_date_get_day GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_day)
+#define g_date_julian 			g_date_get_julian GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_julian)
+#define g_date_day_of_year 		g_date_get_day_of_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_day_of_year)
+#define g_date_monday_week_of_year 	g_date_get_monday_week_of_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_monday_week_of_year)
+#define g_date_sunday_week_of_year 	g_date_get_sunday_week_of_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_sunday_week_of_year)
+#define g_date_days_in_month 		g_date_get_days_in_month GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_days_in_month)
+#define g_date_monday_weeks_in_year 	g_date_get_monday_weeks_in_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_monday_weeks_in_year)
+#define g_date_sunday_weeks_in_year	g_date_get_sunday_weeks_in_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_sunday_weeks_in_year)
 
 G_END_DECLS
 

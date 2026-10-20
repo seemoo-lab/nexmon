@@ -1,42 +1,47 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/vlan.c	VLAN Link Info
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  */
 
 /**
- * @ingroup link_info
+ * @ingroup link
  * @defgroup vlan VLAN
- * @brief
+ * Virtual LAN link module
+ *
+ * @details
+ * \b Link Type Name: "vlan"
+ *
+ * @route_doc{link_vlan, VLAN Documentation}
  *
  * @{
  */
 
-#include <netlink-local.h>
+#include "nl-default.h"
+
+#include <linux/if_vlan.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
-#include <netlink/route/link/info-api.h>
 #include <netlink/route/link/vlan.h>
 
-#include <linux/if_vlan.h>
+#include "nl-route.h"
+#include "link-api.h"
 
 /** @cond SKIP */
 #define VLAN_HAS_ID		(1<<0)
 #define VLAN_HAS_FLAGS		(1<<1)
 #define VLAN_HAS_INGRESS_QOS	(1<<2)
 #define VLAN_HAS_EGRESS_QOS	(1<<3)
+#define VLAN_HAS_PROTOCOL	(1<<4)
 
 struct vlan_info
 {
 	uint16_t		vi_vlan_id;
+	uint16_t		vi_protocol;
+	unsigned int            vi_ingress_qos_mask:(VLAN_PRIO_MAX+1);
 	uint32_t		vi_flags;
 	uint32_t		vi_flags_mask;
 	uint32_t		vi_ingress_qos[VLAN_PRIO_MAX+1];
@@ -45,37 +50,31 @@ struct vlan_info
 	struct vlan_map * 	vi_egress_qos;
 	uint32_t		vi_mask;
 };
+
 /** @endcond */
-
-static struct trans_tbl vlan_flags[] = {
-	__ADD(VLAN_FLAG_REORDER_HDR, reorder_hdr)
-};
-
-char *rtnl_link_vlan_flags2str(int flags, char *buf, size_t len)
-{
-	return __flags2str(flags, buf, len, vlan_flags, ARRAY_SIZE(vlan_flags));
-}
-
-int rtnl_link_vlan_str2flags(const char *name)
-{
-	return __str2flags(name, vlan_flags, ARRAY_SIZE(vlan_flags));
-}
 
 static struct nla_policy vlan_policy[IFLA_VLAN_MAX+1] = {
 	[IFLA_VLAN_ID]		= { .type = NLA_U16 },
 	[IFLA_VLAN_FLAGS]	= { .minlen = sizeof(struct ifla_vlan_flags) },
 	[IFLA_VLAN_INGRESS_QOS]	= { .type = NLA_NESTED },
 	[IFLA_VLAN_EGRESS_QOS]	= { .type = NLA_NESTED },
+	[IFLA_VLAN_PROTOCOL]	= { .type = NLA_U16 },
 };
 
 static int vlan_alloc(struct rtnl_link *link)
 {
 	struct vlan_info *vi;
 
-	if ((vi = calloc(1, sizeof(*vi))) == NULL)
-		return -NLE_NOMEM;
+	if (link->l_info) {
+		vi = link->l_info;
+		free(vi->vi_egress_qos);
+		memset(link->l_info, 0, sizeof(*vi));
+	} else {
+		if ((vi = calloc(1, sizeof(*vi))) == NULL)
+			return -NLE_NOMEM;
 
-	link->l_info = vi;
+		link->l_info = vi;
+	}
 
 	return 0;
 }
@@ -87,7 +86,7 @@ static int vlan_parse(struct rtnl_link *link, struct nlattr *data,
 	struct vlan_info *vi;
 	int err;
 
-	NL_DBG(3, "Parsing VLAN link info");
+	NL_DBG(3, "Parsing VLAN link info\n");
 
 	if ((err = nla_parse_nested(tb, IFLA_VLAN_MAX, data, vlan_policy)) < 0)
 		goto errout;
@@ -100,6 +99,11 @@ static int vlan_parse(struct rtnl_link *link, struct nlattr *data,
 	if (tb[IFLA_VLAN_ID]) {
 		vi->vi_vlan_id = nla_get_u16(tb[IFLA_VLAN_ID]);
 		vi->vi_mask |= VLAN_HAS_ID;
+	}
+
+	if (tb[IFLA_VLAN_PROTOCOL]) {
+		vi->vi_protocol = nla_get_u16(tb[IFLA_VLAN_PROTOCOL]);
+		vi->vi_mask |= VLAN_HAS_PROTOCOL;
 	}
 
 	if (tb[IFLA_VLAN_FLAGS]) {
@@ -115,17 +119,29 @@ static int vlan_parse(struct rtnl_link *link, struct nlattr *data,
 		struct nlattr *nla;
 		int remaining;
 
+		vi->vi_ingress_qos_mask = 0;
 		memset(vi->vi_ingress_qos, 0, sizeof(vi->vi_ingress_qos));
 
 		nla_for_each_nested(nla, tb[IFLA_VLAN_INGRESS_QOS], remaining) {
-			if (nla_len(nla) < sizeof(*map))
+			if (_nla_len(nla) < sizeof(*map))
 				return -NLE_INVAL;
 
 			map = nla_data(nla);
-			if (map->from < 0 || map->from > VLAN_PRIO_MAX) {
+			if (map->from > VLAN_PRIO_MAX) {
 				return -NLE_INVAL;
 			}
 
+			/* Kernel will not explicitly serialize mappings with "to" zero
+			 * (although they are implicitly set).
+			 *
+			 * Thus we only mark those as "set" which are explicitly sent.
+			 * That is similar to what we do with the egress map and it preserves
+			 * previous behavior before NL_CAPABILITY_RTNL_LINK_VLAN_INGRESS_MAP_CLEAR.
+			 *
+			 * It matters only when a received object is send back to kernel to modify
+			 * the link.
+			 */
+			vi->vi_ingress_qos_mask |= (1 << map->from);
 			vi->vi_ingress_qos[map->from] = map->to;
 		}
 
@@ -138,14 +154,14 @@ static int vlan_parse(struct rtnl_link *link, struct nlattr *data,
 		int remaining, i = 0;
 
 		nla_for_each_nested(nla, tb[IFLA_VLAN_EGRESS_QOS], remaining) {
-			if (nla_len(nla) < sizeof(*map))
+			if (_nla_len(nla) < sizeof(*map))
 				return -NLE_INVAL;
 			i++;
 		}
 
 		/* align to have a little reserve */
 		vi->vi_egress_size = (i + 32) & ~31;
-		vi->vi_egress_qos = calloc(vi->vi_egress_size, sizeof(*map));
+		vi->vi_egress_qos = calloc(vi->vi_egress_size, sizeof(*vi->vi_egress_qos));
 		if (vi->vi_egress_qos == NULL)
 			return -NLE_NOMEM;
 
@@ -189,17 +205,23 @@ static void vlan_dump_line(struct rtnl_link *link, struct nl_dump_params *p)
 static void vlan_dump_details(struct rtnl_link *link, struct nl_dump_params *p)
 {
 	struct vlan_info *vi = link->l_info;
-	int i, printed;
+	int printed;
+	uint32_t i;
 	char buf[64];
 
 	rtnl_link_vlan_flags2str(vi->vi_flags, buf, sizeof(buf));
-	nl_dump_line(p, "    vlan-info id %d <%s>\n", vi->vi_vlan_id, buf);
+	nl_dump_line(p, "    vlan-info id %d <%s>", vi->vi_vlan_id, buf);
+
+	if (vi->vi_mask & VLAN_HAS_PROTOCOL)
+		nl_dump_line(p, "    vlan protocol <%d>", ntohs(vi->vi_protocol));
+
+	nl_dump(p, "\n");
 
 	if (vi->vi_mask & VLAN_HAS_INGRESS_QOS) {
 		nl_dump_line(p, 
 		"      ingress vlan prio -> qos/socket prio mapping:\n");
 		for (i = 0, printed = 0; i <= VLAN_PRIO_MAX; i++) {
-			if (vi->vi_ingress_qos[i]) {
+			if (vi->vi_ingress_qos_mask & (1 << i)) {
 				if (printed == 0)
 					nl_dump_line(p, "      ");
 				nl_dump(p, "%x -> %#08x, ",
@@ -239,19 +261,28 @@ static int vlan_clone(struct rtnl_link *dst, struct rtnl_link *src)
 {
 	struct vlan_info *vdst, *vsrc = src->l_info;
 	int err;
+	struct vlan_map *p = NULL;
 
 	dst->l_info = NULL;
-	if ((err = rtnl_link_set_info_type(dst, "vlan")) < 0)
+	if ((err = rtnl_link_set_type(dst, "vlan")) < 0)
 		return err;
 	vdst = dst->l_info;
 
-	vdst->vi_egress_qos = calloc(vsrc->vi_egress_size,
-				     sizeof(struct vlan_map));
-	if (!vdst->vi_egress_qos)
-		return -NLE_NOMEM;
+	if (vsrc->vi_negress) {
+		p = calloc(vsrc->vi_negress,
+		           sizeof(struct vlan_map));
+		if (!p)
+			return -NLE_NOMEM;
+	}
 
-	memcpy(vdst->vi_egress_qos, vsrc->vi_egress_qos,
-	       vsrc->vi_egress_size * sizeof(struct vlan_map));
+	*vdst = *vsrc;
+
+	if (vsrc->vi_negress) {
+		vdst->vi_egress_size = vsrc->vi_negress;
+		vdst->vi_egress_qos = p;
+		memcpy(vdst->vi_egress_qos, vsrc->vi_egress_qos,
+		       vsrc->vi_negress * sizeof(struct vlan_map));
+	}
 
 	return 0;
 }
@@ -260,12 +291,18 @@ static int vlan_put_attrs(struct nl_msg *msg, struct rtnl_link *link)
 {
 	struct vlan_info *vi = link->l_info;
 	struct nlattr *data;
+	int nest_count = 0;
 
 	if (!(data = nla_nest_start(msg, IFLA_INFO_DATA)))
-		return -NLE_MSGSIZE;
+		goto nla_put_failure;
+
+	nest_count++;
 
 	if (vi->vi_mask & VLAN_HAS_ID)
 		NLA_PUT_U16(msg, IFLA_VLAN_ID, vi->vi_vlan_id);
+
+	if (vi->vi_mask & VLAN_HAS_PROTOCOL)
+		NLA_PUT_U16(msg, IFLA_VLAN_PROTOCOL, vi->vi_protocol);
 
 	if (vi->vi_mask & VLAN_HAS_FLAGS) {
 		struct ifla_vlan_flags flags = {
@@ -284,41 +321,49 @@ static int vlan_put_attrs(struct nl_msg *msg, struct rtnl_link *link)
 		if (!(qos = nla_nest_start(msg, IFLA_VLAN_INGRESS_QOS)))
 			goto nla_put_failure;
 
+		nest_count++;
+
 		for (i = 0; i <= VLAN_PRIO_MAX; i++) {
-			if (vi->vi_ingress_qos[i]) {
+			if (vi->vi_ingress_qos_mask & (1 << i)) {
 				map.from = i;
 				map.to = vi->vi_ingress_qos[i];
 
-				NLA_PUT(msg, i, sizeof(map), &map);
+				NLA_PUT(msg, IFLA_VLAN_QOS_MAPPING, sizeof(map), &map);
 			}
 		}
 
 		nla_nest_end(msg, qos);
+		nest_count--;
 	}
 
 	if (vi->vi_mask & VLAN_HAS_EGRESS_QOS) {
 		struct ifla_vlan_qos_mapping map;
 		struct nlattr *qos;
-		int i;
+		uint32_t i;
 
 		if (!(qos = nla_nest_start(msg, IFLA_VLAN_EGRESS_QOS)))
 			goto nla_put_failure;
+
+		nest_count++;
 
 		for (i = 0; i < vi->vi_negress; i++) {
 			map.from = vi->vi_egress_qos[i].vm_from;
 			map.to = vi->vi_egress_qos[i].vm_to;
 
-			NLA_PUT(msg, i, sizeof(map), &map);
+			NLA_PUT(msg, IFLA_VLAN_QOS_MAPPING, sizeof(map), &map);
 		}
 
 		nla_nest_end(msg, qos);
+		nest_count--;
 	}
 
 	nla_nest_end(msg, data);
+	return 0;
 
 nla_put_failure:
-
-	return 0;
+	for (; nest_count > 0; nest_count--)
+		nla_nest_cancel(msg, data);
+	return -NLE_MSGSIZE;
 }
 
 static struct rtnl_link_info_ops vlan_info_ops = {
@@ -334,12 +379,62 @@ static struct rtnl_link_info_ops vlan_info_ops = {
 	.io_free		= vlan_free,
 };
 
-int rtnl_link_vlan_set_id(struct rtnl_link *link, int id)
+/** @cond SKIP */
+#define IS_VLAN_LINK_ASSERT(link) \
+	if ((link)->l_info_ops != &vlan_info_ops) { \
+		APPBUG("Link is not a vlan link. set type \"vlan\" first."); \
+		return -NLE_OPNOTSUPP; \
+	}
+/** @endcond */
+
+/**
+ * @name VLAN Object
+ * @{
+ */
+
+/**
+ * Allocate link object of type VLAN
+ *
+ * @return Allocated link object or NULL.
+ */
+struct rtnl_link *rtnl_link_vlan_alloc(void)
+{
+	struct rtnl_link *link;
+
+	if (!(link = rtnl_link_alloc()))
+		return NULL;
+
+	if (rtnl_link_set_type(link, "vlan") < 0) {
+		rtnl_link_put(link);
+		return NULL;
+	}
+
+	return link;
+}
+
+/**
+ * Check if link is a VLAN link
+ * @arg link		Link object
+ *
+ * @return True if link is a VLAN link, otherwise false is returned.
+ */
+int rtnl_link_is_vlan(struct rtnl_link *link)
+{
+	return link->l_info_ops && !strcmp(link->l_info_ops->io_name, "vlan");
+}
+
+/**
+ * Set VLAN ID
+ * @arg link		Link object
+ * @arg id		VLAN identifier
+ *
+ * @return 0 on success or a negative error code
+ */
+int rtnl_link_vlan_set_id(struct rtnl_link *link, uint16_t id)
 {
 	struct vlan_info *vi = link->l_info;
 
-	if (link->l_info_ops != &vlan_info_ops || !link->l_info_ops)
-		return -NLE_OPNOTSUPP;
+	IS_VLAN_LINK_ASSERT(link);
 
 	vi->vi_vlan_id = id;
 	vi->vi_mask |= VLAN_HAS_ID;
@@ -347,12 +442,17 @@ int rtnl_link_vlan_set_id(struct rtnl_link *link, int id)
 	return 0;
 }
 
+/**
+ * Get VLAN Id
+ * @arg link		Link object
+ *
+ * @return VLAN id, 0 if not set or a negative error code.
+ */
 int rtnl_link_vlan_get_id(struct rtnl_link *link)
 {
 	struct vlan_info *vi = link->l_info;
 
-	if (link->l_info_ops != &vlan_info_ops || !link->l_info_ops)
-		return -NLE_OPNOTSUPP;
+	IS_VLAN_LINK_ASSERT(link);
 
 	if (vi->vi_mask & VLAN_HAS_ID)
 		return vi->vi_vlan_id;
@@ -360,12 +460,57 @@ int rtnl_link_vlan_get_id(struct rtnl_link *link)
 		return 0;
 }
 
+/**
+ * Set VLAN protocol
+ * @arg link		Link object
+ * @arg protocol	VLAN protocol in network byte order.
+ *   Probably you want to set it to something like htons(ETH_P_8021Q).
+ *
+ * @return 0 on success or a negative error code
+ */
+int rtnl_link_vlan_set_protocol(struct rtnl_link *link, uint16_t protocol)
+{
+	struct vlan_info *vi = link->l_info;
+
+	IS_VLAN_LINK_ASSERT(link);
+
+	vi->vi_protocol = protocol;
+	vi->vi_mask |= VLAN_HAS_PROTOCOL;
+
+	return 0;
+}
+
+/**
+ * Get VLAN protocol
+ * @arg link		Link object
+ *
+ * @return VLAN protocol in network byte order like htons(ETH_P_8021Q),
+ *   0 if not set or a negative error code.
+ */
+int rtnl_link_vlan_get_protocol(struct rtnl_link *link)
+{
+	struct vlan_info *vi = link->l_info;
+
+	IS_VLAN_LINK_ASSERT(link);
+
+	if (vi->vi_mask & VLAN_HAS_PROTOCOL)
+		return vi->vi_protocol;
+	else
+		return 0;
+}
+
+/**
+ * Set VLAN flags
+ * @arg link		Link object
+ * @arg flags		VLAN flags
+ *
+ * @return 0 on success or a negative error code.
+ */
 int rtnl_link_vlan_set_flags(struct rtnl_link *link, unsigned int flags)
 {
 	struct vlan_info *vi = link->l_info;
 
-	if (link->l_info_ops != &vlan_info_ops || !link->l_info_ops)
-		return -NLE_OPNOTSUPP;
+	IS_VLAN_LINK_ASSERT(link);
 
 	vi->vi_flags_mask |= flags;
 	vi->vi_flags |= flags;
@@ -374,12 +519,18 @@ int rtnl_link_vlan_set_flags(struct rtnl_link *link, unsigned int flags)
 	return 0;
 }
 
+/**
+ * Unset VLAN flags
+ * @arg link		Link object
+ * @arg flags		VLAN flags
+ *
+ * @return 0 on success or a negative error code.
+ */
 int rtnl_link_vlan_unset_flags(struct rtnl_link *link, unsigned int flags)
 {
 	struct vlan_info *vi = link->l_info;
 
-	if (link->l_info_ops != &vlan_info_ops || !link->l_info_ops)
-		return -NLE_OPNOTSUPP;
+	IS_VLAN_LINK_ASSERT(link);
 
 	vi->vi_flags_mask |= flags;
 	vi->vi_flags &= ~flags;
@@ -388,27 +539,39 @@ int rtnl_link_vlan_unset_flags(struct rtnl_link *link, unsigned int flags)
 	return 0;
 }
 
-unsigned int rtnl_link_vlan_get_flags(struct rtnl_link *link)
+/**
+ * Get VLAN flags
+ * @arg link		Link object
+ *
+ * @return VLAN flags, 0 if none set, or a negative error code.
+ */
+int rtnl_link_vlan_get_flags(struct rtnl_link *link)
 {
 	struct vlan_info *vi = link->l_info;
 
-	if (link->l_info_ops != &vlan_info_ops || !link->l_info_ops)
-		return -NLE_OPNOTSUPP;
+	IS_VLAN_LINK_ASSERT(link);
 
 	return vi->vi_flags;
 }
+
+/** @} */
+
+/**
+ * @name Quality of Service
+ * @{
+ */
 
 int rtnl_link_vlan_set_ingress_map(struct rtnl_link *link, int from,
 				   uint32_t to)
 {
 	struct vlan_info *vi = link->l_info;
 
-	if (link->l_info_ops != &vlan_info_ops || !link->l_info_ops)
-		return -NLE_OPNOTSUPP;
+	IS_VLAN_LINK_ASSERT(link);
 
 	if (from < 0 || from > VLAN_PRIO_MAX)
 		return -NLE_INVAL;
 
+	vi->vi_ingress_qos_mask |= (1 << from);
 	vi->vi_ingress_qos[from] = to;
 	vi->vi_mask |= VLAN_HAS_INGRESS_QOS;
 
@@ -439,10 +602,16 @@ int rtnl_link_vlan_set_egress_map(struct rtnl_link *link, uint32_t from, int to)
 		return -NLE_INVAL;
 
 	if (vi->vi_negress >= vi->vi_egress_size) {
-		int new_size = vi->vi_egress_size + 32;
+		uint32_t new_size = vi->vi_egress_size + 1 + vi->vi_egress_size / 2;
+		size_t bytes;
 		void *ptr;
 
-		ptr = realloc(vi->vi_egress_qos, new_size);
+		if (new_size < vi->vi_egress_size)
+			return -NLE_NOMEM;
+		bytes = (size_t) new_size * sizeof(struct vlan_map);
+		if (bytes / sizeof (struct vlan_map) != new_size)
+			return -NLE_NOMEM;
+		ptr = realloc(vi->vi_egress_qos, bytes);
 		if (!ptr)
 			return -NLE_NOMEM;
 
@@ -478,12 +647,40 @@ struct vlan_map *rtnl_link_vlan_get_egress_map(struct rtnl_link *link,
 	}
 }
 
-static void __init vlan_init(void)
+/** @} */
+
+static const struct trans_tbl vlan_flags[] = {
+	__ADD(VLAN_FLAG_REORDER_HDR, reorder_hdr),
+	__ADD(VLAN_FLAG_GVRP, gvrp),
+	__ADD(VLAN_FLAG_LOOSE_BINDING, loose_binding),
+	__ADD(VLAN_FLAG_MVRP, mvrp),
+	__ADD(VLAN_FLAG_BRIDGE_BINDING, bridge_binding),
+};
+
+/**
+ * @name Flag Translation
+ * @{
+ */
+
+char *rtnl_link_vlan_flags2str(int flags, char *buf, size_t len)
+{
+	return __flags2str(flags, buf, len, vlan_flags, ARRAY_SIZE(vlan_flags));
+}
+
+int rtnl_link_vlan_str2flags(const char *name)
+{
+	return __str2flags(name, vlan_flags, ARRAY_SIZE(vlan_flags));
+}
+
+/** @} */
+
+
+static void _nl_init vlan_init(void)
 {
 	rtnl_link_register_info(&vlan_info_ops);
 }
 
-static void __exit vlan_exit(void)
+static void _nl_exit vlan_exit(void)
 {
 	rtnl_link_unregister_info(&vlan_info_ops);
 }

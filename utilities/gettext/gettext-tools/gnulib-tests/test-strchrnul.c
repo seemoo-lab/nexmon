@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2008-2016 Free Software Foundation, Inc.
+ * Copyright (C) 2008-2026 Free Software Foundation, Inc.
  * Written by Eric Blake and Bruno Haible
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -64,23 +64,20 @@ main (void)
   }
 
   /* Alignment tests.  */
-  {
-    int i, j;
-    for (i = 0; i < 32; i++)
-      {
-        for (j = 0; j < 256; j++)
-          input[i + j] = (j + 1) & 0xff;
-        for (j = 1; j < 256; j++)
-          {
-            ASSERT (strchrnul (input + i, j) == input + i + j - 1);
-            input[i + j - 1] = (j == 1 ? 2 : 1);
-            ASSERT (strchrnul (input + i, j) == input + i + 255);
-            input[i + j - 1] = j;
-          }
-      }
-  }
+  for (int i = 0; i < 32; i++)
+    {
+      for (int j = 0; j < 256; j++)
+        input[i + j] = (j + 1) & 0xff;
+      for (int j = 1; j < 256; j++)
+        {
+          ASSERT (strchrnul (input + i, j) == input + i + j - 1);
+          input[i + j - 1] = (j == 1 ? 2 : 1);
+          ASSERT (strchrnul (input + i, j) == input + i + 255);
+          input[i + j - 1] = j;
+        }
+    }
 
   free (input);
 
-  return 0;
+  return test_exit_status;
 }

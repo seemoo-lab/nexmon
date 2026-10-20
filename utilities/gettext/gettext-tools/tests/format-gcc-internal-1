@@ -7,13 +7,27 @@ cat <<\EOF > f-gi-1.data
 # Valid: no argument
 "abc%%"
 # Valid: no argument
+"abc%<def%>"
+# Invalid: unterminated quote group
 "abc%<"
-# Valid: no argument
+# Invalid: %> without %<
 "abc%>"
+# Invalid: %} without %{
+"abc%}"
 # Valid: no argument
 "abc%'"
+# Invalid: %R without %r
+"abc%R"
 # Valid: no argument
 "abc%m"
+# Valid: one color argument
+"abc%rdef%R"
+# Invalid: unterminated color group
+"abc%r"
+# Valid: one URL argument
+"abc%{def%}"
+# Invalid: unterminated URL group
+"abc%{"
 # Valid: one character argument
 "abc%c"
 # Valid: one string argument
@@ -30,32 +44,32 @@ cat <<\EOF > f-gi-1.data
 "abc%x"
 # Valid: one integer and one string argument
 "abc%.*s"
+# Valid: one floating-point argument
+"abc%f"
 # Valid: one pointer argument
 "abc%p"
 # Valid: one pointer argument
-"abc%H"
+"abc%@"
 # Valid: one pointer argument
-"%J"
-# Valid: %J not at start
-"abc%J"
-# Valid: %J with flags
-"%qJ"
-# Valid: %K with flags
-"%qK"
+"abc%e"
+# Valid: one pointer and one pointer argument
+"abc%Z"
 # Valid: one pointer argument
 "abc%D"
+# Valid: one pointer argument
+"abc%E"
 # Valid: one pointer argument
 "abc%F"
 # Valid: one pointer argument
 "abc%T"
 # Valid: one pointer argument
+"abc%V"
+# Valid: one pointer argument
+"abc%v"
+# Valid: one pointer argument
 "abc%A"
-# Valid: one pointer argument
-"abc%C"
-# Valid: one pointer argument
-"abc%E"
-# Valid: one pointer argument
-"abc%L"
+# Valid: two pointer arguments
+"abc%H-%I"
 # Valid: one pointer argument
 "abc%O"
 # Valid: one pointer argument
@@ -63,7 +77,13 @@ cat <<\EOF > f-gi-1.data
 # Valid: one pointer argument
 "abc%Q"
 # Valid: one pointer argument
-"abc%V"
+"abc%S"
+# Valid: one pointer argument
+"abc%X"
+# Valid: possibly one pointer argument
+"abc%C"
+# Valid: one pointer argument
+"abc%L"
 # Valid: one argument with flags
 "abc%qdef"
 # Valid: one argument with flags
@@ -76,6 +96,10 @@ cat <<\EOF > f-gi-1.data
 "abc%llli"
 # Valid: one argument with size specifier
 "abc%wi"
+# Valid: one argument with size specifier
+"abc%zi"
+# Valid: one argument with size specifier
+"abc%ti"
 # Invalid: unterminated
 "abc%"
 # Invalid: unknown format specifier

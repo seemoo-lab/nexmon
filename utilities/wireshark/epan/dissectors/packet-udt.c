@@ -1,6 +1,8 @@
 /* packet-udt.c
  *
  * Routines for UDT packet dissection
+ * http://udt.sourceforge.net
+ * draft-gg-udt
  *
  * Copyright 2013 (c) chas williams <chas@cmf.nrl.navy.mil>
  *
@@ -10,19 +12,7 @@
  *
  * Copied from packet-tftp.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,9 +20,18 @@
 #include <epan/packet.h>
 #include <epan/conversation.h>
 #include <epan/expert.h>
+#include <epan/wmem_scopes.h>
 
 /*
- * based on http://tools.ietf.org/html/draft-gg-udt-03
+ * Per-conversation information
+ */
+typedef struct _udt_conversation {
+	bool is_dtls;
+	uint32_t isn;
+} udt_conversation;
+
+/*
+ * based on https://tools.ietf.org/html/draft-gg-udt-03
  */
 
 #define UDT_TYPE_DATA			0
@@ -45,8 +44,12 @@
 #define UDT_PACKET_TYPE_SHUTDOWN	0x0005
 #define UDT_PACKET_TYPE_ACK2		0x0006
 
-#define UDT_HANDSHAKE_TYPE_STREAM	0
-#define UDT_HANDSHAKE_TYPE_DGRAM	1
+#define UDT_HANDSHAKE_TYPE_STREAM	1
+#define UDT_HANDSHAKE_TYPE_DGRAM	2
+
+#define UDT_CONTROL_OFFSET             16  /* Offset of control information field */
+#define UDT_MAX_NAK_ENTRIES             8  /* max number of NAK entries displayed in summary */
+#define UDT_MAX_NAK_LENGTH             (UDT_CONTROL_OFFSET + UDT_MAX_NAK_ENTRIES*4)
 
 void proto_register_udt(void);
 void proto_reg_handoff_udt(void);
@@ -73,48 +76,64 @@ static const value_string udt_types[] = {
 	{0, NULL},
 };
 
-static int proto_udt = -1;
-static int hf_udt_iscontrol = -1;
-static int hf_udt_type = -1;
-static int hf_udt_seqno = -1;
-static int hf_udt_ack_seqno = -1;
-static int hf_udt_ackno = -1;
-static int hf_udt_msgno = -1;
-static int hf_udt_msgno_first = -1;
-static int hf_udt_msgno_last = -1;
-static int hf_udt_msgno_inorder = -1;
-static int hf_udt_timestamp = -1;
-static int hf_udt_id = -1;
-static int hf_udt_addinfo = -1;
-static int hf_udt_rtt = -1;
-static int hf_udt_rttvar = -1;
-static int hf_udt_bufavail = -1;
-static int hf_udt_rate = -1;
-static int hf_udt_linkcap = -1;
-static int hf_udt_handshake_version = -1;
-static int hf_udt_handshake_type = -1;
-static int hf_udt_handshake_isn = -1;
-static int hf_udt_handshake_mtu = -1;
-static int hf_udt_handshake_flow_window = -1;
-static int hf_udt_handshake_reqtype = -1;
-static int hf_udt_handshake_id = -1;
-static int hf_udt_handshake_cookie = -1;
-static int hf_udt_handshake_peerip = -1;
+static int proto_udt;
+static int hf_udt_iscontrol;
+static int hf_udt_type;
+static int hf_udt_seqno;
+static int hf_udt_ack_seqno;
+static int hf_udt_ackno;
+static int hf_udt_msgno;
+static int hf_udt_msgno_first;
+static int hf_udt_msgno_last;
+static int hf_udt_msgno_inorder;
+static int hf_udt_timestamp;
+static int hf_udt_id;
+static int hf_udt_addinfo;
+static int hf_udt_rtt;
+static int hf_udt_rttvar;
+static int hf_udt_bufavail;
+static int hf_udt_rate;
+static int hf_udt_linkcap;
+static int hf_udt_handshake_version;
+static int hf_udt_handshake_type;
+static int hf_udt_handshake_isn;
+static int hf_udt_handshake_mtu;
+static int hf_udt_handshake_flow_window;
+static int hf_udt_handshake_reqtype;
+static int hf_udt_handshake_id;
+static int hf_udt_handshake_cookie;
+static int hf_udt_handshake_peerip;
 
-static gint ett_udt = -1;
+static int ett_udt;
 
-static expert_field ei_udt_nak_seqno = EI_INIT;
+static expert_field ei_udt_nak_seqno;
 
 static dissector_handle_t udt_handle;
+
+static heur_dissector_list_t heur_subdissector_list;
+
+static int get_sqn(udt_conversation *udt_conv, uint32_t sqn)
+{
+	if (udt_conv)
+		sqn -= udt_conv->isn;
+
+	return (sqn);
+}
 
 static int
 dissect_udt(tvbuff_t *tvb, packet_info* pinfo, proto_tree *parent_tree,
 	    void *data _U_)
 {
-	proto_tree *tree;
-	proto_item *udt_item;
-	int         is_control, type;
-	guint       i;
+	proto_tree        *tree;
+	proto_item        *udt_item;
+	int                is_control, type;
+	unsigned           i;
+	conversation_t    *conv;
+	udt_conversation  *udt_conv;
+	heur_dtbl_entry_t *hdtbl_entry;
+
+	conv = find_or_create_conversation(pinfo);
+	udt_conv = (udt_conversation *)conversation_get_proto_data(conv, proto_udt);
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "UDT");
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -122,17 +141,65 @@ dissect_udt(tvbuff_t *tvb, packet_info* pinfo, proto_tree *parent_tree,
 	is_control = tvb_get_ntohl(tvb, 0) & 0x80000000;
 	type = (tvb_get_ntohl(tvb, 0) >> 16) & 0x7fff;
 
-	if (is_control)
-		col_add_fstr(pinfo->cinfo, COL_INFO, "UDT type: %s  id: %x",
-			     val_to_str(type, udt_packet_types,
-					"Unknown Control Type (%x)"),
-			     tvb_get_ntohl(tvb, 12));
-	else
+	if (is_control) {
+		const char *typestr = val_to_str(pinfo->pool, type, udt_packet_types,
+					   "Unknown Control Type (%x)");
+		switch (type) {
+		case UDT_PACKET_TYPE_ACK:
+			col_add_fstr(pinfo->cinfo, COL_INFO, "UDT type: ack  seqno: %u",
+				     get_sqn(udt_conv, tvb_get_ntohl(tvb, 16)));
+			break;
+		case UDT_PACKET_TYPE_ACK2:
+			col_set_str(pinfo->cinfo, COL_INFO, "UDT type: ack2");
+			break;
+		case UDT_PACKET_TYPE_NAK: {
+			wmem_strbuf_t *nakstr = wmem_strbuf_new(pinfo->pool, "");
+			unsigned max = tvb_reported_length(tvb);
+			if (max > UDT_MAX_NAK_LENGTH)
+			    max = UDT_MAX_NAK_LENGTH;
+
+			for (i = UDT_CONTROL_OFFSET; i <= (max-4) ; i = i + 4) {
+				uint32_t start, finish;
+				int     is_range;
+
+				is_range = tvb_get_ntohl(tvb, i) & 0x80000000;
+				start = get_sqn(udt_conv, tvb_get_ntohl(tvb, i) & 0x7fffffff);
+
+				if (is_range) {
+					if (i > (max-8)) {
+						// Message is truncated
+						break;
+					}
+					finish = get_sqn(udt_conv, tvb_get_ntohl(tvb, i + 4) & 0x7fffffff);
+					wmem_strbuf_append_printf(nakstr, "%s%u-%u",
+								  i == UDT_CONTROL_OFFSET? "":",",
+								  start, finish);
+					i = i + 4;
+				} else {
+					wmem_strbuf_append_printf(nakstr, "%s%u",
+								  i == UDT_CONTROL_OFFSET? "":",",
+								  start);
+				}
+			}
+
+			// Add ellipsis if the list was too long
+			if (max != tvb_reported_length(tvb))
+				wmem_strbuf_append(nakstr, "...");
+
+			col_add_fstr(pinfo->cinfo, COL_INFO, "UDT type: %s missing:%s",
+				     typestr, wmem_strbuf_get_str(nakstr));
+			break;
+		}
+		default:
+			col_add_fstr(pinfo->cinfo, COL_INFO, "UDT type: %s", typestr);
+			break;
+		}
+	} else {
 		col_add_fstr(pinfo->cinfo, COL_INFO,
-			     "UDT type: data  seqno: %u  msgno: %u  id: %x",
-			     tvb_get_ntohl(tvb, 0) & 0x7fffffff,
-			     tvb_get_ntohl(tvb, 4) & 0x1fffffff,
-			     tvb_get_ntohl(tvb, 12));
+			     "UDT type: data seqno: %u msgno: %u",
+			     get_sqn(udt_conv, tvb_get_ntohl(tvb, 0) & 0x7fffffff),
+			     tvb_get_ntohl(tvb, 4) & 0x1fffffff);
+	}
 
 	udt_item = proto_tree_add_item(parent_tree, proto_udt, tvb,
 					      0, -1, ENC_NA);
@@ -141,7 +208,7 @@ dissect_udt(tvbuff_t *tvb, packet_info* pinfo, proto_tree *parent_tree,
 	proto_tree_add_item(tree, hf_udt_iscontrol, tvb, 0, 4, ENC_BIG_ENDIAN);
 	if (is_control) {
 		if (tree) {
-			proto_tree_add_item(tree, hf_udt_type, tvb, 0, 2,
+			proto_tree_add_item(tree, hf_udt_type, tvb, 0, 4,
 					    ENC_BIG_ENDIAN);
 			switch (type) {
 			case UDT_PACKET_TYPE_ACK:
@@ -188,47 +255,78 @@ dissect_udt(tvbuff_t *tvb, packet_info* pinfo, proto_tree *parent_tree,
 			break;
 		case UDT_PACKET_TYPE_ACK:
 			if (tree) {
-				proto_tree_add_item(tree, hf_udt_ack_seqno, tvb, 16, 4,
-						    ENC_BIG_ENDIAN);
-				proto_tree_add_item(tree, hf_udt_rtt,      tvb, 20, 4,
-						    ENC_BIG_ENDIAN);
-				proto_tree_add_item(tree, hf_udt_rttvar,   tvb, 24, 4,
-						    ENC_BIG_ENDIAN);
-				proto_tree_add_item(tree, hf_udt_bufavail, tvb, 28, 4,
-						    ENC_BIG_ENDIAN);
-				/* if not a light ack, decode the rate and link capacity */
-				if (tvb_reported_length(tvb) == 40) {
-					proto_tree_add_item(tree, hf_udt_rate, tvb,
-							    32, 4, ENC_BIG_ENDIAN);
-					proto_tree_add_item(tree, hf_udt_linkcap, tvb,
-							    36, 4, ENC_BIG_ENDIAN);
-					proto_item_set_len(udt_item, 40);
-				}
+				int len = tvb_reported_length(tvb);
+				uint32_t real_sqn = tvb_get_ntohl(tvb, 16);
+				uint32_t sqn = get_sqn(udt_conv, real_sqn);
+				if (sqn != real_sqn)
+					proto_tree_add_uint_format_value(tree, hf_udt_ack_seqno, tvb, 16, 4, real_sqn,
+									 "%d (relative) [%d]", sqn, real_sqn);
 				else
-				{
-					proto_item_set_len(udt_item, 32);
+					proto_tree_add_uint(tree, hf_udt_ack_seqno, tvb, 16, 4, real_sqn);
+
+				/* if not a light ack, decode the extended fields */
+				if (len < 32) {
+					proto_item_set_len(udt_item, 20);
+				} else {
+					proto_tree_add_item(tree, hf_udt_rtt,      tvb, 20, 4,
+							    ENC_BIG_ENDIAN);
+					proto_tree_add_item(tree, hf_udt_rttvar,   tvb, 24, 4,
+							    ENC_BIG_ENDIAN);
+					proto_tree_add_item(tree, hf_udt_bufavail, tvb, 28, 4,
+							    ENC_BIG_ENDIAN);
+					if (len >= 40) {
+						proto_tree_add_item(tree, hf_udt_rate, tvb,
+								    32, 4, ENC_BIG_ENDIAN);
+						proto_tree_add_item(tree, hf_udt_linkcap, tvb,
+								    36, 4, ENC_BIG_ENDIAN);
+						proto_item_set_len(udt_item, 40);
+					} else {
+						proto_item_set_len(udt_item, 32);
+					}
 				}
 			}
 			break;
 		case UDT_PACKET_TYPE_NAK:
-			for (i = 16; i < tvb_reported_length(tvb); i = i + 4) {
-				guint32 start, finish;
+			for (i = 16; i <= (tvb_reported_length(tvb)-4); i = i + 4) {
+				uint32_t real_start, real_finish;
+				uint32_t start, finish;
 				int     is_range;
 
 				is_range = tvb_get_ntohl(tvb, i) & 0x80000000;
-				start = tvb_get_ntohl(tvb, i) & 0x7fffffff;
+				real_start = tvb_get_ntohl(tvb, i) & 0x7fffffff;
+				start = get_sqn(udt_conv, real_start);
 
 				if (is_range) {
-					finish = tvb_get_ntohl(tvb, i + 4) & 0x7fffffff;
+					if (i > (tvb_reported_length(tvb)-8)) {
+						// Message is truncated - bail
+						break;
+					}
 
-					proto_tree_add_expert_format(tree, pinfo, &ei_udt_nak_seqno,
-									tvb, i, 8, "Missing Sequence Number(s): %u-%u",
-								    start, finish);
+					real_finish = tvb_get_ntohl(tvb, i + 4) & 0x7fffffff;
+					finish = get_sqn(udt_conv, real_finish);
+
+					if (start != real_start)
+						proto_tree_add_expert_format(tree, pinfo, &ei_udt_nak_seqno,
+									     tvb, i, 8,
+									     "Missing Sequence Numbers: "
+									     "%u-%u (relative) [%u-%u]",
+									     start, finish, real_start, real_finish);
+					else
+						proto_tree_add_expert_format(tree, pinfo, &ei_udt_nak_seqno,
+									     tvb, i, 8,
+									     "Missing Sequence Numbers: %u-%u",
+									     real_start, real_finish);
 					i = i + 4;
 				} else {
-					proto_tree_add_expert_format(tree, pinfo, &ei_udt_nak_seqno,
-								    tvb, i, 4, "Missing Sequence Number: %u",
-								    start);
+					if (start != real_start)
+						proto_tree_add_expert_format(tree, pinfo, &ei_udt_nak_seqno,
+									     tvb, i, 4,
+									     "Missing Sequence Number : %u (relative) [%u]",
+									     start, real_start);
+					else
+						proto_tree_add_expert_format(tree, pinfo, &ei_udt_nak_seqno,
+									     tvb, i, 4,
+									     "Missing Sequence Number : %u", real_start);
 				}
 			}
 
@@ -240,8 +338,13 @@ dissect_udt(tvbuff_t *tvb, packet_info* pinfo, proto_tree *parent_tree,
 		tvbuff_t *next_tvb;
 
 		if (tree) {
-			proto_tree_add_item(tree, hf_udt_seqno,		tvb,  0, 4,
-					    ENC_BIG_ENDIAN);
+			uint32_t real_seqno = tvb_get_ntohl(tvb, 0);
+			uint32_t seqno = get_sqn(udt_conv, real_seqno);
+			if (seqno != real_seqno)
+				proto_tree_add_uint_format_value(tree, hf_udt_seqno, tvb, 0, 4, real_seqno,
+								 "%u (relative) [%u]", seqno, real_seqno);
+			else
+				proto_tree_add_uint(tree, hf_udt_seqno,	tvb, 0, 4, real_seqno);
 			proto_tree_add_item(tree, hf_udt_msgno_first,	tvb,  4, 4,
 					    ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_udt_msgno_last,	tvb,  4, 4,
@@ -256,40 +359,78 @@ dissect_udt(tvbuff_t *tvb, packet_info* pinfo, proto_tree *parent_tree,
 					    ENC_BIG_ENDIAN);
 
 		}
+
 		next_tvb = tvb_new_subset_remaining(tvb, 16);
-		call_data_dissector(next_tvb, pinfo, tree);
+
+		// Try heuristic dissectors first...
+		if (!dissector_try_heuristic(heur_subdissector_list, next_tvb, pinfo, parent_tree, &hdtbl_entry, NULL))
+			call_data_dissector(next_tvb, pinfo, parent_tree);
 	}
 
 	return tvb_reported_length(tvb);
 }
 
-static gboolean
-dissect_udt_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+static bool
+dissect_udt_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data, bool is_dtls)
 {
 	conversation_t *conv;
-
-	/* Must have at least 24 captured bytes for heuristic check */
-	if (tvb_captured_length(tvb) < 24)
-		return FALSE;
-
-	/* detect handshake control packet */
-	if (tvb_get_ntohl(tvb, 0) != (0x80000000 | UDT_PACKET_TYPE_HANDSHAKE))
-		return FALSE;
-
-	/* must be version 4 */
-	if ((tvb_get_ntohl(tvb, 16) != 4))
-		return FALSE;
-
-	/* must be datagram or stream */
-	if ((tvb_get_ntohl(tvb, 20) != UDT_HANDSHAKE_TYPE_DGRAM)
-	    && (tvb_get_ntohl(tvb, 20) != UDT_HANDSHAKE_TYPE_STREAM))
-		return FALSE;
+	udt_conversation *udt_conv;
 
 	conv = find_or_create_conversation(pinfo);
-	conversation_set_dissector(conv, udt_handle);
-	dissect_udt(tvb, pinfo, tree, data);
+	udt_conv = (udt_conversation *)conversation_get_proto_data(conv, proto_udt);
 
-	return TRUE;
+	if (udt_conv) {
+		// Already identified conversation as UDT - BUT we might have been called from
+		// the other dissector.
+		if (is_dtls != udt_conv->is_dtls)
+			return false;
+		dissect_udt(tvb, pinfo, tree, data);
+	} else {
+		// Check if this is UDT...
+
+		/* Must have at least 24 captured bytes for heuristic check */
+		if (tvb_captured_length(tvb) < 24)
+			return false;
+
+		/* detect handshake control packet */
+		if (tvb_get_ntohl(tvb, 0) != (0x80000000 | UDT_PACKET_TYPE_HANDSHAKE))
+			return false;
+
+		/* must be version 4 */
+		if ((tvb_get_ntohl(tvb, 16) != 4))
+			return false;
+
+		/* must be datagram or stream */
+		if ((tvb_get_ntohl(tvb, 20) != UDT_HANDSHAKE_TYPE_DGRAM)
+		    && (tvb_get_ntohl(tvb, 20) != UDT_HANDSHAKE_TYPE_STREAM))
+			return false;
+
+		/* This looks like UDT! */
+		udt_conv = wmem_new0(wmem_file_scope(), udt_conversation);
+		udt_conv->is_dtls = is_dtls;
+		/* Save initial sequence number if sufficient bytes were captured */
+		if (tvb_captured_length(tvb) >= 28)
+			udt_conv->isn = tvb_get_ntohl(tvb, 24);
+		conversation_add_proto_data(conv, proto_udt, udt_conv);
+		// DTLS should remain the dissector of record for encrypted conversations
+		if (!is_dtls)
+			conversation_set_dissector(conv, udt_handle);
+
+		dissect_udt(tvb, pinfo, tree, data);
+	}
+	return true;
+}
+
+static bool
+dissect_udt_heur_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+	return dissect_udt_heur(tvb, pinfo, tree, data, false /* Not DTLS */);
+}
+
+static bool
+dissect_udt_heur_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+	return dissect_udt_heur(tvb, pinfo, tree, data, true /* Is DTLS */);
 }
 
 void proto_register_udt(void)
@@ -304,8 +445,8 @@ void proto_register_udt(void)
 
 		{&hf_udt_type, {
 				"Type", "udt.type",
-				FT_UINT16, BASE_HEX,
-				VALS(udt_packet_types), 0x7fff, NULL, HFILL}},
+				FT_UINT32, BASE_HEX,
+				VALS(udt_packet_types), 0x7fff0000, NULL, HFILL}},
 
 		{&hf_udt_seqno, {
 				"Sequence Number", "udt.seqno",
@@ -368,7 +509,7 @@ void proto_register_udt(void)
 				NULL, 0, NULL, HFILL}},
 
 		{&hf_udt_bufavail, {
-				"Buffer Available (packets)", "udt.rttvar",
+				"Buffer Available (packets)", "udt.buf",
 				FT_UINT32, BASE_DEC,
 				NULL, 0, NULL, HFILL}},
 
@@ -429,7 +570,7 @@ void proto_register_udt(void)
 				NULL, 0, NULL, HFILL}},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_udt,
 	};
 
@@ -445,19 +586,22 @@ void proto_register_udt(void)
 
 	expert_udt = expert_register_protocol(proto_udt);
 	expert_register_field_array(expert_udt, ei, array_length(ei));
+
+	udt_handle = register_dissector("udt", dissect_udt, proto_udt);
+
+	heur_subdissector_list = register_heur_dissector_list_with_description("udt", "UDT data", proto_udt);
 }
 
 void proto_reg_handoff_udt(void)
 {
-	udt_handle  = create_dissector_handle(dissect_udt, proto_udt);
-
-	heur_dissector_add("udp", dissect_udt_heur, "UDT over UDP", "udt_udp", proto_udt, HEURISTIC_ENABLE);
-	dissector_add_for_decode_as("udp.port", udt_handle);
+	heur_dissector_add("udp", dissect_udt_heur_udp, "UDT over UDP", "udt_udp", proto_udt, HEURISTIC_ENABLE);
+	heur_dissector_add("dtls", dissect_udt_heur_dtls, "UDT over DTLS", "udt_dtls", proto_udt, HEURISTIC_ENABLE);
+	dissector_add_for_decode_as_with_preference("udp.port", udt_handle);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

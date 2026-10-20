@@ -1,12 +1,14 @@
-# getcwd.m4 - check for working getcwd that is compatible with glibc
-
-# Copyright (C) 2001, 2003-2007, 2009-2016 Free Software Foundation, Inc.
-# This file is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
+# getcwd.m4
+# serial 22
+dnl Copyright (C) 2001, 2003-2007, 2009-2026 Free Software Foundation, Inc.
+dnl This file is free software; the Free Software Foundation
+dnl gives unlimited permission to copy and/or distribute it,
+dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 # Written by Paul Eggert.
-# serial 13
+
+# Check for working getcwd that is compatible with glibc
 
 AC_DEFUN([gl_FUNC_GETCWD_NULL],
   [
@@ -21,12 +23,10 @@ AC_DEFUN([gl_FUNC_GETCWD_NULL],
 #        else /* on Windows with MSVC */
 #         include <direct.h>
 #        endif
-#        ifndef getcwd
-         char *getcwd ();
-#        endif
-]], [[
-#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-/* mingw cwd does not start with '/', but getcwd does allocate.
+         ]GL_MDA_DEFINES],
+         [[
+#if defined _WIN32 && ! defined __CYGWIN__
+/* mingw cwd does not start with '/', but _getcwd does allocate.
    However, mingw fails to honor non-zero size.  */
 #else
            if (chdir ("/") != 0)
@@ -37,9 +37,9 @@ AC_DEFUN([gl_FUNC_GETCWD_NULL],
                if (! f)
                  return 2;
                if (f[0] != '/')
-                 return 3;
+                 { free (f); return 3; }
                if (f[1] != '\0')
-                 return 4;
+                 { free (f); return 4; }
                free (f);
                return 0;
              }
@@ -48,12 +48,16 @@ AC_DEFUN([gl_FUNC_GETCWD_NULL],
         [gl_cv_func_getcwd_null=yes],
         [gl_cv_func_getcwd_null=no],
         [[case "$host_os" in
-                     # Guess yes on glibc systems.
-            *-gnu*)  gl_cv_func_getcwd_null="guessing yes";;
-                     # Guess yes on Cygwin.
-            cygwin*) gl_cv_func_getcwd_null="guessing yes";;
-                     # If we don't know, assume the worst.
-            *)       gl_cv_func_getcwd_null="guessing no";;
+                           # Guess yes on glibc systems.
+            *-gnu* | gnu*) gl_cv_func_getcwd_null="guessing yes";;
+                           # Guess yes on musl systems.
+            *-musl*)       gl_cv_func_getcwd_null="guessing yes";;
+                           # Guess yes on systems that emulate the Linux system calls.
+            midipix*)      gl_cv_func_getcwd_null="guessing yes";;
+                           # Guess yes on Cygwin.
+            cygwin*)       gl_cv_func_getcwd_null="guessing yes";;
+                           # If we don't know, obey --enable-cross-guesses.
+            *)             gl_cv_func_getcwd_null="$gl_cross_guess_normal";;
           esac
         ]])])
 ])
@@ -64,7 +68,8 @@ AC_DEFUN([gl_FUNC_GETCWD_SIGNATURE],
     [gl_cv_func_getcwd_posix_signature],
     [AC_COMPILE_IFELSE(
       [AC_LANG_PROGRAM(
-         [[#include <unistd.h>]],
+         [[#include <unistd.h>
+         ]GL_MDA_DEFINES],
          [[extern
            #ifdef __cplusplus
            "C"
@@ -110,7 +115,7 @@ AC_DEFUN([gl_FUNC_GETCWD],
 
   gl_abort_bug=no
   case "$host_os" in
-    mingw*)
+    mingw* | windows*)
       gl_cv_func_getcwd_path_max=yes
       ;;
     *)
@@ -125,7 +130,7 @@ AC_DEFUN([gl_FUNC_GETCWD],
   dnl Define HAVE_MINIMALLY_WORKING_GETCWD and HAVE_PARTLY_WORKING_GETCWD
   dnl if appropriate.
   case "$gl_cv_func_getcwd_path_max" in
-    "no"|"no, it has the AIX bug") ;;
+    *"no" | *"no, it has the AIX bug") ;;
     *)
       AC_DEFINE([HAVE_MINIMALLY_WORKING_GETCWD], [1],
         [Define to 1 if getcwd minimally works, that is, its result can be
@@ -133,12 +138,12 @@ AC_DEFUN([gl_FUNC_GETCWD],
       ;;
   esac
   case "$gl_cv_func_getcwd_path_max" in
-    "no, but it is partly working")
+    *"no, but it is partly working")
       AC_DEFINE([HAVE_PARTLY_WORKING_GETCWD], [1],
         [Define to 1 if getcwd works, except it sometimes fails when it
          shouldn't, setting errno to ERANGE, ENAMETOOLONG, or ENOENT.])
       ;;
-    "yes, but with shorter paths")
+    *"yes, but with shorter paths")
       AC_DEFINE([HAVE_GETCWD_SHORTER], [1],
         [Define to 1 if getcwd works, but with shorter paths
          than is generally tested with the replacement.])

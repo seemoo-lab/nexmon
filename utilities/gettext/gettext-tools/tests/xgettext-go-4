@@ -1,0 +1,52 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: github.com/gosexy/gettext package,
+# with single-locale API.
+
+cat <<\EOF > xg-go-4.go
+package main
+
+import (
+	// Documentation: https://pkg.go.dev/fmt
+	"fmt"
+	// Documentation: https://pkg.go.dev/github.com/gosexy/gettext
+	"github.com/gosexy/gettext"
+	// Documentation: https://pkg.go.dev/os
+	"os"
+)
+
+func main () {
+	// Specify domain, localedir.
+	domain := "hello"
+	gettext.BindTextdomain(domain, "@localedir@")
+	gettext.Textdomain(domain)
+
+	// Specify locale.
+	//locale := "fr_FR.UTF-8"
+	locale := "" // looks at the POSIX environment variables
+	gettext.SetLocale(gettext.LcAll, locale)
+
+	fmt.Println(gettext.Gettext("Hello, world!"))
+	fmt.Println(fmt.Sprintf(gettext.Gettext("This program is running as process number %d."),
+	                        os.Getpid()))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-4.tmp xg-go-4.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-4.tmp.po > xg-go-4.po || Exit 1
+
+cat <<\EOF > xg-go-4.ok
+msgid "Hello, world!"
+msgstr ""
+
+#, go-format
+msgid "This program is running as process number %d."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-4.ok xg-go-4.po || Exit 1
+
+exit 0

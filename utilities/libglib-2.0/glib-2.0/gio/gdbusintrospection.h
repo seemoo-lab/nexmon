@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -43,7 +45,7 @@ G_BEGIN_DECLS
 struct _GDBusAnnotationInfo
 {
   /*< public >*/
-  volatile gint         ref_count;
+  gint                  ref_count;  /* (atomic) */
   gchar                *key;
   gchar                *value;
   GDBusAnnotationInfo **annotations;
@@ -63,7 +65,7 @@ struct _GDBusAnnotationInfo
 struct _GDBusArgInfo
 {
   /*< public >*/
-  volatile gint         ref_count;
+  gint                  ref_count;  /* (atomic) */
   gchar                *name;
   gchar                *signature;
   GDBusAnnotationInfo **annotations;
@@ -77,14 +79,14 @@ struct _GDBusArgInfo
  * @out_args: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusArgInfo structures or %NULL if there are no out arguments.
  * @annotations: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
  *
- * Information about a method on an D-Bus interface.
+ * Information about a method on a D-Bus interface.
  *
  * Since: 2.26
  */
 struct _GDBusMethodInfo
 {
   /*< public >*/
-  volatile gint         ref_count;
+  gint                  ref_count;  /* (atomic) */
   gchar                *name;
   GDBusArgInfo        **in_args;
   GDBusArgInfo        **out_args;
@@ -105,7 +107,7 @@ struct _GDBusMethodInfo
 struct _GDBusSignalInfo
 {
   /*< public >*/
-  volatile gint         ref_count;
+  gint                  ref_count;  /* (atomic) */
   gchar                *name;
   GDBusArgInfo        **args;
   GDBusAnnotationInfo **annotations;
@@ -126,7 +128,7 @@ struct _GDBusSignalInfo
 struct _GDBusPropertyInfo
 {
   /*< public >*/
-  volatile gint             ref_count;
+  gint                      ref_count;  /* (atomic) */
   gchar                    *name;
   gchar                    *signature;
   GDBusPropertyInfoFlags    flags;
@@ -149,7 +151,7 @@ struct _GDBusPropertyInfo
 struct _GDBusInterfaceInfo
 {
   /*< public >*/
-  volatile gint         ref_count;
+  gint                  ref_count;  /* (atomic) */
   gchar                *name;
   GDBusMethodInfo     **methods;
   GDBusSignalInfo     **signals;
@@ -172,74 +174,74 @@ struct _GDBusInterfaceInfo
 struct _GDBusNodeInfo
 {
   /*< public >*/
-  volatile gint         ref_count;
+  gint                  ref_count;  /* (atomic) */
   gchar                *path;
   GDBusInterfaceInfo  **interfaces;
   GDBusNodeInfo       **nodes;
   GDBusAnnotationInfo **annotations;
 };
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const gchar        *g_dbus_annotation_info_lookup          (GDBusAnnotationInfo **annotations,
                                                             const gchar          *name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusMethodInfo    *g_dbus_interface_info_lookup_method    (GDBusInterfaceInfo   *info,
                                                             const gchar          *name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusSignalInfo    *g_dbus_interface_info_lookup_signal    (GDBusInterfaceInfo   *info,
                                                             const gchar          *name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusPropertyInfo  *g_dbus_interface_info_lookup_property  (GDBusInterfaceInfo   *info,
                                                             const gchar          *name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                g_dbus_interface_info_cache_build      (GDBusInterfaceInfo   *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                g_dbus_interface_info_cache_release    (GDBusInterfaceInfo   *info);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                g_dbus_interface_info_generate_xml     (GDBusInterfaceInfo   *info,
                                                             guint                 indent,
                                                             GString              *string_builder);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusNodeInfo      *g_dbus_node_info_new_for_xml           (const gchar          *xml_data,
                                                             GError              **error);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusInterfaceInfo *g_dbus_node_info_lookup_interface      (GDBusNodeInfo        *info,
                                                             const gchar          *name);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                g_dbus_node_info_generate_xml          (GDBusNodeInfo        *info,
                                                             guint                 indent,
                                                             GString              *string_builder);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusNodeInfo       *g_dbus_node_info_ref                  (GDBusNodeInfo        *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusInterfaceInfo  *g_dbus_interface_info_ref             (GDBusInterfaceInfo   *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusMethodInfo     *g_dbus_method_info_ref                (GDBusMethodInfo      *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusSignalInfo     *g_dbus_signal_info_ref                (GDBusSignalInfo      *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusPropertyInfo   *g_dbus_property_info_ref              (GDBusPropertyInfo    *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusArgInfo        *g_dbus_arg_info_ref                   (GDBusArgInfo         *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusAnnotationInfo *g_dbus_annotation_info_ref            (GDBusAnnotationInfo  *info);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                 g_dbus_node_info_unref                (GDBusNodeInfo        *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                 g_dbus_interface_info_unref           (GDBusInterfaceInfo   *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                 g_dbus_method_info_unref              (GDBusMethodInfo      *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                 g_dbus_signal_info_unref              (GDBusSignalInfo      *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                 g_dbus_property_info_unref            (GDBusPropertyInfo    *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                 g_dbus_arg_info_unref                 (GDBusArgInfo         *info);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                 g_dbus_annotation_info_unref          (GDBusAnnotationInfo  *info);
 
 /**
@@ -305,20 +307,20 @@ void                 g_dbus_annotation_info_unref          (GDBusAnnotationInfo 
  */
 #define G_TYPE_DBUS_ANNOTATION_INFO (g_dbus_annotation_info_get_type ())
 
-GLIB_AVAILABLE_IN_ALL
-GType g_dbus_node_info_get_type       (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
-GType g_dbus_interface_info_get_type  (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
-GType g_dbus_method_info_get_type     (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
-GType g_dbus_signal_info_get_type     (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
-GType g_dbus_property_info_get_type   (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
-GType g_dbus_arg_info_get_type        (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
-GType g_dbus_annotation_info_get_type (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType g_dbus_node_info_get_type       (void);
+GIO_AVAILABLE_IN_ALL
+GType g_dbus_interface_info_get_type  (void);
+GIO_AVAILABLE_IN_ALL
+GType g_dbus_method_info_get_type     (void);
+GIO_AVAILABLE_IN_ALL
+GType g_dbus_signal_info_get_type     (void);
+GIO_AVAILABLE_IN_ALL
+GType g_dbus_property_info_get_type   (void);
+GIO_AVAILABLE_IN_ALL
+GType g_dbus_arg_info_get_type        (void);
+GIO_AVAILABLE_IN_ALL
+GType g_dbus_annotation_info_get_type (void);
 
 G_END_DECLS
 

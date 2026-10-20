@@ -3,10 +3,12 @@
  * Copyright © 2010 Red Hat, Inc.
  * Copyright © 2015 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -48,25 +50,25 @@ struct _GDtlsClientConnectionInterface
   GTypeInterface g_iface;
 };
 
-GLIB_AVAILABLE_IN_2_48
-GType                g_dtls_client_connection_get_type             (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_48
+GType                g_dtls_client_connection_get_type             (void);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GDatagramBased      *g_dtls_client_connection_new                  (GDatagramBased         *base_socket,
                                                                     GSocketConnectable     *server_identity,
                                                                     GError                **error);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GTlsCertificateFlags g_dtls_client_connection_get_validation_flags (GDtlsClientConnection  *conn);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                 g_dtls_client_connection_set_validation_flags (GDtlsClientConnection  *conn,
                                                                     GTlsCertificateFlags    flags);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GSocketConnectable  *g_dtls_client_connection_get_server_identity  (GDtlsClientConnection  *conn);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                 g_dtls_client_connection_set_server_identity  (GDtlsClientConnection  *conn,
                                                                     GSocketConnectable     *identity);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GList *              g_dtls_client_connection_get_accepted_cas     (GDtlsClientConnection  *conn);
 
 

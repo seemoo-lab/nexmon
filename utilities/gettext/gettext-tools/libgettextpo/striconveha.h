@@ -1,25 +1,29 @@
 /* Character set conversion with error handling and autodetection.
-   Copyright (C) 2002, 2005, 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2005, 2007-2026 Free Software Foundation, Inc.
    Written by Bruno Haible.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _STRICONVEHA_H
 #define _STRICONVEHA_H
 
-#include <stdbool.h>
-#include <stddef.h>
+/* This file uses _GL_ATTRIBUTE_MALLOC.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
+#include <stdlib.h>
 
 #include "iconveh.h"
 
@@ -69,7 +73,8 @@ extern char *
        str_iconveha (const char *src,
                      const char *from_codeset, const char *to_codeset,
                      bool transliterate,
-                     enum iconv_ilseq_handler handler);
+                     enum iconv_ilseq_handler handler)
+       _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
 
 
 /* In the above, FROM_CODESET can also be one of the following values:

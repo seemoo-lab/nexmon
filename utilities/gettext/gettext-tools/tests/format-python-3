@@ -1,0 +1,48 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of Python format strings like "100% complete".
+
+cat <<\EOF > f-p-3.py
+gettext("Test 1a is 100% complete");
+apply(gettext("Test 1b is 100% complete"), 120);
+gettext("Test 2a from 0% complete to 100% complete");
+apply(gettext("Test 2b from 0% complete to 100% complete"), 120, 121);
+gettext("Test 3a of %s is 100% complete");
+apply(gettext("Test 3b of %s is 100% complete"), "foo", 120);
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --flag=apply:1:python-format \
+            --omit-header --no-location -d f-p-3.tmp f-p-3.py || Exit 1
+LC_ALL=C tr -d '\r' < f-p-3.tmp.po > f-p-3.po || Exit 1
+
+cat <<\EOF > f-p-3.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+#, python-format
+msgid "Test 1b is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, python-format
+msgid "Test 2b from 0% complete to 100% complete"
+msgstr ""
+
+#, python-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+
+#, python-format
+msgid "Test 3b of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-p-3.ok f-p-3.po
+result=$?
+
+exit $result

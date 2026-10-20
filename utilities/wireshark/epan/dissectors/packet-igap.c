@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -43,34 +31,38 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/expert.h>
 #include "packet-igmp.h"
 
 void proto_register_igap(void);
 void proto_reg_handoff_igap(void);
 
-static int proto_igap      = -1;
-static int hf_type         = -1;
-static int hf_max_resp     = -1;
-static int hf_checksum     = -1;
-static int hf_checksum_status = -1;
-static int hf_maddr        = -1;
-static int hf_version      = -1;
-static int hf_subtype      = -1;
-static int hf_challengeid  = -1;
-static int hf_asize        = -1;
-static int hf_msize        = -1;
-static int hf_account      = -1;
+static dissector_handle_t igap_handle;
+
+static int proto_igap;
+static int hf_type;
+static int hf_max_resp;
+static int hf_checksum;
+static int hf_checksum_status;
+static int hf_maddr;
+static int hf_version;
+static int hf_subtype;
+static int hf_challengeid;
+static int hf_asize;
+static int hf_msize;
+static int hf_account;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_igap_challenge = -1;
-static int hf_igap_user_password = -1;
-static int hf_igap_authentication_result = -1;
-static int hf_igap_result_of_md5_calculation = -1;
-static int hf_igap_accounting_status = -1;
-static int hf_igap_unknown_message = -1;
+static int hf_igap_challenge;
+static int hf_igap_user_password;
+static int hf_igap_authentication_result;
+static int hf_igap_result_of_md5_calculation;
+static int hf_igap_accounting_status;
+static int hf_igap_unknown_message;
 
-static int ett_igap = -1;
+static int ett_igap;
 
+static expert_field ei_checksum;
 
 static const value_string igap_types[] = {
     {IGMP_IGAP_JOIN,  "Membership Report (Join)"},
@@ -136,9 +128,9 @@ dissect_igap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 {
     proto_tree *tree;
     proto_item *item;
-    guint8 type, tsecs, subtype, asize, msize;
+    uint8_t type, tsecs, subtype, asize, msize;
+    uint8_t authentication_result, accounting_status;
     int offset = 0;
-    guchar account[ACCOUNT_SIZE+1], message[MESSAGE_SIZE+1];
 
     item = proto_tree_add_item(parent_tree, proto_igap, tvb, offset, -1, ENC_NA);
     tree = proto_item_add_subtree(item, ett_igap);
@@ -146,40 +138,38 @@ dissect_igap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "IGAP");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    type = tvb_get_guint8(tvb, offset);
+    type = tvb_get_uint8(tvb, offset);
         col_add_str(pinfo->cinfo, COL_INFO,
-                     val_to_str(type, igap_types, "Unknown Type: 0x%02x"));
+                     val_to_str(pinfo->pool, type, igap_types, "Unknown Type: 0x%02x"));
     proto_tree_add_uint(tree, hf_type, tvb, offset, 1, type);
     offset += 1;
 
-    tsecs = tvb_get_guint8(tvb, offset);
+    tsecs = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint_format_value(tree, hf_max_resp, tvb, offset, 1, tsecs,
         "%.1f sec (0x%02x)", tsecs * 0.1, tsecs);
     offset += 1;
 
-    igmp_checksum(tree, tvb, hf_checksum, hf_checksum_status, pinfo, 0);
+    igmp_checksum(tree, tvb, hf_checksum, hf_checksum_status, &ei_checksum, pinfo, 0);
     offset += 2;
 
     proto_tree_add_item(tree, hf_maddr, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
 
-    proto_tree_add_uint(tree, hf_version, tvb, offset, 1,
-        tvb_get_guint8(tvb, offset));
+    proto_tree_add_item(tree, hf_version, tvb, offset, 1, ENC_NA);
     offset += 1;
 
-    subtype = tvb_get_guint8(tvb, offset);
+    subtype = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(tree, hf_subtype, tvb, offset, 1, subtype);
     offset += 2;
 
-    proto_tree_add_uint(tree, hf_challengeid, tvb, offset, 1,
-        tvb_get_guint8(tvb, offset));
+    proto_tree_add_item(tree, hf_challengeid, tvb, offset, 1, ENC_NA);
     offset += 1;
 
-    asize = tvb_get_guint8(tvb, offset);
+    asize = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(tree, hf_asize, tvb, offset, 1, asize);
     offset += 1;
 
-    msize = tvb_get_guint8(tvb, offset);
+    msize = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(tree, hf_msize, tvb, offset, 1, msize);
     offset += 3;
 
@@ -189,9 +179,8 @@ dissect_igap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
                XXX - flag this? */
             asize = ACCOUNT_SIZE;
         }
-        tvb_memcpy(tvb, account, offset, asize);
-        account[asize] = '\0';
-        proto_tree_add_string(tree, hf_account, tvb, offset, asize, account);
+        /* XXX - encoding? */
+        proto_tree_add_item(tree, hf_account, tvb, offset, asize, ENC_ASCII);
     }
     offset += ACCOUNT_SIZE;
 
@@ -201,13 +190,12 @@ dissect_igap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
                XXX - flag this? */
             msize = MESSAGE_SIZE;
         }
-        tvb_memcpy(tvb, message, offset, msize);
         switch (subtype) {
         case IGAP_SUBTYPE_PASSWORD_JOIN:
         case IGAP_SUBTYPE_PASSWORD_LEAVE:
             /* Challenge field is user's password */
-            message[msize] = '\0';
-            proto_tree_add_string(tree, hf_igap_user_password, tvb, offset, msize, message);
+            /* XXX - encoding? */
+            proto_tree_add_item(tree, hf_igap_user_password, tvb, offset, msize, ENC_ASCII);
             break;
         case IGAP_SUBTYPE_CHALLENGE_RESPONSE_JOIN:
         case IGAP_SUBTYPE_CHALLENGE_RESPONSE_LEAVE:
@@ -220,11 +208,15 @@ dissect_igap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
             break;
         case IGAP_SUBTYPE_AUTH_MESSAGE:
             /* Challenge field indicates the result of the authentication */
-            proto_tree_add_uint(tree, hf_igap_authentication_result, tvb, offset, msize, message[0]);
+            /* XXX - what if the length isn't 1? */
+            authentication_result = tvb_get_uint8(tvb, offset);
+            proto_tree_add_uint(tree, hf_igap_authentication_result, tvb, offset, msize, authentication_result);
             break;
         case IGAP_SUBTYPE_ACCOUNTING_MESSAGE:
             /* Challenge field indicates the accounting status */
-            proto_tree_add_uint(tree, hf_igap_accounting_status, tvb, offset, msize, message[0]);
+            /* XXX - what if the length isn't 1? */
+            accounting_status = tvb_get_uint8(tvb, offset);
+            proto_tree_add_uint(tree, hf_igap_accounting_status, tvb, offset, msize, accounting_status);
             break;
         default:
             proto_tree_add_item(tree, hf_igap_unknown_message, tvb, offset, msize, ENC_NA);
@@ -330,28 +322,35 @@ proto_register_igap(void)
         },
     };
 
-    static gint *ett[] = {
+    static ei_register_info ei[] = {
+        { &ei_checksum, { "igap.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
+    };
+
+    expert_module_t* expert_igap;
+
+    static int *ett[] = {
         &ett_igap
     };
 
     proto_igap = proto_register_protocol("Internet Group membership Authentication Protocol", "IGAP", "igap");
     proto_register_field_array(proto_igap, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    expert_igap = expert_register_protocol(proto_igap);
+    expert_register_field_array(expert_igap, ei, array_length(ei));
+
+    igap_handle = register_dissector("igap", dissect_igap, proto_igap);
 }
 
 void
 proto_reg_handoff_igap(void)
 {
-    dissector_handle_t igap_handle;
-
-    igap_handle = create_dissector_handle(dissect_igap, proto_igap);
     dissector_add_uint("igmp.type", IGMP_IGAP_JOIN, igap_handle);
     dissector_add_uint("igmp.type", IGMP_IGAP_QUERY, igap_handle);
     dissector_add_uint("igmp.type", IGMP_IGAP_LEAVE, igap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

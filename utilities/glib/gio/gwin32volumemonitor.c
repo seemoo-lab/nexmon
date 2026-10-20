@@ -3,10 +3,12 @@
  * Copyright (C) 2006-2007 Red Hat, Inc.
  * Copyright (C) 2008 Hans Breuer
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -68,13 +70,13 @@ get_viewable_logical_drives (void)
   DWORD no_drives;
   gboolean hklm_present = FALSE;
 
-  if (RegOpenKeyEx (HKEY_LOCAL_MACHINE,
-		    "Software\\Microsoft\\Windows\\"
-		    "CurrentVersion\\Policies\\Explorer",
-		    0, KEY_READ, &key) == ERROR_SUCCESS)
+  if (RegOpenKeyExW (HKEY_LOCAL_MACHINE,
+		     L"Software\\Microsoft\\Windows\\"
+		     L"CurrentVersion\\Policies\\Explorer",
+		     0, KEY_READ, &key) == ERROR_SUCCESS)
     {
-      if (RegQueryValueEx (key, "NoDrives", NULL, &var_type,
-			   (LPBYTE) &no_drives, &no_drives_size) == ERROR_SUCCESS)
+      if (RegQueryValueExW (key, L"NoDrives", NULL, &var_type,
+			    (LPBYTE) &no_drives, &no_drives_size) == ERROR_SUCCESS)
 	{
 	  /* We need the bits that are set in viewable_drives, and
 	   * unset in no_drives.
@@ -88,13 +90,13 @@ get_viewable_logical_drives (void)
   /* If the key is present in HKLM then the one in HKCU should be ignored */
   if (!hklm_present)
     {
-      if (RegOpenKeyEx (HKEY_CURRENT_USER,
-			"Software\\Microsoft\\Windows\\"
-			"CurrentVersion\\Policies\\Explorer",
-			0, KEY_READ, &key) == ERROR_SUCCESS)
+      if (RegOpenKeyExW (HKEY_CURRENT_USER,
+			 L"Software\\Microsoft\\Windows\\"
+			 L"CurrentVersion\\Policies\\Explorer",
+			 0, KEY_READ, &key) == ERROR_SUCCESS)
 	{
-	  if (RegQueryValueEx (key, "NoDrives", NULL, &var_type,
-			       (LPBYTE) &no_drives, &no_drives_size) == ERROR_SUCCESS)
+	  if (RegQueryValueExW (key, L"NoDrives", NULL, &var_type,
+			        (LPBYTE) &no_drives, &no_drives_size) == ERROR_SUCCESS)
 	    {
 	      viewable_drives = viewable_drives & ~no_drives;
 	    }
@@ -105,13 +107,13 @@ get_viewable_logical_drives (void)
   return viewable_drives; 
 }
 
-/* deliver accesible (aka 'mounted') volumes */
+/* deliver accessible (aka 'mounted') volumes */
 static GList *
 get_mounts (GVolumeMonitor *volume_monitor)
 {
   DWORD   drives;
   gchar   drive[4] = "A:\\";
-  GList *list = NULL;
+  GQueue  queue = G_QUEUE_INIT;
   
   drives = get_viewable_logical_drives ();
 
@@ -121,13 +123,13 @@ get_mounts (GVolumeMonitor *volume_monitor)
   while (drives && drive[0] <= 'Z')
     {
       if (drives & 1)
-      {
-	list = g_list_prepend (list, _g_win32_mount_new (volume_monitor, drive, NULL));
-      }
+        g_queue_push_tail (&queue, _g_win32_mount_new (volume_monitor, drive, NULL));
+
       drives >>= 1;
       drive[0]++;
     }
-  return list;
+
+  return g_steal_pointer (&queue.head);
 }
 
 /* actually 'mounting' volumes is out of GIOs business on win32, so no volumes are delivered either */
@@ -237,7 +239,7 @@ g_win32_volume_monitor_class_init (GWin32VolumeMonitorClass *klass)
 static void
 g_win32_volume_monitor_init (GWin32VolumeMonitor *win32_monitor)
 {
-  /* maybe we shoud setup a callback window to listern for WM_DEVICECHANGE ? */
+  /* maybe we should setup a callback window to listen for WM_DEVICECHANGE ? */
 #if 0
   unix_monitor->mount_monitor = g_win32_mount_monitor_new ();
 

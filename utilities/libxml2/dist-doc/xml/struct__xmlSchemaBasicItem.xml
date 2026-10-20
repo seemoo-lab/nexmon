@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaBasicItem" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaBasicItem</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaBasicItem_1af2264bc4c40cc1d673156af962622b1c" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035b" kindref="member">xmlSchemaTypeType</ref></type>
+        <definition>xmlSchemaTypeType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlSchemaBasicItem::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="479" column="23" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="479" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaBasicItem_1a99dc3b67257851cb91efea473083cd0f" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* dummy</definition>
+        <argsstring></argsstring>
+        <name>dummy</name>
+        <qualifiedname>_xmlSchemaBasicItem::dummy</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="480" column="10" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="480" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlschemas.c" line="478" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="478" bodyend="481"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaBasicItem_1a99dc3b67257851cb91efea473083cd0f" prot="public" virt="non-virtual"><scope>_xmlSchemaBasicItem</scope><name>dummy</name></member>
+      <member refid="struct__xmlSchemaBasicItem_1af2264bc4c40cc1d673156af962622b1c" prot="public" virt="non-virtual"><scope>_xmlSchemaBasicItem</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

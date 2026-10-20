@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,11 +18,11 @@
 void proto_register_tuxedo(void);
 void proto_reg_handoff_tuxedo(void);
 
-static int proto_tuxedo = -1;
-static int hf_tuxedo_magic = -1;
-static int hf_tuxedo_opcode = -1;
+static int proto_tuxedo;
+static int hf_tuxedo_magic;
+static int hf_tuxedo_opcode;
 
-static gint ett_tuxedo = -1;
+static int ett_tuxedo;
 
 static dissector_handle_t tuxedo_handle;
 
@@ -103,8 +91,8 @@ dissect_tuxedo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 {
 	proto_tree	*tuxedoroot_tree = NULL;
 	proto_item	*ti;
-	guint32 magic;
-	guint32 opcode;
+	uint32_t magic;
+	uint32_t opcode;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "TUXEDO");
 
@@ -115,7 +103,7 @@ dissect_tuxedo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 		{
 			opcode = tvb_get_ntohl(tvb, 4);
 
-			col_add_str(pinfo->cinfo, COL_INFO, val_to_str(opcode, tuxedo_opcode_vals, "Unknown (0x%02x)"));
+			col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, opcode, tuxedo_opcode_vals, "Unknown (0x%02x)"));
 
 			if (tree)
 			{
@@ -139,12 +127,12 @@ dissect_tuxedo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	return tvb_captured_length(tvb);
 }
 
-static gboolean
-dissect_tuxedo_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+dissect_tuxedo_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
 	if (tvb_captured_length(tvb) >= 8)
 	{
-		guint32 magic;
+		uint32_t magic;
 		magic = tvb_get_ntohl(tvb, 0);
 		if (magic == TUXEDO_MAGIC || magic == TUXEDO_SMAGIC)
 		{
@@ -154,10 +142,10 @@ dissect_tuxedo_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 			conversation_set_dissector(conversation, tuxedo_handle);
 
 			dissect_tuxedo(tvb, pinfo, tree, data);
-			return TRUE;
+			return true;
 		}
 	}
-	return FALSE;
+	return false;
 }
 
 void
@@ -171,7 +159,7 @@ proto_register_tuxedo(void)
 		  { "Opcode", "tuxedo.opcode", FT_UINT32, BASE_HEX, VALS(tuxedo_opcode_vals), 0x0, "TUXEDO opcode", HFILL }}
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_tuxedo,
 	};
 
@@ -179,19 +167,18 @@ proto_register_tuxedo(void)
 	proto_register_field_array(proto_tuxedo, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-
+	tuxedo_handle = register_dissector("tuxedo", dissect_tuxedo, proto_tuxedo);
 }
 
 void
 proto_reg_handoff_tuxedo(void)
 {
-	tuxedo_handle = create_dissector_handle(dissect_tuxedo, proto_tuxedo);
-	dissector_add_for_decode_as("tcp.port", tuxedo_handle);
+	dissector_add_for_decode_as_with_preference("tcp.port", tuxedo_handle);
 	heur_dissector_add("tcp", dissect_tuxedo_heur, "Tuxedo over TCP", "tuxedo_tcp", proto_tuxedo, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

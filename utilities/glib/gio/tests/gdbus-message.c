@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -128,7 +130,7 @@ message_copy (void)
       copy_val = g_dbus_message_get_header (m, m_headers[n]);
       g_assert (m_val != NULL);
       g_assert (copy_val != NULL);
-      g_assert (g_variant_equal (m_val, copy_val));
+      g_assert_cmpvariant (m_val, copy_val);
     }
   g_assert_cmpint (n, >, 0); /* make sure we actually compared headers etc. */
   g_assert_cmpint (copy_headers[n], ==, 0);
@@ -141,16 +143,101 @@ message_copy (void)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Test g_dbus_message_bytes_needed() returns correct results for a variety of
+ * arbitrary binary inputs.*/
+static void
+message_bytes_needed (void)
+{
+  const struct
+    {
+      const guint8 blob[16];
+      gssize expected_bytes_needed;
+    }
+  vectors[] =
+    {
+      /* Little endian with header rounding */
+      { { 'l', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          50, 0, 0, 0,  /* body length */
+          1, 0, 0, 0,  /* message serial */
+          7, 0, 0, 0  /* header length */}, 74 },
+      /* Little endian without header rounding */
+      { { 'l', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          50, 0, 0, 0,  /* body length */
+          1, 0, 0, 0,  /* message serial */
+          8, 0, 0, 0  /* header length */}, 74 },
+      /* Big endian with header rounding */
+      { { 'B', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          0, 0, 0, 50,  /* body length */
+          0, 0, 0, 1,  /* message serial */
+          0, 0, 0, 7  /* header length */}, 74 },
+      /* Big endian without header rounding */
+      { { 'B', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          0, 0, 0, 50,  /* body length */
+          0, 0, 0, 1,  /* message serial */
+          0, 0, 0, 8  /* header length */}, 74 },
+      /* Invalid endianness */
+      { { '!', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          0, 0, 0, 50,  /* body length */
+          0, 0, 0, 1,  /* message serial */
+          0, 0, 0, 8  /* header length */}, -1 },
+      /* Oversized */
+      { { 'l', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          0, 0, 0, 0x08,  /* body length (128MiB) */
+          1, 0, 0, 0,  /* message serial */
+          7, 0, 0, 0  /* header length */}, -1 },
+      { { 'B', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          0, 0, 0, 0,  /* body length (empty) */
+          1, 0, 0, 0,  /* message serial */
+          0xff, 0xff, 0xff, 0xf0  /* header length (overflow) */}, -1 },
+      { { 'l', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          0, 0, 0, 0,  /* body length (empty) */
+          1, 0, 0, 0,  /* message serial */
+          0xf0, 0xff, 0xff, 0xff  /* header length (overflow) */}, -1 },
+      { { 'B', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          0, 0, 0, 1,  /* body length (short) */
+          1, 0, 0, 0,  /* message serial */
+          0xff, 0xff, 0xff, 0xef  /* header length (overflow once body is added) */}, -1 },
+      { { 'l', 0, 0, 1,  /* endianness, message type, flags, protocol version */
+          1, 0, 0, 0,  /* body length (short) */
+          1, 0, 0, 0,  /* message serial */
+          0xef, 0xff, 0xff, 0xff  /* header length (overflow once body is added) */}, -1 },
+    };
+  gsize i;
+
+  for (i = 0; i < G_N_ELEMENTS (vectors); i++)
+    {
+      gssize bytes_needed;
+      GError *local_error = NULL;
+
+      g_test_message ("Vector: %" G_GSIZE_FORMAT, i);
+
+      bytes_needed = g_dbus_message_bytes_needed ((guchar *) vectors[i].blob,
+                                                  G_N_ELEMENTS (vectors[i].blob),
+                                                  &local_error);
+
+      if (vectors[i].expected_bytes_needed < 0)
+        g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
+      else
+        g_assert_no_error (local_error);
+      g_assert_cmpint (bytes_needed, ==, vectors[i].expected_bytes_needed);
+
+      g_clear_error (&local_error);
+    }
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 int
 main (int   argc,
       char *argv[])
 {
   setlocale (LC_ALL, "C");
 
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
   g_test_add_func ("/gdbus/message/lock", message_lock);
   g_test_add_func ("/gdbus/message/copy", message_copy);
-  return g_test_run();
-}
+  g_test_add_func ("/gdbus/message/bytes-needed", message_bytes_needed);
 
+  return g_test_run ();
+}

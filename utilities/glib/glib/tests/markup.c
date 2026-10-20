@@ -1,6 +1,8 @@
 /* Unit tests for GMarkup
  * Copyright (C) 2013 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -80,7 +82,7 @@ test_markup_stack (void)
   gboolean res;
   GError *error = NULL;
 
-  context = g_markup_parse_context_new (&parser, 0, &data, NULL);
+  context = g_markup_parse_context_new (&parser, G_MARKUP_DEFAULT_FLAGS, &data, NULL);
   res = g_markup_parse_context_parse (context, content, -1, &error);
   g_assert (res);
   g_assert_no_error (error);

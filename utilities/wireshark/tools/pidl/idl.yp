@@ -611,7 +611,7 @@ again:
 	for ($parser->YYData->{INPUT}) {
 		if (/^\#/) {
 			# Linemarker format is described at
-			# http://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
+			# https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
 			if (s/^\# (\d+) \"(.*?)\"(( \d+){1,4}|)//) {
 				$parser->YYData->{LINE} = $1-1;
 				$parser->YYData->{FILE} = $2;
@@ -680,12 +680,29 @@ sub parse_file($$)
 	undef $/;
 	my $cpp = $ENV{CPP};
 	my $options = "";
-	if (! defined $cpp) {
-		if (defined $ENV{CC}) {
-			$cpp = "$ENV{CC}";
-			$options = "-E";
-		} else {
-			$cpp = "cpp";
+	if ($^O eq "MSWin32") {
+	    $cpp = "cpp";
+	}else{
+		if (! defined $cpp) {
+			if (defined $ENV{CC}) {
+				$cpp = "$ENV{CC}";
+				$options = "-E";
+			} else {
+				#
+				# If cc is Clang-based don't use cpp, as
+				# at least some versions of Clang, cpp
+				# doesn't strip // comments, but cc -E
+				# does.
+				#
+
+				my $cc_version = `cc --version`;
+				if ($cc_version =~ /clang/) {
+					$cpp = "cc";
+					$options = "-E"
+				} else {
+					$cpp = "cpp";
+				}
+			}
 		}
 	}
 	my $includes = join('',map { " -I$_" } @$incdirs);

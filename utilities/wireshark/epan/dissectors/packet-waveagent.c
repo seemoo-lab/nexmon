@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  * *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -41,140 +29,140 @@ void proto_register_waveagent(void);
 void proto_reg_handoff_waveagent(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_waveagent = -1;
-static int hf_waveagent_controlword = -1;
-static int hf_waveagent_payloadlen = -1;
-static int hf_waveagent_transnum = -1;
-static int hf_waveagent_rtoken = -1;
-static int hf_waveagent_flowid = -1;
-static int hf_waveagent_capstatus = -1;
-static int hf_waveagent_protocolversion = -1;
-static int hf_waveagent_capimpl = -1;
-static int hf_waveagent_id = -1;
-static int hf_waveagent_bindtag = -1;
-static int hf_waveagent_version = -1;
-static int hf_waveagent_brokerip = -1;
-static int hf_waveagent_brokerport = -1;
-static int hf_waveagent_bindlevel = -1;
-static int hf_waveagent_bindport = -1;
-static int hf_waveagent_numinterfaces = -1;
-static int hf_waveagent_capabilities2 = -1;
-static int hf_waveagent_ifmask = -1;
-static int hf_waveagent_commandstatus = -1;
-static int hf_waveagent_syserrno = -1;
-static int hf_waveagent_statusstring = -1;
-static int hf_waveagent_rxdatapckts = -1;
-static int hf_waveagent_rxdatabytes = -1;
-static int hf_waveagent_rxpcktrate = -1;
-static int hf_waveagent_rxbyterate = -1;
-static int hf_waveagent_txdatapckts = -1;
-static int hf_waveagent_txdatabytes = -1;
-static int hf_waveagent_txpcktrate = -1;
-static int hf_waveagent_txbyterate = -1;
-static int hf_waveagent_looppckts = -1;
-static int hf_waveagent_loopbytes = -1;
-static int hf_waveagent_rxctlpckts = -1;
-static int hf_waveagent_rxctlbytes = -1;
-static int hf_waveagent_txctlpckts = -1;
-static int hf_waveagent_txctlbytes = -1;
-static int hf_waveagent_unknowncmds = -1;
-static int hf_waveagent_snap = -1;
-static int hf_waveagent_state = -1;
-static int hf_waveagent_appstate = -1;
-static int hf_waveagent_rx1pl = -1;
-static int hf_waveagent_rx2pl = -1;
-static int hf_waveagent_rx3pl = -1;
-static int hf_waveagent_rx4pl = -1;
-static int hf_waveagent_rx5pl = -1;
-static int hf_waveagent_rxoospkts = -1;
-/* static int hf_waveagent_rxmeanlatency = -1; */
-/* static int hf_waveagent_rxminlatency = -1; */
-/* static int hf_waveagent_rxmaxlatency = -1; */
-static int hf_waveagent_latencysum = -1;
-static int hf_waveagent_latencycount = -1;
-static int hf_waveagent_txflowstop = -1;
-static int hf_waveagent_jitter = -1;
-static int hf_waveagent_remoteport = -1;
-static int hf_waveagent_remoteaddr = -1;
-static int hf_waveagent_dscp = -1;
-static int hf_waveagent_fsflags = -1;
-static int hf_waveagent_fscbrflag = -1;
-static int hf_waveagent_fscombinedsetupflag = -1;
-/* static int hf_waveagent_totalbytes = -1; */
-static int hf_waveagent_payfill = -1;
-static int hf_waveagent_paysize = -1;
-static int hf_waveagent_avgrate = -1;
-static int hf_waveagent_rxflownum = -1;
-static int hf_waveagent_mode = -1;
-static int hf_waveagent_endpointtype = -1;
-static int hf_waveagent_totalframes = -1;
-static int hf_waveagent_bssidstartindex = -1;
-static int hf_waveagent_bssidstopindex = -1;
-static int hf_waveagent_ifindex = -1;
-static int hf_waveagent_iftype = -1;
-static int hf_waveagent_ifdescription = -1;
-static int hf_waveagent_ifmacaddr = -1;
-static int hf_waveagent_iflinkspeed = -1;
-static int hf_waveagent_ifdhcp = -1;
-static int hf_waveagent_ifwlanbssid = -1;
-static int hf_waveagent_ifwlanssid = -1;
-static int hf_waveagent_ifiptype = -1;
-static int hf_waveagent_ifipv4 = -1;
-static int hf_waveagent_ifipv6 = -1;
-static int hf_waveagent_ifdhcpserver = -1;
-static int hf_waveagent_ifgateway = -1;
-static int hf_waveagent_ifdnsserver = -1;
-static int hf_waveagent_ifethl2status = -1;
-static int hf_waveagent_ifwlanl2status = -1;
-static int hf_waveagent_ifl3status = -1;
-static int hf_waveagent_totalbssid = -1;
-static int hf_waveagent_returnedbssid = -1;
-static int hf_waveagent_scanbssid = -1;
-static int hf_waveagent_scanssid = -1;
-static int hf_waveagent_ifwlanrssi = -1;
-static int hf_waveagent_ifwlansupprates = -1;
-static int hf_waveagent_ifwlancapabilities = -1;
-static int hf_waveagent_ifwlanchannel = -1;
-static int hf_waveagent_ifwlanprivacy = -1;
-static int hf_waveagent_ifwlanbssmode = -1;
-static int hf_waveagent_ifwlannoise = -1;
-static int hf_waveagent_ifphytypes = -1;
-static int hf_waveagent_ifphytypebit0 = -1;
-static int hf_waveagent_ifphytypebit1 = -1;
-static int hf_waveagent_ifphytypebit2 = -1;
-static int hf_waveagent_ifphytypebit3 = -1;
-/* static int hf_waveagent_ifphytypebit4 = -1; */
-static int hf_waveagent_ifwlanauthentication = -1;
-static int hf_waveagent_ifwlancipher = -1;
-static int hf_waveagent_delayfactor = -1;
-static int hf_waveagent_medialossrate = -1;
-static int hf_waveagent_txstartts = -1;
-static int hf_waveagent_txendts = -1;
-static int hf_waveagent_rxstartts = -1;
-static int hf_waveagent_rxendts = -1;
-static int hf_waveagent_oidcode = -1;
-static int hf_waveagent_oidvalue = -1;
-static int hf_waveagent_destip = -1;
-static int hf_waveagent_destport = -1;
-static int hf_waveagent_connectflags = -1;
-static int hf_waveagent_connecttype = -1;
-static int hf_waveagent_minrssi = -1;
-static int hf_waveagent_connecttimeout = -1;
-static int hf_waveagent_connectattempts = -1;
-static int hf_waveagent_reason = -1;
-static int hf_waveagent_sigsequencenum = -1;
-static int hf_waveagent_relaydestid = -1;
-static int hf_waveagent_relaysrcid = -1;
-static int hf_waveagent_relaymessagest = -1;
+static int proto_waveagent;
+static int hf_waveagent_controlword;
+static int hf_waveagent_payloadlen;
+static int hf_waveagent_transnum;
+static int hf_waveagent_rtoken;
+static int hf_waveagent_flowid;
+static int hf_waveagent_capstatus;
+static int hf_waveagent_protocolversion;
+static int hf_waveagent_capimpl;
+static int hf_waveagent_id;
+static int hf_waveagent_bindtag;
+static int hf_waveagent_version;
+static int hf_waveagent_brokerip;
+static int hf_waveagent_brokerport;
+static int hf_waveagent_bindlevel;
+static int hf_waveagent_bindport;
+static int hf_waveagent_numinterfaces;
+static int hf_waveagent_capabilities2;
+static int hf_waveagent_ifmask;
+static int hf_waveagent_commandstatus;
+static int hf_waveagent_syserrno;
+static int hf_waveagent_statusstring;
+static int hf_waveagent_rxdatapckts;
+static int hf_waveagent_rxdatabytes;
+static int hf_waveagent_rxpcktrate;
+static int hf_waveagent_rxbyterate;
+static int hf_waveagent_txdatapckts;
+static int hf_waveagent_txdatabytes;
+static int hf_waveagent_txpcktrate;
+static int hf_waveagent_txbyterate;
+static int hf_waveagent_looppckts;
+static int hf_waveagent_loopbytes;
+static int hf_waveagent_rxctlpckts;
+static int hf_waveagent_rxctlbytes;
+static int hf_waveagent_txctlpckts;
+static int hf_waveagent_txctlbytes;
+static int hf_waveagent_unknowncmds;
+static int hf_waveagent_snap;
+static int hf_waveagent_state;
+static int hf_waveagent_appstate;
+static int hf_waveagent_rx1pl;
+static int hf_waveagent_rx2pl;
+static int hf_waveagent_rx3pl;
+static int hf_waveagent_rx4pl;
+static int hf_waveagent_rx5pl;
+static int hf_waveagent_rxoospkts;
+/* static int hf_waveagent_rxmeanlatency; */
+/* static int hf_waveagent_rxminlatency; */
+/* static int hf_waveagent_rxmaxlatency; */
+static int hf_waveagent_latencysum;
+static int hf_waveagent_latencycount;
+static int hf_waveagent_txflowstop;
+static int hf_waveagent_jitter;
+static int hf_waveagent_remoteport;
+static int hf_waveagent_remoteaddr;
+static int hf_waveagent_dscp;
+static int hf_waveagent_fsflags;
+static int hf_waveagent_fscbrflag;
+static int hf_waveagent_fscombinedsetupflag;
+/* static int hf_waveagent_totalbytes; */
+static int hf_waveagent_payfill;
+static int hf_waveagent_paysize;
+static int hf_waveagent_avgrate;
+static int hf_waveagent_rxflownum;
+static int hf_waveagent_mode;
+static int hf_waveagent_endpointtype;
+static int hf_waveagent_totalframes;
+static int hf_waveagent_bssidstartindex;
+static int hf_waveagent_bssidstopindex;
+static int hf_waveagent_ifindex;
+static int hf_waveagent_iftype;
+static int hf_waveagent_ifdescription;
+static int hf_waveagent_ifmacaddr;
+static int hf_waveagent_iflinkspeed;
+static int hf_waveagent_ifdhcp;
+static int hf_waveagent_ifwlanbssid;
+static int hf_waveagent_ifwlanssid;
+static int hf_waveagent_ifiptype;
+static int hf_waveagent_ifipv4;
+static int hf_waveagent_ifipv6;
+static int hf_waveagent_ifdhcpserver;
+static int hf_waveagent_ifgateway;
+static int hf_waveagent_ifdnsserver;
+static int hf_waveagent_ifethl2status;
+static int hf_waveagent_ifwlanl2status;
+static int hf_waveagent_ifl3status;
+static int hf_waveagent_totalbssid;
+static int hf_waveagent_returnedbssid;
+static int hf_waveagent_scanbssid;
+static int hf_waveagent_scanssid;
+static int hf_waveagent_ifwlanrssi;
+static int hf_waveagent_ifwlansupprates;
+static int hf_waveagent_ifwlancapabilities;
+static int hf_waveagent_ifwlanchannel;
+static int hf_waveagent_ifwlanprivacy;
+static int hf_waveagent_ifwlanbssmode;
+static int hf_waveagent_ifwlannoise;
+static int hf_waveagent_ifphytypes;
+static int hf_waveagent_ifphytypebit0;
+static int hf_waveagent_ifphytypebit1;
+static int hf_waveagent_ifphytypebit2;
+static int hf_waveagent_ifphytypebit3;
+/* static int hf_waveagent_ifphytypebit4; */
+static int hf_waveagent_ifwlanauthentication;
+static int hf_waveagent_ifwlancipher;
+static int hf_waveagent_delayfactor;
+static int hf_waveagent_medialossrate;
+static int hf_waveagent_txstartts;
+static int hf_waveagent_txendts;
+static int hf_waveagent_rxstartts;
+static int hf_waveagent_rxendts;
+static int hf_waveagent_oidcode;
+static int hf_waveagent_oidvalue;
+static int hf_waveagent_destip;
+static int hf_waveagent_destport;
+static int hf_waveagent_connectflags;
+static int hf_waveagent_connecttype;
+static int hf_waveagent_minrssi;
+static int hf_waveagent_connecttimeout;
+static int hf_waveagent_connectattempts;
+static int hf_waveagent_reason;
+static int hf_waveagent_sigsequencenum;
+static int hf_waveagent_relaydestid;
+static int hf_waveagent_relaysrcid;
+static int hf_waveagent_relaymessagest;
 
 /* Initialize the subtree pointers */
-static gint ett_waveagent = -1;
-static gint ett_statechange = -1;
-static gint ett_phytypes = -1;
-static gint ett_fsflags = -1;
-static gint ett_scindex[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };  /* NUM_STATE_CHANGES */
-static gint ett_bss[8]     = { -1, -1, -1, -1, -1, -1, -1, -1 };  /* NUM_BSS           */
-static gint ett_relaymessage = -1;
+static int ett_waveagent;
+static int ett_statechange;
+static int ett_phytypes;
+static int ett_fsflags;
+static int ett_scindex[8];  /* NUM_STATE_CHANGES */
+static int ett_bss[8];  /* NUM_BSS           */
+static int ett_relaymessage;
 
 
 static const value_string control_words[] = {
@@ -218,11 +206,11 @@ static const value_string control_words[] = {
 static value_string_ext control_words_ext = VALUE_STRING_EXT_INIT(control_words);
 
 /* Dissects the WLAN interface stats structure */
-static void dissect_wlan_if_stats(guint32 starting_offset, proto_item *parent_tree, tvbuff_t *tvb)
+static void dissect_wlan_if_stats(uint32_t starting_offset, proto_item *parent_tree, tvbuff_t *tvb)
 {
     proto_item *phy_types;
     proto_tree *phy_types_tree;
-    guint32     phy_types_bitfield, noise_floor;
+    uint32_t    phy_types_bitfield, noise_floor;
 
     proto_tree_add_item(parent_tree,
         hf_waveagent_ifwlanbssid, tvb, starting_offset, 6, ENC_NA);
@@ -230,7 +218,7 @@ static void dissect_wlan_if_stats(guint32 starting_offset, proto_item *parent_tr
     /* two bytes of pad go here */
 
     proto_tree_add_item(parent_tree,
-        hf_waveagent_ifwlanssid, tvb, starting_offset + 8, 32, ENC_ASCII|ENC_NA);
+        hf_waveagent_ifwlanssid, tvb, starting_offset + 8, 32, ENC_ASCII);
 
     /* 4 byte SSID length field not reported */
 
@@ -275,7 +263,7 @@ static void dissect_wlan_if_stats(guint32 starting_offset, proto_item *parent_tr
         hf_waveagent_ifwlancipher, tvb, starting_offset + 60, 4, ENC_BIG_ENDIAN);
 }
 
-static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree, tvbuff_t *tvb, guint32 control_word, guint8 version)
+static void dissect_wa_payload(uint32_t starting_offset, proto_item *parent_tree, packet_info* pinfo, tvbuff_t *tvb, uint32_t control_word, uint8_t version)
 {
     switch (control_word)
     {
@@ -324,7 +312,7 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
             break;
 
         case 0x30: {  /* Interface stats response */
-            guint32 if_type;
+            uint32_t if_type;
 
             proto_tree_add_item(parent_tree,
                 hf_waveagent_ifindex, tvb, starting_offset, 4, ENC_BIG_ENDIAN);
@@ -346,7 +334,7 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
                 hf_waveagent_iflinkspeed, tvb, starting_offset + 20, 4, ENC_BIG_ENDIAN);
 
             proto_tree_add_item(parent_tree,
-                hf_waveagent_ifdescription, tvb, starting_offset + 24, 128, ENC_ASCII|ENC_NA);
+                hf_waveagent_ifdescription, tvb, starting_offset + 24, 128, ENC_ASCII);
 
             /* 4 byte length field goes here - skip it */
 
@@ -389,10 +377,10 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
         }
 
         case 0x31:  {  /* Interface change info response */
-            guint32 offset;
-            guint32 if_type;
-            guint32 delta;
-            guint32 iLoop;
+            uint32_t offset;
+            uint32_t if_type;
+            uint32_t delta;
+            uint32_t iLoop;
 
             proto_tree_add_item(parent_tree,
                 hf_waveagent_ifindex, tvb, starting_offset, 4, ENC_BIG_ENDIAN);
@@ -408,7 +396,7 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
             for (iLoop = 0; iLoop < NUM_STATE_CHANGES; iLoop++) {
                 proto_item *stIndex;
                 proto_tree *st_change_index_tree;
-                guint32     if_status;
+                uint32_t    if_status;
                 int         current_offset;
 
                 current_offset = offset + iLoop * delta;
@@ -470,17 +458,17 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
                 hf_waveagent_oidcode, tvb, starting_offset + 4, 4, ENC_BIG_ENDIAN);
 
             proto_tree_add_item(parent_tree,
-                hf_waveagent_oidvalue, tvb, starting_offset + 12, 1024, ENC_ASCII|ENC_NA);
+                hf_waveagent_oidvalue, tvb, starting_offset + 12, 1024, ENC_ASCII);
 
             break;
 
         case 0x2e: {  /* scan results response message */
-            guint32        offset;
+            uint32_t       offset;
             proto_item    *pi;
-            guint32        num_bss_entries;
-            guint32        tag_len;
-            guint32        delta;
-            guint32        iLoop;
+            uint32_t       num_bss_entries;
+            uint32_t       tag_len;
+            uint32_t       delta;
+            uint32_t       iLoop;
             wmem_strbuf_t *sb;
 
             proto_tree_add_item(parent_tree,
@@ -504,7 +492,7 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
             offset = starting_offset + 16;
             delta  = 148;
 
-            sb = wmem_strbuf_sized_new(wmem_packet_scope(), 8, SHORT_STR);
+            sb = wmem_strbuf_new_sized(pinfo->pool, 8);
 
             for (iLoop = 0; iLoop < num_bss_entries; iLoop++)
             {
@@ -517,18 +505,18 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
                 current_offset = offset + iLoop * delta;
 
                 bssIndex = proto_tree_add_item(parent_tree,
-                    hf_waveagent_scanssid, tvb, current_offset, 32, ENC_ASCII|ENC_NA);
+                    hf_waveagent_scanssid, tvb, current_offset, 32, ENC_ASCII);
 
                 bss_tree = proto_item_add_subtree(bssIndex, ett_bss[iLoop]);
 
                 tag_len = tvb_get_ntohl(tvb, current_offset + 52);
 
                 if (tag_len != 0) {
-                    guint32       isr;
-                    guint8        isr_value;
+                    uint32_t      isr;
+                    uint8_t       isr_value;
 
                     for (isr = 0; isr < tag_len; isr++) {
-                        isr_value = tvb_get_guint8(tvb, offset + 36 + isr);
+                        isr_value = tvb_get_uint8(tvb, offset + 36 + isr);
                         if (isr_value == 0xFF){
                             proto_tree_add_string (bss_tree, hf_waveagent_ifwlansupprates, tvb, offset + 36 + isr,
                                                    1,
@@ -744,10 +732,10 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
             break;
 
         case 0x40: {
-            guint32 offset;
-            guint32 delta;
-            guint32 iLoop;
-            guint32 num_bss_entries;
+            uint32_t offset;
+            uint32_t delta;
+            uint32_t iLoop;
+            uint32_t num_bss_entries;
 
             proto_tree_add_item(parent_tree,
                 hf_waveagent_ifindex, tvb, starting_offset, 4, ENC_BIG_ENDIAN);
@@ -759,7 +747,7 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
                 hf_waveagent_connecttype, tvb, starting_offset + 8, 4, ENC_BIG_ENDIAN);
 
             proto_tree_add_item(parent_tree,
-                hf_waveagent_scanssid, tvb, starting_offset + 12, 32, ENC_ASCII|ENC_NA);
+                hf_waveagent_scanssid, tvb, starting_offset + 12, 32, ENC_ASCII);
 
             num_bss_entries = tvb_get_ntohl(tvb, starting_offset + 142);
 
@@ -814,13 +802,13 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
                 hf_waveagent_capimpl, tvb, starting_offset, 4, ENC_BIG_ENDIAN);
 
             proto_tree_add_item(parent_tree,
-                hf_waveagent_id, tvb, starting_offset + 4, 128, ENC_ASCII|ENC_NA);
+                hf_waveagent_id, tvb, starting_offset + 4, 128, ENC_ASCII);
 
             proto_tree_add_item(parent_tree,
-                hf_waveagent_bindtag, tvb, starting_offset + 136, 128, ENC_ASCII|ENC_NA);
+                hf_waveagent_bindtag, tvb, starting_offset + 136, 128, ENC_ASCII);
 
             proto_tree_add_item(parent_tree,
-                hf_waveagent_version, tvb, starting_offset + 268, 128, ENC_ASCII|ENC_NA);
+                hf_waveagent_version, tvb, starting_offset + 268, 128, ENC_ASCII);
 
             proto_tree_add_item(parent_tree,
                 hf_waveagent_brokerip, tvb, starting_offset + 400, 4, ENC_BIG_ENDIAN);
@@ -849,7 +837,7 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
 
         case 0x82:    /* Reserve request */
             proto_tree_add_item(parent_tree,
-                hf_waveagent_bindtag, tvb, starting_offset, 128, ENC_ASCII|ENC_NA);
+                hf_waveagent_bindtag, tvb, starting_offset, 128, ENC_ASCII);
 
             proto_tree_add_item(parent_tree,
                 hf_waveagent_brokerip, tvb, starting_offset + 132, 4, ENC_BIG_ENDIAN);
@@ -862,7 +850,7 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
         case 0x85: {   /* Flow setup */
             proto_tree *fs_flags;
             proto_tree *fs_flags_tree;
-            guint32     flags_bitfield;
+            uint32_t    flags_bitfield;
 
             if (version < 3) {
                 proto_tree_add_item(parent_tree,
@@ -944,7 +932,7 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
                 hf_waveagent_syserrno, tvb, starting_offset + 4, 4, ENC_BIG_ENDIAN);
 
             proto_tree_add_item(parent_tree,
-                hf_waveagent_statusstring, tvb, starting_offset + 8, 128, ENC_ASCII|ENC_NA);
+                hf_waveagent_statusstring, tvb, starting_offset + 8, 128, ENC_ASCII);
 
             break;
     }
@@ -952,9 +940,9 @@ static void dissect_wa_payload(guint32 starting_offset, proto_item *parent_tree,
 
 
 
-static guint32 dissect_wa_header(guint32 starting_offset, proto_item *parent_tree, tvbuff_t *tvb, guint8 version)
+static uint32_t dissect_wa_header(uint32_t starting_offset, proto_item *parent_tree, tvbuff_t *tvb, uint8_t version)
 {
-    guint32 wa_payload_offset;
+    uint32_t wa_payload_offset;
 
     proto_tree_add_item(parent_tree,
         hf_waveagent_controlword, tvb, 30+starting_offset, 2, ENC_BIG_ENDIAN);
@@ -995,11 +983,11 @@ static int dissect_waveagent(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 {
     proto_item *ti, *rmi;
     proto_tree *waveagent_tree, *relay_message_tree, *payload_tree;
-    guint8      signature_start, signature_end;
-    guint8      version;
-    guint32     magic_number;
-    guint32     control_word, paylen;
-    guint32     wa_payload_offset;
+    uint8_t     signature_start, signature_end;
+    uint8_t     version;
+    uint32_t    magic_number;
+    uint32_t    control_word, paylen;
+    uint32_t    wa_payload_offset;
 
     /* Check that there's enough data */
     if (tvb_captured_length(tvb) < 52 )
@@ -1010,8 +998,8 @@ static int dissect_waveagent(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         return 0;
     }
 
-    signature_start = tvb_get_guint8(tvb, 0);
-    signature_end   = tvb_get_guint8(tvb, 15);
+    signature_start = tvb_get_uint8(tvb, 0);
+    signature_end   = tvb_get_uint8(tvb, 15);
 
     if ( ((signature_start != 0xcc) && (signature_start !=0xdd)) ||
          (signature_end != 0xE2))
@@ -1067,16 +1055,16 @@ static int dissect_waveagent(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
             payload_tree = relay_message_tree;
         }
 
-        dissect_wa_payload(wa_payload_offset, payload_tree, tvb, control_word, version);
+        dissect_wa_payload(wa_payload_offset, payload_tree, pinfo, tvb, control_word, version);
     }
 
     /* Return the amount of data this dissector was able to dissect */
     return tvb_captured_length(tvb);
 }
 
-static gboolean dissect_waveagent_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool dissect_waveagent_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    return (dissect_waveagent(tvb, pinfo, tree) > 0) ? TRUE : FALSE;
+    return dissect_waveagent(tvb, pinfo, tree) > 0;
 }
 
 
@@ -1273,17 +1261,17 @@ void proto_register_waveagent(void)
 
         { &hf_waveagent_id,
         { "ID", "waveagent.id",
-        FT_STRING, 0, NULL, 0x0,
+        FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL } },
 
         { &hf_waveagent_bindtag,
         { "Binding Tag", "waveagent.bindtag",
-        FT_STRING, 0, NULL, 0x0,
+        FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL } },
 
         { &hf_waveagent_version,
         { "Version", "waveagent.version",
-        FT_STRING, 0, NULL, 0x0,
+        FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL } },
 
         { &hf_waveagent_brokerip,
@@ -1342,7 +1330,7 @@ void proto_register_waveagent(void)
 
         { &hf_waveagent_statusstring,
         { "Status Message", "waveagent.statmsg",
-        FT_STRING, 0, NULL, 0x0,
+        FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL } },
     /* END: Command response message fields */
 
@@ -1577,11 +1565,11 @@ void proto_register_waveagent(void)
 
         { &hf_waveagent_fscbrflag,
         { "CBR Transmit Mode", "waveagent.fscbrflag",
-        FT_BOOLEAN, 4, NULL, 0x01, NULL, HFILL } },
+        FT_BOOLEAN, 4, NULL, 0x1, NULL, HFILL } },
 
         { &hf_waveagent_fscombinedsetupflag,
         { "Setup, Connect/Listen, Start Combined", "waveagent.fscombinedsetupflag",
-        FT_BOOLEAN, 4, NULL, 0x02, NULL, HFILL } },
+        FT_BOOLEAN, 4, NULL, 0x2, NULL, HFILL } },
 
     /* END: Flow setup message */
 
@@ -1629,7 +1617,7 @@ void proto_register_waveagent(void)
 
         { &hf_waveagent_ifwlanssid,
         { "WLAN Interface Connected to SSID", "waveagent.ifwlanssid",
-        FT_STRING, 0, NULL, 0x0,
+        FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL } },
 
         { &hf_waveagent_ifwlanrssi,
@@ -1649,19 +1637,19 @@ void proto_register_waveagent(void)
 
         { &hf_waveagent_ifphytypebit0,
         { "11b", "waveagent.ifphytypebit0",
-        FT_BOOLEAN, 4, NULL, 0x01, NULL, HFILL } },
+        FT_BOOLEAN, 4, NULL, 0x1, NULL, HFILL } },
 
         { &hf_waveagent_ifphytypebit1,
         { "11g", "waveagent.ifphytypebit1",
-        FT_BOOLEAN, 4, NULL, 0x02, NULL, HFILL } },
+        FT_BOOLEAN, 4, NULL, 0x2, NULL, HFILL } },
 
         { &hf_waveagent_ifphytypebit2,
         { "11a", "waveagent.ifphytypebit2",
-        FT_BOOLEAN, 4, NULL, 0x04, NULL, HFILL } },
+        FT_BOOLEAN, 4, NULL, 0x4, NULL, HFILL } },
 
         { &hf_waveagent_ifphytypebit3,
         { "11n", "waveagent.ifphytypebit3",
-        FT_BOOLEAN, 4, NULL, 0x08, NULL, HFILL } },
+        FT_BOOLEAN, 4, NULL, 0x8, NULL, HFILL } },
 
         { &hf_waveagent_ifwlanauthentication,
         { "WLAN Interface Authentication Algorithm", "waveagent.ifwlanauthentication",
@@ -1682,7 +1670,7 @@ void proto_register_waveagent(void)
 
         { &hf_waveagent_ifdescription,
         { "Name/Description of the adapter", "waveagent.ifdescription",
-        FT_STRING, 0, NULL, 0x0,
+        FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL } },
 
         { &hf_waveagent_ifmacaddr,
@@ -1765,7 +1753,7 @@ void proto_register_waveagent(void)
 
         { &hf_waveagent_scanssid,
         { "SSID", "waveagent.scanssid",
-        FT_STRING, 0, NULL, 0x0,
+        FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL } },
 
         { &hf_waveagent_ifwlansupprates,
@@ -1802,7 +1790,7 @@ void proto_register_waveagent(void)
 
         { &hf_waveagent_oidvalue,
         { "OID Value", "waveagent.oidvalue",
-        FT_STRING, 0, NULL, 0x0,
+        FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL } },
     /* END: OID fields */
 
@@ -1871,7 +1859,7 @@ void proto_register_waveagent(void)
     };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_waveagent,
         &ett_statechange,
         &ett_phytypes,
@@ -1895,8 +1883,7 @@ void proto_register_waveagent(void)
         &ett_relaymessage,
     };
 
-    proto_waveagent = proto_register_protocol(
-        "WaveAgent", "waveagent", "waveagent");
+    proto_waveagent = proto_register_protocol("WaveAgent", "waveagent", "waveagent");
 
     proto_register_field_array(proto_waveagent, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
@@ -1910,7 +1897,7 @@ void proto_reg_handoff_waveagent(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

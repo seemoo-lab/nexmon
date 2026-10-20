@@ -34,7 +34,7 @@ Reject/problem/returnResult	rejectResult
   /* not sure what the length should be - -1 for now */
   subtree = proto_tree_add_subtree(tree, tvb, offset, -1, ett_ros_invoke_argument, NULL, "invoke argument");
 
-  ros_match_call_response(tvb, actx->pinfo, subtree, invokeid, TRUE);
+  ros_match_call_response(tvb, actx->pinfo, subtree, invokeid, true);
 
   if(session && session->pres_ctx_id && (oid = find_oid_by_pres_ctx_id(actx->pinfo, session->pres_ctx_id))) {
 	/* this should be ROS! */
@@ -52,7 +52,7 @@ Reject/problem/returnResult	rejectResult
   /* not sure what the length should be - -1 for now */
   subtree = proto_tree_add_subtree(tree, tvb, offset,-1, ett_ros_return_result, NULL, "return result");
 
-  ros_match_call_response(tvb, actx->pinfo, subtree, invokeid, FALSE);
+  ros_match_call_response(tvb, actx->pinfo, subtree, invokeid, false);
 
   if(session && session->pres_ctx_id && (oid = find_oid_by_pres_ctx_id(actx->pinfo, session->pres_ctx_id))) {
 	/* this should be ROS! */
@@ -70,7 +70,7 @@ Reject/problem/returnResult	rejectResult
   /* not sure what the length should be - -1 for now */
   subtree = proto_tree_add_subtree(tree, tvb, offset,-1, ett_ros_return_result, NULL, "return result");
 
-  ros_match_call_response(tvb, actx->pinfo, subtree, invokeid, FALSE);
+  ros_match_call_response(tvb, actx->pinfo, subtree, invokeid, false);
 
   if(session && session->pres_ctx_id && (oid = find_oid_by_pres_ctx_id(actx->pinfo, session->pres_ctx_id))) {
 	/* this should be ROS! */
@@ -168,40 +168,40 @@ Reject/problem/returnResult	rejectResult
 	VAL_PTR = &problem
 
 #.FN_BODY GeneralProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, ros_GeneralProblem_vals, "GeneralProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, ros_GeneralProblem_vals, "GeneralProblem(%%d)"));
 
 #.FN_PARS InvokeProblem
 	VAL_PTR = &problem
 
 #.FN_BODY InvokeProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, ros_InvokeProblem_vals, "InvokeProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, ros_InvokeProblem_vals, "InvokeProblem(%%d)"));
 
 #.FN_PARS ReturnResultProblem
 	VAL_PTR = &problem
 
 #.FN_BODY ReturnResultProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, ros_ReturnResultProblem_vals, "ReturnResultProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, ros_ReturnResultProblem_vals, "ReturnResultProblem(%%d)"));
 
 #.FN_PARS ReturnErrorProblem
 	VAL_PTR = &problem
 
 #.FN_BODY ReturnErrorProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, ros_ReturnErrorProblem_vals, "ReturnErrorProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, ros_ReturnErrorProblem_vals, "ReturnErrorProblem(%%d)"));
 
 #.END

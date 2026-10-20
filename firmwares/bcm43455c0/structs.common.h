@@ -38,6 +38,11 @@
 #include <types.h>
 #include <bcmcdc.h>
 
+/* wlc_get_txh_info fills this; AC TXH is 104 bytes plus a few words. */
+struct wlc_txh_info {
+    uint8 PAD[128];
+} __attribute__((packed));
+
 /* used for PAPD cal */
 typedef struct _acphy_txgains {
     uint16 txlpf;
@@ -298,9 +303,12 @@ typedef struct sk_buff {
     uint16 nextby4;                     // 0x14
     uint16 field16;                     // 0x16
     uint32 pkttag_flags;                // 0x18
+    uint32 PAD;                         // 0x1c
     uint16 pkttag_seq;                  // 0x20
     uint8 pkttag_flags2;                // 0x22
-    uint8 pkttag_flags3;                // 0x23 afterwards follow more pkttag fields
+    uint8 pkttag_flags3;                // 0x23
+    uint32 PAD;                         // 0x24
+    void *scb;                          // 0x28 WLPKTTAGSCB; wlc_send_q ldr [pkt,#0x28]
 } __attribute__((packed)) sk_buff;
 
 #define HNDRTE_DEV_NAME_MAX 16

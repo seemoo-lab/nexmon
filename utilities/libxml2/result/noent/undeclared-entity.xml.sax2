@@ -1,0 +1,23 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.comment( Having an external DTD makes undeclared entities a warning. )
+SAX.internalSubset(doc, , foo)
+SAX.externalSubset(doc, , foo)
+SAX.startElementNs(doc, NULL, NULL, 0, 0, 0)
+SAX.characters(
+    , 5)
+SAX.getEntity(undeclared)
+SAX.error: Entity 'undeclared' not defined
+SAX.startElementNs(elem, NULL, NULL, 0, 1, 0, attr='"/>
+...', 0)
+SAX.endElementNs(elem, NULL, NULL)
+SAX.characters(
+    , 5)
+SAX.startElementNs(elem, NULL, NULL, 0, 0, 0)
+SAX.getEntity(undeclared)
+SAX.error: Entity 'undeclared' not defined
+SAX.endElementNs(elem, NULL, NULL)
+SAX.characters(
+, 1)
+SAX.endElementNs(doc, NULL, NULL)
+SAX.endDocument()

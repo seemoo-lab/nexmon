@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,6 +22,7 @@
 
 #include "config.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include "gfileattribute.h"
@@ -27,113 +30,6 @@
 #include <glib-object.h>
 #include "glibintl.h"
 
-
-/**
- * SECTION:gfileattribute
- * @short_description: Key-Value Paired File Attributes
- * @include: gio/gio.h
- * @see_also: #GFile, #GFileInfo
- *
- * File attributes in GIO consist of a list of key-value pairs.
- *
- * Keys are strings that contain a key namespace and a key name, separated
- * by a colon, e.g. "namespace::keyname". Namespaces are included to sort
- * key-value pairs by namespaces for relevance. Keys can be retrived
- * using wildcards, e.g. "standard::*" will return all of the keys in the
- * "standard" namespace.
- *
- * The list of possible attributes for a filesystem (pointed to by a #GFile) is
- * available as a #GFileAttributeInfoList. This list is queryable by key names
- * as indicated earlier.
- *
- * Information is stored within the list in #GFileAttributeInfo structures.
- * The info structure can store different types, listed in the enum
- * #GFileAttributeType. Upon creation of a #GFileAttributeInfo, the type will
- * be set to %G_FILE_ATTRIBUTE_TYPE_INVALID.
- *
- * Classes that implement #GFileIface will create a #GFileAttributeInfoList and
- * install default keys and values for their given file system, architecture,
- * and other possible implementation details (e.g., on a UNIX system, a file
- * attribute key will be registered for the user id for a given file).
- *
- * ## Default Namespaces
- *
- * - `"standard"`: The "Standard" namespace. General file information that
- *   any application may need should be put in this namespace. Examples
- *   include the file's name, type, and size.
- * - `"etag`: The [Entity Tag][gfile-etag] namespace. Currently, the only key
- *   in this namespace is "value", which contains the value of the current
- *   entity tag.
- * - `"id"`: The "Identification" namespace. This namespace is used by file
- *   managers and applications that list directories to check for loops and
- *   to uniquely identify files.
- * - `"access"`: The "Access" namespace. Used to check if a user has the
- *   proper privileges to access files and perform file operations. Keys in
- *   this namespace are made to be generic and easily understood, e.g. the
- *   "can_read" key is %TRUE if the current user has permission to read the
- *   file. UNIX permissions and NTFS ACLs in Windows should be mapped to
- *   these values.
- * - `"mountable"`: The "Mountable" namespace. Includes simple boolean keys
- *   for checking if a file or path supports mount operations, e.g. mount,
- *   unmount, eject. These are used for files of type %G_FILE_TYPE_MOUNTABLE.
- * - `"time"`: The "Time" namespace. Includes file access, changed, created
- *   times.
- * - `"unix"`: The "Unix" namespace. Includes UNIX-specific information and
- *   may not be available for all files. Examples include the UNIX "UID",
- *   "GID", etc.
- * - `"dos"`: The "DOS" namespace. Includes DOS-specific information and may
- *   not be available for all files. Examples include "is_system" for checking
- *   if a file is marked as a system file, and "is_archive" for checking if a
- *   file is marked as an archive file.
- * - `"owner"`: The "Owner" namespace. Includes information about who owns a
- *   file. May not be available for all file systems. Examples include "user"
- *   for getting the user name of the file owner. This information is often
- *   mapped from some backend specific data such as a UNIX UID.
- * - `"thumbnail"`: The "Thumbnail" namespace. Includes information about file
- *   thumbnails and their location within the file system. Examples of keys in
- *   this namespace include "path" to get the location of a thumbnail, "failed"
- *   to check if thumbnailing of the file failed, and "is-valid" to check if
- *   the thumbnail is outdated.
- * - `"filesystem"`: The "Filesystem" namespace. Gets information about the
- *   file system where a file is located, such as its type, how much space is
- *   left available, and the overall size of the file system.
- * - `"gvfs"`: The "GVFS" namespace. Keys in this namespace contain information
- *   about the current GVFS backend in use.
- * - `"xattr"`: The "xattr" namespace. Gets information about extended
- *   user attributes. See attr(5). The "user." prefix of the extended user
- *   attribute name is stripped away when constructing keys in this namespace,
- *   e.g. "xattr::mime_type" for the extended attribute with the name
- *   "user.mime_type". Note that this information is only available if
- *   GLib has been built with extended attribute support.
- * - `"xattr-sys"`: The "xattr-sys" namespace. Gets information about
- *   extended attributes which are not user-specific. See attr(5). Note
- *   that this information is only available if GLib has been built with
- *   extended attribute support.
- * - `"selinux"`: The "SELinux" namespace. Includes information about the
- *   SELinux context of files. Note that this information is only available
- *   if GLib has been built with SELinux support.
- *
- * Please note that these are not all of the possible namespaces.
- * More namespaces can be added from GIO modules or by individual applications.
- * For more information about writing GIO modules, see #GIOModule.
- *
- * <!-- TODO: Implementation note about using extended attributes on supported
- * file systems -->
- *
- * ## Default Keys
- *
- * For a list of the built-in keys and their types, see the
- * [GFileInfo][GFileInfo] documentation.
- *
- * Note that there are no predefined keys in the "xattr" and "xattr-sys"
- * namespaces. Keys for the "xattr" namespace are constructed by stripping
- * away the "user." prefix from the extended user attribute, and prepending
- * "xattr::". Keys for the "xattr-sys" namespace are constructed by
- * concatenating "xattr-sys::" with the extended attribute name. All extended
- * attribute values are returned as hex-encoded strings in which bytes outside
- * the ASCII range are encoded as escape sequences of the form \x`nn`
- * where `nn` is a 2-digit hexadecimal number.
- */
 
 /**
  * _g_file_attribute_value_free:
@@ -271,13 +167,14 @@ valid_char (char c)
   return c >= 32 && c <= 126 && c != '\\';
 }
 
+/* Returns NULL on error */
 static char *
 escape_byte_string (const char *str)
 {
-  size_t len;
-  int num_invalid, i;
+  size_t i, len;
+  size_t num_invalid;
   char *escaped_val, *p;
-  unsigned char c;
+  char c;
   const char hex_digits[] = "0123456789abcdef";
 
   len = strlen (str);
@@ -293,7 +190,12 @@ escape_byte_string (const char *str)
     return g_strdup (str);
   else
     {
-      escaped_val = g_malloc (len + num_invalid*3 + 1);
+      /* Check for overflow. We want to check the inequality:
+       * !(len + num_invalid * 3 + 1 > SIZE_MAX) */
+      if (num_invalid >= (SIZE_MAX - len) / 3)
+        return NULL;
+
+      escaped_val = g_malloc (len + num_invalid * 3 + 1);
 
       p = escaped_val;
       for (i = 0; i < len; i++)
@@ -612,7 +514,7 @@ _g_file_attribute_value_set_from_pointer (GFileAttributeValue *value,
       break;
 
     default:
-      g_warning ("Unknown type specified in g_file_info_set_attribute\n");
+      g_warning ("Unknown type specified in g_file_info_set_attribute");
       break;
     }
 }
@@ -788,7 +690,12 @@ static void
 list_update_public (GFileAttributeInfoListPriv *priv)
 {
   priv->public.infos = (GFileAttributeInfo *)priv->array->data;
-  priv->public.n_infos = priv->array->len;
+
+  /* The `n_infos` member should really have type `size_t`, but by a historical
+   * accident it has type `int` and we can’t change it now because it’s public
+   * API. It should never end up with a negative value at runtime. */
+  g_assert (priv->array->len <= INT_MAX);
+  priv->public.n_infos = (int) priv->array->len;
 }
 
 /**
@@ -833,7 +740,7 @@ g_file_attribute_info_list_dup (GFileAttributeInfoList *list)
   new->ref_count = 1;
   new->array = g_array_new (TRUE, FALSE, sizeof (GFileAttributeInfo));
 
-  g_array_set_size (new->array, list->n_infos);
+  g_array_set_size (new->array, (unsigned int) list->n_infos);
   list_update_public (new);
   for (i = 0; i < list->n_infos; i++)
     {
@@ -857,11 +764,12 @@ GFileAttributeInfoList *
 g_file_attribute_info_list_ref (GFileAttributeInfoList *list)
 {
   GFileAttributeInfoListPriv *priv = (GFileAttributeInfoListPriv *)list;
+  int old_ref_count;
 
   g_return_val_if_fail (list != NULL, NULL);
-  g_return_val_if_fail (priv->ref_count > 0, NULL);
 
-  g_atomic_int_inc (&priv->ref_count);
+  old_ref_count = g_atomic_int_add (&priv->ref_count, 1);
+  g_return_val_if_fail (old_ref_count > 0, NULL);
 
   return list;
 }
@@ -917,7 +825,7 @@ g_file_attribute_info_list_bsearch (GFileAttributeInfoList *list,
 /**
  * g_file_attribute_info_list_lookup:
  * @list: a #GFileAttributeInfoList.
- * @name: the name of the attribute to lookup.
+ * @name: the name of the attribute to look up.
  *
  * Gets the file attribute with the name @name from @list.
  *
@@ -972,10 +880,12 @@ g_file_attribute_info_list_add (GFileAttributeInfoList *list,
       return;
     }
 
+  g_assert (i >= 0);
+
   info.name = g_strdup (name);
   info.type = type;
   info.flags = flags;
-  g_array_insert_vals (priv->array, i, &info, 1);
+  g_array_insert_vals (priv->array, (unsigned int) i, &info, 1);
 
   list_update_public (priv);
 }

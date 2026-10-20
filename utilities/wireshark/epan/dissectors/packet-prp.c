@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald[AT]wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -43,81 +31,39 @@ static const value_string prp_lan_vals[] = {
 /**********************************************************/
 
 void proto_register_prp(void);
-void proto_reg_handoff_prp(void);
 
-static int proto_prp = -1;
+static int proto_prp;
 
 
 /* Initialize trailer fields */
-static int hf_prp_redundancy_control_trailer_sequence_nr = -1;
-static int hf_prp_redundancy_control_trailer_lan = -1;
-static int hf_prp_redundancy_control_trailer_size = -1;
-static int hf_prp_redundancy_control_trailer_suffix = -1;
-static int hf_prp_redundancy_control_trailer_version = -1;
+static int hf_prp_redundancy_control_trailer_sequence_nr;
+static int hf_prp_redundancy_control_trailer_lan;
+static int hf_prp_redundancy_control_trailer_size;
+static int hf_prp_redundancy_control_trailer_suffix;
+static int hf_prp_redundancy_control_trailer_version;
 
 
 /* Initialize the subtree pointers */
-static gint ett_prp_redundancy_control_trailer = -1;
-
-
-/*  Post dissectors (such as the trailer dissector for this protocol)
- *  get called for every single frame anyone loads into Wireshark.
- *  Since this protocol is not of general interest we disable this
- *  protocol by default.
- *
- *  This is done separately from the disabled protocols list mainly so
- *  we can disable it by default.  XXX Maybe there's a better way.
- */
-static gboolean prp_enable_dissector = FALSE;
+static int ett_prp_redundancy_control_trailer;
 
 
 /* Code to actually dissect the packets */
 static int
-dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data)
 {
     proto_item *ti;
     proto_tree *prp_tree;
-    guint       i;
-    guint       length;
-    guint       offset;
-    guint16     lan_id;
-    guint16     lsdu_size;
-    guint16     prp1_suffix;
-    guint       trailer_start;
-    guint       trailer_length;
+    int         i;
+    int         length;
+    uint16_t    lan_id;
+    uint16_t    lsdu_size;
+    uint16_t    prp1_suffix;
+    unsigned    trailer_start;
+    unsigned    trailer_length;
 
     trailer_start = 0;
     trailer_length = 0;
     length = tvb_reported_length(tvb);
-
-    if(length < 14)
-        return 0;
-
-    /*
-     * This is horribly broken.  It assumes the frame is an Ethernet
-     * frame, with a type field at an offset of 12 bytes from the header.
-     * That is not guaranteed to be true.
-     *
-     * Ideally, this should be a heuristic dissector registered in
-     * the "eth.trailer" heuristic dissector table (and it can
-     * be registered as "disabled by default" there); unfortunately,
-     * it needs to know the length of the entire frame for the
-     * PRP-0 heuristic, so it'd have to be passed that length
-     * out of band.
-     */
-    if (!tvb_bytes_exist(tvb, 12, 2))
-        return 0;
-    if(ETHERTYPE_VLAN == tvb_get_ntohs(tvb, 12)) /* tagged frame */
-    {
-        offset = 18;
-    }
-    else /* untagged */
-    {
-        offset = 14;
-    }
-
-    if (!tree)
-        return tvb_captured_length(tvb);
 
     /*
      * Is there enough data in the packet to every try to search for a
@@ -126,22 +72,24 @@ dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, pr
     if (!tvb_bytes_exist(tvb, (length-4)+2, 2))
         return 0;  /* no */
 
+    if (data == NULL) {
+        return 0;
+    }
+
+    int lsdu_size_correct = *(int*)data;
+
     /* search for PRP-0 trailer */
     /* If the frame is >  64 bytes, the PRP-0 trailer is always at the end. */
     /* If the frame is <= 64 bytes, the PRP-0 trailer may be anywhere (before the padding) */
-    for(i=length-4; i>=offset; i--)
+    for(i = 0; i <= length - 4; i++)
     {
-        lan_id    = tvb_get_ntohs(tvb, (i+2)) >> 12;
-        lsdu_size = tvb_get_ntohs(tvb, (i+2)) & 0x0fff;
-        if(lsdu_size == i+4-offset && (lan_id == 0xa || lan_id == 0xb))
+        lan_id    = tvb_get_ntohs(tvb, length - 2 - i) >> 12;
+        lsdu_size = tvb_get_ntohs(tvb, length - 2 - i) & 0x0fff;
+        if(lsdu_size == (lsdu_size_correct - i) && (lan_id == 0xa || lan_id == 0xb))
         {
-            trailer_start  = i;
+            trailer_start  = length - 4 - i;
             trailer_length = 4;
             break;
-        }
-
-        if (length > 64) {
-            break; /* don't search, just check the last position */
         }
     }
 
@@ -177,7 +125,7 @@ dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, pr
             ti = proto_tree_add_string(prp_tree, hf_prp_redundancy_control_trailer_version,
                                        tvb, trailer_start, trailer_length, "PRP-1");
         }
-        PROTO_ITEM_SET_GENERATED(ti);
+        proto_item_set_generated(ti);
 
         proto_tree_add_item(prp_tree, hf_prp_redundancy_control_trailer_sequence_nr,
                             tvb, trailer_start, 2, ENC_BIG_ENDIAN);
@@ -191,7 +139,6 @@ dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, pr
                                 tvb, trailer_start+2, 2, ENC_BIG_ENDIAN);
         } else {
             /* PRP-1 */
-            int lsdu_size_correct = length-offset;
             if (lsdu_size == lsdu_size_correct) {
                 proto_tree_add_uint_format(prp_tree, hf_prp_redundancy_control_trailer_size,
                                            tvb, trailer_start+2, 2, lsdu_size,
@@ -206,7 +153,12 @@ dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, pr
                                 tvb, trailer_start+4, 2, ENC_BIG_ENDIAN);
         }
     }
-    return tvb_captured_length(tvb);
+    return trailer_length;
+}
+
+static bool dissect_prp_redundancy_control_trailer_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *data)
+{
+	return dissect_prp_redundancy_control_trailer(tvb, pinfo, parent_tree, data) > 0;
 }
 
 /* Register the protocol with Wireshark */
@@ -245,47 +197,29 @@ void proto_register_prp(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_prp_redundancy_control_trailer,
     };
 
     module_t *prp_module;
 
     /* Register the protocol name and description */
-    proto_prp = proto_register_protocol("Parallel Redundancy Protocol (IEC62439 Part 3)",
-                        "PRP", "prp");
-    prp_module = prefs_register_protocol(proto_prp, proto_reg_handoff_prp);
+    proto_prp = proto_register_protocol("Parallel Redundancy Protocol (IEC62439 Part 3)", "PRP", "prp");
 
-    prefs_register_bool_preference(prp_module, "enable", "Enable dissector",
-                       "Enable this dissector (default is false)",
-                       &prp_enable_dissector);
+    prp_module = prefs_register_protocol_obsolete(proto_prp);
+
+    prefs_register_obsolete_preference(prp_module, "enable");
 
     /* Required function calls to register the header fields and subtree used */
     proto_register_field_array(proto_prp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-}
-
-void proto_reg_handoff_prp(void)
-{
-    static gboolean prefs_initialized = FALSE;
-
-    if (!prefs_initialized) {
-        dissector_handle_t prp_redundancy_control_trailer_handle;
-
-        prp_redundancy_control_trailer_handle = create_dissector_handle(dissect_prp_redundancy_control_trailer, proto_prp);
-        register_postdissector(prp_redundancy_control_trailer_handle);
-
-        prefs_initialized = TRUE;
-    }
-
-    if (!prp_enable_dissector)
-        proto_disable_by_default(proto_prp);
-    proto_set_decoding(proto_prp, prp_enable_dissector);
+    heur_dissector_add("eth.trailer", dissect_prp_redundancy_control_trailer_heur,
+        "PRP Trailer", "prp_eth", proto_prp, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

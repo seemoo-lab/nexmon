@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /*
  * V5 Data Link Layer
@@ -33,40 +21,45 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/xdlc.h>
+#include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+#include "packet-xdlc.h"
 
 void proto_register_v5dl(void);
 
-static int proto_v5dl = -1;
-static int hf_v5dl_direction = -1;
-/* static int hf_v5dl_address = -1; */
-static int hf_v5dl_ef = -1;
-static int hf_v5dl_eah = -1;
-static int hf_v5dl_cr = -1;
-static int hf_v5dl_ea1 = -1;
-static int hf_v5dl_eal = -1;
-static int hf_v5dl_ea2 = -1;
-static int hf_v5dl_control = -1;
-static int hf_v5dl_n_r = -1;
-static int hf_v5dl_n_s = -1;
-static int hf_v5dl_p = -1;
-static int hf_v5dl_p_ext = -1;
-static int hf_v5dl_f = -1;
-static int hf_v5dl_f_ext = -1;
-static int hf_v5dl_s_ftype = -1;
-static int hf_v5dl_u_modifier_cmd = -1;
-static int hf_v5dl_u_modifier_resp = -1;
-static int hf_v5dl_ftype_i = -1;
-static int hf_v5dl_ftype_s_u = -1;
-static int hf_v5dl_ftype_s_u_ext = -1;
+static int proto_v5dl;
+static int hf_v5dl_direction;
+/* static int hf_v5dl_address; */
+static int hf_v5dl_ef;
+static int hf_v5dl_eah;
+static int hf_v5dl_cr;
+static int hf_v5dl_ea1;
+static int hf_v5dl_eal;
+static int hf_v5dl_ea2;
+static int hf_v5dl_control;
+static int hf_v5dl_n_r;
+static int hf_v5dl_n_s;
+static int hf_v5dl_p;
+static int hf_v5dl_p_ext;
+static int hf_v5dl_f;
+static int hf_v5dl_f_ext;
+static int hf_v5dl_s_ftype;
+static int hf_v5dl_u_modifier_cmd;
+static int hf_v5dl_u_modifier_resp;
+static int hf_v5dl_ftype_i;
+static int hf_v5dl_ftype_s_u;
+static int hf_v5dl_ftype_s_u_ext;
 #if 0
-static int hf_v5dl_checksum = -1;
-static int hf_v5dl_checksum_status = -1;
+static int hf_v5dl_checksum;
+static int hf_v5dl_checksum_status;
 #endif
-static gint ett_v5dl = -1;
-static gint ett_v5dl_address = -1;
-static gint ett_v5dl_control = -1;
-/* static gint ett_v5dl_checksum = -1; */
+static int ett_v5dl;
+static int ett_v5dl_address;
+static int ett_v5dl_control;
+/* static int ett_v5dl_checksum; */
+
+static expert_field ei_v5dl_checksum;
 
 static dissector_handle_t v52_handle;
 
@@ -132,18 +125,18 @@ dissect_v5dl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	proto_tree	*v5dl_tree, *addr_tree;
 	proto_item	*v5dl_ti, *addr_ti;
 	int		direction;
-	guint		v5dl_header_len;
-	guint16		control;
+	unsigned		v5dl_header_len;
+	uint16_t		control;
 #if 0
 	proto_tree	*checksum_tree;
 	proto_item	*checksum_ti;
-	guint16		checksum, checksum_calculated;
-	guint		checksum_offset;
+	uint16_t		checksum, checksum_calculated;
+	unsigned		checksum_offset;
 #endif
-	guint16		addr, cr, eah, eal, v5addr;
-	gboolean	is_response = 0;
+	uint16_t		addr, cr, eah, eal, v5addr;
+	bool	is_response = 0;
 #if 0
-	guint		length, reported_length;
+	unsigned		length, reported_length;
 #endif
 	tvbuff_t	*next_tvb;
 	const char	*srcname = "?";
@@ -161,12 +154,12 @@ dissect_v5dl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 	direction = pinfo->p2p_dir;
 	if (pinfo->p2p_dir == P2P_DIR_RECV) {
-	    is_response = cr ? FALSE : TRUE;
+	    is_response = cr ? false : true;
 	    srcname = "Network";
 	    dstname = "User";
 	}
 	else if (pinfo->p2p_dir == P2P_DIR_SENT) {
-	    is_response = cr ? TRUE : FALSE;
+	    is_response = cr ? true : false;
 	    srcname = "User";
 	    dstname = "Network";
 	}
@@ -187,7 +180,7 @@ dissect_v5dl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		if (direction != P2P_DIR_UNKNOWN) {
 			direction_ti = proto_tree_add_uint(v5dl_tree, hf_v5dl_direction,
 			                                   tvb, 0, 0, pinfo->p2p_dir);
-			PROTO_ITEM_SET_GENERATED(direction_ti);
+			proto_item_set_generated(direction_ti);
 		}
 
 		addr_ti = proto_tree_add_uint(v5dl_tree, hf_v5dl_ef, tvb,
@@ -206,8 +199,8 @@ dissect_v5dl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 	control = dissect_xdlc_control(tvb, 2, pinfo, v5dl_tree, hf_v5dl_control,
 	    ett_v5dl_control, &v5dl_cf_items, &v5dl_cf_items_ext, NULL, NULL,
-	    is_response, TRUE, FALSE);
-	v5dl_header_len += XDLC_CONTROL_LEN(control, TRUE);
+	    is_response, true, false);
+	v5dl_header_len += XDLC_CONTROL_LEN(control, true);
 
 	if (tree)
 		proto_item_set_len(v5dl_ti, v5dl_header_len);
@@ -243,12 +236,12 @@ dissect_v5dl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		checksum_calculated = crc16_ccitt_tvb(tvb, checksum_offset);
 		checksum_calculated = g_htons(checksum_calculated);  /* Note: g_htons() macro may eval arg multiple times */
 
-		proto_tree_add_checksum(v5dl_tree, tvb, checksum_offset, hf_v5dl_checksum, hf_v5dl_checksum_status, NULL, pinfo, checksum_calculated,
-							ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY);
+		proto_tree_add_checksum(v5dl_tree, tvb, checksum_offset, hf_v5dl_checksum, hf_v5dl_checksum_status, &ei_v5dl_checksum,
+								pinfo, checksum_calculated, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY);
 		/*
 		 * Remove the V5DL header *and* the checksum.
 		 */
-		next_tvb = tvb_new_subset(tvb, v5dl_header_len,
+		next_tvb = tvb_new_subset_length_caplen(tvb, v5dl_header_len,
 		    tvb_captured_length_remaining(tvb, v5dl_header_len) - 2,
 		    tvb_reported_length_remaining(tvb, v5dl_header_len) - 2);
 	} else {
@@ -263,7 +256,7 @@ dissect_v5dl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 			 * Remove that byte from the captured length
 			 * and both bytes from the reported length.
 			 */
-			next_tvb = tvb_new_subset(tvb, v5dl_header_len,
+			next_tvb = tvb_new_subset_length_caplen(tvb, v5dl_header_len,
 			    tvb_captured_length_remaining(tvb, v5dl_header_len) - 1,
 			    tvb_reported_length_remaining(tvb, v5dl_header_len) - 2);
 		} else {
@@ -273,7 +266,7 @@ dissect_v5dl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 			 * Just remove the checksum from the reported
 			 * length.
 			 */
-			next_tvb = tvb_new_subset(tvb, v5dl_header_len,
+			next_tvb = tvb_new_subset_length_caplen(tvb, v5dl_header_len,
 			    tvb_captured_length_remaining(tvb, v5dl_header_len),
 			    tvb_reported_length_remaining(tvb, v5dl_header_len) - 2);
 		}
@@ -386,7 +379,7 @@ proto_register_v5dl(void)
 #if 0
 	{ &hf_v5dl_checksum,
 	  { "Checksum", "v5dl.checksum", FT_UINT16, BASE_HEX,
-		NULL, 0x0, "Details at: http://www.wireshark.org/docs/wsug_html_chunked/ChAdvChecksums.html", HFILL }},
+		NULL, 0x0, "Details at: https://www.wireshark.org/docs/wsug_html_chunked/ChAdvChecksums.html", HFILL }},
 
 	{ &hf_v5dl_checksum_status,
 	  { "Checksum Status", "v5dl.checksum.status", FT_UINT8, BASE_NONE,
@@ -394,17 +387,24 @@ proto_register_v5dl(void)
 #endif
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_v5dl,
 		&ett_v5dl_address,
 		&ett_v5dl_control,
 		/* &ett_v5dl_checksum */
 	};
 
-	proto_v5dl = proto_register_protocol("V5 Data Link Layer",
-					     "V5DL", "v5dl");
+	static ei_register_info ei[] = {
+		{ &ei_v5dl_checksum, { "v5dl.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
+	};
+
+	expert_module_t* expert_v5dl;
+
+	proto_v5dl = proto_register_protocol("V5 Data Link Layer", "V5DL", "v5dl");
 	proto_register_field_array (proto_v5dl, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+	expert_v5dl = expert_register_protocol(proto_v5dl);
+	expert_register_field_array(expert_v5dl, ei, array_length(ei));
 
 	register_dissector("v5dl", dissect_v5dl, proto_v5dl);
 }
@@ -416,7 +416,7 @@ proto_reg_handoff_v5dl(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

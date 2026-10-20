@@ -1,6 +1,5 @@
-/* Copyright (C) 1996-2016 Free Software Foundation, Inc.
+/* Copyright (C) 1996-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
-   Contributed by Ulrich Drepper <drepper@cygnus.com>, 1996.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -13,7 +12,9 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Ulrich Drepper and Bruno Haible.  */
 
 #ifndef _LOADINFO_H
 #define _LOADINFO_H	1
@@ -30,12 +31,8 @@
    in gettextP.h.
  */
 
-#ifndef internal_function
-# define internal_function
-#endif
-
-#ifndef LIBINTL_DLL_EXPORTED
-# define LIBINTL_DLL_EXPORTED
+#ifndef LIBINTL_SHLIB_EXPORTED
+# define LIBINTL_SHLIB_EXPORTED
 #endif
 
 /* Tell the compiler when a conditional or integer expression is
@@ -45,7 +42,7 @@
 #endif
 
 /* Separator in PATH like lists of pathnames.  */
-#if ((defined _WIN32 || defined __WIN32__) && !defined __CYGWIN__) || defined __EMX__ || defined __DJGPP__
+#if (defined _WIN32 && !defined __CYGWIN__) || defined __EMX__ || defined __DJGPP__
   /* Win32, OS/2, DOS */
 # define PATH_SEPARATOR ';'
 #else
@@ -62,7 +59,13 @@
 
 struct loaded_l10nfile
 {
+  /* The file name of the localization file.
+     It is set at construction time and then never changed.
+     Exactly one of filename, wfilename is non-NULL.  */
   const char *filename;
+#if defined _WIN32 && !defined __CYGWIN__
+  const wchar_t *wfilename;
+#endif
   int decided;
 
   const void *data;
@@ -81,12 +84,27 @@ extern const char *_nl_normalize_codeset (const char *codeset,
 
 /* Lookup a locale dependent file.
    *L10NFILE_LIST denotes a pool of lookup results of locale dependent
-   files of the same kind, sorted in decreasing order of ->filename.
+   files of the same kind.
+   On most platforms, it is sorted in decreasing order of ->filename.
+   On native Windows platforms, the elements with ->filename != NULL
+   are sorted in decreasing order of ->filename, and the elements with
+   ->wfilename != NULL are sorted in decreasing order of ->wfilename.
+
    DIRLIST and DIRLIST_LEN are an argz list of directories in which to
-   look, containing at least one directory (i.e. DIRLIST_LEN > 0).
+   look.
+   Likewise, on native Windows, WDIRLIST and WDIRLIST_LEN are wide-char
+   list of directories in which to look. Only one of DIRLIST, WDIRLIST
+   is non-NULL.
+   DIRLIST and WDIRLIST contain at least one directory, i.e.
+   DIRLIST_LEN + WDIRLIST_LEN > 0.
+   Outside glibc, only one directory is used, i.e.
+   DIRLIST_LEN == strlen (DIRLIST) + 1, WDIRLIST_LEN == 0, or
+   DIRLIST_LEN == 0, WDIRLIST_LEN == wcslen (WDIRLIST) + 1.
+
    MASK, LANGUAGE, TERRITORY, CODESET, NORMALIZED_CODESET, MODIFIER
    are the pieces of the locale name, as produced by _nl_explode_name().
    FILENAME is the filename suffix.
+
    The return value is the lookup result, either found in *L10NFILE_LIST,
    or - if DO_ALLOCATE is nonzero - freshly allocated, or possibly NULL.
    If the return value is non-NULL, it is added to *L10NFILE_LIST, and
@@ -95,7 +113,11 @@ extern const char *_nl_normalize_codeset (const char *codeset,
    results from which this lookup result inherits.  */
 extern struct loaded_l10nfile *
 _nl_make_l10nflist (struct loaded_l10nfile **l10nfile_list,
-		    const char *dirlist, size_t dirlist_len, int mask,
+		    const char *dirlist, size_t dirlist_len,
+#if defined _WIN32 && !defined __CYGWIN__
+		    const wchar_t *wdirlist, size_t wdirlist_len,
+#endif
+		    int mask,
 		    const char *language, const char *territory,
 		    const char *codeset, const char *normalized_codeset,
 		    const char *modifier,
@@ -105,7 +127,7 @@ _nl_make_l10nflist (struct loaded_l10nfile **l10nfile_list,
    NAME is not a locale alias (but possibly a real locale name).
    The return value is statically allocated and must not be freed.  */
 /* Part of the libintl ABI only for the sake of the gettext.m4 macro.  */
-extern LIBINTL_DLL_EXPORTED const char *_nl_expand_alias (const char *name);
+extern LIBINTL_SHLIB_EXPORTED const char *_nl_expand_alias (const char *name);
 
 /* Split a locale name NAME into its pieces: language, modifier,
    territory, codeset.

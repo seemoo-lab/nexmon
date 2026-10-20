@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,7 +16,9 @@
 void proto_register_mime_encap(void);
 void proto_reg_handoff_mime_encap(void);
 
-static int proto_mime_encap = -1;
+static int proto_mime_encap;
+
+static dissector_handle_t mime_encap_handle;
 
 static heur_dissector_list_t heur_subdissector_list;
 
@@ -55,21 +45,18 @@ proto_register_mime_encap(void)
 {
 	proto_mime_encap = proto_register_protocol("MIME file", "MIME_FILE", "mime_dlt");
 
-	register_dissector("mime_dlt", dissect_mime_encap, proto_mime_encap);
-	heur_subdissector_list = register_heur_dissector_list("wtap_file", proto_mime_encap);
+	mime_encap_handle = register_dissector("mime_dlt", dissect_mime_encap, proto_mime_encap);
+	heur_subdissector_list = register_heur_dissector_list_with_description("wtap_file", "MIME file", proto_mime_encap);
 }
 
 void
 proto_reg_handoff_mime_encap(void)
 {
-	dissector_handle_t mime_encap_handle;
-
-	mime_encap_handle = find_dissector("mime_dlt");
 	dissector_add_uint("wtap_encap", WTAP_ENCAP_MIME, mime_encap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

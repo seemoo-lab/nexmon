@@ -5,23 +5,11 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifndef __PACKET_BACNET_H__
-#define __PACKET_BACNET_H__
+#ifndef __PACKET_BACAPP_H__
+#define __PACKET_BACAPP_H__
 
 #define BACINFO_SERVICE         0
 #define BACINFO_INVOKEID        1
@@ -31,16 +19,44 @@
 
 /* Used for BACnet statistics */
 typedef struct _bacapp_info_value_t {
-    const gchar     *service_type;
-    const gchar     *invoke_id;
-    const gchar     *instance_ident;
-    const gchar     *object_ident;
+    const char      *service_type;
+    const char      *invoke_id;
+    const char      *instance_ident;
+    const char      *object_ident;
 } bacapp_info_value_t;
+
+/* Possible datatypes of the present_value property.
+   Follows the order of Application Tag Number. */
+typedef enum BacappPresentValueType {
+    BACAPP_PRESENT_VALUE_NULL,
+    BACAPP_PRESENT_VALUE_BOOL,
+    BACAPP_PRESENT_VALUE_UNSIGNED,
+    BACAPP_PRESENT_VALUE_SIGNED,
+    BACAPP_PRESENT_VALUE_REAL,
+    BACAPP_PRESENT_VALUE_DOUBLE,
+    BACAPP_PRESENT_VALUE_OCTET_STRING,
+    BACAPP_PRESENT_VALUE_CHARACTER_STRING,
+    BACAPP_PRESENT_VALUE_BIT_STRING,
+    BACAPP_PRESENT_VALUE_ENUM,
+    BACAPP_PRESENT_VALUE_DATE,
+    BACAPP_PRESENT_VALUE_TIME,
+    BACAPP_PRESENT_VALUE_OBJECT_IDENTIFIER
+} BacappPresentValueType;
+
+/* used to disect the BSCVLC data / destination option token data */
+extern unsigned
+bacnet_dissect_token(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    unsigned offset, const char *lable);
+
+/* used to disect the BSCVLC data / destination option hint data */
+extern unsigned
+bacnet_dissect_scope(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    unsigned offset, const char *lable);
 
 #endif /* __PACKET_BACNET_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

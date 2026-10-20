@@ -1,25 +1,24 @@
 /*
- * Copyright (C) 1999-2004 Free Software Foundation, Inc.
+ * Copyright (C) 1999-2004, 2012 Free Software Foundation, Inc.
  * This file is part of the GNU LIBICONV Library.
  *
  * The GNU LIBICONV Library is free software; you can redistribute it
- * and/or modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either version 2
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either version 2.1
  * of the License, or (at your option) any later version.
  *
  * The GNU LIBICONV Library is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
+ * You should have received a copy of the GNU Lesser General Public
  * License along with the GNU LIBICONV Library; see the file COPYING.LIB.
- * If not, write to the Free Software Foundation, Inc., 51 Franklin Street,
- * Fifth Floor, Boston, MA 02110-1301, USA.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
 /*
- * JISX0213:2000
+ * JISX0213:2004
  */
 
 #ifndef _JISX0213_H
@@ -5907,9 +5906,9 @@ static unsigned short ucs4_to_jisx0213 (ucs4_t ucs)
       unsigned short used = summary->used;
       unsigned int i = ucs & 0x0f;
       if (used & ((unsigned short) 1 << i)) {
-        /* Keep in `used' only the bits 0..i-1. */
+        /* Keep in 'used' only the bits 0..i-1. */
         used &= ((unsigned short) 1 << i) - 1;
-        /* Add `summary->indx' and the number of bits set in `used'. */
+        /* Add 'summary->indx' and the number of bits set in 'used'. */
         used = (used & 0x5555) + ((used & 0xaaaa) >> 1);
         used = (used & 0x3333) + ((used & 0xcccc) >> 2);
         used = (used & 0x0f0f) + ((used & 0xf0f0) >> 4);

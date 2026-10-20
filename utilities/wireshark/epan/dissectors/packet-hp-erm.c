@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -46,24 +34,26 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_hp_erm(void);
 void proto_reg_handoff_hp_erm(void);
 
+static dissector_handle_t hp_erm_handle;
+
 #define PROTO_SHORT_NAME "HP_ERM"
 #define PROTO_LONG_NAME  "HP encapsulated remote mirroring"
 
-static guint global_hp_erm_udp_port = 0;
-
-static int  proto_hp_erm       = -1;
-static gint ett_hp_erm         = -1;
-static int  hf_hp_erm_unknown1 = -1;
-static int  hf_hp_erm_unknown2 = -1;
-static int  hf_hp_erm_unknown3 = -1;
-static int  hf_hp_erm_priority = -1;
-static int  hf_hp_erm_cfi      = -1;
-static int  hf_hp_erm_vlan     = -1;
+static int  proto_hp_erm;
+static int ett_hp_erm;
+static int  hf_hp_erm_unknown1;
+static int  hf_hp_erm_unknown2;
+static int  hf_hp_erm_unknown3;
+static int  hf_hp_erm_priority;
+static int  hf_hp_erm_cfi;
+static int  hf_hp_erm_vlan;
+static int  hf_hp_erm_is_tagged;
 
 static const value_string hp_erm_pri_vals[] = {
   { 0, "Background"                        },
@@ -77,11 +67,7 @@ static const value_string hp_erm_pri_vals[] = {
   { 0, NULL                                }
 };
 
-static const value_string hp_erm_cfi_vals[] = {
-  { 0, "Canonical"     },
-  { 1, "Non-canonical" },
-  { 0, NULL            }
-};
+static const true_false_string hp_erm_canonical = { "Non-canonical", "Canonical" };
 
 static dissector_handle_t eth_withoutfcs_handle;
 
@@ -92,6 +78,15 @@ dissect_hp_erm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     proto_tree *hp_erm_tree;
     tvbuff_t   *eth_tvb;
     int        offset = 0;
+    static int * const flags[] = {
+        &hf_hp_erm_unknown2,
+        &hf_hp_erm_priority,
+        &hf_hp_erm_cfi,
+        &hf_hp_erm_vlan,
+        &hf_hp_erm_is_tagged,
+        &hf_hp_erm_unknown3,
+        NULL
+    };
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
     col_set_str(pinfo->cinfo, COL_INFO, PROTO_SHORT_NAME ":");
@@ -102,13 +97,8 @@ dissect_hp_erm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     proto_tree_add_item(hp_erm_tree, hf_hp_erm_unknown1, tvb, offset, 8, ENC_NA);
     offset += 8;
 
-    proto_tree_add_item(hp_erm_tree, hf_hp_erm_unknown2, tvb, offset, 4, ENC_BIG_ENDIAN);
-    proto_tree_add_item(hp_erm_tree, hf_hp_erm_priority, tvb, offset, 4, ENC_BIG_ENDIAN);
-    proto_tree_add_item(hp_erm_tree, hf_hp_erm_cfi, tvb, offset, 4, ENC_BIG_ENDIAN);
-    proto_tree_add_item(hp_erm_tree, hf_hp_erm_vlan, tvb, offset, 4, ENC_BIG_ENDIAN);
-    proto_tree_add_item(hp_erm_tree, hf_hp_erm_unknown3, tvb, offset, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_bitmask_list(hp_erm_tree, tvb, offset, 4, flags, ENC_BIG_ENDIAN);
     offset += 4;
-
 
     eth_tvb = tvb_new_subset_remaining(tvb, offset);
     call_dissector(eth_withoutfcs_handle, eth_tvb, pinfo, tree);
@@ -133,57 +123,39 @@ proto_register_hp_erm(void)
             0x00E00000, NULL, HFILL }},
 
         { &hf_hp_erm_cfi,
-          { "CFI", "hp_erm.cfi", FT_UINT32, BASE_DEC, VALS(hp_erm_cfi_vals),
+          { "CFI", "hp_erm.cfi", FT_BOOLEAN, 32, TFS(&hp_erm_canonical),
             0x00100000, NULL, HFILL }},
 
         { &hf_hp_erm_vlan,
           { "Vlan", "hp_erm.vlan", FT_UINT32, BASE_DEC, NULL,
             0x000FFF00, NULL, HFILL }},
 
+        { &hf_hp_erm_is_tagged,
+          { "Is_Tagged", "hp_erm.is_tagged", FT_BOOLEAN, 32, TFS(&tfs_yes_no),
+            0x00000080, NULL, HFILL }},
+
         { &hf_hp_erm_unknown3,
           { "Unknown3", "hp_erm.unknown3", FT_UINT32, BASE_DEC, NULL,
-            0x000000FF, NULL, HFILL }}
+            0x0000007F, NULL, HFILL }}
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_hp_erm,
     };
 
-    module_t *hp_erm_module;
-
     proto_hp_erm = proto_register_protocol(PROTO_LONG_NAME, PROTO_SHORT_NAME, "hp_erm");
-
-    hp_erm_module = prefs_register_protocol(proto_hp_erm, proto_reg_handoff_hp_erm);
-    prefs_register_uint_preference(hp_erm_module, "udp.port", "HP_ERM UDP Port",
-                                   "Set the UDP port (source or destination) used for HP"
-                                   " encapsulated remote mirroring frames;\n"
-                                   "0 (default) means that the HP_ERM dissector is not active",
-                                   10, &global_hp_erm_udp_port);
 
     proto_register_field_array(proto_hp_erm, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    hp_erm_handle = register_dissector("hp_erm", dissect_hp_erm, proto_hp_erm);
 }
 
 void
 proto_reg_handoff_hp_erm(void)
 {
-    static dissector_handle_t hp_erm_handle;
-    static guint hp_erm_udp_port;
-    static gboolean initialized = FALSE;
-
-    if (!initialized) {
-        eth_withoutfcs_handle = find_dissector_add_dependency("eth_withoutfcs", proto_hp_erm);
-        hp_erm_handle = create_dissector_handle(dissect_hp_erm, proto_hp_erm);
-        initialized = TRUE;
-    } else {
-        if (hp_erm_udp_port != 0)
-            dissector_delete_uint("udp.port", hp_erm_udp_port, hp_erm_handle);
-    }
-
-    hp_erm_udp_port = global_hp_erm_udp_port;
-
-    if (hp_erm_udp_port != 0)
-        dissector_add_uint("udp.port", hp_erm_udp_port, hp_erm_handle);
+    eth_withoutfcs_handle = find_dissector_add_dependency("eth_withoutfcs", proto_hp_erm);
+    dissector_add_for_decode_as_with_preference("udp.port", hp_erm_handle);
 }
 /*
  * Editor modelines

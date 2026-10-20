@@ -1,6 +1,5 @@
 /* Charset handling while reading PO files.
-   Copyright (C) 2001-2007, 2010, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,26 +12,19 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
 #include <alloca.h>
 
 /* Specification.  */
 #include "po-charset.h"
 
-#include <stdlib.h>
 #include <string.h>
 
-#include "xmalloca.h"
-#include "xvasprintf.h"
-#include "po-xerror.h"
-#include "basename.h"
-#include "progname.h"
-#include "c-strstr.h"
 #include "c-strcase.h"
 #include "gettext.h"
 
@@ -55,7 +47,7 @@ const char *
 po_charset_canonicalize (const char *charset)
 {
   /* The list of charsets supported by glibc's iconv() and by the portable
-     iconv() across platforms.  Taken from intl/config.charset.  */
+     iconv() across platforms.  Taken from intl/localcharset.h.  */
   static const char *standard_charsets[] =
   {
     ascii, "ANSI_X3.4-1968", "US-ASCII",        /* i = 0..2 */
@@ -103,9 +95,8 @@ po_charset_canonicalize (const char *charset)
     "GEORGIAN-PS",
     utf8
   };
-  size_t i;
 
-  for (i = 0; i < SIZEOF (standard_charsets); i++)
+  for (size_t i = 0; i < SIZEOF (standard_charsets); i++)
     if (c_strcasecmp (charset, standard_charsets[i]) == 0)
       return standard_charsets[i < 3 ? 0 : i < 27 ? ((i - 3) & ~1) + 3 : i];
   return NULL;
@@ -137,9 +128,8 @@ bool po_is_charset_weird (const char *canon_charset)
     "SHIFT_JIS",
     "JOHAB"
   };
-  size_t i;
 
-  for (i = 0; i < SIZEOF (weird_charsets); i++)
+  for (size_t i = 0; i < SIZEOF (weird_charsets); i++)
     if (strcmp (canon_charset, weird_charsets[i]) == 0)
       return true;
   return false;
@@ -160,9 +150,8 @@ bool po_is_charset_weird_cjk (const char *canon_charset)
     "SHIFT_JIS",        /* 0x{00..7F},    0x{81..F9}{40..FC} */
     "JOHAB"             /* 0x{00..7F},    0x{84..F9}{31..FE} */
   };
-  size_t i;
 
-  for (i = 0; i < SIZEOF (weird_cjk_charsets); i++)
+  for (size_t i = 0; i < SIZEOF (weird_cjk_charsets); i++)
     if (strcmp (canon_charset, weird_cjk_charsets[i]) == 0)
       return true;
   return false;
@@ -428,235 +417,4 @@ po_charset_character_iterator (const char *canon_charset)
   if (strcmp (canon_charset, "JOHAB") == 0)
     return johab_character_iterator;
   return char_iterator;
-}
-
-
-/* The PO file's encoding, as specified in the header entry.  */
-const char *po_lex_charset;
-
-#if HAVE_ICONV
-/* Converter from the PO file's encoding to UTF-8.  */
-iconv_t po_lex_iconv;
-#endif
-/* If no converter is available, some information about the structure of the
-   PO file's encoding.  */
-bool po_lex_weird_cjk;
-
-void
-po_lex_charset_init ()
-{
-  po_lex_charset = NULL;
-#if HAVE_ICONV
-  po_lex_iconv = (iconv_t)(-1);
-#endif
-  po_lex_weird_cjk = false;
-}
-
-void
-po_lex_charset_set (const char *header_entry, const char *filename)
-{
-  /* Verify the validity of CHARSET.  It is necessary
-     1. for the correct treatment of multibyte characters containing
-        0x5C bytes in the PO lexer,
-     2. so that at run time, gettext() can call iconv() to convert
-        msgstr.  */
-  const char *charsetstr = c_strstr (header_entry, "charset=");
-
-  if (charsetstr != NULL)
-    {
-      size_t len;
-      char *charset;
-      const char *canon_charset;
-
-      charsetstr += strlen ("charset=");
-      len = strcspn (charsetstr, " \t\n");
-      charset = (char *) xmalloca (len + 1);
-      memcpy (charset, charsetstr, len);
-      charset[len] = '\0';
-
-      canon_charset = po_charset_canonicalize (charset);
-      if (canon_charset == NULL)
-        {
-          /* Don't warn for POT files, because POT files usually contain
-             only ASCII msgids.  */
-          size_t filenamelen = strlen (filename);
-
-          if (!(filenamelen >= 4
-                && memcmp (filename + filenamelen - 4, ".pot", 4) == 0
-                && strcmp (charset, "CHARSET") == 0))
-            {
-              char *warning_message =
-                xasprintf (_("\
-Charset \"%s\" is not a portable encoding name.\n\
-Message conversion to user's charset might not work.\n"),
-                           charset);
-              po_xerror (PO_SEVERITY_WARNING, NULL,
-                         filename, (size_t)(-1), (size_t)(-1), true,
-                         warning_message);
-              free (warning_message);
-            }
-        }
-      else
-        {
-          const char *envval;
-
-          po_lex_charset = canon_charset;
-#if HAVE_ICONV
-          if (po_lex_iconv != (iconv_t)(-1))
-            iconv_close (po_lex_iconv);
-#endif
-
-          /* The old Solaris/openwin msgfmt and GNU msgfmt <= 0.10.35
-             don't know about multibyte encodings, and require a spurious
-             backslash after every multibyte character whose last byte is
-             0x5C.  Some programs, like vim, distribute PO files in this
-             broken format.  GNU msgfmt must continue to support this old
-             PO file format when the Makefile requests it.  */
-          envval = getenv ("OLD_PO_FILE_INPUT");
-          if (envval != NULL && *envval != '\0')
-            {
-              /* Assume the PO file is in old format, with extraneous
-                 backslashes.  */
-#if HAVE_ICONV
-              po_lex_iconv = (iconv_t)(-1);
-#endif
-              po_lex_weird_cjk = false;
-            }
-          else
-            {
-              /* Use iconv() to parse multibyte characters.  */
-#if HAVE_ICONV
-              /* Avoid glibc-2.1 bug with EUC-KR.  */
-# if ((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
-     && !defined _LIBICONV_VERSION
-              if (strcmp (po_lex_charset, "EUC-KR") == 0)
-                po_lex_iconv = (iconv_t)(-1);
-              else
-# endif
-              /* Avoid Solaris 2.9 bug with GB2312, EUC-TW, BIG5, BIG5-HKSCS,
-                 GBK, GB18030.  */
-# if defined __sun && !defined _LIBICONV_VERSION
-              if (   strcmp (po_lex_charset, "GB2312") == 0
-                  || strcmp (po_lex_charset, "EUC-TW") == 0
-                  || strcmp (po_lex_charset, "BIG5") == 0
-                  || strcmp (po_lex_charset, "BIG5-HKSCS") == 0
-                  || strcmp (po_lex_charset, "GBK") == 0
-                  || strcmp (po_lex_charset, "GB18030") == 0)
-                po_lex_iconv = (iconv_t)(-1);
-              else
-# endif
-              po_lex_iconv = iconv_open ("UTF-8", po_lex_charset);
-              if (po_lex_iconv == (iconv_t)(-1))
-                {
-                  char *warning_message;
-                  const char *recommendation;
-                  const char *note;
-                  char *whole_message;
-
-                  warning_message =
-                    xasprintf (_("\
-Charset \"%s\" is not supported. %s relies on iconv(),\n\
-and iconv() does not support \"%s\".\n"),
-                               po_lex_charset, basename (program_name),
-                               po_lex_charset);
-
-# if !defined _LIBICONV_VERSION
-                  recommendation = _("\
-Installing GNU libiconv and then reinstalling GNU gettext\n\
-would fix this problem.\n");
-# else
-                  recommendation = "";
-# endif
-
-                  /* Test for a charset which has double-byte characters
-                     ending in 0x5C.  For these encodings, the string parser
-                     is likely to be confused if it can't see the character
-                     boundaries.  */
-                  po_lex_weird_cjk = po_is_charset_weird_cjk (po_lex_charset);
-                  if (po_is_charset_weird (po_lex_charset)
-                      && !po_lex_weird_cjk)
-                    note = _("Continuing anyway, expect parse errors.");
-                  else
-                    note = _("Continuing anyway.");
-
-                  whole_message =
-                    xasprintf ("%s%s%s\n",
-                               warning_message, recommendation, note);
-
-                  po_xerror (PO_SEVERITY_WARNING, NULL,
-                             filename, (size_t)(-1), (size_t)(-1), true,
-                             whole_message);
-
-                  free (whole_message);
-                  free (warning_message);
-                }
-#else
-              /* Test for a charset which has double-byte characters
-                 ending in 0x5C.  For these encodings, the string parser
-                 is likely to be confused if it can't see the character
-                 boundaries.  */
-              po_lex_weird_cjk = po_is_charset_weird_cjk (po_lex_charset);
-              if (po_is_charset_weird (po_lex_charset) && !po_lex_weird_cjk)
-                {
-                  char *warning_message;
-                  const char *recommendation;
-                  const char *note;
-                  char *whole_message;
-
-                  warning_message =
-                    xasprintf (_("\
-Charset \"%s\" is not supported. %s relies on iconv().\n\
-This version was built without iconv().\n"),
-                               po_lex_charset, basename (program_name));
-
-                  recommendation = _("\
-Installing GNU libiconv and then reinstalling GNU gettext\n\
-would fix this problem.\n");
-
-                  note = _("Continuing anyway, expect parse errors.");
-
-                  whole_message =
-                    xasprintf ("%s%s%s\n",
-                               warning_message, recommendation, note);
-
-                  po_xerror (PO_SEVERITY_WARNING, NULL,
-                             filename, (size_t)(-1), (size_t)(-1), true,
-                             whole_message);
-
-                  free (whole_message);
-                  free (warning_message);
-                }
-#endif
-            }
-        }
-      freea (charset);
-    }
-  else
-    {
-      /* Don't warn for POT files, because POT files usually contain
-         only ASCII msgids.  */
-      size_t filenamelen = strlen (filename);
-
-      if (!(filenamelen >= 4
-            && memcmp (filename + filenamelen - 4, ".pot", 4) == 0))
-        po_xerror (PO_SEVERITY_WARNING,
-                   NULL, filename, (size_t)(-1), (size_t)(-1), true,
-                   _("\
-Charset missing in header.\n\
-Message conversion to user's charset will not work.\n"));
-    }
-}
-
-void
-po_lex_charset_close ()
-{
-  po_lex_charset = NULL;
-#if HAVE_ICONV
-  if (po_lex_iconv != (iconv_t)(-1))
-    {
-      iconv_close (po_lex_iconv);
-      po_lex_iconv = (iconv_t)(-1);
-    }
-#endif
-  po_lex_weird_cjk = false;
 }

@@ -6,26 +6,15 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*  Include Files */
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/to_str.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #include "packet-zbee.h"
 #include "packet-zbee-aps.h"
@@ -96,7 +85,7 @@
 #define ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_SENSOR_FAILURE                       0x0400    /* Sensor failure */
 #define ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_ELEC_NON_FATAL_FAILURE               0x0800    /* Electronic non-fatal failure */
 #define ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_ELEC_FATAL_FAILURE                   0x1000    /* Electronic fatal failure */
-#define ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_GENERAL_FAULT                        0x2000    /* Genral fault */
+#define ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_GENERAL_FAULT                        0x2000    /* General fault */
 
 /*************************/
 /* Function Declarations */
@@ -105,52 +94,49 @@
 void proto_register_zbee_zcl_pump_config_control(void);
 void proto_reg_handoff_zbee_zcl_pump_config_control(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_pump_config_control_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_pump_config_control = -1;
+static int proto_zbee_zcl_pump_config_control;
 
-static int hf_zbee_zcl_pump_config_control_attr_id = -1;
-static int hf_zbee_zcl_pump_config_control_attr_eff_opr_mode = -1;
-static int hf_zbee_zcl_pump_config_control_attr_opr_mode = -1;
-static int hf_zbee_zcl_pump_config_control_attr_eff_ctrl_mode = -1;
-static int hf_zbee_zcl_pump_config_control_attr_ctrl_mode = -1;
-static int hf_zbee_zcl_pump_config_control_status = -1;
-static int hf_zbee_zcl_pump_config_control_status_device_fault = -1;
-static int hf_zbee_zcl_pump_config_control_status_supply_fault = -1;
-static int hf_zbee_zcl_pump_config_control_status_speed_low = -1;
-static int hf_zbee_zcl_pump_config_control_status_speed_high = -1;
-static int hf_zbee_zcl_pump_config_control_status_local_override = -1;
-static int hf_zbee_zcl_pump_config_control_status_running = -1;
-static int hf_zbee_zcl_pump_config_control_status_rem_pressure = -1;
-static int hf_zbee_zcl_pump_config_control_status_rem_flow = -1;
-static int hf_zbee_zcl_pump_config_control_status_rem_temp = -1;
-static int hf_zbee_zcl_pump_config_control_alarm = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_volt_too_low = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_volt_too_high = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_pwr_missing_phase = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_press_too_low = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_press_too_high = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_dry_running = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_mtr_temp_too_high = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_pump_mtr_fatal_fail = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_elec_temp_too_high = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_pump_block = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_sensor_fail = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_elec_non_fatal_fail = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_fatal_fail = -1;
-static int hf_zbee_zcl_pump_config_control_alarm_gen_fault = -1;
+static int hf_zbee_zcl_pump_config_control_attr_id;
+static int hf_zbee_zcl_pump_config_control_attr_eff_opr_mode;
+static int hf_zbee_zcl_pump_config_control_attr_opr_mode;
+static int hf_zbee_zcl_pump_config_control_attr_eff_ctrl_mode;
+static int hf_zbee_zcl_pump_config_control_attr_ctrl_mode;
+static int hf_zbee_zcl_pump_config_control_status;
+static int hf_zbee_zcl_pump_config_control_status_device_fault;
+static int hf_zbee_zcl_pump_config_control_status_supply_fault;
+static int hf_zbee_zcl_pump_config_control_status_speed_low;
+static int hf_zbee_zcl_pump_config_control_status_speed_high;
+static int hf_zbee_zcl_pump_config_control_status_local_override;
+static int hf_zbee_zcl_pump_config_control_status_running;
+static int hf_zbee_zcl_pump_config_control_status_rem_pressure;
+static int hf_zbee_zcl_pump_config_control_status_rem_flow;
+static int hf_zbee_zcl_pump_config_control_status_rem_temp;
+static int hf_zbee_zcl_pump_config_control_alarm;
+static int hf_zbee_zcl_pump_config_control_alarm_volt_too_low;
+static int hf_zbee_zcl_pump_config_control_alarm_volt_too_high;
+static int hf_zbee_zcl_pump_config_control_alarm_pwr_missing_phase;
+static int hf_zbee_zcl_pump_config_control_alarm_press_too_low;
+static int hf_zbee_zcl_pump_config_control_alarm_press_too_high;
+static int hf_zbee_zcl_pump_config_control_alarm_dry_running;
+static int hf_zbee_zcl_pump_config_control_alarm_mtr_temp_too_high;
+static int hf_zbee_zcl_pump_config_control_alarm_pump_mtr_fatal_fail;
+static int hf_zbee_zcl_pump_config_control_alarm_elec_temp_too_high;
+static int hf_zbee_zcl_pump_config_control_alarm_pump_block;
+static int hf_zbee_zcl_pump_config_control_alarm_sensor_fail;
+static int hf_zbee_zcl_pump_config_control_alarm_elec_non_fatal_fail;
+static int hf_zbee_zcl_pump_config_control_alarm_fatal_fail;
+static int hf_zbee_zcl_pump_config_control_alarm_gen_fault;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_pump_config_control = -1;
-static gint ett_zbee_zcl_pump_config_control_status = -1;
-static gint ett_zbee_zcl_pump_config_control_alarm = -1;
+static int ett_zbee_zcl_pump_config_control;
+static int ett_zbee_zcl_pump_config_control_status;
+static int ett_zbee_zcl_pump_config_control_alarm;
 
 /* Attributes */
 static const value_string zbee_zcl_pump_config_control_attr_names[] = {
@@ -183,7 +169,7 @@ static const value_string zbee_zcl_pump_config_control_attr_names[] = {
 
 /*Operation Mode Values*/
 static const value_string zbee_zcl_pump_config_control_operation_mode_names[] = {
-    {0, "Noramal"},
+    {0, "Normal"},
     {1, "Minimum"},
     {2, "Maximum"},
     {3, "Local"},
@@ -194,10 +180,10 @@ static const value_string zbee_zcl_pump_config_control_operation_mode_names[] = 
 static const value_string zbee_zcl_pump_config_control_control_mode_names[] = {
     {0, "Constant Speed"},
     {1, "Constant Pressure"},
-    {2, "proportional Pressure"},
+    {2, "Proportional Pressure"},
     {3, "Constant Flow"},
     {4, "Reserved"},
-    {5, "Constat Temperature"},
+    {5, "Constant Temperature"},
     {6, "Reserved"},
     {7, "Automatic"},
     {0, NULL}
@@ -230,11 +216,12 @@ dissect_zbee_zcl_pump_config_control(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
  *@param offset pointer to buffer offset
  *@param attr_id attribute identifier
  *@param data_type attribute data type
+ *@param client_attr ZCL client
 */
-void
-dissect_zcl_pump_config_control_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_pump_config_control_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int * pump_status[] = {
+    static int * const pump_status[] = {
         &hf_zbee_zcl_pump_config_control_status_device_fault,
         &hf_zbee_zcl_pump_config_control_status_supply_fault,
         &hf_zbee_zcl_pump_config_control_status_speed_low,
@@ -247,7 +234,7 @@ dissect_zcl_pump_config_control_attr_data(proto_tree *tree, tvbuff_t *tvb, guint
         NULL
     };
 
-    static const int * alarm_mask[] = {
+    static int * const alarm_mask[] = {
         &hf_zbee_zcl_pump_config_control_alarm_volt_too_low,
         &hf_zbee_zcl_pump_config_control_alarm_volt_too_high,
         &hf_zbee_zcl_pump_config_control_alarm_pwr_missing_phase,
@@ -317,7 +304,7 @@ dissect_zcl_pump_config_control_attr_data(proto_tree *tree, tvbuff_t *tvb, guint
         case ZBEE_ZCL_ATTR_ID_PUMP_CONFIG_CONTROL_POWER:
         case ZBEE_ZCL_ATTR_ID_PUMP_CONFIG_CONTROL_LIFETIME_ENERGY_CONS:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -360,39 +347,39 @@ proto_register_zbee_zcl_pump_config_control(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_device_fault,
-            { "Device Fault", "zbee_zcl_hvac.pump_config_control.attr.status.device_fault", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Device Fault", "zbee_zcl_hvac.pump_config_control.attr.status.device_fault", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_DEVICE_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_supply_fault,
-            { "Supply Fault", "zbee_zcl_hvac.pump_config_control.attr.status.supply_fault", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Supply Fault", "zbee_zcl_hvac.pump_config_control.attr.status.supply_fault", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_SUPPLY_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_speed_low,
-            { "Speed Low", "zbee_zcl_hvac.pump_config_control.attr.status.speed_low", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Speed Low", "zbee_zcl_hvac.pump_config_control.attr.status.speed_low", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_SPEED_LOW, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_speed_high,
-            { "Speed High", "zbee_zcl_hvac.pump_config_control.attr.status.speed_high", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Speed High", "zbee_zcl_hvac.pump_config_control.attr.status.speed_high", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_SPEED_HIGH, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_local_override,
-            { "Local Override", "zbee_zcl_hvac.pump_config_control.attr.status.local_override", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Local Override", "zbee_zcl_hvac.pump_config_control.attr.status.local_override", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_LOCAL_OVERRIDE, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_running,
-            { "Running", "zbee_zcl_hvac.pump_config_control.attr.status.running", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Running", "zbee_zcl_hvac.pump_config_control.attr.status.running", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_RUNNING, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_rem_pressure,
-            { "Remote Pressure", "zbee_zcl_hvac.pump_config_control.attr.status.rem_pressure", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Remote Pressure", "zbee_zcl_hvac.pump_config_control.attr.status.rem_pressure", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_REMOTE_PRESSURE, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_rem_flow,
-            { "Remote Flow", "zbee_zcl_hvac.pump_config_control.attr.status.rem_flow", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Remote Flow", "zbee_zcl_hvac.pump_config_control.attr.status.rem_flow", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_REMOTE_FLOW, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_status_rem_temp,
-            { "Remote Temperature", "zbee_zcl_hvac.pump_config_control.attr.status.rem_temp", FT_BOOLEAN, 8, TFS(&tfs_no_yes),
+            { "Remote Temperature", "zbee_zcl_hvac.pump_config_control.attr.status.rem_temp", FT_BOOLEAN, 16, TFS(&tfs_no_yes),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_STATUS_REMOTE_TEMP, NULL, HFILL } },
         /* end Pump Status fields */
 
@@ -402,65 +389,65 @@ proto_register_zbee_zcl_pump_config_control(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_volt_too_low,
-            { "Supply voltage too low", "zbee_zcl_hvac.pump_config_control.attr.alarm.volt_too_low", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Supply voltage too low", "zbee_zcl_hvac.pump_config_control.attr.alarm.volt_too_low", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_VOLTAGE_TOO_LOW, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_volt_too_high,
-            { "Supply voltage too high", "zbee_zcl_hvac.pump_config_control.attr.alarm.volt_too_high", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Supply voltage too high", "zbee_zcl_hvac.pump_config_control.attr.alarm.volt_too_high", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_VOLTAGE_TOO_HIGH, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_pwr_missing_phase,
-            { "Power missing phase", "zbee_zcl_hvac.pump_config_control.attr.alarm.pwr_missing_phase", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Power missing phase", "zbee_zcl_hvac.pump_config_control.attr.alarm.pwr_missing_phase", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_PWR_MISSING_PHASE, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_press_too_low,
-            { "System pressure too low", "zbee_zcl_hvac.pump_config_control.attr.alarm.press_too_low", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "System pressure too low", "zbee_zcl_hvac.pump_config_control.attr.alarm.press_too_low", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_PRESSURE_TOO_LOW, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_press_too_high,
-            { "System pressure too high", "zbee_zcl_hvac.pump_config_control.attr.alarm.press_too_high", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "System pressure too high", "zbee_zcl_hvac.pump_config_control.attr.alarm.press_too_high", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_PRESSURE_TOO_HIGH, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_dry_running,
-            { "Dry running", "zbee_zcl_hvac.pump_config_control.attr.alarm.dry_running", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Dry running", "zbee_zcl_hvac.pump_config_control.attr.alarm.dry_running", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_DRY_RUNNING, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_mtr_temp_too_high,
-            { "Motor temperature too high", "zbee_zcl_hvac.pump_config_control.attr.alarm.mtr_temp_too_high", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Motor temperature too high", "zbee_zcl_hvac.pump_config_control.attr.alarm.mtr_temp_too_high", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_MTR_TEMP_TOO_HIGH, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_pump_mtr_fatal_fail,
-            { "Pump motor has fatal failure", "zbee_zcl_hvac.pump_config_control.attr.alarm.mtr_fatal_fail", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Pump motor has fatal failure", "zbee_zcl_hvac.pump_config_control.attr.alarm.mtr_fatal_fail", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_PUMP_MTR_FATAL_FAILURE, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_elec_temp_too_high,
-            { "Electronic temperature too high", "zbee_zcl_hvac.pump_config_control.attr.alarm.elec_temp_too_high", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Electronic temperature too high", "zbee_zcl_hvac.pump_config_control.attr.alarm.elec_temp_too_high", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_ELEC_TEMP_TOO_HIGH, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_pump_block,
-            { "Pump blocked", "zbee_zcl_hvac.pump_config_control.attr.alarm.pump_block", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Pump blocked", "zbee_zcl_hvac.pump_config_control.attr.alarm.pump_block", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_PUMP_BLOCK, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_sensor_fail,
-            { "Sensor failure", "zbee_zcl_hvac.pump_config_control.attr.alarm.sensor_fail", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Sensor failure", "zbee_zcl_hvac.pump_config_control.attr.alarm.sensor_fail", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_SENSOR_FAILURE, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_elec_non_fatal_fail,
-            { "Electronic non-fatal failure", "zbee_zcl_hvac.pump_config_control.attr.alarm.elec_non_fatal_fail", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Electronic non-fatal failure", "zbee_zcl_hvac.pump_config_control.attr.alarm.elec_non_fatal_fail", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_ELEC_NON_FATAL_FAILURE, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_fatal_fail,
-            { "Electronic fatal failure", "zbee_zcl_hvac.pump_config_control.attr.alarm.elec_fatal_fail", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "Electronic fatal failure", "zbee_zcl_hvac.pump_config_control.attr.alarm.elec_fatal_fail", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_ELEC_FATAL_FAILURE, NULL, HFILL } },
 
         { &hf_zbee_zcl_pump_config_control_alarm_gen_fault,
-            { "Genral fault", "zbee_zcl_hvac.pump_config_control.attr.alarm.gen_fault", FT_BOOLEAN, 8, TFS(&tfs_disabled_enabled),
+            { "General fault", "zbee_zcl_hvac.pump_config_control.attr.alarm.gen_fault", FT_BOOLEAN, 16, TFS(&tfs_disabled_enabled),
             ZBEE_ZCL_PUMP_CONFIG_CONTROL_ALARM_GENERAL_FAULT, NULL, HFILL } }
         /* end Alarm Mask fields */
     };
 
     /* ZCL Pump Configuration and Control subtrees */
-    static gint *ett[ZBEE_ZCL_PUMP_CONFIG_CONTROL_NUM_ETT];
+    static int *ett[ZBEE_ZCL_PUMP_CONFIG_CONTROL_NUM_ETT];
 
     ett[0] = &ett_zbee_zcl_pump_config_control;
     ett[1] = &ett_zbee_zcl_pump_config_control_status;
@@ -482,18 +469,15 @@ proto_register_zbee_zcl_pump_config_control(void)
 void
 proto_reg_handoff_zbee_zcl_pump_config_control(void)
 {
-    dissector_handle_t pump_config_ctrl_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    pump_config_ctrl_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_PUMP_CONFIG_CTRL);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_PUMP_CONFIG_CONTROL, pump_config_ctrl_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_pump_config_control,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_PUMP_CONFIG_CTRL,
+                            proto_zbee_zcl_pump_config_control,
                             ett_zbee_zcl_pump_config_control,
                             ZBEE_ZCL_CID_PUMP_CONFIG_CONTROL,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_pump_config_control_attr_id,
                             hf_zbee_zcl_pump_config_control_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_pump_config_control_attr_data
+                            dissect_zcl_pump_config_control_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_pump_config_control*/
 
@@ -523,23 +507,20 @@ proto_reg_handoff_zbee_zcl_pump_config_control(void)
 void proto_register_zbee_zcl_fan_control(void);
 void proto_reg_handoff_zbee_zcl_fan_control(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_fan_control_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_fan_control = -1;
+static int proto_zbee_zcl_fan_control;
 
-static int hf_zbee_zcl_fan_control_attr_id = -1;
-static int hf_zbee_zcl_fan_control_attr_fan_mode = -1;
-static int hf_zbee_zcl_fan_control_attr_fan_mode_seq = -1;
+static int hf_zbee_zcl_fan_control_attr_id;
+static int hf_zbee_zcl_fan_control_attr_fan_mode;
+static int hf_zbee_zcl_fan_control_attr_fan_mode_seq;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_fan_control = -1;
+static int ett_zbee_zcl_fan_control;
 
 /* Attributes */
 static const value_string zbee_zcl_fan_control_attr_names[] = {
@@ -597,9 +578,10 @@ dissect_zbee_zcl_fan_control(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tr
  *@param offset pointer to buffer offset
  *@param attr_id attribute identifier
  *@param data_type attribute data type
+ *@param client_attr ZCL client
 */
-void
-dissect_zcl_fan_control_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_fan_control_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch (attr_id) {
@@ -615,7 +597,7 @@ dissect_zcl_fan_control_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset
             break;
 
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -646,7 +628,7 @@ proto_register_zbee_zcl_fan_control(void)
     };
 
     /* ZCL Fan Control subtrees */
-    static gint *ett[ZBEE_ZCL_FAN_CONTROL_NUM_ETT];
+    static int *ett[ZBEE_ZCL_FAN_CONTROL_NUM_ETT];
 
     ett[0] = &ett_zbee_zcl_fan_control;
 
@@ -666,18 +648,15 @@ proto_register_zbee_zcl_fan_control(void)
 void
 proto_reg_handoff_zbee_zcl_fan_control(void)
 {
-    dissector_handle_t fan_control_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    fan_control_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_FAN_CONTROL);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_FAN_CONTROL, fan_control_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_fan_control,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_FAN_CONTROL,
+                            proto_zbee_zcl_fan_control,
                             ett_zbee_zcl_fan_control,
                             ZBEE_ZCL_CID_FAN_CONTROL,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_fan_control_attr_id,
                             hf_zbee_zcl_fan_control_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_fan_control_attr_data
+                            dissect_zcl_fan_control_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_fan_control*/
 
@@ -713,24 +692,21 @@ proto_reg_handoff_zbee_zcl_fan_control(void)
 void proto_register_zbee_zcl_dehumidification_control(void);
 void proto_reg_handoff_zbee_zcl_dehumidification_control(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_dehumidification_control_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_dehumidification_control = -1;
+static int proto_zbee_zcl_dehumidification_control;
 
-static int hf_zbee_zcl_dehumidification_control_attr_id = -1;
-static int hf_zbee_zcl_dehumidification_control_attr_rel_hum_mode = -1;
-static int hf_zbee_zcl_dehumidification_control_attr_dehum_lockout = -1;
-static int hf_zbee_zcl_dehumidification_control_attr_rel_hum_display = -1;
+static int hf_zbee_zcl_dehumidification_control_attr_id;
+static int hf_zbee_zcl_dehumidification_control_attr_rel_hum_mode;
+static int hf_zbee_zcl_dehumidification_control_attr_dehum_lockout;
+static int hf_zbee_zcl_dehumidification_control_attr_rel_hum_display;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_dehumidification_control = -1;
+static int ett_zbee_zcl_dehumidification_control;
 
 /* Attributes */
 static const value_string zbee_zcl_dehumidification_control_attr_names[] = {
@@ -781,7 +757,7 @@ static const value_string zbee_zcl_dehumidification_control_rel_hum_display_name
 static int
 dissect_zbee_zcl_dehumidification_control(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void* data _U_)
 {
-    return tvb_captured_length(tvb);;
+    return tvb_captured_length(tvb);
 } /*dissect_zbee_zcl_dehumidification_control*/
 
 
@@ -793,9 +769,10 @@ dissect_zbee_zcl_dehumidification_control(tvbuff_t *tvb _U_, packet_info *pinfo 
  *@param offset pointer to buffer offset
  *@param attr_id attribute identifier
  *@param data_type attribute data type
+ *@param client_attr ZCL client
 */
-void
-dissect_zcl_dehumidification_control_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_dehumidification_control_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch (attr_id) {
@@ -821,7 +798,7 @@ dissect_zcl_dehumidification_control_attr_data(proto_tree *tree, tvbuff_t *tvb, 
         case ZBEE_ZCL_ATTR_ID_DEHUMIDIFICATION_CONTROL_DEHUM_HYSTERESIS:
         case ZBEE_ZCL_ATTR_ID_DEHUMIDIFICATION_CONTROL_DEHUM_MAX_COOL:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -856,7 +833,7 @@ proto_register_zbee_zcl_dehumidification_control(void)
     };
 
     /* ZCL Dehumidification Control subtrees */
-    static gint *ett[ZBEE_ZCL_DEHUMIDIFICATION_CONTROL_NUM_ETT];
+    static int *ett[ZBEE_ZCL_DEHUMIDIFICATION_CONTROL_NUM_ETT];
 
     ett[0] = &ett_zbee_zcl_dehumidification_control;
 
@@ -876,18 +853,15 @@ proto_register_zbee_zcl_dehumidification_control(void)
 void
 proto_reg_handoff_zbee_zcl_dehumidification_control(void)
 {
-    dissector_handle_t dehumidification_control_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    dehumidification_control_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_DEHUMIDIFICATION_CONTROL);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_DEHUMIDIFICATION_CONTROL, dehumidification_control_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_dehumidification_control,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_DEHUMIDIFICATION_CONTROL,
+                            proto_zbee_zcl_dehumidification_control,
                             ett_zbee_zcl_dehumidification_control,
                             ZBEE_ZCL_CID_DEHUMIDIFICATION_CONTROL,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_dehumidification_control_attr_id,
                             hf_zbee_zcl_dehumidification_control_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_dehumidification_control_attr_data
+                            dissect_zcl_dehumidification_control_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_dehumidification_control*/
 
@@ -917,23 +891,20 @@ proto_reg_handoff_zbee_zcl_dehumidification_control(void)
 void proto_register_zbee_zcl_thermostat_ui_config(void);
 void proto_reg_handoff_zbee_zcl_thermostat_ui_config(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_thermostat_ui_config_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_thermostat_ui_config = -1;
+static int proto_zbee_zcl_thermostat_ui_config;
 
-static int hf_zbee_zcl_thermostat_ui_config_attr_id = -1;
-static int hf_zbee_zcl_thermostat_ui_config_attr_temp_disp_mode = -1;
-static int hf_zbee_zcl_thermostat_ui_config_attr_keypad_lockout = -1;
+static int hf_zbee_zcl_thermostat_ui_config_attr_id;
+static int hf_zbee_zcl_thermostat_ui_config_attr_temp_disp_mode;
+static int hf_zbee_zcl_thermostat_ui_config_attr_keypad_lockout;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_thermostat_ui_config = -1;
+static int ett_zbee_zcl_thermostat_ui_config;
 
 /* Attributes */
 static const value_string zbee_zcl_thermostat_ui_config_attr_names[] = {
@@ -987,9 +958,10 @@ dissect_zbee_zcl_thermostat_ui_config(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
  *@param offset pointer to buffer offset
  *@param attr_id attribute identifier
  *@param data_type attribute data type
+ *@param client_attr ZCL client
 */
-void
-dissect_zcl_thermostat_ui_config_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_thermostat_ui_config_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch (attr_id) {
@@ -1005,7 +977,7 @@ dissect_zcl_thermostat_ui_config_attr_data(proto_tree *tree, tvbuff_t *tvb, guin
             break;
 
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -1036,7 +1008,7 @@ proto_register_zbee_zcl_thermostat_ui_config(void)
     };
 
     /* ZCL Thermostat User Interface Configuration subtrees */
-    static gint *ett[ZBEE_ZCL_THERMOSTAT_UI_CONFIG_NUM_ETT];
+    static int *ett[ZBEE_ZCL_THERMOSTAT_UI_CONFIG_NUM_ETT];
     ett[0] = &ett_zbee_zcl_thermostat_ui_config;
 
     /* Register the ZigBee ZCL Thermostat User Interface Configuration cluster protocol name and description */
@@ -1055,23 +1027,20 @@ proto_register_zbee_zcl_thermostat_ui_config(void)
 void
 proto_reg_handoff_zbee_zcl_thermostat_ui_config(void)
 {
-    dissector_handle_t thermostat_ui_config_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    thermostat_ui_config_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_THERMOSTAT_UI_CONFIG);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_THERMOSTAT_UI_CONFIG, thermostat_ui_config_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_thermostat_ui_config,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_THERMOSTAT_UI_CONFIG,
+                            proto_zbee_zcl_thermostat_ui_config,
                             ett_zbee_zcl_thermostat_ui_config,
                             ZBEE_ZCL_CID_THERMOSTAT_UI_CONFIG,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_thermostat_ui_config_attr_id,
                             hf_zbee_zcl_thermostat_ui_config_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_thermostat_ui_config_attr_data
+                            dissect_zcl_thermostat_ui_config_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_thermostat_ui_config*/
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

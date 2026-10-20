@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlFdIOCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>xmlFdIOCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlFdIOCtxt_1a6f8059414f0228f0256115e024eeed4b" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int fd</definition>
+        <argsstring></argsstring>
+        <name>fd</name>
+        <qualifiedname>xmlFdIOCtxt::fd</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlIO.c" line="712" column="9" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="712" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlIO.c" line="711" column="1" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="711" bodyend="713"/>
+    <listofallmembers>
+      <member refid="structxmlFdIOCtxt_1a6f8059414f0228f0256115e024eeed4b" prot="public" virt="non-virtual"><scope>xmlFdIOCtxt</scope><name>fd</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

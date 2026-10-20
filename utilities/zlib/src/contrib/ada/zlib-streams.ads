@@ -31,7 +31,7 @@ package ZLib.Streams is
       Mode   : in     Flush_Mode := Sync_Flush);
    --  Flush the written data to the back stream,
    --  all data placed to the compressor is flushing to the Back stream.
-   --  Should not be used untill necessary, becouse it is decreasing
+   --  Should not be used until necessary, because it is decreasing
    --  compression.
 
    function Read_Total_In (Stream : in Stream_Type) return Count;
@@ -62,7 +62,7 @@ package ZLib.Streams is
                                     := Default_Buffer_Size;
       Write_Buffer_Size : in     Ada.Streams.Stream_Element_Offset
                                     := Default_Buffer_Size);
-   --  Create the Comression/Decompression stream.
+   --  Create the Compression/Decompression stream.
    --  If mode is In_Stream then Write operation is disabled.
    --  If mode is Out_Stream then Read operation is disabled.
 
@@ -97,13 +97,13 @@ private
       Rest_Last  : Stream_Element_Offset;
       --  Buffer for Read operation.
       --  We need to have this buffer in the record
-      --  becouse not all read data from back stream
+      --  because not all read data from back stream
       --  could be processed during the read operation.
 
       Buffer_Size : Stream_Element_Offset;
       --  Buffer size for write operation.
       --  We do not need to have this buffer
-      --  in the record becouse all data could be
+      --  in the record because all data could be
       --  processed in the write operation.
 
       Back       : Stream_Access;

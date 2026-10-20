@@ -1,0 +1,61 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: global function declarations.
+
+cat <<\EOF > xg-go-14.go
+package main
+
+import (
+	"fmt"
+	. "github.com/leonelquinteros/gotext"
+)
+
+func NL1 () *Locale {
+	return NewLocale(".", "fr_FR")
+}
+
+
+type NotLocale2 struct {
+	b int
+	Get func (s string) string
+}
+
+func NL2 () NotLocale2 {
+	return NotLocale2{}
+}
+
+func NL3 () (*Locale, NotLocale2) {
+	return NL1(), NL2()
+}
+
+func NL4 () (NotLocale2, Locale) {
+	return NL2(), *NL1()
+}
+
+func main () {
+	fmt.Println(NL1().Get("Test 1"))
+	fmt.Println(NL2().Get("Test 2"))
+	_, v3 := NL3()
+	fmt.Println(v3.Get("Test 3"))
+	_, v4 := NL4()
+	fmt.Println(v4.Get("Test 4"))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-14.tmp xg-go-14.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-14.tmp.po > xg-go-14.po || Exit 1
+
+cat <<\EOF > xg-go-14.ok
+msgid "Test 1"
+msgstr ""
+
+msgid "Test 4"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-14.ok xg-go-14.po || Exit 1
+
+exit 0

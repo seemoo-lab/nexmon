@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -40,29 +42,6 @@ struct _GTuples
 {
   guint len;
 };
-
-/* GRelation
- *
- * Indexed Relations.  Imagine a really simple table in a
- * database.  Relations are not ordered.  This data type is meant for
- * maintaining a N-way mapping.
- *
- * g_relation_new() creates a relation with FIELDS fields
- *
- * g_relation_destroy() frees all resources
- * g_tuples_destroy() frees the result of g_relation_select()
- *
- * g_relation_index() indexes relation FIELD with the provided
- *   equality and hash functions.  this must be done before any
- *   calls to insert are made.
- *
- * g_relation_insert() inserts a new tuple.  you are expected to
- *   provide the right number of fields.
- *
- * g_relation_delete() deletes all relations with KEY in FIELD
- * g_relation_select() returns ...
- * g_relation_count() counts ...
- */
 
 GLIB_DEPRECATED_IN_2_26
 GRelation* g_relation_new     (gint         fields);

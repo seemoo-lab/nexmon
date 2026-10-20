@@ -1,0 +1,11 @@
+--- modules/xgetcwd	2024-07-15 14:00:18.948308439 +0200
++++ modules/xgetcwd	2024-08-21 04:04:32.517733443 +0200
+@@ -7,7 +7,7 @@
+ m4/xgetcwd.m4
+ 
+ Depends-on:
+-getcwd
++getcwd-lgpl
+ xalloc
+ 
+ configure.ac:

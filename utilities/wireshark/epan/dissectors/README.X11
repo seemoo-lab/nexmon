@@ -1,13 +1,35 @@
 The X11 dissector generator is no longer run automatically.
 
-To run the dissector generator, you will need perl 5.10 and the XML::Twig
-module from CPAN. You will also need 'git' to retrieve the lastest protocol
-descriptions.
+To run the dissector generator, you will need perl 5.10 or later and the
+XML::Twig module from CPAN. You will also need 'git' to retrieve the
+latest protocol descriptions.
 
 Once you have those, you also need the XML protocol descriptions. In the
 epan/dissectors directory, run the following commands:
- git clone git://anongit.freedesktop.org/xcb/proto xcbproto
- git clone git://anongit.freedesktop.org/git/mesa/mesa
+  git clone https://gitlab.freedesktop.org/xorg/proto/xcbproto.git
+  git clone https://gitlab.freedesktop.org/mesa/mesa.git
+
+You should probably check out a release-tag version of both
+repositories.  The current tip of the main branch for xcbproto has what
+might be an error in the XML file for the Sync extension:
+
+https://gitlab.freedesktop.org/xorg/proto/xcbproto/-/issues/26
+
+so the xcb-proto-1.17.0 tag should be checked out.
+
+The current tip of the main branch of the Mesa repository causes the
+scripts to generate code that gets errors at run time, for reasons as
+yet undetermined; it works with the 24.3-branchpoint tag.
+
+Please be aware that the Mesa repository is rather large. As of this writing,
+the full git history is 587MiB and the source itself is roughly 250MiB. The
+space needed can be significantly reduced by downloading less commit history
+(such as with the git option --shallow-source, available since git 2.11) and
+performing a sparse checkout (available since git 2.25), e.g.,
+
+  git clone --shallow-since=2024-04-23 --sparse https://gitlab.freedesktop.org/mesa/mesa.git
+  cd mesa
+  git sparse-checkout add src/mapi/glapi/gen/
 
 As of this writing, mesa will provide:
  src/mapi/glapi/gen/gl_API.xml
@@ -17,8 +39,10 @@ and xcbproto provides:
  damage.xml
  dpms.xml
  dri2.xml
+ dri3.xml
  ge.xml
  glx.xml
+ present.xml
  randr.xml
  record.xml
  render.xml
@@ -41,13 +65,19 @@ and xcbproto provides:
  xtest.xml
  xv.xml
  xvmc.xml
-  
-Or, if you have already cloned those repositories, "git pull" each one to bring
-it up to date. Please be aware that the Mesa repository is rather large; it is
-slightly more than 200MB as of this writing.
 
-Run the following:
- make x11-dissector
+Or, if you have already cloned those repositories, "git pull" each one to bring
+it up to date.
+
+Then build the x11-dissector target; for example, run the command
+
+  make x11-dissector
+
+if you're using Make as your build tool or
+
+  ninja x11-dissector
+
+if you're using Ninja as your build tool.
 
 This will automatically run process-x11-fields.pl (for the core protocol
 definitions), and then it will run process-x11-xcb.pl to process the XML

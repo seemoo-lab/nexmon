@@ -3,16 +3,16 @@
 
 # Test --foreign-user
 
-cat <<EOF > xg-test4.in.c
+cat <<\EOF > xg-test4.in.c
 _("extract me")
 EOF
 
 : ${XGETTEXT=xgettext}
 # delete POT-Creation-Date: line because the date depends on local time.
-${XGETTEXT} --output - --foreign-user --no-location -k_ xg-test4.in.c \
-  | sed '/\"POT-Creation-Date:.*/d' | LC_ALL=C tr -d '\r' > xg-test4.po
+${XGETTEXT} --output xg-test4.tmp --foreign-user --no-location -k_ xg-test4.in.c || Exit 1
+sed -e '/\"POT-Creation-Date:.*/d' < xg-test4.tmp | LC_ALL=C tr -d '\r' > xg-test4.po
 
-cat <<EOF > xg-test4.ok
+cat <<\EOF > xg-test4.ok
 # SOME DESCRIPTIVE TITLE.
 # This file is put in the public domain.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.

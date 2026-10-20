@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- This file is in the public domain. -->
 <interface>
   <!-- interface-requires gtk+ 3.10 -->
-  <template class="HelloApplicationWindow" parent="GtkApplicationWindow">
+  <object class="GtkApplicationWindow" id="main_window">
     <property name="title" translatable="yes">Example Application</property>
     <property name="default-width">600</property>
     <property name="default-height">400</property>
@@ -41,5 +42,5 @@
         </child>
       </object>
     </child>
-  </template>
+  </object>
 </interface>

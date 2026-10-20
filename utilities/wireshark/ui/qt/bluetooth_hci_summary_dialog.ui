@@ -31,9 +31,6 @@
      <property name="showDropIndicator" stdset="0">
       <bool>false</bool>
      </property>
-     <property name="alternatingRowColors">
-      <bool>true</bool>
-     </property>
      <property name="selectionMode">
       <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>
@@ -67,14 +64,14 @@
      <attribute name="headerCascadingSectionResizes">
       <bool>false</bool>
      </attribute>
+     <attribute name="headerMinimumSectionSize">
+      <number>100</number>
+     </attribute>
      <attribute name="headerDefaultSectionSize">
       <number>100</number>
      </attribute>
      <attribute name="headerHighlightSections">
       <bool>false</bool>
-     </attribute>
-     <attribute name="headerMinimumSectionSize">
-      <number>100</number>
      </attribute>
      <attribute name="headerShowSortIndicator" stdset="0">
       <bool>false</bool>
@@ -109,6 +106,11 @@
      </column>
      <column>
       <property name="text">
+       <string>Subevent</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
        <string>Status</string>
       </property>
      </column>
@@ -133,6 +135,9 @@
       </property>
       <property name="text">
        <string>0x01</string>
+      </property>
+      <property name="text">
+       <string/>
       </property>
       <property name="text">
        <string/>
@@ -182,6 +187,9 @@
        <string/>
       </property>
       <property name="text">
+       <string/>
+      </property>
+      <property name="text">
        <string>0</string>
       </property>
      </item>
@@ -191,6 +199,9 @@
       </property>
       <property name="text">
        <string>0x03</string>
+      </property>
+      <property name="text">
+       <string/>
       </property>
       <property name="text">
        <string/>
@@ -240,6 +251,9 @@
        <string/>
       </property>
       <property name="text">
+       <string/>
+      </property>
+      <property name="text">
        <string>0</string>
       </property>
      </item>
@@ -249,6 +263,9 @@
       </property>
       <property name="text">
        <string>0x05</string>
+      </property>
+      <property name="text">
+       <string/>
       </property>
       <property name="text">
        <string/>
@@ -298,6 +315,9 @@
        <string/>
       </property>
       <property name="text">
+       <string/>
+      </property>
+      <property name="text">
        <string>0</string>
       </property>
      </item>
@@ -307,6 +327,9 @@
       </property>
       <property name="text">
        <string>0x08</string>
+      </property>
+      <property name="text">
+       <string/>
       </property>
       <property name="text">
        <string/>
@@ -356,6 +379,9 @@
        <string/>
       </property>
       <property name="text">
+       <string/>
+      </property>
+      <property name="text">
        <string>0</string>
       </property>
      </item>
@@ -385,12 +411,18 @@
        <string/>
       </property>
       <property name="text">
+       <string/>
+      </property>
+      <property name="text">
        <string>0</string>
       </property>
      </item>
      <item>
       <property name="text">
        <string>Unknown OGF</string>
+      </property>
+      <property name="text">
+       <string/>
       </property>
       <property name="text">
        <string/>
@@ -443,12 +475,18 @@
        <string/>
       </property>
       <property name="text">
+       <string/>
+      </property>
+      <property name="text">
        <string>0</string>
       </property>
      </item>
      <item>
       <property name="text">
        <string>Status</string>
+      </property>
+      <property name="text">
+       <string/>
       </property>
       <property name="text">
        <string/>
@@ -501,6 +539,9 @@
        <string/>
       </property>
       <property name="text">
+       <string/>
+      </property>
+      <property name="text">
        <string>0</string>
       </property>
      </item>
@@ -530,15 +571,35 @@
        <string/>
       </property>
       <property name="text">
+       <string/>
+      </property>
+      <property name="text">
        <string>0</string>
       </property>
      </item>
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0">
+    <layout class="QHBoxLayout" name="resultsFilterHorizontalLayout">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="resultsFilterLabel">
+       <property name="text">
+        <string>Results filter:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="resultsFilterLineEdit"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0">
      <property name="spacing">
-      <number>-1</number>
+      <number>6</number>
      </property>
      <property name="sizeConstraint">
       <enum>QLayout::SetDefaultConstraint</enum>
@@ -546,6 +607,16 @@
      <property name="bottomMargin">
       <number>0</number>
      </property>
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Display filter:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="DisplayFilterEdit" name="displayFilterLineEdit"/>
+     </item>
      <item>
       <widget class="QComboBox" name="interfaceComboBox">
        <property name="sizePolicy">
@@ -622,7 +693,30 @@
     <string>Save as image</string>
    </property>
   </action>
+  <action name="actionMark_Unmark_Row">
+   <property name="text">
+    <string>Mark/Unmark Row</string>
+   </property>
+   <property name="toolTip">
+    <string>Mark/Unmark Row</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+M</string>
+   </property>
+  </action>
+  <action name="actionMark_Unmark_Cell">
+   <property name="text">
+    <string>Mark/Unmark Cell</string>
+   </property>
+  </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>DisplayFilterEdit</class>
+   <extends>QLineEdit</extends>
+   <header>widgets/display_filter_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

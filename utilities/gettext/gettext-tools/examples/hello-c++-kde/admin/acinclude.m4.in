@@ -3084,7 +3084,7 @@ dnl This is a merge of some macros out of the gettext aclocal.m4
 dnl since we don't need anything, I took the things we need
 dnl the copyright for them is:
 dnl >
-dnl Copyright (C) 1994-1998, 2015-2016 Free Software Foundation, Inc.
+dnl Copyright (C) 1994-1998 Free Software Foundation, Inc.
 dnl This Makefile.in is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.

@@ -16,13 +16,13 @@ msgstr ""
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <%s>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
 
 #, c-format
-msgid "Written by %s.\n"
+msgid "Written by %s and %s.\n"
 msgstr ""
 
 #, c-format
@@ -39,6 +39,10 @@ msgid "no input file given"
 msgstr ""
 
 #, c-format
+msgid "The option '%s' is deprecated."
+msgstr ""
+
+#, c-format
 msgid ""
 "Cannot convert from \"%s\" to \"%s\". %s relies on iconv(), and iconv() does "
 "not support this conversion."
@@ -52,6 +56,12 @@ msgstr ""
 
 #, c-format
 msgid "warning: ITS rule file '%s' does not exist"
+msgstr ""
+
+#, c-format
+msgid ""
+"warning: a fallback ITS rule file '%s' is used; it may not be in sync with "
+"the upstream"
 msgstr ""
 
 #, c-format
@@ -114,8 +124,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-"  -d, --default-domain=NAME   use NAME.po for output (instead of messages."
-"po)\n"
+"  -d, --default-domain=NAME   use NAME.po for output (instead of "
+"messages.po)\n"
 msgstr ""
 
 #, c-format
@@ -138,13 +148,18 @@ msgstr ""
 #, c-format
 msgid ""
 "  -L, --language=NAME         recognise the specified language\n"
-"                                (C, C++, ObjectiveC, PO, Shell, Python, "
-"Lisp,\n"
-"                                EmacsLisp, librep, Scheme, Smalltalk, Java,\n"
-"                                JavaProperties, C#, awk, YCP, Tcl, Perl, "
-"PHP,\n"
-"                                GCC-source, NXStringTable, RST, Glade, Lua,\n"
-"                                JavaScript, Vala, Desktop)\n"
+"                                (C, C++, ObjectiveC, PO, Python, Java,\n"
+"                                JavaProperties, C#, JavaScript, TypeScript, "
+"TSX,\n"
+"                                Scheme, Guile, Lisp, EmacsLisp, librep, "
+"Rust,\n"
+"                                Go, Ruby, Shell, awk, Lua, Modula-2, D, "
+"OCaml,\n"
+"                                Smalltalk, Vala, Tcl, Perl, PHP, GCC-"
+"source,\n"
+"                                YCP, NXStringTable, RST, RSJ, Glade, "
+"GSettings,\n"
+"                                Desktop)\n"
 msgstr ""
 
 #, c-format
@@ -201,6 +216,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"      --no-check=NAME         don't perform syntax check on messages\n"
+"                                (url, email)\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "      --sentence-end=TYPE     type describing the end of sentence\n"
 "                                (single-space, which is the default, \n"
 "                                 or double-space)\n"
@@ -216,11 +237,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-"                                (only languages C, C++, ObjectiveC, Shell,\n"
-"                                Python, Lisp, EmacsLisp, librep, Scheme, "
-"Java,\n"
-"                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade,\n"
-"                                Lua, JavaScript, Vala)\n"
+"                                (only languages C, C++, ObjectiveC, Python,\n"
+"                                Java, C#, JavaScript, TypeScript, TSX, "
+"Scheme,\n"
+"                                Guile, Lisp, EmacsLisp, librep, Rust, Go, "
+"Shell,\n"
+"                                awk, Lua, Modula-2, D, OCaml, Vala, Tcl, "
+"Perl,\n"
+"                                PHP, GCC-source, Glade, GSettings)\n"
 msgstr ""
 
 #, c-format
@@ -231,11 +255,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-"                                (only languages C, C++, ObjectiveC, Shell,\n"
-"                                Python, Lisp, EmacsLisp, librep, Scheme, "
-"Java,\n"
-"                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade,\n"
-"                                Lua, JavaScript, Vala, Desktop)\n"
+"                                (only languages C, C++, ObjectiveC, Python,\n"
+"                                Java, C#, JavaScript, TypeScript, TSX, "
+"Scheme,\n"
+"                                Guile, Lisp, EmacsLisp, librep, Rust, Go, "
+"Shell,\n"
+"                                awk, Lua, Modula-2, D, OCaml, Vala, Tcl, "
+"Perl,\n"
+"                                PHP, GCC-source, Glade, GSettings, Desktop)\n"
 msgstr ""
 
 #, c-format
@@ -247,11 +274,25 @@ msgstr ""
 
 #, c-format
 msgid ""
-"                                (only languages C, C++, ObjectiveC, Shell,\n"
-"                                Python, Lisp, EmacsLisp, librep, Scheme, "
-"Java,\n"
-"                                C#, awk, YCP, Tcl, Perl, PHP, GCC-source,\n"
-"                                Lua, JavaScript, Vala)\n"
+"                                (only languages C, C++, ObjectiveC, Python,\n"
+"                                Java, C#, JavaScript, TypeScript, TSX, "
+"Scheme,\n"
+"                                Guile, Lisp, EmacsLisp, librep, Rust, Go, "
+"Shell,\n"
+"                                awk, Lua, Modula-2, D, OCaml, Vala, Tcl, "
+"Perl,\n"
+"                                PHP, GCC-source, YCP)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"      --tag=WORD:FORMAT       defines the behaviour of tagged template "
+"literals\n"
+"                              with tag WORD\n"
+msgstr ""
+
+#, c-format
+msgid "                                (only language JavaScript)\n"
 msgstr ""
 
 #, c-format
@@ -259,7 +300,9 @@ msgid "  -T, --trigraphs             understand ANSI C trigraphs for input\n"
 msgstr ""
 
 #, c-format
-msgid "                                (only languages C, C++, ObjectiveC)\n"
+msgid ""
+"                                (deprecated; only languages C, C++, "
+"ObjectiveC)\n"
 msgstr ""
 
 #, c-format
@@ -363,7 +406,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "  -s, --sort-output           generate sorted output\n"
+msgid "  -s, --sort-output           generate sorted output (deprecated)\n"
 msgstr ""
 
 #, c-format
@@ -373,6 +416,13 @@ msgstr ""
 #, c-format
 msgid ""
 "      --omit-header           don't write header with 'msgid \"\"' entry\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"      --no-git                don't use the git program to produce a\n"
+"                              reproducible 'POT-Creation-Date' field in the\n"
+"                              output.\n"
 msgstr ""
 
 #, c-format
@@ -395,6 +445,22 @@ msgstr ""
 #, c-format
 msgid ""
 "      --msgid-bugs-address=EMAIL@ADDRESS  set report address for msgid bugs\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"      --generated=FILE        Declares that the given FILE is generated and\n"
+"                              therefore should not have an influence on the\n"
+"                              'POT-Creation-Date' field in the output.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"      --reference=FILE        Declares that the output depends on the "
+"contents\n"
+"                              of the given FILE.  This has an influence on "
+"the\n"
+"                              'POT-Creation-Date' field in the output.\n"
 msgstr ""
 
 #, c-format
@@ -423,7 +489,14 @@ msgstr ""
 msgid "  -V, --version               output version information and exit\n"
 msgstr ""
 
-msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
+#, c-format
+msgid "  -v, --verbose               increase verbosity level\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Report bugs in the bug tracker at <%s>\n"
+"or by email to <%s>.\n"
 msgstr ""
 
 msgid "this file may not contain domain directives"
@@ -435,71 +508,11 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "standard input"
-msgstr ""
-
 #, c-format
 msgid "error while opening \"%s\" for reading"
 msgstr ""
 
-#, c-format
-msgid "Non-ASCII character at %s%s."
-msgstr ""
-
-#, c-format
-msgid "Non-ASCII comment at or before %s%s."
-msgstr ""
-
-#, c-format
-msgid "Non-ASCII string at %s%s."
-msgstr ""
-
-msgid "Please specify the source encoding through --from-code."
-msgstr ""
-
-#, c-format
-msgid "%s%s: warning: "
-msgstr ""
-
-#, c-format
-msgid ""
-"Although being used in a format string position, the %s is not a valid %s "
-"format string. Reason: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Although declared as such, the %s is not a valid %s format string. Reason: "
-"%s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"'%s' format string with unnamed arguments cannot be properly localized:\n"
-"The translator cannot reorder the arguments.\n"
-"Please consider using a format string with named arguments,\n"
-"and a mapping instead of a tuple for the arguments.\n"
-msgstr ""
-
-msgid ""
-"Empty msgid.  It is reserved by GNU gettext:\n"
-"gettext(\"\") returns the header entry with\n"
-"meta information, not the empty string.\n"
-msgstr ""
-
-#, c-format
-msgid "ambiguous argument specification for keyword '%.*s'"
-msgstr ""
-
-#, c-format
-msgid "warning: missing context for keyword '%.*s'"
-msgstr ""
-
-#, c-format
-msgid "warning: missing context for plural argument of keyword '%.*s'"
-msgstr ""
-
-msgid "context mismatch between singular and plural form"
+msgid "standard input"
 msgstr ""
 
 msgid ""
@@ -507,6 +520,15 @@ msgid ""
 "If you are using a 'Makevars' file, please specify\n"
 "the MSGID_BUGS_ADDRESS variable there; otherwise please\n"
 "specify an --msgid-bugs-address command line option.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Determining the POT-Creation-Date through the\n"
+"version-control (git) history took %.2f seconds.\n"
+"If you want to speed this up and produce a less\n"
+"reproducible POT-Creation-Date instead, without 'git',\n"
+"pass the option '%s'.\n"
 msgstr ""
 
 #, c-format
@@ -522,7 +544,15 @@ msgid "invalid endianness: %s"
 msgstr ""
 
 #, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr ""
+
+#, c-format
 msgid "no input file should be given if %s and %s are specified"
+msgstr ""
+
+#, c-format
+msgid "%s is only valid with %s"
 msgstr ""
 
 #, c-format
@@ -734,6 +764,13 @@ msgid "  --template=TEMPLATE         an XML file used as a template\n"
 msgstr ""
 
 #, c-format
+msgid ""
+"  --replace-text              output XML with translated text replacing the\n"
+"                              original text, not augmenting the original "
+"text\n"
+msgstr ""
+
+#, c-format
 msgid "Input file syntax:\n"
 msgstr ""
 
@@ -790,6 +827,17 @@ msgstr ""
 
 #, c-format
 msgid ""
+"      --no-convert            don't convert the messages to UTF-8 encoding\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"      --no-redundancy         don't pre-expand ISO C 99 <inttypes.h>\n"
+"                                format string directive macros\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "  -a, --alignment=NUMBER      align strings to NUMBER bytes (default: %d)\n"
 msgstr ""
 
@@ -810,20 +858,10 @@ msgstr ""
 msgid "      --statistics            print statistics about translations\n"
 msgstr ""
 
-#, c-format
-msgid "  -v, --verbose               increase verbosity level\n"
-msgstr ""
-
 msgid "warning: PO file header missing or invalid\n"
 msgstr ""
 
 msgid "warning: charset conversion will not work\n"
-msgstr ""
-
-msgid "warning: PO file header fuzzy\n"
-msgstr ""
-
-msgid "warning: older versions of msgfmt will give an error on this\n"
 msgstr ""
 
 #, c-format

@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -25,72 +13,76 @@
 #include <epan/packet.h>
 #include <epan/etypes.h>
 #include <epan/to_str.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-smb-common.h"
 
 void proto_register_msnlb(void);
 void proto_reg_handoff_msnlb(void);
 
+static dissector_handle_t msnlb_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_msnlb = -1;
+static int proto_msnlb;
 
-static int hf_msnlb_signature = -1;
-static int hf_msnlb_version = -1;
-static int hf_msnlb_uniquehostid = -1;
-static int hf_msnlb_clusterip = -1;
-static int hf_msnlb_dedicatedip = -1;
-static int hf_msnlb_signature_data = -1;
+static int hf_msnlb_signature;
+static int hf_msnlb_version;
+static int hf_msnlb_uniquehostid;
+static int hf_msnlb_clusterip;
+static int hf_msnlb_dedicatedip;
+static int hf_msnlb_signature_data;
 
-static int hf_msnlb_myhostid = -1;
-static int hf_msnlb_defaulthostid = -1;
-static int hf_msnlb_convergencestate = -1;
-static int hf_msnlb_numberofportrules = -1;
-static int hf_msnlb_uniquehostcode = -1;
-static int hf_msnlb_packetshandled = -1;
-static int hf_msnlb_teamingcfg = -1;
-static int hf_msnlb_teamingcfg_reserved = -1;
-static int hf_msnlb_teamingcfg_xorclusterip = -1;
-static int hf_msnlb_teamingcfg_numberofparticipants = -1;
-static int hf_msnlb_teamingcfg_hashing = -1;
-static int hf_msnlb_teamingcfg_master = -1;
-static int hf_msnlb_teamingcfg_active = -1;
-static int hf_msnlb_reserved = -1;
-static int hf_msnlb_portruleconfiguration = -1;
-static int hf_msnlb_portruleconfiguration_data = -1;
-static int hf_msnlb_currentmap = -1;
-static int hf_msnlb_currentmap_data = -1;
-static int hf_msnlb_newmap = -1;
-static int hf_msnlb_newmap_data = -1;
-static int hf_msnlb_idlemap = -1;
-static int hf_msnlb_idlemap_data = -1;
-static int hf_msnlb_readymap = -1;
-static int hf_msnlb_readymap_data = -1;
-static int hf_msnlb_loadweights = -1;
-static int hf_msnlb_loadweights_data = -1;
-static int hf_msnlb_reserved2 = -1;
-static int hf_msnlb_reserved2_data = -1;
+static int hf_msnlb_myhostid;
+static int hf_msnlb_defaulthostid;
+static int hf_msnlb_convergencestate;
+static int hf_msnlb_numberofportrules;
+static int hf_msnlb_uniquehostcode;
+static int hf_msnlb_packetshandled;
+static int hf_msnlb_teamingcfg;
+static int hf_msnlb_teamingcfg_reserved;
+static int hf_msnlb_teamingcfg_xorclusterip;
+static int hf_msnlb_teamingcfg_numberofparticipants;
+static int hf_msnlb_teamingcfg_hashing;
+static int hf_msnlb_teamingcfg_master;
+static int hf_msnlb_teamingcfg_active;
+static int hf_msnlb_reserved;
+static int hf_msnlb_portruleconfiguration;
+static int hf_msnlb_portruleconfiguration_data;
+static int hf_msnlb_currentmap;
+static int hf_msnlb_currentmap_data;
+static int hf_msnlb_newmap;
+static int hf_msnlb_newmap_data;
+static int hf_msnlb_idlemap;
+static int hf_msnlb_idlemap_data;
+static int hf_msnlb_readymap;
+static int hf_msnlb_readymap_data;
+static int hf_msnlb_loadweights;
+static int hf_msnlb_loadweights_data;
+static int hf_msnlb_reserved2;
+static int hf_msnlb_reserved2_data;
 
-static int hf_msnlb_extended_hb = -1;
-static int hf_msnlb_extended_hb_type = -1;
-static int hf_msnlb_length = -1;
-static int hf_msnlb_address_family = -1;
-static int hf_msnlb_host_name = -1;
-static int hf_msnlb_host_ipv4 = -1;
-static int hf_msnlb_host_ipv6 = -1;
-static int hf_msnlb_host_unknown = -1;
-static int hf_msnlb_padding = -1;
-static int hf_msnlb_extended_hb_unknown = -1;
+static int hf_msnlb_extended_hb;
+static int hf_msnlb_extended_hb_type;
+static int hf_msnlb_length;
+static int hf_msnlb_address_family;
+static int hf_msnlb_host_name;
+static int hf_msnlb_host_ipv4;
+static int hf_msnlb_host_ipv6;
+static int hf_msnlb_host_unknown;
+static int hf_msnlb_padding;
+static int hf_msnlb_extended_hb_unknown;
 
-static gint ett_msnlb = -1;
-static gint ett_msnlb_signature = -1;
-static gint ett_msnlb_teamingcfg = -1;
-static gint ett_msnlb_portruleconfiguration = -1;
-static gint ett_msnlb_currentmap = -1;
-static gint ett_msnlb_newmap = -1;
-static gint ett_msnlb_idlemap = -1;
-static gint ett_msnlb_readymap = -1;
-static gint ett_msnlb_loadweights = -1;
-static gint ett_msnlb_reserved = -1;
-static gint ett_msnlb_extended_hb = -1;
+static int ett_msnlb;
+static int ett_msnlb_signature;
+static int ett_msnlb_teamingcfg;
+static int ett_msnlb_portruleconfiguration;
+static int ett_msnlb_currentmap;
+static int ett_msnlb_newmap;
+static int ett_msnlb_idlemap;
+static int ett_msnlb_readymap;
+static int ett_msnlb_loadweights;
+static int ett_msnlb_reserved;
+static int ett_msnlb_extended_hb;
 
 #define NLB_CLUSTER_MEMBERSHIP_HB 0xC0DE01BF
 #define NLB_EXTENDED_HB 0xC0DE01C0
@@ -115,12 +107,12 @@ static const value_string nlb_address_family_vals[] = {
   { 0, NULL }
 };
 
-true_false_string tfs_reverse_normal = { "Reverse", "Normal" };
+static true_false_string tfs_reverse_normal = { "Reverse", "Normal" };
 
 static void
-version_base_custom(gchar *result, guint32 version)
+version_base_custom(char *result, uint32_t version)
 {
-  g_snprintf(result, ITEM_LABEL_LENGTH, "%d.%d", (version  >> 8) & 0xFF, (version & 0xFF));
+  snprintf(result, ITEM_LABEL_LENGTH, "%d.%d", (version  >> 8) & 0xFF, (version & 0xFF));
 }
 
 static int
@@ -128,8 +120,8 @@ dissect_msnlb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 {
   proto_item  *ti;
   proto_tree  *msnlb_tree = NULL, *msnlb_subtree;
-  guint16     offset = 0;
-  guint32     signature;
+  uint16_t    offset = 0;
+  uint32_t    signature;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "MS NLB");
 
@@ -157,13 +149,13 @@ dissect_msnlb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
   offset += 4;
 
   ti = proto_tree_add_item(msnlb_tree, hf_msnlb_signature_data, tvb, offset, -1, ENC_NA);
-  proto_item_append_text(ti, " - %s", val_to_str(signature, nlb_signature_vals, "Unknown (%u)"));
-  col_append_fstr(pinfo->cinfo, COL_INFO, " - %s", val_to_str(signature, nlb_signature_vals, "Unknown (%u)"));
+  proto_item_append_text(ti, " - %s", val_to_str(pinfo->pool, signature, nlb_signature_vals, "Unknown (%u)"));
+  col_append_fstr(pinfo->cinfo, COL_INFO, " - %s", val_to_str(pinfo->pool, signature, nlb_signature_vals, "Unknown (%u)"));
   msnlb_subtree = proto_item_add_subtree(ti, ett_msnlb_signature);
 
   switch(signature){
     case NLB_CLUSTER_MEMBERSHIP_HB:{
-      guint32 i;
+      uint32_t i;
       proto_tree *teamingcfg_tree, *subtree;
 
       proto_tree_add_item(msnlb_subtree, hf_msnlb_myhostid, tvb, offset, 2, ENC_LITTLE_ENDIAN);
@@ -262,15 +254,15 @@ dissect_msnlb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     }
     break;
     case NLB_EXTENDED_HB:{
-      guint8 hb_type;
+      uint8_t hb_type;
       proto_tree *hb_tree;
       while (tvb_reported_length_remaining(tvb, offset) > 0) {
         ti = proto_tree_add_item(msnlb_subtree, hf_msnlb_extended_hb, tvb, offset, -1, ENC_NA);
         hb_tree = proto_item_add_subtree(ti, ett_msnlb_extended_hb);
 
         proto_tree_add_item(hb_tree, hf_msnlb_extended_hb_type, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        hb_type = tvb_get_guint8(tvb, offset);
-        proto_item_append_text(ti, " - %s", val_to_str(hb_type, nlb_extended_hb_type_vals, "Unknown (%u)"));
+        hb_type = tvb_get_uint8(tvb, offset);
+        proto_item_append_text(ti, " - %s", val_to_str(pinfo->pool, hb_type, nlb_extended_hb_type_vals, "Unknown (%u)"));
         offset += 1;
 
         switch(hb_type){
@@ -282,13 +274,13 @@ dissect_msnlb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
             offset += 2;
             proto_tree_add_item(hb_tree, hf_msnlb_reserved, tvb, offset, 4, ENC_NA);
             offset += 4;
-            offset = display_unicode_string(tvb, hb_tree, offset, hf_msnlb_host_name, &fqdn);
+            offset = display_unicode_string(tvb, pinfo, hb_tree, offset, hf_msnlb_host_name, &fqdn);
             offset += 6;
             proto_item_append_text(ti, ": %s", fqdn);
             }
           break;
           case 2:{ /* IP */
-            guint16 address_family;
+            uint16_t address_family;
             proto_tree_add_item(hb_tree, hf_msnlb_length, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset += 1;
             proto_tree_add_item(hb_tree, hf_msnlb_reserved, tvb, offset, 2, ENC_NA);
@@ -301,12 +293,12 @@ dissect_msnlb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
             switch(address_family){
               case 0x2: /* IPv4 */
                 proto_tree_add_item(hb_tree, hf_msnlb_host_ipv4, tvb, offset, 4, ENC_BIG_ENDIAN);
-                proto_item_append_text(ti, ": %s", tvb_ip_to_str(tvb, offset));
+                proto_item_append_text(ti, ": %s", tvb_ip_to_str(pinfo->pool, tvb, offset));
                 offset += 4;
                 break;
               case 0x17: /* IPv6 */
                 proto_tree_add_item(hb_tree, hf_msnlb_host_ipv6, tvb, offset, 16, ENC_NA);
-                proto_item_append_text(ti, ": %s", tvb_ip6_to_str(tvb, offset));
+                proto_item_append_text(ti, ": %s", tvb_ip6_to_str(pinfo->pool, tvb, offset));
                 offset += 16;
                 break;
               default: /* Unknown */
@@ -566,7 +558,7 @@ proto_register_msnlb(void)
     },
     { &hf_msnlb_address_family,
       { "Address Family", "msnlb.address_family",
-        FT_UINT8, BASE_HEX_DEC,
+        FT_UINT16, BASE_HEX_DEC,
         VALS(nlb_address_family_vals), 0,
         NULL, HFILL }
     },
@@ -608,7 +600,7 @@ proto_register_msnlb(void)
     }
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_msnlb,
     &ett_msnlb_signature,
     &ett_msnlb_teamingcfg,
@@ -625,14 +617,13 @@ proto_register_msnlb(void)
   proto_msnlb = proto_register_protocol("MS Network Load Balancing", "MS NLB", "msnlb");
   proto_register_field_array(proto_msnlb, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  msnlb_handle = register_dissector("msnlb", dissect_msnlb, proto_msnlb);
 }
 
 void
 proto_reg_handoff_msnlb(void)
 {
-  dissector_handle_t msnlb_handle;
-
-  msnlb_handle = create_dissector_handle(dissect_msnlb, proto_msnlb);
   dissector_add_uint("ethertype", ETHERTYPE_MS_NLB_HEARTBEAT, msnlb_handle);
 }
 

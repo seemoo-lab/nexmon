@@ -2,30 +2,15 @@
  *
  * Basic Encoding Rules (BER) file reading
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-
-#include <errno.h>
-
-#include "wtap-int.h"
-#include "file_wrappers.h"
-#include <wsutil/buffer.h>
 #include "ber.h"
 
+#include "wtap_module.h"
+#include "file_wrappers.h"
+#include <wsutil/buffer.h>
 
 #define BER_CLASS_UNI   0
 #define BER_CLASS_APP   1
@@ -34,84 +19,45 @@
 #define BER_UNI_TAG_SEQ 16      /* SEQUENCE, SEQUENCE OF */
 #define BER_UNI_TAG_SET 17      /* SET, SET OF */
 
-static gboolean ber_read_file(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
-                              Buffer *buf, int *err, gchar **err_info)
+static int ber_file_type_subtype = -1;
+
+void register_ber(void);
+
+static bool ber_full_file_read(wtap *wth, wtap_rec *rec,
+                                   int *err, char **err_info,
+                                   int64_t *data_offset)
 {
-  gint64 file_size;
-  int packet_size;
+  if (!wtap_full_file_read(wth, rec, err, err_info, data_offset))
+    return false;
 
-  if ((file_size = wtap_file_size(wth, err)) == -1)
-    return FALSE;
-
-  if (file_size > G_MAXINT) {
-    /*
-     * Probably a corrupt capture file; don't blow up trying
-     * to allocate space for an immensely-large packet.
-     */
-    *err = WTAP_ERR_BAD_FILE;
-    *err_info = g_strdup_printf("ber: File has %" G_GINT64_MODIFIER "d-byte packet, bigger than maximum of %u",
-                                file_size, G_MAXINT);
-    return FALSE;
-  }
-  packet_size = (int)file_size;
-
-  phdr->rec_type = REC_TYPE_PACKET;
-  phdr->presence_flags = 0; /* yes, we have no bananas^Wtime stamp */
-
-  phdr->caplen = packet_size;
-  phdr->len = packet_size;
-
-  phdr->ts.secs = 0;
-  phdr->ts.nsecs = 0;
-
-  ws_buffer_assure_space(buf, packet_size);
-  return wtap_read_packet_bytes(fh, buf, packet_size, err, err_info);
+  /* Pass the file name. */
+  rec->rec_header.packet_header.pseudo_header.ber.pathname = wth->pathname;
+  return true;
 }
 
-static gboolean ber_read(wtap *wth, int *err, gchar **err_info, gint64 *data_offset)
+static bool ber_full_file_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+                                        int *err, char **err_info)
 {
-  gint64 offset;
+  if (!wtap_full_file_seek_read(wth, seek_off, rec, err, err_info))
+    return false;
 
-  *err = 0;
-
-  offset = file_tell(wth->fh);
-
-  /* there is only ever one packet */
-  if (offset != 0)
-    return FALSE;
-
-  *data_offset = offset;
-
-  return ber_read_file(wth, wth->fh, &wth->phdr, wth->frame_buffer, err, err_info);
+  /* Pass the file name. */
+  rec->rec_header.packet_header.pseudo_header.ber.pathname = wth->pathname;
+  return true;
 }
 
-static gboolean ber_seek_read(wtap *wth, gint64 seek_off, struct wtap_pkthdr *phdr,
-                              Buffer *buf, int *err, gchar **err_info)
-{
-  /* there is only one packet */
-  if(seek_off > 0) {
-    *err = 0;
-    return FALSE;
-  }
-
-  if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
-    return FALSE;
-
-  return ber_read_file(wth, wth->random_fh, phdr, buf, err, err_info);
-}
-
-wtap_open_return_val ber_open(wtap *wth, int *err, gchar **err_info)
+wtap_open_return_val ber_open(wtap *wth, int *err, char **err_info)
 {
 #define BER_BYTES_TO_CHECK 8
-  guint8 bytes[BER_BYTES_TO_CHECK];
-  guint8 ber_id;
-  gint8 ber_class;
-  gint8 ber_tag;
-  gboolean ber_pc;
-  guint8 oct, nlb = 0;
+  uint8_t bytes[BER_BYTES_TO_CHECK];
+  uint8_t ber_id;
+  uint8_t ber_class;
+  uint8_t ber_tag;
+  bool ber_pc;
+  uint8_t oct, ntb = 0, nlb = 0;
   int len = 0;
-  gint64 file_size;
-  int offset = 0, i;
+  int64_t file_size;
+  size_t offset = 0;
 
   if (!wtap_read_bytes(wth->fh, &bytes, BER_BYTES_TO_CHECK, err, err_info)) {
     if (*err != WTAP_ERR_SHORT_READ)
@@ -125,11 +71,16 @@ wtap_open_return_val ber_open(wtap *wth, int *err, gchar **err_info)
   ber_pc = (ber_id>>5) & 0x01;
   ber_tag = ber_id & 0x1F;
 
+  if (ber_tag == 0x1F) {
+    ber_tag = bytes[offset++];
+    ntb = 1; /* number of tag bytes */
+  }
+
   /* it must be constructed and either a SET or a SEQUENCE */
   /* or a CONTEXT/APPLICATION less than 32 (arbitrary) */
   if(!(ber_pc &&
        (((ber_class == BER_CLASS_UNI) && ((ber_tag == BER_UNI_TAG_SET) || (ber_tag == BER_UNI_TAG_SEQ))) ||
-        (((ber_class == BER_CLASS_CON) || (ber_class == BER_CLASS_APP)) && (ber_tag < 32)))))
+        (((ber_class == BER_CLASS_CON) || (ber_class == BER_CLASS_APP)) && (ber_tag < 0xFF)))))
     return WTAP_OPEN_NOT_MINE;
 
   /* now check the length */
@@ -144,17 +95,19 @@ wtap_open_return_val ber_open(wtap *wth, int *err, gchar **err_info)
     else {
       nlb = oct & 0x7F; /* number of length bytes */
 
-      if((nlb > 0) && (nlb <= (BER_BYTES_TO_CHECK - 2))) {
+      if(nlb > 0) {
+        if (nlb + offset >= sizeof(bytes)) {
+            return WTAP_OPEN_NOT_MINE;
+        }
         /* not indefinite length and we have read enough bytes to compute the length */
-        i = nlb;
-        while(i--) {
+        for(int i = 0; i < nlb; i++) {
           oct = bytes[offset++];
           len = (len<<8) + oct;
         }
       }
     }
 
-    len += (2 + nlb); /* add back Tag and Length bytes */
+    len += (2 + ntb + nlb); /* add back Tag and Length bytes */
     file_size = wtap_file_size(wth, err);
 
     if(len != file_size) {
@@ -168,19 +121,45 @@ wtap_open_return_val ber_open(wtap *wth, int *err, gchar **err_info)
   if (file_seek(wth->fh, 0, SEEK_SET, err) == -1)
     return WTAP_OPEN_ERROR;
 
-  wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_BER;
+  wth->file_type_subtype = ber_file_type_subtype;
   wth->file_encap = WTAP_ENCAP_BER;
   wth->snapshot_length = 0;
 
-  wth->subtype_read = ber_read;
-  wth->subtype_seek_read = ber_seek_read;
+  wth->subtype_read = ber_full_file_read;
+  wth->subtype_seek_read = ber_full_file_seek_read;
   wth->file_tsprec = WTAP_TSPREC_SEC;
 
   return WTAP_OPEN_MINE;
 }
 
+static const struct supported_block_type ber_blocks_supported[] = {
+  /*
+   * These are file formats that we dissect, so we provide only one
+   * "packet" with the file's contents, and don't support any
+   * options.
+   */
+  { WTAP_BLOCK_PACKET, ONE_BLOCK_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info ber_info = {
+  "ASN.1 Basic Encoding Rules", "ber", NULL, NULL,
+  false, BLOCKS_SUPPORTED(ber_blocks_supported),
+  NULL, NULL, NULL
+};
+
+void register_ber(void)
+{
+  ber_file_type_subtype = wtap_register_file_type_subtype(&ber_info);
+
+  /*
+   * Register name for backwards compatibility with the
+   * wtap_filetypes table in Lua.
+   */
+  wtap_register_backwards_compatibility_lua_name("BER", ber_file_type_subtype);
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

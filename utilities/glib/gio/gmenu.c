@@ -1,10 +1,12 @@
 /*
  * Copyright © 2011 Canonical Ltd.
  *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * licence, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,26 +29,16 @@
 #include "gicon.h"
 
 /**
- * SECTION:gmenu
- * @title: GMenu
- * @short_description: A simple implementation of GMenuModel
- * @include: gio/gio.h
- *
- * #GMenu is a simple implementation of #GMenuModel.
- * You populate a #GMenu by adding #GMenuItem instances to it.
- *
- * There are some convenience functions to allow you to directly
- * add items (avoiding #GMenuItem) for the common cases. To add
- * a regular item, use g_menu_insert(). To add a section, use
- * g_menu_insert_section(). To add a submenu, use
- * g_menu_insert_submenu().
- */
-
-/**
  * GMenu:
  *
- * #GMenu is an opaque structure type.  You must access it using the
- * functions below.
+ * `GMenu` is a simple implementation of [class@Gio.MenuModel].
+ * You populate a `GMenu` by adding [class@Gio.MenuItem] instances to it.
+ *
+ * There are some convenience functions to allow you to directly
+ * add items (avoiding [class@Gio.MenuItem]) for the common cases. To add
+ * a regular item, use [method@Gio.Menu.insert]. To add a section, use
+ * [method@Gio.Menu.insert_section]. To add a submenu, use
+ * [method@Gio.Menu.insert_submenu].
  *
  * Since: 2.32
  */
@@ -162,7 +154,7 @@ g_menu_insert_item (GMenu     *menu,
   g_return_if_fail (G_IS_MENU (menu));
   g_return_if_fail (G_IS_MENU_ITEM (item));
 
-  if (position < 0 || position > menu->items->len)
+  if (position < 0 || (guint) position > menu->items->len)
     position = menu->items->len;
 
   new_item.attributes = g_hash_table_ref (item->attributes);
@@ -253,8 +245,8 @@ g_menu_new (void)
  * g_menu_insert:
  * @menu: a #GMenu
  * @position: the position at which to insert the item
- * @label: (allow-none): the section label, or %NULL
- * @detailed_action: (allow-none): the detailed action string, or %NULL
+ * @label: (nullable): the section label, or %NULL
+ * @detailed_action: (nullable): the detailed action string, or %NULL
  *
  * Convenience function for inserting a normal menu item into @menu.
  * Combine g_menu_item_new() and g_menu_insert_item() for a more flexible
@@ -278,8 +270,8 @@ g_menu_insert (GMenu       *menu,
 /**
  * g_menu_prepend:
  * @menu: a #GMenu
- * @label: (allow-none): the section label, or %NULL
- * @detailed_action: (allow-none): the detailed action string, or %NULL
+ * @label: (nullable): the section label, or %NULL
+ * @detailed_action: (nullable): the detailed action string, or %NULL
  *
  * Convenience function for prepending a normal menu item to the start
  * of @menu.  Combine g_menu_item_new() and g_menu_insert_item() for a more
@@ -298,8 +290,8 @@ g_menu_prepend (GMenu       *menu,
 /**
  * g_menu_append:
  * @menu: a #GMenu
- * @label: (allow-none): the section label, or %NULL
- * @detailed_action: (allow-none): the detailed action string, or %NULL
+ * @label: (nullable): the section label, or %NULL
+ * @detailed_action: (nullable): the detailed action string, or %NULL
  *
  * Convenience function for appending a normal menu item to the end of
  * @menu.  Combine g_menu_item_new() and g_menu_insert_item() for a more
@@ -319,7 +311,7 @@ g_menu_append (GMenu       *menu,
  * g_menu_insert_section:
  * @menu: a #GMenu
  * @position: the position at which to insert the item
- * @label: (allow-none): the section label, or %NULL
+ * @label: (nullable): the section label, or %NULL
  * @section: a #GMenuModel with the items of the section
  *
  * Convenience function for inserting a section menu item into @menu.
@@ -345,7 +337,7 @@ g_menu_insert_section (GMenu       *menu,
 /**
  * g_menu_prepend_section:
  * @menu: a #GMenu
- * @label: (allow-none): the section label, or %NULL
+ * @label: (nullable): the section label, or %NULL
  * @section: a #GMenuModel with the items of the section
  *
  * Convenience function for prepending a section menu item to the start
@@ -365,7 +357,7 @@ g_menu_prepend_section (GMenu       *menu,
 /**
  * g_menu_append_section:
  * @menu: a #GMenu
- * @label: (allow-none): the section label, or %NULL
+ * @label: (nullable): the section label, or %NULL
  * @section: a #GMenuModel with the items of the section
  *
  * Convenience function for appending a section menu item to the end of
@@ -386,7 +378,7 @@ g_menu_append_section (GMenu       *menu,
  * g_menu_insert_submenu:
  * @menu: a #GMenu
  * @position: the position at which to insert the item
- * @label: (allow-none): the section label, or %NULL
+ * @label: (nullable): the section label, or %NULL
  * @submenu: a #GMenuModel with the items of the submenu
  *
  * Convenience function for inserting a submenu menu item into @menu.
@@ -411,7 +403,7 @@ g_menu_insert_submenu (GMenu       *menu,
 /**
  * g_menu_prepend_submenu:
  * @menu: a #GMenu
- * @label: (allow-none): the section label, or %NULL
+ * @label: (nullable): the section label, or %NULL
  * @submenu: a #GMenuModel with the items of the submenu
  *
  * Convenience function for prepending a submenu menu item to the start
@@ -431,7 +423,7 @@ g_menu_prepend_submenu (GMenu       *menu,
 /**
  * g_menu_append_submenu:
  * @menu: a #GMenu
- * @label: (allow-none): the section label, or %NULL
+ * @label: (nullable): the section label, or %NULL
  * @submenu: a #GMenuModel with the items of the submenu
  *
  * Convenience function for appending a submenu menu item to the end of
@@ -480,7 +472,7 @@ g_menu_remove (GMenu *menu,
                gint   position)
 {
   g_return_if_fail (G_IS_MENU (menu));
-  g_return_if_fail (0 <= position && position < menu->items->len);
+  g_return_if_fail (0 <= position && (guint) position < menu->items->len);
 
   g_menu_clear_item (&g_array_index (menu->items, struct item, position));
   g_array_remove_index (menu->items, position);
@@ -643,7 +635,7 @@ valid_attribute_name (const gchar *name)
  * g_menu_item_set_attribute_value:
  * @menu_item: a #GMenuItem
  * @attribute: the attribute to set
- * @value: (allow-none): a #GVariant to use as the value, or %NULL
+ * @value: (nullable): a #GVariant to use as the value, or %NULL
  *
  * Sets or unsets an attribute on @menu_item.
  *
@@ -688,7 +680,7 @@ g_menu_item_set_attribute_value (GMenuItem   *menu_item,
  * g_menu_item_set_attribute:
  * @menu_item: a #GMenuItem
  * @attribute: the attribute to set
- * @format_string: (allow-none): a #GVariant format string, or %NULL
+ * @format_string: (nullable): a #GVariant format string, or %NULL
  * @...: positional parameters, as per @format_string
  *
  * Sets or unsets an attribute on @menu_item.
@@ -737,7 +729,7 @@ g_menu_item_set_attribute (GMenuItem   *menu_item,
  * g_menu_item_set_link:
  * @menu_item: a #GMenuItem
  * @link: type of link to establish or unset
- * @model: (allow-none): the #GMenuModel to link to (or %NULL to unset)
+ * @model: (nullable): the #GMenuModel to link to (or %NULL to unset)
  *
  * Creates a link from @menu_item to @model if non-%NULL, or unsets it.
  *
@@ -773,7 +765,7 @@ g_menu_item_set_link (GMenuItem   *menu_item,
  * g_menu_item_get_attribute_value:
  * @menu_item: a #GMenuItem
  * @attribute: the attribute name to query
- * @expected_type: (allow-none): the expected type of the attribute
+ * @expected_type: (nullable): the expected type of the attribute
  *
  * Queries the named @attribute on @menu_item.
  *
@@ -781,7 +773,7 @@ g_menu_item_set_link (GMenuItem   *menu_item,
  * type, %NULL is returned.  %NULL is also returned if the attribute
  * simply does not exist.
  *
- * Returns: (transfer full): the attribute value, or %NULL
+ * Returns: (nullable) (transfer full): the attribute value, or %NULL
  *
  * Since: 2.34
  */
@@ -865,7 +857,7 @@ g_menu_item_get_attribute (GMenuItem   *menu_item,
  *
  * Queries the named @link on @menu_item.
  *
- * Returns: (transfer full): the link, or %NULL
+ * Returns: (nullable) (transfer full): the link, or %NULL
  *
  * Since: 2.34
  */
@@ -890,7 +882,7 @@ g_menu_item_get_link (GMenuItem   *menu_item,
 /**
  * g_menu_item_set_label:
  * @menu_item: a #GMenuItem
- * @label: (allow-none): the label to set, or %NULL to unset
+ * @label: (nullable): the label to set, or %NULL to unset
  *
  * Sets or unsets the "label" attribute of @menu_item.
  *
@@ -916,7 +908,7 @@ g_menu_item_set_label (GMenuItem   *menu_item,
 /**
  * g_menu_item_set_submenu:
  * @menu_item: a #GMenuItem
- * @submenu: (allow-none): a #GMenuModel, or %NULL
+ * @submenu: (nullable): a #GMenuModel, or %NULL
  *
  * Sets or unsets the "submenu" link of @menu_item to @submenu.
  *
@@ -938,7 +930,7 @@ g_menu_item_set_submenu (GMenuItem  *menu_item,
 /**
  * g_menu_item_set_section:
  * @menu_item: a #GMenuItem
- * @section: (allow-none): a #GMenuModel, or %NULL
+ * @section: (nullable): a #GMenuModel, or %NULL
  *
  * Sets or unsets the "section" link of @menu_item to @section.
  *
@@ -960,8 +952,8 @@ g_menu_item_set_section (GMenuItem  *menu_item,
 /**
  * g_menu_item_set_action_and_target_value:
  * @menu_item: a #GMenuItem
- * @action: (allow-none): the name of the action for this item
- * @target_value: (allow-none): a #GVariant to use as the action target
+ * @action: (nullable): the name of the action for this item
+ * @target_value: (nullable): a #GVariant to use as the action target
  *
  * Sets or unsets the "action" and "target" attributes of @menu_item.
  *
@@ -1026,8 +1018,8 @@ g_menu_item_set_action_and_target_value (GMenuItem   *menu_item,
 /**
  * g_menu_item_set_action_and_target:
  * @menu_item: a #GMenuItem
- * @action: (allow-none): the name of the action for this item
- * @format_string: (allow-none): a GVariant format string
+ * @action: (nullable): the name of the action for this item
+ * @format_string: (nullable): a GVariant format string
  * @...: positional parameters, as per @format_string
  *
  * Sets or unsets the "action" and "target" attributes of @menu_item.
@@ -1112,8 +1104,8 @@ g_menu_item_set_detailed_action (GMenuItem   *menu_item,
 
 /**
  * g_menu_item_new:
- * @label: (allow-none): the section label, or %NULL
- * @detailed_action: (allow-none): the detailed action string, or %NULL
+ * @label: (nullable): the section label, or %NULL
+ * @detailed_action: (nullable): the detailed action string, or %NULL
  *
  * Creates a new #GMenuItem.
  *
@@ -1147,7 +1139,7 @@ g_menu_item_new (const gchar *label,
 
 /**
  * g_menu_item_new_submenu:
- * @label: (allow-none): the section label, or %NULL
+ * @label: (nullable): the section label, or %NULL
  * @submenu: a #GMenuModel with the items of the submenu
  *
  * Creates a new #GMenuItem representing a submenu.
@@ -1177,7 +1169,7 @@ g_menu_item_new_submenu (const gchar *label,
 
 /**
  * g_menu_item_new_section:
- * @label: (allow-none): the section label, or %NULL
+ * @label: (nullable): the section label, or %NULL
  * @section: a #GMenuModel with the items of the section
  *
  * Creates a new #GMenuItem representing a section.
@@ -1190,7 +1182,7 @@ g_menu_item_new_submenu (const gchar *label,
  * the menu that @menu_item is added to.
  *
  * Visual separation is typically displayed between two non-empty
- * sections.  If @label is non-%NULL then it will be encorporated into
+ * sections.  If @label is non-%NULL then it will be incorporated into
  * this visual indication.  This allows for labeled subsections of a
  * menu.
  *

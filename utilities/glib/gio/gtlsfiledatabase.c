@@ -2,10 +2,12 @@
  *
  * Copyright © 2010 Collabora, Ltd
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,25 +30,15 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gtlsfiledatabase
- * @short_description: TLS file based database type
- * @include: gio/gio.h
+ * GTlsFileDatabase:
  *
- * #GTlsFileDatabase is implemented by #GTlsDatabase objects which load
- * their certificate information from a file. It is an interface which
+ * `GTlsFileDatabase` is implemented by [class@Gio.TlsDatabase] objects which
+ * load their certificate information from a file. It is an interface which
  * TLS library specific subtypes implement.
  *
  * Since: 2.30
  */
 
-/**
- * GTlsFileDatabase:
- *
- * Implemented by a #GTlsDatabase which allows you to load certificates
- * from a file.
- *
- * Since: 2.30
- */
 G_DEFINE_INTERFACE (GTlsFileDatabase, g_tls_file_database, G_TYPE_TLS_DATABASE)
 
 static void
@@ -63,9 +55,7 @@ g_tls_file_database_default_init (GTlsFileDatabaseInterface *iface)
    * Since: 2.30
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_string ("anchors",
-                                                           P_("Anchors"),
-                                                           P_("The certificate authority anchor file"),
+                                       g_param_spec_string ("anchors", NULL, NULL,
                                                            NULL,
                                                            G_PARAM_READWRITE |
                                                            G_PARAM_CONSTRUCT |
@@ -74,7 +64,7 @@ g_tls_file_database_default_init (GTlsFileDatabaseInterface *iface)
 
 /**
  * g_tls_file_database_new:
- * @anchors: filename of anchor certificate authorities.
+ * @anchors: (type filename): filename of anchor certificate authorities.
  * @error: #GError for error reporting, or %NULL to ignore.
  *
  * Creates a new #GTlsFileDatabase which uses anchor certificate authorities

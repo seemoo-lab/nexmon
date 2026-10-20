@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,13 +28,15 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gdbusinterface
- * @short_description: Base type for D-Bus interfaces
- * @include: gio/gio.h
+ * GDBusInterface:
  *
- * The #GDBusInterface type is the base type for D-Bus interfaces both
- * on the service side (see #GDBusInterfaceSkeleton) and client side
- * (see #GDBusProxy).
+ * Base type for D-Bus interfaces.
+ *
+ * The `GDBusInterface` type is the base type for D-Bus interfaces both
+ * on the service side (see [class@Gio.DBusInterfaceSkeleton]) and client side
+ * (see [class@Gio.DBusProxy]).
+ *
+ * Since: 2.30
  */
 
 typedef GDBusInterfaceIface GDBusInterfaceInterface;
@@ -52,7 +56,12 @@ g_dbus_interface_default_init (GDBusInterfaceIface *iface)
  * Gets D-Bus introspection information for the D-Bus interface
  * implemented by @interface_.
  *
- * Returns: (transfer none): A #GDBusInterfaceInfo. Do not free.
+ * This can return %NULL if no #GDBusInterfaceInfo was provided during
+ * construction of @interface_ and is also not made available otherwise.
+ * For example, #GDBusProxy implements #GDBusInterface but allows for a %NULL
+ * #GDBusInterfaceInfo.
+ *
+ * Returns: (transfer none) (nullable): A #GDBusInterfaceInfo. Do not free.
  *
  * Since: 2.30
  */
@@ -73,7 +82,7 @@ g_dbus_interface_get_info (GDBusInterface *interface_)
  * the returned object is being used from other threads. See
  * g_dbus_interface_dup_object() for a thread-safe alternative.
  *
- * Returns: (transfer none): A #GDBusObject or %NULL. The returned
+ * Returns: (nullable) (transfer none): A #GDBusObject or %NULL. The returned
  *     reference belongs to @interface_ and should not be freed.
  *
  * Since: 2.30
@@ -91,7 +100,7 @@ g_dbus_interface_get_object (GDBusInterface *interface_)
  *
  * Gets the #GDBusObject that @interface_ belongs to, if any.
  *
- * Returns: (transfer full): A #GDBusObject or %NULL. The returned
+ * Returns: (nullable) (transfer full): A #GDBusObject or %NULL. The returned
  * reference should be freed with g_object_unref().
  *
  * Since: 2.32
@@ -119,7 +128,7 @@ g_dbus_interface_dup_object (GDBusInterface *interface_)
 /**
  * g_dbus_interface_set_object:
  * @interface_: An exported D-Bus interface.
- * @object: (allow-none): A #GDBusObject or %NULL.
+ * @object: (nullable): A #GDBusObject or %NULL.
  *
  * Sets the #GDBusObject for @interface_ to @object.
  *

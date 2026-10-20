@@ -97,27 +97,22 @@ TransportAddress
 
 
 #.TF_RENAME
-ISDNConnection/circuitTypes		ISDNCircuitTypes
-ISDNConnection/circuitTypes/_item	ISDNCircuitTypes_item
-ISDNConnection/highLayerCompatibility 	ISDNHighLayerCompatibility
-PSDNConnection/networkAddress	      	PSDNNetworkAddress
-ConferenceTerminateRequest/reason	TerminateRequestReason
-ConferenceTerminateIndication/reason	TerminateIndicationReason
-ConferenceEjectUserRequest/reason		EjectUserRequestReason
-RosterUpdateIndication/nodeInformation/nodeRecordList/refresh NodeRefresh
-RosterUpdateIndication/applicationInformation/_item/applicationRecordList/refresh ApplicationRefresh
-RosterUpdateIndication/applicationInformation/_item/applicationRecordList/update ApplicationUpdate
-RosterUpdateIndication/applicationInformation/_item/applicationRecordList/update/_item ApplicationUpdateItem
 ConferenceQueryResponse/result	QueryResponseResult
 ConferenceJoinResponse/result	JoinResponseResult
 ConferenceInviteResponse/result	InviteResponseResult
-ConferenceAddResponse/result	AddResponseResult
-ConferenceLockResponse/result	LockResponseResult
-ConferenceUnlockResponse/result	UnlockResponseResult
-ConferenceTerminateResponse/result	TerminateResponseResult
-ConferenceEjectUserResponse/result	EjectUserResponseResult
-ConferenceTransferResponse/result	TransferResponseResult
-RegistryAllocateHandleResponse/result	AllocateHandleResponseResult
+
+#.FIELD_RENAME
+ConferenceCreateRequest/userData userData-set-of
+ConferenceCreateResponse/userData userData-set-of
+ConferenceQueryRequest/userData userData-set-of
+ConferenceQueryResponse/userData userData-set-of
+ConferenceJoinRequest/userData userData-set-of
+ConferenceJoinResponse/userData userData-set-of
+ConferenceInviteRequest/userData userData-set-of
+ConferenceInviteResponse/userData userData-set-of
+#ConferenceAddRequest/userData userData-set-of
+#ConferenceAddResponse/userData userData-set-of
+#ConferenceAssistanceIndication/userData userData-set-of
 
 #.FN_BODY ConnectData/connectPDU VAL_PTR = &next_tvb
     tvbuff_t	*next_tvb = NULL;
@@ -148,15 +143,15 @@ RegistryAllocateHandleResponse/result	AllocateHandleResponseResult
 #.FN_BODY UserData/_item/value VAL_PTR = &next_tvb
     tvbuff_t *next_tvb = NULL;
     tvbuff_t *t124NSIdentifier = (tvbuff_t*)actx->private_data;
-    guint8   *ns = NULL;
+    uint8_t  *ns = NULL;
 
 %(DEFAULT_BODY)s
 
 	if(next_tvb && t124NSIdentifier) {
 
-	ns = tvb_get_string_enc(wmem_packet_scope(), t124NSIdentifier, 0, tvb_reported_length(t124NSIdentifier), ENC_ASCII|ENC_NA);
+	ns = tvb_get_string_enc(actx->pinfo->pool, t124NSIdentifier, 0, tvb_reported_length(t124NSIdentifier), ENC_ASCII|ENC_NA);
 	if(ns != NULL) {
-		dissector_try_string(t124_ns_dissector_table, ns, next_tvb, actx->pinfo, top_tree, NULL);
+		dissector_try_string_with_data(t124_ns_dissector_table, ns, next_tvb, actx->pinfo, top_tree, false, NULL);
 	}
 	}
 
@@ -169,7 +164,7 @@ RegistryAllocateHandleResponse/result	AllocateHandleResponseResult
 
 	if(next_tvb) {
 
-	     dissector_try_uint(t124_sd_dissector_table, channelId, next_tvb, actx->pinfo, top_tree);
+	     dissector_try_uint_with_data(t124_sd_dissector_table, channelId, next_tvb, actx->pinfo, top_tree, false, NULL);
 
 	}
 
@@ -190,7 +185,7 @@ RegistryAllocateHandleResponse/result	AllocateHandleResponseResult
 
 
 #.FN_BODY DomainMCSPDU  VAL_PTR = &domainmcs_value
-  	gint domainmcs_value;
+	int domainmcs_value;
 
 %(DEFAULT_BODY)s
 	switch(domainmcs_value) {
@@ -201,7 +196,8 @@ RegistryAllocateHandleResponse/result	AllocateHandleResponseResult
 		/* Do nothing */
 		break;
 	default:
-		col_prepend_fstr(%(ACTX)s->pinfo->cinfo, COL_INFO, "%%s ", val_to_str(domainmcs_value, t124_DomainMCSPDU_vals, "Unknown"));
+                col_prepend_fstr(%(ACTX)s->pinfo->cinfo, COL_INFO, "%%s ",
+                                 val_to_str_const(domainmcs_value, t124_DomainMCSPDU_vals, "Unknown"));
 		break;
 	}
 

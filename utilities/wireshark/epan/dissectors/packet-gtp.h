@@ -4,39 +4,27 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_GTP_H
 #define __PACKET_GTP_H
 /*structure used to track responses to requests using sequence number*/
 typedef struct gtp_msg_hash_entry {
-    gboolean is_request;    /*TRUE/FALSE*/
-    guint32 req_frame;      /*frame with request */
+    bool is_request;    /*true/false*/
+    uint32_t req_frame;      /*frame with request */
     nstime_t req_time;      /*req time */
-    guint32 rep_frame;      /*frame with reply */
-    gint seq_nr;			/*sequence number*/
-	guint msgtype; 			/*messagetype*/
+    uint32_t rep_frame;      /*frame with reply */
+    int seq_nr;			/*sequence number*/
+	unsigned msgtype; 			/*messagetype*/
 } gtp_msg_hash_t;
 
 
 typedef struct _gtp_hdr {
-  guint8 flags;  /* GTP header flags */
-  guint8 message; /* Message type */
-  guint16 length; /* Length of header */
-  gint64 teid; /* Tunnel End-point ID */
+  uint8_t flags;  /* GTP header flags */
+  uint8_t message; /* Message type */
+  uint32_t length; /* Length of header */
+  int64_t teid; /* Tunnel End-point ID */
 } gtp_hdr_t;
 
 /* definitions of GTP messages */
@@ -95,8 +83,10 @@ typedef struct _gtp_hdr {
 #define GTP_MSG_FORW_SRNS_CNTXT     0x3A
 #define GTP_MSG_FORW_RELOC_ACK      0x3B
 #define GTP_MSG_FORW_SRNS_CNTXT_ACK 0x3C
+#define GTP_MSG_UE_REG_QUERY_REQ    0x3D
+#define GTP_MSG_UE_REG_QUERY_RESP   0x3E
 /*
- * 61-69 For future use. Shall not be sent. If received,
+ * 63-69 For future use. Shall not be sent. If received,
  * shall be treated as an Unknown message.
  */
 #define GTP_MSG_RAN_INFO_RELAY      70
@@ -144,38 +134,72 @@ typedef struct _gtp_hdr {
 #define GTP_MSG_END_MARKER          0xFE /* 254 */
 #define GTP_MSG_TPDU                0xFF
 
+/* Used by custom dissector */
 extern value_string_ext cause_type_ext;
 
+static const value_string gtp_sel_mode_vals[] = {
+    { 0, "MS or network provided APN, subscription verified" },
+    { 1, "MS provided APN, subscription not verified" },
+    { 2, "Network provided APN, subscription not verified" },
+    { 3, "For future use. Shall not be sent. If received, shall be interpreted as the value 2 (Network provided APN, subscription not verified)" },
+    { 0, NULL }
+};
+
+/** GTP header extension info
+* This structure is used to transfer infotmation to users of the "gtp.hdr_ext" dissector table
+*/
+
+typedef struct gtp_hdr_ext_info {
+    proto_item* hdr_ext_item; /* The item created when adding the type of header to the tree,
+                               * used to put the name in the tree
+                               */
+} gtp_hdr_ext_info_t;
+
+
+
 /* Data structures to keep track of sessions */
-extern guint32 gtp_session_count;
-extern gboolean g_gtp_session;
+extern uint32_t gtp_session_count;
+extern bool g_gtp_session;
 
 typedef struct session_args {
     wmem_list_t *teid_list;
     wmem_list_t *ip_list;
-    guint32 last_teid;
+    uint32_t last_teid;
     address last_ip;
-    guint8 last_cause;
+    uint8_t last_cause;
+    const char *imsi;
 } session_args_t;
 
 /* Relation between frame -> session */
-extern GHashTable* session_table;
+extern wmem_map_t* session_table;
+
+/* Relation between session -> IMSI */
+extern wmem_map_t* session_imsi;
 
 /* Relation between <teid,ip> -> frame */
-extern wmem_tree_t* frame_tree;
+extern wmem_map_t* frame_map;
 
-guint32 get_frame(address ip, guint32 teid, guint32 *frame);
+uint32_t get_frame(address ip, uint32_t teid, uint32_t *frame);
 
-void remove_frame_info(guint32 *f);
+void remove_frame_info(uint32_t f);
 
-void add_gtp_session(guint32 frame, guint32 session);
+void add_gtp_session(uint32_t frame, uint32_t session);
 
-gboolean teid_exists(guint32 teid, wmem_list_t *teid_list);
+bool teid_exists(uint32_t teid, wmem_list_t *teid_list);
 
-gboolean ip_exists(address ip, wmem_list_t *ip_list);
+bool ip_exists(address ip, wmem_list_t *ip_list);
 
-void fill_map(wmem_list_t *teid_list, wmem_list_t *ip_list, guint32 frame);
+void fill_map(wmem_list_t *teid_list, wmem_list_t *ip_list, uint32_t frame);
 
-gboolean is_cause_accepted(guint8 cause, guint32 version);
+bool is_cause_accepted(uint8_t cause, uint32_t version);
+
+/* Add teid map to IMSI from ex NGAP where both are known. */
+void gtp_add_teid_imsi(uint32_t teid, const char* imsi);
+
+WS_DLL_PUBLIC
+int decode_qos_umts(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, const char * qos_str, uint8_t type);
+
+WS_DLL_PUBLIC
+void dissect_gtp_uli(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, session_args_t * args _U_);
 
 #endif /* __PACKET_GTP_H*/

@@ -3,35 +3,29 @@
  * Wiretap Library
  * Copyright (c) 1998 by Gilbert Ramirez <gram@alumni.rice.edu>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
+#include "libpcap.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include "wtap-int.h"
+#include "wtap_module.h"
 #include "file_wrappers.h"
+#include "required_file_handlers.h"
 #include "pcap-common.h"
 #include "pcap-encap.h"
-#include "libpcap.h"
-#include "erf.h"
+#include "erf-common.h"
+#include <wsutil/ws_assert.h>
 
-/* See source to the "libpcap" library for information on the "libpcap"
-   file format. */
+/*
+ * The "libpcap" file format was determined by reading the "libpcap" code;
+ * wiretap reads the "libpcap" file format with its own code, rather than
+ * using the "libpcap" library's code to read it.
+ * See source to the "libpcap" library for information on the "libpcap"
+ *  file format.
+ */
 
 /*
  * Private per-wtap_t data needed to read a file.
@@ -42,68 +36,163 @@ typedef enum {
 	MAYBE_SWAPPED
 } swapped_type_t;
 
+/*
+ * Variants of pcap, some distinguished by the magic number and some,
+ * alas, not.
+ *
+ * (Don't do that.  Srsly.)
+ */
+typedef enum {
+	PCAP,		/* OG pcap */
+	PCAP_NSEC,	/* PCAP with nanosecond resolution */
+	PCAP_AIX,	/* AIX pcap */
+	PCAP_SS990417,	/* Modified, from 1999-04-17 patch */
+	PCAP_SS990915,	/* Modified, from 1999-09-15 patch */
+	PCAP_SS991029,	/* Modified, from 1999-10-29 patch */
+	PCAP_NOKIA,	/* Nokia pcap */
+	PCAP_UNKNOWN	/* Unknown as yet */
+} pcap_variant_t;
+
 typedef struct {
-	gboolean byte_swapped;
+	bool byte_swapped;
 	swapped_type_t lengths_swapped;
-	guint16	version_major;
-	guint16	version_minor;
+	uint16_t version_major;
+	uint16_t version_minor;
+	pcap_variant_t variant;
+	int fcs_len;
 	void *encap_priv;
 } libpcap_t;
 
-/* On some systems, the FDDI MAC addresses are bit-swapped. */
-#if !defined(ultrix) && !defined(__alpha) && !defined(__bsdi__)
-#define BIT_SWAPPED_MAC_ADDRS
-#endif
+/* Try to read the first few records of the capture file. */
+static bool libpcap_try_variants(wtap *wth, const pcap_variant_t *variants,
+    size_t n_variants, int *err, char **err_info);
+static int libpcap_try_variant(wtap *wth, pcap_variant_t variant,
+    int *err, char **err_info);
+typedef enum {
+	TRY_REC_KEEP_READING,	/* Keep reading records */
+	TRY_REC_EOF,		/* EOF - no ore records to read */
+	TRY_REC_ERROR		/* Error - give up */
+} try_record_ret_t;
+static try_record_ret_t libpcap_try_record(wtap *wth, pcap_variant_t variant,
+    int *figure_of_meritp, int *err, char **err_info);
 
-/* Try to read the first two records of the capture file. */
-static int libpcap_try(wtap *wth, int *err, gchar **err_info);
-static int libpcap_try_header(wtap *wth, FILE_T fh, int *err, gchar **err_info,
-    struct pcaprec_ss990915_hdr *hdr);
-
-static gboolean libpcap_read(wtap *wth, int *err, gchar **err_info,
-    gint64 *data_offset);
-static gboolean libpcap_seek_read(wtap *wth, gint64 seek_off,
-    struct wtap_pkthdr *phdr, Buffer *buf, int *err, gchar **err_info);
-static gboolean libpcap_read_packet(wtap *wth, FILE_T fh,
-    struct wtap_pkthdr *phdr, Buffer *buf, int *err, gchar **err_info);
-static gboolean libpcap_dump(wtap_dumper *wdh, const struct wtap_pkthdr *phdr,
-    const guint8 *pd, int *err, gchar **err_info);
-static int libpcap_read_header(wtap *wth, FILE_T fh, int *err, gchar **err_info,
+static bool libpcap_read(wtap *wth, wtap_rec *rec,
+    int *err, char **err_info, int64_t *data_offset);
+static bool libpcap_seek_read(wtap *wth, int64_t seek_off,
+    wtap_rec *rec, int *err, char **err_info);
+static bool libpcap_read_packet(wtap *wth, FILE_T fh,
+    wtap_rec *rec, int *err, char **err_info);
+static bool libpcap_read_header(wtap *wth, FILE_T fh, int *err, char **err_info,
     struct pcaprec_ss990915_hdr *hdr);
 static void libpcap_close(wtap *wth);
 
-wtap_open_return_val libpcap_open(wtap *wth, int *err, gchar **err_info)
+static bool libpcap_dump_pcap(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info);
+static bool libpcap_dump_pcap_nsec(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info);
+static bool libpcap_dump_pcap_ss990417(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info);
+static bool libpcap_dump_pcap_ss990915(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info);
+static bool libpcap_dump_pcap_ss991029(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info);
+static bool libpcap_dump_pcap_nokia(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info);
+
+/*
+ * Subfields of the field containing the link-layer header type.
+ *
+ * Link-layer header types are assigned for both pcap and
+ * pcapng, and the same value must work with both.  In pcapng,
+ * the link-layer header type field in an Interface Description
+ * Block is 16 bits, so only the bottommost 16 bits of the
+ * link-layer header type in a pcap file can be used for the
+ * header type value.
+ *
+ * In libpcap, the upper 16 bits, from the top down, are divided into:
+ *
+ *    A 4-bit "FCS length" field, to allow the FCS length to
+ *    be specified, just as it can be specified in the if_fcslen
+ *    field of the pcapng IDB.  The field is in units of 16 bits,
+ *    i.e. 1 means 16 bits of FCS, 2 means 32 bits of FCS, etc..
+ *
+ *    A reserved bit, which must be zero.
+ *
+ *    An "FCS length present" flag; if 0, the "FCS length" field
+ *    should be ignored, and if 1, the "FCS length" field should
+ *    be used.
+ *
+ *    10 reserved bits, which must be zero.  They were originally
+ *    intended to be used as a "class" field, allowing additional
+ *    classes of link-layer types to be defined, with a class value
+ *    of 0 indicating that the link-layer type is a LINKTYPE_ value.
+ *    A value of 0x224 was, at one point, used by NetBSD to define
+ *    "raw" packet types, with the lower 16 bits containing a
+ *    NetBSD AF_ value; see
+ *
+ *        https://marc.info/?l=tcpdump-workers&m=98296750229149&w=2
+ *
+ *    It's unknown whether those were ever used in capture files,
+ *    or if the intent was just to use it as a link-layer type
+ *    for BPF programs; NetBSD's libpcap used to support them in
+ *    the BPF code generator, but it no longer does so.  If it
+ *    was ever used in capture files, or if classes other than
+ *    "LINKTYPE_ value" are ever useful in capture files, we could
+ *    re-enable this, and use the reserved 16 bits following the
+ *    link-layer type in pcapng files to hold the class information
+ *    there.  (Note, BTW, that LINKTYPE_RAW/DLT_RAW is now being
+ *    interpreted by libpcap, tcpdump, and Wireshark as "raw IP",
+ *    including both IPv4 and IPv6, with the version number in the
+ *    header being checked to see which it is, not just "raw IPv4";
+ *    there are LINKTYPE_IPV4/DLT_IPV4 and LINKTYPE_IPV6/DLT_IPV6
+ *    values if "these are IPv{4,6} and only IPv{4,6} packets"
+ *    types are needed.)
+ *
+ *    Or we might be able to use it for other purposes.
+ */
+#define LT_LINKTYPE(x)			((x) & 0x0000FFFF)
+#define LT_RESERVED1(x)			((x) & 0x03FF0000)
+#define LT_FCS_LENGTH_PRESENT(x)	((x) & 0x04000000)
+#define LT_FCS_LENGTH(x)		(((x) & 0xF0000000) >> 28)
+#define LT_FCS_DATALINK_EXT(x)		(((x) & 0xF) << 28) | 0x04000000)
+
+/*
+ * Private file type/subtype values; pcap and nanosecond-resolution
+ * pcap are imported from wiretap/file_access.c.
+ */
+static int pcap_aix_file_type_subtype = -1;
+static int pcap_ss990417_file_type_subtype = -1;
+static int pcap_ss990915_file_type_subtype = -1;
+static int pcap_ss991029_file_type_subtype = -1;
+static int pcap_nokia_file_type_subtype = -1;
+
+/*
+ * pcap variants that use the standard magic number.
+ */
+static const pcap_variant_t variants_standard[] = {
+	PCAP,
+	PCAP_SS990417,
+	PCAP_NOKIA
+};
+#define N_VARIANTS_STANDARD	G_N_ELEMENTS(variants_standard)
+
+/*
+ * pcap variants that use the modified magic number.
+ */
+static const pcap_variant_t variants_modified[] = {
+	PCAP_SS991029,
+	PCAP_SS990915
+};
+#define N_VARIANTS_MODIFIED	G_N_ELEMENTS(variants_modified)
+
+wtap_open_return_val libpcap_open(wtap *wth, int *err, char **err_info)
 {
-	guint32 magic;
+	uint32_t magic;
 	struct pcap_hdr hdr;
-	gboolean byte_swapped;
-	gboolean modified;
-	gboolean aix;
-	int file_encap;
-	gint64 first_packet_offset;
+	bool byte_swapped;
+	pcap_variant_t variant;
 	libpcap_t *libpcap;
-	static const int subtypes_modified[] = {
-		WTAP_FILE_TYPE_SUBTYPE_PCAP_SS991029,
-		WTAP_FILE_TYPE_SUBTYPE_PCAP_SS990915
-	};
-#define N_SUBTYPES_MODIFIED	G_N_ELEMENTS(subtypes_modified)
-	static const int subtypes_standard[] = {
-		WTAP_FILE_TYPE_SUBTYPE_PCAP,
-		WTAP_FILE_TYPE_SUBTYPE_PCAP_SS990417,
-		WTAP_FILE_TYPE_SUBTYPE_PCAP_NOKIA
-	};
-#define N_SUBTYPES_STANDARD	G_N_ELEMENTS(subtypes_standard)
-	static const int subtypes_nsec[] = {
-		WTAP_FILE_TYPE_SUBTYPE_PCAP_NSEC
-	};
-#define N_SUBTYPES_NSEC		G_N_ELEMENTS(subtypes_nsec)
-#define MAX_FIGURES_OF_MERIT \
-	MAX(MAX(N_SUBTYPES_MODIFIED, N_SUBTYPES_STANDARD), N_SUBTYPES_NSEC)
-	int figures_of_merit[MAX_FIGURES_OF_MERIT];
-	const int *subtypes;
-	int n_subtypes;
-	int best_subtype;
-	int i;
+	bool skip_ixia_extra = false;
 
 	/* Read in the number that should be at the start of a "libpcap" file */
 	if (!wtap_read_bytes(wth->fh, &magic, sizeof magic, err, err_info)) {
@@ -116,45 +205,107 @@ wtap_open_return_val libpcap_open(wtap *wth, int *err, gchar **err_info)
 
 	case PCAP_MAGIC:
 		/* Host that wrote it has our byte order, and was running
-		   a program using either standard or ss990417 libpcap. */
-		byte_swapped = FALSE;
-		modified = FALSE;
-		wth->file_tsprec = WTAP_TSPREC_USEC;
-		break;
-
-	case PCAP_MODIFIED_MAGIC:
-		/* Host that wrote it has our byte order, and was running
-		   a program using either ss990915 or ss991029 libpcap. */
-		byte_swapped = FALSE;
-		modified = TRUE;
-		wth->file_tsprec = WTAP_TSPREC_USEC;
+		   a program using either standard or ss990417 libpcap,
+		   or maybe it was written by AIX.  That means we don't
+		   yet know the variant. */
+		byte_swapped = false;
+		variant = PCAP_UNKNOWN;
 		break;
 
 	case PCAP_SWAPPED_MAGIC:
 		/* Host that wrote it has a byte order opposite to ours,
 		   and was running a program using either standard or
-		   ss990417 libpcap. */
-		byte_swapped = TRUE;
-		modified = FALSE;
-		wth->file_tsprec = WTAP_TSPREC_USEC;
+		   ss990417 libpcap, or maybe it was written by AIX.
+		   That means we don't yet know the variant. */
+		byte_swapped = true;
+		variant = PCAP_UNKNOWN;
+		break;
+
+	case PCAP_IXIAHW_MAGIC:
+		/* Ixia "lcap" hardware-capture variant, in our
+		   byte order, in which there's an extra 4-byte
+		   field at the end of the file header, containing
+		   the total number of bytes of packet records in
+		   the file, i.e. the file size minus the file header
+		   size.  It's otherwise like standard pcap, with
+		   nanosecond time-stamp resolution.
+
+		   See issue #14073. */
+		skip_ixia_extra = true;
+		byte_swapped = false;
+		variant = PCAP_NSEC;
+		break;
+
+	case PCAP_SWAPPED_IXIAHW_MAGIC:
+		/* Ixia "lcap" hardware-capture variant, in a byte
+		   order opposite to ours, in which there's an extra
+		   4-byte field at the end of the file header,
+		   containing the total number of bytes of packet
+		   records in the file, i.e. the file size minus
+		   the file header size.  It's otherwise like standard
+		   pcap with nanosecond time-stamp resolution.
+
+		   See issue #14073. */
+		skip_ixia_extra = true;
+		byte_swapped = true;
+		variant = PCAP_NSEC;
+		break;
+
+	case PCAP_IXIASW_MAGIC:
+		/* Ixia "lcap" software-capture variant, in our
+		   byte order, in which there's an extra 4-byte
+		   field at the end of the file header, containing
+		   the total number of bytes of packet records in
+		   the file, i.e. the file size minus the file header
+		   size.  It's otherwise like standard pcap, with
+		   microsecond time-stamp resolution.
+
+		   See issue #14073. */
+		skip_ixia_extra = true;
+		byte_swapped = false;
+		variant = PCAP;
+		break;
+
+	case PCAP_SWAPPED_IXIASW_MAGIC:
+		/* Ixia "lcap" software-capture variant, in a byte
+		   order opposite to ours, in which there's an extra
+		   4-byte field at the end of the file header,
+		   containing the total number of bytes of packet
+		   records in the file, i.e. the file size minus
+		   the file header size.  It's otherwise like standard
+		   pcap with microsecond time-stamp resolution.
+
+		   See issue #14073. */
+		skip_ixia_extra = true;
+		byte_swapped = true;
+		variant = PCAP;
+		break;
+
+	case PCAP_MODIFIED_MAGIC:
+		/* Host that wrote it has our byte order, and was running
+		   a program using either ss990915 or ss991029 libpcap.
+		   That means we don't yet know the variant; there's
+		   no obvious default, so default to "unknown". */
+		byte_swapped = false;
+		variant = PCAP_UNKNOWN;
 		break;
 
 	case PCAP_SWAPPED_MODIFIED_MAGIC:
 		/* Host that wrote it out has a byte order opposite to
 		   ours, and was running a program using either ss990915
-		   or ss991029 libpcap. */
-		byte_swapped = TRUE;
-		modified = TRUE;
-		wth->file_tsprec = WTAP_TSPREC_USEC;
+		   or ss991029 libpcap.  That means we don't yet know
+		   the variant; there's no obvious default, so default
+		   to "unknown". */
+		byte_swapped = true;
+		variant = PCAP_UNKNOWN;
 		break;
 
 	case PCAP_NSEC_MAGIC:
 		/* Host that wrote it has our byte order, and was writing
 		   the file in a format similar to standard libpcap
 		   except that the time stamps have nanosecond resolution. */
-		byte_swapped = FALSE;
-		modified = FALSE;
-		wth->file_tsprec = WTAP_TSPREC_NSEC;
+		byte_swapped = false;
+		variant = PCAP_NSEC;
 		break;
 
 	case PCAP_SWAPPED_NSEC_MAGIC:
@@ -162,9 +313,8 @@ wtap_open_return_val libpcap_open(wtap *wth, int *err, gchar **err_info)
 		   ours, and was writing the file in a format similar to
 		   standard libpcap except that the time stamps have
 		   nanosecond resolution. */
-		byte_swapped = TRUE;
-		modified = FALSE;
-		wth->file_tsprec = WTAP_TSPREC_NSEC;
+		byte_swapped = true;
+		variant = PCAP_NSEC;
 		break;
 
 	default:
@@ -175,9 +325,17 @@ wtap_open_return_val libpcap_open(wtap *wth, int *err, gchar **err_info)
 	/* Read the rest of the header. */
 	if (!wtap_read_bytes(wth->fh, &hdr, sizeof hdr, err, err_info))
 		return WTAP_OPEN_ERROR;
+	if (skip_ixia_extra) {
+		/*
+		 * Skip 4 bytes of size information in the file header.
+		 */
+		if (!wtap_read_bytes(wth->fh, NULL, 4, err, err_info))
+			return WTAP_OPEN_ERROR;
+	}
 
 	if (byte_swapped) {
 		/* Byte-swap the header fields about which we care. */
+		magic = GUINT32_SWAP_LE_BE(magic);
 		hdr.version_major = GUINT16_SWAP_LE_BE(hdr.version_major);
 		hdr.version_minor = GUINT16_SWAP_LE_BE(hdr.version_minor);
 		hdr.snaplen = GUINT32_SWAP_LE_BE(hdr.snaplen);
@@ -186,93 +344,25 @@ wtap_open_return_val libpcap_open(wtap *wth, int *err, gchar **err_info)
 	if (hdr.version_major < 2) {
 		/* We only support version 2.0 and later. */
 		*err = WTAP_ERR_UNSUPPORTED;
-		*err_info = g_strdup_printf("pcap: major version %u unsupported",
+		*err_info = ws_strdup_printf("pcap: major version %u unsupported",
 		    hdr.version_major);
 		return WTAP_OPEN_ERROR;
 	}
 
-	/*
-	 * AIX's non-standard tcpdump uses a minor version number of 2.
-	 * Unfortunately, older versions of libpcap might have used
-	 * that as well.
-	 *
-	 * The AIX libpcap uses RFC 1573 ifType values rather than
-	 * DLT_ values in the header; the ifType values for LAN devices
-	 * are:
-	 *
-	 *	Ethernet	6
-	 *	Token Ring	9
-	 *	FDDI		15
-	 *
-	 * which correspond to DLT_IEEE802 (used for Token Ring),
-	 * DLT_PPP, and DLT_SLIP_BSDOS, respectively.  The ifType value
-	 * for a loopback interface is 24, which currently isn't
-	 * used by any version of libpcap I know about (and, as
-	 * tcpdump.org are assigning DLT_ values above 100, and
-	 * NetBSD started assigning values starting at 50, and
-	 * the values chosen by other libpcaps appear to stop at
-	 * 19, it's probably not going to be used by any libpcap
-	 * in the future).
-	 *
-	 * We shall assume that if the minor version number is 2, and
-	 * the network type is 6, 9, 15, or 24, that it's AIX libpcap.
-	 *
-	 * I'm assuming those older versions of libpcap didn't
-	 * use DLT_IEEE802 for Token Ring, and didn't use DLT_SLIP_BSDOS
-	 * as that came later.  It may have used DLT_PPP, however, in
-	 * which case we're out of luck; we assume it's Token Ring
-	 * in AIX libpcap rather than PPP in standard libpcap, as
-	 * you're probably more likely to be handing an AIX libpcap
-	 * token-ring capture than an old (pre-libpcap 0.4) PPP capture
-	 * to Wireshark.
-	 */
-	aix = FALSE;	/* assume it's not AIX */
-	if (hdr.version_major == 2 && hdr.version_minor == 2) {
-		switch (hdr.network) {
-
-		case 6:
-			hdr.network = 1;	/* DLT_EN10MB, Ethernet */
-			aix = TRUE;
-			break;
-
-		case 9:
-			hdr.network = 6;	/* DLT_IEEE802, Token Ring */
-			aix = TRUE;
-			break;
-
-		case 15:
-			hdr.network = 10;	/* DLT_FDDI, FDDI */
-			aix = TRUE;
-			break;
-
-		case 24:
-			hdr.network = 0;	/* DLT_NULL, loopback */
-			aix = TRUE;
-			break;
-		}
-	}
-
-	file_encap = wtap_pcap_encap_to_wtap_encap(hdr.network);
-	if (file_encap == WTAP_ENCAP_UNKNOWN) {
-		*err = WTAP_ERR_UNSUPPORTED;
-		*err_info = g_strdup_printf("pcap: network type %u unknown or unsupported",
-		    hdr.network);
-		return WTAP_OPEN_ERROR;
-	}
-
 	/* This is a libpcap file */
-	libpcap = (libpcap_t *)g_malloc(sizeof(libpcap_t));
-	libpcap->byte_swapped = byte_swapped;
-	libpcap->version_major = hdr.version_major;
-	libpcap->version_minor = hdr.version_minor;
-	libpcap->encap_priv = NULL;
-	wth->priv = (void *)libpcap;
 	wth->subtype_read = libpcap_read;
 	wth->subtype_seek_read = libpcap_seek_read;
 	wth->subtype_close = libpcap_close;
-	wth->file_encap = file_encap;
 	wth->snapshot_length = hdr.snaplen;
-
+	libpcap = g_new0(libpcap_t, 1);
+	wth->priv = (void *)libpcap;
+	/*
+	 * Fill in the information we already know or can determine
+	 * at this point, so the private data is usable by the code
+	 * that tries reading packets as a heuristic to guess the
+	 * variant.
+	 */
+	libpcap->byte_swapped = byte_swapped;
 	/* In file format version 2.3, the order of the "incl_len" and
 	   "orig_len" fields in the per-packet header was reversed,
 	   in order to match the BPF header layout.
@@ -288,306 +378,583 @@ wtap_open_return_val libpcap_open(wtap *wth, int *err, gchar **err_info)
 	   as well.
 
 	   In addition, DG/UX's tcpdump uses version 543.0, and writes
-	   the two fields in the pre-2.3 order. */
+	   the two fields in the pre-2.3 order.
+
+	   Furthermore, files that don't have a magic number of 2.4
+	   were not used by the variant forms of pcap that need
+	   heuristic tests to detect. */
 	switch (hdr.version_major) {
 
 	case 2:
-		if (hdr.version_minor < 3)
+		if (hdr.version_minor < 3) {
 			libpcap->lengths_swapped = SWAPPED;
-		else if (hdr.version_minor == 3)
+			variant = PCAP;
+		} else if (hdr.version_minor == 3) {
 			libpcap->lengths_swapped = MAYBE_SWAPPED;
-		else
+			variant = PCAP;
+		} else
 			libpcap->lengths_swapped = NOT_SWAPPED;
 		break;
 
 	case 543:
 		libpcap->lengths_swapped = SWAPPED;
+		variant = PCAP;
 		break;
 
 	default:
 		libpcap->lengths_swapped = NOT_SWAPPED;
 		break;
 	}
-
+	libpcap->version_major = hdr.version_major;
+	libpcap->version_minor = hdr.version_minor;
 	/*
-	 * Is this AIX format?
+	 * Check whether this is an AIX pcap before we convert the
+	 * link-layer type in the header file to an encapsulation,
+	 * because AIX pcaps use RFC 1573 ifType values in the header.
+	 *
+	 * AIX pcap files use the standard magic number, and have a
+	 * major and minor version of 2.
+	 *
+	 * Unfortunately, that's also true of older versions of libpcap,
+	 * so we need to do some heuristics to try to identify AIX pcap
+	 * files.
 	 */
-	if (aix) {
+	if (magic ==  PCAP_MAGIC && hdr.version_major == 2 &&
+	    hdr.version_minor == 2) {
 		/*
-		 * Yes.  Skip all the tests for other mutant formats,
-		 * and for the ERF link-layer header type, and set the
-		 * precision to nanosecond precision.
+		 * The AIX libpcap uses RFC 1573 ifType values rather
+		 * than LINKTYPE_/DLT_ values in the header; the ifType
+		 * values for LAN devices are:
+		 *
+		 *	Ethernet	6
+		 *	Token Ring	9
+		 *	FDDI		15
+		 *
+		 * which correspond to LINKTYPE_IEEE802_5/DLT_IEEE802 (used
+		 * for Token Ring), LINKTYPE_PPP/DLT_PPP, and
+		 * LINKTYPE_SLIP_BSDOS/DLT_SLIP_BSDOS, respectively, and
+		 * the ifType value for a loopback interface is 24, which
+		 * currently isn't used by any version of libpcap I know
+		 * about (and, as tcpdump.org are assigning LINKTYPE_/DLT_
+		 * values above 100, and NetBSD started assigning values
+		 * starting at 50, and the values chosen by other libpcaps
+		 * appear to stop at 19, it's probably not going to be used
+		 * by any libpcap in the future).
+		 *
+		 * So we shall assume that if the network type is 6, 9, 15,
+		 * or 24 it's AIX libpcap.
+		 *
+		 * We also assume those older versions of libpcap didn't use
+		 * LINKTYPE_IEEE802_5/DLT_IEEE802 for Token Ring, and didn't
+		 * use LINKTYPE_SLIP_BSDOS/DLT_SLIP_BSDOS as that came later.
+		 * It may have used LINKTYPE_PPP/DLT_PPP, however, in which
+		 * case we're out of luck; we assume it's Token Ring in AIX
+		 * libpcap rather than PPP in standard libpcap, as you're
+		 * probably more likely to be handing an AIX libpcap token-
+		 *ring capture than an old (pre-libpcap 0.4) PPP capture to
+		 * Wireshark.
+		 *
+		 * AIX pcap files didn't use the upper 16 bits, so we don't
+		 * need to ignore them here - they'll be 0.
 		 */
-		wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_PCAP_AIX;
-		wth->file_tsprec = WTAP_TSPREC_NSEC;
-		return WTAP_OPEN_MINE;
-	}
+		switch (hdr.network) {
 
-	/*
-	 * No.  Let's look at the header for the first record,
-	 * and see if, interpreting it as a standard header (if the
-	 * magic number was standard) or a modified header (if the
-	 * magic number was modified), the position where it says the
-	 * header for the *second* record is contains a corrupted header.
-	 *
-	 * If so, then:
-	 *
-	 *	If this file had the standard magic number, it may be
-	 *	an ss990417 capture file - in that version of Alexey's
-	 *	patch, the packet header format was changed but the
-	 *	magic number wasn't, and, alas, Red Hat appear to have
-	 *	picked up that version of the patch for RH 6.1, meaning
-	 *	RH 6.1 has a tcpdump that writes out files that can't
-	 *	be read by any software that expects non-modified headers
-	 *	if the magic number isn't the modified magic number (e.g.,
-	 *	any normal version of tcpdump, and Wireshark if we don't
-	 *	do this gross heuristic).
-	 *
-	 *	If this file had the modified magic number, it may be
-	 *	an ss990915 capture file - in that version of Alexey's
-	 *	patch, the magic number was changed, but the record
-	 *	header had some extra fields, and, alas, SuSE appear
-	 *	to have picked up that version of the patch for SuSE
-	 *	6.3, meaning that programs expecting the standard per-
-	 *	packet header in captures with the modified magic number
-	 *	can't read dumps from its tcpdump.
-	 *
-	 * Oh, and if it has the standard magic number, it might, instead,
-	 * be a Nokia libpcap file, so we may need to try that if
-	 * neither normal nor ss990417 headers work.
-	 */
-	if (modified) {
-		/*
-		 * Well, we have the magic number from Alexey's
-		 * later two patches.  Try the subtypes for that.
-		 */
-		subtypes = subtypes_modified;
-		n_subtypes = N_SUBTYPES_MODIFIED;
-	} else {
-		if (wth->file_tsprec == WTAP_TSPREC_NSEC) {
-			/*
-			 * We have nanosecond-format libpcap's magic
-			 * number.  Try the subtypes for that.
-			 */
-			subtypes = subtypes_nsec;
-			n_subtypes = N_SUBTYPES_NSEC;
-		} else {
-			/*
-			 * We have the regular libpcap magic number.
-			 * Try the subtypes for that.
-			 */
-			subtypes = subtypes_standard;
-			n_subtypes = N_SUBTYPES_STANDARD;
+		case 6:
+			hdr.network = 1;	/* LINKTYPE_EN10MB, Ethernet */
+			variant = PCAP_AIX;
+			break;
+
+		case 9:
+			hdr.network = 6;	/* LINKTYPE_IEEE802_5, Token Ring */
+			variant = PCAP_AIX;
+			break;
+
+		case 15:
+			hdr.network = 10;	/* LINKTYPE_FDDI, FDDI */
+			variant = PCAP_AIX;
+			break;
+
+		case 24:
+			hdr.network = 0;	/* LINKTYPE_NULL, loopback */
+			variant = PCAP_AIX;
+			break;
 		}
 	}
 
 	/*
-	 * Try all the subtypes.
+	 * Check the main reserved field.
 	 */
+	if (LT_RESERVED1(hdr.network) != 0) {
+		*err = WTAP_ERR_UNSUPPORTED;
+		*err_info = ws_strdup_printf("pcap: network type reserved field not zero (0x%08x)",
+		    LT_RESERVED1(hdr.network));
+		return WTAP_OPEN_ERROR;
+	}
+
+	/*
+	 * Map the link-layer type from the "network" field in
+	 * the header to a Wiretap encapsulation.
+	 */
+	wth->file_encap = wtap_pcap_encap_to_wtap_encap(LT_LINKTYPE(hdr.network));
+	if (wth->file_encap == WTAP_ENCAP_UNKNOWN) {
+		*err = WTAP_ERR_UNSUPPORTED;
+		*err_info = ws_strdup_printf("pcap: network type %u unknown or unsupported",
+		    hdr.network);
+		return WTAP_OPEN_ERROR;
+	}
+
+	/*
+	 * Extract the FCS information, if present.
+	 */
+	libpcap->fcs_len = -1;
+	if (LT_FCS_LENGTH_PRESENT(hdr.network)) {
+		/*
+		 * We have an FCS length, in units of 16 bits.
+		 * Convert it to bits.
+		 */
+		libpcap->fcs_len = LT_FCS_LENGTH(hdr.network) * 16;
+	}
+
+	libpcap->encap_priv = NULL;
+
+	/*
+	 * If this file has the standard magic number, it could be
+	 * one of a number of variants, including regular pcap, the
+	 * AIX variant, the ss990417 variant, and a Nokia variant.
+	 * The ss990417 variant is used in, for example, Red Hat 6.1,
+	 * so some versions of AIX, RH 6.1, and some Nokia devices
+	 * write files that can't be read by any software that expects
+	 * standard libpcap packet record headers if the magic number
+	 * is the standard magic number (e.g., any program such as
+	 * tcpdump that uses libpcap, when using the standard libpcap,
+	 * and Wireshark if we don't do the heuristics below).
+	 *
+	 * If this file has the patched magic number, used by the
+	 * ss990915 and ss991029 variants, then it could be either
+	 * of those.  The ss991029 variant uses the same packet
+	 * record header as the ss990417 variant, but the ss990915
+	 * variant uses a packet record header with some additional
+	 * fields and it is used in, for example, SuSE 6.3, so SuSE
+	 * 6.3 writes files that can't be read by any software that
+	 * expects ss990417 packet record headers if the magic number
+	 * is the modified magic number.
+	 *
+	 * So, for the standard and modified magic number:
+	 *
+	 * For the standard magic number, we first do some heuristic
+	 * checks of data from the file header to see if it looks like
+	 * an AIX libpcap file.  If so, we choose PCAP_AIX as the variant,
+	 * and we don't have to do any more guessing.
+	 *
+	 * Otherwise, we determine the variant by, for each variant,
+	 * trying to read the first few packets as if that file were
+	 * in that variant's format, and seeing whether the packet
+	 * record headers make sense.
+	 *
+	 * But don't do the latter if the input is a pipe; that would mean
+	 * the open won't complete until two packets have been written to
+	 * the pipe, unless the pipe is closed after one packet has been
+	 * written, so a program reading from the file won't see the
+	 * first packet until the second packet has been written.
+	 */
+	switch (magic) {
+
+	case PCAP_MAGIC:
+		/*
+		 * Original libpcap magic.
+		 *
+		 * If we still don't know the variant, look at the first
+		 * few packets to see what type of per-packet header they
+		 * have.
+		 *
+		 * Default to PCAP, as that's probably what this is;
+		 * libpcap_try_variants() will just give up if we're
+		 * reading from a pipe.
+		 */
+		if (variant == PCAP_UNKNOWN) {
+			if (wth->ispipe) {
+				/*
+				 * We can't do the heuristics.
+				 * Just go with standard libpcap.
+				 */
+				libpcap->variant = PCAP;
+			} else {
+				/*
+				 * Try the variants that use the standard
+				 * pcap magic number.
+				 */
+				if (!libpcap_try_variants(wth, variants_standard,
+				    N_VARIANTS_STANDARD, err, err_info)) {
+					/*
+					 * File read error.
+					 */
+					return WTAP_OPEN_ERROR;
+				}
+			}
+		} else {
+			/*
+			 * Use the variant we found.
+			 */
+			libpcap->variant = variant;
+		}
+		break;
+
+	case PCAP_MODIFIED_MAGIC:
+		/*
+		 * Modified libpcap magic, from Alexey's later two
+		 * patches.
+		 *
+		 * This might be one of two different flavors of
+		 * pcap file, with different modified per-packet
+		 * headers.
+		 *
+		 * If we're reading from a pipe, we don't have an
+		 * obvious choice to use as a default.
+		 */
+		if (wth->ispipe) {
+			/*
+			 * We can't do the heuristics.
+			 * There's no obvious choice to use as a
+			 * default, so just report an error.
+			 */
+			*err = WTAP_ERR_UNSUPPORTED;
+			*err_info = g_strdup("pcap: that type of pcap file can't be read from a pipe");
+			return WTAP_OPEN_ERROR;
+		} else {
+			/*
+			 * Try the variants that use the modified
+			 * pcap magic number.
+			 */
+			if (!libpcap_try_variants(wth, variants_modified,
+			    N_VARIANTS_MODIFIED, err, err_info)) {
+				/*
+				 * File read error.
+				 */
+				return WTAP_OPEN_ERROR;
+			}
+		}
+		break;
+
+	default:
+		/*
+		 * None of these require heuristics to guess the
+		 * variant; just use the variant we found.
+		 */
+		libpcap->variant = variant;
+		break;
+	}
+
+	/*
+	 * Set the file type and subtype, and handle some variants
+	 * specially.
+	 */
+	switch (libpcap->variant) {
+
+	case PCAP:
+		wth->file_type_subtype = pcap_file_type_subtype;
+		wth->file_tsprec = WTAP_TSPREC_USEC;
+		break;
+
+	case PCAP_NSEC:
+		wth->file_type_subtype = pcap_nsec_file_type_subtype;
+		wth->file_tsprec = WTAP_TSPREC_NSEC;
+		break;
+
+	case PCAP_SS990417:
+		wth->file_type_subtype = pcap_ss990417_file_type_subtype;
+		wth->file_tsprec = WTAP_TSPREC_USEC;
+		break;
+
+	case PCAP_SS990915:
+		wth->file_type_subtype = pcap_ss990915_file_type_subtype;
+		wth->file_tsprec = WTAP_TSPREC_USEC;
+		break;
+
+	case PCAP_SS991029:
+		wth->file_type_subtype = pcap_ss991029_file_type_subtype;
+		wth->file_tsprec = WTAP_TSPREC_USEC;
+		break;
+
+	case PCAP_AIX:
+		wth->file_type_subtype = pcap_aix_file_type_subtype;
+		wth->file_tsprec = WTAP_TSPREC_NSEC;
+		break;
+
+	case PCAP_NOKIA:
+		wth->file_type_subtype = pcap_nokia_file_type_subtype;
+		wth->file_tsprec = WTAP_TSPREC_USEC;
+		/*
+		 * We treat a DLT_ value of 13 specially - it appears
+		 * that in Nokia libpcap format, it's some form of ATM
+		 * with what I suspect is a pseudo-header (even though
+		 * Nokia's IPSO is based on FreeBSD, which #defines
+		 * DLT_SLIP_BSDOS as 13).
+		 *
+		 * Treat 13 as WTAP_ENCAP_ATM_PDUS, rather than as what
+		 * we normally treat it.
+		 */
+		switch (hdr.network) {
+
+		case 13:
+			wth->file_encap = WTAP_ENCAP_ATM_PDUS;
+			break;
+		}
+		break;
+
+	default:
+		ws_assert_not_reached();
+	}
+
+	if (wth->file_encap == WTAP_ENCAP_ERF) {
+		/* Reset the ERF interface lookup table */
+		libpcap->encap_priv = erf_priv_create();
+	} else {
+		/*
+		 * Add an IDB; we don't know how many interfaces were
+		 * involved, so we just say one interface, about which
+		 * we only know the link-layer type, snapshot length,
+		 * and time stamp resolution.
+		 */
+		wtap_add_generated_idb(wth);
+	}
+
+	return WTAP_OPEN_MINE;
+}
+
+static bool libpcap_try_variants(wtap *wth, const pcap_variant_t *variants,
+    size_t n_variants, int *err, char **err_info)
+{
+	libpcap_t *libpcap = (libpcap_t *)wth->priv;
+#define MAX_FIGURES_OF_MERIT \
+	MAX(N_VARIANTS_MODIFIED, N_VARIANTS_STANDARD)
+	int figures_of_merit[MAX_FIGURES_OF_MERIT];
+	int best_variant;
+	int64_t first_packet_offset;
+
 	first_packet_offset = file_tell(wth->fh);
-	for (i = 0; i < n_subtypes; i++) {
-		wth->file_type_subtype = subtypes[i];
-		figures_of_merit[i] = libpcap_try(wth, err, err_info);
+	for (size_t i = 0; i < n_variants; i++) {
+		figures_of_merit[i] = libpcap_try_variant(wth, variants[i],
+		    err, err_info);
 		if (figures_of_merit[i] == -1) {
 			/*
-			 * Well, we couldn't even read it.
-			 * Give up.
+			 * Well, we couldn't even read it.  Give up.
 			 */
-			return WTAP_OPEN_ERROR;
+			return false;
 		}
 		if (figures_of_merit[i] == 0) {
 			/*
 			 * This format doesn't have any issues.
-			 * Put the seek pointer back, and finish.
+			 * Put the seek pointer back, and finish,
+			 * using that format as the subtype.
 			 */
-			if (file_seek(wth->fh, first_packet_offset, SEEK_SET, err) == -1) {
-				return WTAP_OPEN_ERROR;
+			if (file_seek(wth->fh, first_packet_offset, SEEK_SET,
+			    err) == -1) {
+				return false;
 			}
-			goto done;
+			libpcap->variant = variants[i];
+			return true;
 		}
 
 		/*
-		 * OK, we've recorded the figure of merit for this one;
-		 * go back to the first packet and try the next one.
+		 * OK, we've recorded the figure of merit for this
+		 * one; go back to the first packet and try the
+		 * next one.
 		 */
-		if (file_seek(wth->fh, first_packet_offset, SEEK_SET, err) == -1) {
-			return WTAP_OPEN_ERROR;
+		if (file_seek(wth->fh, first_packet_offset, SEEK_SET,
+		    err) == -1) {
+			return false;
 		}
 	}
 
 	/*
 	 * OK, none are perfect; let's see which one is least bad.
 	 */
-	best_subtype = INT_MAX;
-	for (i = 0; i < n_subtypes; i++) {
+	best_variant = INT_MAX;
+	for (size_t i = 0; i < n_variants; i++) {
 		/*
 		 * Is this subtype better than the last one we saw?
 		 */
-		if (figures_of_merit[i] < best_subtype) {
+		if (figures_of_merit[i] < best_variant) {
 			/*
 			 * Yes.  Choose it until we find a better one.
 			 */
-			wth->file_type_subtype = subtypes[i];
-			best_subtype = figures_of_merit[i];
+			libpcap->variant = variants[i];
+			best_variant = figures_of_merit[i];
 		}
 	}
-
-done:
-	/*
-	 * We treat a DLT_ value of 13 specially - it appears that in
-	 * Nokia libpcap format, it's some form of ATM with what I
-	 * suspect is a pseudo-header (even though Nokia's IPSO is
-	 * based on FreeBSD, which #defines DLT_SLIP_BSDOS as 13).
-	 *
-	 * If this is a Nokia capture, treat 13 as WTAP_ENCAP_ATM_PDUS,
-	 * rather than as what we normally treat it.
-	 */
-	if (wth->file_type_subtype == WTAP_FILE_TYPE_SUBTYPE_PCAP_NOKIA &&
-	    hdr.network == 13)
-		wth->file_encap = WTAP_ENCAP_ATM_PDUS;
-
-	if (wth->file_encap == WTAP_ENCAP_ERF) {
-		/*Reset the ERF interface lookup table*/
-		libpcap->encap_priv = erf_priv_create();
-	}
-	return WTAP_OPEN_MINE;
+	return true;
 }
 
-/* Try to read the first two records of the capture file. */
-static int libpcap_try(wtap *wth, int *err, gchar **err_info)
+/*
+ * Maximum number of records to try to read.  Must be >= 2.
+ */
+#define MAX_RECORDS_TO_TRY	3
+
+/* Try to read the first MAX_RECORDS_TO_TRY records of the capture file. */
+static int libpcap_try_variant(wtap *wth, pcap_variant_t variant,
+   int *err, char **err_info)
 {
-	int ret;
+	int figure_of_merit;
+
+	figure_of_merit = 0;
 
 	/*
-	 * pcaprec_ss990915_hdr is the largest header type.
+	 * Attempt to read the MAX_RECORDS_TO_TRY records.
 	 */
-	struct pcaprec_ss990915_hdr first_rec_hdr, second_rec_hdr;
-
-
-	/*
-	 * Attempt to read the first record's header.
-	 */
-	ret = libpcap_try_header(wth, wth->fh, err, err_info, &first_rec_hdr);
-	if (ret == -1) {
-		if (*err == 0 || *err == WTAP_ERR_SHORT_READ) {
-			/*
-			 * EOF or short read - assume the file is in this
-			 * format.
-			 * When our client tries to read the first packet
-			 * they will presumably get the same EOF or short
-			 * read.
-			 */
-			return 0;
-		}
-
-		return ret;
-	}
-	if (ret != 0) {
+	for (unsigned int i = 0; i < MAX_RECORDS_TO_TRY; i++) {
 		/*
-		 * Probably a mismatch; return the figure of merit
-		 * (demerit?).
+		 * Attempt to read this record.
 		 */
-		return ret;
-	}
+		try_record_ret_t try_record_ret;
 
-	/*
-	 * Now skip over the first record's data, under the assumption
-	 * that the header is sane.
-	 */
-	if (file_seek(wth->fh, first_rec_hdr.hdr.incl_len, SEEK_CUR, err) == -1)
-		return -1;
+		try_record_ret = libpcap_try_record(wth, variant,
+		    &figure_of_merit, err, err_info);
 
-	/*
-	 * Now attempt to read the second record's header.
-	 */
-	ret = libpcap_try_header(wth, wth->fh, err, err_info, &second_rec_hdr);
-	if (ret == -1) {
-		if (*err == 0 || *err == WTAP_ERR_SHORT_READ) {
+		if (try_record_ret == TRY_REC_ERROR) {
 			/*
-			 * EOF or short read - assume the file is in this
-			 * format.
-			 * When our client tries to read the second packet
-			 * they will presumably get the same EOF or short
-			 * read.
+			 * Error; return the error indication.
 			 */
-			return 0;
+			return -1;
 		}
-
-		return ret;
+		if (try_record_ret == TRY_REC_EOF) {
+			/*
+			 * Nothing more to read from this file.
+			 */
+			break;
+		}
 	}
 
-	return ret;
+	return figure_of_merit;
 }
 
-/* Read the header of the next packet.
+/* Read the header of the next packet and, if that succeeds, read the
+   data of the next packet.
 
    Return -1 on an I/O error, 0 on success, or a positive number if the
    header looks corrupt.  The higher the positive number, the more things
    are wrong with the header; this is used by the heuristics that try to
    guess what type of file it is, with the type with the fewest problems
    being chosen. */
-static int libpcap_try_header(wtap *wth, FILE_T fh, int *err, gchar **err_info,
-    struct pcaprec_ss990915_hdr *hdr)
+static try_record_ret_t libpcap_try_record(wtap *wth, pcap_variant_t variant,
+    int *figure_of_meritp, int *err, char **err_info)
 {
-	int	ret;
+	libpcap_t *libpcap = (libpcap_t *)wth->priv;
+	struct pcaprec_hdr hdr;
+	/* Fields from PCAP_SS* modified headers */
+	uint32_t ifindex;
+	uint16_t protocol;
+	uint8_t pkt_type;
+	uint32_t nokia_stuff;
+	bool incl_len_ok = true;
 
-	if (!libpcap_read_header(wth, fh, err, err_info, hdr))
-		return -1;
-
-	ret = 0;	/* start out presuming everything's OK */
-	switch (wth->file_type_subtype) {
-
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_NSEC:
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_AIX:
-		/*
-		 * Nanosecond resolution; treat fractions-of-a-second
-		 * values >= 1 000 000 000 as an indication that
-		 * the header format might not be what we think it is.
-		 */
-		if (hdr->hdr.ts_usec >= 1000000000)
-			ret++;
-		break;
-
-	default:
-		/*
-		 * Microsecond resolution; treat fractions-of-a-second
-		 * values >= 1 000 000 as an indication that the header
-		 * format might not be what we think it is.
-		 */
-		if (hdr->hdr.ts_usec >= 1000000)
-			ret++;
-		break;
+	/*
+	 * Read the header, one field at a time.
+	 * First, do the fields that all pcap formats have - the
+	 * time stamp, the captured length, and the original
+	 * length.
+	 */
+	if (!wtap_read_bytes_or_eof(wth->fh, &hdr.ts_sec, 4, err, err_info)) {
+		if (*err == 0) {
+			/*
+			 * EOF - assume the file is in this format.
+			 * This means it doesn't have all the
+			 * records we're trying to read.
+			 */
+			return TRY_REC_EOF;
+		}
+		if (*err == WTAP_ERR_SHORT_READ) {
+			/*
+			 * Short read; this might be a corrupt
+			 * file in this format or might not be
+			 * in this format.  Return a figure of
+			 * merit of 1 more than what we've
+			 * accumulated so far, to note the
+			 * short read in addition to any other
+			 * issues we've found.
+			 */
+			*figure_of_meritp += 1;
+			return TRY_REC_EOF;
+		}
+		/* Hard error. */
+		return TRY_REC_ERROR;
 	}
-	if (hdr->hdr.incl_len > WTAP_MAX_PACKET_SIZE) {
+
+	if (libpcap->byte_swapped) {
+		/* Byte-swap the field. */
+		hdr.ts_sec = GUINT32_SWAP_LE_BE(hdr.ts_sec);
+	}
+
+	if (!wtap_read_bytes(wth->fh, &hdr.ts_usec, 4, err, err_info)) {
+		if (*err == WTAP_ERR_SHORT_READ) {
+			/*
+			 * Short read; this might be a corrupt
+			 * file in this format or might not be
+			 * in this format.  Return a figure of
+			 * merit of 1 more than what we've
+			 * accumulated so far, to note the
+			 * short read in addition to any other
+			 * issues we've found.
+			 */
+			*figure_of_meritp += 1;
+			return TRY_REC_EOF;
+		}
+		/* Hard error. */
+		return TRY_REC_ERROR;
+	}
+
+	if (libpcap->byte_swapped) {
+		/* Byte-swap the field. */
+		hdr.ts_usec = GUINT32_SWAP_LE_BE(hdr.ts_usec);
+	}
+
+	/*
+	 * The only file types for which we have to do variant
+	 * determination by looking at packets have microsecond
+	 * resolution; treat fractions-of-a-second values >= 1 000 000
+	 * as an indication that the header format might not be
+	 * what we think it is.
+	 */
+	if (hdr.ts_usec >= 1000000)
+		*figure_of_meritp += 1;
+
+	if (!wtap_read_bytes(wth->fh, &hdr.incl_len, 4, err, err_info)) {
+		if (*err == WTAP_ERR_SHORT_READ) {
+			/*
+			 * Short read; this might be a corrupt
+			 * file in this format or might not be
+			 * in this format.  Return a figure of
+			 * merit of 1 more than what we've
+			 * accumulated so far, to note the
+			 * short read in addition to any other
+			 * issues we've found.
+			 */
+			*figure_of_meritp += 1;
+			return TRY_REC_EOF;
+		}
+		/* Hard error. */
+		return TRY_REC_ERROR;
+	}
+
+	if (libpcap->byte_swapped) {
+		/* Byte-swap the field. */
+		hdr.incl_len = GUINT32_SWAP_LE_BE(hdr.incl_len);
+	}
+
+	if (hdr.incl_len > wtap_max_snaplen_for_encap(wth->file_encap)) {
 		/*
 		 * Probably either a corrupt capture file or a file
 		 * of a type different from the one we're trying.
 		 */
-		ret++;
+		incl_len_ok = false;
+		*figure_of_meritp += 1;
 	}
 
-	if (hdr->hdr.orig_len > 64*1024*1024) {
-		/*
-		 * In theory I guess the on-the-wire packet size can be
-		 * arbitrarily large, and it can certainly be larger than the
-		 * maximum snapshot length which bounds the snapshot size,
-		 * but any file claiming 64MB in a single packet is *probably*
-		 * corrupt, and treating them as such makes the heuristics
-		 * much more reliable. See, for example,
-		 *
-		 *    https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=9634
-		 *
-		 * (64MB is an arbitrary size at this point).
-		 */
-		ret++;
-	}
-
-	if (hdr->hdr.incl_len > wth->snapshot_length) {
+	if (hdr.incl_len > wth->snapshot_length) {
 	        /*
 	         * This is not a fatal error, and packets that have one
 	         * such packet probably have thousands. For discussion,
 	         * see
-	         * https://www.wireshark.org/lists/wireshark-dev/201307/msg00076.html
+	         * https://lists.wireshark.org/archives/wireshark-dev/201307/msg00076.html
 	         * and related messages.
 	         *
 	         * The packet contents will be copied to a Buffer, which
@@ -598,61 +965,362 @@ static int libpcap_try_header(wtap *wth, FILE_T fh, int *err, gchar **err_info,
 	         * We just treat this as an indication that we might be
 	         * trying the wrong file type here.
 	         */
-		ret++;
+		*figure_of_meritp += 1;
 	}
 
-	if (hdr->hdr.incl_len > hdr->hdr.orig_len) {
+	if (!wtap_read_bytes(wth->fh, &hdr.orig_len, 4, err, err_info)) {
+		if (*err == WTAP_ERR_SHORT_READ) {
+			/*
+			 * Short read; this might be a corrupt
+			 * file in this format or might not be
+			 * in this format.  Return a figure of
+			 * merit of 1 more than what we've
+			 * accumulated so far, to note the
+			 * short read in addition to any other
+			 * issues we've found.
+			 */
+			*figure_of_meritp += 1;
+			return TRY_REC_EOF;
+		}
+		/* Hard error. */
+		return TRY_REC_ERROR;
+	}
+
+	if (libpcap->byte_swapped) {
+		/* Byte-swap the field. */
+		hdr.orig_len = GUINT32_SWAP_LE_BE(hdr.orig_len);
+	}
+
+	if (hdr.orig_len > 128*1024*1024) {
+		/*
+		 * In theory I guess the on-the-wire packet size can be
+		 * arbitrarily large, and it can certainly be larger than the
+		 * maximum snapshot length which bounds the snapshot size,
+		 * but any file claiming 128MB in a single packet is *probably*
+		 * corrupt, and treating them as such makes the heuristics
+		 * much more reliable. See, for example,
+		 *
+		 *    https://gitlab.com/wireshark/wireshark/-/issues/9634
+		 *
+		 * (128MB is an arbitrary size at this point, chosen to be
+		 * large enough for the largest D-Bus packet).
+		 */
+		*figure_of_meritp += 1;
+	}
+
+	if (hdr.incl_len > hdr.orig_len) {
 		/*
 		 * Another hint that this might be the wrong file type.
 		 */
-		ret++;
+		*figure_of_meritp += 1;
 	}
 
-	return ret;
+	/*
+	 * Now check any additional fields that the variant we're
+	 * trying has.
+	 */
+	switch (variant) {
+
+	case PCAP:
+	case PCAP_AIX:
+	case PCAP_NSEC:
+		/* No more fields. */
+		break;
+
+	case PCAP_SS990417:
+	case PCAP_SS991029:
+	case PCAP_SS990915:
+		/* struct pcaprec_modified_hdr */
+
+		/* 32-bit interface index. */
+		if (!wtap_read_bytes(wth->fh, &ifindex, 4, err, err_info)) {
+			if (*err == WTAP_ERR_SHORT_READ) {
+				/*
+				 * Short read; this might be a corrupt
+				 * file in this format or might not be
+				 * in this format.  Return a figure of
+				 * merit of 1 more than what we've
+				 * accumulated so far, to note the
+				 * short read in addition to any other
+				 * issues we've found.
+				 */
+				*figure_of_meritp += 1;
+				return TRY_REC_EOF;
+			}
+			/* Hard error. */
+			return TRY_REC_ERROR;
+		}
+
+		if (libpcap->byte_swapped) {
+			/* Byte-swap the field. */
+			ifindex = GUINT32_SWAP_LE_BE(ifindex);
+		}
+
+		/*
+		 * Make sure it's not too large; those files date
+		 * from an era when a Linux box probably didn't
+		 * have more than 10000 interfaces, so check for
+		 * a value >= 10000.
+		 */
+		if (ifindex > 10000)
+			*figure_of_meritp += 1;
+
+		/*
+		 * 16-bit "Ethernet packet type", which is either an
+		 * Ethertype or one of the internal Linux ETH_P_
+		 * values from linux/if_ether.h.
+		 */
+		if (!wtap_read_bytes(wth->fh, &protocol, 2, err, err_info)) {
+			if (*err == WTAP_ERR_SHORT_READ) {
+				/*
+				 * Short read; this might be a corrupt
+				 * file in this format or might not be
+				 * in this format.  Return a figure of
+				 * merit of 1 more than what we've
+				 * accumulated so far, to note the
+				 * short read in addition to any other
+				 * issues we've found.
+				 */
+				*figure_of_meritp += 1;
+				return TRY_REC_EOF;
+			}
+			/* Hard error. */
+			return TRY_REC_ERROR;
+		}
+
+		if (libpcap->byte_swapped) {
+			/* Byte-swap the field. */
+			protocol = GUINT16_SWAP_LE_BE(protocol);
+		}
+
+		/*
+		 * Valid values are:
+		 *
+		 *   anything >= 0x0600 (normal Ethertype range)
+		 *   0x0060 (ETH_P_LOOP)
+		 *   0x0200 (ETH_P_ECHO)
+		 *   0x0400 (ETH_P_PUP)
+		 *   0x0000 (see in some such captures)
+		 *   0x0001 to 0x0017 ("Non DIX types")
+		 */
+		if (!(protocol >= 0x0600 ||
+		      protocol == 0x0060 ||
+		      protocol == 0x0200 ||
+		      protocol == 0x0400 ||
+		      protocol == 0x0000 ||
+		      (protocol >= 0x0001 && protocol <= 0x0017)))
+			*figure_of_meritp += 1;
+
+		/*
+		 * 8-bit packet type - one of the Linux PACKET_
+		 * types from linux/if_packet.h.  The ones that
+		 * would appear in files from the era in which
+		 * these formats existed (the patches that
+		 * introduced them from are from 1999) are in
+		 * the range 0 through 4; anything else is treated
+		 * as a sign that this is unlikely to be in that
+		 * format.
+		 */
+		if (!wtap_read_bytes(wth->fh, &pkt_type, 1, err, err_info)) {
+			if (*err == WTAP_ERR_SHORT_READ) {
+				/*
+				 * Short read; this might be a corrupt
+				 * file in this format or might not be
+				 * in this format.  Return a figure of
+				 * merit of 1 more than what we've
+				 * accumulated so far, to note the
+				 * short read in addition to any other
+				 * issues we've found.
+				 */
+				*figure_of_meritp += 1;
+				return TRY_REC_EOF;
+			}
+			/* Hard error. */
+			return TRY_REC_ERROR;
+		}
+
+		if (pkt_type > 4)
+			*figure_of_meritp += 1;
+
+		if (variant == PCAP_SS990915) {
+			/*
+			 * 2 8-bit values that are filled in only
+			 * if libpcap is built with SMP debugging,
+			 * fllowed by 3 bytes of 8-bit padding,
+			 * not guaranteed to be zero.
+			 *
+			 * Just skip them.
+			 */
+			if (!wtap_read_bytes(wth->fh, NULL, 5, err, err_info)) {
+				if (*err == WTAP_ERR_SHORT_READ) {
+					/*
+					 * Short read; this might be a corrupt
+					 * file in this format or might not be
+					 * in this format.  Return a figure of
+					 * merit of 1 more than what we've
+					 * accumulated so far, to note the
+					 * short read in addition to any other
+					 * issues we've found.
+					 */
+					*figure_of_meritp += 1;
+					return TRY_REC_EOF;
+				}
+				/* Hard error. */
+				return TRY_REC_ERROR;
+			}
+		} else {
+			/*
+			 * 8-bit structure padding, not guaranteed to be
+			 * zero.
+			 */
+			if (!wtap_read_bytes(wth->fh, NULL, 1, err, err_info)) {
+				if (*err == WTAP_ERR_SHORT_READ) {
+					/*
+					 * Short read; this might be a corrupt
+					 * file in this format or might not be
+					 * in this format.  Return a figure of
+					 * merit of 1 more than what we've
+					 * accumulated so far, to note the
+					 * short read in addition to any other
+					 * issues we've found.
+					 */
+					*figure_of_meritp += 1;
+					return TRY_REC_EOF;
+				}
+				/* Hard error. */
+				return TRY_REC_ERROR;
+			}
+		}
+		break;
+
+	case PCAP_NOKIA:
+		/*
+		 * pcaprec_nokia_hdr.
+		 *
+		 * 4 bytes of unknown stuff.
+		 */
+		if (!wtap_read_bytes(wth->fh, &nokia_stuff, 4, err, err_info)) {
+			if (*err == WTAP_ERR_SHORT_READ) {
+				/*
+				 * Short read; this might be a corrupt
+				 * file in this format or might not be
+				 * in this format.  Return a figure of
+				 * merit of 1 more than what we've
+				 * accumulated so far, to note the
+				 * short read in addition to any other
+				 * issues we've found.
+				 */
+				*figure_of_meritp += 1;
+				return TRY_REC_EOF;
+			}
+			/* Hard error. */
+			return TRY_REC_ERROR;
+		}
+
+		/*
+		 * Values we've seen in this field are of the form
+		 *
+		 *   0xXfbfYZ0W
+		 *
+		 * where X is either 9/1001 or b/1011, Y is either b/1011
+		 * or d/1101, Z is either 6/0110 or 9/1001, and W is either
+		 * 1/0001 or 2/0010.
+		 *
+		 * Check for those values.
+		 */
+#define NOKIA_STUFF_CONSTANT(ns)	((ns) & 0x0FFF00F0)
+#define NOKIA_STUFF_PART_1(ns)		((ns) & 0xF0000000)
+#define NOKIA_STUFF_PART_2(ns)		((ns) & 0x0000F000)
+#define NOKIA_STUFF_PART_3(ns)		((ns) & 0x00000F00)
+#define NOKIA_STUFF_PART_4(ns)		((ns) & 0x0000000F)
+		if (!(NOKIA_STUFF_CONSTANT(nokia_stuff) == 0x0fbf0000 &&
+		      (NOKIA_STUFF_PART_1(nokia_stuff) == 0x90000000 ||
+		       NOKIA_STUFF_PART_1(nokia_stuff) == 0xb0000000) &&
+		      (NOKIA_STUFF_PART_2(nokia_stuff) == 0x0000b000 ||
+		       NOKIA_STUFF_PART_2(nokia_stuff) == 0x0000d000) &&
+		      (NOKIA_STUFF_PART_3(nokia_stuff) == 0x00000600 ||
+		       NOKIA_STUFF_PART_3(nokia_stuff) == 0x00000900) &&
+		      (NOKIA_STUFF_PART_4(nokia_stuff) == 0x00000001 ||
+		       NOKIA_STUFF_PART_4(nokia_stuff) == 0x00000002)))
+			*figure_of_meritp += 1;
+		break;
+
+	default:
+		ws_assert_not_reached();
+	}
+
+	if (!incl_len_ok) {
+		/*
+		 * Might be the wrong file type; stop trying, and give
+		 * this as the figure of merit for this file type.
+		 */
+		return TRY_REC_EOF;
+	}
+
+	/*
+	 * Now skip over the record's data, under the assumption that
+	 * the header is sane.
+	 */
+	if (!wtap_read_bytes(wth->fh, NULL, hdr.incl_len, err, err_info)) {
+		if (*err == WTAP_ERR_SHORT_READ) {
+			/*
+			 * Short read; this might be a corrupt
+			 * file in this format or might not be
+			 * in this format.  Return a figure of
+			 * merit of 1 more than what we've
+			 * accumulated so far, to note the
+			 * short read in addition to any other
+			 * issues we've found.
+			 */
+			*figure_of_meritp += 1;
+			return TRY_REC_EOF;
+		}
+		/* Hard error. */
+		return TRY_REC_ERROR;
+	}
+
+	return TRY_REC_KEEP_READING;
 }
 
 /* Read the next packet */
-static gboolean libpcap_read(wtap *wth, int *err, gchar **err_info,
-    gint64 *data_offset)
+static bool libpcap_read(wtap *wth, wtap_rec *rec,
+    int *err, char **err_info, int64_t *data_offset)
 {
 	*data_offset = file_tell(wth->fh);
 
-	return libpcap_read_packet(wth, wth->fh, &wth->phdr,
-	    wth->frame_buffer, err, err_info);
+	return libpcap_read_packet(wth, wth->fh, rec, err, err_info);
 }
 
-static gboolean
-libpcap_seek_read(wtap *wth, gint64 seek_off, struct wtap_pkthdr *phdr,
-    Buffer *buf, int *err, gchar **err_info)
+static bool
+libpcap_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+    int *err, char **err_info)
 {
 	if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
-		return FALSE;
+		return false;
 
-	if (!libpcap_read_packet(wth, wth->random_fh, phdr, buf, err,
-	    err_info)) {
+	if (!libpcap_read_packet(wth, wth->random_fh, rec, err, err_info)) {
 		if (*err == 0)
 			*err = WTAP_ERR_SHORT_READ;
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
-static gboolean
-libpcap_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
-    Buffer *buf, int *err, gchar **err_info)
+static bool
+libpcap_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
+    int *err, char **err_info)
 {
 	struct pcaprec_ss990915_hdr hdr;
-	guint packet_size;
-	guint orig_size;
+	unsigned packet_size;
+	unsigned orig_size;
 	int phdr_len;
-	libpcap_t *libpcap;
-
-	libpcap = (libpcap_t *)wth->priv;
+	libpcap_t *libpcap = (libpcap_t *)wth->priv;
+	bool is_nokia;
 
 	if (!libpcap_read_header(wth, fh, err, err_info, &hdr))
-		return FALSE;
+		return false;
 
-	if (hdr.hdr.incl_len > WTAP_MAX_PACKET_SIZE) {
+	if (hdr.hdr.incl_len > wtap_max_snaplen_for_encap(wth->file_encap)) {
 		/*
 		 * Probably a corrupt capture file; return an error,
 		 * so that our caller doesn't blow up trying to allocate
@@ -660,10 +1328,11 @@ libpcap_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 		 */
 		*err = WTAP_ERR_BAD_FILE;
 		if (err_info != NULL) {
-			*err_info = g_strdup_printf("pcap: File has %u-byte packet, bigger than maximum of %u",
-			    hdr.hdr.incl_len, WTAP_MAX_PACKET_SIZE);
+			*err_info = ws_strdup_printf("pcap: File has %u-byte packet, bigger than maximum of %u",
+			    hdr.hdr.incl_len,
+			    wtap_max_snaplen_for_encap(wth->file_encap));
 		}
-		return FALSE;
+		return false;
 	}
 
 	packet_size = hdr.hdr.incl_len;
@@ -673,27 +1342,34 @@ libpcap_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 	 * AIX appears to put 3 bytes of padding in front of FDDI
 	 * frames; strip that crap off.
 	 */
-	if (wth->file_type_subtype == WTAP_FILE_TYPE_SUBTYPE_PCAP_AIX &&
+	if (libpcap->variant == PCAP_AIX &&
 	    (wth->file_encap == WTAP_ENCAP_FDDI ||
 	     wth->file_encap == WTAP_ENCAP_FDDI_BITSWAPPED)) {
 		/*
 		 * The packet size is really a record size and includes
 		 * the padding.
 		 */
-		packet_size -= 3;
-		orig_size -= 3;
+		if (ckd_sub(&packet_size, packet_size, 3) ||
+		    ckd_sub(&orig_size, orig_size, 3)) {
+			*err = WTAP_ERR_BAD_FILE;
+			if (err_info != NULL) {
+				*err_info = ws_strdup("pcap: AIX FDDI padding is absent");
+			}
+			return false;
+		}
 
 		/*
 		 * Skip the padding.
 		 */
-		if (!file_skip(fh, 3, err))
-			return FALSE;
+		if (!wtap_read_bytes(fh, NULL, 3, err, err_info))
+			return false;
 	}
 
-	phdr_len = pcap_process_pseudo_header(fh, wth->file_type_subtype,
-	    wth->file_encap, packet_size, TRUE, phdr, err, err_info);
+	is_nokia = (libpcap->variant == PCAP_NOKIA);
+	phdr_len = pcap_process_pseudo_header(fh, is_nokia,
+	    wth->file_encap, packet_size, rec, err, err_info);
 	if (phdr_len < 0)
-		return FALSE;	/* error */
+		return false;	/* error */
 
 	/*
 	 * Don't count any pseudo-header as part of the packet.
@@ -701,78 +1377,80 @@ libpcap_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 	orig_size -= phdr_len;
 	packet_size -= phdr_len;
 
-	phdr->rec_type = REC_TYPE_PACKET;
-	phdr->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
+	wtap_setup_packet_rec(rec, wth->file_encap);
+	rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
+	rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
 
 	/* Update the timestamp, if not already done */
 	if (wth->file_encap != WTAP_ENCAP_ERF) {
-		phdr->ts.secs = hdr.hdr.ts_sec;
-		if (wth->file_tsprec == WTAP_TSPREC_NSEC)
-			phdr->ts.nsecs = hdr.hdr.ts_usec;
+		rec->ts.secs = hdr.hdr.ts_sec;
+		if (libpcap->variant == PCAP_NSEC ||
+		    libpcap->variant == PCAP_AIX)
+			rec->ts.nsecs = hdr.hdr.ts_usec;
 		else
-			phdr->ts.nsecs = hdr.hdr.ts_usec * 1000;
+			rec->ts.nsecs = hdr.hdr.ts_usec * 1000;
 	} else {
 		int interface_id;
 		/* Set interface ID for ERF format */
-		phdr->presence_flags |= WTAP_HAS_INTERFACE_ID;
-		if ((interface_id = erf_populate_interface_from_header((erf_t*) libpcap->encap_priv, wth, &phdr->pseudo_header)) < 0)
-			return FALSE;
+		rec->presence_flags |= WTAP_HAS_INTERFACE_ID;
+		if ((interface_id = erf_populate_interface_from_header((erf_t*) libpcap->encap_priv, wth, &rec->rec_header.packet_header.pseudo_header, err, err_info)) < 0)
+			return false;
 
-		phdr->interface_id = (guint) interface_id;
+		rec->rec_header.packet_header.interface_id = (unsigned) interface_id;
 	}
-	phdr->caplen = packet_size;
-	phdr->len = orig_size;
+	rec->rec_header.packet_header.caplen = packet_size;
+	rec->rec_header.packet_header.len = orig_size;
 
 	/*
 	 * Read the packet data.
 	 */
-	if (!wtap_read_packet_bytes(fh, buf, packet_size, err, err_info))
-		return FALSE;	/* failed */
+	if (!wtap_read_bytes_buffer(fh, &rec->data, packet_size, err, err_info))
+		return false;	/* failed */
 
-	pcap_read_post_process(wth->file_type_subtype, wth->file_encap,
-	    phdr, ws_buffer_start_ptr(buf), libpcap->byte_swapped, -1);
-	return TRUE;
+	pcap_read_post_process(is_nokia, wth->file_encap, rec,
+	    libpcap->byte_swapped, libpcap->fcs_len);
+	return true;
 }
 
 /* Read the header of the next packet.
 
-   Return FALSE on an error, TRUE on success. */
-static int libpcap_read_header(wtap *wth, FILE_T fh, int *err, gchar **err_info,
+   Return false on an error, true on success. */
+static bool
+libpcap_read_header(wtap *wth, FILE_T fh, int *err, char **err_info,
     struct pcaprec_ss990915_hdr *hdr)
 {
 	int bytes_to_read;
-	guint32 temp;
-	libpcap_t *libpcap;
+	uint32_t temp;
+	libpcap_t *libpcap = (libpcap_t *)wth->priv;
 
-	switch (wth->file_type_subtype) {
+	switch (libpcap->variant) {
 
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP:
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_AIX:
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_NSEC:
+	case PCAP:
+	case PCAP_AIX:
+	case PCAP_NSEC:
 		bytes_to_read = sizeof (struct pcaprec_hdr);
 		break;
 
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS990417:
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS991029:
+	case PCAP_SS990417:
+	case PCAP_SS991029:
 		bytes_to_read = sizeof (struct pcaprec_modified_hdr);
 		break;
 
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS990915:
+	case PCAP_SS990915:
 		bytes_to_read = sizeof (struct pcaprec_ss990915_hdr);
 		break;
 
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_NOKIA:
+	case PCAP_NOKIA:
 		bytes_to_read = sizeof (struct pcaprec_nokia_hdr);
 		break;
 
 	default:
-		g_assert_not_reached();
 		bytes_to_read = 0;
+		ws_assert_not_reached();
 	}
 	if (!wtap_read_bytes_or_eof(fh, hdr, bytes_to_read, err, err_info))
-		return FALSE;
+		return false;
 
-	libpcap = (libpcap_t *)wth->priv;
 	if (libpcap->byte_swapped) {
 		/* Byte-swap the record header fields. */
 		hdr->hdr.ts_sec = GUINT32_SWAP_LE_BE(hdr->hdr.ts_sec);
@@ -804,12 +1482,12 @@ static int libpcap_read_header(wtap *wth, FILE_T fh, int *err, gchar **err_info,
 		break;
 	}
 
-	return TRUE;
+	return true;
 }
 
 /* Returns 0 if we could write the specified encapsulation type,
    an error indication otherwise. */
-int libpcap_dump_can_write_encap(int encap)
+static int libpcap_dump_can_write_encap(int encap)
 {
 	/* Per-packet encapsulations aren't supported. */
 	if (encap == WTAP_ENCAP_PER_PACKET)
@@ -821,47 +1499,13 @@ int libpcap_dump_can_write_encap(int encap)
 	return 0;
 }
 
-/* Returns TRUE on success, FALSE on failure; sets "*err" to an error code on
-   failure */
-gboolean libpcap_dump_open(wtap_dumper *wdh, int *err)
+static bool libpcap_dump_write_file_header(wtap_dumper *wdh, uint32_t magic,
+    int *err)
 {
-	guint32 magic;
 	struct pcap_hdr file_hdr;
 
-	/* This is a libpcap file */
-	wdh->subtype_write = libpcap_dump;
-
-	/* Write the file header. */
-	switch (wdh->file_type_subtype) {
-
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP:
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS990417:	/* modified, but with the old magic, sigh */
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_NOKIA:	/* Nokia libpcap of some sort */
-		magic = PCAP_MAGIC;
-		wdh->tsprecision = WTAP_TSPREC_USEC;
-		break;
-
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS990915:	/* new magic, extra crap */
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS991029:
-		magic = PCAP_MODIFIED_MAGIC;
-		wdh->tsprecision = WTAP_TSPREC_USEC;
-		break;
-
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_NSEC:		/* same as WTAP_FILE_TYPE_SUBTYPE_PCAP, but nsec precision */
-		magic = PCAP_NSEC_MAGIC;
-		wdh->tsprecision = WTAP_TSPREC_NSEC;
-		break;
-
-	default:
-		/* We should never get here - our open routine
-		   should only get called for the types above. */
-		*err = WTAP_ERR_UNWRITABLE_FILE_TYPE;
-		return FALSE;
-	}
-
 	if (!wtap_dump_file_write(wdh, &magic, sizeof magic, err))
-		return FALSE;
-	wdh->bytes_dumped += sizeof magic;
+		return false;
 
 	/* current "libpcap" format is 2.4 */
 	file_hdr.version_major = 2;
@@ -877,130 +1521,84 @@ gboolean libpcap_dump_open(wtap_dumper *wdh, int *err)
 	 *
 	 * A snapshot length of 0, inside Wiretap, means "snapshot length
 	 * unknown"; if the snapshot length supplied to us is 0, we make
-	 * the snapshot length in the header file WTAP_MAX_PACKET_SIZE.
+	 * the snapshot length in the header file the maximum for the
+	 * link-layer type we'll be writing.
 	 */
-	file_hdr.snaplen = (wdh->snaplen != 0) ? wdh->snaplen :
-						 WTAP_MAX_PACKET_SIZE;
-	file_hdr.network = wtap_wtap_encap_to_pcap_encap(wdh->encap);
+	file_hdr.snaplen = (wdh->snaplen != 0) ? (unsigned)wdh->snaplen :
+						 wtap_max_snaplen_for_encap(wdh->file_encap);
+	file_hdr.network = wtap_wtap_encap_to_pcap_encap(wdh->file_encap);
 	if (!wtap_dump_file_write(wdh, &file_hdr, sizeof file_hdr, err))
-		return FALSE;
-	wdh->bytes_dumped += sizeof file_hdr;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
-/* Write a record for a packet to a dump file.
-   Returns TRUE on success, FALSE on failure. */
-static gboolean libpcap_dump(wtap_dumper *wdh,
-	const struct wtap_pkthdr *phdr,
-	const guint8 *pd, int *err, gchar **err_info _U_)
+/* Good old fashioned pcap.
+   Returns true on success, false on failure; sets "*err" to an error code on
+   failure */
+static bool
+libpcap_dump_open_pcap(wtap_dumper *wdh, int *err, char **err_info _U_)
 {
-	const union wtap_pseudo_header *pseudo_header = &phdr->pseudo_header;
-	struct pcaprec_ss990915_hdr rec_hdr;
-	size_t hdr_size;
-	int phdrsize;
+	/* This is a libpcap file */
+	wdh->subtype_write = libpcap_dump_pcap;
 
-	phdrsize = pcap_get_phdr_size(wdh->encap, pseudo_header);
+	/* Write the file header. */
+	return libpcap_dump_write_file_header(wdh, PCAP_MAGIC, err);
+}
 
-	/* We can only write packet records. */
-	if (phdr->rec_type != REC_TYPE_PACKET) {
-		*err = WTAP_ERR_UNWRITABLE_REC_TYPE;
-		return FALSE;
-	}
+/* Like classic pcap, but with nanosecond resolution.
+   Returns true on success, false on failure; sets "*err" to an error code on
+   failure */
+static bool
+libpcap_dump_open_pcap_nsec(wtap_dumper *wdh, int *err, char **err_info _U_)
+{
+	/* This is a nanosecond-resolution libpcap file */
+	wdh->subtype_write = libpcap_dump_pcap_nsec;
 
-	/* Don't write anything we're not willing to read. */
-	if (phdr->caplen + phdrsize > WTAP_MAX_PACKET_SIZE) {
-		*err = WTAP_ERR_PACKET_TOO_LARGE;
-		return FALSE;
-	}
+	/* Write the file header. */
+	return libpcap_dump_write_file_header(wdh, PCAP_NSEC_MAGIC, err);
+}
 
-	rec_hdr.hdr.ts_sec = (guint32) phdr->ts.secs;
-	if(wdh->tsprecision == WTAP_TSPREC_NSEC) {
-		rec_hdr.hdr.ts_usec = phdr->ts.nsecs;
-	} else {
-		rec_hdr.hdr.ts_usec = phdr->ts.nsecs / 1000;
-	}
-	rec_hdr.hdr.incl_len = phdr->caplen + phdrsize;
-	rec_hdr.hdr.orig_len = phdr->len + phdrsize;
+/* Modified, but with the old magic, sigh.
+   Returns true on success, false on failure; sets "*err" to an error code on
+   failure */
+static bool
+libpcap_dump_open_pcap_ss990417(wtap_dumper *wdh, int *err,
+    char **err_info _U_)
+{
+	/* This is a modified-by-patch-SS990417 libpcap file */
+	wdh->subtype_write = libpcap_dump_pcap_ss990417;
 
-	if (rec_hdr.hdr.incl_len > WTAP_MAX_PACKET_SIZE) {
-		*err = WTAP_ERR_BAD_FILE;
-		return FALSE;
-	}
+	/* Write the file header. */
+	return libpcap_dump_write_file_header(wdh, PCAP_MAGIC, err);
+}
 
-	switch (wdh->file_type_subtype) {
+/* New magic, extra crap.
+   Returns true on success, false on failure; sets "*err" to an error code on
+   failure */
+static bool
+libpcap_dump_open_pcap_ss990915(wtap_dumper *wdh, int *err,
+    char **err_info _U_)
+{
+	/* This is a modified-by-patch-SS990915 libpcap file */
+	wdh->subtype_write = libpcap_dump_pcap_ss990915;
 
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP:
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_NSEC:
-		hdr_size = sizeof (struct pcaprec_hdr);
-		break;
+	/* Write the file header. */
+	return libpcap_dump_write_file_header(wdh, PCAP_MODIFIED_MAGIC, err);
+}
 
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS990417:	/* modified, but with the old magic, sigh */
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS991029:
-		/* XXX - what should we supply here?
+/* Same magic as SS990915, *different* extra crap, sigh.
+   Returns true on success, false on failure; sets "*err" to an error code on
+   failure */
+static bool
+libpcap_dump_open_pcap_ss991029(wtap_dumper *wdh, int *err,
+    char **err_info _U_)
+{
+	/* This is a modified-by-patch-SS991029 libpcap file */
+	wdh->subtype_write = libpcap_dump_pcap_ss991029;
 
-		   Alexey's "libpcap" looks up the interface in the system's
-		   interface list if "ifindex" is non-zero, and prints
-		   the interface name.  It ignores "protocol", and uses
-		   "pkt_type" to tag the packet as "host", "broadcast",
-		   "multicast", "other host", "outgoing", or "none of the
-		   above", but that's it.
-
-		   If the capture we're writing isn't a modified or
-		   RH 6.1 capture, we'd have to do some work to
-		   generate the packet type and interface index - and
-		   we can't generate the interface index unless we
-		   just did the capture ourselves in any case.
-
-		   I'm inclined to continue to punt; systems other than
-		   those with the older patch can read standard "libpcap"
-		   files, and systems with the older patch, e.g. RH 6.1,
-		   will just have to live with this. */
-		rec_hdr.ifindex = 0;
-		rec_hdr.protocol = 0;
-		rec_hdr.pkt_type = 0;
-		hdr_size = sizeof (struct pcaprec_modified_hdr);
-		break;
-
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_SS990915:	/* new magic, extra crap at the end */
-		rec_hdr.ifindex = 0;
-		rec_hdr.protocol = 0;
-		rec_hdr.pkt_type = 0;
-		rec_hdr.cpu1 = 0;
-		rec_hdr.cpu2 = 0;
-		hdr_size = sizeof (struct pcaprec_ss990915_hdr);
-		break;
-
-	case WTAP_FILE_TYPE_SUBTYPE_PCAP_NOKIA:	/* old magic, extra crap at the end */
-		/* restore the "mysterious stuff" that came with the packet */
-		memcpy(&rec_hdr.ifindex, pseudo_header->nokia.stuff, 4);
-		/* not written */
-		rec_hdr.protocol = 0;
-		rec_hdr.pkt_type = 0;
-		rec_hdr.cpu1 = 0;
-		rec_hdr.cpu2 = 0;
-		hdr_size = sizeof (struct pcaprec_nokia_hdr);
-		break;
-
-	default:
-		/* We should never get here - our open routine
-		   should only get called for the types above. */
-		g_assert_not_reached();
-		*err = WTAP_ERR_UNWRITABLE_FILE_TYPE;
-		return FALSE;
-	}
-
-	if (!wtap_dump_file_write(wdh, &rec_hdr, hdr_size, err))
-		return FALSE;
-	wdh->bytes_dumped += hdr_size;
-
-	if (!pcap_write_phdr(wdh, wdh->encap, pseudo_header, err))
-		return FALSE;
-
-	if (!wtap_dump_file_write(wdh, pd, phdr->caplen, err))
-		return FALSE;
-	wdh->bytes_dumped += phdr->caplen;
-	return TRUE;
+	/* Write the file header. */
+	return libpcap_dump_write_file_header(wdh, PCAP_MODIFIED_MAGIC, err);
 }
 
 static void libpcap_close(wtap *wth)
@@ -1021,8 +1619,362 @@ static void libpcap_close(wtap *wth)
 	}
 }
 
+/* Nokia libpcap of some sort.
+   Returns true on success, false on failure; sets "*err" to an error code on
+   failure */
+static bool
+libpcap_dump_open_pcap_nokia(wtap_dumper *wdh, int *err, char **err_info _U_)
+{
+	/* This is a Nokia libpcap file */
+	wdh->subtype_write = libpcap_dump_pcap_nokia;
+
+	/* Write the file header. */
+	return libpcap_dump_write_file_header(wdh, PCAP_MAGIC, err);
+}
+
+static bool
+libpcap_dump_write_packet(wtap_dumper *wdh, const wtap_rec *rec,
+    struct pcaprec_hdr *hdr, size_t hdr_size, int *err, char **err_info)
+{
+	const union wtap_pseudo_header *pseudo_header = &rec->rec_header.packet_header.pseudo_header;
+	unsigned phdrsize;
+
+	phdrsize = pcap_get_phdr_size(wdh->file_encap, pseudo_header);
+
+	/* We can only write packet records. */
+	if (rec->rec_type != REC_TYPE_PACKET) {
+		*err = WTAP_ERR_UNWRITABLE_REC_TYPE;
+		*err_info = wtap_unwritable_rec_type_err_string(rec);
+		return false;
+	}
+
+	/*
+	 * Make sure this packet doesn't have a link-layer type that
+	 * differs from the one for the file.
+	 */
+	if (wdh->file_encap != rec->rec_header.packet_header.pkt_encap) {
+		*err = WTAP_ERR_ENCAP_PER_PACKET_UNSUPPORTED;
+		return false;
+	}
+
+	/*
+	 * Don't write anything we're not willing to read.
+	 * (The cast is to prevent an overflow.)
+	 */
+	if ((uint64_t)rec->rec_header.packet_header.caplen + phdrsize > wtap_max_snaplen_for_encap(wdh->file_encap)) {
+		*err = WTAP_ERR_PACKET_TOO_LARGE;
+		return false;
+	}
+
+	hdr->incl_len = rec->rec_header.packet_header.caplen + phdrsize;
+	hdr->orig_len = rec->rec_header.packet_header.len + phdrsize;
+
+	if (!wtap_dump_file_write(wdh, hdr, hdr_size, err))
+		return false;
+
+	if (!pcap_write_phdr(wdh, wdh->file_encap, pseudo_header, err))
+		return false;
+
+	if (!wtap_dump_file_write(wdh, ws_buffer_start_ptr(&rec->data),
+	    rec->rec_header.packet_header.caplen, err))
+		return false;
+	return true;
+}
+
+/* Good old fashioned pcap.
+   Write a record for a packet to a dump file.
+   Returns true on success, false on failure. */
+static bool
+libpcap_dump_pcap(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info)
+{
+	struct pcaprec_hdr rec_hdr;
+
+	/*
+	 * Some code that reads libpcap files may handle time
+	 * stamps as unsigned, but most of it probably handles
+	 * them as signed.
+	 */
+	if (rec->ts.secs < 0 || rec->ts.secs > INT32_MAX) {
+		*err = WTAP_ERR_TIME_STAMP_NOT_SUPPORTED;
+		return false;
+	}
+	rec_hdr.ts_sec = (uint32_t) rec->ts.secs;
+	rec_hdr.ts_usec = rec->ts.nsecs / 1000;
+	return libpcap_dump_write_packet(wdh, rec, &rec_hdr, sizeof rec_hdr,
+	    err, err_info);
+}
+
+/* Like classic pcap, but with nanosecond resolution.
+   Write a record for a packet to a dump file.
+   Returns true on success, false on failure. */
+static bool
+libpcap_dump_pcap_nsec(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info)
+{
+	struct pcaprec_hdr rec_hdr;
+
+	/*
+	 * Some code that reads libpcap files may handle time
+	 * stamps as unsigned, but most of it probably handles
+	 * them as signed.
+	 */
+	if (rec->ts.secs < 0 || rec->ts.secs > INT32_MAX) {
+		*err = WTAP_ERR_TIME_STAMP_NOT_SUPPORTED;
+		return false;
+	}
+	rec_hdr.ts_sec = (uint32_t) rec->ts.secs;
+	rec_hdr.ts_usec = rec->ts.nsecs;
+	return libpcap_dump_write_packet(wdh, rec, &rec_hdr, sizeof rec_hdr,
+	    err, err_info);
+}
+
+/* Modified, but with the old magic, sigh.
+   Write a record for a packet to a dump file.
+   Returns true on success, false on failure. */
+static bool
+libpcap_dump_pcap_ss990417(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info)
+{
+	struct pcaprec_modified_hdr rec_hdr;
+
+	/*
+	 * Some code that reads libpcap files may handle time
+	 * stamps as unsigned, but most of it probably handles
+	 * them as signed.
+	 */
+	if (rec->ts.secs < 0 || rec->ts.secs > INT32_MAX) {
+		*err = WTAP_ERR_TIME_STAMP_NOT_SUPPORTED;
+		return false;
+	}
+	rec_hdr.hdr.ts_sec = (uint32_t) rec->ts.secs;
+	rec_hdr.hdr.ts_usec = rec->ts.nsecs / 1000;
+	/* XXX - what should we supply here?
+
+	   Alexey's "libpcap" looks up the interface in the system's
+	   interface list if "ifindex" is non-zero, and prints
+	   the interface name.  It ignores "protocol", and uses
+	   "pkt_type" to tag the packet as "host", "broadcast",
+	   "multicast", "other host", "outgoing", or "none of the
+	   above", but that's it.
+
+	   If the capture we're writing isn't a modified or
+	   RH 6.1 capture, we'd have to do some work to
+	   generate the packet type and interface index - and
+	   we can't generate the interface index unless we
+	   just did the capture ourselves in any case.
+
+	   I'm inclined to continue to punt; systems other than
+	   those with the older patch can read standard "libpcap"
+	   files, and systems with the older patch, e.g. RH 6.1,
+	   will just have to live with this. */
+	rec_hdr.ifindex = 0;
+	rec_hdr.protocol = 0;
+	rec_hdr.pkt_type = 0;
+	return libpcap_dump_write_packet(wdh, rec, &rec_hdr.hdr, sizeof rec_hdr,
+	    err, err_info);
+}
+
+/* New magic, extra crap.
+   Write a record for a packet to a dump file.
+   Returns true on success, false on failure. */
+static bool
+libpcap_dump_pcap_ss990915(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info)
+{
+	struct pcaprec_ss990915_hdr rec_hdr;
+
+	/*
+	 * Some code that reads libpcap files may handle time
+	 * stamps as unsigned, but most of it probably handles
+	 * them as signed.
+	 */
+	if (rec->ts.secs < 0 || rec->ts.secs > INT32_MAX) {
+		*err = WTAP_ERR_TIME_STAMP_NOT_SUPPORTED;
+		return false;
+	}
+	rec_hdr.hdr.ts_sec = (uint32_t) rec->ts.secs;
+	rec_hdr.hdr.ts_usec = rec->ts.nsecs / 1000;
+	rec_hdr.ifindex = 0;
+	rec_hdr.protocol = 0;
+	rec_hdr.pkt_type = 0;
+	rec_hdr.cpu1 = 0;
+	rec_hdr.cpu2 = 0;
+	return libpcap_dump_write_packet(wdh, rec, &rec_hdr.hdr, sizeof rec_hdr,
+	    err, err_info);
+}
+
+/* Same magic as SS990915, *different* extra crap, sigh.
+   Write a record for a packet to a dump file.
+   Returns true on success, false on failure. */
+static bool
+libpcap_dump_pcap_ss991029(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info)
+{
+	struct pcaprec_modified_hdr rec_hdr;
+
+	/*
+	 * Some code that reads libpcap files may handle time
+	 * stamps as unsigned, but most of it probably handles
+	 * them as signed.
+	 */
+	if (rec->ts.secs < 0 || rec->ts.secs > INT32_MAX) {
+		*err = WTAP_ERR_TIME_STAMP_NOT_SUPPORTED;
+		return false;
+	}
+	rec_hdr.hdr.ts_sec = (uint32_t) rec->ts.secs;
+	rec_hdr.hdr.ts_usec = rec->ts.nsecs / 1000;
+	/* XXX - what should we supply here?
+
+	   Alexey's "libpcap" looks up the interface in the system's
+	   interface list if "ifindex" is non-zero, and prints
+	   the interface name.  It ignores "protocol", and uses
+	   "pkt_type" to tag the packet as "host", "broadcast",
+	   "multicast", "other host", "outgoing", or "none of the
+	   above", but that's it.
+
+	   If the capture we're writing isn't a modified or
+	   RH 6.1 capture, we'd have to do some work to
+	   generate the packet type and interface index - and
+	   we can't generate the interface index unless we
+	   just did the capture ourselves in any case.
+
+	   I'm inclined to continue to punt; systems other than
+	   those with the older patch can read standard "libpcap"
+	   files, and systems with the older patch, e.g. RH 6.1,
+	   will just have to live with this. */
+	rec_hdr.ifindex = 0;
+	rec_hdr.protocol = 0;
+	rec_hdr.pkt_type = 0;
+	return libpcap_dump_write_packet(wdh, rec, &rec_hdr.hdr, sizeof rec_hdr,
+	    err, err_info);
+}
+
+/* Nokia libpcap of some sort.
+   Write a record for a packet to a dump file.
+   Returns true on success, false on failure. */
+static bool
+libpcap_dump_pcap_nokia(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info)
+{
+	struct pcaprec_nokia_hdr rec_hdr;
+	const union wtap_pseudo_header *pseudo_header = &rec->rec_header.packet_header.pseudo_header;
+
+	/*
+	 * Some code that reads libpcap files may handle time
+	 * stamps as unsigned, but most of it probably handles
+	 * them as signed.
+	 */
+	if (rec->ts.secs < 0 || rec->ts.secs > INT32_MAX) {
+		*err = WTAP_ERR_TIME_STAMP_NOT_SUPPORTED;
+		return false;
+	}
+	rec_hdr.hdr.ts_sec = (uint32_t) rec->ts.secs;
+	rec_hdr.hdr.ts_usec = rec->ts.nsecs / 1000;
+	/* restore the "mysterious stuff" that came with the packet */
+	memcpy(rec_hdr.stuff, pseudo_header->nokia.stuff, 4);
+	return libpcap_dump_write_packet(wdh, rec, &rec_hdr.hdr, sizeof rec_hdr,
+	    err, err_info);
+}
+
+static const struct supported_block_type pcap_blocks_supported[] = {
+	/*
+	 * We support packet blocks, with no comments or other options.
+	 */
+	{ WTAP_BLOCK_PACKET, MULTIPLE_BLOCKS_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info pcap_info = {
+	/* Gianluca Varenni suggests that we add "deprecated" to the description. */
+	"Wireshark/tcpdump/... - pcap", "pcap", "pcap", "cap;dmp",
+	false, BLOCKS_SUPPORTED(pcap_blocks_supported),
+	libpcap_dump_can_write_encap, libpcap_dump_open_pcap, NULL
+};
+
+static const struct file_type_subtype_info pcap_nsec_info = {
+	"Wireshark/tcpdump/... - nanosecond pcap", "nsecpcap", "pcap", "cap;dmp",
+	false, BLOCKS_SUPPORTED(pcap_blocks_supported),
+	libpcap_dump_can_write_encap, libpcap_dump_open_pcap_nsec, NULL
+};
+
+static const struct file_type_subtype_info pcap_aix_info = {
+	"AIX tcpdump - pcap", "aixpcap", "pcap", "cap;dmp",
+	false, BLOCKS_SUPPORTED(pcap_blocks_supported),
+	NULL, NULL, NULL
+};
+
+static const struct file_type_subtype_info pcap_ss990417_info = {
+	"RedHat 6.1 tcpdump - pcap", "rh6_1pcap", "pcap", "cap;dmp",
+	false, BLOCKS_SUPPORTED(pcap_blocks_supported),
+	libpcap_dump_can_write_encap, libpcap_dump_open_pcap_ss990417, NULL
+};
+
+static const struct file_type_subtype_info pcap_ss990915_info = {
+	"SuSE 6.3 tcpdump - pcap", "suse6_3pcap", "pcap", "cap;dmp",
+	false, BLOCKS_SUPPORTED(pcap_blocks_supported),
+	libpcap_dump_can_write_encap, libpcap_dump_open_pcap_ss990915, NULL
+};
+
+static const struct file_type_subtype_info pcap_ss991029_info = {
+	"Modified tcpdump - pcap", "modpcap", "pcap", "cap;dmp",
+	false, BLOCKS_SUPPORTED(pcap_blocks_supported),
+	libpcap_dump_can_write_encap, libpcap_dump_open_pcap_ss991029, NULL
+};
+
+static const struct file_type_subtype_info pcap_nokia_info = {
+	"Nokia tcpdump - pcap", "nokiapcap", "pcap", "cap;dmp",
+	false, BLOCKS_SUPPORTED(pcap_blocks_supported),
+	libpcap_dump_can_write_encap, libpcap_dump_open_pcap_nokia, NULL
+};
+
+void register_pcap(void)
+{
+	pcap_file_type_subtype = wtap_register_file_type_subtype(&pcap_info);
+	pcap_nsec_file_type_subtype = wtap_register_file_type_subtype(&pcap_nsec_info);
+	pcap_aix_file_type_subtype = wtap_register_file_type_subtype(&pcap_aix_info);
+	pcap_ss990417_file_type_subtype = wtap_register_file_type_subtype(&pcap_ss990417_info);
+	pcap_ss990915_file_type_subtype = wtap_register_file_type_subtype(&pcap_ss990915_info);
+	pcap_ss991029_file_type_subtype = wtap_register_file_type_subtype(&pcap_ss991029_info);
+	pcap_nokia_file_type_subtype = wtap_register_file_type_subtype(&pcap_nokia_info);
+
+	/*
+	 * We now call the libpcap file format just pcap, but we allow
+	 * the various variants of it to be specified using names
+	 * containing "libpcap" as well as "pcap", for backwards
+	 * compatibility.
+	 *
+	 * Register names for that purpose.
+	 */
+	wtap_register_compatibility_file_subtype_name("libpcap", "pcap");
+	wtap_register_compatibility_file_subtype_name("nseclibpcap", "nsecpcap");
+	wtap_register_compatibility_file_subtype_name("aixlibpcap", "aixpcap");
+	wtap_register_compatibility_file_subtype_name("modlibpcap", "modpcap");
+	wtap_register_compatibility_file_subtype_name("nokialibpcap", "nokiapcap");
+	wtap_register_compatibility_file_subtype_name("rh6_1libpcap", "rh6_1pcap");
+	wtap_register_compatibility_file_subtype_name("suse6_3libpcap", "suse6_3pcap");
+
+	/*
+	 * Register names for backwards compatibility with the
+	 * wtap_filetypes table in Lua.
+	 */
+	wtap_register_backwards_compatibility_lua_name("PCAP",
+	    pcap_file_type_subtype);
+	wtap_register_backwards_compatibility_lua_name("PCAP_NSEC",
+	    pcap_nsec_file_type_subtype);
+	wtap_register_backwards_compatibility_lua_name("PCAP_AIX",
+	    pcap_aix_file_type_subtype);
+	wtap_register_backwards_compatibility_lua_name("PCAP_SS990417",
+	    pcap_ss990417_file_type_subtype);
+	wtap_register_backwards_compatibility_lua_name("PCAP_SS990915",
+	    pcap_ss990915_file_type_subtype);
+	wtap_register_backwards_compatibility_lua_name("PCAP_SS991029",
+	    pcap_ss991029_file_type_subtype);
+	wtap_register_backwards_compatibility_lua_name("PCAP_NOKIA",
+	    pcap_nokia_file_type_subtype);
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -66,6 +66,14 @@
     <key name="test-array" type="ai">
       <default>[0,1,2,3,4,5]</default>
     </key>
+    <key name="test-dict" type="a{sau}">
+      <default>
+      {
+        "AC": [0,0, 0,0,0,0,0,0],
+        "IV": [0,0, 0,0,0,0,0,0]
+      }
+      </default>
+    </key>
   </schema>
 
   <schema id="org.gtk.test.localized" path="/tests/localized/" gettext-domain="test">
@@ -74,6 +82,9 @@
     </key>
     <key name="backspace" type="s">
       <default l10n="messages" context="keyboard label">"BackSpace"</default>
+    </key>
+    <key name="midnight" type="s">
+      <default l10n="time">"12:00 AM"</default>
     </key>
   </schema>
 
@@ -108,6 +119,9 @@
     <key name="double" type="d">
       <default>0</default>
     </key>
+    <key name="handle" type="h">
+      <default>0</default>
+    </key>
     <key name="string" type="s">
       <default>""</default>
     </key>
@@ -122,6 +136,10 @@
     </key>
     <key name="flags" flags="org.gtk.test.TestFlags">
       <default>['mourning', 'laughing']</default>
+    </key>
+    <key name="range" type='u'>
+      <default>33</default>
+      <range min="2" max="44"/>
     </key>
   </schema>
 
@@ -198,6 +216,12 @@
     <override name="int32">42</override>
     <key name='another-int32' type='i'>
       <default>0</default>
+    </key>
+  </schema>
+
+  <schema id="org.gtk.test.per-desktop" path="/tests/per-desktop/">
+    <key name="desktop" type="s">
+      <default>"GNOME"</default>
     </key>
   </schema>
 

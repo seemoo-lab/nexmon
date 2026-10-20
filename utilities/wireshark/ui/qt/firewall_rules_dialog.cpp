@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include <config.h>
@@ -34,10 +22,10 @@
 #include "wsutil/file_util.h"
 #include "wsutil/utf8_entities.h"
 
-#include "wireshark_application.h"
+#include "main_application.h"
+#include "ui/qt/widgets/wireshark_file_dialog.h"
 
 #include <QClipboard>
-#include <QFileDialog>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTextCursor>
@@ -96,7 +84,7 @@ void FirewallRulesDialog::updateWidgets()
     QString rule_hint = firewall_product_rule_hint(prod_);
     QString rule_line;
 
-    rule_line = QString("%1 %2 rules for %3, packet %4.")
+    rule_line = QStringLiteral("%1 %2 rules for %3, packet %4.")
             .arg(comment_pfx)
             .arg(firewall_product_name(prod_))
             .arg(file_name_)
@@ -139,21 +127,21 @@ void FirewallRulesDialog::updateWidgets()
 }
 
 #define ADDR_BUF_LEN 200
-void FirewallRulesDialog::addRule(QString description, syntax_func rule_func, address *addr, guint32 port)
+void FirewallRulesDialog::addRule(QString description, syntax_func rule_func, address *addr, uint32_t port)
 {
     if (!rule_func) return;
 
     char addr_buf[ADDR_BUF_LEN];
     QString comment_pfx = firewall_product_comment_prefix(prod_);
     GString *rule_str = g_string_new("");
-    gboolean inbound = ui->inboundCheckBox->isChecked();
-    gboolean deny = ui->denyCheckBox->isChecked();
+    bool inbound = ui->inboundCheckBox->isChecked();
+    bool deny = ui->denyCheckBox->isChecked();
 
     address_to_str_buf(addr, addr_buf, ADDR_BUF_LEN);
     rule_func(rule_str, addr_buf, port, ptype_, inbound, deny);
     ui->textBrowser->append(QString());
 
-    QString comment_line = comment_pfx + " " + description;
+    QString comment_line = QStringLiteral("%1 %2").arg(comment_pfx, description);
     ui->textBrowser->append(comment_line);
     ui->textBrowser->append(rule_str->str);
 
@@ -180,20 +168,20 @@ void FirewallRulesDialog::on_denyCheckBox_toggled(bool)
 void FirewallRulesDialog::on_buttonBox_clicked(QAbstractButton *button)
 {
     if (button == ui->buttonBox->button(QDialogButtonBox::Save)) {
-        QString save_title = QString("Save %1 rules as" UTF8_HORIZONTAL_ELLIPSIS)
-                .arg(firewall_product_name(prod_));
-        QByteArray file_name = QFileDialog::getSaveFileName(this,
+        QString save_title = tr("Save %1 rules as…").arg(firewall_product_name(prod_));
+        QByteArray file_name = WiresharkFileDialog::getSaveFileName(this,
                                                  save_title,
-                                                 wsApp->lastOpenDir().canonicalPath(),
+                                                 mainApp->openDialogInitialDir().canonicalPath(),
                                                  tr("Text file (*.txt);;All Files (" ALL_FILES_WILDCARD ")")
                                                  ).toUtf8();
         if (file_name.length() > 0) {
             QFile save_file(file_name);
             QByteArray rule_text = ui->textBrowser->toPlainText().toUtf8();
 
-            save_file.open(QIODevice::WriteOnly);
-            save_file.write(rule_text);
-            save_file.close();
+            if (save_file.open(QIODevice::WriteOnly)) {
+                save_file.write(rule_text);
+                save_file.close();
+            }
 
             if (save_file.error() != QFile::NoError) {
                 QMessageBox::warning(this, tr("Warning"), tr("Unable to save %1").arg(save_file.fileName()));
@@ -201,31 +189,18 @@ void FirewallRulesDialog::on_buttonBox_clicked(QAbstractButton *button)
             }
 
             /* Save the directory name for future file dialogs. */
-            wsApp->setLastOpenDir(file_name.constData());
+            mainApp->setLastOpenDirFromFilename(file_name);
         }
     } else if (button == ui->buttonBox->button(QDialogButtonBox::Apply)) {
         if (ui->textBrowser->textCursor().hasSelection()) {
             ui->textBrowser->copy();
         } else {
-            wsApp->clipboard()->setText(ui->textBrowser->toPlainText());
+            mainApp->clipboard()->setText(ui->textBrowser->toPlainText());
         }
     }
 }
 
 void FirewallRulesDialog::on_buttonBox_helpRequested()
 {
-    wsApp->helpTopicAction(HELP_FIREWALL_DIALOG);
+    mainApp->helpTopicAction(HELP_FIREWALL_DIALOG);
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

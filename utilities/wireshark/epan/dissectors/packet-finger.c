@@ -1,24 +1,12 @@
 /* packet-finger.c
- * Routines for basic finger dissection (see http://tools.ietf.org/html/rfc742)
+ * Routines for basic finger dissection (see https://tools.ietf.org/html/rfc742)
  * Copyright 2013, Christopher Maynard <Christopher.Maynard@gtech.com>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,46 +14,51 @@
 #include <epan/conversation.h>
 #include <epan/expert.h>
 
+#include "packet-tcp.h"
+
 void proto_register_finger(void);
 void proto_reg_handoff_finger(void);
 
+static dissector_handle_t finger_handle;
+
 #define FINGER_PORT     79  /* This is the registered IANA port */
 
-static int proto_finger = -1;
-static int hf_finger_query = -1;
-static int hf_finger_response = -1;
-static int hf_finger_response_in = -1;
-static int hf_finger_response_to = -1;
-static int hf_finger_response_time = -1;
+static int proto_finger;
+static int hf_finger_query;
+static int hf_finger_response;
+static int hf_finger_response_in;
+static int hf_finger_response_to;
+static int hf_finger_response_time;
 
-static expert_field ei_finger_nocrlf = EI_INIT;
+static expert_field ei_finger_nocrlf;
 
-static gint ett_finger = -1;
+static int ett_finger;
 
 typedef struct _finger_transaction_t {
-    guint32  req_frame;
-    guint32  rep_frame;
+    uint32_t req_frame;
+    uint32_t rep_frame;
     nstime_t req_time;
 } finger_transaction_t;
 
 static int
 dissect_finger(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-    void *data _U_)
+    void *data)
 {
     proto_item           *ti, *expert_ti;
     proto_tree           *finger_tree;
     conversation_t       *conversation;
     finger_transaction_t *finger_trans;
-    gboolean              is_query;
-    guint                 len;
+    bool                  is_query;
+    unsigned              len;
+    struct tcpinfo       *tcpinfo = (struct tcpinfo*)data;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FINGER");
 
     if (pinfo->destport == FINGER_PORT) {
-        is_query = TRUE;
+        is_query = true;
         col_set_str(pinfo->cinfo, COL_INFO, "Query");
     } else {
-        is_query = FALSE;
+        is_query = false;
         col_set_str(pinfo->cinfo, COL_INFO, "Response");
     }
 
@@ -80,7 +73,7 @@ dissect_finger(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     if (!PINFO_FD_VISITED(pinfo)) {
         if (pinfo->can_desegment) {
             if (is_query) {
-                if ((len < 2) || (tvb_memeql(tvb, len - 2, "\r\n", 2))) {
+                if ((len < 2) || (tvb_memeql(tvb, len - 2, (const uint8_t*)"\r\n", 2))) {
                     pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
                     pinfo->desegment_offset = 0;
                     return -1;
@@ -88,7 +81,11 @@ dissect_finger(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                     finger_trans->req_frame = pinfo->num;
                     finger_trans->req_time = pinfo->abs_ts;
                 }
-            } else {
+            } else if (!(tcpinfo && (IS_TH_FIN(tcpinfo->flags) || tcpinfo->is_reassembled))) {
+                /* If this is the FIN (or already desegmented, as with an out
+                 * of order segment received after FIN) go ahead and dissect
+                 * on the first pass.
+                 */
                 pinfo->desegment_len = DESEGMENT_UNTIL_FIN;
                 pinfo->desegment_offset = 0;
                 return -1;
@@ -116,8 +113,8 @@ dissect_finger(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     finger_tree = proto_item_add_subtree(ti, ett_finger);
 
     if (is_query) {
-        expert_ti = proto_tree_add_item(finger_tree, hf_finger_query, tvb, 0, -1, ENC_ASCII|ENC_NA);
-        if ((len < 2) || (tvb_memeql(tvb, len - 2, "\r\n", 2))) {
+        expert_ti = proto_tree_add_item(finger_tree, hf_finger_query, tvb, 0, -1, ENC_ASCII);
+        if ((len < 2) || (tvb_memeql(tvb, len - 2, (const uint8_t*)"\r\n", 2))) {
             /*
              * From RFC742, Send a single "command line", ending with <CRLF>.
              */
@@ -126,21 +123,21 @@ dissect_finger(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         if (tree && finger_trans->rep_frame) {
             ti = proto_tree_add_uint(finger_tree, hf_finger_response_in,
                 tvb, 0, 0, finger_trans->rep_frame);
-            PROTO_ITEM_SET_GENERATED(ti);
+            proto_item_set_generated(ti);
         }
     } else if (tree && finger_trans->rep_frame) {
-        proto_tree_add_item(finger_tree, hf_finger_response, tvb, 0, -1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(finger_tree, hf_finger_response, tvb, 0, -1, ENC_ASCII);
         if (finger_trans->req_frame) {
             nstime_t ns;
 
             ti = proto_tree_add_uint(finger_tree, hf_finger_response_to,
                 tvb, 0, 0, finger_trans->req_frame);
-            PROTO_ITEM_SET_GENERATED(ti);
+            proto_item_set_generated(ti);
 
             if (pinfo->num == finger_trans->rep_frame) {
                 nstime_delta(&ns, &pinfo->abs_ts, &finger_trans->req_time);
                 ti = proto_tree_add_time(finger_tree, hf_finger_response_time, tvb, 0, 0, &ns);
-                PROTO_ITEM_SET_GENERATED(ti);
+                proto_item_set_generated(ti);
             }
         }
     }
@@ -163,12 +160,12 @@ proto_register_finger(void)
               NULL, HFILL }
         },
         { &hf_finger_response_in,
-            { "Response In", "finger.response_in", FT_FRAMENUM, BASE_NONE, NULL,
+            { "Response In", "finger.response_in", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE),
               0x0, "The response to this FINGER query is in this frame",
               HFILL }
         },
         { &hf_finger_response_to,
-            { "Request In", "finger.response_to", FT_FRAMENUM, BASE_NONE, NULL,
+            { "Request In", "finger.response_to", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST),
               0x0, "This is a response to the FINGER query in this frame",
               HFILL }
         },
@@ -179,7 +176,7 @@ proto_register_finger(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_finger
     };
 
@@ -190,6 +187,7 @@ proto_register_finger(void)
     };
 
     proto_finger = proto_register_protocol("finger", "FINGER", "finger");
+    finger_handle = register_dissector("finger", dissect_finger, proto_finger);
     proto_register_field_array(proto_finger, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
     expert_finger = expert_register_protocol(proto_finger);
@@ -199,14 +197,11 @@ proto_register_finger(void)
 void
 proto_reg_handoff_finger(void)
 {
-    static dissector_handle_t finger_handle;
-
-    finger_handle = create_dissector_handle(dissect_finger, proto_finger);
-    dissector_add_uint("tcp.port", FINGER_PORT, finger_handle);
+    dissector_add_uint_with_preference("tcp.port", FINGER_PORT, finger_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

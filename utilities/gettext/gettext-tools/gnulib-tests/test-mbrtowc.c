@@ -1,9 +1,9 @@
 /* Test of conversion of multibyte character to wide character.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2008.  */
 
@@ -26,6 +26,7 @@ SIGNATURE_CHECK (mbrtowc, size_t, (wchar_t *, char const *, size_t,
 
 #include <locale.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "macros.h"
@@ -65,17 +66,12 @@ main (int argc, char *argv[])
 
   /* Test single-byte input.  */
   {
-    int c;
     char buf[1];
 
     memset (&state, '\0', sizeof (mbstate_t));
-    for (c = 0; c < 0x100; c++)
+    for (int c = 0; c < 0x100; c++)
       switch (c)
         {
-        default:
-          if (! (c && 1 < argc && argv[1][0] == '5'))
-            break;
-          /* Fall through.  */
         case '\t': case '\v': case '\f':
         case ' ': case '!': case '"': case '#': case '%':
         case '&': case '\'': case '(': case ')': case '*':
@@ -97,17 +93,23 @@ main (int argc, char *argv[])
         case 'p': case 'q': case 'r': case 's': case 't':
         case 'u': case 'v': case 'w': case 'x': case 'y':
         case 'z': case '{': case '|': case '}': case '~':
-          /* c is in the ISO C "basic character set", or argv[1] starts
-             with '5' so we are testing all nonnull bytes.  */
+          /* c is in the ISO C "basic character set".  */
+          ASSERT (c < 0x80);
+          /* c is an ASCII character.  */
           buf[0] = c;
+
           wc = (wchar_t) 0xBADFACE;
           ret = mbrtowc (&wc, buf, 1, &state);
           ASSERT (ret == 1);
           ASSERT (wc == c);
           ASSERT (mbsinit (&state));
+
           ret = mbrtowc (NULL, buf, 1, &state);
           ASSERT (ret == 1);
           ASSERT (mbsinit (&state));
+
+          break;
+        default:
           break;
         }
   }
@@ -122,10 +124,52 @@ main (int argc, char *argv[])
     ASSERT (mbsinit (&state));
   }
 
+#ifdef __ANDROID__
+  /* On Android ≥ 5.0, the default locale is the "C.UTF-8" locale, not the
+     "C" locale.  Furthermore, when you attempt to set the "C" or "POSIX"
+     locale via setlocale(), what you get is a "C" locale with UTF-8 encoding,
+     that is, effectively the "C.UTF-8" locale.  */
+  if (argc > 1 && strcmp (argv[1], "1") == 0 && MB_CUR_MAX > 1)
+    argv[1] = "3";
+#endif
+
   if (argc > 1)
     switch (argv[1][0])
       {
       case '1':
+        /* C or POSIX locale.  */
+        {
+          char buf[1];
+
+          memset (&state, '\0', sizeof (mbstate_t));
+          for (int c = 0; c < 0x100; c++)
+            if (c != 0)
+              {
+                /* We are testing all nonnull bytes.  */
+                buf[0] = c;
+
+                wc = (wchar_t) 0xBADFACE;
+                ret = mbrtowc (&wc, buf, 1, &state);
+                /* POSIX:2018 says: "In the POSIX locale an [EILSEQ] error
+                   cannot occur since all byte values are valid characters."  */
+                ASSERT (ret == 1);
+                if (c < 0x80)
+                  /* c is an ASCII character.  */
+                  ASSERT (wc == c);
+                else
+                  /* On most platforms, the bytes 0x80..0xFF map to U+0080..U+00FF.
+                     But on musl libc, the bytes 0x80..0xFF map to U+DF80..U+DFFF.  */
+                  ASSERT (wc == (btowc (c) == 0xDF00 + c ? btowc (c) : c));
+                ASSERT (mbsinit (&state));
+
+                ret = mbrtowc (NULL, buf, 1, &state);
+                ASSERT (ret == 1);
+                ASSERT (mbsinit (&state));
+              }
+        }
+        return test_exit_status;
+
+      case '2':
         /* Locale encoding is ISO-8859-1 or ISO-8859-15.  */
         {
           char input[] = "B\374\337er"; /* "Büßer" */
@@ -170,9 +214,9 @@ main (int argc, char *argv[])
           ASSERT (wc == 'r');
           ASSERT (mbsinit (&state));
         }
-        return 0;
+        return test_exit_status;
 
-      case '2':
+      case '3':
         /* Locale encoding is UTF-8.  */
         {
           char input[] = "B\303\274\303\237er"; /* "Büßer" */
@@ -225,9 +269,37 @@ main (int argc, char *argv[])
           ASSERT (wc == 'r');
           ASSERT (mbsinit (&state));
         }
-        return 0;
+        if (sizeof (wchar_t) > 2)
+          { /* \360\237\220\203 = U+0001F403 */
+            memset (&state, '\0', sizeof (mbstate_t));
 
-      case '3':
+            wc = (wchar_t) 0xBADFACE;
+            ret = mbrtowc (&wc, "\360", 1, &state);
+            ASSERT (ret == (size_t)(-2));
+            ASSERT (wc == (wchar_t) 0xBADFACE);
+            ASSERT (!mbsinit (&state));
+
+            wc = (wchar_t) 0xBADFACE;
+            ret = mbrtowc (&wc, "\237", 1, &state);
+            ASSERT (ret == (size_t)(-2));
+            ASSERT (wc == (wchar_t) 0xBADFACE);
+            ASSERT (!mbsinit (&state));
+
+            wc = (wchar_t) 0xBADFACE;
+            ret = mbrtowc (&wc, "\220", 1, &state);
+            ASSERT (ret == (size_t)(-2));
+            ASSERT (wc == (wchar_t) 0xBADFACE);
+            ASSERT (!mbsinit (&state));
+
+            wc = (wchar_t) 0xBADFACE;
+            ret = mbrtowc (&wc, "\203", 1, &state);
+            ASSERT (ret == 1);
+            ASSERT (wctob (wc) == EOF);
+            ASSERT (mbsinit (&state));
+          }
+        return test_exit_status;
+
+      case '4':
         /* Locale encoding is EUC-JP.  */
         {
           char input[] = "<\306\374\313\334\270\354>"; /* "<日本語>" */
@@ -281,9 +353,9 @@ main (int argc, char *argv[])
           ASSERT (wc == '>');
           ASSERT (mbsinit (&state));
         }
-        return 0;
+        return test_exit_status;
 
-      case '4':
+      case '5':
         /* Locale encoding is GB18030.  */
         {
           char input[] = "B\250\271\201\060\211\070er"; /* "Büßer" */
@@ -330,7 +402,7 @@ main (int argc, char *argv[])
           ASSERT (ret == 1);
           ASSERT (wc == 'e');
           ASSERT (mbsinit (&state));
-          input[5] = '\0';
+          input[7] = '\0';
 
           wc = (wchar_t) 0xBADFACE;
           ret = mbrtowc (&wc, input + 8, 1, &state);
@@ -338,11 +410,35 @@ main (int argc, char *argv[])
           ASSERT (wc == 'r');
           ASSERT (mbsinit (&state));
         }
-        return 0;
+        if (sizeof (wchar_t) > 2)
+          { /* \224\071\311\067 = U+0001F403 */
+            memset (&state, '\0', sizeof (mbstate_t));
 
-      case '5':
-        /* C locale; tested above.  */
-        return 0;
+            wc = (wchar_t) 0xBADFACE;
+            ret = mbrtowc (&wc, "\224", 1, &state);
+            ASSERT (ret == (size_t)(-2));
+            ASSERT (wc == (wchar_t) 0xBADFACE);
+            ASSERT (!mbsinit (&state));
+
+            wc = (wchar_t) 0xBADFACE;
+            ret = mbrtowc (&wc, "\071", 1, &state);
+            ASSERT (ret == (size_t)(-2));
+            ASSERT (wc == (wchar_t) 0xBADFACE);
+            ASSERT (!mbsinit (&state));
+
+            wc = (wchar_t) 0xBADFACE;
+            ret = mbrtowc (&wc, "\311", 1, &state);
+            ASSERT (ret == (size_t)(-2));
+            ASSERT (wc == (wchar_t) 0xBADFACE);
+            ASSERT (!mbsinit (&state));
+
+            wc = (wchar_t) 0xBADFACE;
+            ret = mbrtowc (&wc, "\067", 1, &state);
+            ASSERT (ret == 1);
+            ASSERT (wctob (wc) == EOF);
+            ASSERT (mbsinit (&state));
+          }
+        return test_exit_status;
       }
 
   return 1;

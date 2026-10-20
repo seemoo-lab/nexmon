@@ -1,8 +1,10 @@
-# log10.m4 serial 4
-dnl Copyright (C) 2011-2016 Free Software Foundation, Inc.
+# log10.m4
+# serial 16
+dnl Copyright (C) 2011-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_LOG10],
 [
@@ -12,22 +14,13 @@ AC_DEFUN([gl_FUNC_LOG10],
   dnl Determine LOG10_LIBM.
   gl_COMMON_DOUBLE_MATHFUNC([log10])
 
-  save_LIBS="$LIBS"
-  LIBS="$LIBS $LOG10_LIBM"
-  gl_FUNC_LOG10_WORKS
-  LIBS="$save_LIBS"
-  case "$gl_cv_func_log10_works" in
-    *yes) ;;
-    *) REPLACE_LOG10=1 ;;
-  esac
-
   m4_ifdef([gl_FUNC_LOG10_IEEE], [
-    if test $gl_log10_required = ieee && test $REPLACE_LOG10 = 0; then
+    if test $gl_log10_required = ieee; then
       AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
       AC_CACHE_CHECK([whether log10 works according to ISO C 99 with IEC 60559],
         [gl_cv_func_log10_ieee],
         [
-          save_LIBS="$LIBS"
+          saved_LIBS="$LIBS"
           LIBS="$LIBS $LOG10_LIBM"
           AC_RUN_IFELSE(
             [AC_LANG_SOURCE([[
@@ -36,8 +29,7 @@ AC_DEFUN([gl_FUNC_LOG10],
 #endif
 #include <math.h>
 /* Compare two numbers with ==.
-   This is a separate function because IRIX 6.5 "cc -O" miscompiles an
-   'x == x' test.  */
+   This is a separate function in order to disable compiler optimizations.  */
 static int
 numeric_equal (double x, double y)
 {
@@ -46,9 +38,9 @@ numeric_equal (double x, double y)
 static double dummy (double x) { return 0; }
 int main (int argc, char *argv[])
 {
-  double (*my_log10) (double) = argc ? log10 : dummy;
+  double (* volatile my_log10) (double) = argc ? log10 : dummy;
   /* Test log10(negative).
-     This test fails on NetBSD 5.1, Solaris 11 2011-11.  */
+     This test fails on NetBSD 5.1, Solaris 11.4.  */
   double y = my_log10 (-1.0);
   if (numeric_equal (y, y))
     return 1;
@@ -58,13 +50,17 @@ int main (int argc, char *argv[])
             [gl_cv_func_log10_ieee=yes],
             [gl_cv_func_log10_ieee=no],
             [case "$host_os" in
-                       # Guess yes on glibc systems.
-               *-gnu*) gl_cv_func_log10_ieee="guessing yes" ;;
-                       # If we don't know, assume the worst.
-               *)      gl_cv_func_log10_ieee="guessing no" ;;
+                                   # Guess yes on glibc systems.
+               *-gnu* | gnu*)      gl_cv_func_log10_ieee="guessing yes" ;;
+                                   # Guess yes on musl systems.
+               *-musl* | midipix*) gl_cv_func_log10_ieee="guessing yes" ;;
+                                   # Guess yes on native Windows.
+               mingw* | windows*)  gl_cv_func_log10_ieee="guessing yes" ;;
+                                   # If we don't know, obey --enable-cross-guesses.
+               *)                  gl_cv_func_log10_ieee="$gl_cross_guess_normal" ;;
              esac
             ])
-          LIBS="$save_LIBS"
+          LIBS="$saved_LIBS"
         ])
       case "$gl_cv_func_log10_ieee" in
         *yes) ;;
@@ -72,36 +68,4 @@ int main (int argc, char *argv[])
       esac
     fi
   ])
-])
-
-dnl Test whether log10() works.
-dnl On OSF/1 5.1, log10(-0.0) is NaN.
-AC_DEFUN([gl_FUNC_LOG10_WORKS],
-[
-  AC_REQUIRE([AC_PROG_CC])
-  AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
-  AC_CACHE_CHECK([whether log10 works], [gl_cv_func_log10_works],
-    [
-      AC_RUN_IFELSE(
-        [AC_LANG_SOURCE([[
-#include <math.h>
-volatile double x;
-double y;
-int main ()
-{
-  x = -0.0;
-  y = log10 (x);
-  if (!(y + y == y))
-    return 1;
-  return 0;
-}
-]])],
-        [gl_cv_func_log10_works=yes],
-        [gl_cv_func_log10_works=no],
-        [case "$host_os" in
-           osf*) gl_cv_func_log10_works="guessing no";;
-           *)    gl_cv_func_log10_works="guessing yes";;
-         esac
-        ])
-    ])
 ])

@@ -1,5 +1,5 @@
 # Reading tcl/msgcat .msg files.
-# Copyright (C) 2002, 2015-2016 Free Software Foundation, Inc.
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# Written by Bruno Haible.
 
 namespace eval msgcat {
   namespace export mcset mcdump
@@ -57,7 +59,7 @@ proc msgcat::mcdump {langfile} {
     # msgunfmt expects the output in UTF-8 encoding.
     fconfigure stdout -encoding utf-8
 
-    set msgcat::header ""
+    set ::msgcat::header ""
 
     set fd [open $langfile r]
     # In newer tcl versions, the .msg files are in UTF-8 encoding.
@@ -65,11 +67,11 @@ proc msgcat::mcdump {langfile} {
     eval [read $fd]
     close $fd
 
-    if {$msgcat::header == ""} {
+    if {$::msgcat::header == ""} {
       # Provide a minimal header.
-      set msgcat::header [subst "MIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n"]
+      set ::msgcat::header [subst "MIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n"]
     }
-    msgcat::write_po_message "" $msgcat::header
+    msgcat::write_po_message "" $::msgcat::header
   } else {
     # Tell msgunfmt to emit an internationalized error message.
     exit 2

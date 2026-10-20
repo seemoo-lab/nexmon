@@ -1,11 +1,8 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-cdt.c                                                               */
-/* asn2wrs.py -b -p cdt -c ./cdt.cnf -s ./packet-cdt-template -D . -O ../.. cdt.asn */
+/* asn2wrs.py -b -q -L -p cdt -c ./cdt.cnf -s ./packet-cdt-template -D . -O ../.. cdt.asn */
 
-/* Input file: packet-cdt-template.c */
-
-#line 1 "./asn1/cdt/packet-cdt-template.c"
 /* packet-cdt.c
  *
  * Routines for Compressed Data Type packet dissection.
@@ -16,19 +13,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref: STANAG 4406 Annex E
  */
@@ -39,7 +24,7 @@
 #include <epan/oids.h>
 #include <epan/expert.h>
 #include <epan/asn1.h>
-
+#include <wsutil/array.h>
 #include "packet-ber.h"
 #include "packet-p1.h"
 
@@ -58,47 +43,32 @@
 void proto_register_cdt(void);
 void proto_reg_handoff_cdt(void);
 
-static proto_tree *top_tree = NULL;
-static proto_item *cdt_item = NULL;
+static proto_tree *top_tree;
+static proto_item *cdt_item;
 
-static guint32 content_type = 0;
+static uint32_t content_type;
 
 /* Initialize the protocol and registered fields */
-static int proto_cdt = -1;
-
-/*--- Included file: packet-cdt-hf.c ---*/
-#line 1 "./asn1/cdt/packet-cdt-hf.c"
-static int hf_cdt_CompressedData_PDU = -1;        /* CompressedData */
-static int hf_cdt_compressionAlgorithm = -1;      /* CompressionAlgorithmIdentifier */
-static int hf_cdt_compressedContentInfo = -1;     /* CompressedContentInfo */
-static int hf_cdt_algorithmID_ShortForm = -1;     /* AlgorithmID_ShortForm */
-static int hf_cdt_algorithmID_OID = -1;           /* OBJECT_IDENTIFIER */
-static int hf_cdt_contentType = -1;               /* T_contentType */
-static int hf_cdt_contentType_ShortForm = -1;     /* ContentType_ShortForm */
-static int hf_cdt_contentType_OID = -1;           /* T_contentType_OID */
-static int hf_cdt_compressedContent = -1;         /* CompressedContent */
-
-/*--- End of included file: packet-cdt-hf.c ---*/
-#line 61 "./asn1/cdt/packet-cdt-template.c"
+static int proto_cdt;
+static int hf_cdt_CompressedData_PDU;             /* CompressedData */
+static int hf_cdt_compressionAlgorithm;           /* CompressionAlgorithmIdentifier */
+static int hf_cdt_compressedContentInfo;          /* CompressedContentInfo */
+static int hf_cdt_algorithmID_ShortForm;          /* AlgorithmID_ShortForm */
+static int hf_cdt_algorithmID_OID;                /* OBJECT_IDENTIFIER */
+static int hf_cdt_contentType;                    /* T_contentType */
+static int hf_cdt_contentType_ShortForm;          /* ContentType_ShortForm */
+static int hf_cdt_contentType_OID;                /* T_contentType_OID */
+static int hf_cdt_compressedContent;              /* CompressedContent */
 
 /* Initialize the subtree pointers */
+static int ett_cdt_CompressedData;
+static int ett_cdt_CompressionAlgorithmIdentifier;
+static int ett_cdt_CompressedContentInfo;
+static int ett_cdt_T_contentType;
 
-/*--- Included file: packet-cdt-ett.c ---*/
-#line 1 "./asn1/cdt/packet-cdt-ett.c"
-static gint ett_cdt_CompressedData = -1;
-static gint ett_cdt_CompressionAlgorithmIdentifier = -1;
-static gint ett_cdt_CompressedContentInfo = -1;
-static gint ett_cdt_T_contentType = -1;
+static expert_field ei_cdt_unable_compress_content;
+static expert_field ei_cdt_unable_uncompress_content;
 
-/*--- End of included file: packet-cdt-ett.c ---*/
-#line 64 "./asn1/cdt/packet-cdt-template.c"
-
-static expert_field ei_cdt_unable_compress_content = EI_INIT;
-static expert_field ei_cdt_unable_uncompress_content = EI_INIT;
-
-
-/*--- Included file: packet-cdt-fn.c ---*/
-#line 1 "./asn1/cdt/packet-cdt-fn.c"
 
 static const value_string cdt_AlgorithmID_ShortForm_vals[] = {
   {   0, "zlibCompress" },
@@ -107,21 +77,19 @@ static const value_string cdt_AlgorithmID_ShortForm_vals[] = {
 
 
 static int
-dissect_cdt_AlgorithmID_ShortForm(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 19 "./asn1/cdt/cdt.cnf"
-  guint32 value;
+dissect_cdt_AlgorithmID_ShortForm(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  uint32_t value;
 
     offset = dissect_ber_integer(implicit_tag, actx, tree, tvb, offset, hf_index,
                                                 &value);
 
   proto_item_append_text (cdt_item, ", %s",
-                          val_to_str (value, cdt_AlgorithmID_ShortForm_vals,
+                          val_to_str(actx->pinfo->pool, value, cdt_AlgorithmID_ShortForm_vals,
                                       "unknown"));
 
   col_append_fstr (actx->pinfo->cinfo, COL_INFO, "%s ",
-                   val_to_str (value, cdt_AlgorithmID_ShortForm_vals,
+                   val_to_str(actx->pinfo->pool, value, cdt_AlgorithmID_ShortForm_vals,
                                "unknown"));
-
 
 
   return offset;
@@ -130,7 +98,7 @@ dissect_cdt_AlgorithmID_ShortForm(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, 
 
 
 static int
-dissect_cdt_OBJECT_IDENTIFIER(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_cdt_OBJECT_IDENTIFIER(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_object_identifier(implicit_tag, actx, tree, tvb, offset, hf_index, NULL);
 
   return offset;
@@ -150,7 +118,7 @@ static const ber_choice_t CompressionAlgorithmIdentifier_choice[] = {
 };
 
 static int
-dissect_cdt_CompressionAlgorithmIdentifier(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_cdt_CompressionAlgorithmIdentifier(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  CompressionAlgorithmIdentifier_choice, hf_index, ett_cdt_CompressionAlgorithmIdentifier,
                                  NULL);
@@ -170,20 +138,18 @@ static const value_string cdt_ContentType_ShortForm_vals[] = {
 
 
 static int
-dissect_cdt_ContentType_ShortForm(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 34 "./asn1/cdt/cdt.cnf"
+dissect_cdt_ContentType_ShortForm(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
 
     offset = dissect_ber_integer(implicit_tag, actx, tree, tvb, offset, hf_index,
                                                 &content_type);
 
   proto_item_append_text (cdt_item, ", %s",
-                          val_to_str (content_type, cdt_ContentType_ShortForm_vals,
+                          val_to_str(actx->pinfo->pool, content_type, cdt_ContentType_ShortForm_vals,
                                       "unknown"));
 
   col_append_fstr (actx->pinfo->cinfo, COL_INFO, "%s ",
-                   val_to_str (content_type, cdt_ContentType_ShortForm_vals,
+                   val_to_str(actx->pinfo->pool, content_type, cdt_ContentType_ShortForm_vals,
                                "unknown"));
-
 
 
   return offset;
@@ -192,14 +158,13 @@ dissect_cdt_ContentType_ShortForm(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, 
 
 
 static int
-dissect_cdt_T_contentType_OID(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 48 "./asn1/cdt/cdt.cnf"
+dissect_cdt_T_contentType_OID(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   const char *obj_id = NULL;
 
     offset = dissect_ber_object_identifier_str(implicit_tag, actx, tree, tvb, offset, hf_index, &obj_id);
 
   if (obj_id) {
-    const char *name = oid_resolved_from_string (wmem_packet_scope(), obj_id);
+    const char *name = oid_resolved_from_string (actx->pinfo->pool, obj_id);
 
     if (!name) {
       name = obj_id;
@@ -209,7 +174,6 @@ dissect_cdt_T_contentType_OID(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int 
 
     col_append_fstr (actx->pinfo->cinfo, COL_INFO, "%s ", name);
   }
-
 
 
   return offset;
@@ -229,7 +193,7 @@ static const ber_choice_t T_contentType_choice[] = {
 };
 
 static int
-dissect_cdt_T_contentType(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_cdt_T_contentType(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  T_contentType_choice, hf_index, ett_cdt_T_contentType,
                                  NULL);
@@ -240,8 +204,7 @@ dissect_cdt_T_contentType(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offs
 
 
 static int
-dissect_cdt_CompressedContent(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 67 "./asn1/cdt/cdt.cnf"
+dissect_cdt_CompressedContent(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   tvbuff_t   *next_tvb = NULL, *compr_tvb = NULL;
   int         save_offset = offset;
 
@@ -256,7 +219,7 @@ dissect_cdt_CompressedContent(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int 
     return offset;
   }
 
-  next_tvb = tvb_child_uncompress (tvb, compr_tvb, 0, tvb_reported_length (compr_tvb));
+  next_tvb = tvb_child_uncompress_zlib(tvb, compr_tvb, 0, tvb_reported_length (compr_tvb));
 
   if (next_tvb == NULL) {
     proto_tree_add_expert(top_tree, actx->pinfo, &ei_cdt_unable_uncompress_content,
@@ -284,7 +247,6 @@ dissect_cdt_CompressedContent(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int 
    }
 
 
-
   return offset;
 }
 
@@ -296,7 +258,7 @@ static const ber_sequence_t CompressedContentInfo_sequence[] = {
 };
 
 static int
-dissect_cdt_CompressedContentInfo(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_cdt_CompressedContentInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    CompressedContentInfo_sequence, hf_index, ett_cdt_CompressedContentInfo);
 
@@ -311,13 +273,11 @@ static const ber_sequence_t CompressedData_sequence[] = {
 };
 
 int
-dissect_cdt_CompressedData(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 11 "./asn1/cdt/cdt.cnf"
+dissect_cdt_CompressedData(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   content_type = 0;
 
     offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    CompressedData_sequence, hf_index, ett_cdt_CompressedData);
-
 
 
 
@@ -329,14 +289,11 @@ dissect_cdt_CompressedData(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int off
 static int dissect_CompressedData_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-  offset = dissect_cdt_CompressedData(FALSE, tvb, offset, &asn1_ctx, tree, hf_cdt_CompressedData_PDU);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+  offset = dissect_cdt_CompressedData(false, tvb, offset, &asn1_ctx, tree, hf_cdt_CompressedData_PDU);
   return offset;
 }
 
-
-/*--- End of included file: packet-cdt-fn.c ---*/
-#line 69 "./asn1/cdt/packet-cdt-template.c"
 
 
 /*--- proto_register_cdt -------------------------------------------*/
@@ -368,9 +325,6 @@ void proto_register_cdt (void) {
 
   /* List of fields */
   static hf_register_info hf[] = {
-
-/*--- Included file: packet-cdt-hfarr.c ---*/
-#line 1 "./asn1/cdt/packet-cdt-hfarr.c"
     { &hf_cdt_CompressedData_PDU,
       { "CompressedData", "cdt.CompressedData_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -407,23 +361,14 @@ void proto_register_cdt (void) {
       { "compressedContent", "cdt.compressedContent",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-
-/*--- End of included file: packet-cdt-hfarr.c ---*/
-#line 101 "./asn1/cdt/packet-cdt-template.c"
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
-
-/*--- Included file: packet-cdt-ettarr.c ---*/
-#line 1 "./asn1/cdt/packet-cdt-ettarr.c"
+  static int *ett[] = {
     &ett_cdt_CompressedData,
     &ett_cdt_CompressionAlgorithmIdentifier,
     &ett_cdt_CompressedContentInfo,
     &ett_cdt_T_contentType,
-
-/*--- End of included file: packet-cdt-ettarr.c ---*/
-#line 106 "./asn1/cdt/packet-cdt-template.c"
   };
 
   static ei_register_info ei[] = {
@@ -446,12 +391,6 @@ void proto_register_cdt (void) {
 
 /*--- proto_reg_handoff_cdt ---------------------------------------*/
 void proto_reg_handoff_cdt (void) {
-
-/*--- Included file: packet-cdt-dis-tab.c ---*/
-#line 1 "./asn1/cdt/packet-cdt-dis-tab.c"
   register_ber_oid_dissector("1.3.26.0.4406.0.4.2", dissect_CompressedData_PDU, proto_cdt, "cdt");
 
-
-/*--- End of included file: packet-cdt-dis-tab.c ---*/
-#line 129 "./asn1/cdt/packet-cdt-template.c"
 }

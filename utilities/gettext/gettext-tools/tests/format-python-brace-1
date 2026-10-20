@@ -12,12 +12,22 @@ cat <<\EOF > f-pyb-1.data
 "abc{0}"
 # Valid: a named argument
 "abc{value}"
-# Invalid: an empty name
+# Valid: an empty name
 "abc{}"
 # Invalid: unterminated name
 "abc{value"
 # Valid: three arguments, two with equal names
 "abc{addr},{char},{addr}"
+# Valid: empty name and non-numeric name
+"abc{},{value}"
+# Valid: empty name and non-numeric name
+"abc{value},{}"
+# Invalid: empty name and numeric name
+"abc{},{1}"
+# Invalid: empty name and numeric name
+"abc{1},{}"
+# Valid: multiple empty names
+"abc{},{},{}"
 # Valid: getattr operator
 "abc{value.name}"
 # Invalid: getattr operator with numeric field name
@@ -32,10 +42,20 @@ cat <<\EOF > f-pyb-1.data
 "abc{value[!]}"
 # Valid: use of both getattr and getitem operators
 "abc{value.v[name]}"
+# Valid: use of both getitem and getattr operators
+"abc{value[name].v}"
 # Valid: format specifier
 "abc{value:0}"
+# Valid: format specifier after getattr operator
+"abc{value.name:0}"
+# Valid: format specifier after getitem operator
+"abc{value[name]:0}"
 # Valid: standard format specifier
 "abc{value:<<-#012.34e}"
+# Invalid: null precision
+"abc{value:.}"
+# Invalid: null precision
+"abc{value:8.}"
 # Invalid: non-standard format specifier
 "abc{value:<c>}"
 # Valid: nested format specifier

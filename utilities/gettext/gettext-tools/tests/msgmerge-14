@@ -1,43 +1,36 @@
 #! /bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test merging of a ref.pot in UTF-8 encoding against a def.po in legacy
-# encoding (that was produced from an older version of ref.pot, in ASCII
-# encoding).
+# Test that the msgmerge output is stable under an 'msgcat' invocation.
+# Also test what happens with the 'no-wrap' flag during msgmerge.
 
-cat <<\EOF > mm-test14-ru.po
-# Russian messages for CLISP
-# Copyright (C) 1998 Free Software Foundation, Inc.
-# Eduard Haritonov <hed@iis.nsk.su>, 1998.
-# Arseny Slobodjuck <ampy@ich.dvo.ru>, 2002.
-#
+cat <<\EOF > mm-test14.po
 msgid ""
 msgstr ""
-"Project-Id-Version: GNU elvis 1.7\n"
-"POT-Creation-Date: 2002-11-01 01:22+0100\n"
-"PO-Revision-Date: 2002-11-01 01:23+0100\n"
-"Last-Translator: Arseny Slobodjuck <ampy@ich.dvo.ru>\n"
-"Language-Team: Russian <ru@li.org>\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=koi8-r\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: arith.c:9
-msgid "Division durch Null"
-msgstr "ƒ≈Ã≈Œ…≈ Œ¡ Œ’Ãÿ"
+msgid "This is a long paragraph that gets wrapped into several lines because it is so long."
+msgstr "Dies ist ein langer Abschnitt, der in mehrere Zeilen umgebrochen wird, weil er so lang ist."
+
+#, no-wrap
+msgid "This is a long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+msgstr "Dies ist ein langer Abschnitt, der nicht in mehrere Zeilen umgebrochen wird, weil er als 'no-wrap' markiert ist."
+
+msgid "This is another long paragraph that gets wrapped into several lines because it is so long."
+msgstr "Dies ist ein weiterer langer Abschnitt, der in mehrere Zeilen umgebrochen wird, weil er so lang ist."
+
+#, no-wrap
+msgid "This is another long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+msgstr "Dies ist ein weiterer langer Abschnitt, der nicht in mehrere Zeilen umgebrochen wird, weil er als 'no-wrap' markiert ist."
 EOF
 
-cat <<\EOF > mm-test14.pot
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
+cat <<\EOF > mm-test14-1.pot
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2002-11-01 01:22+0100\n"
+"Report-Msgid-Bugs-To: \n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,48 +38,192 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: arith.c:10
-msgid "Division durch Null"
+msgid "This is a long paragraph that gets wrapped into several lines because it is so long."
 msgstr ""
 
-#: arith.c:15
-msgid "√úberlauf"
+#, no-wrap
+msgid "This is a long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
 msgstr ""
 EOF
 
 : ${MSGMERGE=msgmerge}
-${MSGMERGE} -q -o mm-test14.tmp mm-test14-ru.po mm-test14.pot || Exit 1
-LC_ALL=C tr -d '\r' < mm-test14.tmp > mm-test14.out || Exit 1
+${MSGMERGE} -q -o mm-test14.tmp.po mm-test14.po mm-test14-1.pot || Exit 1
+LC_ALL=C tr -d '\r' < mm-test14.tmp.po > mm-test14.new.po || Exit 1
 
-cat <<\EOF > mm-test14.ok
-# Russian messages for CLISP
-# Copyright (C) 1998 Free Software Foundation, Inc.
-# Eduard Haritonov <hed@iis.nsk.su>, 1998.
-# Arseny Slobodjuck <ampy@ich.dvo.ru>, 2002.
-#
+: ${MSGCAT=msgcat}
+${MSGCAT} mm-test14.new.po > mm-test14.tmp.po || Exit 1
+LC_ALL=C tr -d '\r' < mm-test14.tmp.po > mm-test14.cat.po || Exit 1
+
+: ${DIFF=diff}
+${DIFF} mm-test14.new.po mm-test14.cat.po || Exit 1
+
+cat <<\EOF > mm-test14-1.ok
 msgid ""
 msgstr ""
-"Project-Id-Version: GNU elvis 1.7\n"
-"POT-Creation-Date: 2002-11-01 01:22+0100\n"
-"PO-Revision-Date: 2002-11-01 01:23+0100\n"
-"Last-Translator: Arseny Slobodjuck <ampy@ich.dvo.ru>\n"
-"Language-Team: Russian <ru@li.org>\n"
-"Language: ru\n"
+"Report-Msgid-Bugs-To: \n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid ""
+"This is a long paragraph that gets wrapped into several lines because it is "
+"so long."
+msgstr ""
+"Dies ist ein langer Abschnitt, der in mehrere Zeilen umgebrochen wird, weil "
+"er so lang ist."
+
+#, no-wrap
+msgid "This is a long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+msgstr "Dies ist ein langer Abschnitt, der nicht in mehrere Zeilen umgebrochen wird, weil er als 'no-wrap' markiert ist."
+
+#~ msgid ""
+#~ "This is another long paragraph that gets wrapped into several lines "
+#~ "because it is so long."
+#~ msgstr ""
+#~ "Dies ist ein weiterer langer Abschnitt, der in mehrere Zeilen umgebrochen "
+#~ "wird, weil er so lang ist."
+
+#, no-wrap
+#~ msgid "This is another long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+#~ msgstr "Dies ist ein weiterer langer Abschnitt, der nicht in mehrere Zeilen umgebrochen wird, weil er als 'no-wrap' markiert ist."
+EOF
+
+: ${DIFF=diff}
+${DIFF} mm-test14-1.ok mm-test14.new.po || Exit 1
+
+# Now test what happens with the 'no-wrap' flag when merging with a POT file
+# where the 'no-wrap' flag is set.
+
+cat <<\EOF > mm-test14-2.pot
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: arith.c:10
-msgid "Division durch Null"
-msgstr "–¥–µ–ª–µ–Ω–∏–µ –Ω–∞ –Ω—É–ª—å"
+#, no-wrap
+msgid "This is a long paragraph that gets wrapped into several lines because it is so long."
+msgstr ""
 
-#: arith.c:15
-msgid "√úberlauf"
+#, no-wrap
+msgid "This is a long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+msgstr ""
+
+#, no-wrap
+msgid "This is another long paragraph that gets wrapped into several lines because it is so long."
+msgstr ""
+
+#, no-wrap
+msgid "This is another long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
 msgstr ""
 EOF
 
-: ${DIFF=diff}
-${DIFF} mm-test14.ok mm-test14.out
-result=$?
+: ${MSGMERGE=msgmerge}
+${MSGMERGE} -q -o mm-test14.tmp.po mm-test14.new.po mm-test14-2.pot || Exit 1
+LC_ALL=C tr -d '\r' < mm-test14.tmp.po > mm-test14-2.po || Exit 1
 
-exit $result
+cat <<\EOF > mm-test14-2.ok
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#, no-wrap
+msgid "This is a long paragraph that gets wrapped into several lines because it is so long."
+msgstr "Dies ist ein langer Abschnitt, der in mehrere Zeilen umgebrochen wird, weil er so lang ist."
+
+#, no-wrap
+msgid "This is a long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+msgstr "Dies ist ein langer Abschnitt, der nicht in mehrere Zeilen umgebrochen wird, weil er als 'no-wrap' markiert ist."
+
+#, no-wrap
+msgid "This is another long paragraph that gets wrapped into several lines because it is so long."
+msgstr "Dies ist ein weiterer langer Abschnitt, der in mehrere Zeilen umgebrochen wird, weil er so lang ist."
+
+#, no-wrap
+msgid "This is another long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+msgstr "Dies ist ein weiterer langer Abschnitt, der nicht in mehrere Zeilen umgebrochen wird, weil er als 'no-wrap' markiert ist."
+EOF
+
+: ${DIFF=diff}
+${DIFF} mm-test14-2.ok mm-test14-2.po || Exit 1
+
+# Now test what happens with the 'no-wrap' flag when merging with a POT file
+# where the 'no-wrap' flag is absent.
+
+cat <<\EOF > mm-test14-3.pot
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "This is a long paragraph that gets wrapped into several lines because it is so long."
+msgstr ""
+
+msgid "This is a long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+msgstr ""
+
+msgid "This is another long paragraph that gets wrapped into several lines because it is so long."
+msgstr ""
+
+msgid "This is another long paragraph that does not get wrapped into several lines because it is marked as 'no-wrap'."
+msgstr ""
+EOF
+
+: ${MSGMERGE=msgmerge}
+${MSGMERGE} -q -o mm-test14.tmp.po mm-test14.new.po mm-test14-3.pot || Exit 1
+LC_ALL=C tr -d '\r' < mm-test14.tmp.po > mm-test14-3.po || Exit 1
+
+cat <<\EOF > mm-test14-3.ok
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid ""
+"This is a long paragraph that gets wrapped into several lines because it is "
+"so long."
+msgstr ""
+"Dies ist ein langer Abschnitt, der in mehrere Zeilen umgebrochen wird, weil "
+"er so lang ist."
+
+msgid ""
+"This is a long paragraph that does not get wrapped into several lines "
+"because it is marked as 'no-wrap'."
+msgstr ""
+"Dies ist ein langer Abschnitt, der nicht in mehrere Zeilen umgebrochen wird, "
+"weil er als 'no-wrap' markiert ist."
+
+msgid ""
+"This is another long paragraph that gets wrapped into several lines because "
+"it is so long."
+msgstr ""
+"Dies ist ein weiterer langer Abschnitt, der in mehrere Zeilen umgebrochen "
+"wird, weil er so lang ist."
+
+msgid ""
+"This is another long paragraph that does not get wrapped into several lines "
+"because it is marked as 'no-wrap'."
+msgstr ""
+"Dies ist ein weiterer langer Abschnitt, der nicht in mehrere Zeilen "
+"umgebrochen wird, weil er als 'no-wrap' markiert ist."
+EOF
+
+: ${DIFF=diff}
+${DIFF} mm-test14-3.ok mm-test14-3.po || Exit 1
+
+Exit 0

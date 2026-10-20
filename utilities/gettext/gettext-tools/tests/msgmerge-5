@@ -3,7 +3,7 @@
 
 # Test handling of header entry.
 
-cat <<EOF > mm-test5.in1.po
+cat <<\EOF > mm-test5.in1.po
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -26,7 +26,7 @@ msgstr ""
 "blah blah blah blah blah blah blah blah blah blah blah blah blah bla bla bla\n"
 EOF
 
-cat <<EOF > mm-test5.in2.po
+cat <<\EOF > mm-test5.in2.po
 msgid ""
 msgstr ""
 
@@ -44,7 +44,7 @@ cat mm-test5.err | grep -v 'warning: Charset' | grep -v '^ '
 test $result = 0 || { Exit 1; }
 LC_ALL=C tr -d '\r' < mm-test5.tmp > mm-test5.out || Exit 1
 
-cat <<EOF > mm-test5.ok
+cat <<\EOF > mm-test5.ok
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.

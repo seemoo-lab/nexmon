@@ -11,39 +11,148 @@ struct _EscapeTest
 {
   const gchar *original;
   const gchar *expected;
+  gboolean expected_markup_parse_error;  /* we expect this iff the original is not valid UTF-8 */
+  GMarkupError expected_markup_parse_error_code;
 };
 
 static EscapeTest escape_tests[] =
 {
-  { "&", "&amp;" },
-  { "<", "&lt;" },
-  { ">", "&gt;" },
-  { "'", "&apos;" },
-  { "\"", "&quot;" },
-  { "", "" },
-  { "A", "A" },
-  { "A&", "A&amp;" },
-  { "&A", "&amp;A" },
-  { "A&A", "A&amp;A" },
-  { "&&A", "&amp;&amp;A" },
-  { "A&&", "A&amp;&amp;" },
-  { "A&&A", "A&amp;&amp;A" },
-  { "A&A&A", "A&amp;A&amp;A" },
-  { "A&#23;A", "A&amp;#23;A" },
-  { "A&#xa;A", "A&amp;#xa;A" }
+  { "&", "&amp;", FALSE, 0 },
+  { "<", "&lt;", FALSE, 0 },
+  { ">", "&gt;", FALSE, 0 },
+  { "'", "&apos;", FALSE, 0 },
+  { "\"", "&quot;", FALSE, 0 },
+  { "\"\"", "&quot;&quot;", FALSE, 0 },
+  { "\"അ\"", "&quot;അ&quot;", FALSE, 0 },
+  { "", "", FALSE, 0 },
+  { "A", "A", FALSE, 0 },
+  { "A&", "A&amp;", FALSE, 0 },
+  { "&A", "&amp;A", FALSE, 0 },
+  { "A&A", "A&amp;A", FALSE, 0 },
+  { "&&A", "&amp;&amp;A", FALSE, 0 },
+  { "A&&", "A&amp;&amp;", FALSE, 0 },
+  { "A&&A", "A&amp;&amp;A", FALSE, 0 },
+  { "A&A&A", "A&amp;A&amp;A", FALSE, 0 },
+  { "A&#23;A", "A&amp;#23;A", FALSE, 0 },
+  { "A&#xa;A", "A&amp;#xa;A", FALSE, 0 },
+  { "N\x2N", "N&#x2;N", FALSE, 0 },
+  { "N\xc2\x80N", "N&#x80;N", FALSE, 0 },
+  { "N\xc2\x79N", "N\xc2\x79N", TRUE, G_MARKUP_ERROR_BAD_UTF8 },
+  { "N\xc2\x9fN", "N&#x9f;N", FALSE, 0 },
+  { "\xc2", "\xc2", TRUE, G_MARKUP_ERROR_BAD_UTF8 },
+
+  /* As per g_markup_escape_text()'s documentation, whitespace is not escaped: */
+  { "\t", "\t", FALSE, 0 },
 };
+
+static void
+start_element_unreachable_cb (GMarkupParseContext  *context,
+                              const char           *element_name,
+                              const char          **attribute_names,
+                              const char          **attribute_values,
+                              void                 *user_data,
+                              GError              **error)
+{
+  if (g_strcmp0 (element_name, "wrapper") == 0)
+    return;
+
+  g_assert_not_reached ();
+}
+
+static void
+end_element_unreachable_cb (GMarkupParseContext  *context,
+                            const char           *element_name,
+                            void                 *user_data,
+                            GError              **error)
+{
+  if (g_strcmp0 (element_name, "wrapper") == 0)
+    return;
+
+  g_assert_not_reached ();
+}
+
+static void
+escape_text_cb (GMarkupParseContext  *context,
+                const char           *text,
+                size_t                text_len,
+                void                 *user_data,
+                GError              **error)
+{
+  char **parsed_text_inout = user_data;
+
+  if (*parsed_text_inout == NULL)
+    *parsed_text_inout = g_strdup (text);
+  else
+    g_set_str_take (parsed_text_inout, g_strconcat (*parsed_text_inout, text, NULL));
+}
+
+static void
+passthrough_unreachable_cb (GMarkupParseContext  *context,
+                            const char           *passthrough_text,
+                            size_t                text_len,
+                            void                 *user_data,
+                            GError              **error)
+{
+  g_assert_not_reached ();
+}
 
 static void
 escape_test (gconstpointer d)
 {
   const EscapeTest *test = d;
-  gchar *result;
+  char *non_nul_terminated_original = NULL;
+  size_t non_nul_terminated_original_len = 0;
+  char *result = NULL, *result2 = NULL;
+  GMarkupParseContext *context;
+  GError *local_error = NULL;
+  const GMarkupParser parser = {
+    .start_element = start_element_unreachable_cb,
+    .end_element = end_element_unreachable_cb,
+    .text = escape_text_cb,
+    .passthrough = passthrough_unreachable_cb,
+    .error = NULL,  /* handle these via g_markup_parse_context_parse() */
+  };
+  char *parsed_text = NULL, *wrapped_result = NULL;
 
+  /* Try once nul-terminated */
   result = g_markup_escape_text (test->original, -1);
-
   g_assert_cmpstr (result, ==, test->expected);
 
+  /* And try again with a newly allocated original without a nul-terminator,
+   * and using a fixed length. This can help catch buffer overflows. */
+  non_nul_terminated_original_len = strlen (test->original);
+  non_nul_terminated_original = (non_nul_terminated_original_len > 0) ? g_memdup2 (test->original, non_nul_terminated_original_len) : g_strdup (test->original);
+  result2 = g_markup_escape_text (non_nul_terminated_original, non_nul_terminated_original_len);
+  g_assert_cmpstr (result2, ==, test->expected);
+
+  /* Check that the escaped output gets parsed as text by the markup parser. i.e.
+   * the escaping worked. We have to wrap it in a single element, as XML
+   * requires that. */
+  context = g_markup_parse_context_new (&parser, G_MARKUP_DEFAULT_FLAGS, &parsed_text, NULL);
+  wrapped_result = g_strdup_printf ("<wrapper>%s</wrapper>", result);
+  g_markup_parse_context_parse (context, wrapped_result, -1, &local_error);
+
+  if (test->expected_markup_parse_error)
+    {
+      g_assert_error (local_error, G_MARKUP_ERROR, (int) test->expected_markup_parse_error_code);
+    }
+  else
+    {
+      /* We can’t just check that `parsed_text == test->original`, as the XML
+       * parser will normalise newlines to \n. */
+      char *normalised_original = g_strdelimit (g_strdup (test->original), "\r", '\n');
+      g_assert_no_error (local_error);
+      g_assert_cmpstr (parsed_text, ==, normalised_original);
+      g_free (normalised_original);
+    }
+
+  g_clear_error (&local_error);
+  g_markup_parse_context_free (context);
+  g_free (parsed_text);
+  g_free (wrapped_result);
   g_free (result);
+  g_free (result2);
+  g_free (non_nul_terminated_original);
 }
 
 typedef struct _UnicharTest UnicharTest;
@@ -93,6 +202,9 @@ unichar_test (gconstpointer d)
 
   t.original = outbuf;
   t.expected = expected;
+  t.expected_markup_parse_error = FALSE;
+  t.expected_markup_parse_error_code = 0;
+
   escape_test (&t);
 }
 
@@ -135,21 +247,21 @@ format_test (void)
 
 int main (int argc, char **argv)
 {
-  gint i;
+  gsize i;
   gchar *path;
 
   g_test_init (&argc, &argv, NULL);
 
   for (i = 0; i < G_N_ELEMENTS (escape_tests); i++)
     {
-      path = g_strdup_printf ("/markup/escape-text/%d", i);
+      path = g_strdup_printf ("/markup/escape-text/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &escape_tests[i], escape_test);
       g_free (path);
     }
 
   for (i = 0; i < G_N_ELEMENTS (unichar_tests); i++)
     {
-      path = g_strdup_printf ("/markup/escape-unichar/%d", i);
+      path = g_strdup_printf ("/markup/escape-unichar/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &unichar_tests[i], unichar_test);
       g_free (path);
     }

@@ -1,0 +1,334 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaWildcard" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaWildcard</compoundname>
+    <includes local="no">schemasInternals.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1af2264bc4c40cc1d673156af962622b1c" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035b" kindref="member">xmlSchemaTypeType</ref></type>
+        <definition>xmlSchemaTypeType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlSchemaWildcard::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="293" column="23" bodyfile="schemasInternals.h" bodystart="293" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1a4990db1c20ea984528b46e4180a65d48" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* id</definition>
+        <argsstring></argsstring>
+        <name>id</name>
+        <qualifiedname>_xmlSchemaWildcard::id</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="294" column="19" bodyfile="schemasInternals.h" bodystart="294" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1a0f727e637a3145725c64509a1f687b17" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1afb7787502db52ed53c5449fda627a467" kindref="member">xmlSchemaAnnot</ref> *</type>
+        <definition>xmlSchemaAnnot* annot</definition>
+        <argsstring></argsstring>
+        <name>annot</name>
+        <qualifiedname>_xmlSchemaWildcard::annot</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="295" column="20" bodyfile="schemasInternals.h" bodystart="295" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1a8bedaa23f1809c00fd1a1dbaadd3df7c" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+        <definition>xmlNode* node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>_xmlSchemaWildcard::node</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="296" column="13" bodyfile="schemasInternals.h" bodystart="296" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1a2e10596f7e8b2afeb519b9d349dc773a" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int minOccurs</definition>
+        <argsstring></argsstring>
+        <name>minOccurs</name>
+        <qualifiedname>_xmlSchemaWildcard::minOccurs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="297" column="9" bodyfile="schemasInternals.h" bodystart="297" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1aa98f64287911d914e01d990e1dd41e74" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxOccurs</definition>
+        <argsstring></argsstring>
+        <name>maxOccurs</name>
+        <qualifiedname>_xmlSchemaWildcard::maxOccurs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="298" column="9" bodyfile="schemasInternals.h" bodystart="298" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1a0456df014da045b5a4cc3c9e31f1e145" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int processContents</definition>
+        <argsstring></argsstring>
+        <name>processContents</name>
+        <qualifiedname>_xmlSchemaWildcard::processContents</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="299" column="9" bodyfile="schemasInternals.h" bodystart="299" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1ad61a74cd49cab72fb1dbc4c1a8085518" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int any</definition>
+        <argsstring></argsstring>
+        <name>any</name>
+        <qualifiedname>_xmlSchemaWildcard::any</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="300" column="9" bodyfile="schemasInternals.h" bodystart="300" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1a6fee3cacd061eec780286de2b91cf7c6" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1aa0570b4557dd045b0e55aa8978173f22" kindref="member">xmlSchemaWildcardNs</ref> *</type>
+        <definition>xmlSchemaWildcardNs* nsSet</definition>
+        <argsstring></argsstring>
+        <name>nsSet</name>
+        <qualifiedname>_xmlSchemaWildcard::nsSet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="301" column="25" bodyfile="schemasInternals.h" bodystart="301" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1a22214fcb1432f4eccc2bafcc492e518b" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1aa0570b4557dd045b0e55aa8978173f22" kindref="member">xmlSchemaWildcardNs</ref> *</type>
+        <definition>xmlSchemaWildcardNs* negNsSet</definition>
+        <argsstring></argsstring>
+        <name>negNsSet</name>
+        <qualifiedname>_xmlSchemaWildcard::negNsSet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="302" column="25" bodyfile="schemasInternals.h" bodystart="302" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcard_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlSchemaWildcard::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="303" column="9" bodyfile="schemasInternals.h" bodystart="303" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A wildcard. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="9">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDict</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDictStrings</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="10" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlSchemaAnnot</label>
+        <link refid="struct__xmlSchemaAnnot"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>content</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlSchemaWildcard</label>
+        <link refid="struct__xmlSchemaWildcard"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>negNsSet</edgelabel>
+          <edgelabel>nsSet</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlSchemaWildcardNs</label>
+        <link refid="struct__xmlSchemaWildcardNs"/>
+        <childnode refid="11" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="schemasInternals.h" line="292" column="1" bodyfile="schemasInternals.h" bodystart="292" bodyend="304"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaWildcard_1a0f727e637a3145725c64509a1f687b17" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>annot</name></member>
+      <member refid="struct__xmlSchemaWildcard_1ad61a74cd49cab72fb1dbc4c1a8085518" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>any</name></member>
+      <member refid="struct__xmlSchemaWildcard_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>flags</name></member>
+      <member refid="struct__xmlSchemaWildcard_1a4990db1c20ea984528b46e4180a65d48" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>id</name></member>
+      <member refid="struct__xmlSchemaWildcard_1aa98f64287911d914e01d990e1dd41e74" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>maxOccurs</name></member>
+      <member refid="struct__xmlSchemaWildcard_1a2e10596f7e8b2afeb519b9d349dc773a" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>minOccurs</name></member>
+      <member refid="struct__xmlSchemaWildcard_1a22214fcb1432f4eccc2bafcc492e518b" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>negNsSet</name></member>
+      <member refid="struct__xmlSchemaWildcard_1a8bedaa23f1809c00fd1a1dbaadd3df7c" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>node</name></member>
+      <member refid="struct__xmlSchemaWildcard_1a6fee3cacd061eec780286de2b91cf7c6" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>nsSet</name></member>
+      <member refid="struct__xmlSchemaWildcard_1a0456df014da045b5a4cc3c9e31f1e145" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>processContents</name></member>
+      <member refid="struct__xmlSchemaWildcard_1af2264bc4c40cc1d673156af962622b1c" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcard</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

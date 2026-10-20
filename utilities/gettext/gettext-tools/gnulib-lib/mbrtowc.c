@@ -1,342 +1,87 @@
 /* Convert multibyte character to wide character.
-   Copyright (C) 1999-2002, 2005-2016 Free Software Foundation, Inc.
+   Copyright (C) 1999-2002, 2005-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2008.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
 /* Specification.  */
 #include <wchar.h>
 
-#if C_LOCALE_MAYBE_EILSEQ
-# include "hard-locale.h"
-# include <locale.h>
-#endif
-
 #if GNULIB_defined_mbstate_t
-/* Implement mbrtowc() on top of mbtowc().  */
+/* Implement mbrtowc() on top of mbtowc() for the non-UTF-8 locales
+   and directly for the UTF-8 locales.  */
 
 # include <errno.h>
+# include <stdint.h>
 # include <stdlib.h>
 
-# include "localcharset.h"
-# include "streq.h"
-# include "verify.h"
+# if AVOID_ANY_THREADS
 
+/* The option '--disable-threads' explicitly requests no locking.  */
 
-verify (sizeof (mbstate_t) >= 4);
+# elif defined _WIN32 && !defined __CYGWIN__
 
+#  define WIN32_LEAN_AND_MEAN  /* avoid including junk */
+#  include <windows.h>
+
+# elif HAVE_PTHREAD_API
+
+#  include <pthread.h>
+#  if HAVE_THREADS_H && HAVE_WEAK_SYMBOLS
+#   include <threads.h>
+#   pragma weak thrd_exit
+#   define c11_threads_in_use() (thrd_exit != NULL)
+#  else
+#   define c11_threads_in_use() 0
+#  endif
+
+# elif HAVE_THREADS_H
+
+#  include <threads.h>
+
+# endif
+
+# include "attribute.h"
+# include "lc-charset-dispatch.h"
+# include "mbtowc-lock.h"
+
+static_assert (sizeof (mbstate_t) >= 4);
 static char internal_state[4];
 
 size_t
 mbrtowc (wchar_t *pwc, const char *s, size_t n, mbstate_t *ps)
 {
-  char *pstate = (char *)ps;
-
-  if (s == NULL)
-    {
-      pwc = NULL;
-      s = "";
-      n = 1;
-    }
-
-  if (n == 0)
-    return (size_t)(-2);
-
-  /* Here n > 0.  */
-
-  if (pstate == NULL)
-    pstate = internal_state;
-
-  {
-    size_t nstate = pstate[0];
-    char buf[4];
-    const char *p;
-    size_t m;
-
-    switch (nstate)
-      {
-      case 0:
-        p = s;
-        m = n;
-        break;
-      case 3:
-        buf[2] = pstate[3];
-        /*FALLTHROUGH*/
-      case 2:
-        buf[1] = pstate[2];
-        /*FALLTHROUGH*/
-      case 1:
-        buf[0] = pstate[1];
-        p = buf;
-        m = nstate;
-        buf[m++] = s[0];
-        if (n >= 2 && m < 4)
-          {
-            buf[m++] = s[1];
-            if (n >= 3 && m < 4)
-              buf[m++] = s[2];
-          }
-        break;
-      default:
-        errno = EINVAL;
-        return (size_t)(-1);
-      }
-
-    /* Here m > 0.  */
-
-# if __GLIBC__ || defined __UCLIBC__
-    /* Work around bug <http://sourceware.org/bugzilla/show_bug.cgi?id=9674> */
-    mbtowc (NULL, NULL, 0);
-# endif
-    {
-      int res = mbtowc (pwc, p, m);
-
-      if (res >= 0)
-        {
-          if (pwc != NULL && ((*pwc == 0) != (res == 0)))
-            abort ();
-          if (nstate >= (res > 0 ? res : 1))
-            abort ();
-          res -= nstate;
-          pstate[0] = 0;
-          return res;
-        }
-
-      /* mbtowc does not distinguish between invalid and incomplete multibyte
-         sequences.  But mbrtowc needs to make this distinction.
-         There are two possible approaches:
-           - Use iconv() and its return value.
-           - Use built-in knowledge about the possible encodings.
-         Given the low quality of implementation of iconv() on the systems that
-         lack mbrtowc(), we use the second approach.
-         The possible encodings are:
-           - 8-bit encodings,
-           - EUC-JP, EUC-KR, GB2312, EUC-TW, BIG5, GB18030, SJIS,
-           - UTF-8.
-         Use specialized code for each.  */
-      if (m >= 4 || m >= MB_CUR_MAX)
-        goto invalid;
-      /* Here MB_CUR_MAX > 1 and 0 < m < 4.  */
-      {
-        const char *encoding = locale_charset ();
-
-        if (STREQ_OPT (encoding, "UTF-8", 'U', 'T', 'F', '-', '8', 0, 0, 0, 0))
-          {
-            /* Cf. unistr/u8-mblen.c.  */
-            unsigned char c = (unsigned char) p[0];
-
-            if (c >= 0xc2)
-              {
-                if (c < 0xe0)
-                  {
-                    if (m == 1)
-                      goto incomplete;
-                  }
-                else if (c < 0xf0)
-                  {
-                    if (m == 1)
-                      goto incomplete;
-                    if (m == 2)
-                      {
-                        unsigned char c2 = (unsigned char) p[1];
-
-                        if ((c2 ^ 0x80) < 0x40
-                            && (c >= 0xe1 || c2 >= 0xa0)
-                            && (c != 0xed || c2 < 0xa0))
-                          goto incomplete;
-                      }
-                  }
-                else if (c <= 0xf4)
-                  {
-                    if (m == 1)
-                      goto incomplete;
-                    else /* m == 2 || m == 3 */
-                      {
-                        unsigned char c2 = (unsigned char) p[1];
-
-                        if ((c2 ^ 0x80) < 0x40
-                            && (c >= 0xf1 || c2 >= 0x90)
-                            && (c < 0xf4 || (c == 0xf4 && c2 < 0x90)))
-                          {
-                            if (m == 2)
-                              goto incomplete;
-                            else /* m == 3 */
-                              {
-                                unsigned char c3 = (unsigned char) p[2];
-
-                                if ((c3 ^ 0x80) < 0x40)
-                                  goto incomplete;
-                              }
-                          }
-                      }
-                  }
-              }
-            goto invalid;
-          }
-
-        /* As a reference for this code, you can use the GNU libiconv
-           implementation.  Look for uses of the RET_TOOFEW macro.  */
-
-        if (STREQ_OPT (encoding,
-                       "EUC-JP", 'E', 'U', 'C', '-', 'J', 'P', 0, 0, 0))
-          {
-            if (m == 1)
-              {
-                unsigned char c = (unsigned char) p[0];
-
-                if ((c >= 0xa1 && c < 0xff) || c == 0x8e || c == 0x8f)
-                  goto incomplete;
-              }
-            if (m == 2)
-              {
-                unsigned char c = (unsigned char) p[0];
-
-                if (c == 0x8f)
-                  {
-                    unsigned char c2 = (unsigned char) p[1];
-
-                    if (c2 >= 0xa1 && c2 < 0xff)
-                      goto incomplete;
-                  }
-              }
-            goto invalid;
-          }
-        if (STREQ_OPT (encoding,
-                       "EUC-KR", 'E', 'U', 'C', '-', 'K', 'R', 0, 0, 0)
-            || STREQ_OPT (encoding,
-                          "GB2312", 'G', 'B', '2', '3', '1', '2', 0, 0, 0)
-            || STREQ_OPT (encoding,
-                          "BIG5", 'B', 'I', 'G', '5', 0, 0, 0, 0, 0))
-          {
-            if (m == 1)
-              {
-                unsigned char c = (unsigned char) p[0];
-
-                if (c >= 0xa1 && c < 0xff)
-                  goto incomplete;
-              }
-            goto invalid;
-          }
-        if (STREQ_OPT (encoding,
-                       "EUC-TW", 'E', 'U', 'C', '-', 'T', 'W', 0, 0, 0))
-          {
-            if (m == 1)
-              {
-                unsigned char c = (unsigned char) p[0];
-
-                if ((c >= 0xa1 && c < 0xff) || c == 0x8e)
-                  goto incomplete;
-              }
-            else /* m == 2 || m == 3 */
-              {
-                unsigned char c = (unsigned char) p[0];
-
-                if (c == 0x8e)
-                  goto incomplete;
-              }
-            goto invalid;
-          }
-        if (STREQ_OPT (encoding,
-                       "GB18030", 'G', 'B', '1', '8', '0', '3', '0', 0, 0))
-          {
-            if (m == 1)
-              {
-                unsigned char c = (unsigned char) p[0];
-
-                if ((c >= 0x90 && c <= 0xe3) || (c >= 0xf8 && c <= 0xfe))
-                  goto incomplete;
-              }
-            else /* m == 2 || m == 3 */
-              {
-                unsigned char c = (unsigned char) p[0];
-
-                if (c >= 0x90 && c <= 0xe3)
-                  {
-                    unsigned char c2 = (unsigned char) p[1];
-
-                    if (c2 >= 0x30 && c2 <= 0x39)
-                      {
-                        if (m == 2)
-                          goto incomplete;
-                        else /* m == 3 */
-                          {
-                            unsigned char c3 = (unsigned char) p[2];
-
-                            if (c3 >= 0x81 && c3 <= 0xfe)
-                              goto incomplete;
-                          }
-                      }
-                  }
-              }
-            goto invalid;
-          }
-        if (STREQ_OPT (encoding, "SJIS", 'S', 'J', 'I', 'S', 0, 0, 0, 0, 0))
-          {
-            if (m == 1)
-              {
-                unsigned char c = (unsigned char) p[0];
-
-                if ((c >= 0x81 && c <= 0x9f) || (c >= 0xe0 && c <= 0xea)
-                    || (c >= 0xf0 && c <= 0xf9))
-                  goto incomplete;
-              }
-            goto invalid;
-          }
-
-        /* An unknown multibyte encoding.  */
-        goto incomplete;
-      }
-
-     incomplete:
-      {
-        size_t k = nstate;
-        /* Here 0 <= k < m < 4.  */
-        pstate[++k] = s[0];
-        if (k < m)
-          {
-            pstate[++k] = s[1];
-            if (k < m)
-              pstate[++k] = s[2];
-          }
-        if (k != m)
-          abort ();
-      }
-      pstate[0] = m;
-      return (size_t)(-2);
-
-     invalid:
-      errno = EILSEQ;
-      /* The conversion state is undefined, says POSIX.  */
-      return (size_t)(-1);
-    }
-  }
+# define FITS_IN_CHAR_TYPE(wc)  ((wc) <= WCHAR_MAX)
+# include "mbrtowc-impl.h"
 }
 
 #else
 /* Override the system's mbrtowc() function.  */
+
+# if MBRTOWC_IN_C_LOCALE_MAYBE_EILSEQ
+#  include "hard-locale.h"
+#  include <locale.h>
+# endif
 
 # undef mbrtowc
 
 size_t
 rpl_mbrtowc (wchar_t *pwc, const char *s, size_t n, mbstate_t *ps)
 {
-  size_t ret;
-  wchar_t wc;
-
-# if MBRTOWC_NULL_ARG2_BUG || MBRTOWC_RETVAL_BUG || MBRTOWC_EMPTY_INPUT_BUG
+# if MBRTOWC_RETVAL_BUG || MBRTOWC_EMPTY_INPUT_BUG
   if (s == NULL)
     {
       pwc = NULL;
@@ -350,6 +95,7 @@ rpl_mbrtowc (wchar_t *pwc, const char *s, size_t n, mbstate_t *ps)
     return (size_t) -2;
 # endif
 
+  wchar_t wc;
   if (! pwc)
     pwc = &wc;
 
@@ -368,7 +114,7 @@ rpl_mbrtowc (wchar_t *pwc, const char *s, size_t n, mbstate_t *ps)
         size_t count = 0;
         for (; n > 0; s++, n--)
           {
-            ret = mbrtowc (&wc, s, 1, ps);
+            size_t ret = mbrtowc (&wc, s, 1, ps);
 
             if (ret == (size_t)(-1))
               return (size_t)(-1);
@@ -385,14 +131,21 @@ rpl_mbrtowc (wchar_t *pwc, const char *s, size_t n, mbstate_t *ps)
   }
 # endif
 
+  size_t ret;
+# if MBRTOWC_STORES_INCOMPLETE_BUG
+  ret = mbrtowc (&wc, s, n, ps);
+  if (ret < (size_t) -2 && pwc != NULL)
+    *pwc = wc;
+# else
   ret = mbrtowc (pwc, s, n, ps);
+# endif
 
 # if MBRTOWC_NUL_RETVAL_BUG
   if (ret < (size_t) -2 && !*pwc)
     return 0;
 # endif
 
-# if C_LOCALE_MAYBE_EILSEQ
+# if MBRTOWC_IN_C_LOCALE_MAYBE_EILSEQ
   if ((size_t) -2 <= ret && n != 0 && ! hard_locale (LC_CTYPE))
     {
       unsigned char uc = *s;

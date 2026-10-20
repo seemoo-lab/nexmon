@@ -10,19 +10,7 @@
  *
  * Copied from packet-tftp.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -42,9 +30,9 @@
 void proto_register_rx(void);
 void proto_reg_handoff_rx(void);
 
-#define UDP_PORT_RX_LOW		7000
-#define UDP_PORT_RX_HIGH	7009
-#define UDP_PORT_RX_AFS_BACKUPS	7021
+static dissector_handle_t rx_handle;
+
+#define UDP_PORT_RX_RANGE	"7000-7009,7021"
 
 static const value_string rx_types[] = {
 	{ RX_PACKET_TYPE_DATA,		"data" },
@@ -79,56 +67,56 @@ static const value_string rx_ack_type[] = {
 	{ 0,			NULL	}
 };
 
-static int proto_rx = -1;
-static int hf_rx_epoch = -1;
-static int hf_rx_cid = -1;
-static int hf_rx_seq = -1;
-static int hf_rx_serial = -1;
-static int hf_rx_callnumber = -1;
-static int hf_rx_type = -1;
-static int hf_rx_flags = -1;
-static int hf_rx_flags_clientinit = -1;
-static int hf_rx_flags_request_ack = -1;
-static int hf_rx_flags_last_packet = -1;
-static int hf_rx_flags_more_packets = -1;
-static int hf_rx_flags_free_packet = -1;
-static int hf_rx_userstatus = -1;
-static int hf_rx_securityindex = -1;
-static int hf_rx_spare = -1;
-static int hf_rx_serviceid = -1;
-static int hf_rx_bufferspace = -1;
-static int hf_rx_maxskew = -1;
-static int hf_rx_first_packet = -1;
-static int hf_rx_prev_packet = -1;
-static int hf_rx_reason = -1;
-static int hf_rx_numacks = -1;
-static int hf_rx_ack_type = -1;
-static int hf_rx_ack = -1;
-static int hf_rx_challenge = -1;
-static int hf_rx_version = -1;
-static int hf_rx_nonce = -1;
-static int hf_rx_inc_nonce = -1;
-static int hf_rx_min_level = -1;
-static int hf_rx_level = -1;
-static int hf_rx_response = -1;
-static int hf_rx_encrypted = -1;
-static int hf_rx_kvno = -1;
-static int hf_rx_ticket_len = -1;
-static int hf_rx_ticket = -1;
-static int hf_rx_ifmtu = -1;
-static int hf_rx_maxmtu = -1;
-static int hf_rx_rwind = -1;
-static int hf_rx_maxpackets = -1;
-static int hf_rx_abort = -1;
-static int hf_rx_abortcode = -1;
+static int proto_rx;
+static int hf_rx_epoch;
+static int hf_rx_cid;
+static int hf_rx_seq;
+static int hf_rx_serial;
+static int hf_rx_callnumber;
+static int hf_rx_type;
+static int hf_rx_flags;
+static int hf_rx_flags_clientinit;
+static int hf_rx_flags_request_ack;
+static int hf_rx_flags_last_packet;
+static int hf_rx_flags_more_packets;
+static int hf_rx_flags_free_packet;
+static int hf_rx_userstatus;
+static int hf_rx_securityindex;
+static int hf_rx_spare;
+static int hf_rx_serviceid;
+static int hf_rx_bufferspace;
+static int hf_rx_maxskew;
+static int hf_rx_first_packet;
+static int hf_rx_prev_packet;
+static int hf_rx_reason;
+static int hf_rx_numacks;
+static int hf_rx_ack_type;
+static int hf_rx_ack;
+static int hf_rx_challenge;
+static int hf_rx_version;
+static int hf_rx_nonce;
+static int hf_rx_inc_nonce;
+static int hf_rx_min_level;
+static int hf_rx_level;
+static int hf_rx_response;
+static int hf_rx_encrypted;
+static int hf_rx_kvno;
+static int hf_rx_ticket_len;
+static int hf_rx_ticket;
+static int hf_rx_ifmtu;
+static int hf_rx_maxmtu;
+static int hf_rx_rwind;
+static int hf_rx_maxpackets;
+static int hf_rx_abort;
+static int hf_rx_abortcode;
 
-static gint ett_rx = -1;
-static gint ett_rx_flags = -1;
-static gint ett_rx_ack = -1;
-static gint ett_rx_challenge = -1;
-static gint ett_rx_response = -1;
-static gint ett_rx_encrypted = -1;
-static gint ett_rx_abort = -1;
+static int ett_rx;
+static int ett_rx_flags;
+static int ett_rx_ack;
+static int ett_rx_challenge;
+static int ett_rx_response;
+static int ett_rx_encrypted;
+static int ett_rx_abort;
 
 static dissector_handle_t afs_handle;
 
@@ -139,21 +127,14 @@ dissect_rx_response_encrypted(tvbuff_t *tvb, proto_tree *parent_tree, int offset
 	proto_item *item;
 	int old_offset=offset;
 	int i;
-	guint32 callnumber;
+	uint32_t callnumber;
 
 	item = proto_tree_add_item(parent_tree, hf_rx_encrypted, tvb, offset, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_rx_encrypted);
 
 	/* epoch : 4 bytes */
-	{
-		nstime_t ts;
-		ts.secs = tvb_get_ntohl(tvb, offset);
-		ts.nsecs = 0;
-
-		proto_tree_add_time(tree, hf_rx_epoch, tvb,
-			offset, 4, &ts);
-		offset += 4;
-	}
+	proto_tree_add_item(tree, hf_rx_epoch, tvb, offset, 4, ENC_TIME_SECS|ENC_BIG_ENDIAN);
+	offset += 4;
 
 	/* cid : 4 bytes */
 	proto_tree_add_item(tree, hf_rx_cid, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -162,7 +143,7 @@ dissect_rx_response_encrypted(tvbuff_t *tvb, proto_tree *parent_tree, int offset
 	/*FIXME don't know how to handle this checksum, skipping it */
 	offset += 4;
 
-	/* sequrityindex : 1 byte */
+	/* securityindex : 1 byte */
 	proto_tree_add_item(tree, hf_rx_securityindex, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 4;
 
@@ -188,23 +169,19 @@ dissect_rx_response_encrypted(tvbuff_t *tvb, proto_tree *parent_tree, int offset
 
 
 static int
-dissect_rx_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, guint32 seq, guint32 callnumber)
+dissect_rx_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, uint32_t seq, uint32_t callnumber)
 {
 	proto_tree *tree;
 	proto_item *item;
-	guint32 version, tl;
+	uint32_t version, tl;
 	int old_offset=offset;
 
 	col_add_fstr(pinfo->cinfo, COL_INFO,
-			"RESPONSE  "
-			"Seq: %lu  "
-			"Call: %lu  "
-			"Source Port: %s  "
-			"Destination Port: %s  ",
+			"RESPONSE  Seq: %lu  Call: %lu  Source Port: %s  Destination Port: %s  ",
 			(unsigned long)seq,
 			(unsigned long)callnumber,
-			udp_port_to_display(wmem_packet_scope(), pinfo->srcport),
-			udp_port_to_display(wmem_packet_scope(), pinfo->destport)
+			udp_port_to_display(pinfo->pool, pinfo->srcport),
+			udp_port_to_display(pinfo->pool, pinfo->destport)
 		);
 
 	item = proto_tree_add_item(parent_tree, hf_rx_response, tvb, offset, -1, ENC_NA);
@@ -241,28 +218,24 @@ dissect_rx_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 }
 
 static int
-dissect_rx_abort(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, guint32 seq, guint32 callnumber)
+dissect_rx_abort(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, uint32_t seq, uint32_t callnumber)
 {
 	proto_tree *tree;
 	proto_item *item;
 	int old_offset=offset;
 
 	col_add_fstr(pinfo->cinfo, COL_INFO,
-			"ABORT  "
-			"Seq: %lu  "
-			"Call: %lu  "
-			"Source Port: %s  "
-			"Destination Port: %s  ",
+			"ABORT  Seq: %lu  Call: %lu  Source Port: %s  Destination Port: %s  ",
 			(unsigned long)seq,
 			(unsigned long)callnumber,
-			udp_port_to_display(wmem_packet_scope(), pinfo->srcport),
-			udp_port_to_display(wmem_packet_scope(), pinfo->destport)
+			udp_port_to_display(pinfo->pool, pinfo->srcport),
+			udp_port_to_display(pinfo->pool, pinfo->destport)
 		);
 
 	item = proto_tree_add_item(parent_tree, hf_rx_abort, tvb, offset, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_rx_abort);
 
-	/* kvno */
+	/* abort code */
 	proto_tree_add_item(tree, hf_rx_abortcode, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
 
@@ -272,23 +245,19 @@ dissect_rx_abort(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 
 
 static int
-dissect_rx_challenge(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, guint32 seq, guint32 callnumber)
+dissect_rx_challenge(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, uint32_t seq, uint32_t callnumber)
 {
 	proto_tree *tree;
 	proto_item *item;
-	guint32 version;
+	uint32_t version;
 	int old_offset=offset;
 
 	col_add_fstr(pinfo->cinfo, COL_INFO,
-			"CHALLENGE  "
-			"Seq: %lu  "
-			"Call: %lu  "
-			"Source Port: %s  "
-			"Destination Port: %s  ",
+			"CHALLENGE  Seq: %lu  Call: %lu  Source Port: %s  Destination Port: %s  ",
 			(unsigned long)seq,
 			(unsigned long)callnumber,
-			udp_port_to_display(wmem_packet_scope(), pinfo->srcport),
-			udp_port_to_display(wmem_packet_scope(), pinfo->destport)
+			udp_port_to_display(pinfo->pool, pinfo->srcport),
+			udp_port_to_display(pinfo->pool, pinfo->destport)
 		);
 
 	item = proto_tree_add_item(parent_tree, hf_rx_challenge, tvb, offset, -1, ENC_NA);
@@ -312,24 +281,14 @@ dissect_rx_challenge(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
 }
 
 static int
-dissect_rx_acks(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, guint32 seq, guint32 callnumber)
+dissect_rx_acks(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, uint32_t seq, uint32_t callnumber)
 {
 	proto_tree *tree;
 	proto_item *item;
-	guint8 num;
+	uint8_t num, reason;
 	int old_offset = offset;
 
-	col_add_fstr(pinfo->cinfo, COL_INFO,
-			"ACK  "
-			"Seq: %lu  "
-			"Call: %lu  "
-			"Source Port: %s  "
-			"Destination Port: %s  ",
-			(unsigned long)seq,
-			(unsigned long)callnumber,
-			udp_port_to_display(wmem_packet_scope(), pinfo->srcport),
-			udp_port_to_display(wmem_packet_scope(), pinfo->destport)
-		);
+
 
 	item = proto_tree_add_item(parent_tree, hf_rx_ack, tvb, offset, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_rx_ack);
@@ -356,11 +315,12 @@ dissect_rx_acks(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int 
 	offset += 4;
 
 	/* reason : 1 byte */
+	reason = tvb_get_uint8(tvb, offset);
 	proto_tree_add_item(tree, hf_rx_reason, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 
 	/* nACKs */
-	num = tvb_get_guint8(tvb, offset);
+	num = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(tree, hf_rx_numacks, tvb, offset, 1, num);
 	offset += 1;
 
@@ -376,7 +336,8 @@ dissect_rx_acks(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int 
 	 *
 	 * RX as a protocol seems to be completely undefined and seems to lack
 	 * any sort of documentation other than "read the source of any of the
-	 * (compatible?) implementations.
+	 * (compatible?) implementations.  The OpenAFS source indicates that
+	 * 3 bytes of padding are written after the acks.
 	 */
 	if (tvb_reported_length_remaining(tvb, offset)>3) {
 		offset += 3;	/* guess. some implementations add 3 bytes */
@@ -403,6 +364,19 @@ dissect_rx_acks(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int 
 		}
 	}
 
+	col_add_fstr(pinfo->cinfo, COL_INFO,
+			"ACK %s  "
+			"Seq: %lu  "
+			"Call: %lu  "
+			"Source Port: %s  "
+			"Destination Port: %s  ",
+			val_to_str(pinfo->pool, reason, rx_reason, "%d"),
+			(unsigned long)seq,
+			(unsigned long)callnumber,
+			udp_port_to_display(pinfo->pool, pinfo->srcport),
+			udp_port_to_display(pinfo->pool, pinfo->destport)
+		);
+
 	proto_item_set_len(item, offset-old_offset);
 	return offset;
 }
@@ -411,7 +385,7 @@ dissect_rx_acks(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int 
 static int
 dissect_rx_flags(tvbuff_t *tvb, struct rxinfo *rxinfo, proto_tree *parent_tree, int offset)
 {
-	static const int * flags[] = {
+	static int * const flags[] = {
 		&hf_rx_flags_free_packet,
 		&hf_rx_flags_more_packets,
 		&hf_rx_flags_last_packet,
@@ -420,7 +394,7 @@ dissect_rx_flags(tvbuff_t *tvb, struct rxinfo *rxinfo, proto_tree *parent_tree, 
 		NULL
 	};
 
-	rxinfo->flags = tvb_get_guint8(tvb, offset);
+	rxinfo->flags = tvb_get_uint8(tvb, offset);
 
 	proto_tree_add_bitmask(parent_tree, tvb, offset, hf_rx_flags, ett_rx_flags, flags, ENC_NA);
 
@@ -433,20 +407,21 @@ dissect_rx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *dat
 {
 	proto_tree *tree;
 	proto_item *item;
+	const char *version_type;
 	int offset = 0;
 	struct rxinfo rxinfo;
-	guint8 type;
+	uint8_t type;
 	nstime_t ts;
-	guint32 seq, callnumber;
-	guint16 serviceid;
+	uint32_t seq, callnumber;
+	uint16_t serviceid;
 
 	/* Ensure we have enough data */
 	if (tvb_captured_length(tvb) < 28)
 		return 0;
 
 	/* Make sure it's a known type */
-	type = tvb_get_guint8(tvb, 20);
-	if (type == 0 || type == 10 || type == 11 || type == 12 || type > 13)
+	type = tvb_get_uint8(tvb, 20);
+	if (!try_val_to_str(type, rx_types))
 		return 0;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "RX");
@@ -487,7 +462,7 @@ dissect_rx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *dat
 	offset += 4;
 
 	/* type : 1 byte */
-	type = tvb_get_guint8(tvb, offset);
+	type = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(tree, hf_rx_type, tvb,
 		offset, 1, type);
 	offset += 1;
@@ -500,7 +475,7 @@ dissect_rx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *dat
 	proto_tree_add_item(tree, hf_rx_userstatus, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 
-	/* sequrityindex : 1 byte */
+	/* securityindex : 1 byte */
 	proto_tree_add_item(tree, hf_rx_securityindex, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 
@@ -532,15 +507,27 @@ dissect_rx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *dat
 	case RX_PACKET_TYPE_ACKALL:
 		/* does not contain any payload */
 		col_add_fstr(pinfo->cinfo, COL_INFO,
-				"ACKALL  "
-				"Seq: %lu  "
-				"Call: %lu  "
-				"Source Port: %s  "
-				"Destination Port: %s  ",
+				"ACKALL  Seq: %lu  Call: %lu  Source Port: %s  Destination Port: %s  ",
 				(unsigned long)seq,
 				(unsigned long)callnumber,
-				udp_port_to_display(wmem_packet_scope(), pinfo->srcport),
-				udp_port_to_display(wmem_packet_scope(), pinfo->destport)
+				udp_port_to_display(pinfo->pool, pinfo->srcport),
+				udp_port_to_display(pinfo->pool, pinfo->destport)
+			);
+		break;
+	case RX_PACKET_TYPE_VERSION:
+		/* does not contain any payload */
+		if (rxinfo.cid == 0)
+		    version_type = "NAT ping";
+		else
+		    version_type = "request";
+
+		col_add_fstr(pinfo->cinfo, COL_INFO,
+				"VERSION %s  Seq: %lu  Call: %lu  Source Port: %s  Destination Port: %s  ",
+				version_type,
+				(unsigned long)seq,
+				(unsigned long)callnumber,
+				udp_port_to_display(pinfo->pool, pinfo->srcport),
+				udp_port_to_display(pinfo->pool, pinfo->destport)
 			);
 		break;
 	case RX_PACKET_TYPE_CHALLENGE:
@@ -561,7 +548,7 @@ dissect_rx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *dat
 		break;
 	}
 
-	return(tvb_captured_length(tvb));
+	return tvb_captured_length(tvb);
 }
 
 void
@@ -731,11 +718,11 @@ proto_register_rx(void)
 			NULL, 0, NULL, HFILL }},
 
 		{ &hf_rx_abortcode, {
-			"Abort Code", "rx.abort_code", FT_UINT32, BASE_DEC,
+			"Abort Code", "rx.abort_code", FT_INT32, BASE_DEC,
 			NULL, 0, NULL, HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_rx,
 		&ett_rx_flags,
 		&ett_rx_ack,
@@ -748,30 +735,23 @@ proto_register_rx(void)
 	proto_rx = proto_register_protocol("RX Protocol", "RX", "rx");
 	proto_register_field_array(proto_rx, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	rx_handle = register_dissector("rx", dissect_rx, proto_rx);
 }
 
 void
 proto_reg_handoff_rx(void)
 {
-	dissector_handle_t rx_handle;
-
-	int port;
-
 	/*
 	 * Get handle for the AFS dissector.
 	 */
 	afs_handle = find_dissector_add_dependency("afs", proto_rx);
 
-	/* Ports in the range UDP_PORT_RX_LOW to UDP_PORT_RX_HIGH
-	   are all used for various AFS services. */
-	rx_handle = create_dissector_handle(dissect_rx, proto_rx);
-	for (port = UDP_PORT_RX_LOW; port <= UDP_PORT_RX_HIGH; port++)
-		dissector_add_uint("udp.port", port, rx_handle);
-	dissector_add_uint("udp.port", UDP_PORT_RX_AFS_BACKUPS, rx_handle);
+	dissector_add_uint_range_with_preference("udp.port", UDP_PORT_RX_RANGE, rx_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

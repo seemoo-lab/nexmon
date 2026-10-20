@@ -1,6 +1,5 @@
 /* Plural form count.
-   Copyright (C) 2003, 2007, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "plural-count.h"
@@ -31,7 +30,6 @@ get_plural_count (const char *header)
 {
   const struct expression *plural;
   unsigned long int nplurals;
-
   extract_plural_expression (header, &plural, &nplurals);
 
   return nplurals;

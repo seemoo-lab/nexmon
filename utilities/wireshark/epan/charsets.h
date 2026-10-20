@@ -1,23 +1,11 @@
-/* charsets.h
+/** @file
  * Routines for handling character sets
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __CHARSETS_H__
 #define __CHARSETS_H__
@@ -36,6 +24,10 @@ extern "C" {
 
 /* Table for windows-1250 */
 extern const gunichar2 charset_table_cp1250[0x80];
+/* Table for windows-1251 */
+extern const gunichar2 charset_table_cp1251[0x80];
+/* Table for windows-1252 */
+extern const gunichar2 charset_table_cp1252[0x80];
 
 /* Tables for ISO-8859-X */
 extern const gunichar2 charset_table_iso_8859_2[0x80];
@@ -58,6 +50,20 @@ extern const gunichar2 charset_table_mac_roman[0x80];
 
 /* Tables for DOS code pages */
 extern const gunichar2 charset_table_cp437[0x80];
+extern const gunichar2 charset_table_cp855[0x80];
+extern const gunichar2 charset_table_cp866[0x80];
+
+/*
+ * Translation tables that map the lower 128 code points in single-byte
+ * ISO 646-based character encodings to Unicode code points in the
+ * Basic Multilingual Plane.
+ */
+extern const gunichar2 charset_table_iso_646_basic[0x80];
+
+/* Tables for EBCDIC code pages */
+extern const gunichar2 charset_table_ebcdic[256];
+extern const gunichar2 charset_table_ebcdic_cp037[256];
+extern const gunichar2 charset_table_ebcdic_cp500[256];
 
 /*
  * Given a wmem scope, a pointer, and a length, treat the string of bytes
@@ -68,44 +74,152 @@ extern const gunichar2 charset_table_cp437[0x80];
  * Octets with the highest bit set will be converted to the Unicode
  * REPLACEMENT CHARACTER.
  */
-WS_DLL_PUBLIC guint8 *
-get_ascii_string(wmem_allocator_t *scope, const guint8 *ptr, gint length);
+WS_DLL_PUBLIC uint8_t *
+get_ascii_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
 
-WS_DLL_PUBLIC guint8 *
-get_8859_1_string(wmem_allocator_t *scope, const guint8 *ptr, gint length);
+/*
+ * Given a wmem scope, a pointer, and a length, treat the string of bytes
+ * referred to by the pointer and length as a UTF-8 string, and return a
+ * pointer to a UTF-8 string, allocated using the wmem scope, with all
+ * ill-formed sequences replaced with the Unicode REPLACEMENT CHARACTER
+ * according to the recommended "best practices" given in the Unicode
+ * Standard and specified by W3C/WHATWG.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_utf_8_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
 
-WS_DLL_PUBLIC guint8 *
-get_unichar2_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const gunichar2 table[0x80]);
+/*
+ * Given a wmem scope, a pointer, a length, and a translation table,
+ * treat the string of bytes referred to by the pointer and length as a
+ * string encoded using one octet per character, with octets with the
+ * high-order bit clear being mapped by the translation table to 2-byte
+ * Unicode Basic Multilingual Plane characters (including REPLACEMENT
+ * CHARACTER) and octets with the high-order bit set being mapped to
+ * REPLACEMENT CHARACTER, and return a pointer to a UTF-8 string,
+ * allocated using the wmem scope.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_iso_646_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, const gunichar2 table[0x80]);
 
-WS_DLL_PUBLIC guint8 *
-get_ucs_2_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const guint encoding);
+/*
+ * Given a wmem scope, a pointer, and a length, treat the string of bytes
+ * referred to by the pointer and length as an ISO 8859/1 string, and
+ * return a pointer to a UTF-8 string, allocated using the wmem scope.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_8859_1_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
 
-WS_DLL_PUBLIC guint8 *
-get_utf_16_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const guint encoding);
+/*
+ * Given a wmem scope, a pointer, a length, and a translation table with
+ * 128 entries, treat the string of bytes referred to by the pointer and
+ * length as a string encoded using one octet per character, with octets
+ * with the high-order bit clear being ASCII and octets with the high-order
+ * bit set being mapped by the translation table to 2-byte Unicode Basic
+ * Multilingual Plane characters (including REPLACEMENT CHARACTER), and
+ * return a pointer to a UTF-8 string, allocated using the wmem scope.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_unichar2_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, const gunichar2 table[0x80]);
 
-WS_DLL_PUBLIC guint8 *
-get_ucs_4_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const guint encoding);
+/*
+ * Given a wmem scope, a pointer, and a length, treat the string of bytes
+ * referred to by the pointer and length as a UCS-2 encoded string
+ * containing characters from the Basic Multilingual Plane (plane 0) of
+ * Unicode, and return a pointer to a UTF-8 string, allocated with the
+ * wmem scope.
+ *
+ * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN,
+ * possibly ORed with ENC_BOM.
+ *
+ * Specify length in bytes.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_ucs_2_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, unsigned encoding);
 
-WS_DLL_PUBLIC guint8 *
-get_ts_23_038_7bits_string(wmem_allocator_t *scope, const guint8 *ptr,
-        const gint bit_offset, gint no_of_chars);
+/*
+ * Given a wmem scope, a pointer, and a length, treat the string of bytes
+ * referred to by the pointer and length as a UTF-16 encoded string, and
+ * return a pointer to a UTF-8 string, allocated with the wmem scope.
+ *
+ * See RFC 2781 section 2.2.
+ *
+ * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN,
+ * possibly ORed with ENC_BOM.
+ *
+ * Specify length in bytes.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_utf_16_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, unsigned encoding);
 
-WS_DLL_PUBLIC guint8 *
-get_ascii_7bits_string(wmem_allocator_t *scope, const guint8 *ptr,
-        const gint bit_offset, gint no_of_chars);
+/*
+ * Given a wmem scope, a pointer, and a length, treat the string of bytes
+ * referred to by the pointer and length as a UCS-4 encoded string, and
+ * return a pointer to a UTF-8 string, allocated with the wmem scope.
+ *
+ * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN,
+ * possibly ORed with ENC_BOM.
+ *
+ * Specify length in bytes.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_ucs_4_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, unsigned encoding);
 
-WS_DLL_PUBLIC guint8 *
-get_ebcdic_string(wmem_allocator_t *scope, const guint8 *ptr, gint length);
+WS_DLL_PUBLIC uint8_t *
+get_ts_23_038_7bits_string_packed(wmem_allocator_t *scope, const uint8_t *ptr,
+        const int bit_offset, int no_of_chars);
 
-#if 0
-void ASCII_to_EBCDIC(guint8 *buf, guint bytes);
-guint8 ASCII_to_EBCDIC1(guint8 c);
-#endif
-WS_DLL_PUBLIC
-void EBCDIC_to_ASCII(guint8 *buf, guint bytes);
-WS_DLL_PUBLIC
-guint8 EBCDIC_to_ASCII1(guint8 c);
+WS_DLL_PUBLIC uint8_t *
+get_ts_23_038_7bits_string_unpacked(wmem_allocator_t *scope, const uint8_t *ptr,
+        int length);
 
+WS_DLL_PUBLIC uint8_t *
+get_etsi_ts_102_221_annex_a_string(wmem_allocator_t *scope, const uint8_t *ptr,
+        int length);
+
+WS_DLL_PUBLIC uint8_t *
+get_ascii_7bits_string(wmem_allocator_t *scope, const uint8_t *ptr,
+        const int bit_offset, int no_of_chars);
+
+/*
+ * Given a wmem scope, a pointer, a length, and a translation table with
+ * 256 entries, treat the string of bytes referred to by the pointer and
+ * length as a string encoded using one octet per character, with octets
+ * being mapped by the translation table to 2-byte Unicode Basic Multilingual
+ * Plane characters (including REPLACEMENT CHARACTER), and return a
+ * pointer to a UTF-8 string, allocated using the wmem scope.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_nonascii_unichar2_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, const gunichar2 table[256]);
+
+/*
+ * Given a wmem scope, a pointer, and a length, treat the bytes referred to
+ * by the pointer and length as a GB18030 encoded string, and return a pointer
+ * to a UTF-8 string, allocated using the wmem scope, converted having
+ * substituted REPLACEMENT CHARACTER according to the Unicode Standard
+ * 5.22 U+FFFD Substitution for Conversion.
+ * ( https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf )
+ *
+ * As expected, this will also decode GBK and GB2312 strings.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_gb18030_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+
+/*
+ * Given a wmem scope, a pointer, and a length, treat the bytes referred to
+ * by the pointer and length as a EUC-KR encoded string, and return a pointer
+ * to a UTF-8 string, allocated using the wmem scope, converted having
+ * substituted REPLACEMENT CHARACTER according to the Unicode Standard
+ * 5.22 U+FFFD Substitution for Conversion.
+ * ( https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf )
+ */
+WS_DLL_PUBLIC uint8_t *
+get_euc_kr_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+
+WS_DLL_PUBLIC uint8_t *
+get_t61_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+
+WS_DLL_PUBLIC uint8_t *
+get_dect_standard_8bits_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
@@ -113,7 +227,7 @@ guint8 EBCDIC_to_ASCII1(guint8 c);
 #endif /* __CHARSETS_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

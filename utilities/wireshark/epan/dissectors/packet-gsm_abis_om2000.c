@@ -11,109 +11,120 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/expert.h>
 
 void proto_register_abis_om2000(void);
 
 /* initialize the protocol and registered fields */
-static int proto_abis_om2000 = -1;
+static int proto_abis_om2000;
 
-static int hf_om2k_msg_code = -1;
-static int hf_om2k_mo_if = -1;
-static int hf_om2k_mo_class = -1;
-static int hf_om2k_mo_sub1 = -1;
-static int hf_om2k_mo_sub2 = -1;
-static int hf_om2k_mo_instance = -1;
+static int hf_om2k_msg_code;
+static int hf_om2k_mo_if;
+static int hf_om2k_mo_class;
+static int hf_om2k_mo_sub1;
+static int hf_om2k_mo_sub2;
+static int hf_om2k_mo_instance;
 
-static int hf_om2k_aip = -1;
-static int hf_om2k_oip = -1;
-static int hf_om2k_comb = -1;
-static int hf_om2k_ts = -1;
-static int hf_om2k_hsn = -1;
-static int hf_om2k_maio = -1;
-static int hf_om2k_bsic = -1;
-static int hf_om2k_diversity = -1;
-static int hf_om2k_fn_offs = -1;
-static int hf_om2k_ext_range = -1;
-static int hf_om2k_irc = -1;
-static int hf_om2k_bs_pa_mfrms = -1;
-static int hf_om2k_bs_ag_blks_res= -1;
-static int hf_om2k_drx_dev_max = -1;
-static int hf_om2k_cr = -1;
-static int hf_om2k_ipt3 = -1;
-static int hf_om2k_aop = -1;
-static int hf_om2k_t3105 = -1;
-static int hf_om2k_ny1 = -1;
-static int hf_om2k_cbi = -1;
-static int hf_om2k_tsc = -1;
-static int hf_om2k_icm = -1;
-static int hf_om2k_tta = -1;
-static int hf_om2k_icm_cr = -1;
-static int hf_om2k_lsc_fm = -1;
-static int hf_om2k_lsc_lsi = -1;
-static int hf_om2k_lsc_lsa = -1;
-static int hf_om2k_ls_ft = -1;
-static int hf_om2k_cst = -1;
-static int hf_om2k_ea = -1;
-static int hf_om2k_unknown_tag = -1;
-static int hf_om2k_unknown_val = -1;
-static int hf_om2k_nom_pwr = -1;
-static int hf_om2k_fill_mark = -1;
-static int hf_om2k_bcc = -1;
-static int hf_om2k_mo_state = -1;
-static int hf_om2k_la_state = -1;
-static int hf_om2k_tsn_state = -1;
-static int hf_om2k_bts_manuf = -1;
-static int hf_om2k_bts_gen = -1;
-static int hf_om2k_bts_rev = -1;
-static int hf_om2k_bts_var = -1;
-static int hf_om2k_brr = -1;
-static int hf_om2k_bfr = -1;
-static int hf_om2k_hwinfo_sig = -1;
-static int hf_om2k_capa_sig = -1;
-static int hf_om2k_file_rev = -1;
-static int hf_om2k_filerel_ilr = -1;
-static int hf_om2k_filerel_cur = -1;
-static int hf_om2k_filerel_other = -1;
-static int hf_om2k_cal_time = -1;
-static int hf_om2k_list_nr = -1;
-static int hf_om2k_list_nr_end = -1;
-static int hf_om2k_isl = -1;
-static int hf_om2k_isl_icp1 = -1;
-static int hf_om2k_isl_icp2 = -1;
-static int hf_om2k_isl_ci = -1;
-static int hf_om2k_conl = -1;
-static int hf_om2k_conl_nr_cgs = -1;
-static int hf_om2k_conl_nr_cps_cg = -1;
-static int hf_om2k_conl_ccp = -1;
-static int hf_om2k_conl_ci = -1;
-static int hf_om2k_conl_tag = -1;
-static int hf_om2k_conl_tei = -1;
-static int hf_om2k_tf_mode = -1;
-static int hf_om2k_tf_fs_offset = -1;
+static int hf_om2k_aip;
+static int hf_om2k_oip;
+static int hf_om2k_comb;
+static int hf_om2k_ts;
+static int hf_om2k_hsn;
+static int hf_om2k_maio;
+static int hf_om2k_bsic;
+static int hf_om2k_diversity;
+static int hf_om2k_fn_offs;
+static int hf_om2k_ext_range;
+static int hf_om2k_irc;
+static int hf_om2k_bs_pa_mfrms;
+static int hf_om2k_bs_ag_blks_res;
+static int hf_om2k_drx_dev_max;
+static int hf_om2k_cr;
+static int hf_om2k_ipt3;
+static int hf_om2k_aop;
+static int hf_om2k_t3105;
+static int hf_om2k_ny1;
+static int hf_om2k_cbi;
+static int hf_om2k_tsc;
+static int hf_om2k_icm;
+static int hf_om2k_tta;
+static int hf_om2k_icm_cr;
+static int hf_om2k_lsc_fm;
+static int hf_om2k_lsc_lsi;
+static int hf_om2k_lsc_lsa;
+static int hf_om2k_ls_ft;
+static int hf_om2k_cst;
+static int hf_om2k_ea;
+static int hf_om2k_unknown_tag;
+static int hf_om2k_unknown_val;
+static int hf_om2k_nom_pwr;
+static int hf_om2k_fill_mark;
+static int hf_om2k_bcc;
+static int hf_om2k_mo_state;
+static int hf_om2k_la_state;
+static int hf_om2k_tsn_state;
+static int hf_om2k_bts_manuf;
+static int hf_om2k_bts_gen;
+static int hf_om2k_bts_rev;
+static int hf_om2k_bts_var;
+static int hf_om2k_brr;
+static int hf_om2k_bfr;
+static int hf_om2k_hwinfo_sig;
+static int hf_om2k_capa_sig;
+static int hf_om2k_file_rev;
+static int hf_om2k_filerel_ilr;
+static int hf_om2k_filerel_cur;
+static int hf_om2k_filerel_other;
+static int hf_om2k_cal_time;
+static int hf_om2k_list_nr;
+static int hf_om2k_list_nr_end;
+static int hf_om2k_isl;
+static int hf_om2k_isl_icp1;
+static int hf_om2k_isl_icp2;
+static int hf_om2k_isl_ci;
+static int hf_om2k_conl;
+static int hf_om2k_conl_nr_cgs;
+static int hf_om2k_conl_nr_cps_cg;
+static int hf_om2k_conl_ccp;
+static int hf_om2k_conl_ci;
+static int hf_om2k_conl_tag;
+static int hf_om2k_conl_tei;
+static int hf_om2k_tf_mode;
+static int hf_om2k_tf_fs_offset;
+static int hf_om2k_attr_id;
+static int hf_om2k_attr_index;
+static int hf_om2k_result_code;
+static int hf_om2k_reason_code;
+static int hf_om2k_iwd_type;
+static int hf_om2k_iwd_gen_rev;
+static int hf_om2k_trxc_list;
+static int hf_om2k_max_allowed_power;
+static int hf_om2k_max_allowed_num_trxcs;
+static int hf_om2k_mctr_feat_sts_bitmap;
+static int hf_om2k_config_type;
+static int hf_om2k_jitter_size;
+static int hf_om2k_packing_algo;
+static int hf_om2k_power_bo_ctype_map;
+static int hf_om2k_power_bo_priority;
+static int hf_om2k_power_bo_value;
 
 /* initialize the subtree pointers */
-static int ett_om2000 = -1;
-static int ett_om2k_mo = -1;
-static int ett_om2k_isl = -1;
-static int ett_om2k_conl = -1;
+static int ett_om2000;
+static int ett_om2k_mo;
+static int ett_om2k_isl;
+static int ett_om2k_conl;
+static int ett_om2k_iwd;
+
+static expert_field ei_om2k_not_performed;
+static expert_field ei_om2k_reject;
+static expert_field ei_om2k_nack;
+static expert_field ei_om2k_ena_res_disabled;
 
 static const value_string om2k_msgcode_vals[] = {
 	{ 0x0000, "Abort SP Command" },
@@ -138,7 +149,7 @@ static const value_string om2k_msgcode_vals[] = {
 	{ 0x001a, "CON Configuration Result" },
 	{ 0x001c, "Connect Command" },
 	{ 0x001e, "Connect Complete" },
-	{ 0x001f, "Connect Rejecte" },
+	{ 0x001f, "Connect Reject" },
 	{ 0x0028, "Disable Request" },
 	{ 0x002a, "Disable Request Accept" },
 	{ 0x002b, "Disable Request Reject" },
@@ -291,6 +302,14 @@ static const value_string om2k_msgcode_vals[] = {
 	{ 0x011a, "Feature Control Complete" },
 	{ 0x011b, "Feature Control Reject" },
 
+	/* Observed with RBS6000 / DUG 20 */
+	{ 0x012c, "MCTR Configuration Request" },
+	{ 0x012e, "MCTR Configuration Request Accept" },
+	{ 0x012f, "MCTR Configuration Request Reject" },
+	{ 0x0130, "MCTR Configuration Result ACK" },
+	{ 0x0131, "MCTR Configuration Result NACK" },
+	{ 0x0132, "MCTR Configuration Result" },
+
 	{ 0, NULL }
 };
 static value_string_ext om2k_msgcode_vals_ext = VALUE_STRING_EXT_INIT(om2k_msgcode_vals);
@@ -423,6 +442,16 @@ static const value_string om2k_attr_vals[] = {
 	{ 0x9b, "Master TX Chain Delay" },
 	{ 0x9c, "External Condition Class 2 Extension" },
 	{ 0x9d, "TSs MO State" },
+	{ 0x9e, "Configuration Type" },
+	{ 0x9f, "Jitter Size" },
+	{ 0xa0, "Packing Algorithm" },
+	{ 0xa8, "TRXC List" },
+	{ 0xa9, "Maximum Allowed Power" },
+	{ 0xaa, "Maximum Allowed Number of TRXCs" },
+	{ 0xab, "MCTR Feature Status Bitmap" },
+	{ 0xae, "Power Back-off Channel Type Map" },
+	{ 0xaf, "Power Back-off Priority" },
+	{ 0xb0, "Power Back-off Value" },
 	{ 0, NULL }
 };
 static value_string_ext om2k_attr_vals_ext = VALUE_STRING_EXT_INIT(om2k_attr_vals);
@@ -499,10 +528,13 @@ static const value_string filerel_state_vals[] = {
 
 static const value_string om2k_mo_class_short_vals[] = {
 	{ 0x01, "TRXC" },
+	{ 0x02, "TG" },
 	{ 0x03, "TS" },
 	{ 0x04, "TF" },
 	{ 0x05, "IS" },
 	{ 0x06, "CON" },
+	{ 0x07, "DP" },
+	{ 0x08, "MCTR" },
 	{ 0x0a, "CF" },
 	{ 0x0b, "TX" },
 	{ 0x0c, "RX" },
@@ -511,10 +543,13 @@ static const value_string om2k_mo_class_short_vals[] = {
 
 static const value_string om2k_mo_class_vals[] = {
 	{ 0x01, "TRXC (TRX Controller)" },
+	{ 0x02, "TG (TRX Group)" },
 	{ 0x03, "TS (Timeslot)" },
 	{ 0x04, "TF (Timing Function)" },
 	{ 0x05, "IS (Interface Switch)" },
 	{ 0x06, "CON (Concentrator)" },
+	{ 0x07, "DP (Data Path)" },
+	{ 0x08, "MCTR (Multi Carrier TRansceiver)" },
 	{ 0x0a, "CF (Central Function)" },
 	{ 0x0b, "TX (Transmitter)" },
 	{ 0x0c, "RX (Receiver)" },
@@ -529,20 +564,88 @@ static const value_string om2k_tf_mode_vals[] = {
 	{ 0, NULL }
 };
 
-static gint
-dissect_tss_mo_state(tvbuff_t *tvb, gint offset, proto_tree *tree)
+static const value_string om2k_attr_id_vals[] = {
+	{ 0x0005, "Alarm Status Type" },
+	{ 0x0007, "Input BS_AG_BLKS_RES" },
+	{ 0x001d, "Input FN Offset" },
+	{ 0x002f, "Power GMSK" },
+	{ 0x0033, "Receiver Diversity" },
+	{ 0x0037, "Power 8-PSK" },
+	{ 0x003a, "TF Mode" },
+	{ 0x0043, "File Supported Functions OML I" },
+	{ 0x0044, "File Supported Functions OML II" },
+	{ 0x0045, "File Supported Functions RSL I" },
+	{ 0x0046, "File Supported Functions RSL II" },
+	{ 0x0047, "Input Extended Range" },
+	{ 0x0086, "TF Synchronization Source" },
+	{ 0x0101, "Alarm Information" },
+	{ 0x0127, "ICPs Signaling" },
+	{ 0x0143, "TG Supported Functions OML I" },
+	{ 0x0144, "TG Supported Functions OML II" },
+	{ 0x0145, "TG Supported Functions RSL I" },
+	{ 0x0146, "TG Supported Functions RSL II" },
+	{ 0x01ff, "ICPs IS" },
+	{ 0x0227, "ICPs Traffic" },
+	{ 0x0243, "TRXC Supported Functions OML I" },
+	{ 0x0244, "TRXC Supported Functions OML II" },
+	{ 0x0245, "TRXC Supported Functions RSL I" },
+	{ 0x0246, "TRXC Supported Functions RSL II" },
+	{ 0x02ff, "Cascadable" },
+	{ 0x0327, "ICPs PCM" },
+	{ 0x03ff, "TEI" },
+	{ 0x041f, "ARFCN AB RX" },
+	{ 0x0420, "ARFCN TX" },
+	{ 0x0427, "ICPs CON" },
+	{ 0x04ff, "TCH Capabilities" },
+	{ 0x0527, "ICP Group" },
+	{ 0x05ff, "Cascade downlink" },
+	{ 0x0627, "ICP Group Capacity" },
+	{ 0x07ff, "CRC-4 Option" },
+	{ 0x0bff, "Hopping Type" },
+	{ 0x0cff, "TRXC Domain" },
+	{ 0x19ff, "Band AB RX" },
+	{ 0x1aff, "Band TX" },
+	{ 0x1bff, "TX Chain Delay" },
+	{ 0, NULL }
+};
+
+static value_string_ext om2k_attr_id_vals_ext = VALUE_STRING_EXT_INIT(om2k_attr_id_vals);
+
+static const value_string om2k_res_code_vals[] = {
+	{ 0x02, "Wrong state or out of sequence" },
+	{ 0x03, "File error" },
+	{ 0x04, "Fault, unspecified" },
+	{ 0x05, "Tuning fault" },
+	{ 0x06, "Protocol error" },
+	{ 0x07, "MO not connected" },
+	{ 0x08, "Parameter error" },
+	{ 0x09, "Operational function not supported" },
+	{ 0x0a, "Local Access state LOCALLY DISCONNECTED" },
+	{ 0, NULL }
+};
+
+static const value_string om2k_iwd_type_vals[] = {
+	{ 0x00, "OML" },
+	{ 0x01, "RSL" },
+	{ 0x02, "GSL" },
+	{ 0x03, "TRA" },
+	{ 0, NULL }
+};
+
+static int
+dissect_tss_mo_state(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *tree)
 {
-	guint8 tmp;
-	guint  i = 0;
+	uint8_t tmp;
+	unsigned  i = 0;
 
 	for (i = 0; i < 8; i+= 2) {
-		tmp = tvb_get_guint8(tvb, offset);
+		tmp = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint_format(tree, hf_om2k_tsn_state, tvb, offset, 1, tmp & 0xf,
-					   "Timslot %u MO State: %s", i,
-					   val_to_str(tmp & 0xf, om2k_mo_state_vals, "unknown (%02d)"));
+					   "Timeslot %u MO State: %s", i,
+					   val_to_str(pinfo->pool, tmp & 0xf, om2k_mo_state_vals, "unknown (%02d)"));
 		proto_tree_add_uint_format(tree, hf_om2k_tsn_state, tvb, offset, 1, tmp >> 4,
-					   "Timslot %u MO State: %s", i+1,
-					   val_to_str(tmp >> 4, om2k_mo_state_vals, "unknown (%02d)"));
+					   "Timeslot %u MO State: %s", i+1,
+					   val_to_str(pinfo->pool, tmp >> 4, om2k_mo_state_vals, "unknown (%02d)"));
 		offset++;
 	}
 
@@ -550,19 +653,19 @@ dissect_tss_mo_state(tvbuff_t *tvb, gint offset, proto_tree *tree)
 }
 
 
-static gint
-dissect_om2k_time(tvbuff_t *tvb, gint offset, proto_tree *tree)
+static int
+dissect_om2k_time(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
 	nstime_t  tmptime;
 	time_t    tval;
 	struct tm _time;
 
-	_time.tm_year  = 100 + tvb_get_guint8(tvb, offset++);
-	_time.tm_mon   = tvb_get_guint8(tvb, offset++) - 1;
-	_time.tm_mday  = tvb_get_guint8(tvb, offset++);
-	_time.tm_hour  = tvb_get_guint8(tvb, offset++);
-	_time.tm_min   = tvb_get_guint8(tvb, offset++);
-	_time.tm_sec   = tvb_get_guint8(tvb, offset++);
+	_time.tm_year  = 100 + tvb_get_uint8(tvb, offset++);
+	_time.tm_mon   = tvb_get_uint8(tvb, offset++) - 1;
+	_time.tm_mday  = tvb_get_uint8(tvb, offset++);
+	_time.tm_hour  = tvb_get_uint8(tvb, offset++);
+	_time.tm_min   = tvb_get_uint8(tvb, offset++);
+	_time.tm_sec   = tvb_get_uint8(tvb, offset++);
 	_time.tm_isdst = -1;
 
 	tval           = mktime(&_time);
@@ -574,24 +677,24 @@ dissect_om2k_time(tvbuff_t *tvb, gint offset, proto_tree *tree)
 	return 6;
 }
 
-static gint
-dissect_om2k_attr_unkn(tvbuff_t *tvb, gint offset, gint len, gint iei, proto_tree *tree)
+static int
+dissect_om2k_attr_unkn(tvbuff_t *tvb, packet_info *pinfo, int offset, int len, int iei, proto_tree *tree)
 {
 	proto_tree_add_bytes_format(tree, hf_om2k_unknown_val, tvb,
 				    offset, len, NULL,
 				    "%s: %s",
-				    val_to_str_ext(iei, &om2k_attr_vals_ext, "0x%02x"),
-				    tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, len));
+				    val_to_str_ext(pinfo->pool, iei, &om2k_attr_vals_ext, "0x%02x"),
+				    tvb_bytes_to_str(pinfo->pool, tvb, offset, len));
 	return len;
 }
 
-static gint
-dissect_om2k_is_list(tvbuff_t *tvb, gint base_offset, proto_tree *tree)
+static int
+dissect_om2k_is_list(tvbuff_t *tvb, int base_offset, proto_tree *tree)
 {
-	gint        offset = base_offset;
+	int         offset = base_offset;
 	proto_item *ti;
 	proto_tree *isl_tree;
-	guint8      len    = tvb_get_guint8(tvb, offset++);
+	uint8_t     len    = tvb_get_uint8(tvb, offset++);
 
 	ti       = proto_tree_add_item(tree, hf_om2k_isl, tvb, offset, len, ENC_NA);
 	isl_tree = proto_item_add_subtree(ti, ett_om2k_isl);
@@ -609,13 +712,13 @@ dissect_om2k_is_list(tvbuff_t *tvb, gint base_offset, proto_tree *tree)
 	return offset - base_offset;
 }
 
-static gint
-dissect_om2k_con_list(tvbuff_t *tvb, gint base_offset, proto_tree *tree)
+static int
+dissect_om2k_con_list(tvbuff_t *tvb, int base_offset, proto_tree *tree)
 {
-	gint        offset = base_offset;
+	int         offset = base_offset;
 	proto_item *ti;
 	proto_tree *conl_tree;
-	guint8      len    = tvb_get_guint8(tvb, offset++);
+	uint8_t     len    = tvb_get_uint8(tvb, offset++);
 
 	ti = proto_tree_add_item(tree, hf_om2k_conl, tvb, offset, len, ENC_NA);
 	conl_tree = proto_item_add_subtree(ti, ett_om2k_conl);
@@ -624,7 +727,7 @@ dissect_om2k_con_list(tvbuff_t *tvb, gint base_offset, proto_tree *tree)
 			    offset++, 1, ENC_BIG_ENDIAN);
 
 	while (offset < base_offset + len) {
-		guint8 nr_cps_cg = tvb_get_guint8(tvb, offset);
+		uint8_t nr_cps_cg = tvb_get_uint8(tvb, offset);
 		proto_tree_add_item(conl_tree, hf_om2k_conl_nr_cps_cg, tvb,
 				    offset++, 1, ENC_BIG_ENDIAN);
 		while (nr_cps_cg--) {
@@ -642,18 +745,89 @@ dissect_om2k_con_list(tvbuff_t *tvb, gint base_offset, proto_tree *tree)
 	return offset - base_offset;
 }
 
+static int
+dissect_om2k_negotiation_record1(tvbuff_t *tvb, int base_offset, proto_tree *tree)
+{
+	int offset = base_offset;
+	uint8_t i;
+	uint8_t num_iwd = tvb_get_uint8(tvb, offset++);
 
-static gint
-dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
+	for (i = 0; i < num_iwd; i++) {
+		uint8_t j;
+		proto_item *ti;
+		proto_tree *iwd_tree;
+		uint8_t num_vers = tvb_get_uint8(tvb, offset++);
+
+		ti = proto_tree_add_item(tree, hf_om2k_iwd_type, tvb, offset++, 1, ENC_NA);
+		iwd_tree = proto_item_add_subtree(ti, ett_om2k_iwd);
+
+		for (j = 0; j < num_vers; j++) {
+			proto_tree_add_item(iwd_tree, hf_om2k_iwd_gen_rev, tvb,
+					    offset, 6, ENC_ASCII);
+			offset += 6;
+		}
+	}
+	return offset - base_offset;
+}
+
+static int
+dissect_om2k_mo_record(tvbuff_t *tvb, packet_info *pinfo, int base_offset, int len, proto_tree *tree)
+{
+	int offset = base_offset;
+	proto_tree_add_item(tree, hf_om2k_mo_class, tvb, offset++, 1, ENC_NA);
+	proto_tree_add_item(tree, hf_om2k_mo_instance, tvb, offset++, 1, ENC_NA);
+
+	while (offset < len) {
+		uint16_t attr_id;
+		uint8_t attr_len;
+
+		attr_id = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+		offset += 2;
+		attr_len = tvb_get_uint8(tvb, offset++);
+		offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, attr_len, attr_id, tree);
+	}
+
+	return offset - base_offset;
+}
+
+static int
+dissect_om2k_negotiation_record2(tvbuff_t *tvb, int base_offset, proto_tree *tree)
+{
+	int offset = base_offset;
+	uint8_t i;
+	uint8_t num_iwd = tvb_get_uint8(tvb, offset++);
+
+	for (i = 0; i < num_iwd; i++) {
+		proto_item *ti;
+		proto_tree *iwd_tree;
+
+		ti = proto_tree_add_item(tree, hf_om2k_iwd_type, tvb, offset++, 1, ENC_NA);
+		iwd_tree = proto_item_add_subtree(ti, ett_om2k_iwd);
+
+		proto_tree_add_item(iwd_tree, hf_om2k_iwd_gen_rev, tvb,
+				    offset, 6, ENC_ASCII);
+		offset += 6;
+	}
+	return offset - base_offset;
+}
+
+
+
+static int
+dissect_om2k_attrs(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree, uint16_t msg_code)
 {
 	while (tvb_reported_length_remaining(tvb, offset) > 0) {
-		guint8 iei = tvb_get_guint8(tvb, offset++);
-		guint8 len, tmp;
+		uint8_t iei = tvb_get_uint8(tvb, offset++);
+		uint8_t len, tmp;
+		proto_item *ti;
 
 		switch (iei) {
 		case 0x00: /* Accordance Information */
-			proto_tree_add_item(tree, hf_om2k_aip, tvb,
-					    offset++, 1, ENC_BIG_ENDIAN);
+			tmp = tvb_get_uint8(tvb, offset);
+			ti = proto_tree_add_item(tree, hf_om2k_aip, tvb,
+						 offset++, 1, ENC_BIG_ENDIAN);
+			if (tmp != 0x00)
+				expert_add_info(pinfo, ti, &ei_om2k_not_performed);
 			break;
 		case 0x06: /* BCC */
 			proto_tree_add_item(tree, hf_om2k_bcc, tvb,
@@ -706,7 +880,7 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			/* FIXME */
 		case 0x15: /* External Condition Map Class 2 */
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, 2, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 2, iei, tree);
 			break;
 		case 0x16: /* File Relation Indication */
 			proto_tree_add_item(tree, hf_om2k_filerel_ilr, tvb,
@@ -720,7 +894,7 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			break;
 		case 0x17: /* File Revision */
 			proto_tree_add_item(tree, hf_om2k_file_rev, tvb,
-					    offset, 8, ENC_ASCII|ENC_NA);
+					    offset, 8, ENC_ASCII);
 			offset += 8;
 			break;
 		case 0x1c: /* Filling Marker */
@@ -733,15 +907,15 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			offset += 2;
 			break;
 		case 0x1e: /* Frequency List */
-			len = tvb_get_guint8(tvb, offset++);
+			len = tvb_get_uint8(tvb, offset++);
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, len, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, len, iei, tree);
 			break;
 		case 0x1f: /* Frequency Specifier Rx */
 			/* FIXME */
 		case 0x20: /* Frequency Specifier Rx */
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, 2, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 2, iei, tree);
 			break;
 		case 0x21: /* HSN */
 			proto_tree_add_item(tree, hf_om2k_hsn, tvb,
@@ -759,7 +933,7 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			/* FIXME */
 		case 0x26: /* Internal Fault Map Class 2A Ext */
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, 6, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 6, iei, tree);
 			break;
 		case 0x27: /* IS Connection List */
 			offset += dissect_om2k_is_list(tvb, offset, tree);
@@ -777,8 +951,11 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 					    offset++, 1, ENC_BIG_ENDIAN);
 			break;
 		case 0x2c: /* MO State */
-			proto_tree_add_item(tree, hf_om2k_mo_state, tvb,
-					    offset++, 1, ENC_BIG_ENDIAN);
+			tmp = tvb_get_uint8(tvb, offset);
+			ti = proto_tree_add_item(tree, hf_om2k_mo_state, tvb,
+						 offset++, 1, ENC_BIG_ENDIAN);
+			if (msg_code == 0x3a && tmp != 0x02)
+				expert_add_info(pinfo, ti, &ei_om2k_ena_res_disabled);
 			break;
 		case 0x2d: /* Ny1 */
 			proto_tree_add_item(tree, hf_om2k_ny1, tvb,
@@ -792,13 +969,21 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			proto_tree_add_item(tree, hf_om2k_nom_pwr, tvb,
 					    offset++, 1, ENC_BIG_ENDIAN);
 			break;
+		case 0x32: /* Reason Code */
+			proto_tree_add_item(tree, hf_om2k_reason_code, tvb,
+					    offset++, 1, ENC_BIG_ENDIAN);
+			break;
 		case 0x33: /* Receiver Diversity */
 			proto_tree_add_item(tree, hf_om2k_diversity, tvb,
 					    offset++, 1, ENC_BIG_ENDIAN);
 			break;
 		case 0x34: /* Replacement Unit Map */
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, 6, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 6, iei, tree);
+			break;
+		case 0x35: /* Result Code */
+			proto_tree_add_item(tree, hf_om2k_result_code, tvb,
+					    offset++, 1, ENC_BIG_ENDIAN);
 			break;
 		case 0x38: /* T3105 */
 			proto_tree_add_item(tree, hf_om2k_t3105, tvb,
@@ -818,25 +1003,25 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			break;
 		case 0x40: /* BTS Version */
 			proto_tree_add_item(tree, hf_om2k_bts_manuf, tvb,
-					    offset, 3, ENC_ASCII|ENC_NA);
+					    offset, 3, ENC_ASCII);
 			offset += 3;
 			proto_tree_add_item(tree, hf_om2k_bts_gen, tvb,
-					    offset, 3, ENC_ASCII|ENC_NA);
+					    offset, 3, ENC_ASCII);
 			offset += 3;
 			proto_tree_add_item(tree, hf_om2k_bts_rev, tvb,
-					    offset, 3, ENC_ASCII|ENC_NA);
+					    offset, 3, ENC_ASCII);
 			offset += 3;
 			proto_tree_add_item(tree, hf_om2k_bts_var, tvb,
-					    offset, 3, ENC_ASCII|ENC_NA);
+					    offset, 3, ENC_ASCII);
 			offset += 3;
 			break;
 		case 0x43: /* OML Function Map 1 */
 		case 0x44: /* OML Function Map 2 */
 		case 0x45: /* RSL Function Map 1 */
 		case 0x46: /* RSL Function Map 2 */
-			len = tvb_get_guint8(tvb, offset++);
+			len = tvb_get_uint8(tvb, offset++);
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, len, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, len, iei, tree);
 			break;
 		case 0x47: /* Ext Range */
 			proto_tree_add_item(tree, hf_om2k_ext_range, tvb,
@@ -851,11 +1036,11 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			break;
 		case 0x50: /* Replacement Unit Map Extension */
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, 6, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 6, iei, tree);
 			break;
 		case 0x74: /* ICM Boundary */
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, 5, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 5, iei, tree);
 			break;
 		case 0x79: /* Link Supervision Control */
 			proto_tree_add_item(tree, hf_om2k_lsc_fm, tvb,
@@ -878,10 +1063,20 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			proto_tree_add_item(tree, hf_om2k_icm_cr, tvb,
 					    offset++, 1, ENC_BIG_ENDIAN);
 			break;
+		case 0x7f: /* Attribute ID */
+			proto_tree_add_item(tree, hf_om2k_attr_id, tvb,
+					    offset, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(tree, hf_om2k_attr_index, tvb,
+					    offset+2, 1, ENC_BIG_ENDIAN);
+			offset += 3;
+			break;
 		case 0x84: /* HW Info Signature */
 			proto_tree_add_item(tree, hf_om2k_hwinfo_sig, tvb,
 					    offset, 2, ENC_BIG_ENDIAN);
 			offset += 2;
+			break;
+		case 0x85: /* MO Record */
+			offset += dissect_om2k_mo_record(tvb, pinfo, offset, tvb_reported_length_remaining(tvb, offset), tree);
 			break;
 		case 0x87: /* TTA */
 			proto_tree_add_item(tree, hf_om2k_tta, tvb,
@@ -893,10 +1088,12 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			offset += 2;
 			break;
 		case 0x90: /* Negotiation Record I */
+			offset++; /* skip len field */
+			offset += dissect_om2k_negotiation_record1(tvb, offset, tree);
+			break;
 		case 0x91: /* Negotiation Record II */
-			len = tvb_get_guint8(tvb, offset++);
-			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, len, iei, tree);
+			offset++; /* skip len field */
+			offset += dissect_om2k_negotiation_record2(tvb, offset, tree);
 			break;
 		case 0x92: /* Encryption Algorithm */
 			proto_tree_add_item(tree, hf_om2k_ea, tvb,
@@ -908,7 +1105,7 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			break;
 		case 0x95: /* Dedication information */
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, 3, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 3, iei, tree);
 			break;
 		case 0x98: /* FS Offset */
 			proto_tree_add_item(tree, hf_om2k_tf_fs_offset, tvb,
@@ -917,18 +1114,75 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 			break;
 		case 0x9c: /* External Condition Class 2 Extension */
 			/* FIXME */
-			offset += dissect_om2k_attr_unkn(tvb, offset, 4, iei, tree);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 4, iei, tree);
 			break;
 		case 0x9d: /* TSs MO State */
-			offset += dissect_tss_mo_state(tvb, offset, tree);
+			offset += dissect_tss_mo_state(tvb, pinfo, offset, tree);
 			break;
-		case 0x9e:
-		case 0x9f:
+		case 0x9e: /* Configuration Type */
+			proto_tree_add_item(tree, hf_om2k_config_type, tvb, offset++, 1, ENC_NA);
+			break;
+		case 0x9f: /* Jitter Size */
+			proto_tree_add_item(tree, hf_om2k_jitter_size, tvb, offset++, 1, ENC_NA);
+			break;
+		case 0xa0: /* Packing Algorithm */
+			proto_tree_add_item(tree, hf_om2k_packing_algo, tvb, offset++, 1, ENC_NA);
+			break;
+		case 0xa8: /* TRXC List (bitmap) */
+			proto_tree_add_item(tree, hf_om2k_trxc_list, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+			offset += 2;
+			break;
+		case 0xa9: /* Maximum Allowed Power */
+			proto_tree_add_item(tree, hf_om2k_max_allowed_power, tvb, offset, 1, ENC_NA);
+			offset += 1;
+			break;
+		case 0xaa: /* Maximum Allowed Number of TRXCs */
+			proto_tree_add_item(tree, hf_om2k_max_allowed_num_trxcs, tvb, offset, 1, ENC_NA);
+			offset += 1;
+			break;
+		case 0xab: /* MCTR Feature Status Bitmap */
+			tmp = tvb_get_uint8(tvb, offset++);
+			proto_tree_add_item(tree, hf_om2k_mctr_feat_sts_bitmap, tvb, offset, tmp, ENC_NA);
+			offset += tmp;
+			break;
+		case 0xae: /* Power Back-Off Channel Type Map */
+			tmp = tvb_get_uint8(tvb, offset++);
+			proto_tree_add_item(tree, hf_om2k_power_bo_ctype_map, tvb, offset, tmp, ENC_NA);
+			offset += tmp;
+			break;
+		case 0xaf: /* Power Back-Off Priority */
+			tmp = tvb_get_uint8(tvb, offset++);
+			proto_tree_add_item(tree, hf_om2k_power_bo_priority, tvb, offset, tmp, ENC_NA);
+			offset += tmp;
+			break;
+		case 0xb0: /* Power Back-Off Value */
+			tmp = tvb_get_uint8(tvb, offset++);
+			proto_tree_add_item(tree, hf_om2k_power_bo_value, tvb, offset, tmp, ENC_NA);
+			offset += tmp;
+			break;
+		case 0xa3:
+		case 0xa5:
+		case 0xa6:
+			/* we don't know any of the above, but the
+			 * TLV structure is quite clear in the protocol
+			 * traces */
+			tmp = tvb_get_uint8(tvb, offset++);
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, tmp, iei, tree);
+			break;
+		case 0xb5: /* unknown 2-bytes fixed length attribute of TX Config */
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 2, iei, tree);
+			break;
+		case 0xd2: /* unknown 6-bytes fixed length attribute of TRXC Fault Rep */
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 6, iei, tree);
+			break;
+		case 0xac: /* unknown 58-bytes fixed length attribute of message type 0x0136 */
+			offset += dissect_om2k_attr_unkn(tvb, pinfo, offset, 58, iei, tree);
+			break;
 		default:
-			tmp = tvb_get_guint8(tvb, offset);
+			tmp = tvb_get_uint8(tvb, offset);
 			proto_tree_add_uint_format(tree, hf_om2k_unknown_tag, tvb,
 					    offset-1, 1, tmp, "Tag %s: 0x%02x",
-					    val_to_str_ext(iei, &om2k_attr_vals_ext, "0x%02x"), tmp);
+					    val_to_str_ext(pinfo->pool, iei, &om2k_attr_vals_ext, "0x%02x"), tmp);
 			offset++;
 			break;
 		}
@@ -937,20 +1191,20 @@ dissect_om2k_attrs(tvbuff_t *tvb, gint offset, proto_tree *tree)
 	return offset;
 }
 
-static guint
-dissect_om2k_mo(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tree)
+static unsigned
+dissect_om2k_mo(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
 {
-	guint8      mo_class = tvb_get_guint8(tvb, offset);
-	guint8      inst  = tvb_get_guint8(tvb, offset+3);
+	uint8_t     mo_class = tvb_get_uint8(tvb, offset);
+	uint8_t     inst  = tvb_get_uint8(tvb, offset+3);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, ", (%-4s %u)",
-				val_to_str(mo_class, om2k_mo_class_short_vals,
+				val_to_str(pinfo->pool, mo_class, om2k_mo_class_short_vals,
 					   "0x%02x"), inst);
 	if (tree) {
 		proto_item *ti;
 		proto_tree *mo_tree;
-		guint8      sub1  = tvb_get_guint8(tvb, offset+1);
-		guint8      sub2  = tvb_get_guint8(tvb, offset+2);
+		uint8_t     sub1  = tvb_get_uint8(tvb, offset+1);
+		uint8_t     sub2  = tvb_get_uint8(tvb, offset+2);
 
 		ti      = proto_tree_add_item(tree, hf_om2k_mo_if, tvb, offset,
 					      4, ENC_NA);
@@ -964,7 +1218,7 @@ dissect_om2k_mo(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tree
 		proto_tree_add_item(mo_tree, hf_om2k_mo_instance, tvb, offset+3,
 				    1, ENC_BIG_ENDIAN);
 		proto_item_append_text(ti, ", Class: %s, Sub: %02x/%02x, Instance: %u",
-				       val_to_str(mo_class, om2k_mo_class_vals, "0x%02x"),
+				       val_to_str(pinfo->pool, mo_class, om2k_mo_class_vals, "0x%02x"),
 				       sub1, sub2, inst);
 	}
 	return 4;
@@ -975,8 +1229,9 @@ dissect_abis_om2000(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 {
 	proto_item *ti;
 	proto_tree *om2k_tree;
-	guint16     msg_code;
-	guint8      tmp;
+	uint16_t    msg_code;
+	uint8_t     tmp;
+	const char *msgt_str;
 
 	int offset;
 
@@ -997,21 +1252,20 @@ dissect_abis_om2000(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 	offset += dissect_om2k_mo(tvb, offset, pinfo, om2k_tree);  /* appends to COL_INFO */
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, " %s ",
-			val_to_str_ext(msg_code, &om2k_msgcode_vals_ext,
+			val_to_str_ext(pinfo->pool, msg_code, &om2k_msgcode_vals_ext,
 				   "unknown 0x%04x"));
 
 	if (tree == NULL)
 		return tvb_captured_length(tvb);   /* No refs to COL_...  beyond this point */
 
-	proto_item_append_text(ti, " %s ",
-			       val_to_str_ext(msg_code, &om2k_msgcode_vals_ext,
-					  "unknown 0x%04x"));
+	msgt_str = val_to_str_ext(pinfo->pool, msg_code, &om2k_msgcode_vals_ext, "unknown 0x%04x");
+	proto_item_append_text(ti, " %s ", msgt_str);
 
 	switch (msg_code) {
 	case 0x74: /* Operational Info */
-		tmp = tvb_get_guint8(tvb, offset+1);
+		tmp = tvb_get_uint8(tvb, offset+1);
 		proto_item_append_text(ti, ": %s",
-				       val_to_str(tmp, om2k_oip_vals,
+				       val_to_str(pinfo->pool, tmp, om2k_oip_vals,
 						  "unknown 0x%02x"));
 		break;
 	case 0x1A: /* CON Configuration Result */
@@ -1022,15 +1276,21 @@ dissect_abis_om2000(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 	case 0xB6: /* TX Configuration Result */
 	case 0xE2: /* DP Configuration Result */
 	case 0xF6: /* DP Configuration Result */
-		tmp = tvb_get_guint8(tvb, offset+1);
+		tmp = tvb_get_uint8(tvb, offset+1);
 		proto_item_append_text(ti, ": %s",
-				       val_to_str(tmp, om2k_aip_vals,
+				       val_to_str(pinfo->pool, tmp, om2k_aip_vals,
 						  "unknown 0x%02x"));
 		break;
 	default:
 		break;
 	}
-	dissect_om2k_attrs(tvb, offset, om2k_tree);
+
+	if (strstr(msgt_str, "Reject"))
+		expert_add_info(pinfo, ti, &ei_om2k_reject);
+	if (strstr(msgt_str, "NACK"))
+		expert_add_info(pinfo, ti, &ei_om2k_nack);
+
+	dissect_om2k_attrs(tvb, pinfo, offset, om2k_tree, msg_code);
 	return tvb_captured_length(tvb);
 }
 
@@ -1096,7 +1356,7 @@ proto_register_abis_om2000(void)
 		{ &hf_om2k_maio,
 		  { "MAIO", "gsm_abis_om2000.maio",
 		    FT_UINT8, BASE_DEC, NULL, 0,
-		    "Mobile Allication Index Offset", HFILL }
+		    "Mobile Allocation Index Offset", HFILL }
 		},
 		{ &hf_om2k_bsic,
 		  { "BSIC", "gsm_abis_om2000.bsic",
@@ -1115,12 +1375,12 @@ proto_register_abis_om2000(void)
 		},
 		{ &hf_om2k_ext_range,
 		  { "Extended Range", "gsm_abis_om2000.ext_range",
-		    FT_BOOLEAN, 1, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01' ? */
+		    FT_BOOLEAN, BASE_NONE, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01' ? */
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_irc,
 		  { "Interference Rejection Combining", "gsm_abis_om2000.irc",
-		    FT_BOOLEAN, 1, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01,' ? */
+		    FT_BOOLEAN, BASE_NONE, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01,' ? */
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_bs_pa_mfrms,
@@ -1140,12 +1400,12 @@ proto_register_abis_om2000(void)
 		},
 		{ &hf_om2k_cr,
 		  { "CCCH Repeat", "gsm_abis_om2000.ccch_repeat",
-		    FT_BOOLEAN, 1, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01,' ? */
+		    FT_BOOLEAN, BASE_NONE, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01,' ? */
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_ipt3,
 		  { "Inhibit Paging Request Type 3", "gsm_abis_om2000.ipt3",
-		    FT_BOOLEAN, 2, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x02,' ? */
+		    FT_BOOLEAN, BASE_NONE, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x02,' ? */
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_aop,
@@ -1165,7 +1425,7 @@ proto_register_abis_om2000(void)
 		},
 		{ &hf_om2k_cbi,
 		  { "CBCH Indicator", "gsm_abis_om2000.cbi",
-		    FT_BOOLEAN, 1, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01,' ? */
+		    FT_BOOLEAN, BASE_NONE, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01,' ? */
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_tsc,
@@ -1175,7 +1435,7 @@ proto_register_abis_om2000(void)
 		},
 		{ &hf_om2k_icm,
 		  { "Idle Channel Measurement", "gsm_abis_om2000.icm",
-		    FT_BOOLEAN, 1, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01,' ? */
+		    FT_BOOLEAN, BASE_NONE, NULL, 0,          /* XXX: bitmask needed? 'FT_BOOLEAN, 8, NULL, 0x01,' ? */
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_tta,
@@ -1342,12 +1602,12 @@ proto_register_abis_om2000(void)
 		},
 		{ &hf_om2k_isl_icp1,
 		  { "ICP1", "gsm_abis_om2000.is_list.icp1",
-		    FT_UINT16, BASE_DEC, NULL, 0x7ff,
+		    FT_UINT16, BASE_DEC, NULL, 0x07ff,
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_isl_icp2,
 		  { "ICP2", "gsm_abis_om2000.is_list.icp2",
-		    FT_UINT16, BASE_DEC, NULL, 0x7ff,
+		    FT_UINT16, BASE_DEC, NULL, 0x07ff,
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_isl_ci,
@@ -1372,12 +1632,12 @@ proto_register_abis_om2000(void)
 		},
 		{ &hf_om2k_conl_ccp,
 		  { "CON Connection Point", "gsm_abis_om2000.con_list.cpp",
-		    FT_UINT16, BASE_DEC, NULL, 0x3ff,
+            FT_UINT16, BASE_DEC, NULL, 0x07ff,
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_conl_ci,
 		  { "Contiguity Index", "gsm_abis_om2000.con_list.ci",
-		    FT_UINT8, BASE_DEC, NULL, 0x7,
+		    FT_UINT8, BASE_DEC, NULL, 0,
 		    NULL, HFILL }
 		},
 		{ &hf_om2k_conl_tag,
@@ -1400,18 +1660,121 @@ proto_register_abis_om2000(void)
 		    FT_UINT64, BASE_DEC, NULL, 0,
 		    NULL, HFILL }
 		},
+		{ &hf_om2k_attr_id,
+		  { "Attribute Identifier", "gsm_abis_om2000.attr_id",
+		    FT_UINT16, BASE_HEX|BASE_EXT_STRING, &om2k_attr_id_vals_ext, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_attr_index,
+		  { "Attribute Index", "gsm_abis_om2000.attr_index",
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_reason_code,
+		  { "Reason Code", "gsm_abis_om2000.reason_code",
+		    FT_UINT8, BASE_HEX, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_result_code,
+		  { "Result Code", "gsm_abis_om2000.res_code",
+		    FT_UINT8, BASE_HEX, VALS(om2k_res_code_vals), 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_iwd_type,
+		  { "IWD", "gsm_abis_om2000.iwd_type",
+		    FT_UINT8, BASE_HEX, VALS(om2k_iwd_type_vals), 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_iwd_gen_rev,
+		  { "IWD Generation/Revision", "gsm_abis_om2000.iwd_gen_rev",
+		    FT_STRING, BASE_NONE, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_trxc_list,
+		  { "TRXC List", "gsm_abis_om2000.trxc_list",
+		    FT_UINT16, BASE_HEX, NULL, 0xFFFF,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_max_allowed_power,
+		  { "Maximum allowed power", "gsm_abis_om2000.max_allowed_power",
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_max_allowed_num_trxcs,
+		  { "Maximum allowed number of TRXCs", "gsm_abis_om2000.max_allowed_num_trxcs",
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_mctr_feat_sts_bitmap,
+		  { "MCTR Feature status bitmap", "gsm_abis_om2000.mctr_feat_sts_bitmap",
+		    FT_BYTES, BASE_NONE, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_config_type,
+		  { "Configuration Type", "gsm_abis_om2000.config_type",
+		    FT_BOOLEAN, 8, NULL, 0x01,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_jitter_size,
+		  { "Jitter Size", "gsm_abis_om2000.jitter_size",
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_packing_algo,
+		  { "Packing Algorithm", "gsm_abis_om2000.packing_algo",
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_power_bo_ctype_map,
+		  { "Power Back-Off Channel Type Map", "gsm_abis_om2000.power_bo_ctype_map",
+		    FT_BYTES, BASE_NONE, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_power_bo_priority,
+		  { "Power Back-Off Priority", "gsm_abis_om2000.power_bo_priority",
+		    FT_BYTES, BASE_NONE, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_om2k_power_bo_value,
+		  { "Power Back-Off Value", "gsm_abis_om2000.power_bo_value",
+		    FT_BYTES, BASE_NONE, NULL, 0,
+		    NULL, HFILL }
+		},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_om2000,
 		&ett_om2k_mo,
 		&ett_om2k_isl,
 		&ett_om2k_conl,
+		&ett_om2k_iwd,
 	};
+	static ei_register_info ei[] = {
+		{ &ei_om2k_not_performed,
+		  { "gsm_abis_om2000.not_performed", PI_RESPONSE_CODE, PI_WARN,
+		    "Operation not performed as per request", EXPFILL }
+		},
+		{ &ei_om2k_reject,
+		  { "gsm_abis_om2000.reject", PI_RESPONSE_CODE, PI_WARN,
+		    "Operation Rejected by RBS", EXPFILL }
+		},
+		{ &ei_om2k_nack,
+		  { "gsm_abis_om2000.nack", PI_RESPONSE_CODE, PI_ERROR,
+		    "Operation NACKed by peer", EXPFILL }
+		},
+		{ &ei_om2k_ena_res_disabled,
+		  { "gsm_abis_om2000.ena_res_disabled", PI_RESPONSE_CODE, PI_WARN,
+		    "Enable Result != Enabled", EXPFILL }
+		},
+
+	};
+	expert_module_t *expert_om2000;
 
 	proto_abis_om2000 = proto_register_protocol("Ericsson A-bis OML",
 						    "Ericsson OML",
 						    "gsm_abis_om2000");
 
+	expert_om2000 = expert_register_protocol(proto_abis_om2000);
+	expert_register_field_array(expert_om2000, ei, array_length(ei));
 	proto_register_field_array(proto_abis_om2000, hf, array_length(hf));
 
 	proto_register_subtree_array(ett, array_length(ett));
@@ -1421,7 +1784,7 @@ proto_register_abis_om2000(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

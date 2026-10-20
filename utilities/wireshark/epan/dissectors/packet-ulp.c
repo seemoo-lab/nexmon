@@ -1,34 +1,21 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-ulp.c                                                               */
-/* asn2wrs.py -p ulp -c ./ulp.cnf -s ./packet-ulp-template -D . -O ../.. ULP.asn SUPL.asn ULP-Components.asn */
+/* asn2wrs.py -q -L -p ulp -c ./ulp.cnf -s ./packet-ulp-template -D . -O ../.. ULP.asn SUPL.asn ULP-Components.asn */
 
-/* Input file: packet-ulp-template.c */
-
-#line 1 "./asn1/ulp/packet-ulp-template.c"
 /* packet-ulp.c
  * Routines for OMA UserPlane Location Protocol packet dissection
  * Copyright 2006, Anders Broman <anders.broman@ericsson.com>
+ * Copyright 2014-2019, Pascal Quantin <pascal@wireshark.org>
+ * Copyright 2020, Stig Bjorlykke <stig@bjorlykke.org>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * ref OMA-TS-ULP-V2_0_2-20140708-A
+ * ref OMA-TS-ULP-V2_0_5-20191028-A
  * http://www.openmobilealliance.org
  */
 
@@ -39,10 +26,12 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/asn1.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 #include "packet-tcp.h"
-#include "packet-gsm_map.h"
 #include "packet-e164.h"
 #include "packet-e212.h"
 
@@ -59,892 +48,948 @@ static dissector_handle_t lpp_handle;
  * oma-ulp         7275/tcp    OMA UserPlane Location
  * oma-ulp         7275/udp    OMA UserPlane Location
  */
-static guint gbl_ulp_tcp_port = 7275;
-static guint gbl_ulp_udp_port = 7275;
+#define ULP_PORT    7275
 
 /* Initialize the protocol and registered fields */
-static int proto_ulp = -1;
+static int proto_ulp;
 
 
 #define ULP_HEADER_SIZE 2
 
-static gboolean ulp_desegment = TRUE;
+static bool ulp_desegment = true;
 
-
-/*--- Included file: packet-ulp-hf.c ---*/
-#line 1 "./asn1/ulp/packet-ulp-hf.c"
-static int hf_ulp_ULP_PDU_PDU = -1;               /* ULP_PDU */
-static int hf_ulp_length = -1;                    /* INTEGER_0_65535 */
-static int hf_ulp_version = -1;                   /* Version */
-static int hf_ulp_sessionID = -1;                 /* SessionID */
-static int hf_ulp_message = -1;                   /* UlpMessage */
-static int hf_ulp_msSUPLINIT = -1;                /* SUPLINIT */
-static int hf_ulp_msSUPLSTART = -1;               /* SUPLSTART */
-static int hf_ulp_msSUPLRESPONSE = -1;            /* SUPLRESPONSE */
-static int hf_ulp_msSUPLPOSINIT = -1;             /* SUPLPOSINIT */
-static int hf_ulp_msSUPLPOS = -1;                 /* SUPLPOS */
-static int hf_ulp_msSUPLEND = -1;                 /* SUPLEND */
-static int hf_ulp_msSUPLAUTHREQ = -1;             /* SUPLAUTHREQ */
-static int hf_ulp_msSUPLAUTHRESP = -1;            /* SUPLAUTHRESP */
-static int hf_ulp_msSUPLTRIGGEREDSTART = -1;      /* Ver2_SUPLTRIGGEREDSTART */
-static int hf_ulp_msSUPLTRIGGEREDRESPONSE = -1;   /* Ver2_SUPLTRIGGEREDRESPONSE */
-static int hf_ulp_msSUPLTRIGGEREDSTOP = -1;       /* Ver2_SUPLTRIGGEREDSTOP */
-static int hf_ulp_msSUPLNOTIFY = -1;              /* Ver2_SUPLNOTIFY */
-static int hf_ulp_msSUPLNOTIFYRESPONSE = -1;      /* Ver2_SUPLNOTIFYRESPONSE */
-static int hf_ulp_msSUPLSETINIT = -1;             /* Ver2_SUPLSETINIT */
-static int hf_ulp_msSUPLREPORT = -1;              /* Ver2_SUPLREPORT */
-static int hf_ulp_posMethod = -1;                 /* PosMethod */
-static int hf_ulp_notification = -1;              /* Notification */
-static int hf_ulp_sLPAddress = -1;                /* SLPAddress */
-static int hf_ulp_qoP = -1;                       /* QoP */
-static int hf_ulp_sLPMode = -1;                   /* SLPMode */
-static int hf_ulp_mac = -1;                       /* MAC */
-static int hf_ulp_keyIdentity = -1;               /* KeyIdentity */
-static int hf_ulp_ver2_SUPL_INIT_extension = -1;  /* Ver2_SUPL_INIT_extension */
-static int hf_ulp_notificationType = -1;          /* NotificationType */
-static int hf_ulp_encodingType = -1;              /* EncodingType */
-static int hf_ulp_requestorId = -1;               /* T_requestorId */
-static int hf_ulp_requestorIdType = -1;           /* FormatIndicator */
-static int hf_ulp_clientName = -1;                /* T_clientName */
-static int hf_ulp_clientNameType = -1;            /* FormatIndicator */
-static int hf_ulp_ver2_Notification_extension = -1;  /* Ver2_Notification_extension */
-static int hf_ulp_sETCapabilities = -1;           /* SETCapabilities */
-static int hf_ulp_locationId = -1;                /* LocationId */
-static int hf_ulp_ver2_SUPL_START_extension = -1;  /* Ver2_SUPL_START_extension */
-static int hf_ulp_posTechnology = -1;             /* PosTechnology */
-static int hf_ulp_prefMethod = -1;                /* PrefMethod */
-static int hf_ulp_posProtocol = -1;               /* PosProtocol */
-static int hf_ulp_ver2_SETCapabilities_extension = -1;  /* Ver2_SETCapabilities_extension */
-static int hf_ulp_agpsSETassisted = -1;           /* BOOLEAN */
-static int hf_ulp_agpsSETBased = -1;              /* BOOLEAN */
-static int hf_ulp_autonomousGPS = -1;             /* BOOLEAN */
-static int hf_ulp_aflt = -1;                      /* BOOLEAN */
-static int hf_ulp_ecid = -1;                      /* BOOLEAN */
-static int hf_ulp_eotd = -1;                      /* BOOLEAN */
-static int hf_ulp_otdoa = -1;                     /* BOOLEAN */
-static int hf_ulp_ver2_PosTechnology_extension = -1;  /* Ver2_PosTechnology_extension */
-static int hf_ulp_tia801 = -1;                    /* BOOLEAN */
-static int hf_ulp_rrlp = -1;                      /* BOOLEAN */
-static int hf_ulp_rrc = -1;                       /* BOOLEAN */
-static int hf_ulp_ver2_PosProtocol_extension = -1;  /* Ver2_PosProtocol_extension */
-static int hf_ulp_sETAuthKey = -1;                /* SETAuthKey */
-static int hf_ulp_keyIdentity4 = -1;              /* KeyIdentity4 */
-static int hf_ulp_ver2_SUPL_RESPONSE_extension = -1;  /* Ver2_SUPL_RESPONSE_extension */
-static int hf_ulp_shortKey = -1;                  /* BIT_STRING_SIZE_128 */
-static int hf_ulp_longKey = -1;                   /* BIT_STRING_SIZE_256 */
-static int hf_ulp_requestedAssistData = -1;       /* RequestedAssistData */
-static int hf_ulp_position = -1;                  /* Position */
-static int hf_ulp_suplpos = -1;                   /* SUPLPOS */
-static int hf_ulp_ver = -1;                       /* Ver */
-static int hf_ulp_ver2_SUPL_POS_INIT_extension = -1;  /* Ver2_SUPL_POS_INIT_extension */
-static int hf_ulp_almanacRequested = -1;          /* BOOLEAN */
-static int hf_ulp_utcModelRequested = -1;         /* BOOLEAN */
-static int hf_ulp_ionosphericModelRequested = -1;  /* BOOLEAN */
-static int hf_ulp_dgpsCorrectionsRequested = -1;  /* BOOLEAN */
-static int hf_ulp_referenceLocationRequested = -1;  /* BOOLEAN */
-static int hf_ulp_referenceTimeRequested = -1;    /* BOOLEAN */
-static int hf_ulp_acquisitionAssistanceRequested = -1;  /* BOOLEAN */
-static int hf_ulp_realTimeIntegrityRequested = -1;  /* BOOLEAN */
-static int hf_ulp_navigationModelRequested = -1;  /* BOOLEAN */
-static int hf_ulp_navigationModelData = -1;       /* NavigationModel */
-static int hf_ulp_ver2_RequestedAssistData_extension = -1;  /* Ver2_RequestedAssistData_extension */
-static int hf_ulp_gpsWeek = -1;                   /* INTEGER_0_1023 */
-static int hf_ulp_gpsToe = -1;                    /* T_gpsToe */
-static int hf_ulp_nsat = -1;                      /* INTEGER_0_31 */
-static int hf_ulp_toeLimit = -1;                  /* T_toeLimit */
-static int hf_ulp_satInfo = -1;                   /* SatelliteInfo */
-static int hf_ulp_SatelliteInfo_item = -1;        /* SatelliteInfoElement */
-static int hf_ulp_satId = -1;                     /* INTEGER_0_63 */
-static int hf_ulp_iode = -1;                      /* INTEGER_0_255 */
-static int hf_ulp_posPayLoad = -1;                /* PosPayLoad */
-static int hf_ulp_velocity = -1;                  /* Velocity */
-static int hf_ulp_ver2_SUPL_POS_extension = -1;   /* Ver2_SUPL_POS_extension */
-static int hf_ulp_tia801payload = -1;             /* OCTET_STRING_SIZE_1_8192 */
-static int hf_ulp_rrcPayload = -1;                /* OCTET_STRING_SIZE_1_8192 */
-static int hf_ulp_rrlpPayload = -1;               /* T_rrlpPayload */
-static int hf_ulp_ver2_PosPayLoad_extension = -1;  /* Ver2_PosPayLoad_extension */
-static int hf_ulp_statusCode = -1;                /* StatusCode */
-static int hf_ulp_ver2_SUPL_END_extension = -1;   /* Ver2_SUPL_END_extension */
-static int hf_ulp_sPCSETKey = -1;                 /* SPCSETKey */
-static int hf_ulp_spctid = -1;                    /* SPCTID */
-static int hf_ulp_sPCSETKeylifetime = -1;         /* SPCSETKeylifetime */
-static int hf_ulp_notificationResponse = -1;      /* NotificationResponse */
-static int hf_ulp_targetSETID = -1;               /* SETId */
-static int hf_ulp_applicationID = -1;             /* ApplicationID */
-static int hf_ulp_multipleLocationIds = -1;       /* MultipleLocationIds */
-static int hf_ulp_thirdParty = -1;                /* ThirdParty */
-static int hf_ulp_triggerType = -1;               /* TriggerType */
-static int hf_ulp_triggerParams = -1;             /* TriggerParams */
-static int hf_ulp_reportingCap = -1;              /* ReportingCap */
-static int hf_ulp_causeCode = -1;                 /* CauseCode */
-static int hf_ulp_periodicParams = -1;            /* PeriodicParams */
-static int hf_ulp_areaEventParams = -1;           /* AreaEventParams */
-static int hf_ulp_numberOfFixes = -1;             /* INTEGER_1_8639999 */
-static int hf_ulp_intervalBetweenFixes = -1;      /* T_intervalBetweenFixes */
-static int hf_ulp_startTime = -1;                 /* T_startTime */
-static int hf_ulp_areaEventType = -1;             /* AreaEventType */
-static int hf_ulp_locationEstimate = -1;          /* BOOLEAN */
-static int hf_ulp_repeatedReportingParams = -1;   /* RepeatedReportingParams */
-static int hf_ulp_startTime_01 = -1;              /* T_startTime_01 */
-static int hf_ulp_stopTime = -1;                  /* T_stopTime */
-static int hf_ulp_geographicTargetAreaList = -1;  /* GeographicTargetAreaList */
-static int hf_ulp_areaIdLists = -1;               /* SEQUENCE_SIZE_1_maxAreaIdList_OF_AreaIdList */
-static int hf_ulp_areaIdLists_item = -1;          /* AreaIdList */
-static int hf_ulp_minimumIntervalTime = -1;       /* T_minimumIntervalTime */
-static int hf_ulp_maximumNumberOfReports = -1;    /* INTEGER_1_1024 */
-static int hf_ulp_GeographicTargetAreaList_item = -1;  /* GeographicTargetArea */
-static int hf_ulp_circularArea = -1;              /* CircularArea */
-static int hf_ulp_ellipticalArea = -1;            /* EllipticalArea */
-static int hf_ulp_polygonArea = -1;               /* PolygonArea */
-static int hf_ulp_areaIdSet = -1;                 /* AreaIdSet */
-static int hf_ulp_areaIdSetType = -1;             /* AreaIdSetType */
-static int hf_ulp_geoAreaMappingList = -1;        /* GeoAreaMappingList */
-static int hf_ulp_AreaIdSet_item = -1;            /* AreaId */
-static int hf_ulp_gSMAreaId = -1;                 /* GSMAreaId */
-static int hf_ulp_wCDMAAreaId = -1;               /* WCDMAAreaId */
-static int hf_ulp_cDMAAreaId = -1;                /* CDMAAreaId */
-static int hf_ulp_hRPDAreaId = -1;                /* HRPDAreaId */
-static int hf_ulp_uMBAreaId = -1;                 /* UMBAreaId */
-static int hf_ulp_lTEAreaId = -1;                 /* LTEAreaId */
-static int hf_ulp_wLANAreaId = -1;                /* WLANAreaId */
-static int hf_ulp_wiMAXAreaId = -1;               /* WimaxAreaId */
-static int hf_ulp_refMCC = -1;                    /* INTEGER_0_999 */
-static int hf_ulp_refMNC = -1;                    /* INTEGER_0_999 */
-static int hf_ulp_refLAC = -1;                    /* INTEGER_0_65535 */
-static int hf_ulp_refCI = -1;                     /* INTEGER_0_65535 */
-static int hf_ulp_refUC = -1;                     /* INTEGER_0_268435455 */
-static int hf_ulp_refSID = -1;                    /* INTEGER_0_65535 */
-static int hf_ulp_refNID = -1;                    /* INTEGER_0_32767 */
-static int hf_ulp_refBASEID = -1;                 /* INTEGER_0_65535 */
-static int hf_ulp_refSECTORID = -1;               /* BIT_STRING_SIZE_128 */
-static int hf_ulp_refCI_01 = -1;                  /* BIT_STRING_SIZE_29 */
-static int hf_ulp_apMACAddress = -1;              /* T_apMACAddress */
-static int hf_ulp_bsID_MSB = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_ulp_bsID_LSB = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_ulp_GeoAreaMappingList_item = -1;   /* GeoAreaIndex */
-static int hf_ulp_supportedNetworkInformation = -1;  /* SupportedNetworkInformation */
-static int hf_ulp_reportingMode = -1;             /* ReportingMode */
-static int hf_ulp_gnssPosTechnology = -1;         /* GNSSPosTechnology */
-static int hf_ulp_repMode = -1;                   /* RepModee */
-static int hf_ulp_batchRepConditions = -1;        /* BatchRepConditions */
-static int hf_ulp_batchRepType = -1;              /* BatchRepType */
-static int hf_ulp_num_interval = -1;              /* INTEGER_1_1024 */
-static int hf_ulp_num_minutes = -1;               /* INTEGER_1_2048 */
-static int hf_ulp_endofsession = -1;              /* NULL */
-static int hf_ulp_reportPosition = -1;            /* BOOLEAN */
-static int hf_ulp_reportMeasurements = -1;        /* BOOLEAN */
-static int hf_ulp_intermediateReports = -1;       /* BOOLEAN */
-static int hf_ulp_discardOldest = -1;             /* BOOLEAN */
-static int hf_ulp_sessionList = -1;               /* SessionList */
-static int hf_ulp_reportDataList = -1;            /* ReportDataList */
-static int hf_ulp_moreComponents = -1;            /* NULL */
-static int hf_ulp_SessionList_item = -1;          /* SessionInformation */
-static int hf_ulp_ReportDataList_item = -1;       /* ReportData */
-static int hf_ulp_positionData = -1;              /* PositionData */
-static int hf_ulp_resultCode = -1;                /* ResultCode */
-static int hf_ulp_timestamp = -1;                 /* TimeStamp */
-static int hf_ulp_ganssSignalsInfo = -1;          /* GANSSsignalsInfo */
-static int hf_ulp_GANSSsignalsInfo_item = -1;     /* GANSSSignalsDescription */
-static int hf_ulp_ganssId = -1;                   /* INTEGER_0_15 */
-static int hf_ulp_gANSSSignals = -1;              /* GANSSSignals */
-static int hf_ulp_absoluteTime = -1;              /* UTCTime */
-static int hf_ulp_relativeTime = -1;              /* T_relativeTime */
-static int hf_ulp_notificationMode = -1;          /* NotificationMode */
-static int hf_ulp_e_SLPAddress = -1;              /* SLPAddress */
-static int hf_ulp_historicReporting = -1;         /* HistoricReporting */
-static int hf_ulp_protectionLevel = -1;           /* ProtectionLevel */
-static int hf_ulp_minimumMajorVersion = -1;       /* INTEGER_0_255 */
-static int hf_ulp_allowedReportingType = -1;      /* AllowedReportingType */
-static int hf_ulp_reportingCriteria = -1;         /* ReportingCriteria */
-static int hf_ulp_timeWindow = -1;                /* TimeWindow */
-static int hf_ulp_maxNumberofReports = -1;        /* INTEGER_1_65536 */
-static int hf_ulp_minTimeInterval = -1;           /* T_minTimeInterval */
-static int hf_ulp_startTime_02 = -1;              /* T_startTime_02 */
-static int hf_ulp_stopTime_01 = -1;               /* T_stopTime_01 */
-static int hf_ulp_protlevel = -1;                 /* ProtLevel */
-static int hf_ulp_basicProtectionParams = -1;     /* BasicProtectionParams */
-static int hf_ulp_keyIdentifier = -1;             /* OCTET_STRING_SIZE_8 */
-static int hf_ulp_basicReplayCounter = -1;        /* INTEGER_0_65535 */
-static int hf_ulp_basicMAC = -1;                  /* BIT_STRING_SIZE_32 */
-static int hf_ulp_initialApproximateposition = -1;  /* Position */
-static int hf_ulp_utran_GPSReferenceTimeResult = -1;  /* UTRAN_GPSReferenceTimeResult */
-static int hf_ulp_utran_GANSSReferenceTimeResult = -1;  /* UTRAN_GANSSReferenceTimeResult */
-static int hf_ulp_utran_GPSReferenceTimeAssistance = -1;  /* UTRAN_GPSReferenceTimeAssistance */
-static int hf_ulp_utran_GANSSReferenceTimeAssistance = -1;  /* UTRAN_GANSSReferenceTimeAssistance */
-static int hf_ulp_emergencyCallLocation = -1;     /* NULL */
-static int hf_ulp_serviceCapabilities = -1;       /* ServiceCapabilities */
-static int hf_ulp_supportedBearers = -1;          /* SupportedBearers */
-static int hf_ulp_servicesSupported = -1;         /* ServicesSupported */
-static int hf_ulp_reportingCapabilities = -1;     /* ReportingCap */
-static int hf_ulp_eventTriggerCapabilities = -1;  /* EventTriggerCapabilities */
-static int hf_ulp_sessionCapabilities = -1;       /* SessionCapabilities */
-static int hf_ulp_periodicTrigger = -1;           /* BOOLEAN */
-static int hf_ulp_areaEventTrigger = -1;          /* BOOLEAN */
-static int hf_ulp_geoAreaShapesSupported = -1;    /* GeoAreaShapesSupported */
-static int hf_ulp_maxNumGeoAreaSupported = -1;    /* INTEGER_0_maxNumGeoArea */
-static int hf_ulp_maxAreaIdListSupported = -1;    /* INTEGER_0_maxAreaIdList */
-static int hf_ulp_maxAreaIdSupportedPerList = -1;  /* INTEGER_0_maxAreaId */
-static int hf_ulp_ellipticalArea_01 = -1;         /* BOOLEAN */
-static int hf_ulp_polygonArea_01 = -1;            /* BOOLEAN */
-static int hf_ulp_maxNumberTotalSessions = -1;    /* INTEGER_1_128 */
-static int hf_ulp_maxNumberPeriodicSessions = -1;  /* INTEGER_1_32 */
-static int hf_ulp_maxNumberTriggeredSessions = -1;  /* INTEGER_1_32 */
-static int hf_ulp_gsm = -1;                       /* BOOLEAN */
-static int hf_ulp_wcdma = -1;                     /* BOOLEAN */
-static int hf_ulp_lte = -1;                       /* BOOLEAN */
-static int hf_ulp_cdma = -1;                      /* BOOLEAN */
-static int hf_ulp_hprd = -1;                      /* BOOLEAN */
-static int hf_ulp_umb = -1;                       /* BOOLEAN */
-static int hf_ulp_wlan = -1;                      /* BOOLEAN */
-static int hf_ulp_wiMAX = -1;                     /* BOOLEAN */
-static int hf_ulp_lpp = -1;                       /* BOOLEAN */
-static int hf_ulp_posProtocolVersionRRLP = -1;    /* PosProtocolVersion3GPP */
-static int hf_ulp_posProtocolVersionRRC = -1;     /* PosProtocolVersion3GPP */
-static int hf_ulp_posProtocolVersionTIA801 = -1;  /* PosProtocolVersion3GPP2 */
-static int hf_ulp_posProtocolVersionLPP = -1;     /* PosProtocolVersion3GPP */
-static int hf_ulp_lppe = -1;                      /* BOOLEAN */
-static int hf_ulp_posProtocolVersionLPPe = -1;    /* PosProtocolVersionOMA */
-static int hf_ulp_majorVersionField = -1;         /* INTEGER_0_255 */
-static int hf_ulp_technicalVersionField = -1;     /* INTEGER_0_255 */
-static int hf_ulp_editorialVersionField = -1;     /* INTEGER_0_255 */
-static int hf_ulp_PosProtocolVersion3GPP2_item = -1;  /* Supported3GPP2PosProtocolVersion */
-static int hf_ulp_revisionNumber = -1;            /* BIT_STRING_SIZE_6 */
-static int hf_ulp_pointReleaseNumber = -1;        /* INTEGER_0_255 */
-static int hf_ulp_internalEditLevel = -1;         /* INTEGER_0_255 */
-static int hf_ulp_minorVersionField = -1;         /* INTEGER_0_255 */
-static int hf_ulp_gANSSPositionMethods = -1;      /* GANSSPositionMethods */
-static int hf_ulp_GANSSPositionMethods_item = -1;  /* GANSSPositionMethod */
-static int hf_ulp_ganssSBASid = -1;               /* T_ganssSBASid */
-static int hf_ulp_gANSSPositioningMethodTypes = -1;  /* GANSSPositioningMethodTypes */
-static int hf_ulp_setAssisted = -1;               /* BOOLEAN */
-static int hf_ulp_setBased = -1;                  /* BOOLEAN */
-static int hf_ulp_autonomous = -1;                /* BOOLEAN */
-static int hf_ulp_ganssRequestedCommonAssistanceDataList = -1;  /* GanssRequestedCommonAssistanceDataList */
-static int hf_ulp_ganssRequestedGenericAssistanceDataList = -1;  /* GanssRequestedGenericAssistanceDataList */
-static int hf_ulp_extendedEphemeris = -1;         /* ExtendedEphemeris */
-static int hf_ulp_extendedEphemerisCheck = -1;    /* ExtendedEphCheck */
-static int hf_ulp_ganssReferenceTime = -1;        /* BOOLEAN */
-static int hf_ulp_ganssIonosphericModel = -1;     /* BOOLEAN */
-static int hf_ulp_ganssAdditionalIonosphericModelForDataID00 = -1;  /* BOOLEAN */
-static int hf_ulp_ganssAdditionalIonosphericModelForDataID11 = -1;  /* BOOLEAN */
-static int hf_ulp_ganssEarthOrientationParameters = -1;  /* BOOLEAN */
-static int hf_ulp_ganssAdditionalIonosphericModelForDataID01 = -1;  /* BOOLEAN */
-static int hf_ulp_GanssRequestedGenericAssistanceDataList_item = -1;  /* GanssReqGenericData */
-static int hf_ulp_ganssId_01 = -1;                /* T_ganssId */
-static int hf_ulp_ganssSBASid_01 = -1;            /* T_ganssSBASid_01 */
-static int hf_ulp_ganssRealTimeIntegrity = -1;    /* BOOLEAN */
-static int hf_ulp_ganssDifferentialCorrection = -1;  /* DGANSS_Sig_Id_Req */
-static int hf_ulp_ganssAlmanac = -1;              /* BOOLEAN */
-static int hf_ulp_ganssNavigationModelData = -1;  /* GanssNavigationModelData */
-static int hf_ulp_ganssTimeModels = -1;           /* T_ganssTimeModels */
-static int hf_ulp_ganssReferenceMeasurementInfo = -1;  /* BOOLEAN */
-static int hf_ulp_ganssDataBits = -1;             /* GanssDataBits */
-static int hf_ulp_ganssUTCModel = -1;             /* BOOLEAN */
-static int hf_ulp_ganssAdditionalDataChoices = -1;  /* GanssAdditionalDataChoices */
-static int hf_ulp_ganssAuxiliaryInformation = -1;  /* BOOLEAN */
-static int hf_ulp_ganssExtendedEphemeris = -1;    /* ExtendedEphemeris */
-static int hf_ulp_ganssExtendedEphemerisCheck = -1;  /* GanssExtendedEphCheck */
-static int hf_ulp_bds_DifferentialCorrection = -1;  /* BDS_Sig_Id_Req */
-static int hf_ulp_bds_GridModelReq = -1;          /* BOOLEAN */
-static int hf_ulp_ganssWeek = -1;                 /* T_ganssWeek */
-static int hf_ulp_ganssToe = -1;                  /* T_ganssToe */
-static int hf_ulp_t_toeLimit = -1;                /* T_t_toeLimit */
-static int hf_ulp_satellitesListRelatedDataList = -1;  /* SatellitesListRelatedDataList */
-static int hf_ulp_SatellitesListRelatedDataList_item = -1;  /* SatellitesListRelatedData */
-static int hf_ulp_iod = -1;                       /* INTEGER_0_1023 */
-static int hf_ulp_ganssTODmin = -1;               /* T_ganssTODmin */
-static int hf_ulp_reqDataBitAssistanceList = -1;  /* ReqDataBitAssistanceList */
-static int hf_ulp_gnssSignals = -1;               /* GANSSSignals */
-static int hf_ulp_ganssDataBitInterval = -1;      /* INTEGER_0_15 */
-static int hf_ulp_ganssDataBitSatList = -1;       /* T_ganssDataBitSatList */
-static int hf_ulp_ganssDataBitSatList_item = -1;  /* INTEGER_0_63 */
-static int hf_ulp_orbitModelID = -1;              /* INTEGER_0_7 */
-static int hf_ulp_clockModelID = -1;              /* INTEGER_0_7 */
-static int hf_ulp_utcModelID = -1;                /* INTEGER_0_7 */
-static int hf_ulp_almanacModelID = -1;            /* INTEGER_0_7 */
-static int hf_ulp_validity = -1;                  /* INTEGER_1_256 */
-static int hf_ulp_beginTime = -1;                 /* GPSTime */
-static int hf_ulp_endTime = -1;                   /* GPSTime */
-static int hf_ulp_beginTime_01 = -1;              /* GANSSextEphTime */
-static int hf_ulp_endTime_01 = -1;                /* GANSSextEphTime */
-static int hf_ulp_gPSWeek = -1;                   /* INTEGER_0_1023 */
-static int hf_ulp_gPSTOWhour = -1;                /* INTEGER_0_167 */
-static int hf_ulp_gANSSday = -1;                  /* INTEGER_0_8191 */
-static int hf_ulp_gANSSTODhour = -1;              /* INTEGER_0_23 */
-static int hf_ulp_lPPPayload = -1;                /* T_lPPPayload */
-static int hf_ulp_lPPPayload_item = -1;           /* T_lPPPayload_item */
-static int hf_ulp_tia801Payload = -1;             /* T_tia801Payload */
-static int hf_ulp_tia801Payload_item = -1;        /* OCTET_STRING_SIZE_1_60000 */
-static int hf_ulp_maj = -1;                       /* INTEGER_0_255 */
-static int hf_ulp_min = -1;                       /* INTEGER_0_255 */
-static int hf_ulp_servind = -1;                   /* INTEGER_0_255 */
-static int hf_ulp_setSessionID = -1;              /* SetSessionID */
-static int hf_ulp_slpSessionID = -1;              /* SlpSessionID */
-static int hf_ulp_sessionId = -1;                 /* INTEGER_0_65535 */
-static int hf_ulp_setId = -1;                     /* SETId */
-static int hf_ulp_msisdn = -1;                    /* T_msisdn */
-static int hf_ulp_mdn = -1;                       /* T_mdn */
-static int hf_ulp_minsi = -1;                     /* BIT_STRING_SIZE_34 */
-static int hf_ulp_imsi = -1;                      /* T_imsi */
-static int hf_ulp_nai = -1;                       /* IA5String_SIZE_1_1000 */
-static int hf_ulp_iPAddress = -1;                 /* IPAddress */
-static int hf_ulp_sessionSlpID = -1;              /* OCTET_STRING_SIZE_4 */
-static int hf_ulp_slpId = -1;                     /* SLPAddress */
-static int hf_ulp_ipv4Address = -1;               /* OCTET_STRING_SIZE_4 */
-static int hf_ulp_ipv6Address = -1;               /* OCTET_STRING_SIZE_16 */
-static int hf_ulp_fqdn = -1;                      /* FQDN */
-static int hf_ulp_cellInfo = -1;                  /* CellInfo */
-static int hf_ulp_status = -1;                    /* Status */
-static int hf_ulp_gsmCell = -1;                   /* GsmCellInformation */
-static int hf_ulp_wcdmaCell = -1;                 /* WcdmaCellInformation */
-static int hf_ulp_cdmaCell = -1;                  /* CdmaCellInformation */
-static int hf_ulp_ver2_CellInfo_extension = -1;   /* Ver2_CellInfo_extension */
-static int hf_ulp_timestamp_01 = -1;              /* UTCTime */
-static int hf_ulp_positionEstimate = -1;          /* PositionEstimate */
-static int hf_ulp_latitudeSign = -1;              /* T_latitudeSign */
-static int hf_ulp_latitude = -1;                  /* INTEGER_0_8388607 */
-static int hf_ulp_longitude = -1;                 /* INTEGER_M8388608_8388607 */
-static int hf_ulp_uncertainty = -1;               /* T_uncertainty */
-static int hf_ulp_uncertaintySemiMajor = -1;      /* INTEGER_0_127 */
-static int hf_ulp_uncertaintySemiMinor = -1;      /* INTEGER_0_127 */
-static int hf_ulp_orientationMajorAxis = -1;      /* T_orientationMajorAxis */
-static int hf_ulp_confidence = -1;                /* T_confidence */
-static int hf_ulp_altitudeInfo = -1;              /* AltitudeInfo */
-static int hf_ulp_altitudeDirection = -1;         /* T_altitudeDirection */
-static int hf_ulp_altitude = -1;                  /* T_altitude */
-static int hf_ulp_altUncertainty = -1;            /* INTEGER_0_127 */
-static int hf_ulp_refNID_01 = -1;                 /* INTEGER_0_65535 */
-static int hf_ulp_refSID_01 = -1;                 /* INTEGER_0_32767 */
-static int hf_ulp_refBASELAT = -1;                /* INTEGER_0_4194303 */
-static int hf_ulp_reBASELONG = -1;                /* INTEGER_0_8388607 */
-static int hf_ulp_refREFPN = -1;                  /* INTEGER_0_511 */
-static int hf_ulp_refWeekNumber = -1;             /* INTEGER_0_65535 */
-static int hf_ulp_refSeconds = -1;                /* INTEGER_0_4194303 */
-static int hf_ulp_nmr = -1;                       /* NMR */
-static int hf_ulp_ta = -1;                        /* INTEGER_0_255 */
-static int hf_ulp_frequencyInfo = -1;             /* FrequencyInfo */
-static int hf_ulp_primaryScramblingCode = -1;     /* INTEGER_0_511 */
-static int hf_ulp_measuredResultsList = -1;       /* MeasuredResultsList */
-static int hf_ulp_cellParametersId = -1;          /* INTEGER_0_127 */
-static int hf_ulp_timingAdvance = -1;             /* TimingAdvance */
-static int hf_ulp_ta_01 = -1;                     /* INTEGER_0_8191 */
-static int hf_ulp_tAResolution = -1;              /* TAResolution */
-static int hf_ulp_chipRate = -1;                  /* ChipRate */
-static int hf_ulp_modeSpecificFrequencyInfo = -1;  /* FrequencySpecificInfo */
-static int hf_ulp_fdd_fr = -1;                    /* FrequencyInfoFDD */
-static int hf_ulp_tdd_fr = -1;                    /* FrequencyInfoTDD */
-static int hf_ulp_uarfcn_UL = -1;                 /* UARFCN */
-static int hf_ulp_uarfcn_DL = -1;                 /* UARFCN */
-static int hf_ulp_uarfcn_Nt = -1;                 /* UARFCN */
-static int hf_ulp_NMR_item = -1;                  /* NMRelement */
-static int hf_ulp_arfcn = -1;                     /* INTEGER_0_1023 */
-static int hf_ulp_bsic = -1;                      /* INTEGER_0_63 */
-static int hf_ulp_rxLev = -1;                     /* INTEGER_0_63 */
-static int hf_ulp_MeasuredResultsList_item = -1;  /* MeasuredResults */
-static int hf_ulp_utra_CarrierRSSI = -1;          /* UTRA_CarrierRSSI */
-static int hf_ulp_cellMeasuredResultsList = -1;   /* CellMeasuredResultsList */
-static int hf_ulp_CellMeasuredResultsList_item = -1;  /* CellMeasuredResults */
-static int hf_ulp_cellIdentity = -1;              /* INTEGER_0_268435455 */
-static int hf_ulp_modeSpecificInfo = -1;          /* T_modeSpecificInfo */
-static int hf_ulp_fdd = -1;                       /* T_fdd */
-static int hf_ulp_primaryCPICH_Info = -1;         /* PrimaryCPICH_Info */
-static int hf_ulp_cpich_Ec_N0 = -1;               /* CPICH_Ec_N0 */
-static int hf_ulp_cpich_RSCP = -1;                /* CPICH_RSCP */
-static int hf_ulp_pathloss = -1;                  /* Pathloss */
-static int hf_ulp_tdd = -1;                       /* T_tdd */
-static int hf_ulp_cellParametersID = -1;          /* CellParametersID */
-static int hf_ulp_proposedTGSN = -1;              /* TGSN */
-static int hf_ulp_primaryCCPCH_RSCP = -1;         /* PrimaryCCPCH_RSCP */
-static int hf_ulp_timeslotISCP_List = -1;         /* TimeslotISCP_List */
-static int hf_ulp_TimeslotISCP_List_item = -1;    /* TimeslotISCP */
-static int hf_ulp_horacc = -1;                    /* INTEGER_0_127 */
-static int hf_ulp_veracc = -1;                    /* INTEGER_0_127 */
-static int hf_ulp_maxLocAge = -1;                 /* T_maxLocAge */
-static int hf_ulp_delay = -1;                     /* INTEGER_0_7 */
-static int hf_ulp_horvel = -1;                    /* Horvel */
-static int hf_ulp_horandvervel = -1;              /* Horandvervel */
-static int hf_ulp_horveluncert = -1;              /* Horveluncert */
-static int hf_ulp_horandveruncert = -1;           /* Horandveruncert */
-static int hf_ulp_bearing = -1;                   /* T_bearing */
-static int hf_ulp_horspeed = -1;                  /* T_horspeed */
-static int hf_ulp_verdirect = -1;                 /* T_verdirect */
-static int hf_ulp_bearing_01 = -1;                /* T_bearing_01 */
-static int hf_ulp_horspeed_01 = -1;               /* T_horspeed_01 */
-static int hf_ulp_verspeed = -1;                  /* T_verspeed */
-static int hf_ulp_bearing_02 = -1;                /* T_bearing_02 */
-static int hf_ulp_horspeed_02 = -1;               /* T_horspeed_02 */
-static int hf_ulp_uncertspeed = -1;               /* T_uncertspeed */
-static int hf_ulp_verdirect_01 = -1;              /* T_verdirect_01 */
-static int hf_ulp_bearing_03 = -1;                /* T_bearing_03 */
-static int hf_ulp_horspeed_03 = -1;               /* T_horspeed_03 */
-static int hf_ulp_verspeed_01 = -1;               /* T_verspeed_01 */
-static int hf_ulp_horuncertspeed = -1;            /* T_horuncertspeed */
-static int hf_ulp_veruncertspeed = -1;            /* T_veruncertspeed */
-static int hf_ulp_MultipleLocationIds_item = -1;  /* LocationIdData */
-static int hf_ulp_relativetimestamp = -1;         /* RelativeTime */
-static int hf_ulp_servingFlag = -1;               /* BOOLEAN */
-static int hf_ulp_supportedWLANInfo = -1;         /* SupportedWLANInfo */
-static int hf_ulp_supportedWLANApsList = -1;      /* SupportedWLANApsList */
-static int hf_ulp_supportedWCDMAInfo = -1;        /* SupportedWCDMAInfo */
-static int hf_ulp_hrdp = -1;                      /* BOOLEAN */
-static int hf_ulp_wimax = -1;                     /* BOOLEAN */
-static int hf_ulp_historic = -1;                  /* BOOLEAN */
-static int hf_ulp_nonServing = -1;                /* BOOLEAN */
-static int hf_ulp_uTRANGPSReferenceTime = -1;     /* BOOLEAN */
-static int hf_ulp_uTRANGANSSReferenceTime = -1;   /* BOOLEAN */
-static int hf_ulp_apTP = -1;                      /* BOOLEAN */
-static int hf_ulp_apAG = -1;                      /* BOOLEAN */
-static int hf_ulp_apSN = -1;                      /* BOOLEAN */
-static int hf_ulp_apDevType = -1;                 /* BOOLEAN */
-static int hf_ulp_apRSSI = -1;                    /* BOOLEAN */
-static int hf_ulp_apChanFreq = -1;                /* BOOLEAN */
-static int hf_ulp_apRTD = -1;                     /* BOOLEAN */
-static int hf_ulp_setTP = -1;                     /* BOOLEAN */
-static int hf_ulp_setAG = -1;                     /* BOOLEAN */
-static int hf_ulp_setSN = -1;                     /* BOOLEAN */
-static int hf_ulp_setRSSI = -1;                   /* BOOLEAN */
-static int hf_ulp_apRepLoc = -1;                  /* BOOLEAN */
-static int hf_ulp_supportedWLANApDataList = -1;   /* SEQUENCE_SIZE_1_maxWLANApDataSize_OF_SupportedWLANApData */
-static int hf_ulp_supportedWLANApDataList_item = -1;  /* SupportedWLANApData */
-static int hf_ulp_supportedWLANapsChannel11a = -1;  /* SupportedWLANApsChannel11a */
-static int hf_ulp_supportedWLANapsChannel11bg = -1;  /* SupportedWLANApsChannel11bg */
-static int hf_ulp_ch34 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch36 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch38 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch40 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch42 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch44 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch46 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch48 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch52 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch56 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch60 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch64 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch149 = -1;                     /* BOOLEAN */
-static int hf_ulp_ch153 = -1;                     /* BOOLEAN */
-static int hf_ulp_ch157 = -1;                     /* BOOLEAN */
-static int hf_ulp_ch161 = -1;                     /* BOOLEAN */
-static int hf_ulp_ch1 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch2 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch3 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch4 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch5 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch6 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch7 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch8 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch9 = -1;                       /* BOOLEAN */
-static int hf_ulp_ch10 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch11 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch12 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch13 = -1;                      /* BOOLEAN */
-static int hf_ulp_ch14 = -1;                      /* BOOLEAN */
-static int hf_ulp_apMACAddress_01 = -1;           /* T_apMACAddress_01 */
-static int hf_ulp_apDevType_01 = -1;              /* T_apDevType */
-static int hf_ulp_mrl = -1;                       /* BOOLEAN */
-static int hf_ulp_hrpdCell = -1;                  /* HrpdCellInformation */
-static int hf_ulp_umbCell = -1;                   /* UmbCellInformation */
-static int hf_ulp_lteCell = -1;                   /* LteCellInformation */
-static int hf_ulp_wlanAP = -1;                    /* WlanAPInformation */
-static int hf_ulp_wimaxBS = -1;                   /* WimaxBSInformation */
-static int hf_ulp_cellGlobalIdEUTRA = -1;         /* CellGlobalIdEUTRA */
-static int hf_ulp_physCellId = -1;                /* PhysCellId */
-static int hf_ulp_trackingAreaCode = -1;          /* TrackingAreaCode */
-static int hf_ulp_rsrpResult = -1;                /* RSRP_Range */
-static int hf_ulp_rsrqResult = -1;                /* RSRQ_Range */
-static int hf_ulp_ta_02 = -1;                     /* INTEGER_0_1282 */
-static int hf_ulp_measResultListEUTRA = -1;       /* MeasResultListEUTRA */
-static int hf_ulp_earfcn = -1;                    /* INTEGER_0_65535 */
-static int hf_ulp_earfcn_ext = -1;                /* INTEGER_65536_262143 */
-static int hf_ulp_MeasResultListEUTRA_item = -1;  /* MeasResultEUTRA */
-static int hf_ulp_cgi_Info = -1;                  /* T_cgi_Info */
-static int hf_ulp_cellGlobalId = -1;              /* CellGlobalIdEUTRA */
-static int hf_ulp_measResult = -1;                /* T_measResult */
-static int hf_ulp_plmn_Identity = -1;             /* PLMN_Identity */
-static int hf_ulp_cellIdentity_01 = -1;           /* CellIdentity */
-static int hf_ulp_mcc = -1;                       /* MCC */
-static int hf_ulp_mnc = -1;                       /* MNC */
-static int hf_ulp_MCC_item = -1;                  /* MCC_MNC_Digit */
-static int hf_ulp_MNC_item = -1;                  /* MCC_MNC_Digit */
-static int hf_ulp_apMACAddress_02 = -1;           /* T_apMACAddress_02 */
-static int hf_ulp_apTransmitPower = -1;           /* T_apTransmitPower */
-static int hf_ulp_apAntennaGain = -1;             /* T_apAntennaGain */
-static int hf_ulp_apSignaltoNoise = -1;           /* T_apSignaltoNoise */
-static int hf_ulp_apDeviceType = -1;              /* T_apDeviceType */
-static int hf_ulp_apSignalStrength = -1;          /* T_apSignalStrength */
-static int hf_ulp_apChannelFrequency = -1;        /* INTEGER_0_256 */
-static int hf_ulp_apRoundTripDelay = -1;          /* RTD */
-static int hf_ulp_setTransmitPower = -1;          /* T_setTransmitPower */
-static int hf_ulp_setAntennaGain = -1;            /* T_setAntennaGain */
-static int hf_ulp_setSignaltoNoise = -1;          /* T_setSignaltoNoise */
-static int hf_ulp_setSignalStrength = -1;         /* T_setSignalStrength */
-static int hf_ulp_apReportedLocation = -1;        /* ReportedLocation */
-static int hf_ulp_apRepLocation = -1;             /* RepLocation */
-static int hf_ulp_apSignalStrengthDelta = -1;     /* INTEGER_0_1 */
-static int hf_ulp_apSignaltoNoiseDelta = -1;      /* INTEGER_0_1 */
-static int hf_ulp_setSignalStrengthDelta = -1;    /* INTEGER_0_1 */
-static int hf_ulp_setSignaltoNoiseDelta = -1;     /* INTEGER_0_1 */
-static int hf_ulp_operatingClass = -1;            /* INTEGER_0_255 */
-static int hf_ulp_apSSID = -1;                    /* T_apSSID */
-static int hf_ulp_apPHYType = -1;                 /* T_apPHYType */
-static int hf_ulp_setMACAddress = -1;             /* T_setMACAddress */
-static int hf_ulp_rTDValue = -1;                  /* INTEGER_0_16777216 */
-static int hf_ulp_rTDUnits = -1;                  /* RTDUnits */
-static int hf_ulp_rTDAccuracy = -1;               /* INTEGER_0_255 */
-static int hf_ulp_locationEncodingDescriptor = -1;  /* LocationEncodingDescriptor */
-static int hf_ulp_locationData = -1;              /* LocationData */
-static int hf_ulp_locationAccuracy = -1;          /* INTEGER_0_4294967295 */
-static int hf_ulp_locationValue = -1;             /* OCTET_STRING_SIZE_1_128 */
-static int hf_ulp_lciLocData = -1;                /* LciLocData */
-static int hf_ulp_locationDataLCI = -1;           /* LocationDataLCI */
-static int hf_ulp_latitudeResolution = -1;        /* BIT_STRING_SIZE_6 */
-static int hf_ulp_latitude_01 = -1;               /* BIT_STRING_SIZE_34 */
-static int hf_ulp_longitudeResolution = -1;       /* BIT_STRING_SIZE_6 */
-static int hf_ulp_longitude_01 = -1;              /* BIT_STRING_SIZE_34 */
-static int hf_ulp_altitudeType = -1;              /* BIT_STRING_SIZE_4 */
-static int hf_ulp_altitudeResolution = -1;        /* BIT_STRING_SIZE_6 */
-static int hf_ulp_altitude_01 = -1;               /* BIT_STRING_SIZE_30 */
-static int hf_ulp_datum = -1;                     /* BIT_STRING_SIZE_8 */
-static int hf_ulp_wimaxBsID = -1;                 /* WimaxBsID */
-static int hf_ulp_wimaxRTD = -1;                  /* WimaxRTD */
-static int hf_ulp_wimaxNMRList = -1;              /* WimaxNMRList */
-static int hf_ulp_rtd = -1;                       /* INTEGER_0_65535 */
-static int hf_ulp_rTDstd = -1;                    /* INTEGER_0_1023 */
-static int hf_ulp_WimaxNMRList_item = -1;         /* WimaxNMR */
-static int hf_ulp_relDelay = -1;                  /* INTEGER_M32768_32767 */
-static int hf_ulp_relDelaystd = -1;               /* INTEGER_0_1023 */
-static int hf_ulp_rssi = -1;                      /* INTEGER_0_255 */
-static int hf_ulp_rSSIstd = -1;                   /* T_rSSIstd */
-static int hf_ulp_bSTxPower = -1;                 /* INTEGER_0_255 */
-static int hf_ulp_cinr = -1;                      /* T_cinr */
-static int hf_ulp_cINRstd = -1;                   /* T_cINRstd */
-static int hf_ulp_bSLocation = -1;                /* ReportedLocation */
-static int hf_ulp_utran_GPSReferenceTime = -1;    /* UTRAN_GPSReferenceTime */
-static int hf_ulp_gpsReferenceTimeUncertainty = -1;  /* INTEGER_0_127 */
-static int hf_ulp_utranGPSDriftRate = -1;         /* UTRANGPSDriftRate */
-static int hf_ulp_utran_GPSTimingOfCell = -1;     /* T_utran_GPSTimingOfCell */
-static int hf_ulp_ms_part = -1;                   /* INTEGER_0_1023 */
-static int hf_ulp_ls_part = -1;                   /* INTEGER_0_4294967295 */
-static int hf_ulp_modeSpecificInfo_01 = -1;       /* T_modeSpecificInfo_01 */
-static int hf_ulp_fdd_01 = -1;                    /* T_fdd_01 */
-static int hf_ulp_referenceIdentity = -1;         /* PrimaryCPICH_Info */
-static int hf_ulp_tdd_01 = -1;                    /* T_tdd_01 */
-static int hf_ulp_referenceIdentity_01 = -1;      /* CellParametersID */
-static int hf_ulp_sfn = -1;                       /* INTEGER_0_4095 */
-static int hf_ulp_set_GPSTimingOfCell = -1;       /* T_set_GPSTimingOfCell */
-static int hf_ulp_ms_part_01 = -1;                /* INTEGER_0_16383 */
-static int hf_ulp_modeSpecificInfo_02 = -1;       /* T_modeSpecificInfo_02 */
-static int hf_ulp_fdd_02 = -1;                    /* T_fdd_02 */
-static int hf_ulp_tdd_02 = -1;                    /* T_tdd_02 */
-static int hf_ulp_ganssDay = -1;                  /* INTEGER_0_8191 */
-static int hf_ulp_ganssTimeID = -1;               /* INTEGER_0_15 */
-static int hf_ulp_utran_GANSSReferenceTime = -1;  /* UTRAN_GANSSReferenceTime */
-static int hf_ulp_utranGANSSDriftRate = -1;       /* UTRANGANSSDriftRate */
-static int hf_ulp_ganssTOD = -1;                  /* T_ganssTOD */
-static int hf_ulp_utran_GANSSTimingOfCell = -1;   /* INTEGER_0_3999999 */
-static int hf_ulp_modeSpecificInfo_03 = -1;       /* T_modeSpecificInfo_03 */
-static int hf_ulp_fdd_03 = -1;                    /* T_fdd_03 */
-static int hf_ulp_tdd_03 = -1;                    /* T_tdd_03 */
-static int hf_ulp_ganss_TODUncertainty = -1;      /* INTEGER_0_127 */
-static int hf_ulp_set_GANSSReferenceTime = -1;    /* SET_GANSSReferenceTime */
-static int hf_ulp_set_GANSSTimingOfCell = -1;     /* T_set_GANSSTimingOfCell */
-static int hf_ulp_ms_part_02 = -1;                /* INTEGER_0_80 */
-static int hf_ulp_modeSpecificInfo_04 = -1;       /* T_modeSpecificInfo_04 */
-static int hf_ulp_fdd_04 = -1;                    /* T_fdd_04 */
-static int hf_ulp_tdd_04 = -1;                    /* T_tdd_04 */
-static int hf_ulp_gps = -1;                       /* BOOLEAN */
-static int hf_ulp_galileo = -1;                   /* BOOLEAN */
-static int hf_ulp_sbas = -1;                      /* BOOLEAN */
-static int hf_ulp_modernized_gps = -1;            /* BOOLEAN */
-static int hf_ulp_qzss = -1;                      /* BOOLEAN */
-static int hf_ulp_glonass = -1;                   /* BOOLEAN */
-static int hf_ulp_bds = -1;                       /* BOOLEAN */
-static int hf_ulp_rand = -1;                      /* BIT_STRING_SIZE_128 */
-static int hf_ulp_slpFQDN = -1;                   /* FQDN */
-static int hf_ulp_ThirdParty_item = -1;           /* ThirdPartyID */
-static int hf_ulp_logicalName = -1;               /* IA5String_SIZE_1_1000 */
-static int hf_ulp_msisdn_01 = -1;                 /* T_msisdn_01 */
-static int hf_ulp_emailaddr = -1;                 /* IA5String_SIZE_1_1000 */
-static int hf_ulp_sip_uri = -1;                   /* T_sip_uri */
-static int hf_ulp_ims_public_identity = -1;       /* T_ims_public_identity */
-static int hf_ulp_min_01 = -1;                    /* BIT_STRING_SIZE_34 */
-static int hf_ulp_mdn_01 = -1;                    /* T_mdn_01 */
-static int hf_ulp_uri = -1;                       /* T_uri */
-static int hf_ulp_appProvider = -1;               /* IA5String_SIZE_1_24 */
-static int hf_ulp_appName = -1;                   /* IA5String_SIZE_1_32 */
-static int hf_ulp_appVersion = -1;                /* IA5String_SIZE_1_8 */
-static int hf_ulp_minInt = -1;                    /* T_minInt */
-static int hf_ulp_maxInt = -1;                    /* T_maxInt */
-static int hf_ulp_repMode_01 = -1;                /* RepMode */
-static int hf_ulp_batchRepCap = -1;               /* BatchRepCap */
-static int hf_ulp_realtime = -1;                  /* BOOLEAN */
-static int hf_ulp_quasirealtime = -1;             /* BOOLEAN */
-static int hf_ulp_batch = -1;                     /* BOOLEAN */
-static int hf_ulp_report_position = -1;           /* BOOLEAN */
-static int hf_ulp_report_measurements = -1;       /* BOOLEAN */
-static int hf_ulp_max_num_positions = -1;         /* INTEGER_1_1024 */
-static int hf_ulp_max_num_measurements = -1;      /* INTEGER_1_1024 */
-static int hf_ulp_latitudeSign_01 = -1;           /* T_latitudeSign_01 */
-static int hf_ulp_CoordinateLatitude = -1;        /* INTEGER_0_8388607 */
-static int hf_ulp_CoordinateLongitude = -1;       /* INTEGER_M8388608_8388607 */
-static int hf_ulp_coordinate = -1;                /* Coordinate */
-static int hf_ulp_radius = -1;                    /* T_radius */
-static int hf_ulp_radius_min = -1;                /* INTEGER_1_1000000 */
-static int hf_ulp_radius_max = -1;                /* INTEGER_1_1500000 */
-static int hf_ulp_semiMajor = -1;                 /* T_semiMajor */
-static int hf_ulp_semiMajor_min = -1;             /* INTEGER_1_1000000 */
-static int hf_ulp_semiMajor_max = -1;             /* INTEGER_1_1500000 */
-static int hf_ulp_semiMinor = -1;                 /* T_semiMinor */
-static int hf_ulp_semiMinor_min = -1;             /* INTEGER_1_1000000 */
-static int hf_ulp_semiMinor_max = -1;             /* INTEGER_1_1500000 */
-static int hf_ulp_angle = -1;                     /* T_angle */
-static int hf_ulp_polygonDescription = -1;        /* PolygonDescription */
-static int hf_ulp_polygonHysteresis = -1;         /* T_polygonHysteresis */
-static int hf_ulp_PolygonDescription_item = -1;   /* Coordinate */
+static int hf_ulp_ULP_PDU_PDU;                    /* ULP_PDU */
+static int hf_ulp_length;                         /* INTEGER_0_65535 */
+static int hf_ulp_version;                        /* Version */
+static int hf_ulp_sessionID;                      /* SessionID */
+static int hf_ulp_message;                        /* UlpMessage */
+static int hf_ulp_msSUPLINIT;                     /* SUPLINIT */
+static int hf_ulp_msSUPLSTART;                    /* SUPLSTART */
+static int hf_ulp_msSUPLRESPONSE;                 /* SUPLRESPONSE */
+static int hf_ulp_msSUPLPOSINIT;                  /* SUPLPOSINIT */
+static int hf_ulp_msSUPLPOS;                      /* SUPLPOS */
+static int hf_ulp_msSUPLEND;                      /* SUPLEND */
+static int hf_ulp_msSUPLAUTHREQ;                  /* SUPLAUTHREQ */
+static int hf_ulp_msSUPLAUTHRESP;                 /* SUPLAUTHRESP */
+static int hf_ulp_msSUPLTRIGGEREDSTART;           /* Ver2_SUPLTRIGGEREDSTART */
+static int hf_ulp_msSUPLTRIGGEREDRESPONSE;        /* Ver2_SUPLTRIGGEREDRESPONSE */
+static int hf_ulp_msSUPLTRIGGEREDSTOP;            /* Ver2_SUPLTRIGGEREDSTOP */
+static int hf_ulp_msSUPLNOTIFY;                   /* Ver2_SUPLNOTIFY */
+static int hf_ulp_msSUPLNOTIFYRESPONSE;           /* Ver2_SUPLNOTIFYRESPONSE */
+static int hf_ulp_msSUPLSETINIT;                  /* Ver2_SUPLSETINIT */
+static int hf_ulp_msSUPLREPORT;                   /* Ver2_SUPLREPORT */
+static int hf_ulp_posMethod;                      /* PosMethod */
+static int hf_ulp_notification;                   /* Notification */
+static int hf_ulp_sLPAddress;                     /* SLPAddress */
+static int hf_ulp_qoP;                            /* QoP */
+static int hf_ulp_sLPMode;                        /* SLPMode */
+static int hf_ulp_mac;                            /* MAC */
+static int hf_ulp_keyIdentity;                    /* KeyIdentity */
+static int hf_ulp_ver2_SUPL_INIT_extension;       /* Ver2_SUPL_INIT_extension */
+static int hf_ulp_notificationType;               /* NotificationType */
+static int hf_ulp_encodingType;                   /* EncodingType */
+static int hf_ulp_requestorId;                    /* T_requestorId */
+static int hf_ulp_requestorIdType;                /* FormatIndicator */
+static int hf_ulp_clientName;                     /* T_clientName */
+static int hf_ulp_clientNameType;                 /* FormatIndicator */
+static int hf_ulp_ver2_Notification_extension;    /* Ver2_Notification_extension */
+static int hf_ulp_sETCapabilities;                /* SETCapabilities */
+static int hf_ulp_locationId;                     /* LocationId */
+static int hf_ulp_ver2_SUPL_START_extension;      /* Ver2_SUPL_START_extension */
+static int hf_ulp_posTechnology;                  /* PosTechnology */
+static int hf_ulp_prefMethod;                     /* PrefMethod */
+static int hf_ulp_posProtocol;                    /* PosProtocol */
+static int hf_ulp_ver2_SETCapabilities_extension;  /* Ver2_SETCapabilities_extension */
+static int hf_ulp_agpsSETassisted;                /* BOOLEAN */
+static int hf_ulp_agpsSETBased;                   /* BOOLEAN */
+static int hf_ulp_autonomousGPS;                  /* BOOLEAN */
+static int hf_ulp_aflt;                           /* BOOLEAN */
+static int hf_ulp_ecid;                           /* BOOLEAN */
+static int hf_ulp_eotd;                           /* BOOLEAN */
+static int hf_ulp_otdoa;                          /* BOOLEAN */
+static int hf_ulp_ver2_PosTechnology_extension;   /* Ver2_PosTechnology_extension */
+static int hf_ulp_tia801;                         /* BOOLEAN */
+static int hf_ulp_rrlp;                           /* BOOLEAN */
+static int hf_ulp_rrc;                            /* BOOLEAN */
+static int hf_ulp_ver2_PosProtocol_extension;     /* Ver2_PosProtocol_extension */
+static int hf_ulp_sETAuthKey;                     /* SETAuthKey */
+static int hf_ulp_keyIdentity4;                   /* KeyIdentity4 */
+static int hf_ulp_ver2_SUPL_RESPONSE_extension;   /* Ver2_SUPL_RESPONSE_extension */
+static int hf_ulp_shortKey;                       /* BIT_STRING_SIZE_128 */
+static int hf_ulp_longKey;                        /* BIT_STRING_SIZE_256 */
+static int hf_ulp_requestedAssistData;            /* RequestedAssistData */
+static int hf_ulp_position;                       /* Position */
+static int hf_ulp_suplpos;                        /* SUPLPOS */
+static int hf_ulp_ver;                            /* Ver */
+static int hf_ulp_ver2_SUPL_POS_INIT_extension;   /* Ver2_SUPL_POS_INIT_extension */
+static int hf_ulp_almanacRequested;               /* BOOLEAN */
+static int hf_ulp_utcModelRequested;              /* BOOLEAN */
+static int hf_ulp_ionosphericModelRequested;      /* BOOLEAN */
+static int hf_ulp_dgpsCorrectionsRequested;       /* BOOLEAN */
+static int hf_ulp_referenceLocationRequested;     /* BOOLEAN */
+static int hf_ulp_referenceTimeRequested;         /* BOOLEAN */
+static int hf_ulp_acquisitionAssistanceRequested;  /* BOOLEAN */
+static int hf_ulp_realTimeIntegrityRequested;     /* BOOLEAN */
+static int hf_ulp_navigationModelRequested;       /* BOOLEAN */
+static int hf_ulp_navigationModelData;            /* NavigationModel */
+static int hf_ulp_ver2_RequestedAssistData_extension;  /* Ver2_RequestedAssistData_extension */
+static int hf_ulp_gpsWeek;                        /* INTEGER_0_1023 */
+static int hf_ulp_gpsToe;                         /* INTEGER_0_167 */
+static int hf_ulp_nsat;                           /* INTEGER_0_31 */
+static int hf_ulp_toeLimit;                       /* INTEGER_0_10 */
+static int hf_ulp_satInfo;                        /* SatelliteInfo */
+static int hf_ulp_SatelliteInfo_item;             /* SatelliteInfoElement */
+static int hf_ulp_satId;                          /* INTEGER_0_63 */
+static int hf_ulp_iode;                           /* INTEGER_0_255 */
+static int hf_ulp_posPayLoad;                     /* PosPayLoad */
+static int hf_ulp_velocity;                       /* Velocity */
+static int hf_ulp_ver2_SUPL_POS_extension;        /* Ver2_SUPL_POS_extension */
+static int hf_ulp_tia801payload;                  /* OCTET_STRING_SIZE_1_8192 */
+static int hf_ulp_rrcPayload;                     /* OCTET_STRING_SIZE_1_8192 */
+static int hf_ulp_rrlpPayload;                    /* T_rrlpPayload */
+static int hf_ulp_ver2_PosPayLoad_extension;      /* Ver2_PosPayLoad_extension */
+static int hf_ulp_statusCode;                     /* StatusCode */
+static int hf_ulp_ver2_SUPL_END_extension;        /* Ver2_SUPL_END_extension */
+static int hf_ulp_sPCSETKey;                      /* SPCSETKey */
+static int hf_ulp_spctid;                         /* SPCTID */
+static int hf_ulp_sPCSETKeylifetime;              /* SPCSETKeylifetime */
+static int hf_ulp_notificationResponse;           /* NotificationResponse */
+static int hf_ulp_targetSETID;                    /* SETId */
+static int hf_ulp_applicationID;                  /* ApplicationID */
+static int hf_ulp_multipleLocationIds;            /* MultipleLocationIds */
+static int hf_ulp_thirdParty;                     /* ThirdParty */
+static int hf_ulp_triggerType;                    /* TriggerType */
+static int hf_ulp_triggerParams;                  /* TriggerParams */
+static int hf_ulp_reportingCap;                   /* ReportingCap */
+static int hf_ulp_causeCode;                      /* CauseCode */
+static int hf_ulp_periodicParams;                 /* PeriodicParams */
+static int hf_ulp_areaEventParams;                /* AreaEventParams */
+static int hf_ulp_numberOfFixes;                  /* INTEGER_1_8639999 */
+static int hf_ulp_intervalBetweenFixes;           /* INTEGER_1_8639999 */
+static int hf_ulp_startTime;                      /* INTEGER_0_2678400 */
+static int hf_ulp_areaEventType;                  /* AreaEventType */
+static int hf_ulp_locationEstimate;               /* BOOLEAN */
+static int hf_ulp_repeatedReportingParams;        /* RepeatedReportingParams */
+static int hf_ulp_stopTime;                       /* INTEGER_0_11318399 */
+static int hf_ulp_geographicTargetAreaList;       /* GeographicTargetAreaList */
+static int hf_ulp_areaIdLists;                    /* SEQUENCE_SIZE_1_maxAreaIdList_OF_AreaIdList */
+static int hf_ulp_areaIdLists_item;               /* AreaIdList */
+static int hf_ulp_minimumIntervalTime;            /* INTEGER_1_604800 */
+static int hf_ulp_maximumNumberOfReports;         /* INTEGER_1_1024 */
+static int hf_ulp_GeographicTargetAreaList_item;  /* GeographicTargetArea */
+static int hf_ulp_circularArea;                   /* CircularArea */
+static int hf_ulp_ellipticalArea;                 /* EllipticalArea */
+static int hf_ulp_polygonArea;                    /* PolygonArea */
+static int hf_ulp_areaIdSet;                      /* AreaIdSet */
+static int hf_ulp_areaIdSetType;                  /* AreaIdSetType */
+static int hf_ulp_geoAreaMappingList;             /* GeoAreaMappingList */
+static int hf_ulp_AreaIdSet_item;                 /* AreaId */
+static int hf_ulp_gSMAreaId;                      /* GSMAreaId */
+static int hf_ulp_wCDMAAreaId;                    /* WCDMAAreaId */
+static int hf_ulp_cDMAAreaId;                     /* CDMAAreaId */
+static int hf_ulp_hRPDAreaId;                     /* HRPDAreaId */
+static int hf_ulp_uMBAreaId;                      /* UMBAreaId */
+static int hf_ulp_lTEAreaId;                      /* LTEAreaId */
+static int hf_ulp_wLANAreaId;                     /* WLANAreaId */
+static int hf_ulp_wiMAXAreaId;                    /* WimaxAreaId */
+static int hf_ulp_nRAreaId;                       /* NRAreaId */
+static int hf_ulp_refMCC;                         /* INTEGER_0_999 */
+static int hf_ulp_refMNC;                         /* INTEGER_0_999 */
+static int hf_ulp_refLAC;                         /* INTEGER_0_65535 */
+static int hf_ulp_refCI;                          /* INTEGER_0_65535 */
+static int hf_ulp_refUC;                          /* INTEGER_0_268435455 */
+static int hf_ulp_refSID;                         /* INTEGER_0_65535 */
+static int hf_ulp_refNID;                         /* INTEGER_0_32767 */
+static int hf_ulp_refBASEID;                      /* INTEGER_0_65535 */
+static int hf_ulp_refSECTORID;                    /* BIT_STRING_SIZE_128 */
+static int hf_ulp_refCI_LTE_Cell_Id;              /* BIT_STRING_SIZE_29 */
+static int hf_ulp_apMACAddress;                   /* T_apMACAddress */
+static int hf_ulp_bsID_MSB;                       /* BIT_STRING_SIZE_24 */
+static int hf_ulp_bsID_LSB;                       /* BIT_STRING_SIZE_24 */
+static int hf_ulp_refCI_NR_Cell_Id;               /* BIT_STRING_SIZE_36 */
+static int hf_ulp_GeoAreaMappingList_item;        /* GeoAreaIndex */
+static int hf_ulp_supportedNetworkInformation;    /* SupportedNetworkInformation */
+static int hf_ulp_reportingMode;                  /* ReportingMode */
+static int hf_ulp_gnssPosTechnology;              /* GNSSPosTechnology */
+static int hf_ulp_repMode;                        /* RepModee */
+static int hf_ulp_batchRepConditions;             /* BatchRepConditions */
+static int hf_ulp_batchRepType;                   /* BatchRepType */
+static int hf_ulp_num_interval;                   /* INTEGER_1_1024 */
+static int hf_ulp_num_minutes;                    /* INTEGER_1_2048 */
+static int hf_ulp_endofsession;                   /* NULL */
+static int hf_ulp_reportPosition;                 /* BOOLEAN */
+static int hf_ulp_reportMeasurements;             /* BOOLEAN */
+static int hf_ulp_intermediateReports;            /* BOOLEAN */
+static int hf_ulp_discardOldest;                  /* BOOLEAN */
+static int hf_ulp_sessionList;                    /* SessionList */
+static int hf_ulp_reportDataList;                 /* ReportDataList */
+static int hf_ulp_moreComponents;                 /* NULL */
+static int hf_ulp_SessionList_item;               /* SessionInformation */
+static int hf_ulp_ReportDataList_item;            /* ReportData */
+static int hf_ulp_positionData;                   /* PositionData */
+static int hf_ulp_resultCode;                     /* ResultCode */
+static int hf_ulp_timestamp_choice;               /* TimeStamp */
+static int hf_ulp_ganssSignalsInfo;               /* GANSSsignalsInfo */
+static int hf_ulp_GANSSsignalsInfo_item;          /* GANSSSignalsDescription */
+static int hf_ulp_ganssId;                        /* INTEGER_0_15 */
+static int hf_ulp_gANSSSignals;                   /* GANSSSignals */
+static int hf_ulp_absoluteTime;                   /* UTCTime */
+static int hf_ulp_relativeTime;                   /* INTEGER_0_31536000 */
+static int hf_ulp_notificationMode;               /* NotificationMode */
+static int hf_ulp_e_SLPAddress;                   /* SLPAddress */
+static int hf_ulp_historicReporting;              /* HistoricReporting */
+static int hf_ulp_protectionLevel;                /* ProtectionLevel */
+static int hf_ulp_minimumMajorVersion;            /* INTEGER_0_255 */
+static int hf_ulp_allowedReportingType;           /* AllowedReportingType */
+static int hf_ulp_reportingCriteria;              /* ReportingCriteria */
+static int hf_ulp_timeWindow;                     /* TimeWindow */
+static int hf_ulp_maxNumberofReports;             /* INTEGER_1_65536 */
+static int hf_ulp_minTimeInterval;                /* INTEGER_1_86400 */
+static int hf_ulp_startTime_01;                   /* INTEGER_M525600_M1 */
+static int hf_ulp_stopTime_01;                    /* INTEGER_M525599_0 */
+static int hf_ulp_protlevel;                      /* ProtLevel */
+static int hf_ulp_basicProtectionParams;          /* BasicProtectionParams */
+static int hf_ulp_keyIdentifier;                  /* OCTET_STRING_SIZE_8 */
+static int hf_ulp_basicReplayCounter;             /* INTEGER_0_65535 */
+static int hf_ulp_basicMAC;                       /* BIT_STRING_SIZE_32 */
+static int hf_ulp_initialApproximateposition;     /* Position */
+static int hf_ulp_utran_GPSReferenceTimeResult;   /* UTRAN_GPSReferenceTimeResult */
+static int hf_ulp_utran_GANSSReferenceTimeResult;  /* UTRAN_GANSSReferenceTimeResult */
+static int hf_ulp_utran_GPSReferenceTimeAssistance;  /* UTRAN_GPSReferenceTimeAssistance */
+static int hf_ulp_utran_GANSSReferenceTimeAssistance;  /* UTRAN_GANSSReferenceTimeAssistance */
+static int hf_ulp_ver2_HighAccuracyPosition;      /* Ver2_HighAccuracyPosition */
+static int hf_ulp_emergencyCallLocation;          /* NULL */
+static int hf_ulp_serviceCapabilities;            /* ServiceCapabilities */
+static int hf_ulp_supportedBearers;               /* SupportedBearers */
+static int hf_ulp_servicesSupported;              /* ServicesSupported */
+static int hf_ulp_reportingCapabilities;          /* ReportingCap */
+static int hf_ulp_eventTriggerCapabilities;       /* EventTriggerCapabilities */
+static int hf_ulp_sessionCapabilities;            /* SessionCapabilities */
+static int hf_ulp_periodicTrigger;                /* BOOLEAN */
+static int hf_ulp_areaEventTrigger;               /* BOOLEAN */
+static int hf_ulp_geoAreaShapesSupported;         /* GeoAreaShapesSupported */
+static int hf_ulp_maxNumGeoAreaSupported;         /* INTEGER_0_maxNumGeoArea */
+static int hf_ulp_maxAreaIdListSupported;         /* INTEGER_0_maxAreaIdList */
+static int hf_ulp_maxAreaIdSupportedPerList;      /* INTEGER_0_maxAreaId */
+static int hf_ulp_ellipticalArea_01;              /* BOOLEAN */
+static int hf_ulp_polygonArea_01;                 /* BOOLEAN */
+static int hf_ulp_maxNumberTotalSessions;         /* INTEGER_1_128 */
+static int hf_ulp_maxNumberPeriodicSessions;      /* INTEGER_1_32 */
+static int hf_ulp_maxNumberTriggeredSessions;     /* INTEGER_1_32 */
+static int hf_ulp_gsm;                            /* BOOLEAN */
+static int hf_ulp_wcdma;                          /* BOOLEAN */
+static int hf_ulp_lte;                            /* BOOLEAN */
+static int hf_ulp_cdma;                           /* BOOLEAN */
+static int hf_ulp_hprd;                           /* BOOLEAN */
+static int hf_ulp_umb;                            /* BOOLEAN */
+static int hf_ulp_wlan;                           /* BOOLEAN */
+static int hf_ulp_wiMAX;                          /* BOOLEAN */
+static int hf_ulp_nr;                             /* BOOLEAN */
+static int hf_ulp_lpp;                            /* BOOLEAN */
+static int hf_ulp_posProtocolVersionRRLP;         /* PosProtocolVersion3GPP */
+static int hf_ulp_posProtocolVersionRRC;          /* PosProtocolVersion3GPP */
+static int hf_ulp_posProtocolVersionTIA801;       /* PosProtocolVersion3GPP2 */
+static int hf_ulp_posProtocolVersionLPP;          /* PosProtocolVersion3GPP */
+static int hf_ulp_lppe;                           /* BOOLEAN */
+static int hf_ulp_posProtocolVersionLPPe;         /* PosProtocolVersionOMA */
+static int hf_ulp_majorVersionField;              /* INTEGER_0_255 */
+static int hf_ulp_technicalVersionField;          /* INTEGER_0_255 */
+static int hf_ulp_editorialVersionField;          /* INTEGER_0_255 */
+static int hf_ulp_PosProtocolVersion3GPP2_item;   /* Supported3GPP2PosProtocolVersion */
+static int hf_ulp_revisionNumber;                 /* BIT_STRING_SIZE_6 */
+static int hf_ulp_pointReleaseNumber;             /* INTEGER_0_255 */
+static int hf_ulp_internalEditLevel;              /* INTEGER_0_255 */
+static int hf_ulp_minorVersionField;              /* INTEGER_0_255 */
+static int hf_ulp_gANSSPositionMethods;           /* GANSSPositionMethods */
+static int hf_ulp_additionalPositioningMethods;   /* AdditionalPositioningMethods */
+static int hf_ulp_GANSSPositionMethods_item;      /* GANSSPositionMethod */
+static int hf_ulp_ganssSBASid;                    /* T_ganssSBASid */
+static int hf_ulp_gANSSPositioningMethodTypes;    /* GANSSPositioningMethodTypes */
+static int hf_ulp_rtk;                            /* RTK */
+static int hf_ulp_osr;                            /* BOOLEAN */
+static int hf_ulp_setAssisted;                    /* BOOLEAN */
+static int hf_ulp_setBased;                       /* BOOLEAN */
+static int hf_ulp_autonomous;                     /* BOOLEAN */
+static int hf_ulp_AdditionalPositioningMethods_item;  /* AddPosSupport_Element */
+static int hf_ulp_addPosID;                       /* T_addPosID */
+static int hf_ulp_addPosMode;                     /* T_addPosMode */
+static int hf_ulp_ganssRequestedCommonAssistanceDataList;  /* GanssRequestedCommonAssistanceDataList */
+static int hf_ulp_ganssRequestedGenericAssistanceDataList;  /* GanssRequestedGenericAssistanceDataList */
+static int hf_ulp_extendedEphemeris;              /* ExtendedEphemeris */
+static int hf_ulp_extendedEphemerisCheck;         /* ExtendedEphCheck */
+static int hf_ulp_ganssReferenceTime;             /* BOOLEAN */
+static int hf_ulp_ganssIonosphericModel;          /* BOOLEAN */
+static int hf_ulp_ganssAdditionalIonosphericModelForDataID00;  /* BOOLEAN */
+static int hf_ulp_ganssAdditionalIonosphericModelForDataID11;  /* BOOLEAN */
+static int hf_ulp_ganssEarthOrientationParameters;  /* BOOLEAN */
+static int hf_ulp_ganssAdditionalIonosphericModelForDataID01;  /* BOOLEAN */
+static int hf_ulp_GanssRequestedGenericAssistanceDataList_item;  /* GanssReqGenericData */
+static int hf_ulp_ganssId_01;                     /* T_ganssId */
+static int hf_ulp_ganssSBASid_01;                 /* T_ganssSBASid_01 */
+static int hf_ulp_ganssRealTimeIntegrity;         /* BOOLEAN */
+static int hf_ulp_ganssDifferentialCorrection;    /* DGANSS_Sig_Id_Req */
+static int hf_ulp_ganssAlmanac;                   /* BOOLEAN */
+static int hf_ulp_ganssNavigationModelData;       /* GanssNavigationModelData */
+static int hf_ulp_ganssTimeModels;                /* T_ganssTimeModels */
+static int hf_ulp_ganssReferenceMeasurementInfo;  /* BOOLEAN */
+static int hf_ulp_ganssDataBits;                  /* GanssDataBits */
+static int hf_ulp_ganssUTCModel;                  /* BOOLEAN */
+static int hf_ulp_ganssAdditionalDataChoices;     /* GanssAdditionalDataChoices */
+static int hf_ulp_ganssAuxiliaryInformation;      /* BOOLEAN */
+static int hf_ulp_ganssExtendedEphemeris;         /* ExtendedEphemeris */
+static int hf_ulp_ganssExtendedEphemerisCheck;    /* GanssExtendedEphCheck */
+static int hf_ulp_bds_DifferentialCorrection;     /* BDS_Sig_Id_Req */
+static int hf_ulp_bds_GridModelReq;               /* BOOLEAN */
+static int hf_ulp_ganssWeek;                      /* T_ganssWeek */
+static int hf_ulp_ganssToe;                       /* T_ganssToe */
+static int hf_ulp_t_toeLimit;                     /* T_t_toeLimit */
+static int hf_ulp_satellitesListRelatedDataList;  /* SatellitesListRelatedDataList */
+static int hf_ulp_SatellitesListRelatedDataList_item;  /* SatellitesListRelatedData */
+static int hf_ulp_iod;                            /* INTEGER_0_1023 */
+static int hf_ulp_ganssTODmin;                    /* INTEGER_0_59 */
+static int hf_ulp_reqDataBitAssistanceList;       /* ReqDataBitAssistanceList */
+static int hf_ulp_gnssSignals;                    /* GANSSSignals */
+static int hf_ulp_ganssDataBitInterval;           /* INTEGER_0_15 */
+static int hf_ulp_ganssDataBitSatList;            /* T_ganssDataBitSatList */
+static int hf_ulp_ganssDataBitSatList_item;       /* INTEGER_0_63 */
+static int hf_ulp_orbitModelID;                   /* INTEGER_0_7 */
+static int hf_ulp_clockModelID;                   /* INTEGER_0_7 */
+static int hf_ulp_utcModelID;                     /* INTEGER_0_7 */
+static int hf_ulp_almanacModelID;                 /* INTEGER_0_7 */
+static int hf_ulp_validity;                       /* INTEGER_1_256 */
+static int hf_ulp_beginTime;                      /* GPSTime */
+static int hf_ulp_endTime;                        /* GPSTime */
+static int hf_ulp_beginTime_01;                   /* GANSSextEphTime */
+static int hf_ulp_endTime_01;                     /* GANSSextEphTime */
+static int hf_ulp_gPSWeek;                        /* INTEGER_0_1023 */
+static int hf_ulp_gPSTOWhour;                     /* INTEGER_0_167 */
+static int hf_ulp_gANSSday;                       /* INTEGER_0_8191 */
+static int hf_ulp_gANSSTODhour;                   /* INTEGER_0_23 */
+static int hf_ulp_lPPPayload;                     /* T_lPPPayload */
+static int hf_ulp_lPPPayload_item;                /* T_lPPPayload_item */
+static int hf_ulp_tia801Payload;                  /* T_tia801Payload */
+static int hf_ulp_tia801Payload_item;             /* OCTET_STRING_SIZE_1_60000 */
+static int hf_ulp_maj;                            /* INTEGER_0_255 */
+static int hf_ulp_min;                            /* INTEGER_0_255 */
+static int hf_ulp_servind;                        /* INTEGER_0_255 */
+static int hf_ulp_setSessionID;                   /* SetSessionID */
+static int hf_ulp_slpSessionID;                   /* SlpSessionID */
+static int hf_ulp_sessionId;                      /* INTEGER_0_65535 */
+static int hf_ulp_setId;                          /* SETId */
+static int hf_ulp_msisdn;                         /* T_msisdn */
+static int hf_ulp_mdn;                            /* T_mdn */
+static int hf_ulp_min_bit_string;                 /* BIT_STRING_SIZE_34 */
+static int hf_ulp_imsi;                           /* T_imsi */
+static int hf_ulp_nai;                            /* IA5String_SIZE_1_1000 */
+static int hf_ulp_iPAddress;                      /* IPAddress */
+static int hf_ulp_ver2_imei;                      /* OCTET_STRING_SIZE_8 */
+static int hf_ulp_sessionSlpID;                   /* OCTET_STRING_SIZE_4 */
+static int hf_ulp_slpId;                          /* SLPAddress */
+static int hf_ulp_ipv4Address;                    /* OCTET_STRING_SIZE_4 */
+static int hf_ulp_ipv6Address;                    /* OCTET_STRING_SIZE_16 */
+static int hf_ulp_fqdn;                           /* FQDN */
+static int hf_ulp_cellInfo;                       /* CellInfo */
+static int hf_ulp_status;                         /* Status */
+static int hf_ulp_gsmCell;                        /* GsmCellInformation */
+static int hf_ulp_wcdmaCell;                      /* WcdmaCellInformation */
+static int hf_ulp_cdmaCell;                       /* CdmaCellInformation */
+static int hf_ulp_ver2_CellInfo_extension;        /* Ver2_CellInfo_extension */
+static int hf_ulp_timestamp;                      /* UTCTime */
+static int hf_ulp_positionEstimate;               /* PositionEstimate */
+static int hf_ulp_latitudeSign;                   /* T_latitudeSign */
+static int hf_ulp_latitude;                       /* INTEGER_0_8388607 */
+static int hf_ulp_longitude;                      /* INTEGER_M8388608_8388607 */
+static int hf_ulp_uncertainty;                    /* T_uncertainty */
+static int hf_ulp_uncertaintySemiMajor;           /* INTEGER_0_127 */
+static int hf_ulp_uncertaintySemiMinor;           /* INTEGER_0_127 */
+static int hf_ulp_orientationMajorAxis;           /* INTEGER_0_180 */
+static int hf_ulp_confidence;                     /* INTEGER_0_100 */
+static int hf_ulp_altitudeInfo;                   /* AltitudeInfo */
+static int hf_ulp_altitudeDirection;              /* T_altitudeDirection */
+static int hf_ulp_altitude;                       /* INTEGER_0_32767 */
+static int hf_ulp_altUncertainty;                 /* INTEGER_0_127 */
+static int hf_ulp_refNID_01;                      /* INTEGER_0_65535 */
+static int hf_ulp_refSID_01;                      /* INTEGER_0_32767 */
+static int hf_ulp_refBASELAT;                     /* INTEGER_0_4194303 */
+static int hf_ulp_reBASELONG;                     /* INTEGER_0_8388607 */
+static int hf_ulp_refREFPN;                       /* INTEGER_0_511 */
+static int hf_ulp_refWeekNumber;                  /* INTEGER_0_65535 */
+static int hf_ulp_refSeconds;                     /* INTEGER_0_4194303 */
+static int hf_ulp_nmr;                            /* NMR */
+static int hf_ulp_ta;                             /* INTEGER_0_255 */
+static int hf_ulp_frequencyInfo;                  /* FrequencyInfo */
+static int hf_ulp_primaryScramblingCode;          /* INTEGER_0_511 */
+static int hf_ulp_measuredResultsList;            /* MeasuredResultsList */
+static int hf_ulp_cellParametersId;               /* INTEGER_0_127 */
+static int hf_ulp_timingAdvance;                  /* TimingAdvance */
+static int hf_ulp_ta_01;                          /* INTEGER_0_8191 */
+static int hf_ulp_tAResolution;                   /* TAResolution */
+static int hf_ulp_chipRate;                       /* ChipRate */
+static int hf_ulp_modeSpecificFrequencyInfo;      /* FrequencySpecificInfo */
+static int hf_ulp_fdd_fr;                         /* FrequencyInfoFDD */
+static int hf_ulp_tdd_fr;                         /* FrequencyInfoTDD */
+static int hf_ulp_uarfcn_UL;                      /* UARFCN */
+static int hf_ulp_uarfcn_DL;                      /* UARFCN */
+static int hf_ulp_uarfcn_Nt;                      /* UARFCN */
+static int hf_ulp_NMR_item;                       /* NMRelement */
+static int hf_ulp_arfcn;                          /* INTEGER_0_1023 */
+static int hf_ulp_bsic;                           /* INTEGER_0_63 */
+static int hf_ulp_rxLev;                          /* INTEGER_0_63 */
+static int hf_ulp_MeasuredResultsList_item;       /* MeasuredResults */
+static int hf_ulp_utra_CarrierRSSI;               /* UTRA_CarrierRSSI */
+static int hf_ulp_cellMeasuredResultsList;        /* CellMeasuredResultsList */
+static int hf_ulp_CellMeasuredResultsList_item;   /* CellMeasuredResults */
+static int hf_ulp_cellIdentity_uint;              /* INTEGER_0_268435455 */
+static int hf_ulp_modeSpecificInfo;               /* T_modeSpecificInfo */
+static int hf_ulp_fdd;                            /* T_fdd */
+static int hf_ulp_primaryCPICH_Info;              /* PrimaryCPICH_Info */
+static int hf_ulp_cpich_Ec_N0;                    /* CPICH_Ec_N0 */
+static int hf_ulp_cpich_RSCP;                     /* CPICH_RSCP */
+static int hf_ulp_pathloss;                       /* Pathloss */
+static int hf_ulp_tdd;                            /* T_tdd */
+static int hf_ulp_cellParametersID;               /* CellParametersID */
+static int hf_ulp_proposedTGSN;                   /* TGSN */
+static int hf_ulp_primaryCCPCH_RSCP;              /* PrimaryCCPCH_RSCP */
+static int hf_ulp_timeslotISCP_List;              /* TimeslotISCP_List */
+static int hf_ulp_TimeslotISCP_List_item;         /* TimeslotISCP */
+static int hf_ulp_horacc;                         /* INTEGER_0_127 */
+static int hf_ulp_veracc;                         /* INTEGER_0_127 */
+static int hf_ulp_maxLocAge;                      /* INTEGER_0_65535 */
+static int hf_ulp_delay;                          /* INTEGER_0_7 */
+static int hf_ulp_ver2_responseTime;              /* INTEGER_1_128 */
+static int hf_ulp_horvel;                         /* Horvel */
+static int hf_ulp_horandvervel;                   /* Horandvervel */
+static int hf_ulp_horveluncert;                   /* Horveluncert */
+static int hf_ulp_horandveruncert;                /* Horandveruncert */
+static int hf_ulp_bearing;                        /* T_bearing */
+static int hf_ulp_horspeed;                       /* T_horspeed */
+static int hf_ulp_verdirect;                      /* T_verdirect */
+static int hf_ulp_bearing_01;                     /* T_bearing_01 */
+static int hf_ulp_horspeed_01;                    /* T_horspeed_01 */
+static int hf_ulp_verspeed;                       /* T_verspeed */
+static int hf_ulp_bearing_02;                     /* T_bearing_02 */
+static int hf_ulp_horspeed_02;                    /* T_horspeed_02 */
+static int hf_ulp_uncertspeed;                    /* T_uncertspeed */
+static int hf_ulp_verdirect_01;                   /* T_verdirect_01 */
+static int hf_ulp_bearing_03;                     /* T_bearing_03 */
+static int hf_ulp_horspeed_03;                    /* T_horspeed_03 */
+static int hf_ulp_verspeed_01;                    /* T_verspeed_01 */
+static int hf_ulp_horuncertspeed;                 /* T_horuncertspeed */
+static int hf_ulp_veruncertspeed;                 /* T_veruncertspeed */
+static int hf_ulp_MultipleLocationIds_item;       /* LocationIdData */
+static int hf_ulp_relativetimestamp;              /* RelativeTime */
+static int hf_ulp_servingFlag;                    /* BOOLEAN */
+static int hf_ulp_supportedWLANInfo;              /* SupportedWLANInfo */
+static int hf_ulp_supportedWLANApsList;           /* SupportedWLANApsList */
+static int hf_ulp_supportedWCDMAInfo;             /* SupportedWCDMAInfo */
+static int hf_ulp_hrdp;                           /* BOOLEAN */
+static int hf_ulp_wimax;                          /* BOOLEAN */
+static int hf_ulp_historic;                       /* BOOLEAN */
+static int hf_ulp_nonServing;                     /* BOOLEAN */
+static int hf_ulp_uTRANGPSReferenceTime;          /* BOOLEAN */
+static int hf_ulp_uTRANGANSSReferenceTime;        /* BOOLEAN */
+static int hf_ulp_apTP;                           /* BOOLEAN */
+static int hf_ulp_apAG;                           /* BOOLEAN */
+static int hf_ulp_apSN;                           /* BOOLEAN */
+static int hf_ulp_apDevType;                      /* BOOLEAN */
+static int hf_ulp_apRSSI;                         /* BOOLEAN */
+static int hf_ulp_apChanFreq;                     /* BOOLEAN */
+static int hf_ulp_apRTD;                          /* BOOLEAN */
+static int hf_ulp_setTP;                          /* BOOLEAN */
+static int hf_ulp_setAG;                          /* BOOLEAN */
+static int hf_ulp_setSN;                          /* BOOLEAN */
+static int hf_ulp_setRSSI;                        /* BOOLEAN */
+static int hf_ulp_apRepLoc;                       /* BOOLEAN */
+static int hf_ulp_apRL;                           /* BOOLEAN */
+static int hf_ulp_opClass;                        /* BOOLEAN */
+static int hf_ulp_apSSID_bool;                    /* BOOLEAN */
+static int hf_ulp_apPHYType_bool;                 /* BOOLEAN */
+static int hf_ulp_setMACAddress_bool;             /* BOOLEAN */
+static int hf_ulp_supportedWLANApDataList;        /* SEQUENCE_SIZE_1_maxWLANApDataSize_OF_SupportedWLANApData */
+static int hf_ulp_supportedWLANApDataList_item;   /* SupportedWLANApData */
+static int hf_ulp_supportedWLANapsChannel11a;     /* SupportedWLANApsChannel11a */
+static int hf_ulp_supportedWLANapsChannel11bg;    /* SupportedWLANApsChannel11bg */
+static int hf_ulp_ch34;                           /* BOOLEAN */
+static int hf_ulp_ch36;                           /* BOOLEAN */
+static int hf_ulp_ch38;                           /* BOOLEAN */
+static int hf_ulp_ch40;                           /* BOOLEAN */
+static int hf_ulp_ch42;                           /* BOOLEAN */
+static int hf_ulp_ch44;                           /* BOOLEAN */
+static int hf_ulp_ch46;                           /* BOOLEAN */
+static int hf_ulp_ch48;                           /* BOOLEAN */
+static int hf_ulp_ch52;                           /* BOOLEAN */
+static int hf_ulp_ch56;                           /* BOOLEAN */
+static int hf_ulp_ch60;                           /* BOOLEAN */
+static int hf_ulp_ch64;                           /* BOOLEAN */
+static int hf_ulp_ch149;                          /* BOOLEAN */
+static int hf_ulp_ch153;                          /* BOOLEAN */
+static int hf_ulp_ch157;                          /* BOOLEAN */
+static int hf_ulp_ch161;                          /* BOOLEAN */
+static int hf_ulp_ch1;                            /* BOOLEAN */
+static int hf_ulp_ch2;                            /* BOOLEAN */
+static int hf_ulp_ch3;                            /* BOOLEAN */
+static int hf_ulp_ch4;                            /* BOOLEAN */
+static int hf_ulp_ch5;                            /* BOOLEAN */
+static int hf_ulp_ch6;                            /* BOOLEAN */
+static int hf_ulp_ch7;                            /* BOOLEAN */
+static int hf_ulp_ch8;                            /* BOOLEAN */
+static int hf_ulp_ch9;                            /* BOOLEAN */
+static int hf_ulp_ch10;                           /* BOOLEAN */
+static int hf_ulp_ch11;                           /* BOOLEAN */
+static int hf_ulp_ch12;                           /* BOOLEAN */
+static int hf_ulp_ch13;                           /* BOOLEAN */
+static int hf_ulp_ch14;                           /* BOOLEAN */
+static int hf_ulp_apMACAddress_01;                /* T_apMACAddress_01 */
+static int hf_ulp_apDevType_enum;                 /* T_apDevType_enum */
+static int hf_ulp_mrl;                            /* BOOLEAN */
+static int hf_ulp_hrpdCell;                       /* HrpdCellInformation */
+static int hf_ulp_umbCell;                        /* UmbCellInformation */
+static int hf_ulp_lteCell;                        /* LteCellInformation */
+static int hf_ulp_wlanAP;                         /* WlanAPInformation */
+static int hf_ulp_wimaxBS;                        /* WimaxBSInformation */
+static int hf_ulp_nrCell;                         /* NRCellInformation */
+static int hf_ulp_cellGlobalIdEUTRA;              /* CellGlobalIdEUTRA */
+static int hf_ulp_physCellId;                     /* PhysCellId */
+static int hf_ulp_trackingAreaCode;               /* TrackingAreaCode */
+static int hf_ulp_rsrpResult;                     /* RSRP_Range */
+static int hf_ulp_rsrqResult;                     /* RSRQ_Range */
+static int hf_ulp_ta_02;                          /* INTEGER_0_1282 */
+static int hf_ulp_measResultListEUTRA;            /* MeasResultListEUTRA */
+static int hf_ulp_earfcn;                         /* INTEGER_0_65535 */
+static int hf_ulp_earfcn_ext;                     /* INTEGER_65536_262143 */
+static int hf_ulp_rsrpResult_ext;                 /* RSRP_Range_Ext */
+static int hf_ulp_rsrqResult_ext;                 /* RSRQ_Range_Ext */
+static int hf_ulp_rs_sinrResult;                  /* RS_SINR_Range */
+static int hf_ulp_servingInformation5G;           /* ServingInformation5G */
+static int hf_ulp_MeasResultListEUTRA_item;       /* MeasResultEUTRA */
+static int hf_ulp_cgi_Info;                       /* T_cgi_Info */
+static int hf_ulp_cellGlobalId;                   /* CellGlobalIdEUTRA */
+static int hf_ulp_measResult;                     /* T_measResult */
+static int hf_ulp_neighbourInformation5G;         /* NeighbourInformation5G */
+static int hf_ulp_plmn_Identity;                  /* PLMN_Identity */
+static int hf_ulp_cellIdentity;                   /* CellIdentity */
+static int hf_ulp_mcc;                            /* MCC */
+static int hf_ulp_mnc;                            /* MNC */
+static int hf_ulp_MCC_item;                       /* MCC_MNC_Digit */
+static int hf_ulp_MNC_item;                       /* MCC_MNC_Digit */
+static int hf_ulp_trackingAreaCode_01;            /* TrackingAreaCodeNR */
+static int hf_ulp_apMACAddress_02;                /* T_apMACAddress_02 */
+static int hf_ulp_apTransmitPower;                /* INTEGER_M127_128 */
+static int hf_ulp_apAntennaGain;                  /* INTEGER_M127_128 */
+static int hf_ulp_apSignaltoNoise;                /* INTEGER_M127_128 */
+static int hf_ulp_apDeviceType;                   /* T_apDeviceType */
+static int hf_ulp_apSignalStrength;               /* INTEGER_M127_128 */
+static int hf_ulp_apChannelFrequency;             /* INTEGER_0_256 */
+static int hf_ulp_apRoundTripDelay;               /* RTD */
+static int hf_ulp_setTransmitPower;               /* INTEGER_M127_128 */
+static int hf_ulp_setAntennaGain;                 /* INTEGER_M127_128 */
+static int hf_ulp_setSignaltoNoise;               /* INTEGER_M127_128 */
+static int hf_ulp_setSignalStrength;              /* INTEGER_M127_128 */
+static int hf_ulp_apReportedLocation;             /* ReportedLocation */
+static int hf_ulp_apRepLocation;                  /* RepLocation */
+static int hf_ulp_apSignalStrengthDelta;          /* INTEGER_0_1 */
+static int hf_ulp_apSignaltoNoiseDelta;           /* INTEGER_0_1 */
+static int hf_ulp_setSignalStrengthDelta;         /* INTEGER_0_1 */
+static int hf_ulp_setSignaltoNoiseDelta;          /* INTEGER_0_1 */
+static int hf_ulp_operatingClass;                 /* INTEGER_0_255 */
+static int hf_ulp_apSSID;                         /* T_apSSID */
+static int hf_ulp_apPHYType;                      /* T_apPHYType */
+static int hf_ulp_setMACAddress;                  /* T_setMACAddress */
+static int hf_ulp_rTDValue;                       /* INTEGER_0_16777216 */
+static int hf_ulp_rTDUnits;                       /* RTDUnits */
+static int hf_ulp_rTDAccuracy;                    /* INTEGER_0_255 */
+static int hf_ulp_locationEncodingDescriptor;     /* LocationEncodingDescriptor */
+static int hf_ulp_locationData;                   /* LocationData */
+static int hf_ulp_locationAccuracy;               /* INTEGER_0_4294967295 */
+static int hf_ulp_locationValue;                  /* OCTET_STRING_SIZE_1_128 */
+static int hf_ulp_lciLocData;                     /* LciLocData */
+static int hf_ulp_locationDataLCI;                /* LocationDataLCI */
+static int hf_ulp_latitudeResolution;             /* BIT_STRING_SIZE_6 */
+static int hf_ulp_latitude_bit_string;            /* BIT_STRING_SIZE_34 */
+static int hf_ulp_longitudeResolution;            /* BIT_STRING_SIZE_6 */
+static int hf_ulp_longitude_bit_string;           /* BIT_STRING_SIZE_34 */
+static int hf_ulp_altitudeType;                   /* BIT_STRING_SIZE_4 */
+static int hf_ulp_altitudeResolution;             /* BIT_STRING_SIZE_6 */
+static int hf_ulp_altitude_bit_string;            /* BIT_STRING_SIZE_30 */
+static int hf_ulp_datum;                          /* BIT_STRING_SIZE_8 */
+static int hf_ulp_wimaxBsID;                      /* WimaxBsID */
+static int hf_ulp_wimaxRTD;                       /* WimaxRTD */
+static int hf_ulp_wimaxNMRList;                   /* WimaxNMRList */
+static int hf_ulp_rtd;                            /* INTEGER_0_65535 */
+static int hf_ulp_rTDstd;                         /* INTEGER_0_1023 */
+static int hf_ulp_WimaxNMRList_item;              /* WimaxNMR */
+static int hf_ulp_relDelay;                       /* INTEGER_M32768_32767 */
+static int hf_ulp_relDelaystd;                    /* INTEGER_0_1023 */
+static int hf_ulp_rssi;                           /* INTEGER_0_255 */
+static int hf_ulp_rSSIstd;                        /* INTEGER_0_63 */
+static int hf_ulp_bSTxPower;                      /* INTEGER_0_255 */
+static int hf_ulp_cinr;                           /* INTEGER_0_255 */
+static int hf_ulp_cINRstd;                        /* INTEGER_0_63 */
+static int hf_ulp_bSLocation;                     /* ReportedLocation */
+static int hf_ulp_servingCellInformation;         /* ServingCellInformationNR */
+static int hf_ulp_measuredResultsListNR;          /* MeasResultListNR */
+static int hf_ulp_ServingCellInformationNR_item;  /* ServCellNR */
+static int hf_ulp_physCellId_01;                  /* PhysCellIdNR */
+static int hf_ulp_arfcn_NR;                       /* ARFCN_NR */
+static int hf_ulp_cellGlobalId_01;                /* CellGlobalIdNR */
+static int hf_ulp_ssb_Measurements;               /* NR_Measurements */
+static int hf_ulp_csi_rs_Measurements;            /* NR_Measurements */
+static int hf_ulp_ta_03;                          /* INTEGER_0_3846 */
+static int hf_ulp_MeasResultListNR_item;          /* MeasResultNR */
+static int hf_ulp_cellIdentityNR;                 /* CellIdentityNR */
+static int hf_ulp_rsrp_Range;                     /* INTEGER_0_127 */
+static int hf_ulp_rsrq_Range;                     /* INTEGER_0_127 */
+static int hf_ulp_sinr_Range;                     /* INTEGER_0_127 */
+static int hf_ulp_utran_GPSReferenceTime;         /* UTRAN_GPSReferenceTime */
+static int hf_ulp_gpsReferenceTimeUncertainty;    /* INTEGER_0_127 */
+static int hf_ulp_utranGPSDriftRate;              /* UTRANGPSDriftRate */
+static int hf_ulp_utran_GPSTimingOfCell;          /* T_utran_GPSTimingOfCell */
+static int hf_ulp_ms_part;                        /* INTEGER_0_1023 */
+static int hf_ulp_ls_part;                        /* INTEGER_0_4294967295 */
+static int hf_ulp_modeSpecificInfo_01;            /* T_modeSpecificInfo_01 */
+static int hf_ulp_fdd_01;                         /* T_fdd_01 */
+static int hf_ulp_referenceIdentity;              /* PrimaryCPICH_Info */
+static int hf_ulp_tdd_01;                         /* T_tdd_01 */
+static int hf_ulp_referenceIdentity_01;           /* CellParametersID */
+static int hf_ulp_sfn;                            /* INTEGER_0_4095 */
+static int hf_ulp_set_GPSTimingOfCell;            /* T_set_GPSTimingOfCell */
+static int hf_ulp_ms_part_01;                     /* INTEGER_0_16383 */
+static int hf_ulp_modeSpecificInfo_02;            /* T_modeSpecificInfo_02 */
+static int hf_ulp_fdd_02;                         /* T_fdd_02 */
+static int hf_ulp_tdd_02;                         /* T_tdd_02 */
+static int hf_ulp_ganssDay;                       /* INTEGER_0_8191 */
+static int hf_ulp_ganssTimeID;                    /* INTEGER_0_15 */
+static int hf_ulp_utran_GANSSReferenceTime;       /* UTRAN_GANSSReferenceTime */
+static int hf_ulp_utranGANSSDriftRate;            /* UTRANGANSSDriftRate */
+static int hf_ulp_ganssTOD;                       /* INTEGER_0_86399 */
+static int hf_ulp_utran_GANSSTimingOfCell;        /* INTEGER_0_3999999 */
+static int hf_ulp_modeSpecificInfo_03;            /* T_modeSpecificInfo_03 */
+static int hf_ulp_fdd_03;                         /* T_fdd_03 */
+static int hf_ulp_tdd_03;                         /* T_tdd_03 */
+static int hf_ulp_ganss_TODUncertainty;           /* INTEGER_0_127 */
+static int hf_ulp_set_GANSSReferenceTime;         /* SET_GANSSReferenceTime */
+static int hf_ulp_set_GANSSTimingOfCell;          /* T_set_GANSSTimingOfCell */
+static int hf_ulp_ms_part_02;                     /* INTEGER_0_80 */
+static int hf_ulp_modeSpecificInfo_04;            /* T_modeSpecificInfo_04 */
+static int hf_ulp_fdd_04;                         /* T_fdd_04 */
+static int hf_ulp_tdd_04;                         /* T_tdd_04 */
+static int hf_ulp_gps;                            /* BOOLEAN */
+static int hf_ulp_galileo;                        /* BOOLEAN */
+static int hf_ulp_sbas;                           /* BOOLEAN */
+static int hf_ulp_modernized_gps;                 /* BOOLEAN */
+static int hf_ulp_qzss;                           /* BOOLEAN */
+static int hf_ulp_glonass;                        /* BOOLEAN */
+static int hf_ulp_bds;                            /* BOOLEAN */
+static int hf_ulp_rtk_osr;                        /* BOOLEAN */
+static int hf_ulp_rand;                           /* BIT_STRING_SIZE_128 */
+static int hf_ulp_slpFQDN;                        /* FQDN */
+static int hf_ulp_ThirdParty_item;                /* ThirdPartyID */
+static int hf_ulp_logicalName;                    /* IA5String_SIZE_1_1000 */
+static int hf_ulp_msisdn_01;                      /* T_msisdn_01 */
+static int hf_ulp_emailaddr;                      /* IA5String_SIZE_1_1000 */
+static int hf_ulp_sip_uri;                        /* T_sip_uri */
+static int hf_ulp_ims_public_identity;            /* T_ims_public_identity */
+static int hf_ulp_mdn_01;                         /* T_mdn_01 */
+static int hf_ulp_uri;                            /* T_uri */
+static int hf_ulp_appProvider;                    /* IA5String_SIZE_1_24 */
+static int hf_ulp_appName;                        /* IA5String_SIZE_1_32 */
+static int hf_ulp_appVersion;                     /* IA5String_SIZE_1_8 */
+static int hf_ulp_minInt;                         /* INTEGER_1_3600 */
+static int hf_ulp_maxInt;                         /* INTEGER_1_1440 */
+static int hf_ulp_repMode_01;                     /* RepMode */
+static int hf_ulp_batchRepCap;                    /* BatchRepCap */
+static int hf_ulp_realtime;                       /* BOOLEAN */
+static int hf_ulp_quasirealtime;                  /* BOOLEAN */
+static int hf_ulp_batch;                          /* BOOLEAN */
+static int hf_ulp_report_position;                /* BOOLEAN */
+static int hf_ulp_report_measurements;            /* BOOLEAN */
+static int hf_ulp_max_num_positions;              /* INTEGER_1_1024 */
+static int hf_ulp_max_num_measurements;           /* INTEGER_1_1024 */
+static int hf_ulp_latitudeSign_01;                /* T_latitudeSign_01 */
+static int hf_ulp_coordinateLatitude;             /* INTEGER_0_8388607 */
+static int hf_ulp_coordinateLongitude;            /* INTEGER_M8388608_8388607 */
+static int hf_ulp_coordinate;                     /* Coordinate */
+static int hf_ulp_radius;                         /* INTEGER_1_1000000 */
+static int hf_ulp_radius_min;                     /* INTEGER_1_1000000 */
+static int hf_ulp_radius_max;                     /* INTEGER_1_1500000 */
+static int hf_ulp_semiMajor;                      /* INTEGER_1_1000000 */
+static int hf_ulp_semiMajor_min;                  /* INTEGER_1_1000000 */
+static int hf_ulp_semiMajor_max;                  /* INTEGER_1_1500000 */
+static int hf_ulp_semiMinor;                      /* INTEGER_1_1000000 */
+static int hf_ulp_semiMinor_min;                  /* INTEGER_1_1000000 */
+static int hf_ulp_semiMinor_max;                  /* INTEGER_1_1500000 */
+static int hf_ulp_angle;                          /* INTEGER_0_179 */
+static int hf_ulp_polygonDescription;             /* PolygonDescription */
+static int hf_ulp_polygonHysteresis;              /* INTEGER_1_100000 */
+static int hf_ulp_PolygonDescription_item;        /* Coordinate */
+static int hf_ulp_highAccuracyPositionEstimate;   /* HighAccuracyPositionEstimate */
+static int hf_ulp_degreesLatitude;                /* INTEGER_M2147483648_2147483647 */
+static int hf_ulp_degreesLongitude;               /* INTEGER_M2147483648_2147483647 */
+static int hf_ulp_uncertaintySemiMajor_01;        /* INTEGER_0_255 */
+static int hf_ulp_uncertaintySemiMinor_01;        /* INTEGER_0_255 */
+static int hf_ulp_orientationMajorAxis_01;        /* INTEGER_0_179 */
+static int hf_ulp_horizontalConfidence;           /* INTEGER_0_100 */
+static int hf_ulp_highAccuracyAltitudeInfo;       /* HighAccuracyAltitudeInfo */
+static int hf_ulp_altitude_01;                    /* INTEGER_64000_1280000 */
+static int hf_ulp_uncertaintyAltitude;            /* INTEGER_0_255 */
+static int hf_ulp_verticalConfidence;             /* INTEGER_0_100 */
 /* named bits */
-static int hf_ulp_GANSSSignals_signal1 = -1;
-static int hf_ulp_GANSSSignals_signal2 = -1;
-static int hf_ulp_GANSSSignals_signal3 = -1;
-static int hf_ulp_GANSSSignals_signal4 = -1;
-static int hf_ulp_GANSSSignals_signal5 = -1;
-static int hf_ulp_GANSSSignals_signal6 = -1;
-static int hf_ulp_GANSSSignals_signal7 = -1;
-static int hf_ulp_GANSSSignals_signal8 = -1;
-
-/*--- End of included file: packet-ulp-hf.c ---*/
-#line 66 "./asn1/ulp/packet-ulp-template.c"
-static int hf_ulp_mobile_directory_number = -1;
-static int hf_ulp_ganssTimeModels_bit0 = -1;
-static int hf_ulp_ganssTimeModels_bit1 = -1;
-static int hf_ulp_ganssTimeModels_bit2 = -1;
-static int hf_ulp_ganssTimeModels_bit3 = -1;
-static int hf_ulp_ganssTimeModels_bit4 = -1;
-static int hf_ulp_ganssTimeModels_spare = -1;
+static int hf_ulp_T_addPosMode_standalone;
+static int hf_ulp_T_addPosMode_setBased;
+static int hf_ulp_T_addPosMode_setAssisted;
+static int hf_ulp_GANSSSignals_signal1;
+static int hf_ulp_GANSSSignals_signal2;
+static int hf_ulp_GANSSSignals_signal3;
+static int hf_ulp_GANSSSignals_signal4;
+static int hf_ulp_GANSSSignals_signal5;
+static int hf_ulp_GANSSSignals_signal6;
+static int hf_ulp_GANSSSignals_signal7;
+static int hf_ulp_GANSSSignals_signal8;
+static int hf_ulp_mobile_directory_number;
+static int hf_ulp_ganssTimeModels_bit0;
+static int hf_ulp_ganssTimeModels_bit1;
+static int hf_ulp_ganssTimeModels_bit2;
+static int hf_ulp_ganssTimeModels_bit3;
+static int hf_ulp_ganssTimeModels_bit4;
+static int hf_ulp_ganssTimeModels_spare;
 
 /* Initialize the subtree pointers */
-static gint ett_ulp = -1;
-static gint ett_ulp_setid = -1;
-static gint ett_ulp_thirdPartyId = -1;
-static gint ett_ulp_ganssTimeModels = -1;
-
-/*--- Included file: packet-ulp-ett.c ---*/
-#line 1 "./asn1/ulp/packet-ulp-ett.c"
-static gint ett_ulp_ULP_PDU = -1;
-static gint ett_ulp_UlpMessage = -1;
-static gint ett_ulp_SUPLINIT = -1;
-static gint ett_ulp_Notification = -1;
-static gint ett_ulp_SUPLSTART = -1;
-static gint ett_ulp_SETCapabilities = -1;
-static gint ett_ulp_PosTechnology = -1;
-static gint ett_ulp_PosProtocol = -1;
-static gint ett_ulp_SUPLRESPONSE = -1;
-static gint ett_ulp_SETAuthKey = -1;
-static gint ett_ulp_SUPLPOSINIT = -1;
-static gint ett_ulp_RequestedAssistData = -1;
-static gint ett_ulp_NavigationModel = -1;
-static gint ett_ulp_SatelliteInfo = -1;
-static gint ett_ulp_SatelliteInfoElement = -1;
-static gint ett_ulp_SUPLPOS = -1;
-static gint ett_ulp_PosPayLoad = -1;
-static gint ett_ulp_SUPLEND = -1;
-static gint ett_ulp_SUPLAUTHREQ = -1;
-static gint ett_ulp_SUPLAUTHRESP = -1;
-static gint ett_ulp_Ver2_SUPLNOTIFY = -1;
-static gint ett_ulp_Ver2_SUPLNOTIFYRESPONSE = -1;
-static gint ett_ulp_Ver2_SUPLSETINIT = -1;
-static gint ett_ulp_Ver2_SUPLTRIGGEREDSTART = -1;
-static gint ett_ulp_TriggerParams = -1;
-static gint ett_ulp_PeriodicParams = -1;
-static gint ett_ulp_AreaEventParams = -1;
-static gint ett_ulp_SEQUENCE_SIZE_1_maxAreaIdList_OF_AreaIdList = -1;
-static gint ett_ulp_RepeatedReportingParams = -1;
-static gint ett_ulp_GeographicTargetAreaList = -1;
-static gint ett_ulp_GeographicTargetArea = -1;
-static gint ett_ulp_AreaIdList = -1;
-static gint ett_ulp_AreaIdSet = -1;
-static gint ett_ulp_AreaId = -1;
-static gint ett_ulp_GSMAreaId = -1;
-static gint ett_ulp_WCDMAAreaId = -1;
-static gint ett_ulp_CDMAAreaId = -1;
-static gint ett_ulp_HRPDAreaId = -1;
-static gint ett_ulp_UMBAreaId = -1;
-static gint ett_ulp_LTEAreaId = -1;
-static gint ett_ulp_WLANAreaId = -1;
-static gint ett_ulp_WimaxAreaId = -1;
-static gint ett_ulp_GeoAreaMappingList = -1;
-static gint ett_ulp_Ver2_SUPLTRIGGEREDRESPONSE = -1;
-static gint ett_ulp_ReportingMode = -1;
-static gint ett_ulp_BatchRepConditions = -1;
-static gint ett_ulp_BatchRepType = -1;
-static gint ett_ulp_Ver2_SUPLREPORT = -1;
-static gint ett_ulp_SessionList = -1;
-static gint ett_ulp_SessionInformation = -1;
-static gint ett_ulp_ReportDataList = -1;
-static gint ett_ulp_ReportData = -1;
-static gint ett_ulp_PositionData = -1;
-static gint ett_ulp_GANSSsignalsInfo = -1;
-static gint ett_ulp_GANSSSignalsDescription = -1;
-static gint ett_ulp_TimeStamp = -1;
-static gint ett_ulp_Ver2_SUPLTRIGGEREDSTOP = -1;
-static gint ett_ulp_Ver2_SUPL_INIT_extension = -1;
-static gint ett_ulp_HistoricReporting = -1;
-static gint ett_ulp_ReportingCriteria = -1;
-static gint ett_ulp_TimeWindow = -1;
-static gint ett_ulp_ProtectionLevel = -1;
-static gint ett_ulp_BasicProtectionParams = -1;
-static gint ett_ulp_Ver2_SUPL_START_extension = -1;
-static gint ett_ulp_Ver2_SUPL_RESPONSE_extension = -1;
-static gint ett_ulp_Ver2_SUPL_POS_INIT_extension = -1;
-static gint ett_ulp_Ver2_SUPL_POS_extension = -1;
-static gint ett_ulp_Ver2_SUPL_END_extension = -1;
-static gint ett_ulp_Ver2_Notification_extension = -1;
-static gint ett_ulp_Ver2_SETCapabilities_extension = -1;
-static gint ett_ulp_ServiceCapabilities = -1;
-static gint ett_ulp_ServicesSupported = -1;
-static gint ett_ulp_EventTriggerCapabilities = -1;
-static gint ett_ulp_GeoAreaShapesSupported = -1;
-static gint ett_ulp_SessionCapabilities = -1;
-static gint ett_ulp_SupportedBearers = -1;
-static gint ett_ulp_Ver2_PosProtocol_extension = -1;
-static gint ett_ulp_PosProtocolVersion3GPP = -1;
-static gint ett_ulp_PosProtocolVersion3GPP2 = -1;
-static gint ett_ulp_Supported3GPP2PosProtocolVersion = -1;
-static gint ett_ulp_PosProtocolVersionOMA = -1;
-static gint ett_ulp_Ver2_PosTechnology_extension = -1;
-static gint ett_ulp_GANSSPositionMethods = -1;
-static gint ett_ulp_GANSSPositionMethod = -1;
-static gint ett_ulp_GANSSPositioningMethodTypes = -1;
-static gint ett_ulp_Ver2_RequestedAssistData_extension = -1;
-static gint ett_ulp_GanssRequestedCommonAssistanceDataList = -1;
-static gint ett_ulp_GanssRequestedGenericAssistanceDataList = -1;
-static gint ett_ulp_GanssReqGenericData = -1;
-static gint ett_ulp_GanssNavigationModelData = -1;
-static gint ett_ulp_SatellitesListRelatedDataList = -1;
-static gint ett_ulp_SatellitesListRelatedData = -1;
-static gint ett_ulp_GanssDataBits = -1;
-static gint ett_ulp_ReqDataBitAssistanceList = -1;
-static gint ett_ulp_T_ganssDataBitSatList = -1;
-static gint ett_ulp_GanssAdditionalDataChoices = -1;
-static gint ett_ulp_ExtendedEphemeris = -1;
-static gint ett_ulp_ExtendedEphCheck = -1;
-static gint ett_ulp_GanssExtendedEphCheck = -1;
-static gint ett_ulp_GPSTime = -1;
-static gint ett_ulp_GANSSextEphTime = -1;
-static gint ett_ulp_Ver2_PosPayLoad_extension = -1;
-static gint ett_ulp_T_lPPPayload = -1;
-static gint ett_ulp_T_tia801Payload = -1;
-static gint ett_ulp_Version = -1;
-static gint ett_ulp_SessionID = -1;
-static gint ett_ulp_SetSessionID = -1;
-static gint ett_ulp_SETId = -1;
-static gint ett_ulp_SlpSessionID = -1;
-static gint ett_ulp_IPAddress = -1;
-static gint ett_ulp_SLPAddress = -1;
-static gint ett_ulp_LocationId = -1;
-static gint ett_ulp_CellInfo = -1;
-static gint ett_ulp_Position = -1;
-static gint ett_ulp_PositionEstimate = -1;
-static gint ett_ulp_T_uncertainty = -1;
-static gint ett_ulp_AltitudeInfo = -1;
-static gint ett_ulp_CdmaCellInformation = -1;
-static gint ett_ulp_GsmCellInformation = -1;
-static gint ett_ulp_WcdmaCellInformation = -1;
-static gint ett_ulp_TimingAdvance = -1;
-static gint ett_ulp_FrequencyInfo = -1;
-static gint ett_ulp_FrequencySpecificInfo = -1;
-static gint ett_ulp_FrequencyInfoFDD = -1;
-static gint ett_ulp_FrequencyInfoTDD = -1;
-static gint ett_ulp_NMR = -1;
-static gint ett_ulp_NMRelement = -1;
-static gint ett_ulp_MeasuredResultsList = -1;
-static gint ett_ulp_MeasuredResults = -1;
-static gint ett_ulp_CellMeasuredResultsList = -1;
-static gint ett_ulp_CellMeasuredResults = -1;
-static gint ett_ulp_T_modeSpecificInfo = -1;
-static gint ett_ulp_T_fdd = -1;
-static gint ett_ulp_T_tdd = -1;
-static gint ett_ulp_TimeslotISCP_List = -1;
-static gint ett_ulp_PrimaryCPICH_Info = -1;
-static gint ett_ulp_QoP = -1;
-static gint ett_ulp_Velocity = -1;
-static gint ett_ulp_Horvel = -1;
-static gint ett_ulp_Horandvervel = -1;
-static gint ett_ulp_Horveluncert = -1;
-static gint ett_ulp_Horandveruncert = -1;
-static gint ett_ulp_MultipleLocationIds = -1;
-static gint ett_ulp_LocationIdData = -1;
-static gint ett_ulp_SupportedNetworkInformation = -1;
-static gint ett_ulp_SupportedWLANInfo = -1;
-static gint ett_ulp_SupportedWLANApsList = -1;
-static gint ett_ulp_SEQUENCE_SIZE_1_maxWLANApDataSize_OF_SupportedWLANApData = -1;
-static gint ett_ulp_SupportedWLANApsChannel11a = -1;
-static gint ett_ulp_SupportedWLANApsChannel11bg = -1;
-static gint ett_ulp_SupportedWLANApData = -1;
-static gint ett_ulp_SupportedWCDMAInfo = -1;
-static gint ett_ulp_Ver2_CellInfo_extension = -1;
-static gint ett_ulp_HrpdCellInformation = -1;
-static gint ett_ulp_UmbCellInformation = -1;
-static gint ett_ulp_LteCellInformation = -1;
-static gint ett_ulp_MeasResultListEUTRA = -1;
-static gint ett_ulp_MeasResultEUTRA = -1;
-static gint ett_ulp_T_cgi_Info = -1;
-static gint ett_ulp_T_measResult = -1;
-static gint ett_ulp_CellGlobalIdEUTRA = -1;
-static gint ett_ulp_PLMN_Identity = -1;
-static gint ett_ulp_MCC = -1;
-static gint ett_ulp_MNC = -1;
-static gint ett_ulp_WlanAPInformation = -1;
-static gint ett_ulp_RTD = -1;
-static gint ett_ulp_ReportedLocation = -1;
-static gint ett_ulp_LocationData = -1;
-static gint ett_ulp_RepLocation = -1;
-static gint ett_ulp_LciLocData = -1;
-static gint ett_ulp_LocationDataLCI = -1;
-static gint ett_ulp_WimaxBSInformation = -1;
-static gint ett_ulp_WimaxBsID = -1;
-static gint ett_ulp_WimaxRTD = -1;
-static gint ett_ulp_WimaxNMRList = -1;
-static gint ett_ulp_WimaxNMR = -1;
-static gint ett_ulp_UTRAN_GPSReferenceTimeAssistance = -1;
-static gint ett_ulp_UTRAN_GPSReferenceTime = -1;
-static gint ett_ulp_T_utran_GPSTimingOfCell = -1;
-static gint ett_ulp_T_modeSpecificInfo_01 = -1;
-static gint ett_ulp_T_fdd_01 = -1;
-static gint ett_ulp_T_tdd_01 = -1;
-static gint ett_ulp_UTRAN_GPSReferenceTimeResult = -1;
-static gint ett_ulp_T_set_GPSTimingOfCell = -1;
-static gint ett_ulp_T_modeSpecificInfo_02 = -1;
-static gint ett_ulp_T_fdd_02 = -1;
-static gint ett_ulp_T_tdd_02 = -1;
-static gint ett_ulp_UTRAN_GANSSReferenceTimeAssistance = -1;
-static gint ett_ulp_UTRAN_GANSSReferenceTime = -1;
-static gint ett_ulp_T_modeSpecificInfo_03 = -1;
-static gint ett_ulp_T_fdd_03 = -1;
-static gint ett_ulp_T_tdd_03 = -1;
-static gint ett_ulp_UTRAN_GANSSReferenceTimeResult = -1;
-static gint ett_ulp_SET_GANSSReferenceTime = -1;
-static gint ett_ulp_T_set_GANSSTimingOfCell = -1;
-static gint ett_ulp_T_modeSpecificInfo_04 = -1;
-static gint ett_ulp_T_fdd_04 = -1;
-static gint ett_ulp_T_tdd_04 = -1;
-static gint ett_ulp_GNSSPosTechnology = -1;
-static gint ett_ulp_GANSSSignals = -1;
-static gint ett_ulp_SPCTID = -1;
-static gint ett_ulp_ThirdParty = -1;
-static gint ett_ulp_ThirdPartyID = -1;
-static gint ett_ulp_ApplicationID = -1;
-static gint ett_ulp_ReportingCap = -1;
-static gint ett_ulp_RepMode = -1;
-static gint ett_ulp_BatchRepCap = -1;
-static gint ett_ulp_Coordinate = -1;
-static gint ett_ulp_CircularArea = -1;
-static gint ett_ulp_EllipticalArea = -1;
-static gint ett_ulp_PolygonArea = -1;
-static gint ett_ulp_PolygonDescription = -1;
-
-/*--- End of included file: packet-ulp-ett.c ---*/
-#line 80 "./asn1/ulp/packet-ulp-template.c"
+static int ett_ulp;
+static int ett_ulp_setid;
+static int ett_ulp_thirdPartyId;
+static int ett_ulp_ganssTimeModels;
+static int ett_ulp_ULP_PDU;
+static int ett_ulp_UlpMessage;
+static int ett_ulp_SUPLINIT;
+static int ett_ulp_Notification;
+static int ett_ulp_SUPLSTART;
+static int ett_ulp_SETCapabilities;
+static int ett_ulp_PosTechnology;
+static int ett_ulp_PosProtocol;
+static int ett_ulp_SUPLRESPONSE;
+static int ett_ulp_SETAuthKey;
+static int ett_ulp_SUPLPOSINIT;
+static int ett_ulp_RequestedAssistData;
+static int ett_ulp_NavigationModel;
+static int ett_ulp_SatelliteInfo;
+static int ett_ulp_SatelliteInfoElement;
+static int ett_ulp_SUPLPOS;
+static int ett_ulp_PosPayLoad;
+static int ett_ulp_SUPLEND;
+static int ett_ulp_SUPLAUTHREQ;
+static int ett_ulp_SUPLAUTHRESP;
+static int ett_ulp_Ver2_SUPLNOTIFY;
+static int ett_ulp_Ver2_SUPLNOTIFYRESPONSE;
+static int ett_ulp_Ver2_SUPLSETINIT;
+static int ett_ulp_Ver2_SUPLTRIGGEREDSTART;
+static int ett_ulp_TriggerParams;
+static int ett_ulp_PeriodicParams;
+static int ett_ulp_AreaEventParams;
+static int ett_ulp_SEQUENCE_SIZE_1_maxAreaIdList_OF_AreaIdList;
+static int ett_ulp_RepeatedReportingParams;
+static int ett_ulp_GeographicTargetAreaList;
+static int ett_ulp_GeographicTargetArea;
+static int ett_ulp_AreaIdList;
+static int ett_ulp_AreaIdSet;
+static int ett_ulp_AreaId;
+static int ett_ulp_GSMAreaId;
+static int ett_ulp_WCDMAAreaId;
+static int ett_ulp_CDMAAreaId;
+static int ett_ulp_HRPDAreaId;
+static int ett_ulp_UMBAreaId;
+static int ett_ulp_LTEAreaId;
+static int ett_ulp_WLANAreaId;
+static int ett_ulp_WimaxAreaId;
+static int ett_ulp_NRAreaId;
+static int ett_ulp_GeoAreaMappingList;
+static int ett_ulp_Ver2_SUPLTRIGGEREDRESPONSE;
+static int ett_ulp_ReportingMode;
+static int ett_ulp_BatchRepConditions;
+static int ett_ulp_BatchRepType;
+static int ett_ulp_Ver2_SUPLREPORT;
+static int ett_ulp_SessionList;
+static int ett_ulp_SessionInformation;
+static int ett_ulp_ReportDataList;
+static int ett_ulp_ReportData;
+static int ett_ulp_PositionData;
+static int ett_ulp_GANSSsignalsInfo;
+static int ett_ulp_GANSSSignalsDescription;
+static int ett_ulp_TimeStamp;
+static int ett_ulp_Ver2_SUPLTRIGGEREDSTOP;
+static int ett_ulp_Ver2_SUPL_INIT_extension;
+static int ett_ulp_HistoricReporting;
+static int ett_ulp_ReportingCriteria;
+static int ett_ulp_TimeWindow;
+static int ett_ulp_ProtectionLevel;
+static int ett_ulp_BasicProtectionParams;
+static int ett_ulp_Ver2_SUPL_START_extension;
+static int ett_ulp_Ver2_SUPL_RESPONSE_extension;
+static int ett_ulp_Ver2_SUPL_POS_INIT_extension;
+static int ett_ulp_Ver2_SUPL_POS_extension;
+static int ett_ulp_Ver2_SUPL_END_extension;
+static int ett_ulp_Ver2_Notification_extension;
+static int ett_ulp_Ver2_SETCapabilities_extension;
+static int ett_ulp_ServiceCapabilities;
+static int ett_ulp_ServicesSupported;
+static int ett_ulp_EventTriggerCapabilities;
+static int ett_ulp_GeoAreaShapesSupported;
+static int ett_ulp_SessionCapabilities;
+static int ett_ulp_SupportedBearers;
+static int ett_ulp_Ver2_PosProtocol_extension;
+static int ett_ulp_PosProtocolVersion3GPP;
+static int ett_ulp_PosProtocolVersion3GPP2;
+static int ett_ulp_Supported3GPP2PosProtocolVersion;
+static int ett_ulp_PosProtocolVersionOMA;
+static int ett_ulp_Ver2_PosTechnology_extension;
+static int ett_ulp_GANSSPositionMethods;
+static int ett_ulp_GANSSPositionMethod;
+static int ett_ulp_RTK;
+static int ett_ulp_GANSSPositioningMethodTypes;
+static int ett_ulp_AdditionalPositioningMethods;
+static int ett_ulp_AddPosSupport_Element;
+static int ett_ulp_T_addPosMode;
+static int ett_ulp_Ver2_RequestedAssistData_extension;
+static int ett_ulp_GanssRequestedCommonAssistanceDataList;
+static int ett_ulp_GanssRequestedGenericAssistanceDataList;
+static int ett_ulp_GanssReqGenericData;
+static int ett_ulp_GanssNavigationModelData;
+static int ett_ulp_SatellitesListRelatedDataList;
+static int ett_ulp_SatellitesListRelatedData;
+static int ett_ulp_GanssDataBits;
+static int ett_ulp_ReqDataBitAssistanceList;
+static int ett_ulp_T_ganssDataBitSatList;
+static int ett_ulp_GanssAdditionalDataChoices;
+static int ett_ulp_ExtendedEphemeris;
+static int ett_ulp_ExtendedEphCheck;
+static int ett_ulp_GanssExtendedEphCheck;
+static int ett_ulp_GPSTime;
+static int ett_ulp_GANSSextEphTime;
+static int ett_ulp_Ver2_PosPayLoad_extension;
+static int ett_ulp_T_lPPPayload;
+static int ett_ulp_T_tia801Payload;
+static int ett_ulp_Version;
+static int ett_ulp_SessionID;
+static int ett_ulp_SetSessionID;
+static int ett_ulp_SETId;
+static int ett_ulp_SlpSessionID;
+static int ett_ulp_IPAddress;
+static int ett_ulp_SLPAddress;
+static int ett_ulp_LocationId;
+static int ett_ulp_CellInfo;
+static int ett_ulp_Position;
+static int ett_ulp_PositionEstimate;
+static int ett_ulp_T_uncertainty;
+static int ett_ulp_AltitudeInfo;
+static int ett_ulp_CdmaCellInformation;
+static int ett_ulp_GsmCellInformation;
+static int ett_ulp_WcdmaCellInformation;
+static int ett_ulp_TimingAdvance;
+static int ett_ulp_FrequencyInfo;
+static int ett_ulp_FrequencySpecificInfo;
+static int ett_ulp_FrequencyInfoFDD;
+static int ett_ulp_FrequencyInfoTDD;
+static int ett_ulp_NMR;
+static int ett_ulp_NMRelement;
+static int ett_ulp_MeasuredResultsList;
+static int ett_ulp_MeasuredResults;
+static int ett_ulp_CellMeasuredResultsList;
+static int ett_ulp_CellMeasuredResults;
+static int ett_ulp_T_modeSpecificInfo;
+static int ett_ulp_T_fdd;
+static int ett_ulp_T_tdd;
+static int ett_ulp_TimeslotISCP_List;
+static int ett_ulp_PrimaryCPICH_Info;
+static int ett_ulp_QoP;
+static int ett_ulp_Velocity;
+static int ett_ulp_Horvel;
+static int ett_ulp_Horandvervel;
+static int ett_ulp_Horveluncert;
+static int ett_ulp_Horandveruncert;
+static int ett_ulp_MultipleLocationIds;
+static int ett_ulp_LocationIdData;
+static int ett_ulp_SupportedNetworkInformation;
+static int ett_ulp_SupportedWLANInfo;
+static int ett_ulp_SupportedWLANApsList;
+static int ett_ulp_SEQUENCE_SIZE_1_maxWLANApDataSize_OF_SupportedWLANApData;
+static int ett_ulp_SupportedWLANApsChannel11a;
+static int ett_ulp_SupportedWLANApsChannel11bg;
+static int ett_ulp_SupportedWLANApData;
+static int ett_ulp_SupportedWCDMAInfo;
+static int ett_ulp_Ver2_CellInfo_extension;
+static int ett_ulp_HrpdCellInformation;
+static int ett_ulp_UmbCellInformation;
+static int ett_ulp_LteCellInformation;
+static int ett_ulp_MeasResultListEUTRA;
+static int ett_ulp_MeasResultEUTRA;
+static int ett_ulp_T_cgi_Info;
+static int ett_ulp_T_measResult;
+static int ett_ulp_CellGlobalIdEUTRA;
+static int ett_ulp_PLMN_Identity;
+static int ett_ulp_MCC;
+static int ett_ulp_MNC;
+static int ett_ulp_ServingInformation5G;
+static int ett_ulp_NeighbourInformation5G;
+static int ett_ulp_WlanAPInformation;
+static int ett_ulp_RTD;
+static int ett_ulp_ReportedLocation;
+static int ett_ulp_LocationData;
+static int ett_ulp_RepLocation;
+static int ett_ulp_LciLocData;
+static int ett_ulp_LocationDataLCI;
+static int ett_ulp_WimaxBSInformation;
+static int ett_ulp_WimaxBsID;
+static int ett_ulp_WimaxRTD;
+static int ett_ulp_WimaxNMRList;
+static int ett_ulp_WimaxNMR;
+static int ett_ulp_NRCellInformation;
+static int ett_ulp_ServingCellInformationNR;
+static int ett_ulp_ServCellNR;
+static int ett_ulp_MeasResultListNR;
+static int ett_ulp_MeasResultNR;
+static int ett_ulp_CellGlobalIdNR;
+static int ett_ulp_NR_Measurements;
+static int ett_ulp_UTRAN_GPSReferenceTimeAssistance;
+static int ett_ulp_UTRAN_GPSReferenceTime;
+static int ett_ulp_T_utran_GPSTimingOfCell;
+static int ett_ulp_T_modeSpecificInfo_01;
+static int ett_ulp_T_fdd_01;
+static int ett_ulp_T_tdd_01;
+static int ett_ulp_UTRAN_GPSReferenceTimeResult;
+static int ett_ulp_T_set_GPSTimingOfCell;
+static int ett_ulp_T_modeSpecificInfo_02;
+static int ett_ulp_T_fdd_02;
+static int ett_ulp_T_tdd_02;
+static int ett_ulp_UTRAN_GANSSReferenceTimeAssistance;
+static int ett_ulp_UTRAN_GANSSReferenceTime;
+static int ett_ulp_T_modeSpecificInfo_03;
+static int ett_ulp_T_fdd_03;
+static int ett_ulp_T_tdd_03;
+static int ett_ulp_UTRAN_GANSSReferenceTimeResult;
+static int ett_ulp_SET_GANSSReferenceTime;
+static int ett_ulp_T_set_GANSSTimingOfCell;
+static int ett_ulp_T_modeSpecificInfo_04;
+static int ett_ulp_T_fdd_04;
+static int ett_ulp_T_tdd_04;
+static int ett_ulp_GNSSPosTechnology;
+static int ett_ulp_GANSSSignals;
+static int ett_ulp_SPCTID;
+static int ett_ulp_ThirdParty;
+static int ett_ulp_ThirdPartyID;
+static int ett_ulp_ApplicationID;
+static int ett_ulp_ReportingCap;
+static int ett_ulp_RepMode;
+static int ett_ulp_BatchRepCap;
+static int ett_ulp_Coordinate;
+static int ett_ulp_CircularArea;
+static int ett_ulp_EllipticalArea;
+static int ett_ulp_PolygonArea;
+static int ett_ulp_PolygonDescription;
+static int ett_ulp_Ver2_HighAccuracyPosition;
+static int ett_ulp_HighAccuracyPositionEstimate;
+static int ett_ulp_HighAccuracyAltitudeInfo;
 
 static dissector_handle_t ulp_tcp_handle;
+static dissector_handle_t ulp_pdu_handle;
 
 static const value_string ulp_ganss_id_vals[] = {
   {  0, "Galileo"},
@@ -965,133 +1010,133 @@ static const value_string ulp_ganss_sbas_id_vals[] = {
 };
 
 static void
-ulp_ganssDataBitInterval_fmt(gchar *s, guint32 v)
+ulp_ganssDataBitInterval_fmt(char *s, uint32_t v)
 {
   if (v == 15) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "Time interval is not specified (15)");
+    snprintf(s, ITEM_LABEL_LENGTH, "Time interval is not specified (15)");
   } else {
     double interval = (0.1*pow(2, (double)v));
 
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%g s (%u)", interval, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%gs (%u)", interval, v);
   }
 }
 
 static void
-ulp_ExtendedEphemeris_validity_fmt(gchar *s, guint32 v)
+ulp_ExtendedEphemeris_validity_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%u h (%u)", 4*v, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%uh (%u)", 4*v, v);
 }
 
 static void
-ulp_PositionEstimate_latitude_fmt(gchar *s, guint32 v)
+ulp_PositionEstimate_latitude_fmt(char *s, uint32_t v)
 {
   double latitude = ((double)v*90)/pow(2,23);
 
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%g degrees (%u)", latitude, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%g degrees (%u)", latitude, v);
 }
 
 static void
-ulp_PositionEstimate_longitude_fmt(gchar *s, guint32 v)
+ulp_PositionEstimate_longitude_fmt(char *s, uint32_t v)
 {
-  double longitude = ((double)(gint32)v*360)/pow(2,24);
+  double longitude = ((double)(int32_t)v*360)/pow(2,24);
 
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%g degrees (%u)", longitude, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%g degrees (%u)", longitude, v);
 }
 
 static void
-ulp_NMRelement_rxLev_fmt(gchar *s, guint32 v)
+ulp_NMRelement_rxLev_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RxLev < -110 dBm (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RxLev < -110dBm (0)");
   } else if (v == 63) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RxLev >= -48 dBm (63)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RxLev >= -48dBm (63)");
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d dBm <= RxLev < %d dBm (%u)", -111+v, -110+v, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= RxLev < %ddBm (%u)", -111+v, -110+v, v);
   }
 }
 
 static void
-ulp_UTRA_CarrierRSSI_fmt(gchar *s, guint32 v)
+ulp_UTRA_CarrierRSSI_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSSI < -100 dBm (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RSSI < -100dBm (0)");
   } else if (v == 76) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSSI >= -25 dBm (76)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RSSI >= -25dBm (76)");
   } else if (v > 76) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "Spare (%u)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "Spare (%u)", v);
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d dBm <= RSSI < %d dBm (%u)", -101+v, -100+v, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= RSSI < %ddBm (%u)", -101+v, -100+v, v);
   }
 }
 
 static void
-ulp_PrimaryCCPCH_RSCP_fmt(gchar *s, guint32 v)
+ulp_PrimaryCCPCH_RSCP_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSCP < -115 dBm (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RSCP < -115dBm (0)");
   } else if (v == 91) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSCP >= -25 dBm (91)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RSCP >= -25dBm (91)");
   } else if (v > 91) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "Spare (%u)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "Spare (%u)", v);
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d dBm <= RSCP < %d dBm (%u)", -116+v, -115+v, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= RSCP < %ddBm (%u)", -116+v, -115+v, v);
   }
 }
 
 static void
-ulp_CPICH_Ec_N0_fmt(gchar *s, guint32 v)
+ulp_CPICH_Ec_N0_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "CPICH Ec/N0 < -24 dB (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "CPICH Ec/N0 < -24dB (0)");
   } else if (v == 49) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "CPICH Ec/N0 >= 0 dB (49)");
+    snprintf(s, ITEM_LABEL_LENGTH, "CPICH Ec/N0 >= 0dB (49)");
   } else if (v > 49) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "Spare (%u)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "Spare (%u)", v);
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%.1f dB <= CPICH Ec/N0 < %.1f dB (%u)", -24.5+((float)v/2), -24+((float)v/2), v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= CPICH Ec/N0 < %.1fdB (%u)", -24.5+((float)v/2), -24+((float)v/2), v);
   }
 }
 
 static void
-ulp_CPICH_RSCP_fmt(gchar *s, guint32 v)
+ulp_CPICH_RSCP_fmt(char *s, uint32_t v)
 {
   if (v == 123) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "CPICH RSCP < -120 dBm (123)");
+    snprintf(s, ITEM_LABEL_LENGTH, "CPICH RSCP < -120dBm (123)");
   } else if (v > 123) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d dBm <= CPICH RSCP < %d dBm (%u)", -244+v, -243+v, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= CPICH RSCP < %ddBm (%u)", -244+v, -243+v, v);
   } else if (v == 91) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "CPICH RSCP >= -25 dBm (91)");
+    snprintf(s, ITEM_LABEL_LENGTH, "CPICH RSCP >= -25dBm (91)");
   } else if (v < 91) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d dBm < CPICH RSCP <= %d dBm (%u)", -116+v, -115+v, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm < CPICH RSCP <= %ddBm (%u)", -116+v, -115+v, v);
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "Spare (%u)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "Spare (%u)", v);
   }
 }
 
 static void
-ulp_QoP_horacc_fmt(gchar *s, guint32 v)
+ulp_QoP_horacc_fmt(char *s, uint32_t v)
 {
   double uncertainty = 10*(pow(1.1, (double)v)-1);
 
   if (uncertainty < 1000) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%f m (%u)", uncertainty, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%fm (%u)", uncertainty, v);
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%f km (%u)", uncertainty/1000, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%fkm (%u)", uncertainty/1000, v);
   }
 }
 
 static void
-ulp_QoP_veracc_fmt(gchar *s, guint32 v)
+ulp_QoP_veracc_fmt(char *s, uint32_t v)
 {
   double uncertainty = 45*(pow(1.025, (double)v)-1);
 
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%f m (%u)", uncertainty, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%fm (%u)", uncertainty, v);
 }
 
 static void
-ulp_QoP_delay_fmt(gchar *s, guint32 v)
+ulp_QoP_delay_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%g s (%u)", pow(2, (double)v), v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%gs (%u)", pow(2, (double)v), v);
 }
 
 static const true_false_string ulp_vertical_dir_val = {
@@ -1100,65 +1145,65 @@ static const true_false_string ulp_vertical_dir_val = {
 };
 
 static void
-ulp_RelativeTime_fmt(gchar *s, guint32 v)
+ulp_RelativeTime_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%.2f s (%u)", 0.01*v, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%.2fs (%u)", 0.01*v, v);
 }
 
 static void
-ulp_RSRP_Range_fmt(gchar *s, guint32 v)
+ulp_RSRP_Range_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSRP < -140 dBm (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RSRP < -140dBm (0)");
   } else if (v == 97) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSRP >= -44 dBm (97)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RSRP >= -44dBm (97)");
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d dBm <= RSRP < %d dBm (%u)", -141+v, -140+v, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%ddBm <= RSRP < %ddBm (%u)", -141+v, -140+v, v);
   }
 }
 
 static void
-ulp_RSRQ_Range_fmt(gchar *s, guint32 v)
+ulp_RSRQ_Range_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSRQ < -19.5dB (0)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RSRQ < -19.5dB (0)");
   } else if (v == 64) {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "RSRQ >= -3 dB (34)");
+    snprintf(s, ITEM_LABEL_LENGTH, "RSRQ >= -3dB (34)");
   } else {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%.1f dB <= RSRQ < %.1f dB (%u)", -20+((float)v/2), -19.5+((float)v/2), v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fdB <= RSRQ < %.1fdB (%u)", -20+((float)v/2), -19.5+((float)v/2), v);
   }
 }
 
 static void
-ulp_SignalDelta_fmt(gchar *s, guint32 v)
+ulp_SignalDelta_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%s dB (%u)", v ? "0.5" : "0", v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%sdB (%u)", v ? "0.5" : "0", v);
 }
 
 static void
-ulp_locationAccuracy_fmt(gchar *s, guint32 v)
+ulp_locationAccuracy_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%.1f m (%u)", 0.1*v, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%.1fm (%u)", 0.1*v, v);
 }
 
 static void
-ulp_WimaxRTD_fmt(gchar *s, guint32 v)
+ulp_WimaxRTD_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%.2f us (%u)", 0.01*v, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%.2fus (%u)", 0.01*v, v);
 }
 
 static void
-ulp_WimaxNMR_rssi_fmt(gchar *s, guint32 v)
+ulp_WimaxNMR_rssi_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%.2f dBm (%u)", -103.75+(0.25*v), v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%.2fdBm (%u)", -103.75+(0.25*v), v);
 }
 
 static void
-ulp_UTRAN_gpsReferenceTimeUncertainty_fmt(gchar *s, guint32 v)
+ulp_UTRAN_gpsReferenceTimeUncertainty_fmt(char *s, uint32_t v)
 {
   double uncertainty = 0.0022*(pow(1.18, (double)v)-1);
 
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%f us (%u)", uncertainty, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%fus (%u)", uncertainty, v);
 }
 
 static const value_string ulp_ganss_time_id_vals[] = {
@@ -1170,31 +1215,28 @@ static const value_string ulp_ganss_time_id_vals[] = {
 };
 
 static void
-ulp_utran_GANSSTimingOfCell_fmt(gchar *s, guint32 v)
+ulp_utran_GANSSTimingOfCell_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%.2f us (%u)", 0.25*v, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%.2fus (%u)", 0.25*v, v);
 }
 
 static void
-ulp_Coordinate_latitude_fmt(gchar *s, guint32 v)
+ulp_Coordinate_latitude_fmt(char *s, uint32_t v)
 {
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%f degrees (%u)",
+  snprintf(s, ITEM_LABEL_LENGTH, "%f degrees (%u)",
              ((float)v/8388607.0)*90, v);
 }
 
 static void
-ulp_Coordinate_longitude_fmt(gchar *s, guint32 v)
+ulp_Coordinate_longitude_fmt(char *s, uint32_t v)
 {
-  gint32 longitude = (gint32) v;
+  int32_t longitude = (int32_t) v;
 
-  g_snprintf(s, ITEM_LABEL_LENGTH, "%f degrees (%d)",
+  snprintf(s, ITEM_LABEL_LENGTH, "%f degrees (%d)",
              ((float)longitude/8388608.0)*180, longitude);
 }
 
 /* Include constants */
-
-/*--- Included file: packet-ulp-val.h ---*/
-#line 1 "./asn1/ulp/packet-ulp-val.h"
 #define maxReqLength                   50
 #define maxClientLength                50
 #define maxNumGeoArea                  32
@@ -1210,33 +1252,29 @@ ulp_Coordinate_longitude_fmt(gchar *s, guint32 v)
 #define maxWLANApDataSize              128
 #define maxCellReport                  8
 #define maxWimaxBSMeas                 32
-
-/*--- End of included file: packet-ulp-val.h ---*/
-#line 330 "./asn1/ulp/packet-ulp-template.c"
+#define maxNRServingCell               32
+#define maxCellReportNR                32
 
 typedef struct
 {
-  guint8 notif_enc_type;
-  guint8 ganss_req_gen_data_ganss_id;
+  uint8_t notif_enc_type;
+  uint8_t ganss_req_gen_data_ganss_id;
 } ulp_private_data_t;
 
 static ulp_private_data_t* ulp_get_private_data(asn1_ctx_t *actx)
 {
   if (actx->private_data == NULL) {
-    actx->private_data = wmem_new0(wmem_packet_scope(), ulp_private_data_t);
+    actx->private_data = wmem_new0(actx->pinfo->pool, ulp_private_data_t);
   }
   return (ulp_private_data_t*)actx->private_data;
 }
 
 
-/*--- Included file: packet-ulp-fn.c ---*/
-#line 1 "./asn1/ulp/packet-ulp-fn.c"
-
 
 static int
 dissect_ulp_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -1246,7 +1284,7 @@ dissect_ulp_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_ulp_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -1271,18 +1309,16 @@ dissect_ulp_Version(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 
 static int
 dissect_ulp_T_msisdn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 304 "./asn1/ulp/ulp.cnf"
   tvbuff_t *msisdn_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, &msisdn_tvb);
+                                       8, 8, false, &msisdn_tvb);
 
   if (msisdn_tvb) {
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ulp_setid);
-    dissect_e164_msisdn(msisdn_tvb, subtree, 0, 8, E164_ENC_BCD);
+    dissect_e164_msisdn(msisdn_tvb, actx->pinfo, subtree, 0, 8, E164_ENC_BCD);
   }
-
 
 
   return offset;
@@ -1292,18 +1328,16 @@ dissect_ulp_T_msisdn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 static int
 dissect_ulp_T_mdn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 314 "./asn1/ulp/ulp.cnf"
   tvbuff_t *mdn_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, &mdn_tvb);
+                                       8, 8, false, &mdn_tvb);
 
   if (mdn_tvb) {
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ulp_setid);
-    proto_tree_add_string(subtree, hf_ulp_mobile_directory_number, mdn_tvb, 0, 8, tvb_bcd_dig_to_wmem_packet_str(mdn_tvb, 0, 8, NULL, FALSE));
+    proto_tree_add_item(subtree, hf_ulp_mobile_directory_number, mdn_tvb, 0, 8, ENC_BCD_DIGITS_0_9|ENC_LITTLE_ENDIAN);
   }
-
 
 
   return offset;
@@ -1314,7 +1348,7 @@ dissect_ulp_T_mdn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_ulp_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     34, 34, FALSE, NULL, NULL);
+                                     34, 34, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1323,18 +1357,16 @@ dissect_ulp_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 static int
 dissect_ulp_T_imsi(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 324 "./asn1/ulp/ulp.cnf"
   tvbuff_t *imsi_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, &imsi_tvb);
+                                       8, 8, false, &imsi_tvb);
 
   if (imsi_tvb) {
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ulp_setid);
-    dissect_e212_imsi(imsi_tvb, actx->pinfo, subtree, 0, 8, FALSE);
+    dissect_e212_imsi(imsi_tvb, actx->pinfo, subtree, 0, 8, false);
   }
-
 
 
   return offset;
@@ -1345,7 +1377,8 @@ dissect_ulp_T_imsi(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 static int
 dissect_ulp_IA5String_SIZE_1_1000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          1, 1000, FALSE);
+                                          1, 1000, false,
+                                          NULL);
 
   return offset;
 }
@@ -1355,7 +1388,7 @@ dissect_ulp_IA5String_SIZE_1_1000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_ulp_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       4, 4, FALSE, NULL);
+                                       4, 4, false, NULL);
 
   return offset;
 }
@@ -1365,7 +1398,7 @@ dissect_ulp_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ulp_OCTET_STRING_SIZE_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       16, 16, FALSE, NULL);
+                                       16, 16, false, NULL);
 
   return offset;
 }
@@ -1393,6 +1426,16 @@ dissect_ulp_IPAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 }
 
 
+
+static int
+dissect_ulp_OCTET_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
+                                       8, 8, false, NULL);
+
+  return offset;
+}
+
+
 static const value_string ulp_SETId_vals[] = {
   {   0, "msisdn" },
   {   1, "mdn" },
@@ -1400,16 +1443,18 @@ static const value_string ulp_SETId_vals[] = {
   {   3, "imsi" },
   {   4, "nai" },
   {   5, "iPAddress" },
+  {   6, "ver2-imei" },
   { 0, NULL }
 };
 
 static const per_choice_t SETId_choice[] = {
   {   0, &hf_ulp_msisdn          , ASN1_EXTENSION_ROOT    , dissect_ulp_T_msisdn },
   {   1, &hf_ulp_mdn             , ASN1_EXTENSION_ROOT    , dissect_ulp_T_mdn },
-  {   2, &hf_ulp_minsi           , ASN1_EXTENSION_ROOT    , dissect_ulp_BIT_STRING_SIZE_34 },
+  {   2, &hf_ulp_min_bit_string  , ASN1_EXTENSION_ROOT    , dissect_ulp_BIT_STRING_SIZE_34 },
   {   3, &hf_ulp_imsi            , ASN1_EXTENSION_ROOT    , dissect_ulp_T_imsi },
   {   4, &hf_ulp_nai             , ASN1_EXTENSION_ROOT    , dissect_ulp_IA5String_SIZE_1_1000 },
   {   5, &hf_ulp_iPAddress       , ASN1_EXTENSION_ROOT    , dissect_ulp_IPAddress },
+  {   6, &hf_ulp_ver2_imei       , ASN1_NOT_EXTENSION_ROOT, dissect_ulp_OCTET_STRING_SIZE_8 },
   { 0, NULL, 0, NULL }
 };
 
@@ -1442,7 +1487,7 @@ dissect_ulp_SetSessionID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_ulp_FQDN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,
-                                                      1, 255, FALSE, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-", 64,
+                                                      1, 255, false, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-", 64,
                                                       NULL);
 
   return offset;
@@ -1507,10 +1552,10 @@ static const value_string ulp_PosMethod_vals[] = {
   {   2, "agpsSETassistedpref" },
   {   3, "agpsSETbasedpref" },
   {   4, "autonomousGPS" },
-  {   5, "aFLT" },
-  {   6, "eCID" },
-  {   7, "eOTD" },
-  {   8, "oTDOA" },
+  {   5, "aflt" },
+  {   6, "ecid" },
+  {   7, "eotd" },
+  {   8, "otdoa" },
   {   9, "noPosition" },
   {  10, "ver2-historicalDataRetrieval" },
   {  11, "ver2-agnssSETassisted" },
@@ -1519,6 +1564,7 @@ static const value_string ulp_PosMethod_vals[] = {
   {  14, "ver2-agnssSETbasedpref" },
   {  15, "ver2-autonomousGNSS" },
   {  16, "ver2-sessioninfoquery" },
+  {  17, "ver2-mbs" },
   { 0, NULL }
 };
 
@@ -1526,7 +1572,7 @@ static const value_string ulp_PosMethod_vals[] = {
 static int
 dissect_ulp_PosMethod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     10, NULL, TRUE, 7, NULL);
+                                     10, NULL, true, 8, NULL);
 
   return offset;
 }
@@ -1545,7 +1591,7 @@ static const value_string ulp_NotificationType_vals[] = {
 static int
 dissect_ulp_NotificationType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, TRUE, 0, NULL);
+                                     5, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1561,15 +1607,13 @@ static const value_string ulp_EncodingType_vals[] = {
 
 static int
 dissect_ulp_EncodingType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 60 "./asn1/ulp/ulp.cnf"
-  guint32 val;
+  uint32_t val;
   ulp_private_data_t *ulp_priv = ulp_get_private_data(actx);
 
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, &val, TRUE, 0, NULL);
+                                     3, &val, true, 0, NULL);
 
-  ulp_priv->notif_enc_type = (guint8) val;
-
+  ulp_priv->notif_enc_type = (uint8_t) val;
 
 
   return offset;
@@ -1579,11 +1623,10 @@ dissect_ulp_EncodingType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_ulp_T_requestorId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 67 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_octet_string(tvb, offset, actx, tree, -1,
-                                       1, maxReqLength, FALSE, &val_tvb);
+                                       1, maxReqLength, false, &val_tvb);
 
   if (val_tvb) {
     ulp_private_data_t *ulp_priv = ulp_get_private_data(actx);
@@ -1604,12 +1647,11 @@ dissect_ulp_T_requestorId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
       default:
         actx->created_item = proto_tree_add_string(tree, hf_index, val_tvb, 0,
                                                    tvb_reported_length(val_tvb),
-                                                   tvb_bytes_to_str(wmem_packet_scope(), val_tvb, 0,
+                                                   tvb_bytes_to_str(actx->pinfo->pool, val_tvb, 0,
                                                                     tvb_reported_length(val_tvb)));
         break;
     }
   }
-
 
 
   return offset;
@@ -1632,7 +1674,7 @@ static const value_string ulp_FormatIndicator_vals[] = {
 static int
 dissect_ulp_FormatIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1641,11 +1683,10 @@ dissect_ulp_FormatIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 static int
 dissect_ulp_T_clientName(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 99 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_octet_string(tvb, offset, actx, tree, -1,
-                                       1, maxClientLength, FALSE, &val_tvb);
+                                       1, maxClientLength, false, &val_tvb);
 
   if (val_tvb) {
     ulp_private_data_t *ulp_priv = ulp_get_private_data(actx);
@@ -1666,12 +1707,11 @@ dissect_ulp_T_clientName(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
       default:
         actx->created_item = proto_tree_add_string(tree, hf_index, val_tvb, 0,
                                                    tvb_reported_length(val_tvb),
-                                                   tvb_bytes_to_str(wmem_packet_scope(), val_tvb, 0,
+                                                   tvb_bytes_to_str(actx->pinfo->pool, val_tvb, 0,
                                                                     tvb_reported_length(val_tvb)));
         break;
     }
   }
-
 
 
   return offset;
@@ -1714,13 +1754,11 @@ static const per_sequence_t Notification_sequence[] = {
 
 static int
 dissect_ulp_Notification(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 54 "./asn1/ulp/ulp.cnf"
   ulp_private_data_t *ulp_priv = ulp_get_private_data(actx);
 
   ulp_priv->notif_enc_type = -1;
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_ulp_Notification, Notification_sequence);
-
 
 
 
@@ -1732,22 +1770,7 @@ dissect_ulp_Notification(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_ulp_INTEGER_0_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_maxLocAge(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 385 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -1757,7 +1780,17 @@ dissect_ulp_T_maxLocAge(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_ulp_INTEGER_0_7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 7U, NULL, FALSE);
+                                                            0U, 7U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_INTEGER_1_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            1U, 128U, NULL, false);
 
   return offset;
 }
@@ -1766,8 +1799,9 @@ dissect_ulp_INTEGER_0_7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static const per_sequence_t QoP_sequence[] = {
   { &hf_ulp_horacc          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_127 },
   { &hf_ulp_veracc          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_127 },
-  { &hf_ulp_maxLocAge       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_maxLocAge },
+  { &hf_ulp_maxLocAge       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_65535 },
   { &hf_ulp_delay           , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_7 },
+  { &hf_ulp_ver2_responseTime, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_128 },
   { NULL, 0, 0, NULL }
 };
 
@@ -1790,7 +1824,7 @@ static const value_string ulp_SLPMode_vals[] = {
 static int
 dissect_ulp_SLPMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -1800,7 +1834,7 @@ dissect_ulp_SLPMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_ulp_MAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     64, 64, FALSE, NULL, NULL);
+                                     64, 64, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1810,7 +1844,7 @@ dissect_ulp_MAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_t
 static int
 dissect_ulp_KeyIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     128, 128, FALSE, NULL, NULL);
+                                     128, 128, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -1826,7 +1860,7 @@ static const value_string ulp_NotificationMode_vals[] = {
 static int
 dissect_ulp_NotificationMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1854,6 +1888,11 @@ static const per_sequence_t SupportedWLANInfo_sequence[] = {
   { &hf_ulp_setSN           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_setRSSI         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_apRepLoc        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
+  { &hf_ulp_apRL            , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
+  { &hf_ulp_opClass         , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
+  { &hf_ulp_apSSID_bool     , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
+  { &hf_ulp_apPHYType_bool  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
+  { &hf_ulp_setMACAddress_bool, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
   { NULL, 0, 0, NULL }
 };
 
@@ -1869,23 +1908,21 @@ dissect_ulp_SupportedWLANInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 static int
 dissect_ulp_T_apMACAddress_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 573 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     48, 48, FALSE, &val_tvb, NULL);
+                                     48, 48, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     proto_tree_add_item(tree, hf_index, val_tvb, 0, 6, ENC_NA);
   }
 
 
-
   return offset;
 }
 
 
-static const value_string ulp_T_apDevType_vals[] = {
+static const value_string ulp_T_apDevType_enum_vals[] = {
   {   0, "wlan802-11a" },
   {   1, "wlan802-11b" },
   {   2, "wlan802-11g" },
@@ -1894,9 +1931,9 @@ static const value_string ulp_T_apDevType_vals[] = {
 
 
 static int
-dissect_ulp_T_apDevType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_ulp_T_apDevType_enum(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -1904,7 +1941,7 @@ dissect_ulp_T_apDevType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 static const per_sequence_t SupportedWLANApData_sequence[] = {
   { &hf_ulp_apMACAddress_01 , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_apMACAddress_01 },
-  { &hf_ulp_apDevType_01    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_apDevType },
+  { &hf_ulp_apDevType_enum  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_apDevType_enum },
   { NULL, 0, 0, NULL }
 };
 
@@ -1925,7 +1962,7 @@ static int
 dissect_ulp_SEQUENCE_SIZE_1_maxWLANApDataSize_OF_SupportedWLANApData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_SEQUENCE_SIZE_1_maxWLANApDataSize_OF_SupportedWLANApData, SEQUENCE_SIZE_1_maxWLANApDataSize_OF_SupportedWLANApData_sequence_of,
-                                                  1, maxWLANApDataSize, FALSE);
+                                                  1, maxWLANApDataSize, false);
 
   return offset;
 }
@@ -2033,6 +2070,7 @@ static const per_sequence_t SupportedNetworkInformation_sequence[] = {
   { &hf_ulp_nonServing      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_uTRANGPSReferenceTime, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_uTRANGANSSReferenceTime, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
+  { &hf_ulp_nr              , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
   { NULL, 0, 0, NULL }
 };
 
@@ -2055,7 +2093,7 @@ static const value_string ulp_TriggerType_vals[] = {
 static int
 dissect_ulp_TriggerType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2072,7 +2110,7 @@ static const value_string ulp_AllowedReportingType_vals[] = {
 static int
 dissect_ulp_AllowedReportingType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2080,14 +2118,9 @@ dissect_ulp_AllowedReportingType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 static int
-dissect_ulp_T_startTime_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 190 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_M525600_M1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -525600, -1, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " min");
-
-
+                                                            -525600, -1, NULL, false);
 
   return offset;
 }
@@ -2095,22 +2128,17 @@ dissect_ulp_T_startTime_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 static int
-dissect_ulp_T_stopTime_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 194 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_M525599_0(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -525599, 0U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " min");
-
-
+                                                            -525599, 0U, NULL, false);
 
   return offset;
 }
 
 
 static const per_sequence_t TimeWindow_sequence[] = {
-  { &hf_ulp_startTime_02    , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_startTime_02 },
-  { &hf_ulp_stopTime_01     , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_stopTime_01 },
+  { &hf_ulp_startTime_01    , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_M525600_M1 },
+  { &hf_ulp_stopTime_01     , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_M525599_0 },
   { NULL, 0, 0, NULL }
 };
 
@@ -2127,7 +2155,7 @@ dissect_ulp_TimeWindow(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_INTEGER_1_65536(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 65536U, NULL, FALSE);
+                                                            1U, 65536U, NULL, false);
 
   return offset;
 }
@@ -2135,14 +2163,9 @@ dissect_ulp_INTEGER_1_65536(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 static int
-dissect_ulp_T_minTimeInterval(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 186 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_1_86400(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 86400U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            1U, 86400U, NULL, false);
 
   return offset;
 }
@@ -2151,7 +2174,7 @@ dissect_ulp_T_minTimeInterval(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static const per_sequence_t ReportingCriteria_sequence[] = {
   { &hf_ulp_timeWindow      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_TimeWindow },
   { &hf_ulp_maxNumberofReports, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_65536 },
-  { &hf_ulp_minTimeInterval , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_minTimeInterval },
+  { &hf_ulp_minTimeInterval , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_86400 },
   { NULL, 0, 0, NULL }
 };
 
@@ -2189,17 +2212,7 @@ static const value_string ulp_ProtLevel_vals[] = {
 static int
 dissect_ulp_ProtLevel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_OCTET_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2209,7 +2222,7 @@ dissect_ulp_OCTET_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ulp_BIT_STRING_SIZE_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     32, 32, FALSE, NULL, NULL);
+                                     32, 32, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2254,6 +2267,7 @@ static const per_sequence_t GNSSPosTechnology_sequence[] = {
   { &hf_ulp_qzss            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_glonass         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_bds             , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
+  { &hf_ulp_rtk_osr         , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
   { NULL, 0, 0, NULL }
 };
 
@@ -2312,7 +2326,7 @@ dissect_ulp_SUPLINIT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int
 dissect_ulp_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
@@ -2321,16 +2335,14 @@ dissect_ulp_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_ulp_T_ganssSBASid(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 201 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     3, 3, FALSE, &val_tvb, NULL);
+                                     3, 3, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     proto_tree_add_bits_item(tree, hf_index, val_tvb, 0, 3, ENC_NA);
   }
-
 
 
   return offset;
@@ -2353,11 +2365,36 @@ dissect_ulp_GANSSPositioningMethodTypes(tvbuff_t *tvb _U_, int offset _U_, asn1_
 }
 
 
+static int * const GANSSSignals_bits[] = {
+  &hf_ulp_GANSSSignals_signal1,
+  &hf_ulp_GANSSSignals_signal2,
+  &hf_ulp_GANSSSignals_signal3,
+  &hf_ulp_GANSSSignals_signal4,
+  &hf_ulp_GANSSSignals_signal5,
+  &hf_ulp_GANSSSignals_signal6,
+  &hf_ulp_GANSSSignals_signal7,
+  &hf_ulp_GANSSSignals_signal8,
+  NULL
+};
 
 static int
 dissect_ulp_GANSSSignals(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     1, 8, FALSE, NULL, NULL);
+                                     1, 8, false, GANSSSignals_bits, 8, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t RTK_sequence[] = {
+  { &hf_ulp_osr             , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_RTK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_RTK, RTK_sequence);
 
   return offset;
 }
@@ -2368,6 +2405,7 @@ static const per_sequence_t GANSSPositionMethod_sequence[] = {
   { &hf_ulp_ganssSBASid     , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_ganssSBASid },
   { &hf_ulp_gANSSPositioningMethodTypes, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_GANSSPositioningMethodTypes },
   { &hf_ulp_gANSSSignals    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_GANSSSignals },
+  { &hf_ulp_rtk             , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_RTK },
   { NULL, 0, 0, NULL }
 };
 
@@ -2388,7 +2426,67 @@ static int
 dissect_ulp_GANSSPositionMethods(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_GANSSPositionMethods, GANSSPositionMethods_sequence_of,
-                                                  1, 16, FALSE);
+                                                  1, 16, false);
+
+  return offset;
+}
+
+
+static const value_string ulp_T_addPosID_vals[] = {
+  {   0, "mBS" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_ulp_T_addPosID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     1, NULL, true, 0, NULL);
+
+  return offset;
+}
+
+
+static int * const T_addPosMode_bits[] = {
+  &hf_ulp_T_addPosMode_standalone,
+  &hf_ulp_T_addPosMode_setBased,
+  &hf_ulp_T_addPosMode_setAssisted,
+  NULL
+};
+
+static int
+dissect_ulp_T_addPosMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     1, 8, false, T_addPosMode_bits, 3, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t AddPosSupport_Element_sequence[] = {
+  { &hf_ulp_addPosID        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_addPosID },
+  { &hf_ulp_addPosMode      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_addPosMode },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_AddPosSupport_Element(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_AddPosSupport_Element, AddPosSupport_Element_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t AdditionalPositioningMethods_sequence_of[1] = {
+  { &hf_ulp_AdditionalPositioningMethods_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_AddPosSupport_Element },
+};
+
+static int
+dissect_ulp_AdditionalPositioningMethods(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_ulp_AdditionalPositioningMethods, AdditionalPositioningMethods_sequence_of,
+                                                  1, 8, false);
 
   return offset;
 }
@@ -2396,6 +2494,7 @@ dissect_ulp_GANSSPositionMethods(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 static const per_sequence_t Ver2_PosTechnology_extension_sequence[] = {
   { &hf_ulp_gANSSPositionMethods, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_GANSSPositionMethods },
+  { &hf_ulp_additionalPositioningMethods, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_AdditionalPositioningMethods },
   { NULL, 0, 0, NULL }
 };
 
@@ -2440,7 +2539,7 @@ static const value_string ulp_PrefMethod_vals[] = {
 static int
 dissect_ulp_PrefMethod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2466,7 +2565,7 @@ dissect_ulp_PosProtocolVersion3GPP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_ulp_BIT_STRING_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     6, 6, FALSE, NULL, NULL);
+                                     6, 6, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2496,7 +2595,7 @@ static int
 dissect_ulp_PosProtocolVersion3GPP2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_PosProtocolVersion3GPP2, PosProtocolVersion3GPP2_sequence_of,
-                                                  1, 8, FALSE);
+                                                  1, 8, false);
 
   return offset;
 }
@@ -2571,14 +2670,9 @@ dissect_ulp_ServicesSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 
 static int
-dissect_ulp_T_minInt(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 761 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_1_3600(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 3600U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            1U, 3600U, NULL, false);
 
   return offset;
 }
@@ -2586,14 +2680,9 @@ dissect_ulp_T_minInt(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 
 static int
-dissect_ulp_T_maxInt(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 765 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_1_1440(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 1440U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " min");
-
-
+                                                            1U, 1440U, NULL, false);
 
   return offset;
 }
@@ -2619,7 +2708,7 @@ dissect_ulp_RepMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_ulp_INTEGER_1_1024(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 1024U, NULL, FALSE);
+                                                            1U, 1024U, NULL, false);
 
   return offset;
 }
@@ -2643,8 +2732,8 @@ dissect_ulp_BatchRepCap(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 
 static const per_sequence_t ReportingCap_sequence[] = {
-  { &hf_ulp_minInt          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_minInt },
-  { &hf_ulp_maxInt          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_maxInt },
+  { &hf_ulp_minInt          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_1_3600 },
+  { &hf_ulp_maxInt          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_1440 },
   { &hf_ulp_repMode_01      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_RepMode },
   { &hf_ulp_batchRepCap     , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_BatchRepCap },
   { NULL, 0, 0, NULL }
@@ -2678,7 +2767,7 @@ dissect_ulp_GeoAreaShapesSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_ulp_INTEGER_0_maxNumGeoArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, maxNumGeoArea, NULL, FALSE);
+                                                            0U, maxNumGeoArea, NULL, false);
 
   return offset;
 }
@@ -2688,7 +2777,7 @@ dissect_ulp_INTEGER_0_maxNumGeoArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 static int
 dissect_ulp_INTEGER_0_maxAreaIdList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, maxAreaIdList, NULL, FALSE);
+                                                            0U, maxAreaIdList, NULL, false);
 
   return offset;
 }
@@ -2698,7 +2787,7 @@ dissect_ulp_INTEGER_0_maxAreaIdList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 static int
 dissect_ulp_INTEGER_0_maxAreaId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, maxAreaId, NULL, FALSE);
+                                                            0U, maxAreaId, NULL, false);
 
   return offset;
 }
@@ -2723,19 +2812,9 @@ dissect_ulp_EventTriggerCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 static int
-dissect_ulp_INTEGER_1_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 128U, NULL, FALSE);
-
-  return offset;
-}
-
-
-
-static int
 dissect_ulp_INTEGER_1_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 32U, NULL, FALSE);
+                                                            1U, 32U, NULL, false);
 
   return offset;
 }
@@ -2783,6 +2862,7 @@ static const per_sequence_t SupportedBearers_sequence[] = {
   { &hf_ulp_umb             , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_wlan            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_wiMAX           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
+  { &hf_ulp_nr              , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_BOOLEAN },
   { NULL, 0, 0, NULL }
 };
 
@@ -2831,7 +2911,7 @@ dissect_ulp_SETCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_ulp_INTEGER_0_999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 999U, NULL, FALSE);
+                                                            0U, 999U, NULL, false);
 
   return offset;
 }
@@ -2841,7 +2921,7 @@ dissect_ulp_INTEGER_0_999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ulp_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1023U, NULL, FALSE);
+                                                            0U, 1023U, NULL, false);
 
   return offset;
 }
@@ -2851,7 +2931,7 @@ dissect_ulp_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_ulp_INTEGER_0_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
 
   return offset;
 }
@@ -2881,7 +2961,7 @@ static int
 dissect_ulp_NMR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_NMR, NMR_sequence_of,
-                                                  1, 15, FALSE);
+                                                  1, 15, false);
 
   return offset;
 }
@@ -2910,7 +2990,7 @@ dissect_ulp_GsmCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_ulp_INTEGER_0_268435455(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 268435455U, NULL, FALSE);
+                                                            0U, 268435455U, NULL, false);
 
   return offset;
 }
@@ -2920,7 +3000,7 @@ dissect_ulp_INTEGER_0_268435455(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ulp_UARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16383U, NULL, FALSE);
+                                                            0U, 16383U, NULL, false);
 
   return offset;
 }
@@ -2995,7 +3075,7 @@ dissect_ulp_FrequencyInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ulp_INTEGER_0_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 511U, NULL, FALSE);
+                                                            0U, 511U, NULL, false);
 
   return offset;
 }
@@ -3005,7 +3085,7 @@ dissect_ulp_INTEGER_0_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ulp_UTRA_CarrierRSSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -3029,7 +3109,7 @@ dissect_ulp_PrimaryCPICH_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ulp_CPICH_Ec_N0(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
 
   return offset;
 }
@@ -3039,7 +3119,7 @@ dissect_ulp_CPICH_Ec_N0(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_ulp_CPICH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -3049,7 +3129,7 @@ dissect_ulp_CPICH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_Pathloss(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            46U, 173U, NULL, FALSE);
+                                                            46U, 173U, NULL, false);
 
   return offset;
 }
@@ -3076,7 +3156,7 @@ dissect_ulp_T_fdd(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_ulp_CellParametersID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -3086,7 +3166,7 @@ dissect_ulp_CellParametersID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_ulp_TGSN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 14U, NULL, FALSE);
+                                                            0U, 14U, NULL, false);
 
   return offset;
 }
@@ -3096,7 +3176,7 @@ dissect_ulp_TGSN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_
 static int
 dissect_ulp_PrimaryCCPCH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -3106,7 +3186,7 @@ dissect_ulp_PrimaryCCPCH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ulp_TimeslotISCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -3120,7 +3200,7 @@ static int
 dissect_ulp_TimeslotISCP_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_TimeslotISCP_List, TimeslotISCP_List_sequence_of,
-                                                  1, maxTS, FALSE);
+                                                  1, maxTS, false);
 
   return offset;
 }
@@ -3167,7 +3247,7 @@ dissect_ulp_T_modeSpecificInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 static const per_sequence_t CellMeasuredResults_sequence[] = {
-  { &hf_ulp_cellIdentity    , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_268435455 },
+  { &hf_ulp_cellIdentity_uint, ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_268435455 },
   { &hf_ulp_modeSpecificInfo, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_modeSpecificInfo },
   { NULL, 0, 0, NULL }
 };
@@ -3189,7 +3269,7 @@ static int
 dissect_ulp_CellMeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_CellMeasuredResultsList, CellMeasuredResultsList_sequence_of,
-                                                  1, maxCellMeas, FALSE);
+                                                  1, maxCellMeas, false);
 
   return offset;
 }
@@ -3219,7 +3299,7 @@ static int
 dissect_ulp_MeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_MeasuredResultsList, MeasuredResultsList_sequence_of,
-                                                  1, maxFreq, FALSE);
+                                                  1, maxFreq, false);
 
   return offset;
 }
@@ -3229,7 +3309,7 @@ dissect_ulp_MeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ulp_INTEGER_0_8191(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8191U, NULL, FALSE);
+                                                            0U, 8191U, NULL, false);
 
   return offset;
 }
@@ -3246,7 +3326,7 @@ static const value_string ulp_TAResolution_vals[] = {
 static int
 dissect_ulp_TAResolution(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3263,7 +3343,7 @@ static const value_string ulp_ChipRate_vals[] = {
 static int
 dissect_ulp_ChipRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3310,7 +3390,7 @@ dissect_ulp_WcdmaCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_ulp_INTEGER_0_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32767U, NULL, FALSE);
+                                                            0U, 32767U, NULL, false);
 
   return offset;
 }
@@ -3320,7 +3400,7 @@ dissect_ulp_INTEGER_0_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_ulp_INTEGER_0_4194303(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4194303U, NULL, FALSE);
+                                                            0U, 4194303U, NULL, false);
 
   return offset;
 }
@@ -3330,7 +3410,7 @@ dissect_ulp_INTEGER_0_4194303(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ulp_INTEGER_0_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8388607U, NULL, FALSE);
+                                                            0U, 8388607U, NULL, false);
 
   return offset;
 }
@@ -3361,7 +3441,7 @@ dissect_ulp_CdmaCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ulp_BIT_STRING_SIZE_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     128, 128, FALSE, NULL, NULL);
+                                     128, 128, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -3409,7 +3489,7 @@ dissect_ulp_UmbCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_ulp_MCC_MNC_Digit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 9U, NULL, FALSE);
+                                                            0U, 9U, NULL, false);
 
   return offset;
 }
@@ -3423,7 +3503,7 @@ static int
 dissect_ulp_MCC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_MCC, MCC_sequence_of,
-                                                  3, 3, FALSE);
+                                                  3, 3, false);
 
   return offset;
 }
@@ -3437,7 +3517,7 @@ static int
 dissect_ulp_MNC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_MNC, MNC_sequence_of,
-                                                  2, 3, FALSE);
+                                                  2, 3, false);
 
   return offset;
 }
@@ -3462,7 +3542,7 @@ dissect_ulp_PLMN_Identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ulp_CellIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     28, 28, FALSE, NULL, NULL);
+                                     28, 28, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -3470,7 +3550,7 @@ dissect_ulp_CellIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static const per_sequence_t CellGlobalIdEUTRA_sequence[] = {
   { &hf_ulp_plmn_Identity   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_PLMN_Identity },
-  { &hf_ulp_cellIdentity_01 , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_CellIdentity },
+  { &hf_ulp_cellIdentity    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_CellIdentity },
   { NULL, 0, 0, NULL }
 };
 
@@ -3487,7 +3567,7 @@ dissect_ulp_CellGlobalIdEUTRA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ulp_PhysCellId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 503U, NULL, FALSE);
+                                                            0U, 503U, NULL, false);
 
   return offset;
 }
@@ -3497,7 +3577,7 @@ dissect_ulp_PhysCellId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_TrackingAreaCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     16, 16, FALSE, NULL, NULL);
+                                     16, 16, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -3507,7 +3587,7 @@ dissect_ulp_TrackingAreaCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_ulp_RSRP_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 97U, NULL, FALSE);
+                                                            0U, 97U, NULL, false);
 
   return offset;
 }
@@ -3517,7 +3597,7 @@ dissect_ulp_RSRP_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_RSRQ_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 34U, NULL, FALSE);
+                                                            0U, 34U, NULL, false);
 
   return offset;
 }
@@ -3527,7 +3607,7 @@ dissect_ulp_RSRQ_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_INTEGER_0_1282(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1282U, NULL, FALSE);
+                                                            0U, 1282U, NULL, false);
 
   return offset;
 }
@@ -3552,7 +3632,61 @@ dissect_ulp_T_cgi_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_INTEGER_65536_262143(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            65536U, 262143U, NULL, FALSE);
+                                                            65536U, 262143U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_RSRP_Range_Ext(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            -17, -1, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_RSRQ_Range_Ext(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            -30, 46U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_RS_SINR_Range(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 127U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_TrackingAreaCodeNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     24, 24, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t NeighbourInformation5G_sequence[] = {
+  { &hf_ulp_trackingAreaCode_01, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_TrackingAreaCodeNR },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_NeighbourInformation5G(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_NeighbourInformation5G, NeighbourInformation5G_sequence);
 
   return offset;
 }
@@ -3563,6 +3697,10 @@ static const per_sequence_t T_measResult_sequence[] = {
   { &hf_ulp_rsrqResult      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_RSRQ_Range },
   { &hf_ulp_earfcn          , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_65535 },
   { &hf_ulp_earfcn_ext      , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_INTEGER_65536_262143 },
+  { &hf_ulp_rsrpResult_ext  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_RSRP_Range_Ext },
+  { &hf_ulp_rsrqResult_ext  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_RSRQ_Range_Ext },
+  { &hf_ulp_rs_sinrResult   , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_RS_SINR_Range },
+  { &hf_ulp_neighbourInformation5G, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_NeighbourInformation5G },
   { NULL, 0, 0, NULL }
 };
 
@@ -3599,7 +3737,21 @@ static int
 dissect_ulp_MeasResultListEUTRA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_MeasResultListEUTRA, MeasResultListEUTRA_sequence_of,
-                                                  1, maxCellReport, FALSE);
+                                                  1, maxCellReport, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t ServingInformation5G_sequence[] = {
+  { &hf_ulp_trackingAreaCode_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_TrackingAreaCodeNR },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_ServingInformation5G(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_ServingInformation5G, ServingInformation5G_sequence);
 
   return offset;
 }
@@ -3615,6 +3767,10 @@ static const per_sequence_t LteCellInformation_sequence[] = {
   { &hf_ulp_measResultListEUTRA, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_MeasResultListEUTRA },
   { &hf_ulp_earfcn          , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_65535 },
   { &hf_ulp_earfcn_ext      , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_INTEGER_65536_262143 },
+  { &hf_ulp_rsrpResult_ext  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_RSRP_Range_Ext },
+  { &hf_ulp_rsrqResult_ext  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_RSRQ_Range_Ext },
+  { &hf_ulp_rs_sinrResult   , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_RS_SINR_Range },
+  { &hf_ulp_servingInformation5G, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_ServingInformation5G },
   { NULL, 0, 0, NULL }
 };
 
@@ -3630,62 +3786,25 @@ dissect_ulp_LteCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 static int
 dissect_ulp_T_apMACAddress_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 590 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     48, 48, FALSE, &val_tvb, NULL);
+                                     48, 48, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     proto_tree_add_item(tree, hf_index, val_tvb, 0, 6, ENC_NA);
   }
 
 
-
   return offset;
 }
 
 
 
 static int
-dissect_ulp_T_apTransmitPower(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 601 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_M127_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dBm");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_apAntennaGain(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 605 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dBi");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_apSignaltoNoise(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 609 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dB");
-
-
+                                                            -127, 128U, NULL, false);
 
   return offset;
 }
@@ -3705,22 +3824,7 @@ static const value_string ulp_T_apDeviceType_vals[] = {
 static int
 dissect_ulp_T_apDeviceType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 3, NULL);
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_apSignalStrength(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 613 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dBm");
-
-
+                                     3, NULL, true, 3, NULL);
 
   return offset;
 }
@@ -3730,7 +3834,7 @@ dissect_ulp_T_apSignalStrength(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_ulp_INTEGER_0_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 256U, NULL, FALSE);
+                                                            0U, 256U, NULL, false);
 
   return offset;
 }
@@ -3740,7 +3844,7 @@ dissect_ulp_INTEGER_0_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ulp_INTEGER_0_16777216(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16777216U, NULL, FALSE);
+                                                            0U, 16777216U, NULL, false);
 
   return offset;
 }
@@ -3759,7 +3863,7 @@ static const value_string ulp_RTDUnits_vals[] = {
 static int
 dissect_ulp_RTDUnits(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, TRUE, 0, NULL);
+                                     5, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3781,66 +3885,6 @@ dissect_ulp_RTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_t
 }
 
 
-
-static int
-dissect_ulp_T_setTransmitPower(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 617 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dBm");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_setAntennaGain(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 621 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dBi");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_setSignaltoNoise(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 625 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dB");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_setSignalStrength(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 629 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 128U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dBm");
-
-
-
-  return offset;
-}
-
-
 static const value_string ulp_LocationEncodingDescriptor_vals[] = {
   {   0, "lci" },
   {   1, "asn1" },
@@ -3851,7 +3895,7 @@ static const value_string ulp_LocationEncodingDescriptor_vals[] = {
 static int
 dissect_ulp_LocationEncodingDescriptor(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3861,7 +3905,7 @@ dissect_ulp_LocationEncodingDescriptor(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_ulp_INTEGER_0_4294967295(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4294967295U, NULL, FALSE);
+                                                            0U, 4294967295U, NULL, false);
 
   return offset;
 }
@@ -3871,7 +3915,7 @@ dissect_ulp_INTEGER_0_4294967295(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_ulp_OCTET_STRING_SIZE_1_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 128, FALSE, NULL);
+                                       1, 128, false, NULL);
 
   return offset;
 }
@@ -3911,7 +3955,7 @@ dissect_ulp_ReportedLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_ulp_BIT_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     4, 4, FALSE, NULL, NULL);
+                                     4, 4, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -3921,7 +3965,7 @@ dissect_ulp_BIT_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ulp_BIT_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     30, 30, FALSE, NULL, NULL);
+                                     30, 30, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -3931,7 +3975,7 @@ dissect_ulp_BIT_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_ulp_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -3939,12 +3983,12 @@ dissect_ulp_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 static const per_sequence_t LocationDataLCI_sequence[] = {
   { &hf_ulp_latitudeResolution, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_6 },
-  { &hf_ulp_latitude_01     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_34 },
+  { &hf_ulp_latitude_bit_string, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_34 },
   { &hf_ulp_longitudeResolution, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_6 },
-  { &hf_ulp_longitude_01    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_34 },
+  { &hf_ulp_longitude_bit_string, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_34 },
   { &hf_ulp_altitudeType    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_4 },
   { &hf_ulp_altitudeResolution, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_6 },
-  { &hf_ulp_altitude_01     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_30 },
+  { &hf_ulp_altitude_bit_string, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_30 },
   { &hf_ulp_datum           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BIT_STRING_SIZE_8 },
   { NULL, 0, 0, NULL }
 };
@@ -3996,7 +4040,7 @@ dissect_ulp_RepLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_ulp_INTEGER_0_1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1U, NULL, FALSE);
+                                                            0U, 1U, NULL, false);
 
   return offset;
 }
@@ -4005,16 +4049,14 @@ dissect_ulp_INTEGER_0_1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 static int
 dissect_ulp_T_apSSID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 645 "./asn1/ulp/ulp.cnf"
   tvbuff_t *ssid_tvb;
 
   offset = dissect_per_octet_string(tvb, offset, actx, tree, -1,
-                                       1, 32, FALSE, &ssid_tvb);
+                                       1, 32, false, &ssid_tvb);
 
   if (ssid_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, ssid_tvb, 0, -1, ENC_ASCII|ENC_NA);
   }
-
 
 
   return offset;
@@ -4039,7 +4081,7 @@ static const value_string ulp_T_apPHYType_vals[] = {
 static int
 dissect_ulp_T_apPHYType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     10, NULL, TRUE, 0, NULL);
+                                     10, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -4048,16 +4090,14 @@ dissect_ulp_T_apPHYType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 static int
 dissect_ulp_T_setMACAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 656 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     48, 48, FALSE, &val_tvb, NULL);
+                                     48, 48, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     proto_tree_add_item(tree, hf_index, val_tvb, 0, 6, ENC_NA);
   }
-
 
 
   return offset;
@@ -4066,17 +4106,17 @@ dissect_ulp_T_setMACAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 static const per_sequence_t WlanAPInformation_sequence[] = {
   { &hf_ulp_apMACAddress_02 , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_apMACAddress_02 },
-  { &hf_ulp_apTransmitPower , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_apTransmitPower },
-  { &hf_ulp_apAntennaGain   , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_apAntennaGain },
-  { &hf_ulp_apSignaltoNoise , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_apSignaltoNoise },
+  { &hf_ulp_apTransmitPower , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M127_128 },
+  { &hf_ulp_apAntennaGain   , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M127_128 },
+  { &hf_ulp_apSignaltoNoise , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M127_128 },
   { &hf_ulp_apDeviceType    , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_apDeviceType },
-  { &hf_ulp_apSignalStrength, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_apSignalStrength },
+  { &hf_ulp_apSignalStrength, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M127_128 },
   { &hf_ulp_apChannelFrequency, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_256 },
   { &hf_ulp_apRoundTripDelay, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_RTD },
-  { &hf_ulp_setTransmitPower, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_setTransmitPower },
-  { &hf_ulp_setAntennaGain  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_setAntennaGain },
-  { &hf_ulp_setSignaltoNoise, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_setSignaltoNoise },
-  { &hf_ulp_setSignalStrength, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_setSignalStrength },
+  { &hf_ulp_setTransmitPower, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M127_128 },
+  { &hf_ulp_setAntennaGain  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M127_128 },
+  { &hf_ulp_setSignaltoNoise, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M127_128 },
+  { &hf_ulp_setSignalStrength, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M127_128 },
   { &hf_ulp_apReportedLocation, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_ReportedLocation },
   { &hf_ulp_apRepLocation   , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_RepLocation },
   { &hf_ulp_apSignalStrengthDelta, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_1 },
@@ -4103,7 +4143,7 @@ dissect_ulp_WlanAPInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ulp_BIT_STRING_SIZE_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     24, 24, FALSE, NULL, NULL);
+                                     24, 24, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4143,52 +4183,7 @@ dissect_ulp_WimaxRTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int
 dissect_ulp_INTEGER_M32768_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -32768, 32767U, NULL, FALSE);
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_rSSIstd(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 685 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dB");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_cinr(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 692 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dB");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_cINRstd(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 696 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " dB");
-
-
+                                                            -32768, 32767U, NULL, false);
 
   return offset;
 }
@@ -4199,10 +4194,10 @@ static const per_sequence_t WimaxNMR_sequence[] = {
   { &hf_ulp_relDelay        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_M32768_32767 },
   { &hf_ulp_relDelaystd     , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_1023 },
   { &hf_ulp_rssi            , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_255 },
-  { &hf_ulp_rSSIstd         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_rSSIstd },
+  { &hf_ulp_rSSIstd         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_63 },
   { &hf_ulp_bSTxPower       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_255 },
-  { &hf_ulp_cinr            , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_cinr },
-  { &hf_ulp_cINRstd         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_cINRstd },
+  { &hf_ulp_cinr            , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_255 },
+  { &hf_ulp_cINRstd         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_63 },
   { &hf_ulp_bSLocation      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_ReportedLocation },
   { NULL, 0, 0, NULL }
 };
@@ -4224,7 +4219,7 @@ static int
 dissect_ulp_WimaxNMRList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_WimaxNMRList, WimaxNMRList_sequence_of,
-                                                  1, maxWimaxBSMeas, FALSE);
+                                                  1, maxWimaxBSMeas, false);
 
   return offset;
 }
@@ -4246,12 +4241,166 @@ dissect_ulp_WimaxBSInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 }
 
 
+
+static int
+dissect_ulp_PhysCellIdNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 1007U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_ARFCN_NR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 3279165U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_CellIdentityNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     36, 36, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t CellGlobalIdNR_sequence[] = {
+  { &hf_ulp_plmn_Identity   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_PLMN_Identity },
+  { &hf_ulp_cellIdentityNR  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_CellIdentityNR },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_CellGlobalIdNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_CellGlobalIdNR, CellGlobalIdNR_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t NR_Measurements_sequence[] = {
+  { &hf_ulp_rsrp_Range      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_127 },
+  { &hf_ulp_rsrq_Range      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_127 },
+  { &hf_ulp_sinr_Range      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_127 },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_NR_Measurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_NR_Measurements, NR_Measurements_sequence);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_INTEGER_0_3846(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 3846U, NULL, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t ServCellNR_sequence[] = {
+  { &hf_ulp_physCellId_01   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_PhysCellIdNR },
+  { &hf_ulp_arfcn_NR        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_ARFCN_NR },
+  { &hf_ulp_cellGlobalId_01 , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_CellGlobalIdNR },
+  { &hf_ulp_trackingAreaCode_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_TrackingAreaCodeNR },
+  { &hf_ulp_ssb_Measurements, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_NR_Measurements },
+  { &hf_ulp_csi_rs_Measurements, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_NR_Measurements },
+  { &hf_ulp_ta_03           , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_3846 },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_ServCellNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_ServCellNR, ServCellNR_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t ServingCellInformationNR_sequence_of[1] = {
+  { &hf_ulp_ServingCellInformationNR_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_ServCellNR },
+};
+
+static int
+dissect_ulp_ServingCellInformationNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_ulp_ServingCellInformationNR, ServingCellInformationNR_sequence_of,
+                                                  1, maxNRServingCell, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t MeasResultNR_sequence[] = {
+  { &hf_ulp_physCellId_01   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_PhysCellIdNR },
+  { &hf_ulp_arfcn_NR        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_ARFCN_NR },
+  { &hf_ulp_cellGlobalId_01 , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_CellGlobalIdNR },
+  { &hf_ulp_trackingAreaCode_01, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_TrackingAreaCodeNR },
+  { &hf_ulp_ssb_Measurements, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_NR_Measurements },
+  { &hf_ulp_csi_rs_Measurements, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_NR_Measurements },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_MeasResultNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_MeasResultNR, MeasResultNR_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t MeasResultListNR_sequence_of[1] = {
+  { &hf_ulp_MeasResultListNR_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_MeasResultNR },
+};
+
+static int
+dissect_ulp_MeasResultListNR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_ulp_MeasResultListNR, MeasResultListNR_sequence_of,
+                                                  1, maxCellReportNR, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t NRCellInformation_sequence[] = {
+  { &hf_ulp_servingCellInformation, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_ServingCellInformationNR },
+  { &hf_ulp_measuredResultsListNR, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_MeasResultListNR },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_NRCellInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_NRCellInformation, NRCellInformation_sequence);
+
+  return offset;
+}
+
+
 static const value_string ulp_Ver2_CellInfo_extension_vals[] = {
   {   0, "hrpdCell" },
   {   1, "umbCell" },
   {   2, "lteCell" },
   {   3, "wlanAP" },
   {   4, "wimaxBS" },
+  {   5, "nrCell" },
   { 0, NULL }
 };
 
@@ -4261,6 +4410,7 @@ static const per_choice_t Ver2_CellInfo_extension_choice[] = {
   {   2, &hf_ulp_lteCell         , ASN1_EXTENSION_ROOT    , dissect_ulp_LteCellInformation },
   {   3, &hf_ulp_wlanAP          , ASN1_EXTENSION_ROOT    , dissect_ulp_WlanAPInformation },
   {   4, &hf_ulp_wimaxBS         , ASN1_EXTENSION_ROOT    , dissect_ulp_WimaxBSInformation },
+  {   5, &hf_ulp_nrCell          , ASN1_NOT_EXTENSION_ROOT, dissect_ulp_NRCellInformation },
   { 0, NULL, 0, NULL }
 };
 
@@ -4311,7 +4461,7 @@ static const value_string ulp_Status_vals[] = {
 static int
 dissect_ulp_Status(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -4336,7 +4486,7 @@ dissect_ulp_LocationId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_RelativeTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -4366,7 +4516,7 @@ static int
 dissect_ulp_MultipleLocationIds(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_MultipleLocationIds, MultipleLocationIds_sequence_of,
-                                                  1, maxLidSize, FALSE);
+                                                  1, maxLidSize, false);
 
   return offset;
 }
@@ -4375,18 +4525,16 @@ dissect_ulp_MultipleLocationIds(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 static int
 dissect_ulp_T_msisdn_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 725 "./asn1/ulp/ulp.cnf"
   tvbuff_t *msisdn_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, &msisdn_tvb);
+                                       8, 8, false, &msisdn_tvb);
 
   if (msisdn_tvb) {
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ulp_thirdPartyId);
-    dissect_e164_msisdn(msisdn_tvb, subtree, 0, 8, E164_ENC_BCD);
+    dissect_e164_msisdn(msisdn_tvb, actx->pinfo, subtree, 0, 8, E164_ENC_BCD);
   }
-
 
 
   return offset;
@@ -4396,11 +4544,9 @@ dissect_ulp_T_msisdn_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 static int
 dissect_ulp_T_sip_uri(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 736 "./asn1/ulp/ulp.cnf"
   offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,
-                                                      1, 255, FALSE, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:./-_~%#@?", 72,
+                                                      1, 255, false, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:./-_~%#@?", 72,
                                                       NULL);
-
 
   return offset;
 }
@@ -4409,11 +4555,9 @@ dissect_ulp_T_sip_uri(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 static int
 dissect_ulp_T_ims_public_identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 741 "./asn1/ulp/ulp.cnf"
   offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,
-                                                      1, 255, FALSE, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:./-_~%#@?", 72,
+                                                      1, 255, false, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:./-_~%#@?", 72,
                                                       NULL);
-
 
   return offset;
 }
@@ -4422,18 +4566,16 @@ dissect_ulp_T_ims_public_identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 static int
 dissect_ulp_T_mdn_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 745 "./asn1/ulp/ulp.cnf"
   tvbuff_t *mdn_tvb;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, &mdn_tvb);
+                                       8, 8, false, &mdn_tvb);
 
   if (mdn_tvb) {
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ulp_thirdPartyId);
-    proto_tree_add_string(subtree, hf_ulp_mobile_directory_number, mdn_tvb, 0, 8, tvb_bcd_dig_to_wmem_packet_str(mdn_tvb, 0, 8, NULL, FALSE));
+    proto_tree_add_string(subtree, hf_ulp_mobile_directory_number, mdn_tvb, 0, 8, tvb_bcd_dig_to_str(actx->pinfo->pool, mdn_tvb, 0, 8, NULL, false));
   }
-
 
 
   return offset;
@@ -4443,11 +4585,9 @@ dissect_ulp_T_mdn_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 static int
 dissect_ulp_T_uri(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 756 "./asn1/ulp/ulp.cnf"
   offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,
-                                                      1, 255, FALSE, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./-_~%#", 69,
+                                                      1, 255, false, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./-_~%#", 69,
                                                       NULL);
-
 
 
   return offset;
@@ -4472,7 +4612,7 @@ static const per_choice_t ThirdPartyID_choice[] = {
   {   2, &hf_ulp_emailaddr       , ASN1_EXTENSION_ROOT    , dissect_ulp_IA5String_SIZE_1_1000 },
   {   3, &hf_ulp_sip_uri         , ASN1_EXTENSION_ROOT    , dissect_ulp_T_sip_uri },
   {   4, &hf_ulp_ims_public_identity, ASN1_EXTENSION_ROOT    , dissect_ulp_T_ims_public_identity },
-  {   5, &hf_ulp_min_01          , ASN1_EXTENSION_ROOT    , dissect_ulp_BIT_STRING_SIZE_34 },
+  {   5, &hf_ulp_min_bit_string  , ASN1_EXTENSION_ROOT    , dissect_ulp_BIT_STRING_SIZE_34 },
   {   6, &hf_ulp_mdn_01          , ASN1_EXTENSION_ROOT    , dissect_ulp_T_mdn_01 },
   {   7, &hf_ulp_uri             , ASN1_EXTENSION_ROOT    , dissect_ulp_T_uri },
   { 0, NULL, 0, NULL }
@@ -4496,7 +4636,7 @@ static int
 dissect_ulp_ThirdParty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_ThirdParty, ThirdParty_sequence_of,
-                                                  1, 64, FALSE);
+                                                  1, 64, false);
 
   return offset;
 }
@@ -4506,7 +4646,8 @@ dissect_ulp_ThirdParty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_IA5String_SIZE_1_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          1, 24, FALSE);
+                                          1, 24, false,
+                                          NULL);
 
   return offset;
 }
@@ -4516,7 +4657,8 @@ dissect_ulp_IA5String_SIZE_1_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ulp_IA5String_SIZE_1_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          1, 32, FALSE);
+                                          1, 32, false,
+                                          NULL);
 
   return offset;
 }
@@ -4526,7 +4668,8 @@ dissect_ulp_IA5String_SIZE_1_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ulp_IA5String_SIZE_1_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          1, 8, FALSE);
+                                          1, 8, false,
+                                          NULL);
 
   return offset;
 }
@@ -4552,7 +4695,8 @@ dissect_ulp_ApplicationID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ulp_UTCTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_VisibleString(tvb, offset, actx, tree, hf_index,
-                                        NO_BOUND, NO_BOUND, FALSE);
+                                        NO_BOUND, NO_BOUND, false,
+                                        NULL);
 
   return offset;
 }
@@ -4568,7 +4712,7 @@ static const value_string ulp_T_latitudeSign_vals[] = {
 static int
 dissect_ulp_T_latitudeSign(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4578,7 +4722,7 @@ dissect_ulp_T_latitudeSign(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_ulp_INTEGER_M8388608_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -8388608, 8388607U, NULL, FALSE);
+                                                            -8388608, 8388607U, NULL, false);
 
   return offset;
 }
@@ -4586,14 +4730,9 @@ dissect_ulp_INTEGER_M8388608_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 static int
-dissect_ulp_T_orientationMajorAxis(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 350 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_0_180(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 180U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " degrees");
-
-
+                                                            0U, 180U, NULL, false);
 
   return offset;
 }
@@ -4602,7 +4741,7 @@ dissect_ulp_T_orientationMajorAxis(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static const per_sequence_t T_uncertainty_sequence[] = {
   { &hf_ulp_uncertaintySemiMajor, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_127 },
   { &hf_ulp_uncertaintySemiMinor, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_127 },
-  { &hf_ulp_orientationMajorAxis, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_orientationMajorAxis },
+  { &hf_ulp_orientationMajorAxis, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_180 },
   { NULL, 0, 0, NULL }
 };
 
@@ -4617,13 +4756,9 @@ dissect_ulp_T_uncertainty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 static int
-dissect_ulp_T_confidence(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_ulp_INTEGER_0_100(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 100U, NULL, FALSE);
-
-#line 354 "./asn1/ulp/ulp.cnf"
-  proto_item_append_text(actx->created_item, "%%");
-
+                                                            0U, 100U, NULL, false);
 
   return offset;
 }
@@ -4639,22 +4774,7 @@ static const value_string ulp_T_altitudeDirection_vals[] = {
 static int
 dissect_ulp_T_altitudeDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_altitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 357 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32767U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " m");
-
-
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4662,7 +4782,7 @@ dissect_ulp_T_altitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 static const per_sequence_t AltitudeInfo_sequence[] = {
   { &hf_ulp_altitudeDirection, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_altitudeDirection },
-  { &hf_ulp_altitude        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_altitude },
+  { &hf_ulp_altitude        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_32767 },
   { &hf_ulp_altUncertainty  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_127 },
   { NULL, 0, 0, NULL }
 };
@@ -4681,7 +4801,7 @@ static const per_sequence_t PositionEstimate_sequence[] = {
   { &hf_ulp_latitude        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_8388607 },
   { &hf_ulp_longitude       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_M8388608_8388607 },
   { &hf_ulp_uncertainty     , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_uncertainty },
-  { &hf_ulp_confidence      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_confidence },
+  { &hf_ulp_confidence      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_100 },
   { &hf_ulp_altitudeInfo    , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_AltitudeInfo },
   { NULL, 0, 0, NULL }
 };
@@ -4698,17 +4818,14 @@ dissect_ulp_PositionEstimate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 static int
 dissect_ulp_T_bearing(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 392 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     9, 9, FALSE, &val_tvb, NULL);
+                                     9, 9, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_bits_item(tree, hf_index, val_tvb, 0, 9, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " degrees");
   }
-
 
 
   return offset;
@@ -4718,17 +4835,14 @@ dissect_ulp_T_bearing(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 static int
 dissect_ulp_T_horspeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 404 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     16, 16, FALSE, &val_tvb, NULL);
+                                     16, 16, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 2, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -4753,16 +4867,14 @@ dissect_ulp_Horvel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 
 static int
 dissect_ulp_T_verdirect(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 416 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     1, 1, FALSE, &val_tvb, NULL);
+                                     1, 1, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_bits_item(tree, hf_index, val_tvb, 0, 1, ENC_NA);
   }
-
 
 
   return offset;
@@ -4772,17 +4884,14 @@ dissect_ulp_T_verdirect(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 static int
 dissect_ulp_T_bearing_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 427 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     9, 9, FALSE, &val_tvb, NULL);
+                                     9, 9, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_bits_item(tree, hf_index, val_tvb, 0, 9, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " degrees");
   }
-
 
 
   return offset;
@@ -4792,17 +4901,14 @@ dissect_ulp_T_bearing_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_ulp_T_horspeed_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 439 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     16, 16, FALSE, &val_tvb, NULL);
+                                     16, 16, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 2, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -4812,17 +4918,14 @@ dissect_ulp_T_horspeed_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 static int
 dissect_ulp_T_verspeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 451 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     8, 8, FALSE, &val_tvb, NULL);
+                                     8, 8, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 1, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -4849,17 +4952,14 @@ dissect_ulp_Horandvervel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_ulp_T_bearing_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 463 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     9, 9, FALSE, &val_tvb, NULL);
+                                     9, 9, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_bits_item(tree, hf_index, val_tvb, 0, 9, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " degrees");
   }
-
 
 
   return offset;
@@ -4869,17 +4969,14 @@ dissect_ulp_T_bearing_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_ulp_T_horspeed_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 475 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     16, 16, FALSE, &val_tvb, NULL);
+                                     16, 16, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 2, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -4889,17 +4986,14 @@ dissect_ulp_T_horspeed_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 static int
 dissect_ulp_T_uncertspeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 487 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     8, 8, FALSE, &val_tvb, NULL);
+                                     8, 8, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 1, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -4925,16 +5019,14 @@ dissect_ulp_Horveluncert(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_ulp_T_verdirect_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 499 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     1, 1, FALSE, &val_tvb, NULL);
+                                     1, 1, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_bits_item(tree, hf_index, val_tvb, 0, 1, ENC_NA);
   }
-
 
 
   return offset;
@@ -4944,17 +5036,14 @@ dissect_ulp_T_verdirect_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 static int
 dissect_ulp_T_bearing_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 510 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     9, 9, FALSE, &val_tvb, NULL);
+                                     9, 9, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_bits_item(tree, hf_index, val_tvb, 0, 9, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " degrees");
   }
-
 
 
   return offset;
@@ -4964,17 +5053,14 @@ dissect_ulp_T_bearing_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_ulp_T_horspeed_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 522 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     16, 16, FALSE, &val_tvb, NULL);
+                                     16, 16, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 2, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -4984,17 +5070,14 @@ dissect_ulp_T_horspeed_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 static int
 dissect_ulp_T_verspeed_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 534 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     8, 8, FALSE, &val_tvb, NULL);
+                                     8, 8, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 1, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -5004,17 +5087,14 @@ dissect_ulp_T_verspeed_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 static int
 dissect_ulp_T_horuncertspeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 546 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     8, 8, FALSE, &val_tvb, NULL);
+                                     8, 8, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 1, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -5024,17 +5104,14 @@ dissect_ulp_T_horuncertspeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 static int
 dissect_ulp_T_veruncertspeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 558 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     8, 8, FALSE, &val_tvb, NULL);
+                                     8, 8, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, val_tvb, 0, 1, ENC_BIG_ENDIAN);
-    proto_item_append_text(actx->created_item, " km/h");
   }
-
 
 
   return offset;
@@ -5087,7 +5164,7 @@ dissect_ulp_Velocity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 
 static const per_sequence_t Position_sequence[] = {
-  { &hf_ulp_timestamp_01    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_UTCTime },
+  { &hf_ulp_timestamp       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_UTCTime },
   { &hf_ulp_positionEstimate, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_PositionEstimate },
   { &hf_ulp_velocity        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_Velocity },
   { NULL, 0, 0, NULL }
@@ -5140,7 +5217,7 @@ dissect_ulp_SUPLSTART(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_ulp_BIT_STRING_SIZE_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     256, 256, FALSE, NULL, NULL);
+                                     256, 256, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5172,7 +5249,7 @@ dissect_ulp_SETAuthKey(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_KeyIdentity4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     128, 128, FALSE, NULL, NULL);
+                                     128, 128, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5182,7 +5259,7 @@ dissect_ulp_KeyIdentity4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_ulp_SPCSETKey(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     128, 128, FALSE, NULL, NULL);
+                                     128, 128, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5207,7 +5284,7 @@ dissect_ulp_SPCTID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 static int
 dissect_ulp_SPCSETKeylifetime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 24U, NULL, FALSE);
+                                                            1U, 24U, NULL, false);
 
   return offset;
 }
@@ -5252,14 +5329,9 @@ dissect_ulp_SUPLRESPONSE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 
 static int
-dissect_ulp_T_gpsToe(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 131 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_0_167(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 167U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " hr");
-
-
+                                                            0U, 167U, NULL, false);
 
   return offset;
 }
@@ -5269,7 +5341,7 @@ dissect_ulp_T_gpsToe(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int
 dissect_ulp_INTEGER_0_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 31U, NULL, FALSE);
+                                                            0U, 31U, NULL, false);
 
   return offset;
 }
@@ -5277,14 +5349,9 @@ dissect_ulp_INTEGER_0_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 
 static int
-dissect_ulp_T_toeLimit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 135 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_0_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 10U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " hr");
-
-
+                                                            0U, 10U, NULL, false);
 
   return offset;
 }
@@ -5313,7 +5380,7 @@ static int
 dissect_ulp_SatelliteInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_SatelliteInfo, SatelliteInfo_sequence_of,
-                                                  1, 31, FALSE);
+                                                  1, 31, false);
 
   return offset;
 }
@@ -5321,9 +5388,9 @@ dissect_ulp_SatelliteInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 static const per_sequence_t NavigationModel_sequence[] = {
   { &hf_ulp_gpsWeek         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_1023 },
-  { &hf_ulp_gpsToe          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_gpsToe },
+  { &hf_ulp_gpsToe          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_167 },
   { &hf_ulp_nsat            , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_31 },
-  { &hf_ulp_toeLimit        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_toeLimit },
+  { &hf_ulp_toeLimit        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_10 },
   { &hf_ulp_satInfo         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_SatelliteInfo },
   { NULL, 0, 0, NULL }
 };
@@ -5359,15 +5426,13 @@ dissect_ulp_GanssRequestedCommonAssistanceDataList(tvbuff_t *tvb _U_, int offset
 
 static int
 dissect_ulp_T_ganssId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 212 "./asn1/ulp/ulp.cnf"
-  guint32 val;
+  uint32_t val;
   ulp_private_data_t *ulp_priv = ulp_get_private_data(actx);
 
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, &val, FALSE);
+                                                            0U, 15U, &val, false);
 
-  ulp_priv->ganss_req_gen_data_ganss_id = (guint8) val;
-
+  ulp_priv->ganss_req_gen_data_ganss_id = (uint8_t) val;
 
 
   return offset;
@@ -5377,16 +5442,14 @@ dissect_ulp_T_ganssId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 static int
 dissect_ulp_T_ganssSBASid_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 222 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     3, 3, FALSE, &val_tvb, NULL);
+                                     3, 3, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     proto_tree_add_bits_item(tree, hf_index, val_tvb, 0, 3, ENC_NA);
   }
-
 
 
   return offset;
@@ -5397,7 +5460,7 @@ dissect_ulp_T_ganssSBASid_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_ulp_DGANSS_Sig_Id_Req(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5406,19 +5469,17 @@ dissect_ulp_DGANSS_Sig_Id_Req(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 static int
 dissect_ulp_T_ganssWeek(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 246 "./asn1/ulp/ulp.cnf"
   ulp_private_data_t *ulp_priv = ulp_get_private_data(actx);
 
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4095U, NULL, FALSE);
+                                                            0U, 4095U, NULL, false);
 
   if (ulp_priv->ganss_req_gen_data_ganss_id != 4) {
     /* Not GLONASS */
-    proto_item_append_text(actx->created_item, " wk");
+    proto_item_append_text(actx->created_item, "wk");
   } else {
-    proto_item_append_text(actx->created_item, " d");
+    proto_item_append_text(actx->created_item, "d");
   }
-
 
 
   return offset;
@@ -5428,24 +5489,20 @@ dissect_ulp_T_ganssWeek(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 static int
 dissect_ulp_T_ganssToe(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 257 "./asn1/ulp/ulp.cnf"
-  guint32 val;
+  uint32_t val;
   ulp_private_data_t *ulp_priv = ulp_get_private_data(actx);
 
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 167U, &val, FALSE);
+                                                            0U, 167U, &val, false);
 
 
 
-
-#line 263 "./asn1/ulp/ulp.cnf"
   if (ulp_priv->ganss_req_gen_data_ganss_id != 4) {
     /* Not GLONASS */
-    proto_item_append_text(actx->created_item, " h");
+    proto_item_append_text(actx->created_item, "h");
   } else {
-    proto_item_set_text(actx->created_item, "%u min (%u)", 15*val, val);
+    proto_item_set_text(actx->created_item, "%umin (%u)", 15*val, val);
   }
-
 
   return offset;
 }
@@ -5454,24 +5511,20 @@ dissect_ulp_T_ganssToe(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 static int
 dissect_ulp_T_t_toeLimit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 271 "./asn1/ulp/ulp.cnf"
-  guint32 val;
+  uint32_t val;
   ulp_private_data_t *ulp_priv = ulp_get_private_data(actx);
 
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, &val, FALSE);
+                                                            0U, 15U, &val, false);
 
 
 
-
-#line 277 "./asn1/ulp/ulp.cnf"
   if (ulp_priv->ganss_req_gen_data_ganss_id != 4) {
     /* Not GLONASS */
-    proto_item_append_text(actx->created_item, " h");
+    proto_item_append_text(actx->created_item, "h");
   } else {
-    proto_item_set_text(actx->created_item, "%u min (%u)", 30*val, val);
+    proto_item_set_text(actx->created_item, "%umin (%u)", 30*val, val);
   }
-
 
   return offset;
 }
@@ -5500,7 +5553,7 @@ static int
 dissect_ulp_SatellitesListRelatedDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_SatellitesListRelatedDataList, SatellitesListRelatedDataList_sequence_of,
-                                                  0, maxGANSSSat, FALSE);
+                                                  0, maxGANSSSat, false);
 
   return offset;
 }
@@ -5526,10 +5579,9 @@ dissect_ulp_GanssNavigationModelData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 static int
 dissect_ulp_T_ganssTimeModels(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 233 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     16, 16, FALSE, &val_tvb, NULL);
+                                     16, 16, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_ulp_ganssTimeModels);
@@ -5542,21 +5594,15 @@ dissect_ulp_T_ganssTimeModels(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
   }
 
 
-
   return offset;
 }
 
 
 
 static int
-dissect_ulp_T_ganssTODmin(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 285 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_0_59(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 59U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            0U, 59U, NULL, false);
 
   return offset;
 }
@@ -5570,7 +5616,7 @@ static int
 dissect_ulp_T_ganssDataBitSatList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_T_ganssDataBitSatList, T_ganssDataBitSatList_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -5593,7 +5639,7 @@ dissect_ulp_ReqDataBitAssistanceList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 static const per_sequence_t GanssDataBits_sequence[] = {
-  { &hf_ulp_ganssTODmin     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_ganssTODmin },
+  { &hf_ulp_ganssTODmin     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_59 },
   { &hf_ulp_reqDataBitAssistanceList, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_ReqDataBitAssistanceList },
   { NULL, 0, 0, NULL }
 };
@@ -5628,7 +5674,7 @@ dissect_ulp_GanssAdditionalDataChoices(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_ulp_INTEGER_1_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 256U, NULL, FALSE);
+                                                            1U, 256U, NULL, false);
 
   return offset;
 }
@@ -5652,7 +5698,7 @@ dissect_ulp_ExtendedEphemeris(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ulp_INTEGER_0_23(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 23U, NULL, FALSE);
+                                                            0U, 23U, NULL, false);
 
   return offset;
 }
@@ -5692,7 +5738,7 @@ dissect_ulp_GanssExtendedEphCheck(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_ulp_BDS_Sig_Id_Req(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5735,17 +5781,7 @@ static int
 dissect_ulp_GanssRequestedGenericAssistanceDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_GanssRequestedGenericAssistanceDataList, GanssRequestedGenericAssistanceDataList_sequence_of,
-                                                  1, maxGANSS, FALSE);
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_INTEGER_0_167(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 167U, NULL, FALSE);
+                                                  1, maxGANSS, false);
 
   return offset;
 }
@@ -5826,7 +5862,7 @@ dissect_ulp_RequestedAssistData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_ulp_OCTET_STRING_SIZE_1_8192(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 8192, FALSE, NULL);
+                                       1, 8192, false, NULL);
 
   return offset;
 }
@@ -5835,17 +5871,15 @@ dissect_ulp_OCTET_STRING_SIZE_1_8192(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 static int
 dissect_ulp_T_rrlpPayload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 139 "./asn1/ulp/ulp.cnf"
  tvbuff_t *rrlp_tvb;
 
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 8192, FALSE, &rrlp_tvb);
+                                       1, 8192, false, &rrlp_tvb);
 
 
   if (rrlp_tvb && rrlp_handle) {
     call_dissector(rrlp_handle, rrlp_tvb, actx->pinfo, tree);
   }
-
 
 
   return offset;
@@ -5855,17 +5889,15 @@ dissect_ulp_T_rrlpPayload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 static int
 dissect_ulp_T_lPPPayload_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 295 "./asn1/ulp/ulp.cnf"
  tvbuff_t *lpp_tvb;
 
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 60000, FALSE, &lpp_tvb);
+                                       1, 60000, false, &lpp_tvb);
 
 
   if (lpp_tvb && lpp_handle) {
     call_dissector(lpp_handle, lpp_tvb, actx->pinfo, tree);
   }
-
 
 
   return offset;
@@ -5880,7 +5912,7 @@ static int
 dissect_ulp_T_lPPPayload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_T_lPPPayload, T_lPPPayload_sequence_of,
-                                                  1, 3, FALSE);
+                                                  1, 3, false);
 
   return offset;
 }
@@ -5890,7 +5922,7 @@ dissect_ulp_T_lPPPayload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_ulp_OCTET_STRING_SIZE_1_60000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 60000, FALSE, NULL);
+                                       1, 60000, false, NULL);
 
   return offset;
 }
@@ -5904,7 +5936,7 @@ static int
 dissect_ulp_T_tia801Payload(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_T_tia801Payload, T_tia801Payload_sequence_of,
-                                                  1, 3, FALSE);
+                                                  1, 3, false);
 
   return offset;
 }
@@ -6020,7 +6052,7 @@ dissect_ulp_T_modeSpecificInfo_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_ulp_INTEGER_0_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4095U, NULL, FALSE);
+                                                            0U, 4095U, NULL, false);
 
   return offset;
 }
@@ -6065,7 +6097,7 @@ static const value_string ulp_UTRANGPSDriftRate_vals[] = {
 static int
 dissect_ulp_UTRANGPSDriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     15, NULL, FALSE, 0, NULL);
+                                     15, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -6091,7 +6123,7 @@ dissect_ulp_UTRAN_GPSReferenceTimeAssistance(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 dissect_ulp_INTEGER_0_16383(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16383U, NULL, FALSE);
+                                                            0U, 16383U, NULL, false);
 
   return offset;
 }
@@ -6181,14 +6213,9 @@ dissect_ulp_UTRAN_GPSReferenceTimeResult(tvbuff_t *tvb _U_, int offset _U_, asn1
 
 
 static int
-dissect_ulp_T_ganssTOD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 709 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_0_86399(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 86399U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            0U, 86399U, NULL, false);
 
   return offset;
 }
@@ -6198,7 +6225,7 @@ dissect_ulp_T_ganssTOD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_ulp_INTEGER_0_3999999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3999999U, NULL, FALSE);
+                                                            0U, 3999999U, NULL, false);
 
   return offset;
 }
@@ -6255,7 +6282,7 @@ dissect_ulp_T_modeSpecificInfo_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 static const per_sequence_t UTRAN_GANSSReferenceTime_sequence[] = {
-  { &hf_ulp_ganssTOD        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_ganssTOD },
+  { &hf_ulp_ganssTOD        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_86399 },
   { &hf_ulp_utran_GANSSTimingOfCell, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_3999999 },
   { &hf_ulp_modeSpecificInfo_03, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_modeSpecificInfo_03 },
   { &hf_ulp_sfn             , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_4095 },
@@ -6295,7 +6322,7 @@ static const value_string ulp_UTRANGANSSDriftRate_vals[] = {
 static int
 dissect_ulp_UTRANGANSSDriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     15, NULL, FALSE, 0, NULL);
+                                     15, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -6322,7 +6349,7 @@ dissect_ulp_UTRAN_GANSSReferenceTimeAssistance(tvbuff_t *tvb _U_, int offset _U_
 static int
 dissect_ulp_INTEGER_0_80(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 80U, NULL, FALSE);
+                                                            0U, 80U, NULL, false);
 
   return offset;
 }
@@ -6462,7 +6489,7 @@ dissect_ulp_SUPLPOS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_ulp_Ver(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     64, 64, FALSE, NULL, NULL);
+                                     64, 64, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -6534,12 +6561,94 @@ static const value_string ulp_StatusCode_vals[] = {
   { 0, NULL }
 };
 
-static guint32 StatusCode_value_map[20+6] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 100, 101, 18, 19, 20, 21, 102, 103};
+static uint32_t StatusCode_value_map[20+6] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 100, 101, 18, 19, 20, 21, 102, 103};
 
 static int
 dissect_ulp_StatusCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     20, NULL, TRUE, 6, StatusCode_value_map);
+                                     20, NULL, true, 6, StatusCode_value_map);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_INTEGER_M2147483648_2147483647(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            INT32_MIN, 2147483647U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_INTEGER_0_179(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 179U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_ulp_INTEGER_64000_1280000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            64000U, 1280000U, NULL, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t HighAccuracyAltitudeInfo_sequence[] = {
+  { &hf_ulp_altitude_01     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_64000_1280000 },
+  { &hf_ulp_uncertaintyAltitude, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_255 },
+  { &hf_ulp_verticalConfidence, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_100 },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_HighAccuracyAltitudeInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_HighAccuracyAltitudeInfo, HighAccuracyAltitudeInfo_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t HighAccuracyPositionEstimate_sequence[] = {
+  { &hf_ulp_degreesLatitude , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_M2147483648_2147483647 },
+  { &hf_ulp_degreesLongitude, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_M2147483648_2147483647 },
+  { &hf_ulp_uncertaintySemiMajor_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_255 },
+  { &hf_ulp_uncertaintySemiMinor_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_255 },
+  { &hf_ulp_orientationMajorAxis_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_179 },
+  { &hf_ulp_horizontalConfidence, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_100 },
+  { &hf_ulp_highAccuracyAltitudeInfo, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_HighAccuracyAltitudeInfo },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_HighAccuracyPositionEstimate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_HighAccuracyPositionEstimate, HighAccuracyPositionEstimate_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t Ver2_HighAccuracyPosition_sequence[] = {
+  { &hf_ulp_timestamp       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_UTCTime },
+  { &hf_ulp_highAccuracyPositionEstimate, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_HighAccuracyPositionEstimate },
+  { &hf_ulp_velocity        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_Velocity },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_Ver2_HighAccuracyPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_Ver2_HighAccuracyPosition, Ver2_HighAccuracyPosition_sequence);
 
   return offset;
 }
@@ -6547,6 +6656,7 @@ dissect_ulp_StatusCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 static const per_sequence_t Ver2_SUPL_END_extension_sequence[] = {
   { &hf_ulp_sETCapabilities , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_SETCapabilities },
+  { &hf_ulp_ver2_HighAccuracyPosition, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_ulp_Ver2_HighAccuracyPosition },
   { NULL, 0, 0, NULL }
 };
 
@@ -6611,7 +6721,7 @@ dissect_ulp_SUPLAUTHRESP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_ulp_INTEGER_1_8639999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 8639999U, NULL, FALSE);
+                                                            1U, 8639999U, NULL, false);
 
   return offset;
 }
@@ -6619,29 +6729,9 @@ dissect_ulp_INTEGER_1_8639999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 
 static int
-dissect_ulp_T_intervalBetweenFixes(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 148 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_0_2678400(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 8639999U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_startTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 152 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 2678400U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            0U, 2678400U, NULL, false);
 
   return offset;
 }
@@ -6649,8 +6739,8 @@ dissect_ulp_T_startTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 static const per_sequence_t PeriodicParams_sequence[] = {
   { &hf_ulp_numberOfFixes   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_1_8639999 },
-  { &hf_ulp_intervalBetweenFixes, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_intervalBetweenFixes },
-  { &hf_ulp_startTime       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_startTime },
+  { &hf_ulp_intervalBetweenFixes, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_1_8639999 },
+  { &hf_ulp_startTime       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_2678400 },
   { NULL, 0, 0, NULL }
 };
 
@@ -6675,7 +6765,7 @@ static const value_string ulp_AreaEventType_vals[] = {
 static int
 dissect_ulp_AreaEventType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -6683,21 +6773,16 @@ dissect_ulp_AreaEventType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 static int
-dissect_ulp_T_minimumIntervalTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 164 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_1_604800(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 604800U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            1U, 604800U, NULL, false);
 
   return offset;
 }
 
 
 static const per_sequence_t RepeatedReportingParams_sequence[] = {
-  { &hf_ulp_minimumIntervalTime, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_T_minimumIntervalTime },
+  { &hf_ulp_minimumIntervalTime, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_1_604800 },
   { &hf_ulp_maximumNumberOfReports, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_1_1024 },
   { NULL, 0, 0, NULL }
 };
@@ -6713,29 +6798,9 @@ dissect_ulp_RepeatedReportingParams(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 static int
-dissect_ulp_T_startTime_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 156 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_0_11318399(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 2678400U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_stopTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 160 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 11318399U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            0U, 11318399U, NULL, false);
 
   return offset;
 }
@@ -6751,7 +6816,7 @@ static const value_string ulp_T_latitudeSign_01_vals[] = {
 static int
 dissect_ulp_T_latitudeSign_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -6759,8 +6824,8 @@ dissect_ulp_T_latitudeSign_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 static const per_sequence_t Coordinate_sequence[] = {
   { &hf_ulp_latitudeSign_01 , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_latitudeSign_01 },
-  { &hf_ulp_CoordinateLatitude, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_8388607 },
-  { &hf_ulp_CoordinateLongitude, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_M8388608_8388607 },
+  { &hf_ulp_coordinateLatitude, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_8388607 },
+  { &hf_ulp_coordinateLongitude, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_M8388608_8388607 },
   { NULL, 0, 0, NULL }
 };
 
@@ -6775,24 +6840,9 @@ dissect_ulp_Coordinate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 static int
-dissect_ulp_T_radius(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 775 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 1000000U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " m");
-
-
-
-  return offset;
-}
-
-
-
-static int
 dissect_ulp_INTEGER_1_1000000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 1000000U, NULL, FALSE);
+                                                            1U, 1000000U, NULL, false);
 
   return offset;
 }
@@ -6802,7 +6852,7 @@ dissect_ulp_INTEGER_1_1000000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_ulp_INTEGER_1_1500000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 1500000U, NULL, FALSE);
+                                                            1U, 1500000U, NULL, false);
 
   return offset;
 }
@@ -6810,7 +6860,7 @@ dissect_ulp_INTEGER_1_1500000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 static const per_sequence_t CircularArea_sequence[] = {
   { &hf_ulp_coordinate      , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_Coordinate },
-  { &hf_ulp_radius          , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_radius },
+  { &hf_ulp_radius          , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_1_1000000 },
   { &hf_ulp_radius_min      , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_1000000 },
   { &hf_ulp_radius_max      , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_1500000 },
   { NULL, 0, 0, NULL }
@@ -6825,60 +6875,15 @@ dissect_ulp_CircularArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 }
 
 
-
-static int
-dissect_ulp_T_semiMajor(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 779 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 1000000U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " m");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_semiMinor(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 783 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 1000000U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " m");
-
-
-
-  return offset;
-}
-
-
-
-static int
-dissect_ulp_T_angle(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 787 "./asn1/ulp/ulp.cnf"
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 179U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " degrees");
-
-
-
-  return offset;
-}
-
-
 static const per_sequence_t EllipticalArea_sequence[] = {
   { &hf_ulp_coordinate      , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_Coordinate },
-  { &hf_ulp_semiMajor       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_semiMajor },
+  { &hf_ulp_semiMajor       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_1_1000000 },
   { &hf_ulp_semiMajor_min   , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_1000000 },
   { &hf_ulp_semiMajor_max   , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_1500000 },
-  { &hf_ulp_semiMinor       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_semiMinor },
+  { &hf_ulp_semiMinor       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_1_1000000 },
   { &hf_ulp_semiMinor_min   , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_1000000 },
   { &hf_ulp_semiMinor_max   , ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_1500000 },
-  { &hf_ulp_angle           , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_T_angle },
+  { &hf_ulp_angle           , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_INTEGER_0_179 },
   { NULL, 0, 0, NULL }
 };
 
@@ -6899,7 +6904,7 @@ static int
 dissect_ulp_PolygonDescription(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_PolygonDescription, PolygonDescription_sequence_of,
-                                                  3, 15, FALSE);
+                                                  3, 15, false);
 
   return offset;
 }
@@ -6907,14 +6912,9 @@ dissect_ulp_PolygonDescription(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 static int
-dissect_ulp_T_polygonHysteresis(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 791 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_1_100000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 100000U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " m");
-
-
+                                                            1U, 100000U, NULL, false);
 
   return offset;
 }
@@ -6922,7 +6922,7 @@ dissect_ulp_T_polygonHysteresis(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 static const per_sequence_t PolygonArea_sequence[] = {
   { &hf_ulp_polygonDescription, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_ulp_PolygonDescription },
-  { &hf_ulp_polygonHysteresis, ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_T_polygonHysteresis },
+  { &hf_ulp_polygonHysteresis, ASN1_NO_EXTENSIONS     , ASN1_OPTIONAL    , dissect_ulp_INTEGER_1_100000 },
   { NULL, 0, 0, NULL }
 };
 
@@ -6967,7 +6967,7 @@ static int
 dissect_ulp_GeographicTargetAreaList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_GeographicTargetAreaList, GeographicTargetAreaList_sequence_of,
-                                                  1, maxNumGeoArea, FALSE);
+                                                  1, maxNumGeoArea, false);
 
   return offset;
 }
@@ -7057,7 +7057,7 @@ dissect_ulp_UMBAreaId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_ulp_BIT_STRING_SIZE_29(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     29, 29, FALSE, NULL, NULL);
+                                     29, 29, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -7066,7 +7066,7 @@ dissect_ulp_BIT_STRING_SIZE_29(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static const per_sequence_t LTEAreaId_sequence[] = {
   { &hf_ulp_refMCC          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_999 },
   { &hf_ulp_refMNC          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_999 },
-  { &hf_ulp_refCI_01        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_BIT_STRING_SIZE_29 },
+  { &hf_ulp_refCI_LTE_Cell_Id, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_BIT_STRING_SIZE_29 },
   { NULL, 0, 0, NULL }
 };
 
@@ -7082,16 +7082,14 @@ dissect_ulp_LTEAreaId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 static int
 dissect_ulp_T_apMACAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 168 "./asn1/ulp/ulp.cnf"
   tvbuff_t *val_tvb;
 
   offset = dissect_per_bit_string(tvb, offset, actx, tree, -1,
-                                     48, 48, FALSE, &val_tvb, NULL);
+                                     48, 48, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
     proto_tree_add_item(tree, hf_index, val_tvb, 0, 6, ENC_NA);
   }
-
 
 
   return offset;
@@ -7127,6 +7125,32 @@ dissect_ulp_WimaxAreaId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 }
 
 
+
+static int
+dissect_ulp_BIT_STRING_SIZE_36(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     36, 36, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t NRAreaId_sequence[] = {
+  { &hf_ulp_refMCC          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_999 },
+  { &hf_ulp_refMNC          , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_999 },
+  { &hf_ulp_refCI_NR_Cell_Id, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_BIT_STRING_SIZE_36 },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_ulp_NRAreaId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_ulp_NRAreaId, NRAreaId_sequence);
+
+  return offset;
+}
+
+
 static const value_string ulp_AreaId_vals[] = {
   {   0, "gSMAreaId" },
   {   1, "wCDMAAreaId" },
@@ -7136,6 +7160,7 @@ static const value_string ulp_AreaId_vals[] = {
   {   5, "lTEAreaId" },
   {   6, "wLANAreaId" },
   {   7, "wiMAXAreaId" },
+  {   8, "nRAreaId" },
   { 0, NULL }
 };
 
@@ -7148,6 +7173,7 @@ static const per_choice_t AreaId_choice[] = {
   {   5, &hf_ulp_lTEAreaId       , ASN1_EXTENSION_ROOT    , dissect_ulp_LTEAreaId },
   {   6, &hf_ulp_wLANAreaId      , ASN1_EXTENSION_ROOT    , dissect_ulp_WLANAreaId },
   {   7, &hf_ulp_wiMAXAreaId     , ASN1_EXTENSION_ROOT    , dissect_ulp_WimaxAreaId },
+  {   8, &hf_ulp_nRAreaId        , ASN1_NOT_EXTENSION_ROOT, dissect_ulp_NRAreaId },
   { 0, NULL, 0, NULL }
 };
 
@@ -7169,7 +7195,7 @@ static int
 dissect_ulp_AreaIdSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_AreaIdSet, AreaIdSet_sequence_of,
-                                                  1, maxAreaId, FALSE);
+                                                  1, maxAreaId, false);
 
   return offset;
 }
@@ -7185,7 +7211,7 @@ static const value_string ulp_AreaIdSetType_vals[] = {
 static int
 dissect_ulp_AreaIdSetType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -7195,7 +7221,7 @@ dissect_ulp_AreaIdSetType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_ulp_GeoAreaIndex(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, maxNumGeoArea, NULL, FALSE);
+                                                            1U, maxNumGeoArea, NULL, false);
 
   return offset;
 }
@@ -7209,7 +7235,7 @@ static int
 dissect_ulp_GeoAreaMappingList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_GeoAreaMappingList, GeoAreaMappingList_sequence_of,
-                                                  1, maxNumGeoArea, FALSE);
+                                                  1, maxNumGeoArea, false);
 
   return offset;
 }
@@ -7239,7 +7265,7 @@ static int
 dissect_ulp_SEQUENCE_SIZE_1_maxAreaIdList_OF_AreaIdList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_SEQUENCE_SIZE_1_maxAreaIdList_OF_AreaIdList, SEQUENCE_SIZE_1_maxAreaIdList_OF_AreaIdList_sequence_of,
-                                                  1, maxAreaIdList, FALSE);
+                                                  1, maxAreaIdList, false);
 
   return offset;
 }
@@ -7249,8 +7275,8 @@ static const per_sequence_t AreaEventParams_sequence[] = {
   { &hf_ulp_areaEventType   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_AreaEventType },
   { &hf_ulp_locationEstimate, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ulp_BOOLEAN },
   { &hf_ulp_repeatedReportingParams, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_RepeatedReportingParams },
-  { &hf_ulp_startTime_01    , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_startTime_01 },
-  { &hf_ulp_stopTime        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_T_stopTime },
+  { &hf_ulp_startTime       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_2678400 },
+  { &hf_ulp_stopTime        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_INTEGER_0_11318399 },
   { &hf_ulp_geographicTargetAreaList, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_GeographicTargetAreaList },
   { &hf_ulp_areaIdLists     , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_SEQUENCE_SIZE_1_maxAreaIdList_OF_AreaIdList },
   { NULL, 0, 0, NULL }
@@ -7298,7 +7324,7 @@ static const value_string ulp_CauseCode_vals[] = {
 static int
 dissect_ulp_CauseCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -7336,12 +7362,12 @@ static const value_string ulp_RepModee_vals[] = {
   { 0, NULL }
 };
 
-static guint32 RepModee_value_map[3+0] = {1, 2, 3};
+static uint32_t RepModee_value_map[3+0] = {1, 2, 3};
 
 static int
 dissect_ulp_RepModee(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, RepModee_value_map);
+                                     3, NULL, true, 0, RepModee_value_map);
 
   return offset;
 }
@@ -7351,7 +7377,7 @@ dissect_ulp_RepModee(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int
 dissect_ulp_INTEGER_1_2048(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 2048U, NULL, FALSE);
+                                                            1U, 2048U, NULL, false);
 
   return offset;
 }
@@ -7474,7 +7500,7 @@ static const value_string ulp_NotificationResponse_vals[] = {
 static int
 dissect_ulp_NotificationResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -7532,7 +7558,7 @@ static int
 dissect_ulp_SessionList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_SessionList, SessionList_sequence_of,
-                                                  1, maxnumSessions, FALSE);
+                                                  1, maxnumSessions, false);
 
   return offset;
 }
@@ -7561,7 +7587,7 @@ static int
 dissect_ulp_GANSSsignalsInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_GANSSsignalsInfo, GANSSsignalsInfo_sequence_of,
-                                                  1, maxGANSS, FALSE);
+                                                  1, maxGANSS, false);
 
   return offset;
 }
@@ -7595,12 +7621,12 @@ static const value_string ulp_ResultCode_vals[] = {
   { 0, NULL }
 };
 
-static guint32 ResultCode_value_map[7+0] = {1, 2, 3, 4, 5, 6, 7};
+static uint32_t ResultCode_value_map[7+0] = {1, 2, 3, 4, 5, 6, 7};
 
 static int
 dissect_ulp_ResultCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     7, NULL, TRUE, 0, ResultCode_value_map);
+                                     7, NULL, true, 0, ResultCode_value_map);
 
   return offset;
 }
@@ -7608,14 +7634,9 @@ dissect_ulp_ResultCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 static int
-dissect_ulp_T_relativeTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 182 "./asn1/ulp/ulp.cnf"
+dissect_ulp_INTEGER_0_31536000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 31536000U, NULL, FALSE);
-
-  proto_item_append_text(actx->created_item, " s");
-
-
+                                                            0U, 31536000U, NULL, false);
 
   return offset;
 }
@@ -7629,7 +7650,7 @@ static const value_string ulp_TimeStamp_vals[] = {
 
 static const per_choice_t TimeStamp_choice[] = {
   {   0, &hf_ulp_absoluteTime    , ASN1_NO_EXTENSIONS     , dissect_ulp_UTCTime },
-  {   1, &hf_ulp_relativeTime    , ASN1_NO_EXTENSIONS     , dissect_ulp_T_relativeTime },
+  {   1, &hf_ulp_relativeTime    , ASN1_NO_EXTENSIONS     , dissect_ulp_INTEGER_0_31536000 },
   { 0, NULL, 0, NULL }
 };
 
@@ -7647,7 +7668,7 @@ static const per_sequence_t ReportData_sequence[] = {
   { &hf_ulp_positionData    , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_PositionData },
   { &hf_ulp_multipleLocationIds, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_MultipleLocationIds },
   { &hf_ulp_resultCode      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_ResultCode },
-  { &hf_ulp_timestamp       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_TimeStamp },
+  { &hf_ulp_timestamp_choice, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ulp_TimeStamp },
   { NULL, 0, 0, NULL }
 };
 
@@ -7668,7 +7689,7 @@ static int
 dissect_ulp_ReportDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_ulp_ReportDataList, ReportDataList_sequence_of,
-                                                  1, 1024, FALSE);
+                                                  1, 1024, false);
 
   return offset;
 }
@@ -7732,17 +7753,15 @@ static const per_choice_t UlpMessage_choice[] = {
 
 static int
 dissect_ulp_UlpMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 44 "./asn1/ulp/ulp.cnf"
 
-guint32 UlpMessage;
+uint32_t UlpMessage;
 
     offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_ulp_UlpMessage, UlpMessage_choice,
                                  &UlpMessage);
 
 
-  col_prepend_fstr(actx->pinfo->cinfo, COL_INFO, "%s ", val_to_str(UlpMessage,ulp_UlpMessage_vals,"Unknown"));
-
+  col_prepend_fstr(actx->pinfo->cinfo, COL_INFO, "%s ", val_to_str_const(UlpMessage,ulp_UlpMessage_vals,"Unknown"));
 
 
   return offset;
@@ -7759,7 +7778,6 @@ static const per_sequence_t ULP_PDU_sequence[] = {
 
 static int
 dissect_ulp_ULP_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 29 "./asn1/ulp/ulp.cnf"
   proto_item *it;
   proto_tree *ulp_tree;
 
@@ -7768,11 +7786,8 @@ dissect_ulp_ULP_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 
   col_set_str(actx->pinfo->cinfo, COL_PROTOCOL, PSNAME);
   col_clear(actx->pinfo->cinfo, COL_INFO);
-
-#line 40 "./asn1/ulp/ulp.cnf"
   offset = dissect_per_sequence(tvb, offset, actx, ulp_tree, hf_index,
                                    ett_ulp_ULP_PDU, ULP_PDU_sequence);
-
 
 
   return offset;
@@ -7783,18 +7798,15 @@ dissect_ulp_ULP_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int dissect_ULP_PDU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, FALSE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_ulp_ULP_PDU(tvb, offset, &asn1_ctx, tree, hf_ulp_ULP_PDU_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 
 
-/*--- End of included file: packet-ulp-fn.c ---*/
-#line 346 "./asn1/ulp/packet-ulp-template.c"
 
-
-static guint
+static unsigned
 get_ulp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
   /* PDU length = Message length */
@@ -7817,9 +7829,6 @@ void proto_register_ulp(void) {
   /* List of fields */
   static hf_register_info hf[] = {
 
-
-/*--- Included file: packet-ulp-hfarr.c ---*/
-#line 1 "./asn1/ulp/packet-ulp-hfarr.c"
     { &hf_ulp_ULP_PDU_PDU,
       { "ULP-PDU", "ulp.ULP_PDU_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -7942,7 +7951,7 @@ void proto_register_ulp(void) {
         NULL, HFILL }},
     { &hf_ulp_requestorId,
       { "requestorId", "ulp.requestorId",
-        FT_STRING, STR_UNICODE, NULL, 0,
+        FT_STRING, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_ulp_requestorIdType,
       { "requestorIdType", "ulp.requestorIdType",
@@ -7950,7 +7959,7 @@ void proto_register_ulp(void) {
         "FormatIndicator", HFILL }},
     { &hf_ulp_clientName,
       { "clientName", "ulp.clientName",
-        FT_STRING, STR_UNICODE, NULL, 0,
+        FT_STRING, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_ulp_clientNameType,
       { "clientNameType", "ulp.clientNameType",
@@ -8126,16 +8135,16 @@ void proto_register_ulp(void) {
         "INTEGER_0_1023", HFILL }},
     { &hf_ulp_gpsToe,
       { "gpsToe", "ulp.gpsToe",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_hours), 0,
+        "INTEGER_0_167", HFILL }},
     { &hf_ulp_nsat,
       { "nsat", "ulp.nsat",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_31", HFILL }},
     { &hf_ulp_toeLimit,
       { "toeLimit", "ulp.toeLimit",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_hours), 0,
+        "INTEGER_0_10", HFILL }},
     { &hf_ulp_satInfo,
       { "satInfo", "ulp.satInfo",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -8250,12 +8259,12 @@ void proto_register_ulp(void) {
         "INTEGER_1_8639999", HFILL }},
     { &hf_ulp_intervalBetweenFixes,
       { "intervalBetweenFixes", "ulp.intervalBetweenFixes",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_1_8639999", HFILL }},
     { &hf_ulp_startTime,
       { "startTime", "ulp.startTime",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_0_2678400", HFILL }},
     { &hf_ulp_areaEventType,
       { "areaEventType", "ulp.areaEventType",
         FT_UINT32, BASE_DEC, VALS(ulp_AreaEventType_vals), 0,
@@ -8268,14 +8277,10 @@ void proto_register_ulp(void) {
       { "repeatedReportingParams", "ulp.repeatedReportingParams_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ulp_startTime_01,
-      { "startTime", "ulp.startTime",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        "T_startTime_01", HFILL }},
     { &hf_ulp_stopTime,
       { "stopTime", "ulp.stopTime",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_0_11318399", HFILL }},
     { &hf_ulp_geographicTargetAreaList,
       { "geographicTargetAreaList", "ulp.geographicTargetAreaList",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -8290,8 +8295,8 @@ void proto_register_ulp(void) {
         NULL, HFILL }},
     { &hf_ulp_minimumIntervalTime,
       { "minimumIntervalTime", "ulp.minimumIntervalTime",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_1_604800", HFILL }},
     { &hf_ulp_maximumNumberOfReports,
       { "maximumNumberOfReports", "ulp.maximumNumberOfReports",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -8360,6 +8365,10 @@ void proto_register_ulp(void) {
       { "wiMAXAreaId", "ulp.wiMAXAreaId_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_ulp_nRAreaId,
+      { "nRAreaId", "ulp.nRAreaId_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_ulp_refMCC,
       { "refMCC", "ulp.refMCC",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -8396,8 +8405,8 @@ void proto_register_ulp(void) {
       { "refSECTORID", "ulp.refSECTORID",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_128", HFILL }},
-    { &hf_ulp_refCI_01,
-      { "refCI", "ulp.refCI",
+    { &hf_ulp_refCI_LTE_Cell_Id,
+      { "refCI", "ulp.refCI_LTE_Cell_Id",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_29", HFILL }},
     { &hf_ulp_apMACAddress,
@@ -8412,6 +8421,10 @@ void proto_register_ulp(void) {
       { "bsID-LSB", "ulp.bsID_LSB",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_24", HFILL }},
+    { &hf_ulp_refCI_NR_Cell_Id,
+      { "refCI", "ulp.refCI_NR_Cell_Id",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_36", HFILL }},
     { &hf_ulp_GeoAreaMappingList_item,
       { "GeoAreaIndex", "ulp.GeoAreaIndex",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -8496,8 +8509,8 @@ void proto_register_ulp(void) {
       { "resultCode", "ulp.resultCode",
         FT_UINT32, BASE_DEC, VALS(ulp_ResultCode_vals), 0,
         NULL, HFILL }},
-    { &hf_ulp_timestamp,
-      { "timestamp", "ulp.timestamp",
+    { &hf_ulp_timestamp_choice,
+      { "timestamp", "ulp.timestamp_choice",
         FT_UINT32, BASE_DEC, VALS(ulp_TimeStamp_vals), 0,
         NULL, HFILL }},
     { &hf_ulp_ganssSignalsInfo,
@@ -8522,8 +8535,8 @@ void proto_register_ulp(void) {
         "UTCTime", HFILL }},
     { &hf_ulp_relativeTime,
       { "relativeTime", "ulp.relativeTime",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_0_31536000", HFILL }},
     { &hf_ulp_notificationMode,
       { "notificationMode", "ulp.notificationMode",
         FT_UINT32, BASE_DEC, VALS(ulp_NotificationMode_vals), 0,
@@ -8562,16 +8575,16 @@ void proto_register_ulp(void) {
         "INTEGER_1_65536", HFILL }},
     { &hf_ulp_minTimeInterval,
       { "minTimeInterval", "ulp.minTimeInterval",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
-    { &hf_ulp_startTime_02,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_1_86400", HFILL }},
+    { &hf_ulp_startTime_01,
       { "startTime", "ulp.startTime",
-        FT_INT32, BASE_DEC, NULL, 0,
-        "T_startTime_02", HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_minutes), 0,
+        "INTEGER_M525600_M1", HFILL }},
     { &hf_ulp_stopTime_01,
       { "stopTime", "ulp.stopTime",
-        FT_INT32, BASE_DEC, NULL, 0,
-        "T_stopTime_01", HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_minutes), 0,
+        "INTEGER_M525599_0", HFILL }},
     { &hf_ulp_protlevel,
       { "protlevel", "ulp.protlevel",
         FT_UINT32, BASE_DEC, VALS(ulp_ProtLevel_vals), 0,
@@ -8610,6 +8623,10 @@ void proto_register_ulp(void) {
         NULL, HFILL }},
     { &hf_ulp_utran_GANSSReferenceTimeAssistance,
       { "utran-GANSSReferenceTimeAssistance", "ulp.utran_GANSSReferenceTimeAssistance_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_ver2_HighAccuracyPosition,
+      { "ver2-HighAccuracyPosition", "ulp.ver2_HighAccuracyPosition_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_ulp_emergencyCallLocation,
@@ -8716,6 +8733,10 @@ void proto_register_ulp(void) {
       { "wiMAX", "ulp.wiMAX",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
+    { &hf_ulp_nr,
+      { "nr", "ulp.nr",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
     { &hf_ulp_lpp,
       { "lpp", "ulp.lpp",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
@@ -8780,6 +8801,10 @@ void proto_register_ulp(void) {
       { "gANSSPositionMethods", "ulp.gANSSPositionMethods",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
+    { &hf_ulp_additionalPositioningMethods,
+      { "additionalPositioningMethods", "ulp.additionalPositioningMethods",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
     { &hf_ulp_GANSSPositionMethods_item,
       { "GANSSPositionMethod", "ulp.GANSSPositionMethod_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -8792,6 +8817,14 @@ void proto_register_ulp(void) {
       { "gANSSPositioningMethodTypes", "ulp.gANSSPositioningMethodTypes_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_ulp_rtk,
+      { "rtk", "ulp.rtk_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_osr,
+      { "osr", "ulp.osr",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
     { &hf_ulp_setAssisted,
       { "setAssisted", "ulp.setAssisted",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
@@ -8804,6 +8837,18 @@ void proto_register_ulp(void) {
       { "autonomous", "ulp.autonomous",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
+    { &hf_ulp_AdditionalPositioningMethods_item,
+      { "AddPosSupport-Element", "ulp.AddPosSupport_Element_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_addPosID,
+      { "addPosID", "ulp.addPosID",
+        FT_UINT32, BASE_DEC, VALS(ulp_T_addPosID_vals), 0,
+        NULL, HFILL }},
+    { &hf_ulp_addPosMode,
+      { "addPosMode", "ulp.addPosMode",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_ulp_ganssRequestedCommonAssistanceDataList,
       { "ganssRequestedCommonAssistanceDataList", "ulp.ganssRequestedCommonAssistanceDataList_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -8938,8 +8983,8 @@ void proto_register_ulp(void) {
         "INTEGER_0_1023", HFILL }},
     { &hf_ulp_ganssTODmin,
       { "ganssTODmin", "ulp.ganssTODmin",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_0_59", HFILL }},
     { &hf_ulp_reqDataBitAssistanceList,
       { "reqDataBitAssistanceList", "ulp.reqDataBitAssistanceList_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -9064,8 +9109,8 @@ void proto_register_ulp(void) {
       { "mdn", "ulp.mdn",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ulp_minsi,
-      { "min", "ulp.min",
+    { &hf_ulp_min_bit_string,
+      { "min", "ulp.min_bit_string",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_34", HFILL }},
     { &hf_ulp_imsi,
@@ -9080,8 +9125,12 @@ void proto_register_ulp(void) {
       { "iPAddress", "ulp.iPAddress",
         FT_UINT32, BASE_DEC, VALS(ulp_IPAddress_vals), 0,
         NULL, HFILL }},
+    { &hf_ulp_ver2_imei,
+      { "ver2-imei", "ulp.ver2_imei",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "OCTET_STRING_SIZE_8", HFILL }},
     { &hf_ulp_sessionSlpID,
-      { "sessionID", "ulp.sessionID",
+      { "sessionID", "ulp.sessionSlpID",
         FT_BYTES, BASE_NONE, NULL, 0,
         "OCTET_STRING_SIZE_4", HFILL }},
     { &hf_ulp_slpId,
@@ -9124,7 +9173,7 @@ void proto_register_ulp(void) {
       { "ver2-CellInfo-extension", "ulp.ver2_CellInfo_extension",
         FT_UINT32, BASE_DEC, VALS(ulp_Ver2_CellInfo_extension_vals), 0,
         NULL, HFILL }},
-    { &hf_ulp_timestamp_01,
+    { &hf_ulp_timestamp,
       { "timestamp", "ulp.timestamp",
         FT_STRING, BASE_NONE, NULL, 0,
         "UTCTime", HFILL }},
@@ -9158,12 +9207,12 @@ void proto_register_ulp(void) {
         "INTEGER_0_127", HFILL }},
     { &hf_ulp_orientationMajorAxis,
       { "orientationMajorAxis", "ulp.orientationMajorAxis",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_degree_degrees), 0,
+        "INTEGER_0_180", HFILL }},
     { &hf_ulp_confidence,
       { "confidence", "ulp.confidence",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_percent), 0,
+        "INTEGER_0_100", HFILL }},
     { &hf_ulp_altitudeInfo,
       { "altitudeInfo", "ulp.altitudeInfo_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -9174,8 +9223,8 @@ void proto_register_ulp(void) {
         NULL, HFILL }},
     { &hf_ulp_altitude,
       { "altitude", "ulp.altitude",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_meters), 0,
+        "INTEGER_0_32767", HFILL }},
     { &hf_ulp_altUncertainty,
       { "altUncertainty", "ulp.altUncertainty",
         FT_UINT32, BASE_CUSTOM, CF_FUNC(ulp_QoP_veracc_fmt), 0,
@@ -9249,15 +9298,15 @@ void proto_register_ulp(void) {
         FT_UINT32, BASE_DEC, VALS(ulp_ChipRate_vals), 0,
         NULL, HFILL }},
     { &hf_ulp_modeSpecificFrequencyInfo,
-      { "modeSpecificInfo", "ulp.modeSpecificInfo",
+      { "modeSpecificInfo", "ulp.modeSpecificFrequencyInfo",
         FT_UINT32, BASE_DEC, VALS(ulp_FrequencySpecificInfo_vals), 0,
         "FrequencySpecificInfo", HFILL }},
     { &hf_ulp_fdd_fr,
-      { "fdd", "ulp.fdd_element",
+      { "fdd", "ulp.fdd_fr_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "FrequencyInfoFDD", HFILL }},
     { &hf_ulp_tdd_fr,
-      { "tdd", "ulp.tdd_element",
+      { "tdd", "ulp.tdd_fr_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "FrequencyInfoTDD", HFILL }},
     { &hf_ulp_uarfcn_UL,
@@ -9304,8 +9353,8 @@ void proto_register_ulp(void) {
       { "CellMeasuredResults", "ulp.CellMeasuredResults_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ulp_cellIdentity,
-      { "cellIdentity", "ulp.cellIdentity",
+    { &hf_ulp_cellIdentity_uint,
+      { "cellIdentity", "ulp.cellIdentity_uint",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_268435455", HFILL }},
     { &hf_ulp_modeSpecificInfo,
@@ -9366,12 +9415,16 @@ void proto_register_ulp(void) {
         "INTEGER_0_127", HFILL }},
     { &hf_ulp_maxLocAge,
       { "maxLocAge", "ulp.maxLocAge",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_0_65535", HFILL }},
     { &hf_ulp_delay,
       { "delay", "ulp.delay",
         FT_UINT32, BASE_CUSTOM, CF_FUNC(ulp_QoP_delay_fmt), 0,
         "INTEGER_0_7", HFILL }},
+    { &hf_ulp_ver2_responseTime,
+      { "ver2-responseTime", "ulp.ver2_responseTime",
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_1_128", HFILL }},
     { &hf_ulp_horvel,
       { "horvel", "ulp.horvel_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -9390,11 +9443,11 @@ void proto_register_ulp(void) {
         NULL, HFILL }},
     { &hf_ulp_bearing,
       { "bearing", "ulp.bearing",
-        FT_UINT16, BASE_DEC, NULL, 0,
+        FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_degree_degrees), 0,
         NULL, HFILL }},
     { &hf_ulp_horspeed,
       { "horspeed", "ulp.horspeed",
-        FT_UINT16, BASE_DEC, NULL, 0,
+        FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         NULL, HFILL }},
     { &hf_ulp_verdirect,
       { "verdirect", "ulp.verdirect",
@@ -9402,27 +9455,27 @@ void proto_register_ulp(void) {
         NULL, HFILL }},
     { &hf_ulp_bearing_01,
       { "bearing", "ulp.bearing",
-        FT_UINT16, BASE_DEC, NULL, 0,
+        FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_degree_degrees), 0,
         "T_bearing_01", HFILL }},
     { &hf_ulp_horspeed_01,
       { "horspeed", "ulp.horspeed",
-        FT_UINT16, BASE_DEC, NULL, 0,
+        FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         "T_horspeed_01", HFILL }},
     { &hf_ulp_verspeed,
       { "verspeed", "ulp.verspeed",
-        FT_UINT8, BASE_DEC, NULL, 0,
+        FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         NULL, HFILL }},
     { &hf_ulp_bearing_02,
       { "bearing", "ulp.bearing",
-        FT_UINT16, BASE_DEC, NULL, 0,
+        FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_degree_degrees), 0,
         "T_bearing_02", HFILL }},
     { &hf_ulp_horspeed_02,
       { "horspeed", "ulp.horspeed",
-        FT_UINT16, BASE_DEC, NULL, 0,
+        FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         "T_horspeed_02", HFILL }},
     { &hf_ulp_uncertspeed,
       { "uncertspeed", "ulp.uncertspeed",
-        FT_UINT8, BASE_DEC, NULL, 0,
+        FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         NULL, HFILL }},
     { &hf_ulp_verdirect_01,
       { "verdirect", "ulp.verdirect",
@@ -9430,23 +9483,23 @@ void proto_register_ulp(void) {
         "T_verdirect_01", HFILL }},
     { &hf_ulp_bearing_03,
       { "bearing", "ulp.bearing",
-        FT_UINT16, BASE_DEC, NULL, 0,
+        FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_degree_degrees), 0,
         "T_bearing_03", HFILL }},
     { &hf_ulp_horspeed_03,
       { "horspeed", "ulp.horspeed",
-        FT_UINT16, BASE_DEC, NULL, 0,
+        FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         "T_horspeed_03", HFILL }},
     { &hf_ulp_verspeed_01,
       { "verspeed", "ulp.verspeed",
-        FT_UINT8, BASE_DEC, NULL, 0,
+        FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         "T_verspeed_01", HFILL }},
     { &hf_ulp_horuncertspeed,
       { "horuncertspeed", "ulp.horuncertspeed",
-        FT_UINT8, BASE_DEC, NULL, 0,
+        FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         NULL, HFILL }},
     { &hf_ulp_veruncertspeed,
       { "veruncertspeed", "ulp.veruncertspeed",
-        FT_UINT8, BASE_DEC, NULL, 0,
+        FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kmh), 0,
         NULL, HFILL }},
     { &hf_ulp_MultipleLocationIds_item,
       { "LocationIdData", "ulp.LocationIdData_element",
@@ -9542,6 +9595,26 @@ void proto_register_ulp(void) {
         "BOOLEAN", HFILL }},
     { &hf_ulp_apRepLoc,
       { "apRepLoc", "ulp.apRepLoc",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
+    { &hf_ulp_apRL,
+      { "apRL", "ulp.apRL",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
+    { &hf_ulp_opClass,
+      { "opClass", "ulp.opClass",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
+    { &hf_ulp_apSSID_bool,
+      { "apSSID", "ulp.apSSID_bool",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
+    { &hf_ulp_apPHYType_bool,
+      { "apPHYType", "ulp.apPHYType_bool",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
+    { &hf_ulp_setMACAddress_bool,
+      { "setMACAddress", "ulp.setMACAddress_bool",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
     { &hf_ulp_supportedWLANApDataList,
@@ -9684,10 +9757,10 @@ void proto_register_ulp(void) {
       { "apMACAddress", "ulp.apMACAddress",
         FT_ETHER, BASE_NONE, NULL, 0,
         "T_apMACAddress_01", HFILL }},
-    { &hf_ulp_apDevType_01,
-      { "apDevType", "ulp.apDevType",
-        FT_UINT32, BASE_DEC, VALS(ulp_T_apDevType_vals), 0,
-        NULL, HFILL }},
+    { &hf_ulp_apDevType_enum,
+      { "apDevType", "ulp.apDevType_enum",
+        FT_UINT32, BASE_DEC, VALS(ulp_T_apDevType_enum_vals), 0,
+        "T_apDevType_enum", HFILL }},
     { &hf_ulp_mrl,
       { "mrl", "ulp.mrl",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
@@ -9712,6 +9785,10 @@ void proto_register_ulp(void) {
       { "wimaxBS", "ulp.wimaxBS_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "WimaxBSInformation", HFILL }},
+    { &hf_ulp_nrCell,
+      { "nrCell", "ulp.nrCell_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "NRCellInformation", HFILL }},
     { &hf_ulp_cellGlobalIdEUTRA,
       { "cellGlobalIdEUTRA", "ulp.cellGlobalIdEUTRA_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -9748,6 +9825,22 @@ void proto_register_ulp(void) {
       { "earfcn-ext", "ulp.earfcn_ext",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_65536_262143", HFILL }},
+    { &hf_ulp_rsrpResult_ext,
+      { "rsrpResult-ext", "ulp.rsrpResult_ext",
+        FT_INT32, BASE_DEC, NULL, 0,
+        "RSRP_Range_Ext", HFILL }},
+    { &hf_ulp_rsrqResult_ext,
+      { "rsrqResult-ext", "ulp.rsrqResult_ext",
+        FT_INT32, BASE_DEC, NULL, 0,
+        "RSRQ_Range_Ext", HFILL }},
+    { &hf_ulp_rs_sinrResult,
+      { "rs-sinrResult", "ulp.rs_sinrResult",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "RS_SINR_Range", HFILL }},
+    { &hf_ulp_servingInformation5G,
+      { "servingInformation5G", "ulp.servingInformation5G_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_ulp_MeasResultListEUTRA_item,
       { "MeasResultEUTRA", "ulp.MeasResultEUTRA_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -9764,11 +9857,15 @@ void proto_register_ulp(void) {
       { "measResult", "ulp.measResult_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_ulp_neighbourInformation5G,
+      { "neighbourInformation5G", "ulp.neighbourInformation5G_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_ulp_plmn_Identity,
       { "plmn-Identity", "ulp.plmn_Identity_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ulp_cellIdentity_01,
+    { &hf_ulp_cellIdentity,
       { "cellIdentity", "ulp.cellIdentity",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
@@ -9788,30 +9885,34 @@ void proto_register_ulp(void) {
       { "MCC-MNC-Digit", "ulp.MCC_MNC_Digit",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
+    { &hf_ulp_trackingAreaCode_01,
+      { "trackingAreaCode", "ulp.trackingAreaCode",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "TrackingAreaCodeNR", HFILL }},
     { &hf_ulp_apMACAddress_02,
       { "apMACAddress", "ulp.apMACAddress",
         FT_ETHER, BASE_NONE, NULL, 0,
         "T_apMACAddress_02", HFILL }},
     { &hf_ulp_apTransmitPower,
       { "apTransmitPower", "ulp.apTransmitPower",
-        FT_INT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_dbm), 0,
+        "INTEGER_M127_128", HFILL }},
     { &hf_ulp_apAntennaGain,
       { "apAntennaGain", "ulp.apAntennaGain",
-        FT_INT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_dbi), 0,
+        "INTEGER_M127_128", HFILL }},
     { &hf_ulp_apSignaltoNoise,
       { "apSignaltoNoise", "ulp.apSignaltoNoise",
-        FT_INT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0,
+        "INTEGER_M127_128", HFILL }},
     { &hf_ulp_apDeviceType,
       { "apDeviceType", "ulp.apDeviceType",
         FT_UINT32, BASE_DEC, VALS(ulp_T_apDeviceType_vals), 0,
         NULL, HFILL }},
     { &hf_ulp_apSignalStrength,
       { "apSignalStrength", "ulp.apSignalStrength",
-        FT_INT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_dbm), 0,
+        "INTEGER_M127_128", HFILL }},
     { &hf_ulp_apChannelFrequency,
       { "apChannelFrequency", "ulp.apChannelFrequency",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -9822,20 +9923,20 @@ void proto_register_ulp(void) {
         "RTD", HFILL }},
     { &hf_ulp_setTransmitPower,
       { "setTransmitPower", "ulp.setTransmitPower",
-        FT_INT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_dbm), 0,
+        "INTEGER_M127_128", HFILL }},
     { &hf_ulp_setAntennaGain,
       { "setAntennaGain", "ulp.setAntennaGain",
-        FT_INT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_dbi), 0,
+        "INTEGER_M127_128", HFILL }},
     { &hf_ulp_setSignaltoNoise,
       { "setSignaltoNoise", "ulp.setSignaltoNoise",
-        FT_INT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0,
+        "INTEGER_M127_128", HFILL }},
     { &hf_ulp_setSignalStrength,
       { "setSignalStrength", "ulp.setSignalStrength",
-        FT_INT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_dbm), 0,
+        "INTEGER_M127_128", HFILL }},
     { &hf_ulp_apReportedLocation,
       { "apReportedLocation", "ulp.apReportedLocation_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -9866,7 +9967,7 @@ void proto_register_ulp(void) {
         "INTEGER_0_255", HFILL }},
     { &hf_ulp_apSSID,
       { "apSSID", "ulp.apSSID",
-        FT_STRING, STR_ASCII, NULL, 0,
+        FT_STRING, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_ulp_apPHYType,
       { "apPHYType", "ulp.apPHYType",
@@ -9916,16 +10017,16 @@ void proto_register_ulp(void) {
       { "latitudeResolution", "ulp.latitudeResolution",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_6", HFILL }},
-    { &hf_ulp_latitude_01,
-      { "latitude", "ulp.latitude",
+    { &hf_ulp_latitude_bit_string,
+      { "latitude", "ulp.latitude_bit_string",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_34", HFILL }},
     { &hf_ulp_longitudeResolution,
       { "longitudeResolution", "ulp.longitudeResolution",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_6", HFILL }},
-    { &hf_ulp_longitude_01,
-      { "longitude", "ulp.longitude",
+    { &hf_ulp_longitude_bit_string,
+      { "longitude", "ulp.longitude_bit_string",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_34", HFILL }},
     { &hf_ulp_altitudeType,
@@ -9936,8 +10037,8 @@ void proto_register_ulp(void) {
       { "altitudeResolution", "ulp.altitudeResolution",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_6", HFILL }},
-    { &hf_ulp_altitude_01,
-      { "altitude", "ulp.altitude",
+    { &hf_ulp_altitude_bit_string,
+      { "altitude", "ulp.altitude_bit_string",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_30", HFILL }},
     { &hf_ulp_datum,
@@ -9982,24 +10083,80 @@ void proto_register_ulp(void) {
         "INTEGER_0_255", HFILL }},
     { &hf_ulp_rSSIstd,
       { "rSSIstd", "ulp.rSSIstd",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0,
+        "INTEGER_0_63", HFILL }},
     { &hf_ulp_bSTxPower,
       { "bSTxPower", "ulp.bSTxPower",
         FT_UINT32, BASE_CUSTOM, CF_FUNC(ulp_WimaxNMR_rssi_fmt), 0,
         "INTEGER_0_255", HFILL }},
     { &hf_ulp_cinr,
       { "cinr", "ulp.cinr",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0,
+        "INTEGER_0_255", HFILL }},
     { &hf_ulp_cINRstd,
       { "cINRstd", "ulp.cINRstd",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0,
+        "INTEGER_0_63", HFILL }},
     { &hf_ulp_bSLocation,
       { "bSLocation", "ulp.bSLocation_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ReportedLocation", HFILL }},
+    { &hf_ulp_servingCellInformation,
+      { "servingCellInformation", "ulp.servingCellInformation",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "ServingCellInformationNR", HFILL }},
+    { &hf_ulp_measuredResultsListNR,
+      { "measuredResultsListNR", "ulp.measuredResultsListNR",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "MeasResultListNR", HFILL }},
+    { &hf_ulp_ServingCellInformationNR_item,
+      { "ServCellNR", "ulp.ServCellNR_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_physCellId_01,
+      { "physCellId", "ulp.physCellId",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "PhysCellIdNR", HFILL }},
+    { &hf_ulp_arfcn_NR,
+      { "arfcn-NR", "ulp.arfcn_NR",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_cellGlobalId_01,
+      { "cellGlobalId", "ulp.cellGlobalId_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "CellGlobalIdNR", HFILL }},
+    { &hf_ulp_ssb_Measurements,
+      { "ssb-Measurements", "ulp.ssb_Measurements_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "NR_Measurements", HFILL }},
+    { &hf_ulp_csi_rs_Measurements,
+      { "csi-rs-Measurements", "ulp.csi_rs_Measurements_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "NR_Measurements", HFILL }},
+    { &hf_ulp_ta_03,
+      { "ta", "ulp.ta",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_3846", HFILL }},
+    { &hf_ulp_MeasResultListNR_item,
+      { "MeasResultNR", "ulp.MeasResultNR_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_cellIdentityNR,
+      { "cellIdentityNR", "ulp.cellIdentityNR",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_rsrp_Range,
+      { "rsrp-Range", "ulp.rsrp_Range",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_127", HFILL }},
+    { &hf_ulp_rsrq_Range,
+      { "rsrq-Range", "ulp.rsrq_Range",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_127", HFILL }},
+    { &hf_ulp_sinr_Range,
+      { "sinr-Range", "ulp.sinr_Range",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_127", HFILL }},
     { &hf_ulp_utran_GPSReferenceTime,
       { "utran-GPSReferenceTime", "ulp.utran_GPSReferenceTime_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -10086,8 +10243,8 @@ void proto_register_ulp(void) {
         NULL, HFILL }},
     { &hf_ulp_ganssTOD,
       { "ganssTOD", "ulp.ganssTOD",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_0_86399", HFILL }},
     { &hf_ulp_utran_GANSSTimingOfCell,
       { "utran-GANSSTimingOfCell", "ulp.utran_GANSSTimingOfCell",
         FT_UINT32, BASE_CUSTOM, CF_FUNC(ulp_utran_GANSSTimingOfCell_fmt), 0,
@@ -10160,6 +10317,10 @@ void proto_register_ulp(void) {
       { "bds", "ulp.bds",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
+    { &hf_ulp_rtk_osr,
+      { "rtk-osr", "ulp.rtk_osr",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
     { &hf_ulp_rand,
       { "rand", "ulp.rand",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -10192,10 +10353,6 @@ void proto_register_ulp(void) {
       { "ims-public-identity", "ulp.ims_public_identity",
         FT_STRING, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-    { &hf_ulp_min_01,
-      { "min", "ulp.min",
-        FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_34", HFILL }},
     { &hf_ulp_mdn_01,
       { "mdn", "ulp.mdn",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -10218,12 +10375,12 @@ void proto_register_ulp(void) {
         "IA5String_SIZE_1_8", HFILL }},
     { &hf_ulp_minInt,
       { "minInt", "ulp.minInt",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
+        "INTEGER_1_3600", HFILL }},
     { &hf_ulp_maxInt,
       { "maxInt", "ulp.maxInt",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_minutes), 0,
+        "INTEGER_1_1440", HFILL }},
     { &hf_ulp_repMode_01,
       { "repMode", "ulp.repMode_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -10264,12 +10421,12 @@ void proto_register_ulp(void) {
       { "latitudeSign", "ulp.latitudeSign",
         FT_UINT32, BASE_DEC, VALS(ulp_T_latitudeSign_01_vals), 0,
         "T_latitudeSign_01", HFILL }},
-    { &hf_ulp_CoordinateLatitude,
-      { "latitude", "ulp.latitude",
+    { &hf_ulp_coordinateLatitude,
+      { "latitude", "ulp.coordinateLatitude",
         FT_UINT32, BASE_CUSTOM, CF_FUNC(ulp_Coordinate_latitude_fmt), 0,
         "INTEGER_0_8388607", HFILL }},
-    { &hf_ulp_CoordinateLongitude,
-      { "longitude", "ulp.longitude",
+    { &hf_ulp_coordinateLongitude,
+      { "longitude", "ulp.coordinateLongitude",
         FT_INT32, BASE_CUSTOM, CF_FUNC(ulp_Coordinate_longitude_fmt), 0,
         "INTEGER_M8388608_8388607", HFILL }},
     { &hf_ulp_coordinate,
@@ -10278,8 +10435,8 @@ void proto_register_ulp(void) {
         NULL, HFILL }},
     { &hf_ulp_radius,
       { "radius", "ulp.radius",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_meters), 0,
+        "INTEGER_1_1000000", HFILL }},
     { &hf_ulp_radius_min,
       { "radius-min", "ulp.radius_min",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -10290,8 +10447,8 @@ void proto_register_ulp(void) {
         "INTEGER_1_1500000", HFILL }},
     { &hf_ulp_semiMajor,
       { "semiMajor", "ulp.semiMajor",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_meters), 0,
+        "INTEGER_1_1000000", HFILL }},
     { &hf_ulp_semiMajor_min,
       { "semiMajor-min", "ulp.semiMajor_min",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -10302,8 +10459,8 @@ void proto_register_ulp(void) {
         "INTEGER_1_1500000", HFILL }},
     { &hf_ulp_semiMinor,
       { "semiMinor", "ulp.semiMinor",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_meters), 0,
+        "INTEGER_1_1000000", HFILL }},
     { &hf_ulp_semiMinor_min,
       { "semiMinor-min", "ulp.semiMinor_min",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -10314,55 +10471,108 @@ void proto_register_ulp(void) {
         "INTEGER_1_1500000", HFILL }},
     { &hf_ulp_angle,
       { "angle", "ulp.angle",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_degree_degrees), 0,
+        "INTEGER_0_179", HFILL }},
     { &hf_ulp_polygonDescription,
       { "polygonDescription", "ulp.polygonDescription",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_ulp_polygonHysteresis,
       { "polygonHysteresis", "ulp.polygonHysteresis",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_meters), 0,
+        "INTEGER_1_100000", HFILL }},
     { &hf_ulp_PolygonDescription_item,
       { "Coordinate", "ulp.Coordinate_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_ulp_highAccuracyPositionEstimate,
+      { "highAccuracyPositionEstimate", "ulp.highAccuracyPositionEstimate_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_degreesLatitude,
+      { "degreesLatitude", "ulp.degreesLatitude",
+        FT_INT32, BASE_DEC, NULL, 0,
+        "INTEGER_M2147483648_2147483647", HFILL }},
+    { &hf_ulp_degreesLongitude,
+      { "degreesLongitude", "ulp.degreesLongitude",
+        FT_INT32, BASE_DEC, NULL, 0,
+        "INTEGER_M2147483648_2147483647", HFILL }},
+    { &hf_ulp_uncertaintySemiMajor_01,
+      { "uncertaintySemiMajor", "ulp.uncertaintySemiMajor",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_255", HFILL }},
+    { &hf_ulp_uncertaintySemiMinor_01,
+      { "uncertaintySemiMinor", "ulp.uncertaintySemiMinor",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_255", HFILL }},
+    { &hf_ulp_orientationMajorAxis_01,
+      { "orientationMajorAxis", "ulp.orientationMajorAxis",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_179", HFILL }},
+    { &hf_ulp_horizontalConfidence,
+      { "horizontalConfidence", "ulp.horizontalConfidence",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_100", HFILL }},
+    { &hf_ulp_highAccuracyAltitudeInfo,
+      { "highAccuracyAltitudeInfo", "ulp.highAccuracyAltitudeInfo_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_ulp_altitude_01,
+      { "altitude", "ulp.altitude",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_64000_1280000", HFILL }},
+    { &hf_ulp_uncertaintyAltitude,
+      { "uncertaintyAltitude", "ulp.uncertaintyAltitude",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_255", HFILL }},
+    { &hf_ulp_verticalConfidence,
+      { "verticalConfidence", "ulp.verticalConfidence",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_100", HFILL }},
+    { &hf_ulp_T_addPosMode_standalone,
+      { "standalone", "ulp.T.addPosMode.standalone",
+        FT_BOOLEAN, 8, NULL, 0x80,
+        NULL, HFILL }},
+    { &hf_ulp_T_addPosMode_setBased,
+      { "setBased", "ulp.T.addPosMode.setBased",
+        FT_BOOLEAN, 8, NULL, 0x40,
+        NULL, HFILL }},
+    { &hf_ulp_T_addPosMode_setAssisted,
+      { "setAssisted", "ulp.T.addPosMode.setAssisted",
+        FT_BOOLEAN, 8, NULL, 0x20,
+        NULL, HFILL }},
     { &hf_ulp_GANSSSignals_signal1,
-      { "signal1", "ulp.signal1",
+      { "signal1", "ulp.GANSSSignals.signal1",
         FT_BOOLEAN, 8, NULL, 0x80,
         NULL, HFILL }},
     { &hf_ulp_GANSSSignals_signal2,
-      { "signal2", "ulp.signal2",
+      { "signal2", "ulp.GANSSSignals.signal2",
         FT_BOOLEAN, 8, NULL, 0x40,
         NULL, HFILL }},
     { &hf_ulp_GANSSSignals_signal3,
-      { "signal3", "ulp.signal3",
+      { "signal3", "ulp.GANSSSignals.signal3",
         FT_BOOLEAN, 8, NULL, 0x20,
         NULL, HFILL }},
     { &hf_ulp_GANSSSignals_signal4,
-      { "signal4", "ulp.signal4",
+      { "signal4", "ulp.GANSSSignals.signal4",
         FT_BOOLEAN, 8, NULL, 0x10,
         NULL, HFILL }},
     { &hf_ulp_GANSSSignals_signal5,
-      { "signal5", "ulp.signal5",
+      { "signal5", "ulp.GANSSSignals.signal5",
         FT_BOOLEAN, 8, NULL, 0x08,
         NULL, HFILL }},
     { &hf_ulp_GANSSSignals_signal6,
-      { "signal6", "ulp.signal6",
+      { "signal6", "ulp.GANSSSignals.signal6",
         FT_BOOLEAN, 8, NULL, 0x04,
         NULL, HFILL }},
     { &hf_ulp_GANSSSignals_signal7,
-      { "signal7", "ulp.signal7",
+      { "signal7", "ulp.GANSSSignals.signal7",
         FT_BOOLEAN, 8, NULL, 0x02,
         NULL, HFILL }},
     { &hf_ulp_GANSSSignals_signal8,
-      { "signal8", "ulp.signal8",
+      { "signal8", "ulp.GANSSSignals.signal8",
         FT_BOOLEAN, 8, NULL, 0x01,
         NULL, HFILL }},
-
-/*--- End of included file: packet-ulp-hfarr.c ---*/
-#line 372 "./asn1/ulp/packet-ulp-template.c"
     { &hf_ulp_mobile_directory_number,
       { "Mobile Directory Number", "ulp.mobile_directory_number",
         FT_STRING, BASE_NONE, NULL, 0,
@@ -10394,14 +10604,11 @@ void proto_register_ulp(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_ulp,
     &ett_ulp_setid,
     &ett_ulp_thirdPartyId,
     &ett_ulp_ganssTimeModels,
-
-/*--- Included file: packet-ulp-ettarr.c ---*/
-#line 1 "./asn1/ulp/packet-ulp-ettarr.c"
     &ett_ulp_ULP_PDU,
     &ett_ulp_UlpMessage,
     &ett_ulp_SUPLINIT,
@@ -10444,6 +10651,7 @@ void proto_register_ulp(void) {
     &ett_ulp_LTEAreaId,
     &ett_ulp_WLANAreaId,
     &ett_ulp_WimaxAreaId,
+    &ett_ulp_NRAreaId,
     &ett_ulp_GeoAreaMappingList,
     &ett_ulp_Ver2_SUPLTRIGGEREDRESPONSE,
     &ett_ulp_ReportingMode,
@@ -10486,7 +10694,11 @@ void proto_register_ulp(void) {
     &ett_ulp_Ver2_PosTechnology_extension,
     &ett_ulp_GANSSPositionMethods,
     &ett_ulp_GANSSPositionMethod,
+    &ett_ulp_RTK,
     &ett_ulp_GANSSPositioningMethodTypes,
+    &ett_ulp_AdditionalPositioningMethods,
+    &ett_ulp_AddPosSupport_Element,
+    &ett_ulp_T_addPosMode,
     &ett_ulp_Ver2_RequestedAssistData_extension,
     &ett_ulp_GanssRequestedCommonAssistanceDataList,
     &ett_ulp_GanssRequestedGenericAssistanceDataList,
@@ -10566,6 +10778,8 @@ void proto_register_ulp(void) {
     &ett_ulp_PLMN_Identity,
     &ett_ulp_MCC,
     &ett_ulp_MNC,
+    &ett_ulp_ServingInformation5G,
+    &ett_ulp_NeighbourInformation5G,
     &ett_ulp_WlanAPInformation,
     &ett_ulp_RTD,
     &ett_ulp_ReportedLocation,
@@ -10578,6 +10792,13 @@ void proto_register_ulp(void) {
     &ett_ulp_WimaxRTD,
     &ett_ulp_WimaxNMRList,
     &ett_ulp_WimaxNMR,
+    &ett_ulp_NRCellInformation,
+    &ett_ulp_ServingCellInformationNR,
+    &ett_ulp_ServCellNR,
+    &ett_ulp_MeasResultListNR,
+    &ett_ulp_MeasResultNR,
+    &ett_ulp_CellGlobalIdNR,
+    &ett_ulp_NR_Measurements,
     &ett_ulp_UTRAN_GPSReferenceTimeAssistance,
     &ett_ulp_UTRAN_GPSReferenceTime,
     &ett_ulp_T_utran_GPSTimingOfCell,
@@ -10614,9 +10835,9 @@ void proto_register_ulp(void) {
     &ett_ulp_EllipticalArea,
     &ett_ulp_PolygonArea,
     &ett_ulp_PolygonDescription,
-
-/*--- End of included file: packet-ulp-ettarr.c ---*/
-#line 409 "./asn1/ulp/packet-ulp-template.c"
+    &ett_ulp_Ver2_HighAccuracyPosition,
+    &ett_ulp_HighAccuracyPositionEstimate,
+    &ett_ulp_HighAccuracyAltitudeInfo,
   };
 
   module_t *ulp_module;
@@ -10625,31 +10846,19 @@ void proto_register_ulp(void) {
   /* Register protocol */
   proto_ulp = proto_register_protocol(PNAME, PSNAME, PFNAME);
   ulp_tcp_handle = register_dissector("ulp", dissect_ulp_tcp, proto_ulp);
+  ulp_pdu_handle = register_dissector("ulp.pdu", dissect_ULP_PDU_PDU, proto_ulp);
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_ulp, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
-  ulp_module = prefs_register_protocol(proto_ulp,proto_reg_handoff_ulp);
+  ulp_module = prefs_register_protocol(proto_ulp, NULL);
 
   prefs_register_bool_preference(ulp_module, "desegment_ulp_messages",
     "Reassemble ULP messages spanning multiple TCP segments",
     "Whether the ULP dissector should reassemble messages spanning multiple TCP segments."
     " To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
     &ulp_desegment);
-
-  /* Register a configuration option for port */
-  prefs_register_uint_preference(ulp_module, "tcp.port",
-                                 "ULP TCP Port",
-                                 "Set the TCP port for ULP messages (IANA registered port is 7275)",
-                                 10,
-                                 &gbl_ulp_tcp_port);
-  prefs_register_uint_preference(ulp_module, "udp.port",
-                                 "ULP UDP Port",
-                                 "Set the UDP port for ULP messages (IANA registered port is 7275)",
-                                 10,
-                                 &gbl_ulp_udp_port);
-
 }
 
 
@@ -10657,25 +10866,12 @@ void proto_register_ulp(void) {
 void
 proto_reg_handoff_ulp(void)
 {
-  static gboolean initialized = FALSE;
-  static dissector_handle_t ulp_udp_handle;
-  static guint local_ulp_tcp_port, local_ulp_udp_port;
-
-  if (!initialized) {
-    dissector_add_string("media_type","application/oma-supl-ulp", ulp_tcp_handle);
-    dissector_add_string("media_type","application/vnd.omaloc-supl-init", ulp_tcp_handle);
-    ulp_udp_handle = create_dissector_handle(dissect_ULP_PDU_PDU, proto_ulp);
     rrlp_handle = find_dissector_add_dependency("rrlp", proto_ulp);
     lpp_handle = find_dissector_add_dependency("lpp", proto_ulp);
-    initialized = TRUE;
-  } else {
-    dissector_delete_uint("tcp.port", local_ulp_tcp_port, ulp_tcp_handle);
-    dissector_delete_uint("udp.port", local_ulp_udp_port, ulp_udp_handle);
-  }
 
-  local_ulp_tcp_port = gbl_ulp_tcp_port;
-  dissector_add_uint("tcp.port", gbl_ulp_tcp_port, ulp_tcp_handle);
-  local_ulp_udp_port = gbl_ulp_udp_port;
-  dissector_add_uint("udp.port", gbl_ulp_udp_port, ulp_udp_handle);
+    dissector_add_string("media_type","application/oma-supl-ulp", ulp_pdu_handle);
+    dissector_add_string("media_type","application/vnd.omaloc-supl-init", ulp_pdu_handle);
+    dissector_add_uint_with_preference("tcp.port", ULP_PORT, ulp_tcp_handle);
+    dissector_add_uint_with_preference("udp.port", ULP_PORT, ulp_pdu_handle);
 }
 

@@ -7,88 +7,84 @@
  *
  * Copied from README.developer
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/capture_dissectors.h>
-#include <wiretap/wtap.h>
 #include <wsutil/pint.h>
-#include <wsutil/frequency-utils.h>
+#include <wsutil/802_11-utils.h>
 
 #include "packet-ieee80211.h"
 
+/*
+ * See
+ *
+ *    https://web.archive.org/web/20040803232023/http://www.shaftnet.org/~pizza/software/capturefrm.txt
+ *
+ * for the format of the header.
+ */
 void proto_register_ieee80211_wlancap(void);
 void proto_reg_handoff_ieee80211_wlancap(void);
 
 static dissector_handle_t ieee80211_radio_handle;
 
-static int proto_wlancap = -1;
+static int proto_wlancap;
 
 /* AVS WLANCAP radio header */
-static int hf_wlancap_magic = -1;
-static int hf_wlancap_version = -1;
-static int hf_wlancap_length = -1;
-static int hf_wlancap_mactime = -1;
-static int hf_wlancap_hosttime = -1;
-static int hf_wlancap_phytype = -1;
-static int hf_wlancap_hop_set = -1;
-static int hf_wlancap_hop_pattern = -1;
-static int hf_wlancap_hop_index = -1;
-static int hf_wlancap_channel = -1;
-static int hf_wlancap_channel_frequency = -1;
-static int hf_wlancap_data_rate = -1;
-static int hf_wlancap_antenna = -1;
-static int hf_wlancap_priority = -1;
-static int hf_wlancap_ssi_type = -1;
-static int hf_wlancap_normrssi_antsignal = -1;
-static int hf_wlancap_dbm_antsignal = -1;
-static int hf_wlancap_rawrssi_antsignal = -1;
-static int hf_wlancap_normrssi_antnoise = -1;
-static int hf_wlancap_dbm_antnoise = -1;
-static int hf_wlancap_rawrssi_antnoise = -1;
-static int hf_wlancap_preamble = -1;
-static int hf_wlancap_encoding = -1;
-static int hf_wlancap_sequence = -1;
-static int hf_wlancap_drops = -1;
-static int hf_wlancap_receiver_addr = -1;
-static int hf_wlancap_padding = -1;
+static int hf_wlancap_magic;
+static int hf_wlancap_version;
+static int hf_wlancap_length;
+static int hf_wlancap_mactime;
+static int hf_wlancap_hosttime;
+static int hf_wlancap_phytype;
+static int hf_wlancap_hop_set;
+static int hf_wlancap_hop_pattern;
+static int hf_wlancap_hop_index;
+static int hf_wlancap_channel;
+static int hf_wlancap_channel_frequency;
+static int hf_wlancap_data_rate;
+static int hf_wlancap_antenna;
+static int hf_wlancap_priority;
+static int hf_wlancap_ssi_type;
+static int hf_wlancap_normrssi_antsignal;
+static int hf_wlancap_dbm_antsignal;
+static int hf_wlancap_rawrssi_antsignal;
+static int hf_wlancap_normrssi_antnoise;
+static int hf_wlancap_dbm_antnoise;
+static int hf_wlancap_rawrssi_antnoise;
+static int hf_wlancap_preamble;
+static int hf_wlancap_encoding;
+static int hf_wlancap_sequence;
+static int hf_wlancap_drops;
+static int hf_wlancap_receiver_addr;
+static int hf_wlancap_padding;
 
-static gint ett_wlancap = -1;
+static int ett_wlancap;
 
 static dissector_handle_t wlancap_handle;
+static capture_dissector_handle_t wlancap_cap_handle;
+static capture_dissector_handle_t ieee80211_cap_handle;
 
-gboolean
-capture_wlancap(const guchar *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
+static bool
+capture_wlancap(const unsigned char *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
 {
-  guint32 length;
+  uint32_t length;
 
-  if (!BYTES_ARE_IN_FRAME(offset, len, sizeof(guint32)*2))
-    return FALSE;
+  if (!BYTES_ARE_IN_FRAME(offset, len, sizeof(uint32_t)*2))
+    return false;
 
-  length = pntoh32(pd+sizeof(guint32));
+  length = pntohu32(pd+sizeof(uint32_t));
 
   if (!BYTES_ARE_IN_FRAME(offset, len, length))
-    return FALSE;
+    return false;
 
   offset += length;
 
   /* 802.11 header follows */
-  return capture_ieee80211(pd, offset, len, cpinfo, pseudo_header);
+  return call_capture_dissector(ieee80211_cap_handle, pd, offset, len, cpinfo, pseudo_header);
 }
 
 /*
@@ -352,22 +348,22 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     proto_item *ti;
     tvbuff_t *next_tvb;
     int offset;
-    guint32 version;
-    guint32 length;
-    guint32 channel;
-    guint   frequency;
-    gint    calc_channel;
-    guint32 datarate;
-    guint32 ssi_type;
-    gint32  dbm;
-    guint32 antnoise;
+    uint32_t version;
+    uint32_t length;
+    uint32_t channel;
+    unsigned   frequency;
+    int     calc_channel;
+    uint32_t datarate;
+    uint32_t ssi_type;
+    int32_t dbm;
+    uint32_t antnoise;
     struct ieee_802_11_phdr phdr;
 
     /* We don't have any 802.11 metadata yet. */
     memset(&phdr, 0, sizeof(phdr));
     phdr.fcs_len = -1;
-    phdr.decrypted = FALSE;
-    phdr.datapad = FALSE;
+    phdr.decrypted = false;
+    phdr.datapad = false;
     phdr.phy = PHDR_802_11_PHY_UNKNOWN;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "WLAN");
@@ -395,7 +391,7 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     if (tree)
       proto_tree_add_item(wlan_tree, hf_wlancap_length, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset+=4;
-    phdr.has_tsf_timestamp = TRUE;
+    phdr.has_tsf_timestamp = true;
     phdr.tsf_timestamp = tvb_get_ntoh64(tvb, offset);
     if (tree)
       proto_tree_add_item(wlan_tree, hf_wlancap_mactime, tvb, offset, 8, ENC_BIG_ENDIAN);
@@ -448,41 +444,41 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     offset+=4;
 
     if (phdr.phy == PHDR_802_11_PHY_11_FHSS) {
-      phdr.phy_info.info_11_fhss.has_hop_set = TRUE;
-      phdr.phy_info.info_11_fhss.hop_set = tvb_get_guint8(tvb, offset);
+      phdr.phy_info.info_11_fhss.has_hop_set = true;
+      phdr.phy_info.info_11_fhss.hop_set = tvb_get_uint8(tvb, offset);
       if (tree)
         proto_tree_add_item(wlan_tree, hf_wlancap_hop_set, tvb, offset, 1, ENC_NA);
-      phdr.phy_info.info_11_fhss.has_hop_pattern = TRUE;
-      phdr.phy_info.info_11_fhss.hop_pattern = tvb_get_guint8(tvb, offset + 1);
+      phdr.phy_info.info_11_fhss.has_hop_pattern = true;
+      phdr.phy_info.info_11_fhss.hop_pattern = tvb_get_uint8(tvb, offset + 1);
       if (tree)
         proto_tree_add_item(wlan_tree, hf_wlancap_hop_pattern, tvb, offset + 1, 1, ENC_NA);
-      phdr.phy_info.info_11_fhss.has_hop_index = TRUE;
-      phdr.phy_info.info_11_fhss.hop_index = tvb_get_guint8(tvb, offset + 2);
+      phdr.phy_info.info_11_fhss.has_hop_index = true;
+      phdr.phy_info.info_11_fhss.hop_index = tvb_get_uint8(tvb, offset + 2);
       if (tree)
         proto_tree_add_item(wlan_tree, hf_wlancap_hop_index, tvb, offset + 2, 1, ENC_NA);
     } else {
       channel = tvb_get_ntohl(tvb, offset);
       if (channel < 256) {
         col_add_fstr(pinfo->cinfo, COL_FREQ_CHAN, "%u", channel);
-        phdr.has_channel = TRUE;
+        phdr.has_channel = true;
         phdr.channel = channel;
         if (tree)
           proto_tree_add_uint(wlan_tree, hf_wlancap_channel, tvb, offset, 4, channel);
         frequency = ieee80211_chan_to_mhz(channel, (phdr.phy != PHDR_802_11_PHY_11A));
         if (frequency != 0) {
-          phdr.has_frequency = TRUE;
+          phdr.has_frequency = true;
           phdr.frequency = frequency;
         }
       } else if (channel < 10000) {
         col_add_fstr(pinfo->cinfo, COL_FREQ_CHAN, "%u MHz", channel);
-        phdr.has_frequency = TRUE;
+        phdr.has_frequency = true;
         phdr.frequency = channel;
         if (tree)
           proto_tree_add_uint_format(wlan_tree, hf_wlancap_channel_frequency, tvb, offset,
                                      4, channel, "Frequency: %u MHz", channel);
         calc_channel = ieee80211_mhz_to_chan(channel);
         if (calc_channel != -1) {
-          phdr.has_channel = TRUE;
+          phdr.has_channel = true;
           phdr.channel = calc_channel;
         }
       } else {
@@ -493,6 +489,7 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
       }
     }
     offset+=4;
+
     datarate = tvb_get_ntohl(tvb, offset);
     if (datarate < 100000) {
       /* In units of 100 Kb/s; convert to b/s */
@@ -507,7 +504,7 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
       /* Can this be expressed in .5 MHz units? */
       if ((datarate % 500000) == 0) {
         /* Yes. */
-        phdr.has_data_rate = TRUE;
+        phdr.has_data_rate = true;
         phdr.data_rate = datarate / 500000;
       }
     }
@@ -519,12 +516,44 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
                                    ((datarate % 1000000) > 500000) ? 5 : 0);
     }
     offset+=4;
+
+    /*
+     * The phytype field in the header "identifies what type of PHY
+     * is employed by the WLAN device used to capture this frame";
+     * in at least one capture, it's phytype_ofdm_dot11_g for frames
+     * received using DSSS, so it may be usable to identify the
+     * type of PHY being used (except that "ofdm" isn't correct, as
+     * 11g supports both DSSS and OFDM), but it cannot be used to
+     * determine the modulation with which the packet was transmitted.
+     *
+     * The encoding field "specifies the encoding of the received packet".
+     * At least one capture using the AVS header specifies CCK for at
+     * least one frame with a 1 Mb/s data rate, which is technically
+     * incorrect (CCK is used only for 5.5 and 11 Mb/s DSSS packets) and
+     * it also specifies it for at least one frame with a 54 Mb/s data
+     * rate, which is *very* wrong (that's OFDM, not DSSS, and CCK is
+     * only used with DSSS), so that field cannot be trusted to indicate
+     * the modulation with which the packet was transmitted.
+     *
+     * We want an indication of how the frame was received, so, if we
+     * have the data rate for a purportedly 11g-OFDM packet, we use
+     * that to determine whether it's 11g-OFDM or 11g/11b-DSSS.
+     */
+    if (phdr.phy == PHDR_802_11_PHY_11G && phdr.has_data_rate) {
+      if (RATE_IS_DSSS(phdr.data_rate)) {
+        /* Presumably 11g using DSSS; we report that as 11b. */
+        phdr.phy = PHDR_802_11_PHY_11B;
+      }
+    }
+
     if (tree)
       proto_tree_add_item(wlan_tree, hf_wlancap_antenna, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset+=4;
+
     if (tree)
       proto_tree_add_item(wlan_tree, hf_wlancap_priority, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset+=4;
+
     ssi_type = tvb_get_ntohl(tvb, offset);
     if (tree)
       proto_tree_add_uint(wlan_tree, hf_wlancap_ssi_type, tvb, offset, 4, ssi_type);
@@ -546,7 +575,7 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     case SSI_DBM:
       /* dBm */
       dbm = tvb_get_ntohl(tvb, offset);
-      phdr.has_signal_dbm = TRUE;
+      phdr.has_signal_dbm = true;
       phdr.signal_dbm = dbm;
       col_add_fstr(pinfo->cinfo, COL_RSSI, "%d dBm", dbm);
       if (tree)
@@ -561,6 +590,7 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
       break;
     }
     offset+=4;
+
     antnoise = tvb_get_ntohl(tvb, offset);
     /* 0xffffffff means "hardware does not provide noise data" */
     if (antnoise != 0xffffffff) {
@@ -581,7 +611,7 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
         /* dBm */
         if (antnoise != 0) {
           /* The spec says use 0xffffffff, but some drivers appear to use 0. */
-          phdr.has_noise_dbm = TRUE;
+          phdr.has_noise_dbm = true;
           phdr.noise_dbm = antnoise;
         }
         if (tree)
@@ -596,70 +626,57 @@ dissect_wlancap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
       }
     }
     offset+=4;
-    switch (tvb_get_ntohl(tvb, offset)) {
 
-    case 0:
-      /* Undefined, so we don't know if there's a short preamble */
-      break;
+    /*
+     * This only applies to packets received as DSSS (1b/11g-DSSS).
+     */
+    if (phdr.phy == PHDR_802_11_PHY_11B) {
+      switch (tvb_get_ntohl(tvb, offset)) {
 
-    case 1:
-      /*
-       * Short preamble.
-       */
-      switch (phdr.phy) {
-
-      case PHDR_802_11_PHY_11B:
-        phdr.phy_info.info_11b.has_short_preamble = TRUE;
-        phdr.phy_info.info_11b.short_preamble = TRUE;
+      case 0:
+        /* Undefined, so we don't know if there's a short preamble */
+        phdr.phy_info.info_11b.has_short_preamble = false;
         break;
 
-      case PHDR_802_11_PHY_11G:
-        phdr.phy_info.info_11g.has_short_preamble = TRUE;
-        phdr.phy_info.info_11g.short_preamble = TRUE;
-        break;
-      }
-      break;
-
-    case 2:
-      /*
-       * Long preamble.
-       * We assume this is present only for PHYs that support variable
-       * preamble lengths.
-       */
-      switch (phdr.phy) {
-
-      case PHDR_802_11_PHY_11B:
-        phdr.phy_info.info_11b.has_short_preamble = TRUE;
-        phdr.phy_info.info_11b.short_preamble = FALSE;
+      case 1:
+        /* Short preamble. */
+        phdr.phy_info.info_11b.has_short_preamble = true;
+        phdr.phy_info.info_11b.short_preamble = true;
         break;
 
-      case PHDR_802_11_PHY_11G:
-        phdr.phy_info.info_11g.has_short_preamble = TRUE;
-        phdr.phy_info.info_11g.short_preamble = FALSE;
+      case 2:
+        /* Long preamble. */
+        phdr.phy_info.info_11b.has_short_preamble = true;
+        phdr.phy_info.info_11b.short_preamble = false;
+        break;
+
+      default:
+        /* Invalid, so we don't know if there's a short preamble. */
+        phdr.phy_info.info_11b.has_short_preamble = false;
         break;
       }
-      break;
-
-    default:
-      /* Invalid, so we don't know if there's a short preamble. */
-      break;
     }
     if (tree)
       proto_tree_add_item(wlan_tree, hf_wlancap_preamble, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset+=4;
+
     if (tree)
       proto_tree_add_item(wlan_tree, hf_wlancap_encoding, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset+=4;
+
     if (version > 1) {
       if (tree)
         proto_tree_add_item(wlan_tree, hf_wlancap_sequence, tvb, offset, 4, ENC_BIG_ENDIAN);
       offset+=4;
+
       if (tree)
         proto_tree_add_item(wlan_tree, hf_wlancap_drops, tvb, offset, 4, ENC_BIG_ENDIAN);
       offset+=4;
+
       if (tree)
         proto_tree_add_item(wlan_tree, hf_wlancap_receiver_addr, tvb, offset, 6, ENC_NA);
       offset+=6;
+
       if (tree)
         proto_tree_add_item(wlan_tree, hf_wlancap_padding, tvb, offset, 2, ENC_NA);
       /*offset+=2;*/
@@ -826,7 +843,7 @@ static hf_register_info hf_wlancap[] = {
       NULL, HFILL }}
 };
 
-static gint *tree_array[] = {
+static int *tree_array[] = {
   &ett_wlancap
 };
 
@@ -836,18 +853,21 @@ void proto_register_ieee80211_wlancap(void)
                                           "AVS WLANCAP", "wlancap");
   proto_register_field_array(proto_wlancap, hf_wlancap,
                              array_length(hf_wlancap));
-  register_dissector("wlancap", dissect_wlancap, proto_wlancap);
+  wlancap_handle = register_dissector("wlancap", dissect_wlancap, proto_wlancap);
 
-  wlancap_handle = create_dissector_handle(dissect_wlancap, proto_wlancap);
   dissector_add_uint("wtap_encap", WTAP_ENCAP_IEEE_802_11_AVS,
                      wlancap_handle);
   proto_register_subtree_array(tree_array, array_length(tree_array));
+
+  wlancap_cap_handle = register_capture_dissector("wlancap", capture_wlancap, proto_wlancap);
 }
 
 void proto_reg_handoff_ieee80211_wlancap(void)
 {
   ieee80211_radio_handle = find_dissector_add_dependency("wlan_radio", proto_wlancap);
-  register_capture_dissector("wtap_encap", WTAP_ENCAP_IEEE_802_11_AVS, capture_wlancap, proto_wlancap);
+  capture_dissector_add_uint("wtap_encap", WTAP_ENCAP_IEEE_802_11_AVS, wlancap_cap_handle);
+
+  ieee80211_cap_handle = find_capture_dissector("ieee80211");
 }
 
 /*

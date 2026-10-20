@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,30 +21,23 @@
 #ifndef __G_THREADED_RESOLVER_H__
 #define __G_THREADED_RESOLVER_H__
 
+#include <gio/gio.h>
 #include <gio/gresolver.h>
 
 G_BEGIN_DECLS
 
+/**
+ * GThreadedResolver:
+ *
+ * #GThreadedResolver is an implementation of #GResolver which calls the libc
+ * lookup functions in threads to allow them to run asynchronously.
+ *
+ * Since: 2.20
+ */
 #define G_TYPE_THREADED_RESOLVER         (g_threaded_resolver_get_type ())
-#define G_THREADED_RESOLVER(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), G_TYPE_THREADED_RESOLVER, GThreadedResolver))
-#define G_THREADED_RESOLVER_CLASS(k)     (G_TYPE_CHECK_CLASS_CAST((k), G_TYPE_THREADED_RESOLVER, GThreadedResolverClass))
-#define G_IS_THREADED_RESOLVER(o)        (G_TYPE_CHECK_INSTANCE_TYPE ((o), G_TYPE_THREADED_RESOLVER))
-#define G_IS_THREADED_RESOLVER_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_THREADED_RESOLVER))
-#define G_THREADED_RESOLVER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), G_TYPE_THREADED_RESOLVER, GThreadedResolverClass))
 
-typedef struct {
-  GResolver parent_instance;
-
-  GThreadPool *thread_pool;
-} GThreadedResolver;
-
-typedef struct {
-  GResolverClass parent_class;
-
-} GThreadedResolverClass;
-
-GLIB_AVAILABLE_IN_ALL
-GType g_threaded_resolver_get_type (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+G_DECLARE_FINAL_TYPE (GThreadedResolver, g_threaded_resolver, G, THREADED_RESOLVER, GResolver)
 
 G_END_DECLS
 

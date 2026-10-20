@@ -1,7 +1,5 @@
 /* Reading Java ResourceBundles.
-   Copyright (C) 2001-2003, 2006-2008, 2011, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "read-java.h"
@@ -28,6 +26,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include <error.h>
 #include "msgunfmt.h"
 #include "relocatable.h"
 #include "javaexec.h"
@@ -35,7 +34,8 @@
 #include "wait-process.h"
 #include "read-catalog.h"
 #include "read-po.h"
-#include "error.h"
+#include "str-list.h"
+#include "xerror-handler.h"
 #include "gettext.h"
 
 #define _(str) gettext (str)
@@ -53,30 +53,31 @@ struct locals
 
 static bool
 execute_and_read_po_output (const char *progname,
-                            const char *prog_path, char **prog_argv,
+                            const char *prog_path,
+                            const char * const *prog_argv,
                             void *private_data)
 {
   struct locals *l = (struct locals *) private_data;
-  pid_t child;
-  int fd[1];
-  FILE *fp;
-  int exitstatus;
 
   /* Open a pipe to the JVM.  */
-  child = create_pipe_in (progname, prog_path, prog_argv, DEV_NULL, false,
-                          true, true, fd);
+  int fd[1];
+  pid_t child = create_pipe_in (progname, prog_path, prog_argv, NULL, NULL,
+                                DEV_NULL, false, true, true, fd);
 
-  fp = fdopen (fd[0], "r");
+  FILE *fp = fdopen (fd[0], "r");
   if (fp == NULL)
     error (EXIT_FAILURE, errno, _("fdopen() failed"));
 
   /* Read the message list.  */
-  l->mdlp = read_catalog_stream (fp, "(pipe)", "(pipe)", &input_format_po);
+  string_list_ty arena;
+  string_list_init (&arena);
+  l->mdlp = read_catalog_stream (fp, "(pipe)", "(pipe)", &input_format_po,
+                                 textmode_xerror_handler, &arena);
 
   fclose (fp);
 
   /* Remove zombie process from process list, and retrieve exit status.  */
-  exitstatus =
+  int exitstatus =
     wait_subprocess (child, progname, false, false, true, true, NULL);
   if (exitstatus != 0)
     error (EXIT_FAILURE, 0, _("%s subprocess failed with exit code %d"),
@@ -90,24 +91,10 @@ msgdomain_list_ty *
 msgdomain_read_java (const char *resource_name, const char *locale_name)
 {
   const char *class_name = "gnu.gettext.DumpResource";
-  const char *gettextjexedir;
-  const char *gettextjar;
-  const char *args[3];
-  struct locals locals;
-
-#if USEJEXE
-  /* Make it possible to override the executable's location.  This is
-     necessary for running the testsuite before "make install".  */
-  gettextjexedir = getenv ("GETTEXTJEXEDIR");
-  if (gettextjexedir == NULL || gettextjexedir[0] == '\0')
-    gettextjexedir = relocate (GETTEXTJEXEDIR);
-#else
-  gettextjexedir = NULL;
-#endif
 
   /* Make it possible to override the gettext.jar location.  This is
      necessary for running the testsuite before "make install".  */
-  gettextjar = getenv ("GETTEXTJAR");
+  const char *gettextjar = getenv ("GETTEXTJAR");
   if (gettextjar == NULL || gettextjar[0] == '\0')
     gettextjar = relocate (GETTEXTJAR);
 
@@ -116,6 +103,7 @@ msgdomain_read_java (const char *resource_name, const char *locale_name)
     resource_name = "Messages";
 
   /* Prepare arguments.  */
+  const char *args[3];
   args[0] = resource_name;
   if (locale_name != NULL)
     {
@@ -128,7 +116,8 @@ msgdomain_read_java (const char *resource_name, const char *locale_name)
   /* Dump the resource and retrieve the resulting output.
      Here we use the user's CLASSPATH, not a minimal one, so that the
      resource can be found.  */
-  if (execute_java_class (class_name, &gettextjar, 1, false, gettextjexedir,
+  struct locals locals;
+  if (execute_java_class (class_name, &gettextjar, 1, false, NULL,
                           args,
                           verbose, false,
                           execute_and_read_po_output, &locals))

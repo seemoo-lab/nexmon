@@ -1,0 +1,27 @@
+(* Example for use of GNU gettext.
+   This file is in the public domain.
+
+   Source code of the OCaml program.  *)
+
+
+module ConfiguredGettext =
+  (* See https://gildor478.github.io/ocaml-gettext/gettext/Gettext/Program/index.html *)
+  Gettext.Program
+    (* See https://gildor478.github.io/ocaml-gettext/gettext/GettextTypes/module-type-INIT_TYPE/index.html *)
+    (struct
+      let textdomain = "hello-ocaml"
+      let codeset = None
+      let dir = Some "@localedir@"
+      let dependencies = []
+    end)
+    (* See https://github.com/gildor478/ocaml-gettext/blob/master/doc/reference-manual.md *)
+    (GettextStub.Native)
+
+open ConfiguredGettext;;
+open Printf;;
+open Unix;; (* works also on Windows *)
+
+let () =
+  print_endline (s_ "Hello, world!");
+  print_endline (sprintf (f_ "This program is running as process number %d.")
+                         (getpid ()));

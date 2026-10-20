@@ -41,7 +41,7 @@ typedef enum
 {
   G_BSEARCH_ARRAY_ALIGN_POWER2  = 1 << 0, /* align memory to power2 sizes */
   G_BSEARCH_ARRAY_AUTO_SHRINK  = 1 << 1   /* shrink array upon removal */
-} GBSearchArrayFlags;
+} G_GNUC_FLAG_ENUM GBSearchArrayFlags;
 
 
 /* --- structures --- */
@@ -116,11 +116,7 @@ static inline void              g_bsearch_array_free      (GBSearchArray        
 
 /* --- implementation --- */
 /* helper macro to cut down realloc()s */
-#ifdef  DISABLE_MEM_POOLS
-#define G_BSEARCH_UPPER_POWER2(n)       (n)
-#else   /* !DISABLE_MEM_POOLS */
-#define G_BSEARCH_UPPER_POWER2(n)       ((n) ? 1 << g_bit_storage ((n) - 1) : 0)
-#endif  /* !DISABLE_MEM_POOLS */
+#define G_BSEARCH_UPPER_POWER2(n)       ((n) ? 1u << g_bit_storage ((n) - 1) : 0)
 #define G_BSEARCH_ARRAY_NODES(barray)    (((guint8*) (barray)) + sizeof (GBSearchArray))
 static inline GBSearchArray*
 g_bsearch_array_create (const GBSearchConfig *bconfig)
@@ -186,13 +182,14 @@ g_bsearch_array_get_index (GBSearchArray        *barray,
                            const GBSearchConfig *bconfig,
                            gconstpointer         node_in_array)
 {
-  guint distance = ((guint8*) node_in_array) - G_BSEARCH_ARRAY_NODES (barray);
+  size_t distance = (size_t) (((guint8*) node_in_array) - G_BSEARCH_ARRAY_NODES (barray));
 
   g_return_val_if_fail (node_in_array != NULL, barray->n_nodes);
 
   distance /= bconfig->sizeof_node;
+  g_assert (distance <= UINT_MAX);
 
-  return MIN (distance, barray->n_nodes + 1); /* may return one after end */
+  return (unsigned int) MIN (distance, barray->n_nodes + 1); /* may return one after end */
 }
 static inline GBSearchArray*
 g_bsearch_array_grow (GBSearchArray        *barray,

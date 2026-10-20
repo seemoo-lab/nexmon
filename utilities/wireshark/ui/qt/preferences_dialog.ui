@@ -16,7 +16,7 @@
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <widget class="QTreeWidget" name="prefsTree">
+     <widget class="PrefModuleTreeView" name="prefsView">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
         <horstretch>0</horstretch>
@@ -29,46 +29,9 @@
       <property name="headerHidden">
        <bool>true</bool>
       </property>
-      <column>
-       <property name="text">
-        <string notr="true">1</string>
-       </property>
-      </column>
-      <item>
-       <property name="text">
-        <string>Appearance</string>
-       </property>
-       <item>
-        <property name="text">
-         <string>Layout</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Columns</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Font and Colors</string>
-        </property>
-       </item>
-      </item>
-      <item>
-       <property name="text">
-        <string>Capture</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Filter Expressions</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Advanced</string>
-       </property>
-      </item>
+      <property name="sortingEnabled">
+        <bool>true</bool>
+      </property>
      </widget>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="sizePolicy">
@@ -84,8 +47,11 @@
       <widget class="LayoutPreferencesFrame" name="layoutFrame"/>
       <widget class="ColumnPreferencesFrame" name="columnFrame"/>
       <widget class="FontColorPreferencesFrame" name="fontandcolorFrame"/>
+      <widget class="WelcomePagePreferencesFrame" name="welcomePageFrame"/>
       <widget class="CapturePreferencesFrame" name="captureFrame"/>
-      <widget class="FilterExpressionsPreferencesFrame" name="filterExpressonsFrame"/>
+      <widget class="UatFrame" name="expertFrame"/>
+      <widget class="UatFrame" name="filterExpressonsFrame"/>
+      <widget class="RsaKeysFrame" name="rsaKeysFrame"/>
       <widget class="QFrame" name="advancedFrame">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
@@ -99,6 +65,16 @@
           </item>
           <item>
            <widget class="QLineEdit" name="advancedSearchLineEdit"/>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="showChangedValuesCheckBox">
+            <property name="toolTip">
+             <string>Checking this will show only changed preferences.</string>
+            </property>
+            <property name="text">
+             <string>Show changed values</string>
+            </property>
+           </widget>
           </item>
           <item>
            <spacer name="horizontalSpacer">
@@ -116,33 +92,19 @@
          </layout>
         </item>
         <item>
-         <widget class="QTreeWidget" name="advancedTree">
+         <widget class="QTreeView" name="advancedView">
           <property name="indentation">
            <number>0</number>
           </property>
           <property name="uniformRowHeights">
            <bool>true</bool>
           </property>
-          <column>
-           <property name="text">
-            <string>Name</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Status</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Type</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Value</string>
-           </property>
-          </column>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::ContiguousSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
          </widget>
         </item>
        </layout>
@@ -156,7 +118,7 @@
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::Ok|QDialogButtonBox::Apply</set>
      </property>
     </widget>
    </item>
@@ -188,51 +150,35 @@
    <container>1</container>
   </customwidget>
   <customwidget>
+   <class>WelcomePagePreferencesFrame</class>
+   <extends>QFrame</extends>
+   <header>welcome_page_preferences_frame.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>CapturePreferencesFrame</class>
    <extends>QFrame</extends>
    <header>capture_preferences_frame.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>FilterExpressionsPreferencesFrame</class>
+   <class>UatFrame</class>
    <extends>QFrame</extends>
-   <header>filter_expressions_preferences_frame.h</header>
+   <header>uat_frame.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PrefModuleTreeView</class>
+   <extends>QTreeView</extends>
+   <header>widgets/pref_module_view.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>RsaKeysFrame</class>
+   <extends>QFrame</extends>
+   <header>rsa_keys_frame.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>PreferencesDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>PreferencesDialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
 </ui>

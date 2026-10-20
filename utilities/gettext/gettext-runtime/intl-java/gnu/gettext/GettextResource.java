@@ -1,5 +1,5 @@
 /* GNU gettext for Java
- * Copyright (C) 2001, 2007, 2015-2016 Free Software Foundation, Inc.
+ * Copyright (C) 2001-2025 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -12,7 +12,7 @@
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package gnu.gettext;
@@ -99,7 +99,6 @@ public abstract class GettextResource extends ResourceBundle {
     // is that we want the generated ResourceBundles to be completely
     // standalone, so that migration from the Sun approach to the GNU gettext
     // approach (without use of plurals) is as straightforward as possible.
-    ResourceBundle origCatalog = catalog;
     do {
       // Try catalog itself.
       if (verbose)
@@ -148,7 +147,7 @@ public abstract class GettextResource extends ResourceBundle {
               String[] pluralforms = (String[])localValue;
               long i = 0;
               try {
-                i = ((Long) pluralEvalMethod.invoke(catalog, new Object[] { new Long(n) })).longValue();
+                i = ((Long) pluralEvalMethod.invoke(catalog, new Object[] { Long.valueOf(n) })).longValue();
                 if (!(i >= 0 && i < pluralforms.length))
                   i = 0;
               } catch (IllegalAccessException e) {

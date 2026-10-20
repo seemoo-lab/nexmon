@@ -16,7 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, see <http://www.gnu.org/licenses/>.
 
-# Contributer(s):
+# Contributor(s):
 #   Andrew Taylor <andrew.taylor@montage.ca>
 
 # gen-unicode-tables.pl - Generate tables for libunicode from Unicode data.
@@ -111,6 +111,9 @@ $FOLDING_MAPPING = 2;
     (
      'AI' => "G_UNICODE_BREAK_AMBIGUOUS",
      'AL' => "G_UNICODE_BREAK_ALPHABETIC",
+     'AK' => "G_UNICODE_BREAK_AKSARA",
+     'AP' => "G_UNICODE_BREAK_AKSARA_PRE_BASE",
+     'AS' => "G_UNICODE_BREAK_AKSARA_START",
      'B2' => "G_UNICODE_BREAK_BEFORE_AND_AFTER",
      'BA' => "G_UNICODE_BREAK_AFTER",
      'BB' => "G_UNICODE_BREAK_BEFORE",
@@ -119,12 +122,15 @@ $FOLDING_MAPPING = 2;
      'CJ' => "G_UNICODE_BREAK_CONDITIONAL_JAPANESE_STARTER",
      'CL' => "G_UNICODE_BREAK_CLOSE_PUNCTUATION",
      'CM' => "G_UNICODE_BREAK_COMBINING_MARK",
-     'CP' => "G_UNICODE_BREAK_CLOSE_PARANTHESIS",
+     'CP' => "G_UNICODE_BREAK_CLOSE_PARENTHESIS",
      'CR' => "G_UNICODE_BREAK_CARRIAGE_RETURN",
+     'EB' => "G_UNICODE_BREAK_EMOJI_BASE",
+     'EM' => "G_UNICODE_BREAK_EMOJI_MODIFIER",
      'EX' => "G_UNICODE_BREAK_EXCLAMATION",
      'GL' => "G_UNICODE_BREAK_NON_BREAKING_GLUE",
      'H2' => "G_UNICODE_BREAK_HANGUL_LV_SYLLABLE",
      'H3' => "G_UNICODE_BREAK_HANGUL_LVT_SYLLABLE",
+     'HH' => "G_UNICODE_BREAK_UNAMBIGUOUS_HYPHEN",
      'HL' => "G_UNICODE_BREAK_HEBREW_LETTER",
      'HY' => "G_UNICODE_BREAK_HYPHEN",
      'ID' => "G_UNICODE_BREAK_IDEOGRAPHIC",
@@ -146,9 +152,12 @@ $FOLDING_MAPPING = 2;
      'SG' => "G_UNICODE_BREAK_SURROGATE",
      'SP' => "G_UNICODE_BREAK_SPACE",
      'SY' => "G_UNICODE_BREAK_SYMBOL",
+     'VF' => "G_UNICODE_BREAK_VIRAMA_FINAL",
+     'VI' => "G_UNICODE_BREAK_VIRAMA",
      'WJ' => "G_UNICODE_BREAK_WORD_JOINER",
      'XX' => "G_UNICODE_BREAK_UNKNOWN",
-     'ZW' => "G_UNICODE_BREAK_ZERO_WIDTH_SPACE"
+     'ZW' => "G_UNICODE_BREAK_ZERO_WIDTH_SPACE",
+     'ZWJ' => "G_UNICODE_BREAK_ZERO_WIDTH_JOINER"
      );
 
 # Title case mappings.
@@ -222,7 +231,7 @@ defined $derivedeastasianwidthtxt or die "Did not find DerivedEastAsianWidth fil
 print "Creating decomp table\n" if ($do_decomp);
 print "Creating property table\n" if ($do_props);
 
-print "Composition exlusions from $compositionexclusionstxt\n";
+print "Composition exclusions from $compositionexclusionstxt\n";
 
 open (INPUT, "< $compositionexclusionstxt") || exit 1;
 
@@ -329,7 +338,11 @@ while (<INPUT>)
 	next;
     }
 
-    if ($fields[$CODE] =~ /([A-F0-9]{4,6})\.\.([A-F0-9]{4,6})/) 
+    # Trim leading and trailing whitespace
+    $fields[$CODE] =~ s/^\s+|\s+$//;
+    $fields[$BREAK_PROPERTY] =~ s/^\s+|\s+$//;
+
+    if ($fields[$CODE] =~ /([A-F0-9]{4,6})\.\.([A-F0-9]{4,6})/)
     {
 	$start_code = hex ($1);
 	$end_code = hex ($2);
@@ -792,13 +805,17 @@ sub print_row
     my ($column) = 4;
     for ($i = $start; $i < $start + 256; ++$i)
     {
-	print OUT ", "
+	print OUT ","
 	    if $i > $start;
 	my ($text) = $values[$i - $start];
 	if (length ($text) + $column + 2 > 78)
 	{
 	    print OUT "\n    ";
 	    $column = 4;
+	}
+	elsif ($i > $start)
+	{
+	    print OUT " "
 	}
 	print OUT $text;
 	$column += length ($text) + 2;
@@ -1150,11 +1167,12 @@ EOT
 
 sub enumerate_ordered
 {
-    my ($array) = @_;
+    my ($array, $should_filter) = @_;
+    $should_filter = defined $should_filter ? $should_filter : 1;
 
     my $n = 0;
     for my $code (sort { $a <=> $b } keys %$array) {
-	if ($array->{$code} == 1) {
+	if ($should_filter && $array->{$code} == 1) {
 	    delete $array->{$code};
 	    next;
 	}
@@ -1172,6 +1190,89 @@ sub output_composition_table
 
     my %first;
     my %second;
+
+    # ## Composition table
+    #
+    # The composition table is a way of encoding Unicode compositions.
+    #
+    # A decomposition is where one codepoint (representing a  ‘composed’ glyph,
+    # such as U+00F4 LATIN SMALL LETTER O WITH CIRCUMFLEX) is turned into
+    # exactly two others (representing its components, in this case U+006F LATIN
+    # SMALL LETTER O and U+0302 COMBINING CIRCUMFLEX ACCENT). This process can
+    # be applied recursively to give ‘full decomposition’, but the table only
+    # ever encodes decomposition pairs.
+    #
+    # A composition is the inverse of this process.
+    #
+    # ## Indexing
+    #
+    # The composition table (`compose_array` in the outputted code) is a 2D
+    # table which is conceptually indexed by the first and second codepoints of
+    # the pair being composed. If the dereferenced value is non-zero, that gives
+    # the composed codepoint. In practice, there are relatively few composition
+    # pairs in the entire Unicode codepoint space, so directly indexing them
+    # would create a very sparse table. Various approaches are used to optimise
+    # the space consumed by the table.
+    #
+    # Codepoints are indexed using the `COMPOSE_INDEX` macro, `compose_data` and
+    # `compose_table` arrays. Together these form a minimal perfect hash
+    # function which maps the codepoint domain into the set of integers 1…n,
+    # where `n` is the number of codepoints which form part of a composed
+    # codepoint (currently around 450, as of 2024).
+    #
+    # The most significant 3 bytes of the codepoint are used to look up its
+    # ‘page’ number  (this is a GLib specific concept and does not come from the
+    # Unicode standard) via `compose_table`. Most pages are not used. Each page
+    # which contains at least one codepoint which forms part of a composition
+    # has an entry in `compose_data`, which is indexed by the least significant
+    # 1 byte of the codepoint to give its ‘compose index’.
+    #
+    # The ‘compose index’ of a codepoint is used to look up its composition in
+    # one of several arrays (which together conceptually form the composition
+    # table). All of the arrays are indexed by this one ‘compose index’ domain.
+    #
+    # ‘Singletons’ are separated out into their own arrays within this domain. A
+    # ‘first singleton’ is a codepoint which appears as the first  codepoint in
+    # a composition pair, and which doesn’t appear (in either position) in any
+    # other composition pairs. A ‘second singleton’ is a codepoint which appears
+    # as the second codepoint in a composition pair, similarly. They are looked
+    # up in `compose_first_single` and `compose_second_single`, respectively.
+    # The resulting value is a tuple containing the other expected codepoint in
+    # the composition pair, and the composed codepoint.
+    #
+    # ‘Either’ codepoints are also separated out into their own array within
+    # this domain. An ‘either’ codepoint is one which appears as the first
+    # codepoint of a composition pair and the second codepoint of a composition
+    # pair (not necessarily different pairs). These have to be separated out as
+    # `COMPOSE_INDEX` does not distinguish between first and second codepoints,
+    # so ‘either’ codepoints necessitate a symmetric array. If the full
+    # `compose_array` were symmetric, it would be huge. Since there are
+    # relatively few ‘either’ codepoints (15 at the time of writing in 2024),
+    # a separate symmetric array suffices for them.
+    #
+    # This means that ‘either’ codepoints have to be a transitive closure: any
+    # codepoint which appears in a first and second position is an ‘either’
+    # codepoint, plus all codepoints which appear with an ‘either’ codepoint.
+    #
+    # The main composition table (`compose_array`) is indexed by the first and
+    # second codepoints of a composed pair. Because these are both in the same
+    # indexing domain, this means a given codepoint can *only* appear as the
+    # first or the second codepoint in a composed pair, but not as both — and
+    # not as the first codepoint in one pair but the second in another.
+    #
+    # ## Performance
+    #
+    # Because Unicode composition happens very frequently (it’s part of text
+    # normalisation in g_utf8_normalize(), and has to check every codepoint in a
+    # string), it needs to be fast. Almost all codepoints which are checked are
+    # not part of a composition, so need to be flagged as such quickly. Those
+    # which are, can take a slightly slower path (through the multiple levels of
+    # look up tables), but this is still a balance between size of the tables in
+    # memory, their impact on the CPU caches, and lookup speed. In particular,
+    # it is a safe assumption that in normal human text, composed codepoints are
+    # likely to all come from the same Unicode block (which will be represented
+    # by one or more contiguous page numbers in the tables) — so we get better
+    # performance by keeping spatial locality of these lookups.
 
     # First we need to go through and remove decompositions
     # starting with a non-starter, and single-character 
@@ -1209,9 +1310,6 @@ sub output_composition_table
 	}
     }
 
-    # Assign integer indices, removing singletons
-    my $n_first = enumerate_ordered (\%first);
-
     # Now record the second character of each (non-singleton) decomposition
     for $code (keys %compositions) {
 	@values = map { hex ($_) } split /\s+/, $compositions{$code};
@@ -1225,21 +1323,64 @@ sub output_composition_table
 	}
     }
 
-    # Assign integer indices, removing duplicate
+    # See if there are any codepoints which occur as the first codepoint in one
+    # decomposition and the second in another. These need to be indexed
+    # separately, and need to be a transitive closure.
+    my $changed = 0;
+    do {
+	$changed = 0;
+
+	for $code (keys %compositions) {
+	    @values = map { hex ($_) } split /\s+/, $compositions{$code};
+
+	    if (exists $first{$values[1]} || exists $second{$values[0]} ||
+	        (exists $either{$values[0]} && !exists $either{$values[1]}) ||
+	        (!exists $either{$values[0]} && exists $either{$values[1]})) {
+		if (exists $either{$values[0]}) {
+		    $either{$values[0]}++;
+		} else {
+		    $either{$values[0]} = 1;
+		}
+		if (exists $either{$values[1]}) {
+		    $either{$values[1]}++;
+		} else {
+		    $either{$values[1]} = 1;
+		}
+
+		delete $first{$values[0]};
+		delete $first{$values[1]};
+		delete $second{$values[0]};
+		delete $second{$values[1]};
+		$changed = 1;
+	    }
+	}
+    } while ($changed);
+
+    # Assign integer indices, removing singletons from the first and second maps,
+    # but not from the either map (as it needs to be a transitive closure).
+    my $n_first = enumerate_ordered (\%first);
     my $n_second = enumerate_ordered (\%second);
+    my $n_either = enumerate_ordered (\%either, 0);
 
     # Build reverse table
-
     my @first_singletons;
     my @second_singletons;
     my %reverse;
+    my %reverse_either;
+
     for $code (keys %compositions) {
 	@values = map { hex ($_) } split /\s+/, $compositions{$code};
 
 	my $first = $first{$values[0]};
 	my $second = $second{$values[1]};
+	my $either0 = $either{$values[0]};
+	my $either1 = $either{$values[1]};
 
-	if (defined $first && defined $second) {
+	if (defined $either0 && defined $either1) {
+	    $reverse_either{"$either0|$either1"} = $code;
+	} elsif ((defined $either0 && !defined $either1) || (!defined $either0 && defined $either1)) {
+	    die "‘either’ map is not a transitive closure for ", $values[0], " or ", $values[1];
+	} elsif (defined $first && defined $second) {
 	    $reverse{"$first|$second"} = $code;
 	} elsif (!defined $first) {
 	    push @first_singletons, [ $values[0], $values[1], $code ];
@@ -1269,12 +1410,18 @@ sub output_composition_table
     printf OUT "#define COMPOSE_FIRST_SINGLE_START %d\n", $total;
     for $record (@first_singletons) {
 	my $code = $record->[0];
+	if (defined $vals{$code}) {
+		die "redefining $code as first-singleton";
+	}
 	$vals{$code} = $i++ + $total;
 	$last = $code if $code > $last;
     }
     $total += @first_singletons;
     printf OUT "#define COMPOSE_SECOND_START %d\n", $total;
     for $code (keys %second) {
+	if (defined $vals{$code}) {
+		die "redefining $code as second";
+	}
 	$vals{$code} = $second{$code} + $total;
 	$last = $code if $code > $last;
     }
@@ -1283,7 +1430,19 @@ sub output_composition_table
     printf OUT "#define COMPOSE_SECOND_SINGLE_START %d\n\n", $total;
     for $record (@second_singletons) {
 	my $code = $record->[0];
+	if (defined $vals{$code}) {
+		die "redefining $code as second-singleton";
+	}
 	$vals{$code} = $i++ + $total;
+	$last = $code if $code > $last;
+    }
+    $total += @second_singletons;
+    printf OUT "#define COMPOSE_EITHER_START %d\n\n", $total;
+    for $code (keys %either) {
+	if (defined $vals{$code}) {
+		die "redefining $code as either";
+	}
+	$vals{$code} = $either{$code} + $total;
 	$last = $code if $code > $last;
     }
 
@@ -1336,7 +1495,7 @@ sub output_composition_table
     # Output array of composition pairs
 
     print OUT <<EOT;
-static const guint16 compose_array[$n_first][$n_second] = {
+static const gunichar compose_array[$n_first][$n_second] = {
 EOT
 			
     for (my $i = 0; $i < $n_first; $i++) {
@@ -1345,12 +1504,9 @@ EOT
 	for (my $j = 0; $j < $n_second; $j++) {
 	    print OUT ", " if $j;
 	    if (exists $reverse{"$i|$j"}) {
-                if ($reverse{"$i|$j"} > 0xFFFF) {
-                    die "time to switch compose_array to gunichar" ;
-                }
-		printf OUT "0x%04x", $reverse{"$i|$j"};
+		printf OUT "0x%06x", $reverse{"$i|$j"};
 	    } else {
-		print OUT "     0";
+		print OUT "       0";
             }
 	}
 	print OUT " }";
@@ -1361,8 +1517,35 @@ EOT
 };
 EOT
 
-    $bytes_out += $n_first * $n_second * 2;
-    
+    $bytes_out += $n_first * $n_second * 4;
+
+    # Output array of ‘either’ codepoints — the codepoints which can appear as
+    # either the first or second in a composition pair.
+    print OUT <<EOT;
+static const gunichar compose_either_array[$n_either][$n_either] = {
+EOT
+
+    for (my $i = 0; $i < $n_either; $i++) {
+	print OUT ",\n" if $i;
+	print OUT " { ";
+	for (my $j = 0; $j < $n_either; $j++) {
+	    print OUT ", " if $j;
+	    if (exists $reverse_either{"$i|$j"}) {
+		printf OUT "0x%06x", $reverse_either{"$i|$j"};
+	    } else {
+		print OUT "       0";
+            }
+	}
+	print OUT " }";
+    }
+    print OUT "\n";
+
+    print OUT <<EOT;
+};
+EOT
+
+    $bytes_out += $n_either * $n_either * 4;
+
     printf STDERR "Generated %d bytes in compose tables\n", $bytes_out;
 }
 

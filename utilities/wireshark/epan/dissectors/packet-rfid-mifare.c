@@ -12,19 +12,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  */
 
@@ -33,17 +21,16 @@
 #include <epan/packet.h>
 
 void proto_register_mifare(void);
-void proto_reg_handoff_mifare(void);
 
-static int proto_mifare = -1;
+static int proto_mifare;
 
-static int hf_mifare_command = -1;
-static int hf_mifare_block_address = -1;
-static int hf_mifare_key_a = -1;
-static int hf_mifare_key_b = -1;
-static int hf_mifare_uid = -1;
-static int hf_mifare_operand = -1;
-static int hf_mifare_payload = -1;
+static int hf_mifare_command;
+static int hf_mifare_block_address;
+static int hf_mifare_key_a;
+static int hf_mifare_key_b;
+static int hf_mifare_uid;
+static int hf_mifare_operand;
+static int hf_mifare_payload;
 
 #define AUTH_A    0x60
 #define AUTH_B    0x61
@@ -69,14 +56,14 @@ static const value_string hf_mifare_commands[] = {
 };
 
 /* Subtree handles: set by register_subtree_array */
-static gint ett_mifare = -1;
+static int ett_mifare;
 
 static int
 dissect_mifare(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     proto_item *item;
     proto_tree *mifare_tree;
-    guint8      cmd;
+    uint8_t     cmd;
 
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "MiFare");
@@ -88,7 +75,7 @@ dissect_mifare(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     mifare_tree = proto_item_add_subtree(item, ett_mifare);
 
     proto_tree_add_item(mifare_tree, hf_mifare_command, tvb, 0, 1, ENC_BIG_ENDIAN);
-    cmd = tvb_get_guint8(tvb, 0);
+    cmd = tvb_get_uint8(tvb, 0);
 
 
     switch (cmd) {
@@ -97,23 +84,23 @@ dissect_mifare(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
             proto_tree_add_item(mifare_tree, hf_mifare_block_address, tvb, 1, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(mifare_tree, hf_mifare_key_a, tvb, 2, 6, ENC_BIG_ENDIAN);
             proto_tree_add_item(mifare_tree, hf_mifare_uid, tvb, 8, 4, ENC_BIG_ENDIAN);
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Authenticate with Key A");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Authenticate with Key A");
             break;
 
         case AUTH_B:
             proto_tree_add_item(mifare_tree, hf_mifare_block_address, tvb, 1, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(mifare_tree, hf_mifare_key_b, tvb, 2, 6, ENC_BIG_ENDIAN);
             proto_tree_add_item(mifare_tree, hf_mifare_uid, tvb, 8, 4, ENC_BIG_ENDIAN);
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Authenticate with Key B");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Authenticate with Key B");
             break;
 
         case READ:
             proto_tree_add_item(mifare_tree, hf_mifare_block_address, tvb, 1, 1, ENC_BIG_ENDIAN);
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Read");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Read");
             break;
 
         case WRITE:
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Write");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Write");
 
             /* LibNFC and the TouchATag-branded reader don't expose the 2-byte CRC
                or 4-bit NAK, as per MF1S703x, so we pretend that they don't exist.
@@ -127,29 +114,29 @@ dissect_mifare(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 
         case TRANSFER:
             proto_tree_add_item(mifare_tree, hf_mifare_block_address, tvb, 1, 1, ENC_BIG_ENDIAN);
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Transfer");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Transfer");
             break;
 
         case DECREMENT:
             proto_tree_add_item(mifare_tree, hf_mifare_block_address, tvb, 1, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(mifare_tree, hf_mifare_operand, tvb, 2, 4, ENC_BIG_ENDIAN);
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Decrement");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Decrement");
             break;
 
         case INCREMENT:
             proto_tree_add_item(mifare_tree, hf_mifare_block_address, tvb, 1, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(mifare_tree, hf_mifare_operand, tvb, 2, 4, ENC_BIG_ENDIAN);
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Increment");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Increment");
             break;
 
         case RESTORE:
             proto_tree_add_item(mifare_tree, hf_mifare_block_address, tvb, 1, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(mifare_tree, hf_mifare_operand, tvb, 2, 4, ENC_BIG_ENDIAN);
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Restore");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Restore");
             break;
 
         default:
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "Unknown");
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, "Unknown");
             break;
     }
     return tvb_captured_length(tvb);
@@ -183,7 +170,7 @@ proto_register_mifare(void)
            NULL, 0x0, NULL, HFILL }}
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mifare
     };
 
@@ -195,7 +182,7 @@ proto_register_mifare(void)
 }
 
 /*
- * Editor modelines - http://www.wireshark.org/tools/modelines.html
+ * Editor modelines - https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

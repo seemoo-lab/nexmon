@@ -3,10 +3,12 @@
  * Copyright © 2008 Christian Kellner, Samuel Cormier-Iijima
  *           © 2009 codethink
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -189,9 +191,7 @@ g_socket_input_stream_class_init (GSocketInputStreamClass *klass)
   ginputstream_class->read_fn = g_socket_input_stream_read;
 
   g_object_class_install_property (gobject_class, PROP_SOCKET,
-				   g_param_spec_object ("socket",
-							P_("socket"),
-							P_("The socket that this stream wraps"),
+				   g_param_spec_object ("socket", NULL, NULL,
 							G_TYPE_SOCKET, G_PARAM_CONSTRUCT_ONLY |
 							G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

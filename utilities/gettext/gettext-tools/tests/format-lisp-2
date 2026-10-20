@@ -154,6 +154,9 @@ msgstr "xyz~{~1@*~C~2:*~D~^~1*~}"
 # Invalid: ~^ inside iteration depends on position
 msgid  "abc~{~D ~^~C~}"
 msgstr "xyz~{~1@*~C~2:*~D~1*~^~}"
+# Valid: ( | . i . i) normalizes to ( | . i)
+msgid  "abc~@{~D~^~D~}"
+msgstr "xyz~@{~D~}"
 # Valid: justification is optional
 msgid  "abc~<~D~;~C~>"
 msgstr "xyz~D~C"

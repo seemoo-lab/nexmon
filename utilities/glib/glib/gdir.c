@@ -6,10 +6,12 @@
  * Copyright 2001 Hans Breuer
  * Copyright 2004 Tor Lillqvist
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,8 +43,7 @@
 #include "glibintl.h"
 
 #if defined (_MSC_VER) && !defined (HAVE_DIRENT_H)
-#include "../build/win32/dirent/dirent.h"
-#include "../build/win32/dirent/wdirent.c"
+#include "dirent/dirent.h"
 #endif
 
 #include "glib-private.h" /* g_dir_open_with_errno, g_dir_new_from_dirp */
@@ -55,13 +56,16 @@
 
 struct _GDir
 {
+  gatomicrefcount ref_count;
 #ifdef G_OS_WIN32
   _WDIR *wdirp;
 #else
   DIR *dirp;
 #endif
 #ifdef G_OS_WIN32
-  gchar utf8_buf[FILENAME_MAX*4];
+  /* maximum encoding of FILENAME_MAX UTF-8 characters, plus a nul terminator
+   * (FILENAME_MAX is not guaranteed to include one) */
+  gchar utf8_buf[FILENAME_MAX*4 + 1];
 #endif
 };
 
@@ -86,10 +90,13 @@ GDir *
 g_dir_open_with_errno (const gchar *path,
                        guint        flags)
 {
-  GDir dir;
 #ifdef G_OS_WIN32
+  GDir *dir;
+  _WDIR *wdirp;
   gint saved_errno;
   wchar_t *wpath;
+#else
+  DIR *dirp;
 #endif
 
   g_return_val_if_fail (path != NULL, NULL);
@@ -99,25 +106,31 @@ g_dir_open_with_errno (const gchar *path,
 
   g_return_val_if_fail (wpath != NULL, NULL);
 
-  dir.wdirp = _wopendir (wpath);
+  wdirp = _wopendir (wpath);
   saved_errno = errno;
   g_free (wpath);
   errno = saved_errno;
 
-  if (dir.wdirp == NULL)
+  if (wdirp == NULL)
     return NULL;
+
+  dir = g_new0 (GDir, 1);
+  g_atomic_ref_count_init (&dir->ref_count);
+  dir->wdirp = wdirp;
+
+  return g_steal_pointer (&dir);
 #else
-  dir.dirp = opendir (path);
+  dirp = opendir (path);
 
-  if (dir.dirp == NULL)
+  if (dirp == NULL)
     return NULL;
-#endif
 
-  return g_memdup (&dir, sizeof dir);
+  return g_dir_new_from_dirp (dirp);
+#endif
 }
 
 /**
- * g_dir_open:
+ * g_dir_open: (constructor)
  * @path: the path to the directory you are interested in. On Unix
  *         in the on-disk encoding. On Windows in UTF-8
  * @flags: Currently must be set to 0. Reserved for future use.
@@ -129,7 +142,7 @@ g_dir_open_with_errno (const gchar *path,
  * directory can then be retrieved using g_dir_read_name().  Note
  * that the ordering is not defined.
  *
- * Returns: a newly allocated #GDir on success, %NULL on failure.
+ * Returns: (transfer full): a newly allocated #GDir on success, %NULL on failure.
  *   If non-%NULL, you must free the result with g_dir_close()
  *   when you are finished with it.
  **/
@@ -143,7 +156,7 @@ g_dir_open (const gchar  *path,
 
   dir = g_dir_open_with_errno (path, flags);
 
-  if (dir == NULL)
+  if (dir == NULL && error != NULL)
     {
       gchar *utf8_path;
 
@@ -152,42 +165,12 @@ g_dir_open (const gchar  *path,
       utf8_path = g_filename_to_utf8 (path, -1, NULL, NULL, NULL);
 
       g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (saved_errno),
-                   _("Error opening directory '%s': %s"), utf8_path, g_strerror (saved_errno));
+                   _("Error opening directory “%s”: %s"), utf8_path, g_strerror (saved_errno));
       g_free (utf8_path);
     }
 
   return dir;
 }
-
-#if defined (G_OS_WIN32) && !defined (_WIN64)
-
-/* The above function actually is called g_dir_open_utf8, and it's
- * that what applications compiled with this GLib version will
- * use.
- */
-
-#undef g_dir_open
-
-/* Binary compatibility version. Not for newly compiled code. */
-
-GDir *
-g_dir_open (const gchar  *path,
-            guint         flags,
-            GError      **error)
-{
-  gchar *utf8_path = g_locale_to_utf8 (path, -1, NULL, NULL, error);
-  GDir *retval;
-
-  if (utf8_path == NULL)
-    return NULL;
-
-  retval = g_dir_open_utf8 (utf8_path, flags, error);
-
-  g_free (utf8_path);
-
-  return retval;
-}
-#endif
 
 /*< private >
  * g_dir_new_from_dirp:
@@ -214,12 +197,15 @@ g_dir_new_from_dirp (gpointer dirp)
 
   g_return_val_if_fail (dirp != NULL, NULL);
 
-  dir = g_new (GDir, 1);
+  dir = g_new0 (GDir, 1);
+  g_atomic_ref_count_init (&dir->ref_count);
   dir->dirp = dirp;
 
   return dir;
 #else
   g_assert_not_reached ();
+
+  return NULL;
 #endif
 }
 
@@ -241,7 +227,7 @@ g_dir_new_from_dirp (gpointer dirp)
  * On Windows, as is true of all GLib functions which operate on
  * filenames, the returned name is in UTF-8.
  *
- * Returns: The entry's name or %NULL if there are no
+ * Returns: (type filename): The entry's name or %NULL if there are no
  *   more entries. The return value is owned by GLib and
  *   must not be modified or freed.
  **/
@@ -293,39 +279,6 @@ g_dir_read_name (GDir *dir)
 #endif
 }
 
-#if defined (G_OS_WIN32) && !defined (_WIN64)
-
-/* Ditto for g_dir_read_name */
-
-#undef g_dir_read_name
-
-/* Binary compatibility version. Not for newly compiled code. */
-
-const gchar *
-g_dir_read_name (GDir *dir)
-{
-  while (1)
-    {
-      const gchar *utf8_name = g_dir_read_name_utf8 (dir);
-      gchar *retval;
-      
-      if (utf8_name == NULL)
-	return NULL;
-
-      retval = g_locale_from_utf8 (utf8_name, -1, NULL, NULL, NULL);
-
-      if (retval != NULL)
-	{
-	  strcpy (dir->utf8_buf, retval);
-	  g_free (retval);
-
-	  return dir->utf8_buf;
-	}
-    }
-}
-
-#endif
-
 /**
  * g_dir_rewind:
  * @dir: a #GDir* created by g_dir_open()
@@ -345,21 +298,107 @@ g_dir_rewind (GDir *dir)
 #endif
 }
 
+static void
+g_dir_actually_close (GDir *dir)
+{
+#ifdef G_OS_WIN32
+  g_clear_pointer (&dir->wdirp, _wclosedir);
+#else
+  g_clear_pointer (&dir->dirp, closedir);
+#endif
+}
+
 /**
  * g_dir_close:
- * @dir: a #GDir* created by g_dir_open()
+ * @dir: (transfer full): a #GDir* created by g_dir_open()
  *
- * Closes the directory and deallocates all related resources.
+ * Closes the directory immediately and decrements the reference count.
+ *
+ * Once the reference count reaches zero, the `GDir` structure itself will be
+ * freed. Prior to GLib 2.80, `GDir` was not reference counted.
+ *
+ * It is an error to call any of the `GDir` methods other than
+ * [method@GLib.Dir.ref] and [method@GLib.Dir.unref] on a `GDir` after calling
+ * [method@GLib.Dir.close] on it.
  **/
 void
 g_dir_close (GDir *dir)
 {
   g_return_if_fail (dir != NULL);
 
-#ifdef G_OS_WIN32
-  _wclosedir (dir->wdirp);
-#else
-  closedir (dir->dirp);
-#endif
-  g_free (dir);
+  g_dir_actually_close (dir);
+  g_dir_unref (dir);
 }
+
+/**
+ * g_dir_ref:
+ * @dir: (transfer none): a `GDir`
+ *
+ * Increment the reference count of `dir`.
+ *
+ * Returns: (transfer full): the same pointer as `dir`
+ * Since: 2.80
+ */
+GDir *
+g_dir_ref (GDir *dir)
+{
+  g_return_val_if_fail (dir != NULL, NULL);
+
+  g_atomic_ref_count_inc (&dir->ref_count);
+  return dir;
+}
+
+/**
+ * g_dir_unref:
+ * @dir: (transfer full): a `GDir`
+ *
+ * Decrements the reference count of `dir`.
+ *
+ * Once the reference count reaches zero, the directory will be closed and all
+ * resources associated with it will be freed. If [method@GLib.Dir.close] is
+ * called when the reference count is greater than zero, the directory is closed
+ * but the `GDir` structure will not be freed until its reference count reaches
+ * zero.
+ *
+ * It is an error to call any of the `GDir` methods other than
+ * [method@GLib.Dir.ref] and [method@GLib.Dir.unref] on a `GDir` after calling
+ * [method@GLib.Dir.close] on it.
+ *
+ * Since: 2.80
+ */
+void
+g_dir_unref (GDir *dir)
+{
+  g_return_if_fail (dir != NULL);
+
+  if (g_atomic_ref_count_dec (&dir->ref_count))
+    {
+      g_dir_actually_close (dir);
+      g_free (dir);
+    }
+}
+
+#ifdef G_OS_WIN32
+
+/* Binary compatibility versions. Not for newly compiled code. */
+
+_GLIB_EXTERN GDir        *g_dir_open_utf8      (const gchar  *path,
+                                                guint         flags,
+                                                GError      **error);
+_GLIB_EXTERN const gchar *g_dir_read_name_utf8 (GDir         *dir);
+
+GDir *
+g_dir_open_utf8 (const gchar  *path,
+                 guint         flags,
+                 GError      **error)
+{
+  return g_dir_open (path, flags, error);
+}
+
+const gchar *
+g_dir_read_name_utf8 (GDir *dir)
+{
+  return g_dir_read_name (dir);
+}
+
+#endif

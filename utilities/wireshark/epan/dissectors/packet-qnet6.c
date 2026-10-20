@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,511 +16,515 @@
 
 #include <epan/etypes.h>
 #include <epan/crc32-tvb.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include <wsutil/crc32.h>
 #include <epan/ipproto.h>
 
 void proto_reg_handoff_qnet6(void);
 void proto_register_qnet6(void);
 
-static int proto_qnet6_l4 = -1;
-static int proto_qnet6_qos = -1;
-static int proto_qnet6_lr = -1;
-static int proto_qnet6_kif = -1;
-static int proto_qnet6_nr = -1;
+static dissector_handle_t qnet6_handle;
 
-static int hf_qnet6_l4_padding = -1;
-static int hf_qnet6_l4_ver = -1;
-static int hf_qnet6_l4_type = -1;
-static int hf_qnet6_l4_flags = -1;
-static int hf_qnet6_l4_flags_first = -1;
-static int hf_qnet6_l4_flags_last = -1;
-static int hf_qnet6_l4_flags_crc = -1;
-static int hf_qnet6_l4_qos_info = -1;
-static int hf_qnet6_l4_qos_src_nd_for_dst = -1;
-static int hf_qnet6_l4_qos_dst_nd_for_src = -1;
-static int hf_qnet6_l4_qos_src_conn_id = -1;
-static int hf_qnet6_l4_qos_dst_conn_id = -1;
-static int hf_qnet6_l4_qos_src_seq_num = -1;
-static int hf_qnet6_l4_qos_qos_type = -1;
-static int hf_qnet6_l4_qos_src_qos_idx = -1;
-static int hf_qnet6_l4_layer = -1;
-static int hf_qnet6_l4_offset = -1;
-static int hf_qnet6_l4_length = -1;
-static int hf_qnet6_l4_crc = -1;
+static int proto_qnet6_l4;
+static int proto_qnet6_qos;
+static int proto_qnet6_lr;
+static int proto_qnet6_kif;
+static int proto_qnet6_nr;
 
-static int hf_qnet6_qos_tcs_src_name_off = -1;
-static int hf_qnet6_qos_tcs_src_name_generated = -1;
-static int hf_qnet6_qos_tcs_src_domain_off = -1;
-static int hf_qnet6_qos_tcs_src_domain_generated = -1;
-static int hf_qnet6_qos_tcs_dst_name_off = -1;
-static int hf_qnet6_qos_tcs_dst_name_generated = -1;
-static int hf_qnet6_qos_tcs_dst_domain_off = -1;
-static int hf_qnet6_qos_tcs_dst_domain_generated = -1;
+static int hf_qnet6_l4_padding;
+static int hf_qnet6_l4_ver;
+static int hf_qnet6_l4_type;
+static int hf_qnet6_l4_flags;
+static int hf_qnet6_l4_flags_first;
+static int hf_qnet6_l4_flags_last;
+static int hf_qnet6_l4_flags_crc;
+static int hf_qnet6_l4_qos_info;
+static int hf_qnet6_l4_qos_src_nd_for_dst;
+static int hf_qnet6_l4_qos_dst_nd_for_src;
+static int hf_qnet6_l4_qos_src_conn_id;
+static int hf_qnet6_l4_qos_dst_conn_id;
+static int hf_qnet6_l4_qos_src_seq_num;
+static int hf_qnet6_l4_qos_qos_type;
+static int hf_qnet6_l4_qos_src_qos_idx;
+static int hf_qnet6_l4_layer;
+static int hf_qnet6_l4_offset;
+static int hf_qnet6_l4_length;
+static int hf_qnet6_l4_crc;
 
-static int hf_qnet6_lr_ver = -1;
-static int hf_qnet6_lr_type = -1;
-static int hf_qnet6_lr_total_len = -1;
-static int hf_qnet6_lr_src = -1;
-static int hf_qnet6_lr_src_name_off = -1;
-static int hf_qnet6_lr_src_name_len = -1;
-static int hf_qnet6_lr_src_name_generated = -1;
-static int hf_qnet6_lr_src_domain_off = -1;
-static int hf_qnet6_lr_src_domain_len = -1;
-static int hf_qnet6_lr_src_domain_generated = -1;
-static int hf_qnet6_lr_src_addr_off = -1;
-static int hf_qnet6_lr_src_addr_len = -1;
-static int hf_qnet6_lr_src_addr_generated = -1;
-static int hf_qnet6_lr_dst = -1;
-static int hf_qnet6_lr_dst_name_off = -1;
-static int hf_qnet6_lr_dst_name_len = -1;
-static int hf_qnet6_lr_dst_name_generated = -1;
-static int hf_qnet6_lr_dst_domain_off = -1;
-static int hf_qnet6_lr_dst_domain_len = -1;
-static int hf_qnet6_lr_dst_domain_generated = -1;
-static int hf_qnet6_lr_dst_addr_off = -1;
-static int hf_qnet6_lr_dst_addr_len = -1;
-static int hf_qnet6_lr_dst_addr_generated = -1;
+static int hf_qnet6_qos_tcs_src_name_off;
+static int hf_qnet6_qos_tcs_src_name_generated;
+static int hf_qnet6_qos_tcs_src_domain_off;
+static int hf_qnet6_qos_tcs_src_domain_generated;
+static int hf_qnet6_qos_tcs_dst_name_off;
+static int hf_qnet6_qos_tcs_dst_name_generated;
+static int hf_qnet6_qos_tcs_dst_domain_off;
+static int hf_qnet6_qos_tcs_dst_domain_generated;
 
-static int hf_qnet6_kif_msgtype = -1;
-static int hf_qnet6_kif_size = -1;
+static int hf_qnet6_lr_ver;
+static int hf_qnet6_lr_type;
+static int hf_qnet6_lr_total_len;
+static int hf_qnet6_lr_src;
+static int hf_qnet6_lr_src_name_off;
+static int hf_qnet6_lr_src_name_len;
+static int hf_qnet6_lr_src_name_generated;
+static int hf_qnet6_lr_src_domain_off;
+static int hf_qnet6_lr_src_domain_len;
+static int hf_qnet6_lr_src_domain_generated;
+static int hf_qnet6_lr_src_addr_off;
+static int hf_qnet6_lr_src_addr_len;
+static int hf_qnet6_lr_src_addr_generated;
+static int hf_qnet6_lr_dst;
+static int hf_qnet6_lr_dst_name_off;
+static int hf_qnet6_lr_dst_name_len;
+static int hf_qnet6_lr_dst_name_generated;
+static int hf_qnet6_lr_dst_domain_off;
+static int hf_qnet6_lr_dst_domain_len;
+static int hf_qnet6_lr_dst_domain_generated;
+static int hf_qnet6_lr_dst_addr_off;
+static int hf_qnet6_lr_dst_addr_len;
+static int hf_qnet6_lr_dst_addr_generated;
 
-static int hf_qnet6_kif_version = -1;
-static int hf_qnet6_kif_client_info = -1;
-static int hf_qnet6_kif_zero = -1;
+static int hf_qnet6_kif_msgtype;
+static int hf_qnet6_kif_size;
+
+static int hf_qnet6_kif_version;
+static int hf_qnet6_kif_client_info;
+static int hf_qnet6_kif_zero;
 
 /*
  * client_info
  */
-static int hf_qnet6_kif_client_info_nd = -1;
-static int hf_qnet6_kif_client_info_pid = -1;
-static int hf_qnet6_kif_client_info_sid = -1;
-static int hf_qnet6_kif_client_info_flags = -1;
-static int hf_qnet6_kif_client_info_cred = -1;
-static int hf_qnet6_kif_client_info_cred_ruid = -1;
-static int hf_qnet6_kif_client_info_cred_euid = -1;
-static int hf_qnet6_kif_client_info_cred_suid = -1;
-static int hf_qnet6_kif_client_info_cred_rgid = -1;
-static int hf_qnet6_kif_client_info_cred_egid = -1;
-static int hf_qnet6_kif_client_info_cred_sgid = -1;
-static int hf_qnet6_kif_client_info_cred_ngroups = -1;
-static int hf_qnet6_kif_client_info_cred_grouplist = -1;
+static int hf_qnet6_kif_client_info_nd;
+static int hf_qnet6_kif_client_info_pid;
+static int hf_qnet6_kif_client_info_sid;
+static int hf_qnet6_kif_client_info_flags;
+static int hf_qnet6_kif_client_info_cred;
+static int hf_qnet6_kif_client_info_cred_ruid;
+static int hf_qnet6_kif_client_info_cred_euid;
+static int hf_qnet6_kif_client_info_cred_suid;
+static int hf_qnet6_kif_client_info_cred_rgid;
+static int hf_qnet6_kif_client_info_cred_egid;
+static int hf_qnet6_kif_client_info_cred_sgid;
+static int hf_qnet6_kif_client_info_cred_ngroups;
+static int hf_qnet6_kif_client_info_cred_grouplist;
 
 /*
  * connect message
  */
-static int hf_qnet6_kif_connect = -1;
-static int hf_qnet6_kif_connect_server_pid = -1;
-static int hf_qnet6_kif_connect_server_chid = -1;
-static int hf_qnet6_kif_connect_client_id = -1;
-static int hf_qnet6_kif_connect_client_pid = -1;
+static int hf_qnet6_kif_connect;
+static int hf_qnet6_kif_connect_server_pid;
+static int hf_qnet6_kif_connect_server_chid;
+static int hf_qnet6_kif_connect_client_id;
+static int hf_qnet6_kif_connect_client_pid;
 /*
  * connect success message
  */
-static int hf_qnet6_kif_connects_client_id = -1;
-static int hf_qnet6_kif_connects_server_id = -1;
-static int hf_qnet6_kif_connects_scoid = -1;
-static int hf_qnet6_kif_connects_nbytes = -1;
+static int hf_qnet6_kif_connects_client_id;
+static int hf_qnet6_kif_connects_server_id;
+static int hf_qnet6_kif_connects_scoid;
+static int hf_qnet6_kif_connects_nbytes;
 /*
  * connect fail message
  */
-static int hf_qnet6_kif_connectf_client_id = -1;
-static int hf_qnet6_kif_connectf_status = -1;
+static int hf_qnet6_kif_connectf_client_id;
+static int hf_qnet6_kif_connectf_status;
 /*
  * connect death message
  */
-static int hf_qnet6_kif_connectd_client_id = -1;
+static int hf_qnet6_kif_connectd_client_id;
 /*
  * msgsend message
  */
-static int hf_qnet6_kif_msgsend = -1;
-static int hf_qnet6_kif_msgsend_server_id = -1;
-static int hf_qnet6_kif_msgsend_client_handle = -1;
-static int hf_qnet6_kif_msgsend_vinfo = -1;
-static int hf_qnet6_kif_msgsend_nbytes = -1;
+static int hf_qnet6_kif_msgsend;
+static int hf_qnet6_kif_msgsend_server_id;
+static int hf_qnet6_kif_msgsend_client_handle;
+static int hf_qnet6_kif_msgsend_vinfo;
+static int hf_qnet6_kif_msgsend_nbytes;
 /*
  * msgread message
  */
-static int hf_qnet6_kif_msgread_msgread_handle = -1;
-static int hf_qnet6_kif_msgread_client_handle = -1;
-static int hf_qnet6_kif_msgread_offset = -1;
-static int hf_qnet6_kif_msgread_nbytes = -1;
+static int hf_qnet6_kif_msgread_msgread_handle;
+static int hf_qnet6_kif_msgread_client_handle;
+static int hf_qnet6_kif_msgread_offset;
+static int hf_qnet6_kif_msgread_nbytes;
 /*
  * msgwrite message
  */
-static int hf_qnet6_kif_msgwrite_status = -1;
-static int hf_qnet6_kif_msgwrite_handle = -1;
-static int hf_qnet6_kif_msgwrite_offset = -1;
-static int hf_qnet6_kif_msgwrite_nbytes = -1;
-static int hf_qnet6_kif_msgwrite_data = -1;
+static int hf_qnet6_kif_msgwrite_status;
+static int hf_qnet6_kif_msgwrite_handle;
+static int hf_qnet6_kif_msgwrite_offset;
+static int hf_qnet6_kif_msgwrite_nbytes;
+static int hf_qnet6_kif_msgwrite_data;
 /*
  * unblock message
  */
-static int hf_qnet6_kif_unblock_server_id = -1;
-static int hf_qnet6_kif_unblock_client_handle = -1;
-static int hf_qnet6_kif_unblock_tid = -1;
+static int hf_qnet6_kif_unblock_server_id;
+static int hf_qnet6_kif_unblock_client_handle;
+static int hf_qnet6_kif_unblock_tid;
 /*
  * event message
  */
-static int hf_qnet6_kif_event_client_handle = -1;
-static int hf_qnet6_kif_event_event = -1;
-static int hf_qnet6_kif_event_notify = -1;
-static int hf_qnet6_kif_event_union1 = -1;
-static int hf_qnet6_kif_event_value = -1;
-static int hf_qnet6_kif_event_union2 = -1;
+static int hf_qnet6_kif_event_client_handle;
+static int hf_qnet6_kif_event_event;
+static int hf_qnet6_kif_event_notify;
+static int hf_qnet6_kif_event_union1;
+static int hf_qnet6_kif_event_value;
+static int hf_qnet6_kif_event_union2;
 
 /*
  * pulse message
  */
 #if 0
-static int hf_qnet6_kif_pulse_server_id = -1;
-static int hf_qnet6_kif_pulse_client_handle = -1;
-static int hf_qnet6_kif_pulse_vinfo = -1;
+static int hf_qnet6_kif_pulse_server_id;
+static int hf_qnet6_kif_pulse_client_handle;
+static int hf_qnet6_kif_pulse_vinfo;
 #endif
-static int hf_qnet6_kif_pulse_pulse = -1;
-static int hf_qnet6_kif_pulse_priority = -1;
+static int hf_qnet6_kif_pulse_pulse;
+static int hf_qnet6_kif_pulse_priority;
 /*
  * signal message
  */
-static int hf_qnet6_kif_signal_client_handle = -1;
-static int hf_qnet6_kif_signal_pid = -1;
-static int hf_qnet6_kif_signal_tid = -1;
-static int hf_qnet6_kif_signal_signo = -1;
-static int hf_qnet6_kif_signal_code = -1;
-static int hf_qnet6_kif_signal_value = -1;
+static int hf_qnet6_kif_signal_client_handle;
+static int hf_qnet6_kif_signal_pid;
+static int hf_qnet6_kif_signal_tid;
+static int hf_qnet6_kif_signal_signo;
+static int hf_qnet6_kif_signal_code;
+static int hf_qnet6_kif_signal_value;
 /*
  * disconnect message
  */
-static int hf_qnet6_kif_disconnect_server_id = -1;
+static int hf_qnet6_kif_disconnect_server_id;
 
 /*
  * vinfo
  */
-static int hf_qnet6_kif_vtid_info_tid = -1;
-static int hf_qnet6_kif_vtid_info_coid = -1;
-static int hf_qnet6_kif_vtid_info_priority = -1;
-static int hf_qnet6_kif_vtid_info_srcmsglen = -1;
-static int hf_qnet6_kif_vtid_info_keydata = -1;
-static int hf_qnet6_kif_vtid_info_srcnd = -1;
-static int hf_qnet6_kif_vtid_info_dstmsglen = -1;
-static int hf_qnet6_kif_vtid_info_zero = -1;
+static int hf_qnet6_kif_vtid_info_tid;
+static int hf_qnet6_kif_vtid_info_coid;
+static int hf_qnet6_kif_vtid_info_priority;
+static int hf_qnet6_kif_vtid_info_srcmsglen;
+static int hf_qnet6_kif_vtid_info_keydata;
+static int hf_qnet6_kif_vtid_info_srcnd;
+static int hf_qnet6_kif_vtid_info_dstmsglen;
+static int hf_qnet6_kif_vtid_info_zero;
 /*
  * pulse
  */
-static int hf_qnet6_kif_pulse_pulse_type = -1;
-static int hf_qnet6_kif_pulse_pulse_subtype = -1;
-static int hf_qnet6_kif_pulse_pulse_code = -1;
-static int hf_qnet6_kif_pulse_pulse_reserved = -1;
-static int hf_qnet6_kif_pulse_pulse_value = -1;
-static int hf_qnet6_kif_pulse_pulse_scoid = -1;
+static int hf_qnet6_kif_pulse_pulse_type;
+static int hf_qnet6_kif_pulse_pulse_subtype;
+static int hf_qnet6_kif_pulse_pulse_code;
+static int hf_qnet6_kif_pulse_pulse_reserved;
+static int hf_qnet6_kif_pulse_pulse_value;
+static int hf_qnet6_kif_pulse_pulse_scoid;
 /*
  * message
  */
-static int hf_qnet6_kif_msg = -1;
-static int hf_qnet6_kif_msg_type = -1;
-static int hf_qnet6_kif_msg_connect_subtype = -1;
-static int hf_qnet6_kif_msg_connect_filetype = -1;
-static int hf_qnet6_kif_msg_connect_replymax = -1;
-static int hf_qnet6_kif_msg_connect_entrymax = -1;
-static int hf_qnet6_kif_msg_connect_key = -1;
-static int hf_qnet6_kif_msg_connect_handle = -1;
+static int hf_qnet6_kif_msg;
+static int hf_qnet6_kif_msg_type;
+static int hf_qnet6_kif_msg_connect_subtype;
+static int hf_qnet6_kif_msg_connect_filetype;
+static int hf_qnet6_kif_msg_connect_replymax;
+static int hf_qnet6_kif_msg_connect_entrymax;
+static int hf_qnet6_kif_msg_connect_key;
+static int hf_qnet6_kif_msg_connect_handle;
 
-static int hf_qnet6_kif_msg_connect_ioflag = -1;
+static int hf_qnet6_kif_msg_connect_ioflag;
 
-static int hf_qnet6_kif_msg_connect_ioflag_access = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_append = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_dsync = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_sync = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_rsync = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_nonblock = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_creat = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_truncate = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_exclusive = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_noctrltty = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_closexec = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_realids = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_largefile = -1;
-static int hf_qnet6_kif_msg_connect_ioflag_async = -1;
+static int hf_qnet6_kif_msg_connect_ioflag_access;
+static int hf_qnet6_kif_msg_connect_ioflag_append;
+static int hf_qnet6_kif_msg_connect_ioflag_dsync;
+static int hf_qnet6_kif_msg_connect_ioflag_sync;
+static int hf_qnet6_kif_msg_connect_ioflag_rsync;
+static int hf_qnet6_kif_msg_connect_ioflag_nonblock;
+static int hf_qnet6_kif_msg_connect_ioflag_creat;
+static int hf_qnet6_kif_msg_connect_ioflag_truncate;
+static int hf_qnet6_kif_msg_connect_ioflag_exclusive;
+static int hf_qnet6_kif_msg_connect_ioflag_noctrltty;
+static int hf_qnet6_kif_msg_connect_ioflag_closexec;
+static int hf_qnet6_kif_msg_connect_ioflag_realids;
+static int hf_qnet6_kif_msg_connect_ioflag_largefile;
+static int hf_qnet6_kif_msg_connect_ioflag_async;
 
-static int hf_qnet6_kif_msg_connect_mode = -1;
-static int hf_qnet6_kif_msg_connect_mode_other_exe = -1;
-static int hf_qnet6_kif_msg_connect_mode_other_read = -1;
-static int hf_qnet6_kif_msg_connect_mode_other_write = -1;
-static int hf_qnet6_kif_msg_connect_mode_group_read = -1;
-static int hf_qnet6_kif_msg_connect_mode_group_write = -1;
-static int hf_qnet6_kif_msg_connect_mode_group_exe = -1;
-static int hf_qnet6_kif_msg_connect_mode_owner_read = -1;
-static int hf_qnet6_kif_msg_connect_mode_owner_write = -1;
-static int hf_qnet6_kif_msg_connect_mode_owner_exe = -1;
-static int hf_qnet6_kif_msg_connect_mode_setuid = -1;
-static int hf_qnet6_kif_msg_connect_mode_setgid = -1;
-static int hf_qnet6_kif_msg_connect_mode_sticky = -1;
-static int hf_qnet6_kif_msg_connect_mode_format = -1;
+static int hf_qnet6_kif_msg_connect_mode;
+static int hf_qnet6_kif_msg_connect_mode_other_exe;
+static int hf_qnet6_kif_msg_connect_mode_other_read;
+static int hf_qnet6_kif_msg_connect_mode_other_write;
+static int hf_qnet6_kif_msg_connect_mode_group_read;
+static int hf_qnet6_kif_msg_connect_mode_group_write;
+static int hf_qnet6_kif_msg_connect_mode_group_exe;
+static int hf_qnet6_kif_msg_connect_mode_owner_read;
+static int hf_qnet6_kif_msg_connect_mode_owner_write;
+static int hf_qnet6_kif_msg_connect_mode_owner_exe;
+static int hf_qnet6_kif_msg_connect_mode_setuid;
+static int hf_qnet6_kif_msg_connect_mode_setgid;
+static int hf_qnet6_kif_msg_connect_mode_sticky;
+static int hf_qnet6_kif_msg_connect_mode_format;
 
-static int hf_qnet6_kif_msg_connect_sflag = -1;
-static int hf_qnet6_kif_msg_connect_access = -1;
-static int hf_qnet6_kif_msg_connect_zero = -1;
-static int hf_qnet6_kif_msg_connect_pathlen = -1;
-static int hf_qnet6_kif_msg_connect_eflag = -1;
-static int hf_qnet6_kif_msg_connect_eflag_dir = -1;
-static int hf_qnet6_kif_msg_connect_eflag_dot = -1;
-static int hf_qnet6_kif_msg_connect_eflag_dotdot = -1;
-static int hf_qnet6_kif_msg_connect_extratype = -1;
-static int hf_qnet6_kif_msg_connect_extralen = -1;
-static int hf_qnet6_kif_msg_connect_path = -1;
-static int hf_qnet6_kif_msg_connect_pad_data = -1;
-static int hf_qnet6_kif_msg_connect_extra_symlink_path = -1;
-static int hf_qnet6_kif_msg_connect_extra_rename_path = -1;
-static int hf_qnet6_kif_msg_connect_extra_mount = -1;
-static int hf_qnet6_kif_msg_connect_extra_data = -1;
-static int hf_qnet6_kif_msg_connect_extra_link_ocb = -1;
+static int hf_qnet6_kif_msg_connect_sflag;
+static int hf_qnet6_kif_msg_connect_access;
+static int hf_qnet6_kif_msg_connect_zero;
+static int hf_qnet6_kif_msg_connect_pathlen;
+static int hf_qnet6_kif_msg_connect_eflag;
+static int hf_qnet6_kif_msg_connect_eflag_dir;
+static int hf_qnet6_kif_msg_connect_eflag_dot;
+static int hf_qnet6_kif_msg_connect_eflag_dotdot;
+static int hf_qnet6_kif_msg_connect_extratype;
+static int hf_qnet6_kif_msg_connect_extralen;
+static int hf_qnet6_kif_msg_connect_path;
+static int hf_qnet6_kif_msg_connect_pad_data;
+static int hf_qnet6_kif_msg_connect_extra_symlink_path;
+static int hf_qnet6_kif_msg_connect_extra_rename_path;
+static int hf_qnet6_kif_msg_connect_extra_mount;
+static int hf_qnet6_kif_msg_connect_extra_data;
+static int hf_qnet6_kif_msg_connect_extra_link_ocb;
 /*
  * devctl
  */
-static int hf_qnet6_kif_msg_io_combine_len = -1;
-static int hf_qnet6_kif_msg_devctl_dcmd = -1;
-static int hf_qnet6_kif_msg_devctl_dcmd_cmd = -1;
-static int hf_qnet6_kif_msg_devctl_dcmd_ccmd = -1;
-static int hf_qnet6_kif_msg_devctl_dcmd_size = -1;
-static int hf_qnet6_kif_msg_devctl_dcmd_class = -1;
-static int hf_qnet6_kif_msg_devctl_dcmd_from = -1;
-static int hf_qnet6_kif_msg_devctl_dcmd_to = -1;
+static int hf_qnet6_kif_msg_io_combine_len;
+static int hf_qnet6_kif_msg_devctl_dcmd;
+static int hf_qnet6_kif_msg_devctl_dcmd_cmd;
+static int hf_qnet6_kif_msg_devctl_dcmd_ccmd;
+static int hf_qnet6_kif_msg_devctl_dcmd_size;
+static int hf_qnet6_kif_msg_devctl_dcmd_class;
+static int hf_qnet6_kif_msg_devctl_dcmd_from;
+static int hf_qnet6_kif_msg_devctl_dcmd_to;
 
-static int hf_qnet6_kif_msg_devctl_nbytes = -1;
-static int hf_qnet6_kif_msg_devctl_zero = -1;
+static int hf_qnet6_kif_msg_devctl_nbytes;
+static int hf_qnet6_kif_msg_devctl_zero;
 /*
  * stat
  */
 /*
  * read
  */
-static int hf_qnet6_kif_msg_io_read_nbytes = -1;
-static int hf_qnet6_kif_msg_io_read_xtypes = -1;
-static int hf_qnet6_kif_msg_io_read_xtypes_0_7 = -1;
-static int hf_qnet6_kif_msg_io_read_xtypes_8 = -1;
-static int hf_qnet6_kif_msg_io_read_xtypes_14 = -1;
-static int hf_qnet6_kif_msg_io_read_xtypes_15 = -1;
-static int hf_qnet6_kif_msg_io_read_xoffset = -1;
-static int hf_qnet6_kif_msg_io_read_cond_min = -1;
-static int hf_qnet6_kif_msg_io_read_cond_time = -1;
-static int hf_qnet6_kif_msg_io_read_cond_timeout = -1;
+static int hf_qnet6_kif_msg_io_read_nbytes;
+static int hf_qnet6_kif_msg_io_read_xtypes;
+static int hf_qnet6_kif_msg_io_read_xtypes_0_7;
+static int hf_qnet6_kif_msg_io_read_xtypes_8;
+static int hf_qnet6_kif_msg_io_read_xtypes_14;
+static int hf_qnet6_kif_msg_io_read_xtypes_15;
+static int hf_qnet6_kif_msg_io_read_xoffset;
+static int hf_qnet6_kif_msg_io_read_cond_min;
+static int hf_qnet6_kif_msg_io_read_cond_time;
+static int hf_qnet6_kif_msg_io_read_cond_timeout;
 /*
  * write
  */
-static int hf_qnet6_kif_msg_io_write_data = -1;
-static int hf_qnet6_kif_msg_io_write_nbytes = -1;
-static int hf_qnet6_kif_msg_io_write_xtypes = -1;
-static int hf_qnet6_kif_msg_io_write_xtypes_0_7 = -1;
-static int hf_qnet6_kif_msg_io_write_xtypes_8 = -1;
-static int hf_qnet6_kif_msg_io_write_xtypes_14 = -1;
-static int hf_qnet6_kif_msg_io_write_xtypes_15 = -1;
-static int hf_qnet6_kif_msg_io_write_xoffset = -1;
+static int hf_qnet6_kif_msg_io_write_data;
+static int hf_qnet6_kif_msg_io_write_nbytes;
+static int hf_qnet6_kif_msg_io_write_xtypes;
+static int hf_qnet6_kif_msg_io_write_xtypes_0_7;
+static int hf_qnet6_kif_msg_io_write_xtypes_8;
+static int hf_qnet6_kif_msg_io_write_xtypes_14;
+static int hf_qnet6_kif_msg_io_write_xtypes_15;
+static int hf_qnet6_kif_msg_io_write_xoffset;
 
 /*
  * seek
  */
-static int hf_qnet6_kif_msg_seek_whence = -1;
-static int hf_qnet6_kif_msg_seek_offset = -1;
+static int hf_qnet6_kif_msg_seek_whence;
+static int hf_qnet6_kif_msg_seek_offset;
 /*
  * pathconf
  */
-static int hf_qnet6_kif_msg_pathconf_name = -1;
+static int hf_qnet6_kif_msg_pathconf_name;
 /*
  * chmod
  */
-static int hf_qnet6_kif_msg_io_chmod = -1;
-static int hf_qnet6_kif_msg_io_chmod_other_exe = -1;
-static int hf_qnet6_kif_msg_io_chmod_other_read = -1;
-static int hf_qnet6_kif_msg_io_chmod_other_write = -1;
-static int hf_qnet6_kif_msg_io_chmod_group_read = -1;
-static int hf_qnet6_kif_msg_io_chmod_group_write = -1;
-static int hf_qnet6_kif_msg_io_chmod_group_exe = -1;
-static int hf_qnet6_kif_msg_io_chmod_owner_read = -1;
-static int hf_qnet6_kif_msg_io_chmod_owner_write = -1;
-static int hf_qnet6_kif_msg_io_chmod_owner_exe = -1;
-static int hf_qnet6_kif_msg_io_chmod_setuid = -1;
-static int hf_qnet6_kif_msg_io_chmod_setgid = -1;
-static int hf_qnet6_kif_msg_io_chmod_sticky = -1;
+static int hf_qnet6_kif_msg_io_chmod;
+static int hf_qnet6_kif_msg_io_chmod_other_exe;
+static int hf_qnet6_kif_msg_io_chmod_other_read;
+static int hf_qnet6_kif_msg_io_chmod_other_write;
+static int hf_qnet6_kif_msg_io_chmod_group_read;
+static int hf_qnet6_kif_msg_io_chmod_group_write;
+static int hf_qnet6_kif_msg_io_chmod_group_exe;
+static int hf_qnet6_kif_msg_io_chmod_owner_read;
+static int hf_qnet6_kif_msg_io_chmod_owner_write;
+static int hf_qnet6_kif_msg_io_chmod_owner_exe;
+static int hf_qnet6_kif_msg_io_chmod_setuid;
+static int hf_qnet6_kif_msg_io_chmod_setgid;
+static int hf_qnet6_kif_msg_io_chmod_sticky;
 /*
  * chown
  */
-static int hf_qnet6_kif_msg_io_chown_gid = -1;
-static int hf_qnet6_kif_msg_io_chown_uid = -1;
+static int hf_qnet6_kif_msg_io_chown_gid;
+static int hf_qnet6_kif_msg_io_chown_uid;
 /*
  * sync
  */
-static int hf_qnet6_kif_msg_io_sync = -1;
-static int hf_qnet6_kif_msg_syncflag_dsync = -1;
-static int hf_qnet6_kif_msg_syncflag_sync = -1;
-static int hf_qnet6_kif_msg_syncflag_rsync = -1;
+static int hf_qnet6_kif_msg_io_sync;
+static int hf_qnet6_kif_msg_syncflag_dsync;
+static int hf_qnet6_kif_msg_syncflag_sync;
+static int hf_qnet6_kif_msg_syncflag_rsync;
 /*
  * utime
  */
-static int hf_qnet6_kif_msg_io_utime_curflag = -1;
-static int hf_qnet6_kif_msg_io_utime_actime = -1;
-static int hf_qnet6_kif_msg_io_utime_modtime = -1;
+static int hf_qnet6_kif_msg_io_utime_curflag;
+static int hf_qnet6_kif_msg_io_utime_actime;
+static int hf_qnet6_kif_msg_io_utime_modtime;
 /*
  * fdinfo
  */
-static int hf_qnet6_kif_msg_io_fdinfo_flags = -1;
-static int hf_qnet6_kif_msg_io_fdinfo_path_len = -1;
-static int hf_qnet6_kif_msg_io_fdinfo_reserved = -1;
+static int hf_qnet6_kif_msg_io_fdinfo_flags;
+static int hf_qnet6_kif_msg_io_fdinfo_path_len;
+static int hf_qnet6_kif_msg_io_fdinfo_reserved;
 /*
  * lock
  */
-static int hf_qnet6_kif_msg_io_lock_subtype = -1;
-static int hf_qnet6_kif_msg_io_lock_nbytes = -1;
+static int hf_qnet6_kif_msg_io_lock_subtype;
+static int hf_qnet6_kif_msg_io_lock_nbytes;
 /*
  * space
  */
-static int hf_qnet6_kif_msg_io_space_subtype = -1;
-static int hf_qnet6_kif_msg_io_space_whence = -1;
-static int hf_qnet6_kif_msg_io_space_start = -1;
-static int hf_qnet6_kif_msg_io_space_len = -1;
+static int hf_qnet6_kif_msg_io_space_subtype;
+static int hf_qnet6_kif_msg_io_space_whence;
+static int hf_qnet6_kif_msg_io_space_start;
+static int hf_qnet6_kif_msg_io_space_len;
 
-static int hf_qnet6_kif_msgsend_extra = -1;
+static int hf_qnet6_kif_msgsend_extra;
 /*
  * msginfo
  */
-static int hf_qnet6_kif_msg_msginfo_nd = -1;
-static int hf_qnet6_kif_msg_msginfo_srcnd = -1;
-static int hf_qnet6_kif_msg_msginfo_pid = -1;
-static int hf_qnet6_kif_msg_msginfo_tid = -1;
-static int hf_qnet6_kif_msg_msginfo_chid = -1;
-static int hf_qnet6_kif_msg_msginfo_scoid = -1;
-static int hf_qnet6_kif_msg_msginfo_coid = -1;
-static int hf_qnet6_kif_msg_msginfo_msglen = -1;
-static int hf_qnet6_kif_msg_msginfo_srcmsglen = -1;
-static int hf_qnet6_kif_msg_msginfo_dstmsglen = -1;
-static int hf_qnet6_kif_msg_msginfo_priority = -1;
-static int hf_qnet6_kif_msg_msginfo_flags = -1;
-static int hf_qnet6_kif_msg_msginfo_reserved = -1;
+static int hf_qnet6_kif_msg_msginfo_nd;
+static int hf_qnet6_kif_msg_msginfo_srcnd;
+static int hf_qnet6_kif_msg_msginfo_pid;
+static int hf_qnet6_kif_msg_msginfo_tid;
+static int hf_qnet6_kif_msg_msginfo_chid;
+static int hf_qnet6_kif_msg_msginfo_scoid;
+static int hf_qnet6_kif_msg_msginfo_coid;
+static int hf_qnet6_kif_msg_msginfo_msglen;
+static int hf_qnet6_kif_msg_msginfo_srcmsglen;
+static int hf_qnet6_kif_msg_msginfo_dstmsglen;
+static int hf_qnet6_kif_msg_msginfo_priority;
+static int hf_qnet6_kif_msg_msginfo_flags;
+static int hf_qnet6_kif_msg_msginfo_reserved;
 /*
  * openfd
  */
-static int hf_qnet6_kif_msg_openfd_reserved = -1;
-static int hf_qnet6_kif_msg_openfd_key = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag = -1;
+static int hf_qnet6_kif_msg_openfd_reserved;
+static int hf_qnet6_kif_msg_openfd_key;
+static int hf_qnet6_kif_msg_openfd_ioflag;
 
-static int hf_qnet6_kif_msg_openfd_ioflag_access = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_append = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_dsync = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_sync = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_rsync = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_nonblock = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_creat = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_truncate = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_exclusive = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_noctrltty = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_closexec = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_realids = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_largefile = -1;
-static int hf_qnet6_kif_msg_openfd_ioflag_async = -1;
-static int hf_qnet6_kif_msg_openfd_xtype = -1;
-static int hf_qnet6_kif_msg_openfd_sflag = -1;
+static int hf_qnet6_kif_msg_openfd_ioflag_access;
+static int hf_qnet6_kif_msg_openfd_ioflag_append;
+static int hf_qnet6_kif_msg_openfd_ioflag_dsync;
+static int hf_qnet6_kif_msg_openfd_ioflag_sync;
+static int hf_qnet6_kif_msg_openfd_ioflag_rsync;
+static int hf_qnet6_kif_msg_openfd_ioflag_nonblock;
+static int hf_qnet6_kif_msg_openfd_ioflag_creat;
+static int hf_qnet6_kif_msg_openfd_ioflag_truncate;
+static int hf_qnet6_kif_msg_openfd_ioflag_exclusive;
+static int hf_qnet6_kif_msg_openfd_ioflag_noctrltty;
+static int hf_qnet6_kif_msg_openfd_ioflag_closexec;
+static int hf_qnet6_kif_msg_openfd_ioflag_realids;
+static int hf_qnet6_kif_msg_openfd_ioflag_largefile;
+static int hf_qnet6_kif_msg_openfd_ioflag_async;
+static int hf_qnet6_kif_msg_openfd_xtype;
+static int hf_qnet6_kif_msg_openfd_sflag;
 /*
  * dup
  */
-static int hf_qnet6_kif_msg_io_dup_reserved = -1;
-static int hf_qnet6_kif_msg_io_dup_key = -1;
+static int hf_qnet6_kif_msg_io_dup_reserved;
+static int hf_qnet6_kif_msg_io_dup_key;
 /*
  * msg
  */
-static int hf_qnet6_kif_msg_io_msg_mgrid = -1;
-static int hf_qnet6_kif_msg_io_msg_subtype = -1;
+static int hf_qnet6_kif_msg_io_msg_mgrid;
+static int hf_qnet6_kif_msg_io_msg_subtype;
 /*
  * mmap
  */
-static int hf_qnet6_kif_msg_io_mmap_prot = -1;
-static int hf_qnet6_kif_msg_io_mmap_prot_read = -1;
-static int hf_qnet6_kif_msg_io_mmap_prot_write = -1;
-static int hf_qnet6_kif_msg_io_mmap_prot_exec = -1;
-static int hf_qnet6_kif_msg_io_mmap_offset = -1;
+static int hf_qnet6_kif_msg_io_mmap_prot;
+static int hf_qnet6_kif_msg_io_mmap_prot_read;
+static int hf_qnet6_kif_msg_io_mmap_prot_write;
+static int hf_qnet6_kif_msg_io_mmap_prot_exec;
+static int hf_qnet6_kif_msg_io_mmap_offset;
 /*
  * notify
  */
-static int hf_qnet6_kif_msg_io_notify_action = -1;
-static int hf_qnet6_kif_msg_io_notify_flags = -1;
-static int hf_qnet6_kif_msg_io_notify_flags_31 = -1;
-static int hf_qnet6_kif_msg_io_notify_flags_30 = -1;
-static int hf_qnet6_kif_msg_io_notify_flags_29 = -1;
-static int hf_qnet6_kif_msg_io_notify_flags_28 = -1;
-static int hf_qnet6_kif_msg_io_notify_mgr = -1;
-static int hf_qnet6_kif_msg_io_notify_flags_extra_mask = -1;
-static int hf_qnet6_kif_msg_io_notify_flags_exten = -1;
-static int hf_qnet6_kif_msg_io_notify_nfds = -1;
-static int hf_qnet6_kif_msg_io_notify_fd_first = -1;
-static int hf_qnet6_kif_msg_io_notify_nfds_ready = -1;
-static int hf_qnet6_kif_msg_io_notify_timo = -1;
-static int hf_qnet6_kif_msg_io_notify_fds = -1;
+static int hf_qnet6_kif_msg_io_notify_action;
+static int hf_qnet6_kif_msg_io_notify_flags;
+static int hf_qnet6_kif_msg_io_notify_flags_31;
+static int hf_qnet6_kif_msg_io_notify_flags_30;
+static int hf_qnet6_kif_msg_io_notify_flags_29;
+static int hf_qnet6_kif_msg_io_notify_flags_28;
+static int hf_qnet6_kif_msg_io_notify_mgr;
+static int hf_qnet6_kif_msg_io_notify_flags_extra_mask;
+static int hf_qnet6_kif_msg_io_notify_flags_exten;
+static int hf_qnet6_kif_msg_io_notify_nfds;
+static int hf_qnet6_kif_msg_io_notify_fd_first;
+static int hf_qnet6_kif_msg_io_notify_nfds_ready;
+static int hf_qnet6_kif_msg_io_notify_timo;
+static int hf_qnet6_kif_msg_io_notify_fds;
 /*
  * NR
  */
 /*
  * sys/lsm/qnet/nr_msg.h
  */
-static int hf_qnet6_nr_type = -1;
-static int hf_qnet6_nr_remote_req_len = -1;
-static int hf_qnet6_nr_remote_req_id = -1;
-static int hf_qnet6_nr_remote_req_name = -1;
-static int hf_qnet6_nr_remote_rep_spare = -1;
-static int hf_qnet6_nr_remote_rep_id = -1;      /* remote_answer id */
-static int hf_qnet6_nr_remote_rep_nd = -1;      /* remote_answer nd */
-static int hf_qnet6_nr_remote_rep_status = -1;  /* remote_error * status */
+static int hf_qnet6_nr_type;
+static int hf_qnet6_nr_remote_req_len;
+static int hf_qnet6_nr_remote_req_id;
+static int hf_qnet6_nr_remote_req_name;
+static int hf_qnet6_nr_remote_rep_spare;
+static int hf_qnet6_nr_remote_rep_id;      /* remote_answer id */
+static int hf_qnet6_nr_remote_rep_nd;      /* remote_answer nd */
+static int hf_qnet6_nr_remote_rep_status;  /* remote_error * status */
 
 /*
  * Initialize the subtree pointers
  */
-static gint ett_qnet6_l4 = -1;
-static gint ett_qnet6_qos = -1;
-static gint ett_qnet6_flags = -1;
-static gint ett_qnet6_qos_info = -1;
+static int ett_qnet6_l4;
+static int ett_qnet6_qos;
+static int ett_qnet6_flags;
+static int ett_qnet6_qos_info;
 
-static gint ett_qnet6_lr = -1;
-static gint ett_qnet6_lr_src = -1;
-static gint ett_qnet6_lr_src_name_subtree = -1;
-static gint ett_qnet6_lr_src_domain_subtree = -1;
-static gint ett_qnet6_lr_src_addr_subtree = -1;
-static gint ett_qnet6_lr_dst_name_subtree = -1;
-static gint ett_qnet6_lr_dst_domain_subtree = -1;
-static gint ett_qnet6_lr_dst_addr_subtree = -1;
-static gint ett_qnet6_lr_dst = -1;
+static int ett_qnet6_lr;
+static int ett_qnet6_lr_src;
+static int ett_qnet6_lr_src_name_subtree;
+static int ett_qnet6_lr_src_domain_subtree;
+static int ett_qnet6_lr_src_addr_subtree;
+static int ett_qnet6_lr_dst_name_subtree;
+static int ett_qnet6_lr_dst_domain_subtree;
+static int ett_qnet6_lr_dst_addr_subtree;
+static int ett_qnet6_lr_dst;
 
-static gint ett_qnet6_kif = -1;
-static gint ett_qnet6_kif_vinfo = -1;
-static gint ett_qnet6_kif_pulse = -1;
-static gint ett_qnet6_kif_event = -1;
-static gint ett_qnet6_kif_msg = -1;
-static gint ett_qnet6_kif_msg_ioflag = -1;
-static gint ett_qnet6_kif_msg_mode = -1;
-static gint ett_qnet6_kif_msg_eflag = -1;
-static gint ett_qnet6_kif_connect = -1;
-static gint ett_qnet6_kif_chmod_mode = -1;
-static gint ett_qnet6_kif_msgsend = -1;
-static gint ett_qnet6_kif_client_info = -1;
-static gint ett_qnet6_kif_client_info_cred = -1;
-static gint ett_qnet6_kif_client_info_cred_group = -1;
-static gint ett_qnet6_kif_msg_devctl_dcmd = -1;
-static gint ett_qnet6_kif_msg_read_xtypes = -1;
-static gint ett_qnet6_kif_msg_write_xtypes = -1;
-static gint ett_qnet6_kif_msg_sync = -1;
-static gint ett_qnet6_kif_msg_openfd_ioflag = -1;
-static gint ett_qnet6_kif_msg_msginfo = -1;
-static gint ett_qnet6_kif_msg_prot = -1;
-static gint ett_qnet6_kif_msg_notify_flags = -1;
-static gint ett_qnet6_kif_msg_notify_fds = -1;
-static gint ett_qnet6_nr = -1;
+static int ett_qnet6_kif;
+static int ett_qnet6_kif_vinfo;
+static int ett_qnet6_kif_pulse;
+static int ett_qnet6_kif_event;
+static int ett_qnet6_kif_msg;
+static int ett_qnet6_kif_msg_ioflag;
+static int ett_qnet6_kif_msg_mode;
+static int ett_qnet6_kif_msg_eflag;
+static int ett_qnet6_kif_connect;
+static int ett_qnet6_kif_chmod_mode;
+static int ett_qnet6_kif_msgsend;
+static int ett_qnet6_kif_client_info;
+static int ett_qnet6_kif_client_info_cred;
+static int ett_qnet6_kif_client_info_cred_group;
+static int ett_qnet6_kif_msg_devctl_dcmd;
+static int ett_qnet6_kif_msg_read_xtypes;
+static int ett_qnet6_kif_msg_write_xtypes;
+static int ett_qnet6_kif_msg_sync;
+static int ett_qnet6_kif_msg_openfd_ioflag;
+static int ett_qnet6_kif_msg_msginfo;
+static int ett_qnet6_kif_msg_prot;
+static int ett_qnet6_kif_msg_notify_flags;
+static int ett_qnet6_kif_msg_notify_fds;
+static int ett_qnet6_nr;
 
 /*
- * struct qnet6_lr_pkt { guint8 version; guint8 pad0; guint8 type; guint8
+ * struct qnet6_lr_pkt { uint8_t version; uint8_t pad0; uint8_t type; uint8_t
  * pad1;
  *
- * guint32 total_len;
+ * uint32_t total_len;
  *
- * guint32 src_name_off; guint32 src_name_len; guint32 src_domain_off;
- * guint32 src_domain_len; guint32 src_addr_off; guint32 src_addr_len;
+ * uint32_t src_name_off; uint32_t src_name_len; uint32_t src_domain_off;
+ * uint32_t src_domain_len; uint32_t src_addr_off; uint32_t src_addr_len;
  *
- * guint32 dst_name_off; guint32 dst_name_len; guint32 dst_domain_off;
- * guint32 dst_domain_len; guint32 dst_addr_off; guint32 dst_addr_len; };
+ * uint32_t dst_name_off; uint32_t dst_name_len; uint32_t dst_domain_off;
+ * uint32_t dst_domain_len; uint32_t dst_addr_off; uint32_t dst_addr_len; };
  */
 #define QNX_QNET6_LR_PKT_SIZE 56
 /*
@@ -541,8 +533,8 @@ static gint ett_qnet6_nr = -1;
 
 struct qnet6_kif_hdr
 {
-  guint16 msgtype;
-  guint16 size;
+  uint16_t msgtype;
+  uint16_t size;
 };
 
 enum _msg_bases_qnx
@@ -668,12 +660,12 @@ static const value_string qnet6_layer_vals[] = {
 };
 
 #define QNET_L4_QOS_TYPE_LOADBALANCE  0
-#define QNET_L4_QOS_TYPE_REDUDANT     1
+#define QNET_L4_QOS_TYPE_REDUNDANT    1
 #define QNET_L4_QOS_TYPE_EXCLUSIVE    2
 #define QNET_L4_QOS_TYPE_PREFERRED    3
 static const value_string qnet6_qos_type_vals[] = {
   {QNET_L4_QOS_TYPE_LOADBALANCE, "Load balance"},
-  {QNET_L4_QOS_TYPE_REDUDANT,    "Redudant"},
+  {QNET_L4_QOS_TYPE_REDUNDANT,   "Redundant"},
   {QNET_L4_QOS_TYPE_EXCLUSIVE,   "Exclusive or Sequential"},
   {QNET_L4_QOS_TYPE_PREFERRED,   "Preferred link"},
   {0, NULL}
@@ -1089,7 +1081,7 @@ enum QNX_DCMD_CC_DEF
 static const value_string qnet6_kif_msg_devctl_cmd_class_vals[] = {
   {QNX_CCMD_DCMD_BLK_PARTENTRY,         "DCMD_BLK_PARTENTRY"},
   {QNX_CCMD_DCMD_BLK_FORCE_RELEARN,     "DCMD_BLK_FORCE_RELEARN"},
-  {QNX_CCMD_DCMD_FSYS_FORCE_RELEARN,    "DCMD_FSYS_FORCE_RELEARN"},
+/*   {QNX_CCMD_DCMD_FSYS_FORCE_RELEARN,    "DCMD_FSYS_FORCE_RELEARN"}, XXX - duplicate of QNX_CCMD_DCMD_BLK_FORCE_RELEARN */
   {QNX_CCMD_DCMD_FSYS_STATISTICS,       "DCMD_FSYS_STATISTICS"},
   {QNX_CCMD_DCMD_FSYS_STATISTICS_CLR,   "DCMD_FSYS_STATISTICS_CLR"},
   {QNX_CCMD_DCMD_FSYS_STATVFS,          "DCMD_FSYS_STATVFS"},
@@ -1101,7 +1093,7 @@ static const value_string qnet6_kif_msg_devctl_cmd_class_vals[] = {
   {QNX_CCMD_DCMD_FSYS_OPTIONS,          "DCMD_FSYS_OPTIONS"},
   {QNX_CCMD_DCMD_FSYS_FILE_FLAGS,       "DCMD_FSYS_FILE_FLAGS"},
   {QNX_CCMD_DCMD_FSYS_MAP_OFFSET,       "DCMD_FSYS_MAP_OFFSET"},
-  {QNX_CCMD_DCMD_FSYS_UUID,             "DCMD_FSYS_UUID"},
+/*   {QNX_CCMD_DCMD_FSYS_UUID,             "DCMD_FSYS_UUID"}, XXX - duplicate of QNX_CCMD_DCMD_FSYS_MAP_OFFSET */
   {QNX_CCMD_DCMD_FSYS_DIR_NFILES,       "DCMD_FSYS_DIR_NFILES"},
   {QNX_CCMD_DCMD_FSYS_PASS_USE,         "DCMD_FSYS_PASS_USE"},
   {QNX_CCMD_DCMD_FSYS_PASS_CHG,         "DCMD_FSYS_PASS_CHG"},
@@ -1129,7 +1121,7 @@ static const value_string qnet6_kif_msg_devctl_cmd_class_vals[] = {
   {QNX_CCMD_DCMD_IO_NET_GET_CONFIG,     "DCMD_IO_NET_GET_CONFIG"},
   {QNX_CCMD_DCMD_DBGMEM_ADDSYM,         "DCMD_DBGMEM_ADDSYM"},
   {QNX_CCMD_DCMD_DBGMEM_REGISTER,       "DCMD_DBGMEM_REGISTER"},
-  {QNX_CCMD_DCMD_DUMPER_NOTIFYEVENT,    "DCMD_DUMPER_NOTIFYEVENT"},
+/*   {QNX_CCMD_DCMD_DUMPER_NOTIFYEVENT,    "DCMD_DUMPER_NOTIFYEVENT"}, XXX - duplicate of QNX_CCMD_DCMD_DBGMEM_REGISTER */
   {QNX_CCMD_DCMD_DUMPER_REMOVEEVENT,    "DCMD_DUMPER_REMOVEEVENT"},
   {QNX_CCMD_DCMD_DUMPER_REMOVEALL,      "DCMD_DUMPER_REMOVEALL"},
   {QNX_CCMD_DCMD_PROC_SYSINFO,          "DCMD_PROC_SYSINFO:obtain information stored in the system page"},
@@ -1458,7 +1450,7 @@ static const value_string qnet6_kif_msgsend_msg_openfd_xtypes_vals[] = {
 /*
  * Perform LWL4 crc check
  */
-static gboolean qnet6_lwl4_check_crc = TRUE;
+static bool qnet6_lwl4_check_crc = true;
 
 /*
  * in sys/lsm/qnet/qos.h LR is using sockaddr as addr Family:1 means mac
@@ -1474,15 +1466,15 @@ static gboolean qnet6_lwl4_check_crc = TRUE;
  * it can't be searched.
  */
 static int
-dissect_qnet6_lr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_lr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int * poffset, unsigned encoding)
 {
 #define QNET6_LR_PAIRS 6
   proto_item   *ti;
   proto_tree   *stree, *srctree, *dstree, *sstree = NULL;
-  guint32       total_len, off, len, rlen;
-  gint          lr_start, i, hf_index_off = -1, hf_index_len = -1, hf_index = -1;
-  guint8        type;
-  guint8 const *p, *name[QNET6_LR_PAIRS];
+  uint32_t      total_len, off, len, rlen;
+  int           lr_start, i, hf_index_off = -1, hf_index_len = -1, hf_index = -1;
+  uint8_t       type;
+  uint8_t const *p, *name[QNET6_LR_PAIRS];
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "QNET_LR");
 
@@ -1503,14 +1495,14 @@ dissect_qnet6_lr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
   /*
    * type
    */
-  type = tvb_get_guint8(tvb, *poffset);
+  type = tvb_get_uint8(tvb, *poffset);
   proto_tree_add_item(stree, hf_qnet6_lr_type, tvb, (*poffset)++, 1, ENC_BIG_ENDIAN);
   (*poffset)++; /* skip another spare byte */
 
   /*
    * total length which includes this header and name payload
    */
-  total_len = tvb_get_guint32(tvb, *poffset, encoding);
+  total_len = tvb_get_uint32(tvb, *poffset, encoding);
   proto_tree_add_uint(stree, hf_qnet6_lr_total_len, tvb, *poffset, 4, total_len);
   *poffset += 4;
 
@@ -1573,37 +1565,37 @@ dissect_qnet6_lr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
           break;
         }
 
-      off = tvb_get_guint32(tvb, *poffset, encoding);
+      off = tvb_get_uint32(tvb, *poffset, encoding);
       proto_tree_add_item(sstree, hf_index_off, tvb, *poffset, 4, encoding);
       *poffset += 4;
 
-      len = tvb_get_guint32(tvb, *poffset, encoding);
+      len = tvb_get_uint32(tvb, *poffset, encoding);
       proto_tree_add_item(sstree, hf_index_len, tvb, *poffset, 4, encoding);
       *poffset += 4;
 
       if ((off <= rlen) && (len <= rlen))
         {
-          guint addr_data_offset = lr_start + off + QNX_QNET6_LR_PKT_SIZE /* sizeof(struct qnet6_lr_pkt) */;
+          unsigned addr_data_offset = lr_start + off + QNX_QNET6_LR_PKT_SIZE /* sizeof(struct qnet6_lr_pkt) */;
           /*
            * struct qnet6_lr_pkt is 64 bit aligned
            */
           if (i != 2 && i != 5)
             {
-            name[i] = tvb_get_string_enc(wmem_packet_scope(),
+            name[i] = tvb_get_string_enc(pinfo->pool,
                                          tvb,
                                          addr_data_offset,
                                          len,
                                          ENC_ASCII|ENC_NA);
                 ti = proto_tree_add_string(sstree, hf_index, tvb, addr_data_offset, len, name[i]);
-                PROTO_ITEM_SET_GENERATED(ti);
+                proto_item_set_generated(ti);
             }
           else
             {
-              if (tvb_get_guint8(tvb, addr_data_offset + 1) == QNET_LR_SA_FAMILY_MAC && len >= 2 + 6)
+              if (tvb_get_uint8(tvb, addr_data_offset + 1) == QNET_LR_SA_FAMILY_MAC && len >= 2 + 6)
                 {
-                  name[i] = tvb_ether_to_str(tvb, addr_data_offset + 2);
+                  name[i] = tvb_ether_to_str(pinfo->pool, tvb, addr_data_offset + 2);
                   ti = proto_tree_add_item(sstree, hf_index, tvb, addr_data_offset + 2, 6, ENC_NA);
-                  PROTO_ITEM_SET_GENERATED(ti);
+                  proto_item_set_generated(ti);
                 }
               else
                 {
@@ -1645,7 +1637,7 @@ dissect_qnet6_lr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
         }
       break;
     default:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Unknown LR Type");
+      col_set_str(pinfo->cinfo, COL_INFO, "Unknown LR Type");
     }
 
   return *poffset - lr_start;
@@ -1682,11 +1674,11 @@ static const value_string qnet6_kif_msgsend_msg_io_notify_action_vals[] = {
  * NR related header files are in sys/lsm/qnet/nr_msg.h yzhao
  */
 static int
-dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int * poffset, unsigned encoding)
 {
   proto_item *ti;
   proto_tree *stree;
-  guint8      name_len, rlen, type;
+  uint8_t     name_len, rlen, type;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "QNET_NR");
 
@@ -1696,22 +1688,22 @@ dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
   /*
    * type
    */
-  type = tvb_get_guint8(tvb, *poffset);
+  type = tvb_get_uint8(tvb, *poffset);
   proto_tree_add_item(stree, hf_qnet6_nr_type, tvb, (*poffset)++, 1, ENC_NA);
   switch (type)
     {
     case QNX_NR_PING_REQ:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Network Resolver Ping Request");
+      col_set_str(pinfo->cinfo, COL_INFO, "Network Resolver Ping Request");
       break;
     case QNX_NR_PING_ANS:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Network Resolver Ping Reply");
+      col_set_str(pinfo->cinfo, COL_INFO, "Network Resolver Ping Reply");
       /*
        * ping request/reply there is no further data
        */
       break;
     case QNX_NR_REMOTE_REQ:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Network Resolver Remote Request");
-      name_len = tvb_get_guint8(tvb, *poffset);
+      col_set_str(pinfo->cinfo, COL_INFO, "Network Resolver Remote Request");
+      name_len = tvb_get_uint8(tvb, *poffset);
       proto_tree_add_item(stree, hf_qnet6_nr_remote_req_len, tvb, (*poffset)++, 1, ENC_BIG_ENDIAN);
       proto_tree_add_item(stree, hf_qnet6_nr_remote_req_id, tvb, *poffset, 2, encoding);
       *poffset += 2;
@@ -1720,7 +1712,7 @@ dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
       *poffset += rlen;
       break;
     case QNX_NR_REMOTE_ANS:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Network Resolver Remote Reply");
+      col_set_str(pinfo->cinfo, COL_INFO, "Network Resolver Remote Reply");
       proto_tree_add_item(stree, hf_qnet6_nr_remote_rep_spare, tvb, (*poffset)++, 1, ENC_BIG_ENDIAN);
       proto_tree_add_item(stree, hf_qnet6_nr_remote_rep_id, tvb, *poffset, 2, encoding);
       *poffset += 2;
@@ -1728,7 +1720,7 @@ dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
       *poffset += 4;
       break;
     case QNX_NR_REMOTE_ERROR:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Network Resolver Remote Error");
+      col_set_str(pinfo->cinfo, COL_INFO, "Network Resolver Remote Error");
       proto_tree_add_item(stree, hf_qnet6_nr_remote_rep_spare, tvb, (*poffset)++, 1, ENC_BIG_ENDIAN);
       proto_tree_add_item(stree, hf_qnet6_nr_remote_rep_id, tvb, *poffset, 2, encoding);
       *poffset += 2;
@@ -1736,7 +1728,7 @@ dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
       *poffset += 4;
       break;
     default:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Unknown type");
+      col_set_str(pinfo->cinfo, COL_INFO, "Unknown type");
       break;
     }
 
@@ -1748,61 +1740,61 @@ dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
  */
 /*
  * all definitions below are based on QNX Neutrino only supports 32 bits
- * now struct qnet6_kif_connect { guint16 msgtype; guint16 size; // Size
- * of message with cred if sent guint32 version; // Version of local
- * protocol gint32 server_pid; // target process on remote node gint32
- * server_chid; // target channel on remote node gint32 client_id; //
- * handle for remote node to use for this connection gint32 client_pid;
+ * now struct qnet6_kif_connect { uint16_t msgtype; uint16_t size; // Size
+ * of message with cred if sent uint32_t version; // Version of local
+ * protocol int32_t server_pid; // target process on remote node int32_t
+ * server_chid; // target channel on remote node int32_t client_id; //
+ * handle for remote node to use for this connection int32_t client_pid;
  * // local process id for remote node to verify }; struct
- * qnet6_kif_connect_success { guint16 msgtype; //
- * qnet6_kif_CONNECT_SUCCESS guint16 size; // Size of message guint32
- * version; // Version of remote protocol gint32 client_id; // Handle
- * passed in qnet6_kif_connect gint32 server_id; // A handle on remote
- * node to target messages gint32 scoid; // Remote server's server
- * connect id for local information guint32 nbytes; // Number of bytes to
+ * qnet6_kif_connect_success { uint16_t msgtype; //
+ * qnet6_kif_CONNECT_SUCCESS uint16_t size; // Size of message uint32_t
+ * version; // Version of remote protocol int32_t client_id; // Handle
+ * passed in qnet6_kif_connect int32_t server_id; // A handle on remote
+ * node to target messages int32_t scoid; // Remote server's server
+ * connect id for local information uint32_t nbytes; // Number of bytes to
  * limit qnet6_kif_msgsend to };
  *
- * struct qnet6_kif_connect_fail { guint16 msgtype; //
- * qnet6_kif_CONNECT_FAIL guint16 size; // Size of message guint32
- * version; // Version of remote protocol gint32 client_id; // Handle
- * passed in qnet6_kif_connect gint32 status; // errno reason for failure
+ * struct qnet6_kif_connect_fail { uint16_t msgtype; //
+ * qnet6_kif_CONNECT_FAIL uint16_t size; // Size of message uint32_t
+ * version; // Version of remote protocol int32_t client_id; // Handle
+ * passed in qnet6_kif_connect int32_t status; // errno reason for failure
  * };
  *
- * struct qnet6_kif_connect_death { guint16 msgtype; //
- * qnet6_kif_CONNECT_DEATH guint16 size; // Size of message gint32
+ * struct qnet6_kif_connect_death { uint16_t msgtype; //
+ * qnet6_kif_CONNECT_DEATH uint16_t size; // Size of message int32_t
  * client_id; // Handle passed in qnet6_kif_connect };
  */
 /*
  * _vtid_info is in sys/neutrino.h
  */
 /*
- * struct _vtid_info { gint32 tid; gint32 coid; gint32 priority; gint32
- * srcmsglen; gint32 keydata; gint32 srcnd; gint32 dstmsglen; gint32 zero;
- * }; struct qnet6_kif_msgsend { guint16 msgtype; // qnet6_kif_MSGSEND
- * guint16 size; // Size of message without message gint32 server_id; //
- * Handle returned in qnet6_kif_connect_success gint32 client_handle; //
+ * struct _vtid_info { int32_t tid; int32_t coid; int32_t priority; int32_t
+ * srcmsglen; int32_t keydata; int32_t srcnd; int32_t dstmsglen; int32_t zero;
+ * }; struct qnet6_kif_msgsend { uint16_t msgtype; // qnet6_kif_MSGSEND
+ * uint16_t size; // Size of message without message int32_t server_id; //
+ * Handle returned in qnet6_kif_connect_success int32_t client_handle; //
  * Local handle for this transaction struct _vtid_info vinfo; // Info that
- * changes frequently guint32 nbytes; // number of bytes limited by what
+ * changes frequently uint32_t nbytes; // number of bytes limited by what
  * remote node requested // unsigned char message[]; // Data to be sent
  * };
  *
- * struct qnet6_kif_msgread { guint16 msgtype; // qnet6_kif_MSGREAD
- * guint16 size; // Size of message gint32 msgread_handle; // Remote
- * handle to msgxfer to gint32 client_handle; // Local handle for this
- * transaction guint32 offset; // Requested offset to read from guint32
+ * struct qnet6_kif_msgread { uint16_t msgtype; // qnet6_kif_MSGREAD
+ * uint16_t size; // Size of message int32_t msgread_handle; // Remote
+ * handle to msgxfer to int32_t client_handle; // Local handle for this
+ * transaction uint32_t offset; // Requested offset to read from uint32_t
  * nbytes; // Requested size to read };
  *
- * struct qnet6_kif_msgwrite { guint16 msgtype; // MSGWRITE, MSGREPLY,
- * MSGERROR, MSGREAD_XFER, MSGREAD_ERROR guint16 size; // Size of message
- * without message gint32 status; // MSGWRITE/MSGREAD_XFER=not used,
- * MSGREPLY=status, MSGERROR,MSGREAD_ERROR=errno gint32 handle; // xfer
- * handle (msgread_handle or client_handle) guint32 offset; // Requested
- * offset to xfer to guint32 nbytes; // Requested size to xfer //
+ * struct qnet6_kif_msgwrite { uint16_t msgtype; // MSGWRITE, MSGREPLY,
+ * MSGERROR, MSGREAD_XFER, MSGREAD_ERROR uint16_t size; // Size of message
+ * without message int32_t status; // MSGWRITE/MSGREAD_XFER=not used,
+ * MSGREPLY=status, MSGERROR,MSGREAD_ERROR=errno int32_t handle; // xfer
+ * handle (msgread_handle or client_handle) uint32_t offset; // Requested
+ * offset to xfer to uint32_t nbytes; // Requested size to xfer //
  * unsigned char message[]; // Data to be sent };
  *
- * struct qnet6_kif_unblock { guint16 msgtype; // qnet6_kif_UNBLOCK
- * guint16 size; // Size of message gint32 server_id; // Handle returned
- * in qnet6_kif_connect_success gint32 client_handle; // Local handle to
+ * struct qnet6_kif_unblock { uint16_t msgtype; // qnet6_kif_UNBLOCK
+ * uint16_t size; // Size of message int32_t server_id; // Handle returned
+ * in qnet6_kif_connect_success int32_t client_handle; // Local handle to
  * match for unblock int tid; // Local threadid to unblock (match to
  * vinfo.tid) };
  */
@@ -1812,13 +1804,13 @@ dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
 /*
  * QNX6 doesn't support 64 bits yet so void* will be 32 bits, and I assume
  * the int as 32 bits too(I haven't see int is not 32 bits yet on
- * Windows64 and Linux64 so change it to gint32 sizeof(union sigval) will
+ * Windows64 and Linux64 so change it to int32_t sizeof(union sigval) will
  * change when QNX6 supports 64 bits and you may see 32, 64 bits OSes
  * running on different machines with QNX even preference may not help as
  * these are application level data.
  */
 /*
- * union sigval_qnx { gint32 sival_int; void *sival_ptr; }; struct
+ * union sigval_qnx { int32_t sival_int; void *sival_ptr; }; struct
  * sigevent_qnx { int sigev_notify; union { int __sigev_signo; int
  * __sigev_coid; int __sigev_id; void (*__sigev_notify_function) (union
  * sigval); } __sigev_un1; union sigval_qnx sigev_value; union { struct {
@@ -1827,49 +1819,49 @@ dissect_qnet6_nr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * 
  *
  * };
  *
- * struct qnet6_kif_event { guint16 msgtype; // qnet6_kif_EVENT guint16
- * size; // Size of message gint32 client_handle; // Local handle to
+ * struct qnet6_kif_event { uint16_t msgtype; // qnet6_kif_EVENT uint16_t
+ * size; // Size of message int32_t client_handle; // Local handle to
  * deliver event to struct sigevent_qnx event; // Event to be delivered
  * };
  *
- * struct _pulse { guint16 type; guint16 subtype; gint8 code; guint8
- * reserved[3]; // zero must be union sigval_qnx value; gint32 scoid; };
- * struct qnet6_kif_pulse { guint16 msgtype; // qnet6_kif_PULSE guint16
- * size; // Size of message gint32 server_id; // Handle returned in
- * qnet6_kif_connect_success gint32 client_handle; // Local handle for
+ * struct _pulse { uint16_t type; uint16_t subtype; int8_t code; uint8_t
+ * reserved[3]; // zero must be union sigval_qnx value; int32_t scoid; };
+ * struct qnet6_kif_pulse { uint16_t msgtype; // qnet6_kif_PULSE uint16_t
+ * size; // Size of message int32_t server_id; // Handle returned in
+ * qnet6_kif_connect_success int32_t client_handle; // Local handle for
  * this transaction struct _vtid_info vinfo; // Info that changes
- * frequently struct _pulse pulse; // Pulse to deliver to remote gint32
+ * frequently struct _pulse pulse; // Pulse to deliver to remote int32_t
  * priority; // Priority in MsgSendPulse() };
  *
- * struct qnet6_kif_signal { guint16 msgtype; // qnet6_kif_SIGNAL guint16
- * size; // Size of message gint32 client_handle; // Local handle for
- * this transaction gint32 pid; // Signal from this pid (local) gint32
- * tid; // Signal from this tid (local) gint32 signo; // Signal to
- * deliver to remote gint32 code; gint32 value; };
+ * struct qnet6_kif_signal { uint16_t msgtype; // qnet6_kif_SIGNAL uint16_t
+ * size; // Size of message int32_t client_handle; // Local handle for
+ * this transaction int32_t pid; // Signal from this pid (local) int32_t
+ * tid; // Signal from this tid (local) int32_t signo; // Signal to
+ * deliver to remote int32_t code; int32_t value; };
  *
- * struct qnet6_kif_disconnect { guint16 msgtype; // qnet6_kif_DISCONNECT
- * guint16 size; // Size of message gint32 server_id; // Handle returned
+ * struct qnet6_kif_disconnect { uint16_t msgtype; // qnet6_kif_DISCONNECT
+ * uint16_t size; // Size of message int32_t server_id; // Handle returned
  * in qnet6_kif_connect_success };
  */
 
 static void
-display_channel_id(guint32 chid, proto_item * ti)
+display_channel_id(uint32_t chid, proto_item * ti)
 {
   if (chid & QNX_NTO_GLOBAL_CHANNEL)
     {
-      proto_item_append_text(ti, " _NTO_GLOBAL_CHANNEL|%" G_GUINT32_FORMAT, chid & ~QNX_NTO_GLOBAL_CHANNEL);
+      proto_item_append_text(ti, " _NTO_GLOBAL_CHANNEL|%" PRIu32, chid & ~QNX_NTO_GLOBAL_CHANNEL);
     }
 }
 
 static void
-display_coid(guint32 coid, proto_item * ti)
+display_coid(uint32_t coid, proto_item * ti)
 {
   if (coid & QNX_NTO_SIDE_CHANNEL)
     { /* side channel */
       if ((coid & ~QNX_NTO_SIDE_CHANNEL) == 0)
         proto_item_append_text(ti, " SYSMGR_COID)");
       else
-        proto_item_append_text(ti," (_NTO_SIDE_CHANNEL|%" G_GUINT32_FORMAT ")", coid & ~QNX_NTO_SIDE_CHANNEL);
+        proto_item_append_text(ti," (_NTO_SIDE_CHANNEL|%" PRIu32 ")", coid & ~QNX_NTO_SIDE_CHANNEL);
     }
 }
 
@@ -1889,12 +1881,12 @@ display_coid(guint32 coid, proto_item * ti)
  */
 
 static int
-dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * poffset, guint encoding);
+dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int * poffset, unsigned encoding);
 
 static void
-dissect_qnet6_kif_msgsend_msg_extra(tvbuff_t * tvb, proto_tree * tree, gint * poffset, gint combine_len, gint * left, gint clen, const char *data)
+dissect_qnet6_kif_msgsend_msg_extra(tvbuff_t * tvb, proto_tree * tree, int * poffset, int combine_len, int * left, int clen, const char *data)
 {
-  gint nlen;
+  int nlen;
 
   nlen = combine_len & ~0x8000;
   /*
@@ -1925,10 +1917,10 @@ dissect_qnet6_kif_msgsend_msg_extra(tvbuff_t * tvb, proto_tree * tree, gint * po
  */
 #define QNX_MSG_INFO_SIZE (12*4)
 static int
-dissect_qnet6_kif_msgsend_msg_msginfo(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_msginfo(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int         ret = -1;
-  guint32     chid, coid;
+  uint32_t    chid, coid;
   proto_item *ti;
 
   proto_tree_add_item(tree, hf_qnet6_kif_msg_msginfo_nd, tvb, *poffset, 4, encoding);
@@ -1939,13 +1931,13 @@ dissect_qnet6_kif_msgsend_msg_msginfo(tvbuff_t * tvb, packet_info * pinfo _U_, p
   *poffset += 4;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_msginfo_tid, tvb, *poffset, 4, encoding);
   *poffset += 4;
-  chid = tvb_get_guint32(tvb, *poffset, encoding);
+  chid = tvb_get_uint32(tvb, *poffset, encoding);
   ti = proto_tree_add_item(tree, hf_qnet6_kif_msg_msginfo_chid, tvb, *poffset, 4, encoding);
   display_channel_id(chid, ti);
   *poffset += 4;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_msginfo_scoid, tvb, *poffset, 4, encoding);
   *poffset += 4;
-  coid = tvb_get_guint32(tvb, *poffset, encoding);
+  coid = tvb_get_uint32(tvb, *poffset, encoding);
   ti = proto_tree_add_item(tree, hf_qnet6_kif_msg_msginfo_coid, tvb, *poffset, 4, encoding);
   display_coid(coid, ti);
   *poffset += 4;
@@ -1966,6 +1958,11 @@ dissect_qnet6_kif_msgsend_msg_msginfo(tvbuff_t * tvb, packet_info * pinfo _U_, p
 
 }
 
+// Most of the functions below recurse via dissect_qnet6_kif_msgsend_msg.
+// We're guaranteed to run out of packet before we run out of stack, so
+// just skip over them.
+// NOLINTBEGIN(misc-no-recursion)
+
 /*
  * in dissect_qnet6_kif_msgsend_msg already passed the first 2 bytes
  * msg->type and when dissect_qnet6_kif_msgsend_msg_devctl is called, it
@@ -1973,13 +1970,13 @@ dissect_qnet6_kif_msgsend_msg_msginfo(tvbuff_t * tvb, packet_info * pinfo _U_, p
  */
 
 static int
-dissect_qnet6_kif_msgsend_msg_devctl(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_devctl(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int         ret = -1;
-  gint        combine_len, left;
+  int         combine_len, left;
   const char *p;
-  guint32     dcmd;
-  static const int *dcmd_fields[] = {
+  uint32_t    dcmd;
+  static int * const dcmd_fields[] = {
     &hf_qnet6_kif_msg_devctl_dcmd_cmd,
     &hf_qnet6_kif_msg_devctl_dcmd_class,
     &hf_qnet6_kif_msg_devctl_dcmd_ccmd,
@@ -1989,10 +1986,10 @@ dissect_qnet6_kif_msgsend_msg_devctl(tvbuff_t * tvb, packet_info * pinfo, proto_
     NULL
   };
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
-  dcmd = tvb_get_guint32(tvb, *poffset, encoding);
+  dcmd = tvb_get_uint32(tvb, *poffset, encoding);
   proto_tree_add_bitmask(tree, tvb, *poffset, hf_qnet6_kif_msg_devctl_dcmd, ett_qnet6_kif_msg_devctl_dcmd, dcmd_fields, encoding);
   *poffset += 4;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_devctl_nbytes, tvb, *poffset, 4, encoding);
@@ -2038,12 +2035,12 @@ dissect_qnet6_kif_msgsend_msg_devctl(tvbuff_t * tvb, packet_info * pinfo, proto_
  */
 
 static int
-dissect_qnet6_kif_msgsend_msg_read(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_read(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int     ret = -1;
-  guint32 xtypes;
-  gint    combine_len, left;
-  static const int *xtypes_fields[] = {
+  uint32_t xtypes;
+  int     combine_len, left;
+  static int * const xtypes_fields[] = {
     &hf_qnet6_kif_msg_io_read_xtypes_0_7,
     &hf_qnet6_kif_msg_io_read_xtypes_8,
     &hf_qnet6_kif_msg_io_read_xtypes_14,
@@ -2052,12 +2049,12 @@ dissect_qnet6_kif_msgsend_msg_read(tvbuff_t * tvb, packet_info * pinfo _U_, prot
   };
 
   left = tvb_reported_length_remaining(tvb, *poffset);
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_read_nbytes, tvb,  *poffset, 4, encoding);
   *poffset += 4;
-  xtypes = tvb_get_guint32(tvb, *poffset, encoding);
+  xtypes = tvb_get_uint32(tvb, *poffset, encoding);
   proto_tree_add_bitmask(tree, tvb, *poffset, hf_qnet6_kif_msg_io_read_xtypes, ett_qnet6_kif_msg_read_xtypes, xtypes_fields, encoding);
   *poffset += 4;
   proto_tree_add_item(tree, hf_qnet6_kif_zero, tvb, *poffset, 4, ENC_NA);
@@ -2105,12 +2102,12 @@ dissect_qnet6_kif_msgsend_msg_read(tvbuff_t * tvb, packet_info * pinfo _U_, prot
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_write(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_write(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int     ret = -1;
-  guint32 xtypes;
-  gint    combine_len, left;
-  static const int *xtypes_fields[] = {
+  uint32_t xtypes;
+  int     combine_len, left;
+  static int * const xtypes_fields[] = {
     &hf_qnet6_kif_msg_io_write_xtypes_0_7,
     &hf_qnet6_kif_msg_io_write_xtypes_8,
     &hf_qnet6_kif_msg_io_write_xtypes_14,
@@ -2119,12 +2116,12 @@ dissect_qnet6_kif_msgsend_msg_write(tvbuff_t * tvb, packet_info * pinfo _U_, pro
   };
 
   left = tvb_reported_length_remaining(tvb, *poffset);
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_write_nbytes, tvb, *poffset, 4, encoding);
   *poffset += 4;
-  xtypes = tvb_get_guint32(tvb, *poffset, encoding);
+  xtypes = tvb_get_uint32(tvb, *poffset, encoding);
   proto_tree_add_bitmask(tree, tvb, *poffset, hf_qnet6_kif_msg_io_write_xtypes, ett_qnet6_kif_msg_write_xtypes, xtypes_fields, encoding);
   *poffset += 4;
   proto_tree_add_item(tree, hf_qnet6_kif_zero, tvb, *poffset, 4, ENC_NA);
@@ -2192,13 +2189,13 @@ dissect_qnet6_kif_msgsend_msg_write(tvbuff_t * tvb, packet_info * pinfo _U_, pro
  } io_lseek_t;
  */
 static int
-dissect_qnet6_kif_msgsend_msg_seek(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_seek(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_seek_whence, tvb, *poffset, 2, encoding);
@@ -2238,13 +2235,13 @@ dissect_qnet6_kif_msgsend_msg_seek(tvbuff_t * tvb, packet_info * pinfo _U_, prot
  } io_pathconf_t;
  */
 static int
-dissect_qnet6_kif_msgsend_msg_pathconf(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_pathconf(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_pathconf_name, tvb, *poffset, 2, encoding);
@@ -2282,11 +2279,11 @@ dissect_qnet6_kif_msgsend_msg_pathconf(tvbuff_t * tvb, packet_info * pinfo _U_, 
  */
 
 static int
-dissect_qnet6_kif_msgsend_msg_chmod(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_chmod(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
-  static const int *chmod_fields[] = {
+  int combine_len, left;
+  static int * const chmod_fields[] = {
     &hf_qnet6_kif_msg_io_chmod_other_exe,
     &hf_qnet6_kif_msg_io_chmod_other_write,
     &hf_qnet6_kif_msg_io_chmod_other_read,
@@ -2303,7 +2300,7 @@ dissect_qnet6_kif_msgsend_msg_chmod(tvbuff_t * tvb, packet_info * pinfo _U_, pro
   };
 
   left = tvb_reported_length_remaining(tvb, *poffset);
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_bitmask(tree, tvb, *poffset, hf_qnet6_kif_msg_io_chmod, ett_qnet6_kif_chmod_mode, chmod_fields, encoding);
@@ -2339,16 +2336,16 @@ dissect_qnet6_kif_msgsend_msg_chmod(tvbuff_t * tvb, packet_info * pinfo _U_, pro
  * it is a corresponding reply?
  */
 static int
-dissect_qnet6_kif_msgsend_msg_fdinfo(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_fdinfo(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
   if (left < 2 + 4 + 4 + 4)
     return ret;
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_fdinfo_flags, tvb, *poffset, 4, encoding);
@@ -2384,14 +2381,14 @@ dissect_qnet6_kif_msgsend_msg_fdinfo(tvbuff_t * tvb, packet_info * pinfo _U_, pr
  */
 
 static int
-dissect_qnet6_kif_msgsend_msg_lock(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_lock(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_lock_subtype, tvb, *poffset, 4, encoding);
@@ -2417,14 +2414,14 @@ dissect_qnet6_kif_msgsend_msg_lock(tvbuff_t * tvb, packet_info * pinfo _U_, prot
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_space(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_space(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_space_subtype, tvb, *poffset, 2, encoding);
@@ -2454,14 +2451,14 @@ dissect_qnet6_kif_msgsend_msg_space(tvbuff_t * tvb, packet_info * pinfo _U_, pro
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_chown(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_chown(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_chown_gid, tvb, *poffset, 4, encoding);
@@ -2495,25 +2492,23 @@ dissect_qnet6_kif_msgsend_msg_chown(tvbuff_t * tvb, packet_info * pinfo _U_, pro
  * };
  */
 static int
-dissect_qnet6_kif_msgsend_msg_utime(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_utime(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int      ret = -1;
-  gint     combine_len, left;
-  nstime_t nt;
+  int      combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_utime_curflag, tvb, *poffset, 4, encoding);
   *poffset += 4;
-  nt.nsecs = 0;
-  nt.secs = tvb_get_guint32(tvb, *poffset, encoding);
-  proto_tree_add_time(tree, hf_qnet6_kif_msg_io_utime_actime, tvb, *poffset, 4, &nt);
+  proto_tree_add_item(tree, hf_qnet6_kif_msg_io_utime_actime,
+      tvb, *poffset, 4, ENC_TIME_SECS|encoding);
   *poffset += 4;
-  nt.secs = tvb_get_guint32(tvb, *poffset, encoding);
-  proto_tree_add_time(tree, hf_qnet6_kif_msg_io_utime_modtime, tvb, *poffset, 4, &nt);
+  proto_tree_add_item(tree, hf_qnet6_kif_msg_io_utime_modtime,
+      tvb, *poffset, 4, ENC_TIME_SECS|encoding);
   *poffset += 4;
 
   left -= 2 + 4 + 4 + 4;
@@ -2534,11 +2529,11 @@ dissect_qnet6_kif_msgsend_msg_utime(tvbuff_t * tvb, packet_info * pinfo _U_, pro
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_sync(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_sync(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
-  static const int *sync_fields[] = {
+  int combine_len, left;
+  static int * const sync_fields[] = {
     &hf_qnet6_kif_msg_syncflag_dsync,
     &hf_qnet6_kif_msg_syncflag_sync,
     &hf_qnet6_kif_msg_syncflag_rsync,
@@ -2547,7 +2542,7 @@ dissect_qnet6_kif_msgsend_msg_sync(tvbuff_t * tvb, packet_info * pinfo _U_, prot
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_bitmask(tree, tvb, *poffset, hf_qnet6_kif_msg_io_sync, ett_qnet6_kif_msg_sync, sync_fields, encoding);
@@ -2571,14 +2566,14 @@ dissect_qnet6_kif_msgsend_msg_sync(tvbuff_t * tvb, packet_info * pinfo _U_, prot
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_close(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_close(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
 
@@ -2599,14 +2594,14 @@ dissect_qnet6_kif_msgsend_msg_close(tvbuff_t * tvb, packet_info * pinfo _U_, pro
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_stat(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_stat(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_zero, tvb, *poffset, 4, ENC_NA);
@@ -2630,13 +2625,13 @@ dissect_qnet6_kif_msgsend_msg_stat(tvbuff_t * tvb, packet_info * pinfo, proto_tr
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_shutdown(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_shutdown(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
 
@@ -2658,12 +2653,12 @@ dissect_qnet6_kif_msgsend_msg_shutdown(tvbuff_t * tvb, packet_info * pinfo _U_, 
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_openfd(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_openfd(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int         ret = -1;
-  gint        combine_len, left;
+  int         combine_len, left;
   proto_tree *stree;
-  static const int *openfd_ioflag_fields[] = {
+  static int * const openfd_ioflag_fields[] = {
     &hf_qnet6_kif_msg_openfd_ioflag_access,
     &hf_qnet6_kif_msg_openfd_ioflag_append,
     &hf_qnet6_kif_msg_openfd_ioflag_dsync,
@@ -2682,7 +2677,7 @@ dissect_qnet6_kif_msgsend_msg_openfd(tvbuff_t * tvb, packet_info * pinfo _U_, pr
   };
 
   left = tvb_reported_length_remaining(tvb, *poffset);
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_bitmask(tree, tvb, *poffset, hf_qnet6_kif_msg_openfd_ioflag, ett_qnet6_kif_msg_openfd_ioflag, openfd_ioflag_fields, encoding);
@@ -2723,12 +2718,12 @@ dissect_qnet6_kif_msgsend_msg_openfd(tvbuff_t * tvb, packet_info * pinfo _U_, pr
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_mmap(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_mmap(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int         ret = -1;
-  gint        combine_len, left;
+  int         combine_len, left;
   proto_tree *stree;
-  static const int *prot_fields[] = {
+  static int * const prot_fields[] = {
     &hf_qnet6_kif_msg_io_mmap_prot_read,
     &hf_qnet6_kif_msg_io_mmap_prot_write,
     &hf_qnet6_kif_msg_io_mmap_prot_exec,
@@ -2737,7 +2732,7 @@ dissect_qnet6_kif_msgsend_msg_mmap(tvbuff_t * tvb, packet_info * pinfo _U_, prot
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_bitmask(tree, tvb, *poffset, hf_qnet6_kif_msg_io_mmap_prot, ett_qnet6_kif_msg_prot, prot_fields, encoding);
@@ -2771,14 +2766,14 @@ dissect_qnet6_kif_msgsend_msg_mmap(tvbuff_t * tvb, packet_info * pinfo _U_, prot
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_iomsg(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_iomsg(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int  ret = -1;
-  gint combine_len, left;
+  int combine_len, left;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_msg_mgrid, tvb, *poffset, 2, encoding);
@@ -2816,22 +2811,22 @@ dissect_qnet6_kif_msgsend_msg_iomsg(tvbuff_t * tvb, packet_info * pinfo _U_, pro
  * events returned };
  *
  */
-static const guint8 *qnet6_kif_msg_io_notify_event_str[] = {
+static const uint8_t *qnet6_kif_msg_io_notify_event_str[] = {
   "read ", "write ", "rdband "
 };
 
 static int
-dissect_qnet6_kif_msgsend_msg_notify(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_notify(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int         ret = -1;
-  gint        combine_len, left, fd;
-  guint16     event, revent;
+  int         combine_len, left, fd;
+  uint16_t    event, revent;
   proto_tree *stree;
   nstime_t    nt;
-  guint64     timo;
-  guint32     nfds, i, j, n, m;
-  guint8      sevent[20], srevent[20]; /* enough to fit "read,write,rdband" */
-  static const int *notify_flags_fields[] = {
+  uint64_t    timo;
+  uint32_t    nfds, i, j, n, m;
+  uint8_t     sevent[20], srevent[20]; /* enough to fit "read,write,rdband" */
+  static int * const notify_flags_fields[] = {
     &hf_qnet6_kif_msg_io_notify_flags_28,
     &hf_qnet6_kif_msg_io_notify_flags_29,
     &hf_qnet6_kif_msg_io_notify_flags_30,
@@ -2841,7 +2836,7 @@ dissect_qnet6_kif_msgsend_msg_notify(tvbuff_t * tvb, packet_info * pinfo _U_, pr
 
   left = tvb_reported_length_remaining(tvb, *poffset);
 
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_notify_action, tvb, *poffset, 4, encoding);
@@ -2870,7 +2865,7 @@ dissect_qnet6_kif_msgsend_msg_notify(tvbuff_t * tvb, packet_info * pinfo _U_, pr
   *poffset += 4;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_notify_flags_exten, tvb, *poffset, 4, encoding);
   *poffset += 4;
-  nfds = tvb_get_guint32(tvb, *poffset, encoding);
+  nfds = tvb_get_uint32(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_notify_nfds, tvb, *poffset, 4, encoding);
   *poffset += 4;
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_notify_fd_first, tvb, *poffset, 4, encoding);
@@ -2878,7 +2873,7 @@ dissect_qnet6_kif_msgsend_msg_notify(tvbuff_t * tvb, packet_info * pinfo _U_, pr
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_notify_nfds_ready, tvb, *poffset, 4, encoding);
   *poffset += 4;
 
-  timo = tvb_get_guint64(tvb, *poffset, encoding);
+  timo = tvb_get_uint64(tvb, *poffset, encoding);
   if (timo != 0)
     {
       if (timo > 1000000000)
@@ -2904,23 +2899,23 @@ dissect_qnet6_kif_msgsend_msg_notify(tvbuff_t * tvb, packet_info * pinfo _U_, pr
   /*
    * handle pollfd fds[nfds]
    */
-  if ((guint32) left >= nfds * 8)
+  if ((uint32_t) left >= nfds * 8)
     { /* each pollfd size is 8 */
       stree = proto_tree_add_subtree(tree, tvb, *poffset, nfds * 8, ett_qnet6_kif_msg_notify_fds, NULL, "Poll file descriptors array");
       for (i = 0; i < nfds; i++)
         {
-          fd = tvb_get_guint32(tvb, *poffset, encoding);
-          event = tvb_get_guint16(tvb, *poffset + 4, encoding);
-          revent = tvb_get_guint16(tvb, *poffset + 4 + 2, encoding);
+          fd = tvb_get_uint32(tvb, *poffset, encoding);
+          event = tvb_get_uint16(tvb, *poffset + 4, encoding);
+          revent = tvb_get_uint16(tvb, *poffset + 4 + 2, encoding);
           sevent[0] = srevent[0] = 0;
-          for (j = 1, n = 0, m = 0; j < 8; j = j << 1)
+          for (j = n = m = 0; j < 3; j++)
             {
-              if (event & j)
-                n += g_snprintf(sevent + n, sizeof(sevent) - n, "%s", qnet6_kif_msg_io_notify_event_str[j >> 1]);
-              if (revent & j)
-                m += g_snprintf(srevent + m, sizeof(srevent) - m, "%s", qnet6_kif_msg_io_notify_event_str[j >> 1]);
+              if (event & (1<<j))
+                n += snprintf(sevent + n, sizeof(sevent) - n, "%s", qnet6_kif_msg_io_notify_event_str[j]);
+              if (revent & (1<<j))
+                m += snprintf(srevent + m, sizeof(srevent) - m, "%s", qnet6_kif_msg_io_notify_event_str[j]);
             }
-          proto_tree_add_string_format_value(stree, hf_qnet6_kif_msg_io_notify_fds, tvb, *poffset, 8, NULL, "fd:%" G_GINT32_FORMAT " " "event:0x%x %s" "revent:0x%x %s", fd, event, sevent, revent, srevent);
+          proto_tree_add_string_format_value(stree, hf_qnet6_kif_msg_io_notify_fds, tvb, *poffset, 8, NULL, "fd:%" PRId32 " " "event:0x%x %s" "revent:0x%x %s", fd, event, sevent, revent, srevent);
           *poffset += 8;
         }
       left -= nfds * 8;
@@ -2954,14 +2949,14 @@ dissect_qnet6_kif_msgsend_msg_notify(tvbuff_t * tvb, packet_info * pinfo _U_, pr
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg_dup(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg_dup(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   int         ret = -1;
-  gint        combine_len, left;
+  int         combine_len, left;
   proto_tree *stree;
 
   left = tvb_reported_length_remaining(tvb, *poffset);
-  combine_len = tvb_get_guint16(tvb, *poffset, encoding);
+  combine_len = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(tree, hf_qnet6_kif_msg_io_combine_len, tvb, *poffset, 2, encoding);
   *poffset += 2;
   stree = proto_tree_add_subtree(tree, tvb, *poffset, QNX_MSG_INFO_SIZE, ett_qnet6_kif_msg_msginfo, NULL, "MsgInfo");
@@ -2991,16 +2986,16 @@ dissect_qnet6_kif_msgsend_msg_dup(tvbuff_t * tvb, packet_info * pinfo _U_, proto
 }
 
 static int
-dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int * poffset, unsigned encoding)
 {
   proto_item  *ti;
   proto_tree  *stree;
-  guint16      msgtype, subtype, path_len, extra_len, extra_pad;
-  const gchar *msgstr;
-  guint8       extra_type;
-  gint         rlen, head_len;
+  uint16_t     msgtype, subtype, path_len, extra_len, extra_pad;
+  const char *msgstr;
+  uint8_t      extra_type;
+  int          rlen, head_len;
   int          ret = -1;
-  static const int *ioflag_fields[] = {
+  static int * const ioflag_fields[] = {
     &hf_qnet6_kif_msg_connect_ioflag_access,
     &hf_qnet6_kif_msg_connect_ioflag_append,
     &hf_qnet6_kif_msg_connect_ioflag_dsync,
@@ -3017,7 +3012,7 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
     &hf_qnet6_kif_msg_connect_ioflag_async,
     NULL
   };
-  static const int *mode_fields[] = {
+  static int * const mode_fields[] = {
     &hf_qnet6_kif_msg_connect_mode_other_exe,
     &hf_qnet6_kif_msg_connect_mode_other_write,
     &hf_qnet6_kif_msg_connect_mode_other_read,
@@ -3033,7 +3028,7 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
     &hf_qnet6_kif_msg_connect_mode_format,
     NULL
   };
-  static const int *eflag_fields[] = {
+  static int * const eflag_fields[] = {
     &hf_qnet6_kif_msg_connect_eflag_dir,
     &hf_qnet6_kif_msg_connect_eflag_dot,
     &hf_qnet6_kif_msg_connect_eflag_dotdot,
@@ -3045,7 +3040,7 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
   ti = proto_tree_add_string(tree, hf_qnet6_kif_msg, tvb, *poffset, -1, "upper layer message(QNX6 message passing)");
   stree = proto_item_add_subtree(ti, ett_qnet6_kif_msg);
 
-  msgtype = tvb_get_guint16(tvb, *poffset, encoding);
+  msgtype = tvb_get_uint16(tvb, *poffset, encoding);
   proto_tree_add_item(stree, hf_qnet6_kif_msg_type, tvb, *poffset, 2, encoding);
   *poffset += 2;
   msgstr = try_val_to_str_ext(msgtype, &qnet6_kif_msgsend_msgtype_vals_ext);
@@ -3064,7 +3059,7 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
 
       head_len = 2 + 2 + 4 + 2 * 2 + 4 * 4 + 2 * 4 + 1 * 2 + 2;
       proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_subtype,tvb, *poffset, 2, encoding);
-      subtype = tvb_get_guint16(tvb, *poffset, encoding);
+      subtype = tvb_get_uint16(tvb, *poffset, encoding);
       *poffset += 2;
       rlen -= 2;
       if (head_len - 2 - 2 > rlen) /* there is no rest of io_connect */
@@ -3095,15 +3090,15 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
       *poffset += 2;
       proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_zero, tvb, *poffset, 2, encoding);
       *poffset += 2;
-      path_len = tvb_get_guint16(tvb, *poffset, encoding);
+      path_len = tvb_get_uint16(tvb, *poffset, encoding);
       proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_pathlen, tvb, *poffset, 2, encoding);
       *poffset += 2;
       proto_tree_add_bitmask(stree, tvb, *poffset, hf_qnet6_kif_msg_connect_eflag, ett_qnet6_kif_msg_eflag, eflag_fields, encoding);
       *poffset += 1;
-      extra_type = tvb_get_guint8(tvb, *poffset);
+      extra_type = tvb_get_uint8(tvb, *poffset);
       proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_extratype, tvb, *poffset, 1, encoding);
       *poffset += 1;
-      extra_len = tvb_get_guint16(tvb, *poffset, encoding);
+      extra_len = tvb_get_uint16(tvb, *poffset, encoding);
       proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_extralen, tvb, *poffset, 2, encoding);
       *poffset += 2;
       if (path_len > rlen)
@@ -3114,7 +3109,7 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
        */
       if (path_len > 0)
         {
-          proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_path, tvb, *poffset, path_len, ENC_ASCII|ENC_NA);
+          proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_path, tvb, *poffset, path_len, ENC_ASCII);
           *poffset += path_len;
           rlen -= path_len;
         }
@@ -3158,7 +3153,6 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
                   && rlen >= 4)
                 ret = dissect_qnet6_kif_msgsend_msg(tvb, pinfo, stree, poffset, encoding);
               return ret;
-              break;
             default:
               switch (extra_type)
                 {
@@ -3169,18 +3163,18 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
                   /*
                    * extra data is the symlink new path name
                    */
-                  proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_extra_symlink_path, tvb, *poffset, extra_len, ENC_ASCII|ENC_NA);
+                  proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_extra_symlink_path, tvb, *poffset, extra_len, ENC_ASCII);
                   break;
                 case QNX_IO_CONNECT_EXTRA_RENAME:
                   /*
                    * extra data is the mv old new ,extra is old path
                    * name path is the new name
                    */
-                  proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_extra_rename_path, tvb, *poffset, extra_len, ENC_ASCII|ENC_NA);
+                  proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_extra_rename_path, tvb, *poffset, extra_len, ENC_ASCII);
                   break;
                 case QNX_IO_CONNECT_EXTRA_MOUNT:
                 case QNX_IO_CONNECT_EXTRA_MOUNT_OCB:
-                  proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_extra_mount, tvb, *poffset, extra_len, ENC_ASCII|ENC_NA);
+                  proto_tree_add_item(stree, hf_qnet6_kif_msg_connect_extra_mount, tvb, *poffset, extra_len, ENC_ASCII);
                   break;
                 case QNX_IO_CONNECT_EXTRA_NONE: /* 0 */
                 default:
@@ -3266,28 +3260,30 @@ dissect_qnet6_kif_msgsend_msg(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
   return ret;
 }
 
+// NOLINTEND(misc-no-recursion)
+
 static void
-qos_tcs_init_addtree(tvbuff_t * tvb, proto_tree * tree, gint * poffset, guint encoding, int hf_off, int hf_generated, gint rlen, gint name_start)
+qos_tcs_init_addtree(tvbuff_t * tvb, proto_tree * tree, int * poffset, unsigned encoding, int hf_off, int hf_generated, int rlen, int name_start)
 {
-  guint16     off;
+  uint16_t    off;
   proto_item *ti;
-  gint        i;
+  int         i;
 
   proto_tree_add_item(tree, hf_off, tvb, *poffset, 2, encoding);
-  off = tvb_get_guint16(tvb, *poffset, encoding);
-  if ((gint) off < rlen)
+  off = tvb_get_uint16(tvb, *poffset, encoding);
+  if ((int) off < rlen)
     {
       i = off;
       while(i <= rlen)
         {
-          if (tvb_get_guint8(tvb, name_start + i)== 0)
+          if (tvb_get_uint8(tvb, name_start + i)== 0)
             break;
           i++;
         }
       if (i <= rlen)
         {
           ti = proto_tree_add_item(tree, hf_generated, tvb, name_start + off, i - off, ENC_ASCII|ENC_NA);
-          PROTO_ITEM_SET_GENERATED(ti);
+          proto_item_set_generated(ti);
         }
 
     }
@@ -3296,13 +3292,13 @@ qos_tcs_init_addtree(tvbuff_t * tvb, proto_tree * tree, gint * poffset, guint en
 }
 
 static int
-dissect_qnet6_qos(guint8 qtype, tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_qos(uint8_t qtype, tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int * poffset, unsigned encoding)
 {
   proto_item *ti;
   proto_tree *stree;
-  gint        rlen, name_start;
+  int         rlen, name_start;
 
-  col_add_fstr(pinfo->cinfo, COL_PROTOCOL, "QNET_QOS");
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "QNET_QOS");
 
   switch (qtype)
     {
@@ -3310,12 +3306,12 @@ dissect_qnet6_qos(guint8 qtype, tvbuff_t * tvb, packet_info * pinfo, proto_tree 
       ti = proto_tree_add_item(tree, proto_qnet6_qos, tvb, *poffset, -1, ENC_NA);
       stree = proto_item_add_subtree(ti, ett_qnet6_qos);
       /*
-       * after l4_pkt header is the tcs_init_strings guint16
+       * after l4_pkt header is the tcs_init_strings uint16_t
        * src_name_off, src_domain_off, dst_name_off, dst_domain_off
        */
 
       rlen = tvb_reported_length_remaining(tvb, *poffset);
-      if (rlen <(gint) 2 * 4) /* at least we have tcs_init_strings */
+      if (rlen <(int) 2 * 4) /* at least we have tcs_init_strings */
         return -1;
       /*
        * after tcs_init_strings how much left
@@ -3328,20 +3324,20 @@ dissect_qnet6_qos(guint8 qtype, tvbuff_t * tvb, packet_info * pinfo, proto_tree 
       qos_tcs_init_addtree(tvb, stree, poffset, encoding, hf_qnet6_qos_tcs_dst_name_off, hf_qnet6_qos_tcs_dst_name_generated, rlen, name_start);
       qos_tcs_init_addtree(tvb, stree, poffset, encoding, hf_qnet6_qos_tcs_dst_domain_off, hf_qnet6_qos_tcs_dst_domain_generated, rlen, name_start);
 
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Qos TCS_INIT Message");
+      col_set_str(pinfo->cinfo, COL_INFO, "Qos TCS_INIT Message");
 
       break;
     case QNET_L4_TYPE_TCS_REM_UP:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Qos TCS_REM_UP Message");
+      col_set_str(pinfo->cinfo, COL_INFO, "Qos TCS_REM_UP Message");
       break;
     case QNET_L4_TYPE_TCS_UP:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Qos TCS_UP Message");
+      col_set_str(pinfo->cinfo, COL_INFO, "Qos TCS_UP Message");
       break;
     case QNET_L4_TYPE_TCS_DOWN:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Qos TCS_DOWN Message");
+      col_set_str(pinfo->cinfo, COL_INFO, "Qos TCS_DOWN Message");
       break;
     case QNET_L4_TYPE_TCS_REM_DOWN:
-      col_add_fstr(pinfo->cinfo, COL_INFO, "Qos TCS_REM_DOWN Message");
+      col_set_str(pinfo->cinfo, COL_INFO, "Qos TCS_REM_DOWN Message");
       break;
     default:
       break;
@@ -3362,11 +3358,11 @@ dissect_qnet6_qos(guint8 qtype, tvbuff_t * tvb, packet_info * pinfo, proto_tree 
 #define __NGROUPS_MAX 8
 #endif
 /*
- * struct _cred_info { gint32 ruid; gint32 euid; gint32 suid; gint32 rgid;
- * gint32 egid; gint32 sgid; guint32 ngroups; gint32
+ * struct _cred_info { int32_t ruid; int32_t euid; int32_t suid; int32_t rgid;
+ * int32_t egid; int32_t sgid; uint32_t ngroups; int32_t
  * grouplist[__NGROUPS_MAX]; };
  *
- * struct _client_info { guint32 nd; gint32 pid; gint32 sid; guint32 flags;
+ * struct _client_info { uint32_t nd; int32_t pid; int32_t sid; uint32_t flags;
  * struct _cred_info cred; };
  */
 /*
@@ -3375,12 +3371,12 @@ dissect_qnet6_qos(guint8 qtype, tvbuff_t * tvb, packet_info * pinfo, proto_tree 
  * parsed
  */
 static int
-dissect_qnet6_kif_cred(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif_cred(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tree, int * poffset, unsigned encoding)
 {
   proto_item *ti, *ti1, *ti2;
   proto_tree *stree, *sstree;
-  guint32 ngroups;
-  gint nleft, ret = -1, length;
+  uint32_t ngroups;
+  int nleft, ret = -1, length;
 
   ti = NULL; /* for compiler warning */
   nleft = tvb_reported_length_remaining(tvb, *poffset);
@@ -3447,7 +3443,7 @@ dissect_qnet6_kif_cred(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tre
    */
   proto_tree_add_item(sstree, hf_qnet6_kif_client_info_cred_sgid, tvb, *poffset, 4, encoding);
   *poffset += 4;
-  ngroups = tvb_get_guint32(tvb, *poffset, encoding);
+  ngroups = tvb_get_uint32(tvb, *poffset, encoding);
   /*
    * ngroups
    */
@@ -3457,12 +3453,12 @@ dissect_qnet6_kif_cred(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tre
     return ret;
   nleft -= length;
   nleft = MIN(nleft, __NGROUPS_MAX * 4);
-  if (nleft < (gint) ngroups * 4)
+  if (nleft < (int) ngroups * 4)
     return ret;
   /*
    * nleft at least >=0
    */
-  nleft = MIN(ngroups * 4,(guint32) nleft);
+  nleft = MIN(ngroups * 4,(uint32_t) nleft);
   /*
    * nleft is possible 0,4,...
    */
@@ -3476,7 +3472,7 @@ dissect_qnet6_kif_cred(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tre
 
   for (; nleft > 0; nleft -= 4)
     {
-      proto_item_append_text(ti, " %" G_GUINT32_FORMAT, tvb_get_guint32(tvb, *poffset, encoding));
+      proto_item_append_text(ti, " %" PRIu32, tvb_get_uint32(tvb, *poffset, encoding));
       *poffset += 4;
       length += 4;
     }
@@ -3490,15 +3486,15 @@ dissect_qnet6_kif_cred(tvbuff_t * tvb, packet_info * pinfo _U_, proto_tree * tre
 }
 
 static int
-dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint * poffset, guint encoding)
+dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int * poffset, unsigned encoding)
 {
   proto_item           *ti;
   proto_tree           *stree, *stree1, *sstree;
-  gint                  rlen;
+  int                   rlen;
   struct qnet6_kif_hdr  khdr;
   const value_string   *p;
   int                   ret = -1;
-  guint32               nleft, coid, chid;
+  uint32_t              nleft, coid, chid;
 
   ti = proto_tree_add_item(tree, proto_qnet6_kif, tvb, *poffset, -1, ENC_NA);
   stree = proto_item_add_subtree(ti, ett_qnet6_kif);
@@ -3507,13 +3503,13 @@ dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint *
    * when dissect_qnet6_kif is called it is guaranteed that at least msgtype
    * and size are in packet
    */
-  khdr.msgtype = tvb_get_guint16(tvb, *poffset, encoding);
-  khdr.size = tvb_get_guint16(tvb, *poffset + 2, encoding);
+  khdr.msgtype = tvb_get_uint16(tvb, *poffset, encoding);
+  khdr.size = tvb_get_uint16(tvb, *poffset + 2, encoding);
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "QNET_KIF");
   for (p = qnet6_kif_msgtype_vals;
-       p < qnet6_kif_msgtype_vals +
-       sizeof(qnet6_kif_msgtype_vals) / sizeof(value_string); p++)
+       p < qnet6_kif_msgtype_vals + array_length(qnet6_kif_msgtype_vals);
+       p++)
     {
       if (p->value ==(khdr.msgtype & QNET_KIF_MSGTYPE_MASK))
         {
@@ -3563,7 +3559,7 @@ dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint *
       /*
        * server chid
        */
-      chid = tvb_get_guint32(tvb, *poffset, encoding);
+      chid = tvb_get_uint32(tvb, *poffset, encoding);
       ti = proto_tree_add_item(stree,hf_qnet6_kif_connect_server_chid, tvb,*poffset, 4, encoding);
       display_channel_id(chid, ti);
       *poffset += 4;
@@ -3636,7 +3632,7 @@ dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint *
       /*
        * server chid
        */
-      chid = tvb_get_guint32(tvb, *poffset, encoding);
+      chid = tvb_get_uint32(tvb, *poffset, encoding);
       ti = proto_tree_add_item(stree1, hf_qnet6_kif_connect_server_chid, tvb, *poffset, 4, encoding);
       display_channel_id(chid, ti);
       *poffset += 4;
@@ -3666,8 +3662,8 @@ dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint *
       ti = proto_tree_add_string(stree, hf_qnet6_kif_msgsend, tvb, *poffset, -1, "qnet msgsend message");
       stree = proto_item_add_subtree(ti, ett_qnet6_kif_msgsend);
 
-      khdr.msgtype = tvb_get_guint16(tvb, *poffset, encoding);
-      khdr.size = tvb_get_guint16(tvb, *poffset + 2, encoding);
+      khdr.msgtype = tvb_get_uint16(tvb, *poffset, encoding);
+      khdr.size = tvb_get_uint16(tvb, *poffset + 2, encoding);
       /*
        * msgtype
        */
@@ -3777,7 +3773,7 @@ dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint *
        */
       proto_tree_add_item(sstree, hf_qnet6_kif_vtid_info_tid, tvb, *poffset, 4, encoding);
       *poffset += 4;
-      coid = tvb_get_guint32(tvb, *poffset, encoding);
+      coid = tvb_get_uint32(tvb, *poffset, encoding);
       ti = proto_tree_add_item(sstree, hf_qnet6_kif_vtid_info_coid, tvb, *poffset, 4, encoding);
       display_coid(coid, ti);
       *poffset += 4;
@@ -3807,7 +3803,7 @@ dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint *
           *poffset += 4;
 
           /*
-           * start to dissect resmgr_iomsgs which starts with guint16
+           * start to dissect resmgr_iomsgs which starts with uint16_t
            * type
            */
           ret = dissect_qnet6_kif_msgsend_msg(tvb, pinfo, stree, poffset, encoding);
@@ -3898,14 +3894,14 @@ dissect_qnet6_kif(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gint *
       /*
        * nbytes
        */
-      nleft = tvb_get_guint32(tvb, *poffset, encoding);
+      nleft = tvb_get_uint32(tvb, *poffset, encoding);
       proto_tree_add_item(stree, hf_qnet6_kif_msgwrite_nbytes, tvb, *poffset, 4, encoding);
       *poffset += 4;
       /*
        * else data
        */
       if (rlen - 4 * 4 > 0)
-        proto_tree_add_item(stree, hf_qnet6_kif_msgwrite_data, tvb, *poffset, MIN(nleft, (guint32) rlen - 4 * 4), ENC_NA);
+        proto_tree_add_item(stree, hf_qnet6_kif_msgwrite_data, tvb, *poffset, MIN(nleft, (uint32_t) rlen - 4 * 4), ENC_NA);
 
       break;
     case QNET_KIF_MSGTYPE_UNBLOCK:
@@ -4024,12 +4020,12 @@ dissect_qnet6(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * dat
 
   proto_item *ti;
   proto_tree *qnet6_tree, *stree;
-  guint8      qflags, qlayer, qtype, crcbuf[4];
-  guint       encoding;
-  gint        offset = 0;
-  gint        len, plen, cklen;
-  guint32     crc, crcp;
-  static const int * flags[] = {
+  uint8_t     qflags, qlayer, qtype, crcbuf[4];
+  unsigned    encoding;
+  int         offset = 0;
+  int         len, plen, cklen;
+  uint32_t    crc, crcp;
+  static int * const flags[] = {
     &hf_qnet6_l4_flags_first,
     &hf_qnet6_l4_flags_last,
     &hf_qnet6_l4_flags_crc,
@@ -4040,7 +4036,7 @@ dissect_qnet6(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * dat
   /*
    * Check that there's enough data
    */
-  len = (gint) tvb_reported_length(tvb);
+  len = (int) tvb_reported_length(tvb);
   if (len < 36 + 2) /* sizeof (l4_pkt) + 2 bytes pad after 0x8204 */
     return 0;
 
@@ -4060,27 +4056,27 @@ dissect_qnet6(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * dat
   /*
    * version
    */
-  encoding =(tvb_get_guint8(tvb, offset) & 0x80) ? ENC_BIG_ENDIAN : ENC_LITTLE_ENDIAN;
+  encoding =(tvb_get_uint8(tvb, offset) & 0x80) ? ENC_BIG_ENDIAN : ENC_LITTLE_ENDIAN;
   proto_tree_add_item(qnet6_tree, hf_qnet6_l4_ver, tvb, offset++, 1, ENC_BIG_ENDIAN);
 
   /*
    * type
    */
-  qtype = tvb_get_guint8(tvb, offset);
+  qtype = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(qnet6_tree, hf_qnet6_l4_type, tvb, offset++, 1, ENC_BIG_ENDIAN);
 
-  col_add_str(pinfo->cinfo, COL_INFO, val_to_str(qtype, qnet6_type_vals, "Unknown LWL4 Type %u packets"));
+  col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, qtype, qnet6_type_vals, "Unknown LWL4 Type %u packets"));
   /*
    * flags
    */
   proto_tree_add_bitmask_with_flags(qnet6_tree, tvb, offset,
                 hf_qnet6_l4_flags, ett_qnet6_flags, flags, ENC_NA, BMT_NO_APPEND|BMT_NO_FALSE);
-  qflags = tvb_get_guint8(tvb, offset);
+  qflags = tvb_get_uint8(tvb, offset);
   offset++;
   /*
    * layer
    */
-  qlayer = tvb_get_guint8(tvb, offset);
+  qlayer = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(qnet6_tree, hf_qnet6_l4_layer, tvb, offset++, 1, encoding);
   /*
    * qos_info
@@ -4133,13 +4129,13 @@ dissect_qnet6(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * dat
   /*
    * length of its payload
    */
-  plen = tvb_get_guint32(tvb, offset, encoding);
+  plen = tvb_get_uint32(tvb, offset, encoding);
   proto_tree_add_uint(qnet6_tree, hf_qnet6_l4_length, tvb, offset, 4, plen);
   offset += 4;
   /*
    * crc value
    */
-  crcp = tvb_get_guint32(tvb, offset, encoding);
+  crcp = tvb_get_uint32(tvb, offset, encoding);
   /*
    * crc value is l4_pkt header + data behind with original crc is 0
    */
@@ -4253,7 +4249,7 @@ dissect_qnet6(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * dat
           /*
            * at least a type in payload
            */
-          if (plen >= (gint) 1)
+          if (plen >= (int) 1)
             dissect_qnet6_nr(tvb, pinfo, tree, &offset, encoding);
           break;
         case QNET_L4_LAYER_LR:
@@ -4371,7 +4367,7 @@ proto_register_qnet6(void)
       "QNET6 connection sequence number", HFILL}
     },
     {&hf_qnet6_l4_qos_qos_type,
-     {"Sos_type", "qnet6.qos.qos_type",
+     {"Qos_type", "qnet6.qos.qos_type",
       FT_UINT16, BASE_DEC, VALS(qnet6_qos_type_vals), 0,
       "QNET6 qos type", HFILL}
     },
@@ -4442,7 +4438,7 @@ proto_register_qnet6(void)
     }
   };
   static hf_register_info hf_nr[] = {
-    /* type, size are the first guint8 in all nr messages */
+    /* type, size are the first uint8_t in all nr messages */
     {&hf_qnet6_nr_type,
      {"Type", "qnet6.nr.type",
       FT_UINT8, BASE_DEC, VALS(qnet6_nr_type_vals), 0,
@@ -4714,7 +4710,7 @@ proto_register_qnet6(void)
     {&hf_qnet6_kif_vtid_info_tid,
      {"Vtid", "qnet6.kif.msgsend.vtid_info.tid",
       FT_INT32, BASE_DEC, NULL, 0,
-      "essage virtual thread information thread id", HFILL}
+      "Virtual thread information thread id", HFILL}
     },
     {&hf_qnet6_kif_vtid_info_coid,
      {"Coid", "qnet6.kif.msgsend.vtid_info.coid",
@@ -5274,21 +5270,21 @@ proto_register_qnet6(void)
     },
     {&hf_qnet6_kif_msg_io_read_xtypes_0_7,
      {"Xtype", "qnet6.kif.msgsend.msg.read.xtypes0-7",
-      FT_UINT32, BASE_HEX, VALS(qnet6_kif_msgsend_msg_io_read_xtypes_vals), 0xff,
+      FT_UINT32, BASE_HEX, VALS(qnet6_kif_msgsend_msg_io_read_xtypes_vals), 0x000000ff,
       "Extended types 0-7 bits", HFILL}
     },
     {&hf_qnet6_kif_msg_io_read_xtypes_8,
      {"DirExtraHint", "qnet6.kif.msgsend.msg.read.xtypes8",
-      FT_UINT32, BASE_HEX, NULL, 0x100,
+      FT_UINT32, BASE_HEX, NULL, 0x00000100,
       "_IO_XFLAG_DIR_EXTRA_HINT", HFILL}
     },
     {&hf_qnet6_kif_msg_io_read_xtypes_14,
-     {"Nonblock", "qnet6.kif.msgsend.msg.read.xtypes0-7",
+     {"Nonblock", "qnet6.kif.msgsend.msg.read.xtypes14",
       FT_UINT32, BASE_HEX, NULL, 0x4000,
       "_IO_XFLAG_NONBLOCK", HFILL}
     },
     {&hf_qnet6_kif_msg_io_read_xtypes_15,
-     {"Block", "qnet6.kif.msgsend.msg.read.xtypes0-7",
+     {"Block", "qnet6.kif.msgsend.msg.read.xtypes15",
       FT_UINT32, BASE_HEX, NULL, 0x8000,
       "_IO_XFLAG_BLOCK", HFILL}
     },
@@ -5330,22 +5326,22 @@ proto_register_qnet6(void)
     },
     {&hf_qnet6_kif_msg_io_write_xtypes_0_7,
      {"Xtype", "qnet6.kif.msgsend.msg.write.xtypes0-7",
-      FT_UINT32, BASE_HEX, VALS(qnet6_kif_msgsend_msg_io_read_xtypes_vals), 0xff,
+      FT_UINT32, BASE_HEX, VALS(qnet6_kif_msgsend_msg_io_read_xtypes_vals), 0x000000ff,
       "Extended types 0-7 bits", HFILL}
     },
     {&hf_qnet6_kif_msg_io_write_xtypes_8,
      {"DirExtraHint", "qnet6.kif.msgsend.msg.write.xtypes8",
-      FT_UINT32, BASE_HEX, NULL, 0x100,
+      FT_UINT32, BASE_HEX, NULL, 0x00000100,
       "_IO_XFLAG_DIR_EXTRA_HINT", HFILL}
     },
     {&hf_qnet6_kif_msg_io_write_xtypes_14,
-     {"Nonblock", "qnet6.kif.msgsend.msg.write.xtypes0-7",
-      FT_UINT32, BASE_HEX, NULL, 0x4000,
+     {"Nonblock", "qnet6.kif.msgsend.msg.write.xtypes14",
+      FT_UINT32, BASE_HEX, NULL, 0x00004000,
       "_IO_XFLAG_NONBLOCK", HFILL}
     },
     {&hf_qnet6_kif_msg_io_write_xtypes_15,
-     {"Block", "qnet6.kif.msgsend.msg.write.xtypes0-7",
-      FT_UINT32, BASE_HEX, NULL, 0x8000,
+     {"Block", "qnet6.kif.msgsend.msg.write.xtypes15",
+      FT_UINT32, BASE_HEX, NULL, 0x00008000,
       "_IO_XFLAG_BLOCK", HFILL}
     },
     {&hf_qnet6_kif_msg_io_write_xoffset,
@@ -5472,7 +5468,7 @@ proto_register_qnet6(void)
     /* utime */
     {&hf_qnet6_kif_msg_io_utime_curflag,
      {"curflag", "qnet6.kif.msgsend.msg.utime.curflag",
-      FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0,
+      FT_BOOLEAN, BASE_NONE, TFS(&tfs_set_notset), 0,
       "whether use current time", HFILL}
     },
     {&hf_qnet6_kif_msg_io_utime_actime,
@@ -5488,7 +5484,7 @@ proto_register_qnet6(void)
     /* fdinfo */
     {&hf_qnet6_kif_msg_io_fdinfo_flags,
      {"flags", "qnet6.kif.msgsend.msg.fdinfo.flags",
-      FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0,
+      FT_BOOLEAN, BASE_NONE, TFS(&tfs_set_notset), 0,
       "_FDINFO_FLAG_LOCALPATH", HFILL}
     },
     {&hf_qnet6_kif_msg_io_fdinfo_path_len,
@@ -5712,17 +5708,17 @@ proto_register_qnet6(void)
     },
     {&hf_qnet6_kif_msg_io_mmap_prot_read,
      {"Read", "qnet6.kif.msgsend.msg.mmap.prot.read",
-      FT_BOOLEAN, 32, NULL, 0x100,
+      FT_BOOLEAN, 32, NULL, 0x00000100,
       "protection field of mmap", HFILL}
     },
     {&hf_qnet6_kif_msg_io_mmap_prot_write,
      {"Write", "qnet6.kif.msgsend.msg.mmap.prot.write",
-      FT_BOOLEAN, 32, NULL, 0x200,
+      FT_BOOLEAN, 32, NULL, 0x00000200,
       "protection field of mmap", HFILL}
     },
     {&hf_qnet6_kif_msg_io_mmap_prot_exec,
      {"Exec", "qnet6.kif.msgsend.msg.mmap.prot.exec",
-      FT_BOOLEAN, 32, NULL, 0x400,
+      FT_BOOLEAN, 32, NULL, 0x00000400,
       "protection field of mmap", HFILL}
     },
     {&hf_qnet6_kif_msg_io_mmap_offset,
@@ -5905,12 +5901,12 @@ proto_register_qnet6(void)
   };
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_qnet6_l4,
     &ett_qnet6_flags,
     &ett_qnet6_qos_info
   };
-  static gint *ett_lr[] = {
+  static int *ett_lr[] = {
     &ett_qnet6_lr,
     &ett_qnet6_lr_src,
     &ett_qnet6_lr_src_name_subtree,
@@ -5922,7 +5918,7 @@ proto_register_qnet6(void)
     &ett_qnet6_lr_dst_addr_subtree
   };
 
-  static gint *ett_kif[] = {
+  static int *ett_kif[] = {
     &ett_qnet6_kif,
     &ett_qnet6_kif_vinfo,
     &ett_qnet6_kif_pulse,
@@ -5947,10 +5943,10 @@ proto_register_qnet6(void)
     &ett_qnet6_kif_msg_notify_flags,
     &ett_qnet6_kif_msg_notify_fds
   };
-  static gint *ett_nr[] = {
+  static int *ett_nr[] = {
     &ett_qnet6_nr
   };
-  static gint *ett_qos[] = {
+  static int *ett_qos[] = {
     &ett_qnet6_qos
   };
   module_t *qnet6_module;
@@ -5965,6 +5961,9 @@ proto_register_qnet6(void)
   proto_qnet6_kif = proto_register_protocol("QNX6 QNET KIF protocol", "KIF", "kif");
 
   proto_qnet6_nr =  proto_register_protocol("QNX6 QNET Network Resolver protocol", "NR", "nr");
+
+  /* Register the dissector handle */
+  qnet6_handle = register_dissector("lwl4", dissect_qnet6, proto_qnet6_l4);
 
   /* Required function calls to register the header fields and subtrees used */
   proto_register_field_array(proto_qnet6_l4, hf, array_length(hf));
@@ -5994,9 +5993,6 @@ proto_register_qnet6(void)
 void
 proto_reg_handoff_qnet6(void)
 {
-  dissector_handle_t qnet6_handle;
-
-  qnet6_handle = create_dissector_handle(dissect_qnet6, proto_qnet6_l4);
   dissector_add_uint("ethertype", ETHERTYPE_QNX_QNET6, qnet6_handle);
   dissector_add_uint("ip.proto", IP_PROTO_QNX, qnet6_handle);
 }

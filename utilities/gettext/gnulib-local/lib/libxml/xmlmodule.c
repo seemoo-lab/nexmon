@@ -1,12 +1,46 @@
-/*
- * xmlmodule.c : basic API for dynamic module loading added 2.6.17
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
  *
- * See Copyright for the status of this software.
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
  * joelwreed@comcast.net
  *
  * http://www.fortran-2000.com/ArnaudRecipes/sharedlib.html
  */
+
+/*
+ * xmlmodule.c : basic API for dynamic module loading added 2.6.17
+ */
+
+/* In order RTLD_GLOBAL and RTLD_NOW to be defined on zOS */
+#if defined(__MVS__)
+#define _UNIX03_SOURCE
+#endif
 
 #define IN_LIBXML
 #include "libxml.h"
@@ -296,8 +330,9 @@ xmlModulePlatformSymbol(void *handle, const char *name, void **symbol)
 #endif /* HAVE_SHLLOAD */
 #endif /* ! HAVE_DLOPEN */
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__CYGWIN__)
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 /*
@@ -334,6 +369,7 @@ xmlModulePlatformClose(void *handle)
 static int
 xmlModulePlatformSymbol(void *handle, const char *name, void **symbol)
 {
+XML_IGNORE_PEDANTIC_WARNINGS
 #ifdef _WIN32_WCE
     /*
      * GetProcAddressA seems only available on WinCE
@@ -343,6 +379,7 @@ xmlModulePlatformSymbol(void *handle, const char *name, void **symbol)
     *symbol = GetProcAddress(handle, name);
 #endif
     return (NULL == *symbol) ? -1 : 0;
+XML_POP_WARNINGS
 }
 
 #endif /* _WIN32 */

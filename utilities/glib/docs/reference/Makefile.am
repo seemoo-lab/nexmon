@@ -1,1 +1,0 @@
-SUBDIRS = glib gobject gio

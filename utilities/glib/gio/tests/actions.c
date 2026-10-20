@@ -1,3 +1,27 @@
+/*
+ * Copyright © 2010, 2011, 2013, 2014 Codethink Limited
+ * Copyright © 2010, 2011, 2012, 2013, 2015 Red Hat, Inc.
+ * Copyright © 2012 Pavel Vasin
+ * Copyright © 2022 Endless OS Foundation, LLC
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ *
+ * Authors: Ryan Lortie <desrt@desrt.ca>
+ */
+
 #include <gio/gio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,11 +60,11 @@ test_basic (void)
   GVariant *state;
 
   action = g_simple_action_new ("foo", NULL);
-  g_assert (g_action_get_enabled (G_ACTION (action)));
-  g_assert (g_action_get_parameter_type (G_ACTION (action)) == NULL);
-  g_assert (g_action_get_state_type (G_ACTION (action)) == NULL);
-  g_assert (g_action_get_state_hint (G_ACTION (action)) == NULL);
-  g_assert (g_action_get_state (G_ACTION (action)) == NULL);
+  g_assert_true (g_action_get_enabled (G_ACTION (action)));
+  g_assert_null (g_action_get_parameter_type (G_ACTION (action)));
+  g_assert_null (g_action_get_state_type (G_ACTION (action)));
+  g_assert_null (g_action_get_state_hint (G_ACTION (action)));
+  g_assert_null (g_action_get_state (G_ACTION (action)));
   g_object_get (action,
                 "name", &name,
                 "parameter-type", &parameter_type,
@@ -49,21 +73,21 @@ test_basic (void)
                 "state", &state,
                  NULL);
   g_assert_cmpstr (name, ==, "foo");
-  g_assert (parameter_type == NULL);
-  g_assert (enabled);
-  g_assert (state_type == NULL);
-  g_assert (state == NULL);
+  g_assert_null (parameter_type);
+  g_assert_true (enabled);
+  g_assert_null (state_type);
+  g_assert_null (state);
   g_free (name);
 
   g_signal_connect (action, "activate", G_CALLBACK (activate), &a);
-  g_assert (!a.did_run);
+  g_assert_false (a.did_run);
   g_action_activate (G_ACTION (action), NULL);
-  g_assert (a.did_run);
+  g_assert_true (a.did_run);
   a.did_run = FALSE;
 
   g_simple_action_set_enabled (action, FALSE);
   g_action_activate (G_ACTION (action), NULL);
-  g_assert (!a.did_run);
+  g_assert_false (a.did_run);
 
   if (g_test_undefined ())
     {
@@ -74,19 +98,19 @@ test_basic (void)
     }
 
   g_object_unref (action);
-  g_assert (!a.did_run);
+  g_assert_false (a.did_run);
 
   action = g_simple_action_new ("foo", G_VARIANT_TYPE_STRING);
-  g_assert (g_action_get_enabled (G_ACTION (action)));
-  g_assert (g_variant_type_equal (g_action_get_parameter_type (G_ACTION (action)), G_VARIANT_TYPE_STRING));
-  g_assert (g_action_get_state_type (G_ACTION (action)) == NULL);
-  g_assert (g_action_get_state_hint (G_ACTION (action)) == NULL);
-  g_assert (g_action_get_state (G_ACTION (action)) == NULL);
+  g_assert_true (g_action_get_enabled (G_ACTION (action)));
+  g_assert_true (g_variant_type_equal (g_action_get_parameter_type (G_ACTION (action)), G_VARIANT_TYPE_STRING));
+  g_assert_null (g_action_get_state_type (G_ACTION (action)));
+  g_assert_null (g_action_get_state_hint (G_ACTION (action)));
+  g_assert_null (g_action_get_state (G_ACTION (action)));
 
   g_signal_connect (action, "activate", G_CALLBACK (activate), &a);
-  g_assert (!a.did_run);
+  g_assert_false (a.did_run);
   g_action_activate (G_ACTION (action), g_variant_new_string ("Hello world"));
-  g_assert (a.did_run);
+  g_assert_true (a.did_run);
   g_assert_cmpstr (g_variant_get_string (a.params, NULL), ==, "Hello world");
   g_variant_unref (a.params);
   a.did_run = FALSE;
@@ -100,48 +124,35 @@ test_basic (void)
     }
 
   g_object_unref (action);
-  g_assert (!a.did_run);
+  g_assert_false (a.did_run);
 }
 
 static void
 test_name (void)
 {
-  g_assert (!g_action_name_is_valid (""));
-  g_assert (!g_action_name_is_valid ("("));
-  g_assert (!g_action_name_is_valid ("%abc"));
-  g_assert (!g_action_name_is_valid ("$x1"));
-  g_assert (g_action_name_is_valid ("abc.def"));
-  g_assert (g_action_name_is_valid ("ABC-DEF"));
+  g_assert_false (g_action_name_is_valid (""));
+  g_assert_false (g_action_name_is_valid ("("));
+  g_assert_false (g_action_name_is_valid ("%abc"));
+  g_assert_false (g_action_name_is_valid ("$x1"));
+  g_assert_true (g_action_name_is_valid ("abc.def"));
+  g_assert_true (g_action_name_is_valid ("ABC-DEF"));
 }
 
 static gboolean
-strv_has_string (gchar       **haystack,
-                 const gchar  *needle)
-{
-  guint n;
-
-  for (n = 0; haystack != NULL && haystack[n] != NULL; n++)
-    {
-      if (g_strcmp0 (haystack[n], needle) == 0)
-        return TRUE;
-    }
-  return FALSE;
-}
-
-static gboolean
-strv_strv_cmp (gchar **a, gchar **b)
+strv_strv_cmp (const gchar * const *a,
+               const gchar * const *b)
 {
   guint n;
 
   for (n = 0; a[n] != NULL; n++)
     {
-       if (!strv_has_string (b, a[n]))
+       if (!g_strv_contains (b, a[n]))
          return FALSE;
     }
 
   for (n = 0; b[n] != NULL; n++)
     {
-       if (!strv_has_string (a, b[n]))
+       if (!g_strv_contains (a, b[n]))
          return FALSE;
     }
 
@@ -149,9 +160,9 @@ strv_strv_cmp (gchar **a, gchar **b)
 }
 
 static gboolean
-strv_set_equal (gchar **strv, ...)
+strv_set_equal (const gchar * const *strv, ...)
 {
-  gint count;
+  guint count;
   va_list list;
   const gchar *str;
   gboolean res;
@@ -164,7 +175,7 @@ strv_set_equal (gchar **strv, ...)
       str = va_arg (list, const gchar *);
       if (str == NULL)
         break;
-      if (!strv_has_string (strv, str))
+      if (!g_strv_contains (strv, str))
         {
           res = FALSE;
           break;
@@ -177,6 +188,22 @@ strv_set_equal (gchar **strv, ...)
     res = g_strv_length ((gchar**)strv) == count;
 
   return res;
+}
+
+static void
+ensure_state (GActionGroup *group,
+              const gchar  *action_name,
+              const gchar  *expected)
+{
+  GVariant *value;
+  gchar *printed;
+
+  value = g_action_group_get_action_state (group, action_name);
+  printed = g_variant_print (value, TRUE);
+  g_variant_unref (value);
+
+  g_assert_cmpstr (printed, ==, expected);
+  g_free (printed);
 }
 
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
@@ -193,41 +220,41 @@ test_simple_group (void)
 
   simple = g_simple_action_new ("foo", NULL);
   g_signal_connect (simple, "activate", G_CALLBACK (activate), &a);
-  g_assert (!a.did_run);
+  g_assert_false (a.did_run);
   g_action_activate (G_ACTION (simple), NULL);
-  g_assert (a.did_run);
+  g_assert_true (a.did_run);
   a.did_run = FALSE;
 
   group = g_simple_action_group_new ();
   g_simple_action_group_insert (group, G_ACTION (simple));
   g_object_unref (simple);
 
-  g_assert (!a.did_run);
+  g_assert_false (a.did_run);
   g_action_group_activate_action (G_ACTION_GROUP (group), "foo", NULL);
-  g_assert (a.did_run);
+  g_assert_true (a.did_run);
 
   simple = g_simple_action_new_stateful ("bar", G_VARIANT_TYPE_STRING, g_variant_new_string ("hihi"));
   g_simple_action_group_insert (group, G_ACTION (simple));
   g_object_unref (simple);
 
-  g_assert (g_action_group_has_action (G_ACTION_GROUP (group), "foo"));
-  g_assert (g_action_group_has_action (G_ACTION_GROUP (group), "bar"));
-  g_assert (!g_action_group_has_action (G_ACTION_GROUP (group), "baz"));
+  g_assert_true (g_action_group_has_action (G_ACTION_GROUP (group), "foo"));
+  g_assert_true (g_action_group_has_action (G_ACTION_GROUP (group), "bar"));
+  g_assert_false (g_action_group_has_action (G_ACTION_GROUP (group), "baz"));
   actions = g_action_group_list_actions (G_ACTION_GROUP (group));
   g_assert_cmpint (g_strv_length (actions), ==, 2);
-  g_assert (strv_set_equal (actions, "foo", "bar", NULL));
+  g_assert_true (strv_set_equal ((const gchar * const *) actions, "foo", "bar", NULL));
   g_strfreev (actions);
-  g_assert (g_action_group_get_action_enabled (G_ACTION_GROUP (group), "foo"));
-  g_assert (g_action_group_get_action_enabled (G_ACTION_GROUP (group), "bar"));
-  g_assert (g_action_group_get_action_parameter_type (G_ACTION_GROUP (group), "foo") == NULL);
-  g_assert (g_variant_type_equal (g_action_group_get_action_parameter_type (G_ACTION_GROUP (group), "bar"), G_VARIANT_TYPE_STRING));
-  g_assert (g_action_group_get_action_state_type (G_ACTION_GROUP (group), "foo") == NULL);
-  g_assert (g_variant_type_equal (g_action_group_get_action_state_type (G_ACTION_GROUP (group), "bar"), G_VARIANT_TYPE_STRING));
-  g_assert (g_action_group_get_action_state_hint (G_ACTION_GROUP (group), "foo") == NULL);
-  g_assert (g_action_group_get_action_state_hint (G_ACTION_GROUP (group), "bar") == NULL);
-  g_assert (g_action_group_get_action_state (G_ACTION_GROUP (group), "foo") == NULL);
+  g_assert_true (g_action_group_get_action_enabled (G_ACTION_GROUP (group), "foo"));
+  g_assert_true (g_action_group_get_action_enabled (G_ACTION_GROUP (group), "bar"));
+  g_assert_null (g_action_group_get_action_parameter_type (G_ACTION_GROUP (group), "foo"));
+  g_assert_true (g_variant_type_equal (g_action_group_get_action_parameter_type (G_ACTION_GROUP (group), "bar"), G_VARIANT_TYPE_STRING));
+  g_assert_null (g_action_group_get_action_state_type (G_ACTION_GROUP (group), "foo"));
+  g_assert_true (g_variant_type_equal (g_action_group_get_action_state_type (G_ACTION_GROUP (group), "bar"), G_VARIANT_TYPE_STRING));
+  g_assert_null (g_action_group_get_action_state_hint (G_ACTION_GROUP (group), "foo"));
+  g_assert_null (g_action_group_get_action_state_hint (G_ACTION_GROUP (group), "bar"));
+  g_assert_null (g_action_group_get_action_state (G_ACTION_GROUP (group), "foo"));
   state = g_action_group_get_action_state (G_ACTION_GROUP (group), "bar");
-  g_assert (g_variant_type_equal (g_variant_get_type (state), G_VARIANT_TYPE_STRING));
+  g_assert_true (g_variant_type_equal (g_variant_get_type (state), G_VARIANT_TYPE_STRING));
   g_assert_cmpstr (g_variant_get_string (state, NULL), ==, "hihi");
   g_variant_unref (state);
 
@@ -238,13 +265,13 @@ test_simple_group (void)
 
   action = g_simple_action_group_lookup (group, "bar");
   g_simple_action_set_enabled (G_SIMPLE_ACTION (action), FALSE);
-  g_assert (!g_action_group_get_action_enabled (G_ACTION_GROUP (group), "bar"));
+  g_assert_false (g_action_group_get_action_enabled (G_ACTION_GROUP (group), "bar"));
 
   g_simple_action_group_remove (group, "bar");
   action = g_simple_action_group_lookup (group, "foo");
   g_assert_cmpstr (g_action_get_name (action), ==, "foo");
   action = g_simple_action_group_lookup (group, "bar");
-  g_assert (action == NULL);
+  g_assert_null (action);
 
   simple = g_simple_action_new ("foo", NULL);
   g_simple_action_group_insert (group, G_ACTION (simple));
@@ -252,7 +279,7 @@ test_simple_group (void)
 
   a.did_run = FALSE;
   g_object_unref (group);
-  g_assert (!a.did_run);
+  g_assert_false (a.did_run);
 }
 
 G_GNUC_END_IGNORE_DEPRECATIONS
@@ -264,21 +291,23 @@ test_stateful (void)
   GVariant *state;
 
   action = g_simple_action_new_stateful ("foo", NULL, g_variant_new_string ("hihi"));
-  g_assert (g_action_get_enabled (G_ACTION (action)));
-  g_assert (g_action_get_parameter_type (G_ACTION (action)) == NULL);
-  g_assert (g_action_get_state_hint (G_ACTION (action)) == NULL);
-  g_assert (g_variant_type_equal (g_action_get_state_type (G_ACTION (action)),
-                                  G_VARIANT_TYPE_STRING));
+  g_assert_true (g_action_get_enabled (G_ACTION (action)));
+  g_assert_null (g_action_get_parameter_type (G_ACTION (action)));
+  g_assert_null (g_action_get_state_hint (G_ACTION (action)));
+  g_assert_true (g_variant_type_equal (g_action_get_state_type (G_ACTION (action)),
+                                       G_VARIANT_TYPE_STRING));
   state = g_action_get_state (G_ACTION (action));
   g_assert_cmpstr (g_variant_get_string (state, NULL), ==, "hihi");
   g_variant_unref (state);
 
   if (g_test_undefined ())
     {
+      GVariant *new_state = g_variant_ref_sink (g_variant_new_int32 (123));
       g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
                              "*assertion*g_variant_is_of_type*failed*");
-      g_simple_action_set_state (action, g_variant_new_int32 (123));
+      g_simple_action_set_state (action, new_state);
       g_test_assert_expected_messages ();
+      g_variant_unref (new_state);
     }
 
   g_simple_action_set_state (action, g_variant_new_string ("hello"));
@@ -292,10 +321,12 @@ test_stateful (void)
 
   if (g_test_undefined ())
     {
+      GVariant *new_state = g_variant_ref_sink (g_variant_new_int32 (123));
       g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
                              "*assertion*!= NULL*failed*");
-      g_simple_action_set_state (action, g_variant_new_int32 (123));
+      g_simple_action_set_state (action, new_state);
       g_test_assert_expected_messages ();
+      g_variant_unref (new_state);
     }
 
   g_object_unref (action);
@@ -319,12 +350,12 @@ test_default_activate (void)
   action = g_simple_action_new_stateful ("foo", NULL, g_variant_new_boolean (FALSE));
   g_action_activate (G_ACTION (action), NULL);
   state = g_action_get_state (G_ACTION (action));
-  g_assert (g_variant_get_boolean (state));
+  g_assert_true (g_variant_get_boolean (state));
   g_variant_unref (state);
   /* and back again */
   g_action_activate (G_ACTION (action), NULL);
   state = g_action_get_state (G_ACTION (action));
-  g_assert (!g_variant_get_boolean (state));
+  g_assert_false (g_variant_get_boolean (state));
   g_variant_unref (state);
   g_object_unref (action);
 }
@@ -337,8 +368,8 @@ activate_foo (GSimpleAction *simple,
               GVariant      *parameter,
               gpointer       user_data)
 {
-  g_assert (user_data == GINT_TO_POINTER (123));
-  g_assert (parameter == NULL);
+  g_assert_true (user_data == GINT_TO_POINTER (123));
+  g_assert_null (parameter);
   foo_activated = TRUE;
 }
 
@@ -347,7 +378,7 @@ activate_bar (GSimpleAction *simple,
               GVariant      *parameter,
               gpointer       user_data)
 {
-  g_assert (user_data == GINT_TO_POINTER (123));
+  g_assert_true (user_data == GINT_TO_POINTER (123));
   g_assert_cmpstr (g_variant_get_string (parameter, NULL), ==, "param");
   bar_activated = TRUE;
 }
@@ -372,37 +403,43 @@ static void
 test_entries (void)
 {
   const GActionEntry entries[] = {
-    { "foo",    activate_foo                                     },
-    { "bar",    activate_bar, "s"                                },
-    { "toggle", NULL,         NULL, "false"                      },
-    { "volume", NULL,         NULL, "0",     change_volume_state }
+    { "foo",    activate_foo, NULL, NULL,    NULL,                { 0 } },
+    { "bar",    activate_bar, "s",  NULL,    NULL,                { 0 } },
+    { "toggle", NULL,         NULL, "false", NULL,                { 0 } },
+    { "volume", NULL,         NULL, "0",     change_volume_state, { 0 } },
+  };
+  const GActionEntry entries2[] = {
+    { "foo",    activate_foo, NULL, NULL,    NULL,                { 0 } },
+    { "bar",    activate_bar, "s",  NULL,    NULL,                { 0 } },
+    { NULL,     NULL,         NULL, NULL,    NULL,                { 0 } },
   };
   GSimpleActionGroup *actions;
   GVariant *state;
+  GStrv names;
 
   actions = g_simple_action_group_new ();
   g_simple_action_group_add_entries (actions, entries,
                                      G_N_ELEMENTS (entries),
                                      GINT_TO_POINTER (123));
 
-  g_assert (!foo_activated);
+  g_assert_false (foo_activated);
   g_action_group_activate_action (G_ACTION_GROUP (actions), "foo", NULL);
-  g_assert (foo_activated);
+  g_assert_true (foo_activated);
   foo_activated = FALSE;
 
-  g_assert (!bar_activated);
+  g_assert_false (bar_activated);
   g_action_group_activate_action (G_ACTION_GROUP (actions), "bar",
                                   g_variant_new_string ("param"));
-  g_assert (bar_activated);
-  g_assert (!foo_activated);
+  g_assert_true (bar_activated);
+  g_assert_false (foo_activated);
 
   if (g_test_undefined ())
     {
       const GActionEntry bad_type = {
-        "bad-type", NULL, "ss"
+        "bad-type", NULL, "ss", NULL, NULL, { 0 }
       };
       const GActionEntry bad_state = {
-        "bad-state", NULL, NULL, "flse"
+        "bad-state", NULL, NULL, "flse", NULL, { 0 }
       };
 
       g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
@@ -433,6 +470,25 @@ test_entries (void)
   state = g_action_group_get_action_state (G_ACTION_GROUP (actions), "volume");
   g_assert_cmpint (g_variant_get_int32 (state), ==, 7);
   g_variant_unref (state);
+
+  names = g_action_group_list_actions (G_ACTION_GROUP (actions));
+  g_assert_cmpuint (g_strv_length (names), ==, G_N_ELEMENTS (entries));
+  g_strfreev (names);
+
+  g_action_map_remove_action_entries (G_ACTION_MAP (actions), entries, G_N_ELEMENTS (entries));
+  names = g_action_group_list_actions (G_ACTION_GROUP (actions));
+  g_assert_cmpuint (g_strv_length (names), ==, 0);
+  g_strfreev (names);
+
+  /* Check addition and removal of %NULL terminated array */
+  g_action_map_add_action_entries (G_ACTION_MAP (actions), entries2, -1, NULL);
+  names = g_action_group_list_actions (G_ACTION_GROUP (actions));
+  g_assert_cmpuint (g_strv_length (names), ==, G_N_ELEMENTS (entries2) - 1);
+  g_strfreev (names);
+  g_action_map_remove_action_entries (G_ACTION_MAP (actions), entries2, -1);
+  names = g_action_group_list_actions (G_ACTION_GROUP (actions));
+  g_assert_cmpuint (g_strv_length (names), ==, 0);
+  g_strfreev (names);
 
   g_object_unref (actions);
 }
@@ -468,7 +524,7 @@ test_parse_detailed (void)
     { "abc(42, 4)",       "abc",    "(42, 4)",  "expected end of input", NULL },
     { "abc(42,)",         "abc",    "(42,)",    "expected end of input", NULL }
   };
-  gint i;
+  gsize i;
 
   for (i = 0; i < G_N_ELEMENTS (testcases); i++)
     {
@@ -478,7 +534,7 @@ test_parse_detailed (void)
       gchar *name;
 
       success = g_action_parse_detailed_name (testcases[i].detailed, &name, &target, &error);
-      g_assert (success == (error == NULL));
+      g_assert_true (success == (error == NULL));
       if (success && testcases[i].expected_error)
         g_error ("Unexpected success on '%s'.  Expected error containing '%s'",
                  testcases[i].detailed, testcases[i].expected_error);
@@ -497,7 +553,7 @@ test_parse_detailed (void)
         }
 
       g_assert_cmpstr (name, ==, testcases[i].expected_name);
-      g_assert ((target == NULL) == (testcases[i].expected_target == NULL));
+      g_assert_true ((target == NULL) == (testcases[i].expected_target == NULL));
 
       if (success)
         {
@@ -513,9 +569,9 @@ test_parse_detailed (void)
           GVariant *expected;
 
           expected = g_variant_parse (NULL, testcases[i].expected_target, NULL, NULL, NULL);
-          g_assert (expected);
+          g_assert_true (expected);
 
-          g_assert (g_variant_equal (expected, target));
+          g_assert_cmpvariant (expected, target);
           g_variant_unref (expected);
           g_variant_unref (target);
         }
@@ -536,6 +592,8 @@ count_activation (const gchar *action)
   count = GPOINTER_TO_INT (g_hash_table_lookup (activation_counts, action));
   count++;
   g_hash_table_insert (activation_counts, (gpointer)action, GINT_TO_POINTER (count));
+
+  g_main_context_wakeup (NULL);
 }
 
 static gint
@@ -593,7 +651,7 @@ compare_action_groups (GActionGroup *a, GActionGroup *b)
 
   alist = g_action_group_list_actions (a);
   blist = g_action_group_list_actions (b);
-  equal = strv_strv_cmp (alist, blist);
+  equal = strv_strv_cmp ((const gchar * const *) alist, (const gchar * const *) blist);
 
   for (i = 0; equal && alist[i]; i++)
     {
@@ -628,119 +686,76 @@ compare_action_groups (GActionGroup *a, GActionGroup *b)
 }
 
 static gboolean
-stop_loop (gpointer data)
+timeout_cb (gpointer user_data)
 {
-  GMainLoop *loop = data;
+  gboolean *timed_out = user_data;
 
-  g_main_loop_quit (loop);
+  g_assert_false (*timed_out);
+  *timed_out = TRUE;
+  g_main_context_wakeup (NULL);
 
   return G_SOURCE_REMOVE;
 }
 
 static GActionEntry exported_entries[] = {
-  { "undo",  activate_action, NULL, NULL,      NULL },
-  { "redo",  activate_action, NULL, NULL,      NULL },
-  { "cut",   activate_action, NULL, NULL,      NULL },
-  { "copy",  activate_action, NULL, NULL,      NULL },
-  { "paste", activate_action, NULL, NULL,      NULL },
-  { "bold",  activate_toggle, NULL, "true",    NULL },
-  { "lang",  activate_radio,  "s",  "'latin'", NULL },
+  { "undo",  activate_action, NULL, NULL,      NULL, { 0 } },
+  { "redo",  activate_action, NULL, NULL,      NULL, { 0 } },
+  { "cut",   activate_action, NULL, NULL,      NULL, { 0 } },
+  { "copy",  activate_action, NULL, NULL,      NULL, { 0 } },
+  { "paste", activate_action, NULL, NULL,      NULL, { 0 } },
+  { "bold",  activate_toggle, NULL, "true",    NULL, { 0 } },
+  { "lang",  activate_radio,  "s",  "'latin'", NULL, { 0 } },
 };
 
 static void
-list_cb (GObject      *source,
-         GAsyncResult *res,
-         gpointer      user_data)
+async_result_cb (GObject      *source,
+                 GAsyncResult *res,
+                 gpointer      user_data)
 {
-  GDBusConnection *bus = G_DBUS_CONNECTION (source);
-  GMainLoop *loop = user_data;
-  GError *error = NULL;
-  GVariant *v;
-  gchar **actions;
+  GAsyncResult **result_out = user_data;
 
-  v = g_dbus_connection_call_finish (bus, res, &error);
-  g_assert (v);
-  g_variant_get (v, "(^a&s)", &actions);
-  g_assert_cmpint (g_strv_length (actions), ==, G_N_ELEMENTS (exported_entries));
-  g_free (actions);
-  g_variant_unref (v);
-  g_main_loop_quit (loop);
-}
+  g_assert_null (*result_out);
+  *result_out = g_object_ref (res);
 
-static gboolean
-call_list (gpointer user_data)
-{
-  GDBusConnection *bus;
-
-  bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
-  g_dbus_connection_call (bus,
-                          g_dbus_connection_get_unique_name (bus),
-                          "/",
-                          "org.gtk.Actions",
-                          "List",
-                          NULL,
-                          NULL,
-                          0,
-                          G_MAXINT,
-                          NULL,
-                          list_cb,
-                          user_data);
-  g_object_unref (bus);
-
-  return G_SOURCE_REMOVE;
-}
-
-static void
-describe_cb (GObject      *source,
-             GAsyncResult *res,
-             gpointer      user_data)
-{
-  GDBusConnection *bus = G_DBUS_CONNECTION (source);
-  GMainLoop *loop = user_data;
-  GError *error = NULL;
-  GVariant *v;
-  gboolean enabled;
-  gchar *param;
-  GVariantIter *iter;
-
-  v = g_dbus_connection_call_finish (bus, res, &error);
-  g_assert (v);
-  /* FIXME: there's an extra level of tuplelization in here */
-  g_variant_get (v, "((bgav))", &enabled, &param, &iter);
-  g_assert (enabled == TRUE);
-  g_assert_cmpstr (param, ==, "");
-  g_assert_cmpint (g_variant_iter_n_children (iter), ==, 0);
-  g_free (param);
-  g_variant_iter_free (iter);
-  g_variant_unref (v);
-
-  g_main_loop_quit (loop);
-}
-
-static gboolean
-call_describe (gpointer user_data)
-{
-  GDBusConnection *bus;
-
-  bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
-  g_dbus_connection_call (bus,
-                          g_dbus_connection_get_unique_name (bus),
-                          "/",
-                          "org.gtk.Actions",
-                          "Describe",
-                          g_variant_new ("(s)", "copy"),
-                          NULL,
-                          0,
-                          G_MAXINT,
-                          NULL,
-                          describe_cb,
-                          user_data);
-  g_object_unref (bus);
-
-  return G_SOURCE_REMOVE;
+  g_main_context_wakeup (NULL);
 }
 
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
+static void
+action_added_removed_cb (GActionGroup *action_group,
+                         char         *action_name,
+                         gpointer      user_data)
+{
+  guint *counter = user_data;
+
+  *counter = *counter + 1;
+  g_main_context_wakeup (NULL);
+}
+
+static void
+action_enabled_changed_cb (GActionGroup *action_group,
+                           char         *action_name,
+                           gboolean      enabled,
+                           gpointer      user_data)
+{
+  guint *counter = user_data;
+
+  *counter = *counter + 1;
+  g_main_context_wakeup (NULL);
+}
+
+static void
+action_state_changed_cb (GActionGroup *action_group,
+                         char         *action_name,
+                         GVariant     *value,
+                         gpointer      user_data)
+{
+  guint *counter = user_data;
+
+  *counter = *counter + 1;
+  g_main_context_wakeup (NULL);
+}
 
 static void
 test_dbus_export (void)
@@ -749,13 +764,16 @@ test_dbus_export (void)
   GSimpleActionGroup *group;
   GDBusActionGroup *proxy;
   GSimpleAction *action;
-  GMainLoop *loop;
   GError *error = NULL;
   GVariant *v;
   guint id;
   gchar **actions;
-
-  loop = g_main_loop_new (NULL, FALSE);
+  guint n_actions_added = 0, n_actions_enabled_changed = 0, n_actions_removed = 0, n_actions_state_changed = 0;
+  gulong added_signal_id, enabled_changed_signal_id, removed_signal_id, state_changed_signal_id;
+  gboolean enabled;
+  gchar *param;
+  GVariantIter *iter;
+  GAsyncResult *async_result = NULL;
 
   session_bus_up ();
   bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
@@ -770,102 +788,378 @@ test_dbus_export (void)
   g_assert_no_error (error);
 
   proxy = g_dbus_action_group_get (bus, g_dbus_connection_get_unique_name (bus), "/");
+  added_signal_id = g_signal_connect (proxy, "action-added", G_CALLBACK (action_added_removed_cb), &n_actions_added);
+  enabled_changed_signal_id = g_signal_connect (proxy, "action-enabled-changed", G_CALLBACK (action_enabled_changed_cb), &n_actions_enabled_changed);
+  removed_signal_id = g_signal_connect (proxy, "action-removed", G_CALLBACK (action_added_removed_cb), &n_actions_removed);
+  state_changed_signal_id = g_signal_connect (proxy, "action-state-changed", G_CALLBACK (action_state_changed_cb), &n_actions_state_changed);
 
   actions = g_action_group_list_actions (G_ACTION_GROUP (proxy));
   g_assert_cmpint (g_strv_length (actions), ==, 0);
   g_strfreev (actions);
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  /* Actions are queried from the bus asynchronously after the first
+   * list_actions() call. Wait for the expected signals then check again. */
+  while (n_actions_added < G_N_ELEMENTS (exported_entries))
+    g_main_context_iteration (NULL, TRUE);
 
   actions = g_action_group_list_actions (G_ACTION_GROUP (proxy));
   g_assert_cmpint (g_strv_length (actions), ==, G_N_ELEMENTS (exported_entries));
   g_strfreev (actions);
 
   /* check that calling "List" works too */
-  g_idle_add (call_list, loop);
-  g_main_loop_run (loop);
+  g_dbus_connection_call (bus,
+                          g_dbus_connection_get_unique_name (bus),
+                          "/",
+                          "org.gtk.Actions",
+                          "List",
+                          NULL,
+                          NULL,
+                          0,
+                          G_MAXINT,
+                          NULL,
+                          async_result_cb,
+                          &async_result);
+
+  while (async_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  v = g_dbus_connection_call_finish (bus, async_result, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (v);
+  g_variant_get (v, "(^a&s)", &actions);
+  g_assert_cmpuint (g_strv_length (actions), ==, G_N_ELEMENTS (exported_entries));
+  g_free (actions);
+  g_variant_unref (v);
+  g_clear_object (&async_result);
 
   /* check that calling "Describe" works */
-  g_idle_add (call_describe, loop);
-  g_main_loop_run (loop);
+  g_dbus_connection_call (bus,
+                          g_dbus_connection_get_unique_name (bus),
+                          "/",
+                          "org.gtk.Actions",
+                          "Describe",
+                          g_variant_new ("(s)", "copy"),
+                          NULL,
+                          0,
+                          G_MAXINT,
+                          NULL,
+                          async_result_cb,
+                          &async_result);
+
+  while (async_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  v = g_dbus_connection_call_finish (bus, async_result, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (v);
+  /* FIXME: there's an extra level of tuplelization in here */
+  g_variant_get (v, "((bgav))", &enabled, &param, &iter);
+  g_assert_true (enabled);
+  g_assert_cmpstr (param, ==, "");
+  g_assert_cmpint (g_variant_iter_n_children (iter), ==, 0);
+  g_free (param);
+  g_variant_iter_free (iter);
+  g_variant_unref (v);
+  g_clear_object (&async_result);
+
+  /* check that activating a parameterless action over D-Bus works */
+  g_assert_cmpint (activation_count ("undo"), ==, 0);
+
+  g_dbus_connection_call (bus,
+                          g_dbus_connection_get_unique_name (bus),
+                          "/",
+                          "org.gtk.Actions",
+                          "Activate",
+                          g_variant_new ("(sava{sv})", "undo", NULL, NULL),
+                          NULL,
+                          0,
+                          G_MAXINT,
+                          NULL,
+                          async_result_cb,
+                          &async_result);
+
+  while (async_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  v = g_dbus_connection_call_finish (bus, async_result, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (v);
+  g_assert_true (g_variant_is_of_type (v, G_VARIANT_TYPE_UNIT));
+  g_variant_unref (v);
+  g_clear_object (&async_result);
+
+  g_assert_cmpint (activation_count ("undo"), ==, 1);
+
+  /* check that activating a parameterful action over D-Bus works */
+  g_assert_cmpint (activation_count ("lang"), ==, 0);
+  ensure_state (G_ACTION_GROUP (group), "lang", "'latin'");
+
+  g_dbus_connection_call (bus,
+                          g_dbus_connection_get_unique_name (bus),
+                          "/",
+                          "org.gtk.Actions",
+                          "Activate",
+                          g_variant_new ("(s@ava{sv})", "lang", g_variant_new_parsed ("[<'spanish'>]"), NULL),
+                          NULL,
+                          0,
+                          G_MAXINT,
+                          NULL,
+                          async_result_cb,
+                          &async_result);
+
+  while (async_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  v = g_dbus_connection_call_finish (bus, async_result, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (v);
+  g_assert_true (g_variant_is_of_type (v, G_VARIANT_TYPE_UNIT));
+  g_variant_unref (v);
+  g_clear_object (&async_result);
+
+  g_assert_cmpint (activation_count ("lang"), ==, 1);
+  ensure_state (G_ACTION_GROUP (group), "lang", "'spanish'");
+
+  /* check that various error conditions are rejected */
+  struct
+    {
+      const gchar *action_name;
+      GVariant *parameter;  /* (owned floating) (nullable) */
+    }
+  activate_error_conditions[] =
+    {
+      { "nope", NULL },  /* non-existent action */
+      { "lang", g_variant_new_parsed ("[<@u 4>]") },  /* wrong parameter type */
+      { "lang", NULL },  /* parameter missing */
+      { "undo", g_variant_new_parsed ("[<'silly'>]") },  /* extraneous parameter */
+    };
+
+  for (gsize i = 0; i < G_N_ELEMENTS (activate_error_conditions); i++)
+    {
+      GVariant *parameter = g_steal_pointer (&activate_error_conditions[i].parameter);
+      const gchar *type_string = (parameter != NULL) ? "(s@ava{sv})" : "(sava{sv})";
+
+      g_dbus_connection_call (bus,
+                              g_dbus_connection_get_unique_name (bus),
+                              "/",
+                              "org.gtk.Actions",
+                              "Activate",
+                              g_variant_new (type_string,
+                                             activate_error_conditions[i].action_name,
+                                             g_steal_pointer (&parameter),
+                                             NULL),
+                              NULL,
+                              0,
+                              G_MAXINT,
+                              NULL,
+                              async_result_cb,
+                              &async_result);
+
+      while (async_result == NULL)
+        g_main_context_iteration (NULL, TRUE);
+
+      v = g_dbus_connection_call_finish (bus, async_result, &error);
+      g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS);
+      g_assert_null (v);
+      g_clear_error (&error);
+      g_clear_object (&async_result);
+    }
+
+  /* check that setting an action’s state over D-Bus works */
+  g_assert_cmpint (activation_count ("lang"), ==, 1);
+  ensure_state (G_ACTION_GROUP (group), "lang", "'spanish'");
+
+  g_dbus_connection_call (bus,
+                          g_dbus_connection_get_unique_name (bus),
+                          "/",
+                          "org.gtk.Actions",
+                          "SetState",
+                          g_variant_new ("(sva{sv})", "lang", g_variant_new_string ("portuguese"), NULL),
+                          NULL,
+                          0,
+                          G_MAXINT,
+                          NULL,
+                          async_result_cb,
+                          &async_result);
+
+  while (async_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  v = g_dbus_connection_call_finish (bus, async_result, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (v);
+  g_assert_true (g_variant_is_of_type (v, G_VARIANT_TYPE_UNIT));
+  g_variant_unref (v);
+  g_clear_object (&async_result);
+
+  g_assert_cmpint (activation_count ("lang"), ==, 1);
+  ensure_state (G_ACTION_GROUP (group), "lang", "'portuguese'");
+
+  /* check that various error conditions are rejected */
+  struct
+    {
+      const gchar *action_name;
+      GVariant *state;  /* (owned floating) (not nullable) */
+    }
+  set_state_error_conditions[] =
+    {
+      { "nope", g_variant_new_string ("hello") },  /* non-existent action */
+      { "undo", g_variant_new_string ("not stateful") },  /* not a stateful action */
+      { "lang", g_variant_new_uint32 (3) },  /* wrong state type */
+    };
+
+  for (gsize i = 0; i < G_N_ELEMENTS (set_state_error_conditions); i++)
+    {
+      g_dbus_connection_call (bus,
+                              g_dbus_connection_get_unique_name (bus),
+                              "/",
+                              "org.gtk.Actions",
+                              "SetState",
+                              g_variant_new ("(s@va{sv})",
+                                             set_state_error_conditions[i].action_name,
+                                             g_variant_new_variant (g_steal_pointer (&set_state_error_conditions[i].state)),
+                                             NULL),
+                              NULL,
+                              0,
+                              G_MAXINT,
+                              NULL,
+                              async_result_cb,
+                              &async_result);
+
+      while (async_result == NULL)
+        g_main_context_iteration (NULL, TRUE);
+
+      v = g_dbus_connection_call_finish (bus, async_result, &error);
+      g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS);
+      g_assert_null (v);
+      g_clear_error (&error);
+      g_clear_object (&async_result);
+    }
 
   /* test that the initial transfer works */
-  g_assert (G_IS_DBUS_ACTION_GROUP (proxy));
-  g_assert (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
+  g_assert_true (G_IS_DBUS_ACTION_GROUP (proxy));
+  while (!compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)))
+    g_main_context_iteration (NULL, TRUE);
+  n_actions_state_changed = 0;
 
   /* test that various changes get propagated from group to proxy */
+  n_actions_added = 0;
   action = g_simple_action_new_stateful ("italic", NULL, g_variant_new_boolean (FALSE));
   g_simple_action_group_insert (group, G_ACTION (action));
   g_object_unref (action);
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  while (n_actions_added == 0)
+    g_main_context_iteration (NULL, TRUE);
 
-  g_assert (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
+  g_assert_true (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
 
   action = G_SIMPLE_ACTION (g_simple_action_group_lookup (group, "cut"));
   g_simple_action_set_enabled (action, FALSE);
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  while (n_actions_enabled_changed == 0)
+    g_main_context_iteration (NULL, TRUE);
 
-  g_assert (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
+  g_assert_true (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
 
   action = G_SIMPLE_ACTION (g_simple_action_group_lookup (group, "bold"));
   g_simple_action_set_state (action, g_variant_new_boolean (FALSE));
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  while (n_actions_state_changed == 0)
+    g_main_context_iteration (NULL, TRUE);
 
-  g_assert (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
+  g_assert_true (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
 
   g_simple_action_group_remove (group, "italic");
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  while (n_actions_removed == 0)
+    g_main_context_iteration (NULL, TRUE);
 
-  g_assert (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
+  g_assert_true (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
 
   /* test that activations and state changes propagate the other way */
-
+  n_actions_state_changed = 0;
   g_assert_cmpint (activation_count ("copy"), ==, 0);
   g_action_group_activate_action (G_ACTION_GROUP (proxy), "copy", NULL);
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  while (activation_count ("copy") == 0)
+    g_main_context_iteration (NULL, TRUE);
 
   g_assert_cmpint (activation_count ("copy"), ==, 1);
-  g_assert (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
+  g_assert_true (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
 
+  n_actions_state_changed = 0;
   g_assert_cmpint (activation_count ("bold"), ==, 0);
   g_action_group_activate_action (G_ACTION_GROUP (proxy), "bold", NULL);
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  while (n_actions_state_changed == 0)
+    g_main_context_iteration (NULL, TRUE);
 
   g_assert_cmpint (activation_count ("bold"), ==, 1);
-  g_assert (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
+  g_assert_true (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
   v = g_action_group_get_action_state (G_ACTION_GROUP (group), "bold");
-  g_assert (g_variant_get_boolean (v));
+  g_assert_true (g_variant_get_boolean (v));
   g_variant_unref (v);
 
+  n_actions_state_changed = 0;
   g_action_group_change_action_state (G_ACTION_GROUP (proxy), "bold", g_variant_new_boolean (FALSE));
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  while (n_actions_state_changed == 0)
+    g_main_context_iteration (NULL, TRUE);
 
   g_assert_cmpint (activation_count ("bold"), ==, 1);
-  g_assert (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
+  g_assert_true (compare_action_groups (G_ACTION_GROUP (group), G_ACTION_GROUP (proxy)));
   v = g_action_group_get_action_state (G_ACTION_GROUP (group), "bold");
-  g_assert (!g_variant_get_boolean (v));
+  g_assert_false (g_variant_get_boolean (v));
   g_variant_unref (v);
 
   g_dbus_connection_unexport_action_group (bus, id);
 
+  g_signal_handler_disconnect (proxy, added_signal_id);
+  g_signal_handler_disconnect (proxy, enabled_changed_signal_id);
+  g_signal_handler_disconnect (proxy, removed_signal_id);
+  g_signal_handler_disconnect (proxy, state_changed_signal_id);
   g_object_unref (proxy);
   g_object_unref (group);
-  g_main_loop_unref (loop);
+  g_object_unref (bus);
+
+  session_bus_down ();
+}
+
+static void
+test_dbus_export_error_handling (void)
+{
+  GDBusConnection *bus = NULL;
+  GSimpleActionGroup *group = NULL;
+  GError *local_error = NULL;
+  guint id1, id2;
+
+  g_test_summary ("Test that error handling of action group export failure works");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3366");
+
+  session_bus_up ();
+  bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+
+  group = g_simple_action_group_new ();
+  g_simple_action_group_add_entries (group,
+                                     exported_entries,
+                                     G_N_ELEMENTS (exported_entries),
+                                     NULL);
+
+  id1 = g_dbus_connection_export_action_group (bus, "/", G_ACTION_GROUP (group), &local_error);
+  g_assert_no_error (local_error);
+  g_assert_cmpuint (id1, !=, 0);
+
+  /* Trigger a failure by trying to export on a path which is already in use */
+  id2 = g_dbus_connection_export_action_group (bus, "/", G_ACTION_GROUP (group), &local_error);
+  g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_EXISTS);
+  g_assert_cmpuint (id2, ==, 0);
+  g_clear_error (&local_error);
+
+  g_dbus_connection_unexport_action_group (bus, id1);
+
+  while (g_main_context_iteration (NULL, FALSE));
+
+  g_object_unref (group);
   g_object_unref (bus);
 
   session_bus_down ();
@@ -890,7 +1184,7 @@ do_export (gpointer data)
   bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
   path = g_strdup_printf("/%p", data);
 
-  for (i = 0; i < 100000; i++)
+  for (i = 0; i < 10000; i++)
     {
       id = g_dbus_connection_export_action_group (bus, path, G_ACTION_GROUP (group), &error);
       g_assert_no_error (error);
@@ -920,8 +1214,8 @@ test_dbus_threaded (void)
   GSimpleActionGroup *group[10];
   GThread *export[10];
   static GActionEntry entries[] = {
-    { "a",  activate_action, NULL, NULL, NULL },
-    { "b",  activate_action, NULL, NULL, NULL },
+    { "a",  activate_action, NULL, NULL, NULL, { 0 } },
+    { "b",  activate_action, NULL, NULL, NULL, { 0 } },
   };
   gint i;
 
@@ -950,9 +1244,7 @@ test_bug679509 (void)
 {
   GDBusConnection *bus;
   GDBusActionGroup *proxy;
-  GMainLoop *loop;
-
-  loop = g_main_loop_new (NULL, FALSE);
+  gboolean timed_out = FALSE;
 
   session_bus_up ();
   bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
@@ -961,10 +1253,10 @@ test_bug679509 (void)
   g_strfreev (g_action_group_list_actions (G_ACTION_GROUP (proxy)));
   g_object_unref (proxy);
 
-  g_timeout_add (100, stop_loop, loop);
-  g_main_loop_run (loop);
+  g_timeout_add (100, timeout_cb, &timed_out);
+  while (!timed_out)
+    g_main_context_iteration (NULL, TRUE);
 
-  g_main_loop_unref (loop);
   g_object_unref (bus);
 
   session_bus_down ();
@@ -980,7 +1272,7 @@ state_changed (GActionGroup *group,
 {
   GString *string;
 
-  g_assert (!state_change_log);
+  g_assert_false (state_change_log);
 
   string = g_string_new (action_name);
   g_string_append_c (string, ':');
@@ -993,22 +1285,6 @@ verify_changed (const gchar *log_entry)
 {
   g_assert_cmpstr (state_change_log, ==, log_entry);
   g_clear_pointer (&state_change_log, g_free);
-}
-
-static void
-ensure_state (GSimpleActionGroup *group,
-              const gchar        *action_name,
-              const gchar        *expected)
-{
-  GVariant *value;
-  gchar *printed;
-
-  value = g_action_group_get_action_state (G_ACTION_GROUP (group), action_name);
-  printed = g_variant_print (value, TRUE);
-  g_variant_unref (value);
-
-  g_assert_cmpstr (printed, ==, expected);
-  g_free (printed);
 }
 
 static void
@@ -1038,8 +1314,10 @@ test_property_actions (void)
   action = g_property_action_new ("keepalive", app, "inactivity-timeout");
   g_object_get (action, "name", &name, "parameter-type", &ptype, "enabled", &enabled, "state-type", &stype, "state", &state, NULL);
   g_assert_cmpstr (name, ==, "keepalive");
-  g_assert (enabled);
+  g_assert_true (enabled);
   g_free (name);
+  g_variant_type_free (ptype);
+  g_variant_type_free (stype);
   g_variant_unref (state);
 
   g_action_map_add_action (G_ACTION_MAP (group), G_ACTION (action));
@@ -1069,11 +1347,11 @@ test_property_actions (void)
   g_object_unref (client);
   g_object_unref (app);
 
-  ensure_state (group, "app-id", "'org.gtk.test'");
-  ensure_state (group, "keepalive", "uint32 0");
-  ensure_state (group, "tls", "false");
-  ensure_state (group, "disable-proxy", "false");
-  ensure_state (group, "type", "'stream'");
+  ensure_state (G_ACTION_GROUP (group), "app-id", "'org.gtk.test'");
+  ensure_state (G_ACTION_GROUP (group), "keepalive", "uint32 0");
+  ensure_state (G_ACTION_GROUP (group), "tls", "false");
+  ensure_state (G_ACTION_GROUP (group), "disable-proxy", "false");
+  ensure_state (G_ACTION_GROUP (group), "type", "'stream'");
 
   verify_changed (NULL);
 
@@ -1081,88 +1359,88 @@ test_property_actions (void)
   g_action_group_change_action_state (G_ACTION_GROUP (group), "app-id", g_variant_new ("s", "org.gtk.test2"));
   verify_changed ("app-id:'org.gtk.test2'");
   g_assert_cmpstr (g_application_get_application_id (app), ==, "org.gtk.test2");
-  ensure_state (group, "app-id", "'org.gtk.test2'");
+  ensure_state (G_ACTION_GROUP (group), "app-id", "'org.gtk.test2'");
 
   g_action_group_activate_action (G_ACTION_GROUP (group), "app-id", g_variant_new ("s", "org.gtk.test3"));
   verify_changed ("app-id:'org.gtk.test3'");
   g_assert_cmpstr (g_application_get_application_id (app), ==, "org.gtk.test3");
-  ensure_state (group, "app-id", "'org.gtk.test3'");
+  ensure_state (G_ACTION_GROUP (group), "app-id", "'org.gtk.test3'");
 
   g_application_set_application_id (app, "org.gtk.test");
   verify_changed ("app-id:'org.gtk.test'");
-  ensure_state (group, "app-id", "'org.gtk.test'");
+  ensure_state (G_ACTION_GROUP (group), "app-id", "'org.gtk.test'");
 
   /* uint tests */
   g_action_group_change_action_state (G_ACTION_GROUP (group), "keepalive", g_variant_new ("u", 1234));
   verify_changed ("keepalive:uint32 1234");
   g_assert_cmpuint (g_application_get_inactivity_timeout (app), ==, 1234);
-  ensure_state (group, "keepalive", "uint32 1234");
+  ensure_state (G_ACTION_GROUP (group), "keepalive", "uint32 1234");
 
   g_action_group_activate_action (G_ACTION_GROUP (group), "keepalive", g_variant_new ("u", 5678));
   verify_changed ("keepalive:uint32 5678");
   g_assert_cmpuint (g_application_get_inactivity_timeout (app), ==, 5678);
-  ensure_state (group, "keepalive", "uint32 5678");
+  ensure_state (G_ACTION_GROUP (group), "keepalive", "uint32 5678");
 
   g_application_set_inactivity_timeout (app, 0);
   verify_changed ("keepalive:uint32 0");
-  ensure_state (group, "keepalive", "uint32 0");
+  ensure_state (G_ACTION_GROUP (group), "keepalive", "uint32 0");
 
   /* bool tests */
   g_action_group_change_action_state (G_ACTION_GROUP (group), "tls", g_variant_new ("b", TRUE));
   verify_changed ("tls:true");
-  g_assert (g_socket_client_get_tls (client));
-  ensure_state (group, "tls", "true");
+  g_assert_true (g_socket_client_get_tls (client));
+  ensure_state (G_ACTION_GROUP (group), "tls", "true");
 
   g_action_group_change_action_state (G_ACTION_GROUP (group), "disable-proxy", g_variant_new ("b", TRUE));
   verify_changed ("disable-proxy:true");
-  ensure_state (group, "disable-proxy", "true");
-  g_assert (!g_socket_client_get_enable_proxy (client));
+  ensure_state (G_ACTION_GROUP (group), "disable-proxy", "true");
+  g_assert_false (g_socket_client_get_enable_proxy (client));
 
   /* test toggle true->false */
   g_action_group_activate_action (G_ACTION_GROUP (group), "tls", NULL);
   verify_changed ("tls:false");
-  g_assert (!g_socket_client_get_tls (client));
-  ensure_state (group, "tls", "false");
+  g_assert_false (g_socket_client_get_tls (client));
+  ensure_state (G_ACTION_GROUP (group), "tls", "false");
 
   /* and now back false->true */
   g_action_group_activate_action (G_ACTION_GROUP (group), "tls", NULL);
   verify_changed ("tls:true");
-  g_assert (g_socket_client_get_tls (client));
-  ensure_state (group, "tls", "true");
+  g_assert_true (g_socket_client_get_tls (client));
+  ensure_state (G_ACTION_GROUP (group), "tls", "true");
 
   g_socket_client_set_tls (client, FALSE);
   verify_changed ("tls:false");
-  ensure_state (group, "tls", "false");
+  ensure_state (G_ACTION_GROUP (group), "tls", "false");
 
   /* now do the same for the inverted action */
   g_action_group_activate_action (G_ACTION_GROUP (group), "disable-proxy", NULL);
   verify_changed ("disable-proxy:false");
-  g_assert (g_socket_client_get_enable_proxy (client));
-  ensure_state (group, "disable-proxy", "false");
+  g_assert_true (g_socket_client_get_enable_proxy (client));
+  ensure_state (G_ACTION_GROUP (group), "disable-proxy", "false");
 
   g_action_group_activate_action (G_ACTION_GROUP (group), "disable-proxy", NULL);
   verify_changed ("disable-proxy:true");
-  g_assert (!g_socket_client_get_enable_proxy (client));
-  ensure_state (group, "disable-proxy", "true");
+  g_assert_false (g_socket_client_get_enable_proxy (client));
+  ensure_state (G_ACTION_GROUP (group), "disable-proxy", "true");
 
   g_socket_client_set_enable_proxy (client, TRUE);
   verify_changed ("disable-proxy:false");
-  ensure_state (group, "disable-proxy", "false");
+  ensure_state (G_ACTION_GROUP (group), "disable-proxy", "false");
 
   /* enum tests */
   g_action_group_change_action_state (G_ACTION_GROUP (group), "type", g_variant_new ("s", "datagram"));
   verify_changed ("type:'datagram'");
   g_assert_cmpint (g_socket_client_get_socket_type (client), ==, G_SOCKET_TYPE_DATAGRAM);
-  ensure_state (group, "type", "'datagram'");
+  ensure_state (G_ACTION_GROUP (group), "type", "'datagram'");
 
   g_action_group_activate_action (G_ACTION_GROUP (group), "type", g_variant_new ("s", "stream"));
   verify_changed ("type:'stream'");
   g_assert_cmpint (g_socket_client_get_socket_type (client), ==, G_SOCKET_TYPE_STREAM);
-  ensure_state (group, "type", "'stream'");
+  ensure_state (G_ACTION_GROUP (group), "type", "'stream'");
 
   g_socket_client_set_socket_type (client, G_SOCKET_TYPE_SEQPACKET);
   verify_changed ("type:'seqpacket'");
-  ensure_state (group, "type", "'seqpacket'");
+  ensure_state (G_ACTION_GROUP (group), "type", "'seqpacket'");
 
   /* Check some error cases... */
   g_test_expect_message ("GLib-GIO", G_LOG_LEVEL_CRITICAL, "*non-existent*");
@@ -1183,6 +1461,20 @@ test_property_actions (void)
   g_object_unref (group);
 }
 
+static void
+test_property_actions_no_properties (void)
+{
+  GPropertyAction *action;
+
+  g_test_expect_message ("GLib-GIO", G_LOG_LEVEL_CRITICAL, "*Attempted to use an empty property name for GPropertyAction*");
+  action = (GPropertyAction*) g_object_new_with_properties (G_TYPE_PROPERTY_ACTION, 0, NULL, NULL);
+
+  g_test_assert_expected_messages ();
+  g_assert_true (G_IS_PROPERTY_ACTION (action));
+
+  g_object_unref (action);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -1196,9 +1488,11 @@ main (int argc, char **argv)
   g_test_add_func ("/actions/entries", test_entries);
   g_test_add_func ("/actions/parse-detailed", test_parse_detailed);
   g_test_add_func ("/actions/dbus/export", test_dbus_export);
+  g_test_add_func ("/actions/dbus/export/error-handling", test_dbus_export_error_handling);
   g_test_add_func ("/actions/dbus/threaded", test_dbus_threaded);
   g_test_add_func ("/actions/dbus/bug679509", test_bug679509);
   g_test_add_func ("/actions/property", test_property_actions);
+  g_test_add_func ("/actions/no-properties", test_property_actions_no_properties);
 
   return g_test_run ();
 }

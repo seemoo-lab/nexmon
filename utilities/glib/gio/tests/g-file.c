@@ -2,6 +2,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  * Authors: Tomas Bzatek <tbzatek@redhat.com>
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -111,21 +113,21 @@ test_g_file_new_for_path (void)
 {
   const struct TestPathsWithOper cmp_paths[] =
     {
-      {"/", TRUE, 0, "/./"},
-      {"//", TRUE, 0, "//"},
-      {"//", TRUE, 0, "//./"},
-      {"/", TRUE, 0, "/.//"},
-      {"/", TRUE, 0, "/././"},
-      {"/tmp", TRUE, 0, "/tmp/d/../"},
-      {"/", TRUE, 0, "/somedir/../"},
-      {"/", FALSE, 0, "/somedir/.../"},
-      {"//tmp/dir1", TRUE, 0, "//tmp/dir1"},
-      {"/tmp/dir1", TRUE, 0, "///tmp/dir1"},
-      {"/tmp/dir1", TRUE, 0, "////tmp/dir1"},
-      {"/tmp/dir1", TRUE, 0, "/tmp/./dir1"},
-      {"/tmp/dir1", TRUE, 0, "/tmp//dir1"},
-      {"/tmp/dir1", TRUE, 0, "/tmp///dir1///"},
-      {"/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", TRUE, 0, "/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88/"}
+      {"/", TRUE, 0, "/./", NULL },
+      {"//", TRUE, 0, "//", NULL },
+      {"//", TRUE, 0, "//./", NULL },
+      {"/", TRUE, 0, "/.//", NULL },
+      {"/", TRUE, 0, "/././", NULL },
+      {"/tmp", TRUE, 0, "/tmp/d/../", NULL },
+      {"/", TRUE, 0, "/somedir/../", NULL },
+      {"/", FALSE, 0, "/somedir/.../", NULL },
+      {"//tmp/dir1", TRUE, 0, "//tmp/dir1", NULL },
+      {"/tmp/dir1", TRUE, 0, "///tmp/dir1", NULL },
+      {"/tmp/dir1", TRUE, 0, "////tmp/dir1", NULL },
+      {"/tmp/dir1", TRUE, 0, "/tmp/./dir1", NULL },
+      {"/tmp/dir1", TRUE, 0, "/tmp//dir1", NULL },
+      {"/tmp/dir1", TRUE, 0, "/tmp///dir1///", NULL },
+      {"/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", TRUE, 0, "/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88/", NULL }
     };
 
   guint i;
@@ -142,19 +144,19 @@ static void
 test_g_file_new_for_uri (void)
 {
   const struct TestPathsWithOper cmp_uris[] = {
-    {"file:///", TRUE, 0, "file:///./"},
-    {"file:////", TRUE, 0, "file:////"},
-    {"file:////", TRUE, 0, "file:////./"},
-    {"file:///", TRUE, 0, "file:///.//"},
-    {"file:///", TRUE, 0, "file:///././"},
-    {"file:///tmp", TRUE, 0, "file:///tmp/d/../"},
-    {"file:///", TRUE, 0, "file:///somedir/../"},
-    {"file:///", FALSE, 0, "file:///somedir/.../"},
-    {"file:////tmp/dir1", TRUE, 0, "file:////tmp/dir1"},
-    {"file:///tmp/dir1", TRUE, 0, "file:///tmp/./dir1"},
-    {"file:///tmp/dir1", TRUE, 0, "file:///tmp//dir1"},
-    {"file:///tmp/dir1", TRUE, 0, "file:///tmp///dir1///"},
-    {"file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88", TRUE, 0, "file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88/"}
+    {"file:///", TRUE, 0, "file:///./", NULL },
+    {"file:////", TRUE, 0, "file:////", NULL },
+    {"file:////", TRUE, 0, "file:////./", NULL },
+    {"file:///", TRUE, 0, "file:///.//", NULL },
+    {"file:///", TRUE, 0, "file:///././", NULL },
+    {"file:///tmp", TRUE, 0, "file:///tmp/d/../", NULL },
+    {"file:///", TRUE, 0, "file:///somedir/../", NULL },
+    {"file:///", FALSE, 0, "file:///somedir/.../", NULL },
+    {"file:////tmp/dir1", TRUE, 0, "file:////tmp/dir1", NULL },
+    {"file:///tmp/dir1", TRUE, 0, "file:///tmp/./dir1", NULL },
+    {"file:///tmp/dir1", TRUE, 0, "file:///tmp//dir1", NULL },
+    {"file:///tmp/dir1", TRUE, 0, "file:///tmp///dir1///", NULL },
+    {"file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88", TRUE, 0, "file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88/", NULL }
   };
   
   guint i;
@@ -198,11 +200,11 @@ test_g_file_dup (void)
 {
   const struct TestPathsWithOper dup_paths[] =
     {
-      {"/", 0, FALSE, ""},
-      {"file:///", 0, TRUE, ""},
-      {"totalnonsense", 0, FALSE, ""},
-      {"/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", 0, FALSE, ""},
-      {"file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88", 0, TRUE, ""},
+      {"/", 0, FALSE, "", NULL },
+      {"file:///", 0, TRUE, "", NULL },
+      {"totalnonsense", 0, FALSE, "", NULL },
+      {"/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", 0, FALSE, "", NULL },
+      {"file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88", 0, TRUE, "", NULL },
     };
   
   guint i;
@@ -261,11 +263,11 @@ test_g_file_get_parse_name_utf8 (void)
 {
   const struct TestPathsWithOper strings[] =
     {
-      {G_DIR_SEPARATOR_S, 0, FALSE, G_DIR_SEPARATOR_S},
-      {"file:///", 0, TRUE, G_DIR_SEPARATOR_S},
-      {"totalnonsense", 0, FALSE, NULL},
-      {"/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", 0, FALSE, NULL /* Depends on local file encoding */},
-      {"file:///invalid%08/UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88/", 0, TRUE, "file:///invalid%08/UTF-8%20p\xc5\x99\xc3\xadli\xc5\xa1%20\xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd%20k\xc5\xaf\xc5\x88"},
+      {G_DIR_SEPARATOR_S, 0, FALSE, G_DIR_SEPARATOR_S, NULL },
+      {"file:///", 0, TRUE, G_DIR_SEPARATOR_S, NULL },
+      {"totalnonsense", 0, FALSE, NULL, NULL },
+      {"/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", 0, FALSE, NULL, NULL  /* Depends on local file encoding */},
+      {"file:///invalid%08/UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88/", 0, TRUE, "file:///invalid%08/UTF-8%20p\xc5\x99\xc3\xadli\xc5\xa1%20\xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd%20k\xc5\xaf\xc5\x88", NULL },
     };
 
   guint i;
@@ -315,14 +317,14 @@ test_g_file_new_for_commandline_arg (void)
   /*  TestPathsWithOper.use_uri represents IsURIOnly here */
   const struct TestPathsWithOper arg_data[] =
     {
-      {"./", 0, FALSE, "file"},
-      {"../", 0, FALSE, "file"},
-      {"/tmp", 0, FALSE, "file"},
-      {"//UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", 0, FALSE, "file"},
-      {"file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88/", 0, FALSE, "file"},
+      {"./", 0, FALSE, "file", NULL },
+      {"../", 0, FALSE, "file", NULL },
+      {"/tmp", 0, FALSE, "file", NULL },
+      {"//UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", 0, FALSE, "file", NULL },
+      {"file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88/", 0, FALSE, "file", NULL },
 #if 0
-      {"http://www.gtk.org/", 0, TRUE, "http"},
-      {"ftp://user:pass@ftp.gimp.org/", 0, TRUE, "ftp"},
+      {"http://www.gtk.org/", 0, TRUE, "http", NULL },
+      {"ftp://user:pass@ftp.gimp.org/", 0, TRUE, "ftp", NULL },
 #endif
     };
   GFile *file;
@@ -486,15 +488,15 @@ test_g_file_get_parent_child (void)
   const struct TestPathsWithOper paths[] =
     {
       /* path     root_desc   uri  dir_holder */
-      {"/dir1/dir", FALSE, FALSE, "dir"},
-      {"/dir", FALSE, FALSE, "dir"},
-      {"/", TRUE, FALSE, "dir"},
-      {"/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88/", FALSE, FALSE, "UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88"},
-      {"file:///dir1/dir", FALSE, TRUE, "dir"},
-      {"file:///dir", FALSE, TRUE, "dir"},
-      {"file:///", TRUE, TRUE, "dir"},
-      {"file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88/", FALSE, TRUE, "UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88"},
-      {"dav://www.gtk.org/plan/meetings", FALSE, TRUE, "meetings"},
+      {"/dir1/dir", FALSE, FALSE, "dir", NULL },
+      {"/dir", FALSE, FALSE, "dir", NULL },
+      {"/", TRUE, FALSE, "dir", NULL },
+      {"/UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88/", FALSE, FALSE, "UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", NULL },
+      {"file:///dir1/dir", FALSE, TRUE, "dir", NULL },
+      {"file:///dir", FALSE, TRUE, "dir", NULL },
+      {"file:///", TRUE, TRUE, "dir", NULL },
+      {"file:///UTF-8%20p%C5%99%C3%ADli%C5%A1%20%C5%BElu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88/", FALSE, TRUE, "UTF-8 p\xc5\x99\xc3\xadli\xc5\xa1 \xc5\xbelu\xc5\xa5ou\xc4\x8dk\xc3\xbd k\xc5\xaf\xc5\x88", NULL },
+      {"dav://www.gtk.org/plan/meetings", FALSE, TRUE, "meetings", NULL },
     };
 
   guint i;

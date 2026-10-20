@@ -1,7 +1,5 @@
 /* Writing XML files.
-   Copyright (C) 1995-1998, 2000-2003, 2005-2006, 2008-2009, 2014-2016 Free
-   Software Foundation, Inc.
-   This file was written by Daiki Ueno <ueno@gnu.org>.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Daiki Ueno.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "write-xml.h"
@@ -27,8 +25,11 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "error.h"
+
+#include <error.h>
 #include "msgl-iconv.h"
+#include "xerror-handler.h"
+#include "msgl-header.h"
 #include "po-charset.h"
 #include "read-catalog.h"
 #include "read-po.h"
@@ -42,12 +43,10 @@ int
 msgdomain_write_xml_bulk (msgfmt_operand_list_ty *operands,
                           const char *template_file_name,
                           its_rule_list_ty *its_rules,
+                          bool replace_text,
                           const char *file_name)
 {
-  its_merge_context_ty *context;
-  size_t i;
   FILE *fp;
-
   if (strcmp (file_name, "-") == 0)
     fp = stdout;
   else
@@ -61,11 +60,13 @@ msgdomain_write_xml_bulk (msgfmt_operand_list_ty *operands,
         }
     }
 
-  context = its_merge_context_alloc (its_rules, template_file_name);
-  for (i = 0; i < operands->nitems; i++)
+  its_merge_context_ty *context =
+    its_merge_context_alloc (its_rules, template_file_name);
+  for (size_t i = 0; i < operands->nitems; i++)
     its_merge_context_merge (context,
                              operands->items[i].language,
-                             operands->items[i].mlp);
+                             operands->items[i].mlp,
+                             replace_text);
   its_merge_context_write (context, fp);
   its_merge_context_free (context);
 
@@ -86,22 +87,28 @@ msgdomain_write_xml (message_list_ty *mlp,
                      const char *locale_name,
                      const char *template_file_name,
                      its_rule_list_ty *its_rules,
+                     bool replace_text,
                      const char *file_name)
 {
-  msgfmt_operand_ty operand;
-  msgfmt_operand_list_ty operands;
-
   /* Convert the messages to Unicode.  */
-  iconv_message_list (mlp, canon_encoding, po_charset_utf8, NULL);
+  iconv_message_list (mlp, canon_encoding, po_charset_utf8, NULL,
+                      textmode_xerror_handler);
+
+  /* Support for "reproducible builds": Delete information that may vary
+     between builds in the same conditions.  */
+  message_list_delete_header_field (mlp, "POT-Creation-Date:");
 
   /* Create a single-element operands and run the bulk operation on it.  */
+  msgfmt_operand_ty operand;
   operand.language = (char *) locale_name;
   operand.mlp = mlp;
+  msgfmt_operand_list_ty operands;
   operands.nitems = 1;
   operands.items = &operand;
 
   return msgdomain_write_xml_bulk (&operands,
                                    template_file_name,
                                    its_rules,
+                                   replace_text,
                                    file_name);
 }

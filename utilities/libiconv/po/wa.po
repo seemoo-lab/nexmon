@@ -1,26 +1,28 @@
-# Translation of tuxpaint into the walloon language.
+# Translation of libiconv into the walloon language.
 # Copyright (C) 2003 Free Software Foundation, Inc.
-# Pablo Saratxaga <pablo@walon.org>, 2003, 2004, 2007.
+# This file is distributed under the same license as the libiconv package.
+#
+# Pablo Saratxaga <pablo@walon.org>, 2003, 2004, 2007, 2019.
 msgid ""
 msgstr ""
-"Project-Id-Version: libiconv 1.11\n"
+"Project-Id-Version: libiconv 1.15-pre1\n"
 "Report-Msgid-Bugs-To: bug-gnu-libiconv@gnu.org\n"
-"POT-Creation-Date: 2011-08-07 15:24+0200\n"
-"PO-Revision-Date: 2007-08-28 15:50+0200\n"
+"POT-Creation-Date: 2016-12-12 09:35+0100\n"
+"PO-Revision-Date: 2019-10-27 14:19+0100\n"
 "Last-Translator: Pablo Saratxaga <pablo@walon.org>\n"
-"Language-Team: Walloon <linux-wa@walon.org>\n"
+"Language-Team: Walloon <(nothing)>\n"
 "Language: wa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.10.2\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Lokalize 2.0\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
 
 #. TRANSLATORS: The first line of the short usage message.
 #: src/iconv.c:104
 msgid "Usage: iconv [-c] [-s] [-f fromcode] [-t tocode] [file ...]"
-msgstr ""
-"Po s' è siervi: iconv [-c] [-s] [-f ecôd._sourd] [-t ecôd._såme] [fitchî...]"
+msgstr "Po s' è siervi: iconv [-c] [-s] [-f ecôd._sourd] [-t ecôd._såme] [fitchî...]"
 
 #. TRANSLATORS: The second line of the short usage message.
 #. Align it correctly against the first line.
@@ -30,7 +32,7 @@ msgstr "oudonbén:       iconv -l"
 
 #: src/iconv.c:110
 #, c-format
-msgid "Try `%s --help' for more information.\n"
+msgid "Try '%s --help' for more information.\n"
 msgstr "Sayîz «%s --help» po pus di racsegnes.\n"
 
 #. TRANSLATORS: The first line of the long usage message.
@@ -38,7 +40,7 @@ msgstr "Sayîz «%s --help» po pus di racsegnes.\n"
 #: src/iconv.c:115
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION...] [-f ENCODING] [-t ENCODING] [INPUTFILE...]\n"
-msgstr "Po s' è siervi: %s [TCHUZE...] [-f ECÔDAEDJE] [FITCHÎ_INTRÊYE...]\n"
+msgstr "Po s' è siervi: %s [TCHUZE...] [-f ECÔDAEDJE] [FITCHÎ-INTRÊYE...]\n"
 
 #. TRANSLATORS: The second line of the long usage message.
 #. Align it correctly against the first line.
@@ -118,12 +120,12 @@ msgstr "Tchuzes po controler li rexhowe d' arokes:\n"
 #: src/iconv.c:165
 #, c-format, no-wrap
 msgid "  -s, --silent                suppress error messages about conversion problems\n"
-msgstr "  -s, --silent                èn nén håyner les messaedjes d' aroke so les probinmes di cviersaedje\n"
+msgstr "  -s, --silent                èn nén håyner les messaedjes d' aroke so les problinmes di cviersaedje\n"
 
 #: src/iconv.c:169
 #, c-format, no-wrap
 msgid "Informative output:\n"
-msgstr "Rexhowe d' informåcion:\n"
+msgstr "Rexhowe d' infôrmåcion:\n"
 
 #: src/iconv.c:172
 #, c-format, no-wrap
@@ -138,7 +140,7 @@ msgstr "  --help                      mostere ci messaedje d' aidance chal.\n"
 #: src/iconv.c:178
 #, c-format, no-wrap
 msgid "  --version                   output version information and exit\n"
-msgstr "  --version                   mostere des informåcions sol modêye do programe\n"
+msgstr "  --version                   mostere des infôrmåcions sol modêye do programe\n"
 
 #. TRANSLATORS: The placeholder indicates the bug-reporting address
 #. for this package.  Please add _another line_ saying
@@ -155,6 +157,9 @@ msgid ""
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
+"Licince GPLv3+ : Licince Publike GNU modêye 3 ou pus hôte <http://gnu.org/licenses/gpl.html>\n"
+"Çouchal est on libe programe: vos estoz libe del candjî eyet del cossemer.\n"
+"I n' a NOLE WAERANTEYE, ossu lon k' est permis påzès lwès.\n"
 
 #. TRANSLATORS: The %s placeholder expands to an author's name.
 #: src/iconv.c:202
@@ -166,31 +171,22 @@ msgstr "Sicrît pa %s.\n"
 #. The %s placeholder expands to a command-line option.
 #: src/iconv.c:296
 #, c-format
-msgid ""
-"%s argument: A format directive with a variable width is not allowed here."
-msgstr ""
-"årgumint «%s»: Ene directive di format avou ene lårdjeu variåve ni s' pout "
-"nén eployî chal."
+msgid "%s argument: A format directive with a variable width is not allowed here."
+msgstr "årgumint «%s»: Ene directive di format avou ene lårdjeur variåve ni s' pout nén eployî cial."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #: src/iconv.c:311
 #, c-format
-msgid ""
-"%s argument: A format directive with a variable precision is not allowed "
-"here."
-msgstr ""
-"årgumint «%s»: Ene directive di format avou ene precizion variåve ni s' pout "
-"nén eployî chal."
+msgid "%s argument: A format directive with a variable precision is not allowed here."
+msgstr "årgumint «%s»: Ene directive di format avou ene precizion variåve ni s' pout nén eployî chal."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #: src/iconv.c:327
 #, c-format
 msgid "%s argument: A format directive with a size is not allowed here."
-msgstr ""
-"årgumint «%s»: Ene directive di format avou ene grandeu ni s' pout nén "
-"eployî chal."
+msgstr "årgumint «%s»: Ene directive di format avou ene grandeur ni s' pout nén eployî chal."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
@@ -205,34 +201,24 @@ msgstr "årgumint «%s»: Li tchinne finixh e plin mitan d' ene directive."
 #: src/iconv.c:376
 #, c-format
 msgid "%s argument: The character '%c' is not a valid conversion specifier."
-msgstr ""
-"årgumint «%s»: Li caractere «%c» n' est nén on specifieu d' kiviersaedje "
-"valide."
+msgstr "årgumint «%s»: Li caractere «%c» n' est nén on specifieu d' kiviersaedje valide."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #: src/iconv.c:382
 #, c-format
-msgid ""
-"%s argument: The character that terminates the format directive is not a "
-"valid conversion specifier."
-msgstr ""
-"årgumint «%s»: Li caractere ki finixh li directive di format n' est nén on "
-"specifieu d' kiviersaedje valide."
+msgid "%s argument: The character that terminates the format directive is not a valid conversion specifier."
+msgstr "årgumint «%s»: Li caractere ki finixh li directive di format n' est nén on specifieu d' kiviersaedje valide."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #. The %u placeholder expands to the number of arguments consumed by the format string.
 #: src/iconv.c:398
 #, c-format
-msgid ""
-"%s argument: The format string consumes more than one argument: %u argument."
-msgid_plural ""
-"%s argument: The format string consumes more than one argument: %u arguments."
-msgstr[0] ""
-"årgumint «%s»: Li tchinne di format eploye pus d' èn årgumint: %u årgumint."
-msgstr[1] ""
-"årgumint «%s»: Li tchinne di format eploye pus d' èn årgumint: %u årgumints."
+msgid "%s argument: The format string consumes more than one argument: %u argument."
+msgid_plural "%s argument: The format string consumes more than one argument: %u arguments."
+msgstr[0] "årgumint «%s»: Li tchinne di format eploye pus d' èn årgumint: %u årgumint."
+msgstr[1] "årgumint «%s»: Li tchinne di format eploye pus d' èn årgumint: %u årgumints."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --byte-subst.
@@ -246,16 +232,14 @@ msgstr "dji n' sai cvierser des replaeçaedjes d' octets viè unicôde: %s"
 #: src/iconv.c:496
 #, c-format
 msgid "cannot convert unicode substitution to target encoding: %s"
-msgstr ""
-"dji n' sai cvierser des replaeçaedjes unicôde viè l' ecôdaedje såme: %s"
+msgstr "dji n' sai cvierser des replaeçaedjes unicôde viè l' ecôdaedje såme: %s"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --byte-subst.
 #: src/iconv.c:537
 #, c-format
 msgid "cannot convert byte substitution to wide string: %s"
-msgstr ""
-"dji n' sai cvierser des replaeçaedjes d' octets viè des tchinnes wchar: %s"
+msgstr "dji n' sai cvierser des replaeçaedjes d' octets viè des tchinnes wchar: %s"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --widechar-subst.
@@ -269,8 +253,7 @@ msgstr "dji n' sai cvierser des replaeçaedjes wchar viè l' ecôdaedje såme: %
 #: src/iconv.c:619
 #, c-format
 msgid "cannot convert byte substitution to target encoding: %s"
-msgstr ""
-"dji n' sai cvierser des replaeçaedjes d' octets viè l' ecôdaedje såme: %s"
+msgstr "dji n' sai cvierser des replaeçaedjes d' octets viè l' ecôdaedje såme: %s"
 
 #. TRANSLATORS: An error message.
 #. The placeholders expand to the input file name, a line number, and a column number.
@@ -305,56 +288,54 @@ msgstr "%s: aroke d' intrêye/rexhowe"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the encoding name, specified through --from-code.
-#: src/iconv.c:1014
+#: src/iconv.c:1015
 #, c-format
 msgid "conversion from %s unsupported"
 msgstr "li cviersaedje a pårti d' l' ecôdaedje %s n' est nén sopoirté"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the encoding name, specified through --to-code.
-#: src/iconv.c:1020
+#: src/iconv.c:1021
 #, c-format
 msgid "conversion to %s unsupported"
 msgstr "li cviersaedje viè l' ecôdaedje %s n' est nén sopoirté"
 
 #. TRANSLATORS: An error message.
 #. The placeholders expand to the encoding names, specified through --from-code and --to-code, respectively.
-#: src/iconv.c:1026
+#: src/iconv.c:1027
 #, c-format
 msgid "conversion from %s to %s unsupported"
 msgstr "li cviersaedje di l' ecôdaedje %s viè %s n' est nén sopoirté"
 
 #. TRANSLATORS: Additional advice after an error message.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:1031
+#: src/iconv.c:1032
 #, c-format
 msgid "try '%s -l' to get the list of supported encodings"
 msgstr "sayîz «%s -l» po-z aveur li djivêye des ecôdaedjes sopoirtés"
 
 #. TRANSLATORS: A filename substitute denoting standard input.
-#: src/iconv.c:1088
+#: src/iconv.c:1089
 msgid "(stdin)"
 msgstr "(intrêye sitandård)"
 
 #. TRANSLATORS: The first part of an error message.
 #. It is followed by a colon and a detail message.
 #. The %s placeholder expands to the input file name.
-#: src/iconv.c:1100
+#: src/iconv.c:1101
 #, c-format
 msgid "%s"
 msgstr "%s"
 
 #. TRANSLATORS: An error message.
-#: src/iconv.c:1114
+#: src/iconv.c:1115
 #, c-format
 msgid "I/O error"
 msgstr "Aroke d' I/R"
 
 #~ msgid ""
-#~ "This is free software; see the source for copying conditions.  There is "
-#~ "NO\n"
-#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
-#~ "PURPOSE.\n"
+#~ "This is free software; see the source for copying conditions.  There is NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 #~ msgstr ""
 #~ "Çouchal, c' est on libe programe; vos l' poloz bén spåde et sel poloz vs\n"
 #~ "bén candjî tot shuvant li Licince Publike Djeneråle (GPL)\n"

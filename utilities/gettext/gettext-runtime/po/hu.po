@@ -1,111 +1,86 @@
 # Hungarian translation for gettext-runtime.
+# Copyright (C) 2014, 2015, 2019, 2022 Free Software Foundation, Inc.
 # This file is distributed under the same license as the gettext package.
-# Copyright (C) 2014 Free Software Foundation, Inc.
 #
-# Balázs Úr <urbalazs@gmail.com>, 2014, 2015.
+# Balázs Úr <ur.balazs@fsf.hu>, 2014, 2015, 2019, 2022.
 msgid ""
 msgstr ""
-"Project-Id-Version: GNU gettext-runtime 0.19.4.73\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
-"PO-Revision-Date: 2015-06-23 20:33+0200\n"
-"Last-Translator: Balázs Úr <urbalazs@gmail.com>\n"
+"Project-Id-Version: GNU gettext-runtime 0.20.2\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2020-04-13 15:53+0200\n"
+"PO-Revision-Date: 2022-10-21 00:26+0200\n"
+"Last-Translator: Balázs Úr <ur.balazs@fsf.hu>\n"
 "Language-Team: Hungarian <translation-team-hu@lists.sourceforge.net>\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Lokalize 1.2\n"
+"X-Generator: Lokalize 19.12.3\n"
 
 #: gnulib-lib/closeout.c:66
 msgid "write error"
 msgstr "írási hiba"
 
-#: gnulib-lib/error.c:191
+#: gnulib-lib/error.c:195
 msgid "Unknown system error"
 msgstr "Ismeretlen rendszerhiba"
 
-#: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
+#: gnulib-lib/getopt.c:278
 #, c-format
-msgid "%s: option '%s' is ambiguous; possibilities:"
-msgstr "%s: a(z) „%s” kapcsoló nem egyértelmű; lehetőségek:"
+msgid "%s: option '%s%s' is ambiguous\n"
+msgstr "%s: a(z) „%s%s” kapcsoló nem egyértelmű\n"
 
-#: gnulib-lib/getopt.c:619
+#: gnulib-lib/getopt.c:284
 #, c-format
-msgid "%s: option '%s' is ambiguous\n"
-msgstr "%s: a(z) „%s” kapcsoló nem egyértelmű\n"
+msgid "%s: option '%s%s' is ambiguous; possibilities:"
+msgstr "%s: a(z) „%s%s” kapcsoló nem egyértelmű, lehetőségek:"
 
-#: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
+#: gnulib-lib/getopt.c:319
 #, c-format
-msgid "%s: option '--%s' doesn't allow an argument\n"
-msgstr "%s: a(z) „--%s” kapcsoló nem fogad el argumentumot\n"
+msgid "%s: unrecognized option '%s%s'\n"
+msgstr "%s: ismeretlen „%s%s” kapcsoló\n"
 
-#: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
+#: gnulib-lib/getopt.c:345
 #, c-format
-msgid "%s: option '%c%s' doesn't allow an argument\n"
-msgstr "%s: a(z) „%c%s” kapcsoló nem fogad el argumentumot\n"
+msgid "%s: option '%s%s' doesn't allow an argument\n"
+msgstr "%s: a(z) „%s%s” kapcsoló nem enged meg argumentumot\n"
 
-#: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
+#: gnulib-lib/getopt.c:360
 #, c-format
-msgid "%s: option '--%s' requires an argument\n"
-msgstr "%s: a(z) „--%s” kapcsolóhoz egy argumentum szükséges\n"
+msgid "%s: option '%s%s' requires an argument\n"
+msgstr "%s: a(z) „%s%s” kapcsolóhoz egy argumentum szükséges\n"
 
-#: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
-#, c-format
-msgid "%s: unrecognized option '--%s'\n"
-msgstr "%s: ismeretlen „--%s” kapcsoló\n"
-
-#: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
-#, c-format
-msgid "%s: unrecognized option '%c%s'\n"
-msgstr "%s: ismeretlen „%c%s” kapcsoló\n"
-
-#: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
+#: gnulib-lib/getopt.c:621
 #, c-format
 msgid "%s: invalid option -- '%c'\n"
 msgstr "%s: érvénytelen -- „%c” kapcsoló\n"
 
-#: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
-#: gnulib-lib/getopt.c:1136
+#: gnulib-lib/getopt.c:636 gnulib-lib/getopt.c:682
 #, c-format
 msgid "%s: option requires an argument -- '%c'\n"
 msgstr "%s: a kapcsolóhoz egy -- „%c” argumentum szükséges\n"
-
-#: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
-#, c-format
-msgid "%s: option '-W %s' is ambiguous\n"
-msgstr "%s: a „-W %s” kapcsoló nem egyértelmű\n"
-
-#: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
-#, c-format
-msgid "%s: option '-W %s' doesn't allow an argument\n"
-msgstr "%s: a „-W %s” kapcsoló nem fogad el argumentumot\n"
-
-#: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
-#, c-format
-msgid "%s: option '-W %s' requires an argument\n"
-msgstr "%s: a „-W %s” kapcsolóhoz egy argumentum szükséges\n"
 
 #: gnulib-lib/xmalloc.c:38
 #, c-format
 msgid "memory exhausted"
 msgstr "elfogyott a memória"
 
-#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:123
+#: src/envsubst.c:112 src/gettext.c:137 src/ngettext.c:126
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <%s>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
 "Copyright © %s Free Software Foundation, Inc.\n"
-"Licenc GPLv3+: GNU GPL 3. vagy későbbi verzió <http://gnu.org/licenses/gpl.html>\n"
+"Licenc GPLv3+: GNU GPL 3. vagy későbbi verzió <%s>\n"
 "Ez egy szabad szoftver: szabadon módosíthatja és terjesztheti.\n"
 "Nincs SEMMIFÉLE GARANCIA, a törvény által megengedett mértékben.\n"
 
-#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:129
+#: src/envsubst.c:118 src/gettext.c:143 src/ngettext.c:132
 #, c-format
 msgid "Written by %s.\n"
 msgstr "Írta: %s.\n"
@@ -115,57 +90,57 @@ msgstr "Írta: %s.\n"
 msgid "Bruno Haible"
 msgstr "Bruno Haible"
 
-#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:141
+#: src/envsubst.c:127 src/gettext.c:161 src/ngettext.c:144
 #, c-format
 msgid "too many arguments"
 msgstr "túl sok argumentum"
 
-#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:153
+#: src/envsubst.c:138 src/gettext.c:171 src/ngettext.c:156
 #, c-format
 msgid "missing arguments"
 msgstr "hiányzó argumentumok"
 
-#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:207
+#: src/envsubst.c:176 src/gettext.c:248 src/ngettext.c:213
 #, c-format
 msgid "Try '%s --help' for more information.\n"
 msgstr "További információkért próbálja a(z) „%s --help” parancsot.\n"
 
-#: src/envsubst.c:176
+#: src/envsubst.c:181
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [SHELL-FORMAT]\n"
 msgstr "Használat: %s [KAPCSOLÓ] [SHELL-FORMÁTUM]\n"
 
-#: src/envsubst.c:181
+#: src/envsubst.c:186
 #, c-format, no-wrap
 msgid "Substitutes the values of environment variables.\n"
 msgstr "A környezeti változók értékeit helyettesíti.\n"
 
-#: src/envsubst.c:185
+#: src/envsubst.c:190
 #, c-format, no-wrap
 msgid "Operation mode:\n"
 msgstr "Működési mód:\n"
 
-#: src/envsubst.c:188
+#: src/envsubst.c:193
 #, c-format, no-wrap
 msgid "  -v, --variables             output the variables occurring in SHELL-FORMAT\n"
 msgstr "  -v, --variables             kiírja a SHELL-FORMÁTUMBAN előforduló változókat\n"
 
-#: src/envsubst.c:192
+#: src/envsubst.c:197 src/gettext.c:277 src/ngettext.c:243
 #, c-format, no-wrap
 msgid "Informative output:\n"
 msgstr "Tájékoztató kimenet:\n"
 
-#: src/envsubst.c:195
+#: src/envsubst.c:200
 #, c-format, no-wrap
 msgid "  -h, --help                  display this help and exit\n"
 msgstr "  -h, --help                  ezen súgó megjelenítése és kilépés\n"
 
-#: src/envsubst.c:198
+#: src/envsubst.c:203
 #, c-format, no-wrap
 msgid "  -V, --version               output version information and exit\n"
 msgstr "  -V, --version               verzióinformációk kiírása és kilépés\n"
 
-#: src/envsubst.c:202
+#: src/envsubst.c:207
 #, c-format, no-wrap
 msgid ""
 "In normal operation mode, standard input is copied to standard output,\n"
@@ -182,7 +157,7 @@ msgstr ""
 "környezeti változók lesznek helyettesítve. Egyébként a szabványos bemeneten\n"
 "előforduló összes környezeti változó hivatkozás helyettesítve lesz.\n"
 
-#: src/envsubst.c:211
+#: src/envsubst.c:216
 #, c-format, no-wrap
 msgid ""
 "When --variables is used, standard input is ignored, and the output consists\n"
@@ -191,29 +166,35 @@ msgstr ""
 "A --variables használatakor a szabványos bemenet mellőzve lesz, és a kimenet\n"
 "a SHELL-FORMÁTUMBAN hivatkozott környezeti változókból áll, soronként egy.\n"
 
-#. TRANSLATORS: The placeholder indicates the bug-reporting address
-#. for this package.  Please add _another line_ saying
+#. TRANSLATORS: The first placeholder is the web address of the Savannah
+#. project of this package.  The second placeholder is the bug-reporting
+#. email address for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:245
-msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
-msgstr "A hibákat ezen a címen jelentse: <bug-gnu-gettext@gnu.org>.\n"
+#: src/envsubst.c:225 src/gettext.c:301 src/ngettext.c:264
+#, c-format
+msgid ""
+"Report bugs in the bug tracker at <%s>\n"
+"or by email to <%s>.\n"
+msgstr ""
+"A hibákat a(z) <%s> címen lévő hibakövetőbe jelentse,\n"
+"vagy küldjön e-mailt a(z) <%s> címre.\n"
 
-#: src/envsubst.c:442
+#: src/envsubst.c:453
 #, c-format
 msgid "error while reading \"%s\""
 msgstr "hiba a(z) „%s” olvasása közben"
 
-#: src/envsubst.c:443
+#: src/envsubst.c:453
 msgid "standard input"
 msgstr "szabványos bemenet"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/gettext.c:140 src/ngettext.c:129
+#: src/gettext.c:143 src/ngettext.c:132
 msgid "Ulrich Drepper"
 msgstr "Ulrich Drepper"
 
-#: src/gettext.c:244
+#: src/gettext.c:253
 #, c-format, no-wrap
 msgid ""
 "Usage: %s [OPTION] [[TEXTDOMAIN] MSGID]\n"
@@ -222,34 +203,58 @@ msgstr ""
 "Használat: %s [KAPCSOLÓ] [[SZÖVEGTARTOMÁNY] MSGID]\n"
 "vagy:    %s [KAPCSOLÓ] -s [MSGID]...\n"
 
-#: src/gettext.c:250
+#: src/gettext.c:259
 #, c-format, no-wrap
 msgid "Display native language translation of a textual message.\n"
 msgstr "A szöveges üzenet natív nyelvi fordításának megjelenítése.\n"
 
-#: src/gettext.c:254
+#: src/gettext.c:263
 #, c-format, no-wrap
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
+msgstr ""
+"  -d, --domain=SZÖVEGTARTOMÁNY  lefordított üzenetek lekérése a\n"
+"                            SZÖVEGTARTOMÁNYBÓL\n"
+
+#: src/gettext.c:265 src/ngettext.c:230
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for MSGID\n"
+msgstr "  -c, --context=KÖRNYEZET   környezet megadása az MSGID számára\n"
+
+#: src/gettext.c:267 src/ngettext.c:232
+#, c-format
+msgid "  -e                        enable expansion of some escape sequences\n"
+msgstr "  -e                        néhány fedéssorozat kifejtésének engedélyezése\n"
+
+#: src/gettext.c:269
+#, c-format
+msgid "  -n                        suppress trailing newline\n"
+msgstr "  -n                        a záró új sorok elnyomása\n"
+
+#: src/gettext.c:271 src/ngettext.c:234
+#, c-format
+msgid "  -E                        (ignored for compatibility)\n"
+msgstr "  -E                        (mellőzve a kompatibilitás miatt)\n"
+
+#: src/gettext.c:273
+#, c-format
 msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -n                        suppress trailing newline\n"
-"  -V, --version             display version information and exit\n"
 "  [TEXTDOMAIN] MSGID        retrieve translated message corresponding\n"
 "                            to MSGID from TEXTDOMAIN\n"
 msgstr ""
-"  -d, --domain=SZÖVEGTARTOMÁNY   lefordított üzenetek lekérése a\n"
-"                            SZÖVEGTARTOMÁNYBÓL\n"
-"  -e                        néhány fedéssorozat kifejtésének engedélyezése\n"
-"  -E                        (mellőzve a kompatibilitás miatt)\n"
-"  -h, --help                ezen súgó megjelenítése és kilépés\n"
-"  -n                        a záró új sorok elnyomása\n"
-"  -V, --version             verzióinformációk kiírása és kilépés\n"
-"  [SZÖVEGTARTOMÁNY] MSGID        az MSGID-nak megfelelő lefordított üzenet\n"
-"                            lekérése a SZÖVEGTARTOMÁNYBÓL\n"
+"  [SZÖVEGTARTOMÁNY] MSGID   MSGID-nak megfelelő lefordított üzenet lekérése\n"
+"                            a SZÖVEGTARTOMÁNYBÓL\n"
 
-#: src/gettext.c:265
+#: src/gettext.c:279 src/ngettext.c:245
+#, c-format
+msgid "  -h, --help                display this help and exit\n"
+msgstr "  -h, --help                ezen súgó megjelenítése és kilépés\n"
+
+#: src/gettext.c:281 src/ngettext.c:247
+#, c-format
+msgid "  -V, --version             display version information and exit\n"
+msgstr "  -V, --version             verzióinformációk megjelenítése és kilépés\n"
+
+#: src/gettext.c:285
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -271,12 +276,12 @@ msgstr ""
 "fordítva.\n"
 "Szabványos keresési könyvtár: %s\n"
 
-#: src/ngettext.c:212
+#: src/ngettext.c:218
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n"
 msgstr "Használat: %s [KAPCSOLÓ] [SZÖVEGTARTOMÁNY] MSGID MSGID-TÖBBES DARABSZÁM\n"
 
-#: src/ngettext.c:217
+#: src/ngettext.c:223
 #, c-format, no-wrap
 msgid ""
 "Display native language translation of a textual message whose grammatical\n"
@@ -285,29 +290,29 @@ msgstr ""
 "Azon szöveges üzenet natív nyelvi fordításának megjelenítése, amelyek\n"
 "nyelvtani alakja egy számtól függ.\n"
 
-#: src/ngettext.c:222
+#: src/ngettext.c:228
 #, c-format, no-wrap
-msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -V, --version             display version information and exit\n"
-"  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
-"  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
-"  COUNT                     choose singular/plural form based on this value\n"
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
 msgstr ""
-"  -d, --domain=SZÖVEGTARTOMÁNY   lefordított üzenet lekérése a\n"
+"  -d, --domain=SZÖVEGTARTOMÁNY  lefordított üzenet lekérése a\n"
 "                            SZÖVEGTARTOMÁNYBÓL\n"
-"  -e                        néhány fedéssorozat kifejtésének engedélyezése\n"
-"  -E                        (mellőzve a kompatibilitás miatt)\n"
-"  -h, --help                ezen súgó megjelenítése és kilépés\n"
-"  -V, --version             verzióinformációk kiírása és kilépés\n"
-"  [SZÖVEGTARTOMÁNY]         lefordított üzenet lekérése a SZÖVEGTARTOMÁNYBÓL\n"
-"  MSGID MSGID-TÖBBES        MSGID (egyesszám) / MSGID-TÖBBES (többesszám)\n"
-"  DARABSZÁM               egyesszám/többesszám választása ezen érték alapján\n"
 
-#: src/ngettext.c:233
+#: src/ngettext.c:236
+#, c-format
+msgid "  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
+msgstr "  [SZÖVEGTARTOMÁNY]         lefordított üzenet lekérése a SZÖVEGTARTOMÁNYBÓL\n"
+
+#: src/ngettext.c:238
+#, c-format
+msgid "  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
+msgstr "  MSGID MSGID-TÖBBES        MSGID (egyes) / MSGID-TÖBBES (többes) lefordítása\n"
+
+#: src/ngettext.c:240
+#, c-format
+msgid "  COUNT                     choose singular/plural form based on this value\n"
+msgstr "  DARABSZÁM                 egyes/többes alak választása ezen érték alapján\n"
+
+#: src/ngettext.c:251
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"

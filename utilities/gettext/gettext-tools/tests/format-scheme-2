@@ -1,7 +1,7 @@
 #! /bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test checking of Lisp format strings.
+# Test checking of Scheme format strings.
 
 cat <<\EOF > f-sc-2.data
 # Valid: ~~ doesn't count
@@ -178,6 +178,9 @@ msgstr "xyz~{~1@*~C~2:*~D~^~1*~}"
 # Invalid: ~^ inside iteration depends on position
 msgid  "abc~{~D ~^~C~}"
 msgstr "xyz~{~1@*~C~2:*~D~1*~^~}"
+# Valid: ( | . i . i) normalizes to ( | . i)
+msgid  "abc~@{~D~^~D~}"
+msgstr "xyz~@{~D~}"
 # Invalid: type compatibility with non-strict checking
 msgid "abc~{~c~c~}"
 msgid_plural "abc~{~c~c~}"
@@ -204,8 +207,8 @@ ${msgid_line}
 ${msgstr_line}
 EOF
   else
-    cat <<EOF > f-l-2-$n.po
-#, lisp-format
+    cat <<EOF > f-sc-2-$n.po
+#, scheme-format
 ${msgid_line}
 ${msgid_plural_line}
 ${msgstr0_line}

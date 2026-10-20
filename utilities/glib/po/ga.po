@@ -3731,6 +3731,102 @@ msgstr ""
 msgid "Invalid compressed data"
 msgstr "Óstainm neamhbhailí"
 
+msgctxt "full month name with day"
+msgid "January"
+msgstr "Eanáir"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "Feabhra"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "Márta"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "Aibreán"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "Bealtaine"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "Meitheamh"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "Iúil"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "Lúnasa"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "Meán Fómhair"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "Deireadh Fómhair"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "Samhain"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "Nollaig"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "Ean"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "Feabh"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "Márta"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "Aib"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "Beal"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "Meith"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "Iúil"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "Lún"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "MFómh"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "DFómh"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "Samh"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "Noll"
+
 #~ msgctxt "GDateTime"
 #~ msgid "am"
 #~ msgstr "am"

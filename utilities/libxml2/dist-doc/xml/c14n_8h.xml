@@ -1,0 +1,614 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="c14n_8h" kind="file" language="C++">
+    <compoundname>c14n.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="xpath_8h" local="no">libxml/xpath.h</includes>
+    <includedby refid="c14n_8c" local="no">/builds/GNOME/libxml2/c14n.c</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>c14n.h</label>
+        <link refid="c14n_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xpath.h</label>
+        <link refid="xpath_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="6">
+        <label>limits.h</label>
+      </node>
+      <node id="8">
+        <label>stdarg.h</label>
+      </node>
+      <node id="15">
+        <label>stddef.h</label>
+      </node>
+      <node id="5">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlC14NMode</name>
+        <enumvalue id="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871a5569344c37bbe8d7630e93561c0d5bad" prot="public">
+          <name>XML_C14N_1_0</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+<para>Original C14N 1.0 spec. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871a0acc052398a4ce2016e0c132180b8c50" prot="public">
+          <name>XML_C14N_EXCLUSIVE_1_0</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+<para>Exclusive C14N 1.0 spec. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871a32a14c6ad5006d9e645c85fe6812c105" prot="public">
+          <name>XML_C14N_1_1</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+<para>C14N 1.1 spec. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Predefined values for C14N modes. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="c14n.h" line="51" column="1" bodyfile="c14n.h" bodystart="51" bodyend="58"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="c14n_8h_1a5d6fb1eca4c13443bf69da2a5fab3c63" prot="public" static="no">
+        <type>int(*</type>
+        <definition>typedef int(* xmlC14NIsVisibleCallback) (void *user_data, xmlNode *node, xmlNode *parent)</definition>
+        <argsstring>)(void *user_data, xmlNode *node, xmlNode *parent)</argsstring>
+        <name>xmlC14NIsVisibleCallback</name>
+        <briefdescription>
+<para>This is the core C14N function. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Signature for a C14N callback on visible nodes</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>user_data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>parent</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the parent node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if the node should be included </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="c14n.h" line="97" column="9" bodyfile="c14n.h" bodystart="97" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="c14n_8h_1ae5e77b937212f74e64819fc29b8144b2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlC14NDocSaveTo</definition>
+        <argsstring>(xmlDoc *doc, xmlNodeSet *nodes, int mode, xmlChar **inclusive_ns_prefixes, int with_comments, xmlOutputBuffer *buf)</argsstring>
+        <name>xmlC14NDocSaveTo</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="xpath_8h_1a97cc375e3d58372cb9d9db078d25e6e1" kindref="member">xmlNodeSet</ref> *</type>
+          <declname>nodes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>inclusive_ns_prefixes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>with_comments</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Dumps the canonized image of given XML document into the provided buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For details see &quot;Canonical XML&quot; (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>) or &quot;Exclusive XML Canonicalization&quot; (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the nodes set to be included in the canonized image or NULL if all document nodes should be included </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for exclusive canonicalization, ignored otherwise) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the output buffer to store canonical XML; this buffer MUST have encoder==NULL because C14N requires UTF-8 output </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>non-negative value on success or a negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="c14n.h" line="61" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1916" bodyend="1926" declfile="c14n.h" declline="61" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8h_1a0b03db0d24c59380144912ffe50a5474" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlC14NDocDumpMemory</definition>
+        <argsstring>(xmlDoc *doc, xmlNodeSet *nodes, int mode, xmlChar **inclusive_ns_prefixes, int with_comments, xmlChar **doc_txt_ptr)</argsstring>
+        <name>xmlC14NDocDumpMemory</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="xpath_8h_1a97cc375e3d58372cb9d9db078d25e6e1" kindref="member">xmlNodeSet</ref> *</type>
+          <declname>nodes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>inclusive_ns_prefixes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>with_comments</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>doc_txt_ptr</declname>
+        </param>
+        <briefdescription>
+<para>Dumps the canonized image of given XML document into memory. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For details see &quot;Canonical XML&quot; (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>) or &quot;Exclusive XML Canonicalization&quot; (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the nodes set to be included in the canonized image or NULL if all document nodes should be included </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for exclusive canonicalization, ignored otherwise) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc_txt_ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the memory pointer for allocated canonical XML text; the caller of this functions is responsible for calling <ref refid="xmlmemory_8h_1a30231cbab46e8d659a5262c3b781164b" kindref="member">xmlFree()</ref> to free allocated memory </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written on success or a negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="c14n.h" line="69" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1949" bodyend="1993" declfile="c14n.h" declline="69" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8h_1af73d08aab2819d554e7492fb49ec3745" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlC14NDocSave</definition>
+        <argsstring>(xmlDoc *doc, xmlNodeSet *nodes, int mode, xmlChar **inclusive_ns_prefixes, int with_comments, const char *filename, int compression)</argsstring>
+        <name>xmlC14NDocSave</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="xpath_8h_1a97cc375e3d58372cb9d9db078d25e6e1" kindref="member">xmlNodeSet</ref> *</type>
+          <declname>nodes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>inclusive_ns_prefixes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>with_comments</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>compression</declname>
+        </param>
+        <briefdescription>
+<para>Dumps the canonized image of given XML document into the file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For details see &quot;Canonical XML&quot; (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>) or &quot;Exclusive XML Canonicalization&quot; (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the nodes set to be included in the canonized image or NULL if all document nodes should be included </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for exclusive canonicalization, ignored otherwise) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename to store canonical XML image </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>compression</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compression level (zlib required): -1 - libxml default, 0 - uncompressed, &gt;0 - compression level </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written success or a negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="c14n.h" line="77" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="2017" bodyend="2057" declfile="c14n.h" declline="77" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8h_1a86550661d85e370e6da9a94491f4cfc0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlC14NExecute</definition>
+        <argsstring>(xmlDoc *doc, xmlC14NIsVisibleCallback is_visible_callback, void *user_data, int mode, xmlChar **inclusive_ns_prefixes, int with_comments, xmlOutputBuffer *buf)</argsstring>
+        <name>xmlC14NExecute</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="c14n_8h_1a5d6fb1eca4c13443bf69da2a5fab3c63" kindref="member">xmlC14NIsVisibleCallback</ref></type>
+          <declname>is_visible_callback</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>user_data</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>inclusive_ns_prefixes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>with_comments</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Dumps the canonized image of given XML document into the provided buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For details see &quot;Canonical XML&quot; (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>) or &quot;Exclusive XML Canonicalization&quot; (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>is_visible_callback</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the function to use to determine is node visible or not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>user_data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the first parameter for <computeroutput>is_visible_callback</computeroutput> function (in most cases, it is nodes set) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for exclusive canonicalization, ignored otherwise) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the output buffer to store canonical XML; this buffer MUST have encoder==NULL because C14N requires UTF-8 output </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>non-negative value on success or a negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="c14n.h" line="102" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1817" bodyend="1894" declfile="c14n.h" declline="102" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Provide Canonical XML and Exclusive XML Canonicalization. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>the c14n modules provides a</para>
+<para>&quot;Canonical XML&quot; implementation <ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink></para>
+<para>and an</para>
+<para>&quot;Exclusive XML Canonicalization&quot; implementation <ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink></para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Aleksey Sanin </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="c14n.h"/>
+  </compounddef>
+</doxygen>

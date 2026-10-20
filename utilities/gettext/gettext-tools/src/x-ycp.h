@@ -1,6 +1,5 @@
 /* xgettext YCP backend.
-   Copyright (C) 2001-2003, 2006, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,13 +12,15 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
 #include <stdio.h>
 
 #include "message.h"
-#include "xgettext.h"
+#include "xg-arglist-context.h"
 
 
 #ifdef __cplusplus
@@ -31,8 +32,8 @@ extern "C" {
   { "ycp",    "YCP"   },                                                \
 
 #define SCANNERS_YCP \
-  { "YCP",              extract_ycp,                                    \
-                        &flag_table_ycp, &formatstring_ycp, NULL, NULL },     \
+  { "YCP",              extract_ycp, NULL,                              \
+                        &flag_table_ycp, &formatstring_ycp, NULL },     \
 
 /* Scan an YCP file and add its translatable strings to mdlp.  */
 extern void extract_ycp (FILE *fp, const char *real_filename,

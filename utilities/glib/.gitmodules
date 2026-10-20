@@ -1,0 +1,5 @@
+[submodule "subprojects/gvdb"]
+	path = subprojects/gvdb
+	url = ../../GNOME/gvdb.git
+	branch = 2b42fc75f09dbe1cd1057580b5782b08f2dcb400
+	shallow = true

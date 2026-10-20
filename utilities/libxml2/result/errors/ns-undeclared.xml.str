@@ -1,0 +1,3 @@
+./test/errors/ns-undeclared.xml:1: namespace error : Namespace prefix xLink for href on linearGradient is not defined
+<linearGradient id='gradient4' xLink:href='#gradient3' href='otherHref'/>
+                                                                       ^

@@ -5,65 +5,56 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/unit_strings.h>
 #include "packet-ipx.h"
 
 void proto_register_ipxwan(void);
 void proto_reg_handoff_ipxwan(void);
 
+static dissector_handle_t ipxwan_handle;
+
 /*
  * See RFC 1362 for version 1 of this protocol; see the NetWare Link
  * Services Protocol Specification, chapter 3, for version 2.
  */
-static int proto_ipxwan = -1;
+static int proto_ipxwan;
 
-static int hf_ipxwan_identifier = -1;
-static int hf_ipxwan_packet_type = -1;
-static int hf_ipxwan_node_id = -1;
-static int hf_ipxwan_sequence_number = -1;
-static int hf_ipxwan_num_options = -1;
-static int hf_ipxwan_option_num = -1;
-static int hf_ipxwan_accept_option = -1;
-static int hf_ipxwan_option_data_len = -1;
-static int hf_ipxwan_routing_type = -1;
-static int hf_ipxwan_wan_link_delay = -1;
-static int hf_ipxwan_common_network_number = -1;
-static int hf_ipxwan_router_name = -1;
-static int hf_ipxwan_delay = -1;
-static int hf_ipxwan_throughput = -1;
-static int hf_ipxwan_request_size = -1;
-static int hf_ipxwan_delta_time = -1;
-static int hf_ipxwan_extended_node_id = -1;
-static int hf_ipxwan_node_number = -1;
-static int hf_ipxwan_compression_type = -1;
-static int hf_ipxwan_compression_options = -1;
-static int hf_ipxwan_compression_slots = -1;
-static int hf_ipxwan_compression_parameters = -1;
-static int hf_ipxwan_padding = -1;
-static int hf_ipxwan_option_value = -1;
+static int hf_ipxwan_identifier;
+static int hf_ipxwan_packet_type;
+static int hf_ipxwan_node_id;
+static int hf_ipxwan_sequence_number;
+static int hf_ipxwan_num_options;
+static int hf_ipxwan_option_num;
+static int hf_ipxwan_accept_option;
+static int hf_ipxwan_option_data_len;
+static int hf_ipxwan_routing_type;
+static int hf_ipxwan_wan_link_delay;
+static int hf_ipxwan_common_network_number;
+static int hf_ipxwan_router_name;
+static int hf_ipxwan_delay;
+static int hf_ipxwan_throughput;
+static int hf_ipxwan_request_size;
+static int hf_ipxwan_delta_time;
+static int hf_ipxwan_extended_node_id;
+static int hf_ipxwan_node_number;
+static int hf_ipxwan_compression_type;
+static int hf_ipxwan_compression_options;
+static int hf_ipxwan_compression_slots;
+static int hf_ipxwan_compression_parameters;
+static int hf_ipxwan_padding;
+static int hf_ipxwan_option_value;
 
-static gint ett_ipxwan = -1;
-static gint ett_ipxwan_option = -1;
+static int ett_ipxwan;
+static int ett_ipxwan_option;
 
-static expert_field ei_ipxwan_option_data_len = EI_INIT;
+static expert_field ei_ipxwan_option_data_len;
 
 static const value_string ipxwan_packet_type_vals[] = {
 	{ 0,    "Timer Request" },
@@ -128,16 +119,12 @@ dissect_ipxwan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	proto_item *ti;
 	proto_tree *ipxwan_tree = NULL;
 	int offset = 0;
-	guint8 packet_type;
-	guint8 num_options;
-	guint8 option_number;
+	uint8_t packet_type;
+	uint8_t num_options;
+	uint8_t option_number;
 	proto_tree *option_tree;
-	guint16 option_data_len;
-	guint16 wan_link_delay;
-	guint32 delay;
-	guint32 throughput;
-	guint32 delta_time;
-	guint8 compression_type;
+	uint16_t option_data_len;
+	uint8_t compression_type;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IPX WAN");
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -147,12 +134,12 @@ dissect_ipxwan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	ipxwan_tree = proto_item_add_subtree(ti, ett_ipxwan);
 
 	proto_tree_add_item(ipxwan_tree, hf_ipxwan_identifier, tvb,
-		    offset, 4, ENC_ASCII|ENC_NA);
+		    offset, 4, ENC_ASCII);
 
 	offset += 4;
-	packet_type = tvb_get_guint8(tvb, offset);
+	packet_type = tvb_get_uint8(tvb, offset);
 	col_add_str(pinfo->cinfo, COL_INFO,
-		    val_to_str(packet_type, ipxwan_packet_type_vals,
+		    val_to_str(pinfo->pool, packet_type, ipxwan_packet_type_vals,
 		        "Unknown packet type %u"));
 
 	proto_tree_add_uint(ipxwan_tree, hf_ipxwan_packet_type, tvb,
@@ -164,16 +151,16 @@ dissect_ipxwan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	proto_tree_add_item(ipxwan_tree, hf_ipxwan_sequence_number, tvb,
 		offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
-	num_options = tvb_get_guint8(tvb, offset);
+	num_options = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(ipxwan_tree, hf_ipxwan_num_options, tvb,
 		offset, 1, num_options);
 	offset += 1;
 
 	while (num_options != 0) {
-		option_number = tvb_get_guint8(tvb, offset);
+		option_number = tvb_get_uint8(tvb, offset);
 		option_tree = proto_tree_add_subtree_format(ipxwan_tree, tvb, offset, -1,
 			ett_ipxwan_option, &ti, "Option: %s",
-			val_to_str(option_number, ipxwan_option_num_vals,
+			val_to_str(pinfo->pool, option_number, ipxwan_option_num_vals,
 			    "Unknown (%u)"));
 
 		proto_tree_add_uint(option_tree, hf_ipxwan_option_num,
@@ -205,19 +192,15 @@ dissect_ipxwan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 				expert_add_info_format(pinfo, ti, &ei_ipxwan_option_data_len,
 					"Bogus length: %u, should be 54", option_data_len);
 			} else {
-				wan_link_delay = tvb_get_ntohs(tvb,
-					offset);
-				proto_tree_add_uint_format_value(option_tree,
+				proto_tree_add_item(option_tree,
 					hf_ipxwan_wan_link_delay, tvb,
-					offset, 2, wan_link_delay,
-					"%ums",
-					wan_link_delay);
+					offset, 2, ENC_BIG_ENDIAN);
 				proto_tree_add_item(option_tree,
 					hf_ipxwan_common_network_number,
 					tvb, offset+2, 4, ENC_NA);
 				proto_tree_add_item(option_tree,
 					hf_ipxwan_router_name, tvb,
-					offset+6, 48, ENC_ASCII|ENC_NA);
+					offset+6, 48, ENC_ASCII);
 			}
 			break;
 
@@ -226,17 +209,12 @@ dissect_ipxwan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 				expert_add_info_format(pinfo, ti, &ei_ipxwan_option_data_len,
 					"Bogus length: %u, should be 8", option_data_len);
 			} else {
-				delay = tvb_get_ntohl(tvb, offset);
-				proto_tree_add_uint_format_value(option_tree,
+				proto_tree_add_item(option_tree,
 					hf_ipxwan_delay, tvb,
-					offset, 4, delay,
-					"%uus", delay);
-				throughput = tvb_get_ntohl(tvb, offset);
-				proto_tree_add_uint_format_value(option_tree,
+					offset, 4, ENC_BIG_ENDIAN);
+				proto_tree_add_item(option_tree,
 					hf_ipxwan_throughput, tvb,
-					offset, 4, throughput,
-					"%uus",
-					throughput);
+					offset, 4, ENC_BIG_ENDIAN);
 			}
 			break;
 
@@ -248,12 +226,9 @@ dissect_ipxwan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 				proto_tree_add_item(option_tree,
 					hf_ipxwan_request_size, tvb,
 					offset, 4, ENC_BIG_ENDIAN);
-				delta_time = tvb_get_ntohl(tvb, offset);
-				proto_tree_add_uint_format_value(option_tree,
+				proto_tree_add_item(option_tree,
 					hf_ipxwan_delta_time, tvb,
-					offset, 4, delta_time,
-					"%uus",
-					delta_time);
+					offset, 4, ENC_BIG_ENDIAN);
 			}
 			break;
 
@@ -284,7 +259,7 @@ dissect_ipxwan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 				expert_add_info_format(pinfo, ti, &ei_ipxwan_option_data_len,
 					"Bogus length: %u, should be >= 1", option_data_len);
 			} else {
-				compression_type = tvb_get_guint8(tvb,
+				compression_type = tvb_get_uint8(tvb,
 					offset);
 				ti = proto_tree_add_uint(option_tree,
 					hf_ipxwan_compression_type, tvb,
@@ -371,7 +346,7 @@ proto_register_ipxwan(void)
 
 	    { &hf_ipxwan_wan_link_delay,
 	      { "WAN Link Delay", "ipxwan.rip_sap_info_exchange.wan_link_delay",
-	         FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+	         FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0, NULL, HFILL }},
 
 	    { &hf_ipxwan_common_network_number,
 	      { "Common Network Number", "ipxwan.rip_sap_info_exchange.common_network_number",
@@ -383,11 +358,11 @@ proto_register_ipxwan(void)
 
 	    { &hf_ipxwan_delay,
 	      { "Delay", "ipxwan.nlsp_information.delay",
-	         FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+	         FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0, NULL, HFILL }},
 
 	    { &hf_ipxwan_throughput,
 	      { "Throughput", "ipxwan.nlsp_information.throughput",
-	         FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+	         FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0, NULL, HFILL }},
 
 	    { &hf_ipxwan_request_size,
 	      { "Request Size", "ipxwan.nlsp_raw_throughput_data.request_size",
@@ -395,7 +370,7 @@ proto_register_ipxwan(void)
 
 	    { &hf_ipxwan_delta_time,
 	      { "Delta Time", "ipxwan.nlsp_raw_throughput_data.delta_time",
-	         FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+	         FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0, NULL, HFILL }},
 
 	    { &hf_ipxwan_extended_node_id,
 	      { "Extended Node ID", "ipxwan.extended_node_id",
@@ -432,7 +407,7 @@ proto_register_ipxwan(void)
 	      { "Option value", "ipxwan.option_value",
 	         FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ipxwan,
 		&ett_ipxwan_option,
 	};
@@ -447,20 +422,18 @@ proto_register_ipxwan(void)
 	proto_register_subtree_array(ett, array_length(ett));
 	expert_ipxwan = expert_register_protocol(proto_ipxwan);
 	expert_register_field_array(expert_ipxwan, ei, array_length(ei));
+
+	ipxwan_handle = register_dissector("ipxwan", dissect_ipxwan, proto_ipxwan);
 }
 
 void
 proto_reg_handoff_ipxwan(void)
 {
-	dissector_handle_t ipxwan_handle;
-
-	ipxwan_handle = create_dissector_handle(dissect_ipxwan,
-	    proto_ipxwan);
 	dissector_add_uint("ipx.socket", IPX_SOCKET_IPXWAN, ipxwan_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

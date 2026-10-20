@@ -184,20 +184,20 @@ include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libssl
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/armeabi/libssl.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/$(TARGET_ARCH_ABI)/libssl.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcrypto
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/armeabi/libcrypto.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/$(TARGET_ARCH_ABI)/libcrypto.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpcap
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libpcap/local/armeabi/libpcap.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libpcap/local/$(TARGET_ARCH_ABI)/libpcap.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libpcap
 include $(PREBUILT_STATIC_LIBRARY)

@@ -194,12 +194,12 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
 
   if(actx->external.direct_reference) {
     /* see if we can find a nice name */
-    name = oid_resolved_from_string(wmem_packet_scope(), actx->external.direct_reference);
+    name = oid_resolved_from_string(actx->pinfo->pool, actx->external.direct_reference);
     if(!name) name = actx->external.direct_reference;
 
-    if(last_rdn) { /* append it to the RDN */
-      g_strlcat(last_rdn, name, MAX_RDN_STR_LEN);
-      g_strlcat(last_rdn, "=", MAX_RDN_STR_LEN);
+    if(last_rdn_buf) { /* append it to the RDN */
+      wmem_strbuf_append(last_rdn_buf, name);
+      wmem_strbuf_append_c(last_rdn_buf, '=');
 
      /* append it to the tree */
      proto_item_append_text(tree, " (%%s=", name);
@@ -210,10 +210,10 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
 
     if((fmt = val_to_str_const(hf_index, fmt_vals, "")) && *fmt) {
       /* we have a format */
-      last_ava = (char *)wmem_alloc(wmem_packet_scope(), MAX_AVA_STR_LEN); *last_ava = '\0';
+      last_ava = (char *)wmem_alloc(actx->pinfo->pool, MAX_AVA_STR_LEN); *last_ava = '\0';
       register_frame_end_routine (actx->pinfo, x509if_frame_end);
 
-      g_snprintf(last_ava, MAX_AVA_STR_LEN, "%%s %%s", name, fmt);
+      snprintf(last_ava, MAX_AVA_STR_LEN, "%%s %%s", name, fmt);
 
       proto_item_append_text(tree, " %%s", last_ava);
 
@@ -235,17 +235,17 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
   actx->external.direct_reference = orig_oid;
 
   /* try and dissect as a string */
-  dissect_ber_octet_string(FALSE, actx, NULL, tvb, old_offset, hf_x509if_any_string, &out_tvb);
+  dissect_ber_octet_string(false, actx, NULL, tvb, old_offset, hf_x509if_any_string, &out_tvb);
 
   /* should also try and dissect as an OID and integer */
   /* of course, if I can look up the syntax .... */
 
   if(out_tvb) {
     /* it was a string - format it */
-    value = tvb_format_text(out_tvb, 0, tvb_reported_length(out_tvb));
+    value = tvb_format_text(actx->pinfo->pool, out_tvb, 0, tvb_reported_length(out_tvb));
 
-    if(last_rdn) {
-      g_strlcat(last_rdn, value, MAX_RDN_STR_LEN);
+    if(last_rdn_buf) {
+      wmem_strbuf_append(last_rdn_buf, value);
 
       /* append it to the tree*/
       proto_item_append_text(tree, "%%s)", value);
@@ -255,12 +255,12 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
       /* we have a format */
 
       if (!last_ava) {
-        last_ava = (char *)wmem_alloc(wmem_packet_scope(), MAX_AVA_STR_LEN);
+        last_ava = (char *)wmem_alloc(actx->pinfo->pool, MAX_AVA_STR_LEN);
       }
 
-      if(!(name = oid_resolved_from_string(wmem_packet_scope(), actx->external.direct_reference)))
+      if(!(name = oid_resolved_from_string(actx->pinfo->pool, actx->external.direct_reference)))
         name = actx->external.direct_reference;
-      g_snprintf(last_ava, MAX_AVA_STR_LEN, "%%s %%s %%s", name, fmt, value);
+      snprintf(last_ava, MAX_AVA_STR_LEN, "%%s %%s %%s", name, fmt, value);
 
       proto_item_append_text(tree, " %%s", last_ava);
 
@@ -328,30 +328,33 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
   offset=call_ber_oid_callback(actx->external.direct_reference, tvb, offset, actx->pinfo, tree, NULL);
 
 #.FN_BODY RelativeDistinguishedName
-  char *temp_dn;
-
-  rdn_one_value = FALSE;
+  rdn_one_value = false;
   top_of_rdn = tree;
-  last_rdn = (char *)wmem_alloc(wmem_packet_scope(), MAX_DN_STR_LEN); *last_rdn = '\0';
+  last_rdn_buf = wmem_strbuf_new(actx->pinfo->pool, "");
   register_frame_end_routine (actx->pinfo, x509if_frame_end);
 
   %(DEFAULT_BODY)s
 
-  /* we've finished - close the bracket */
-  proto_item_append_text(top_of_rdn, " (%%s)", last_rdn);
+  if (last_rdn_buf) {
+    /* we've finished - close the bracket */
+    proto_item_append_text(top_of_rdn, " (%%s)", wmem_strbuf_get_str(last_rdn_buf));
 
-  /* now append this to the DN */
-  if (last_dn) {
-    if(*last_dn) {
-      temp_dn = (char *)wmem_strdup_printf(wmem_packet_scope(), "%%s,%%s", last_rdn, last_dn);
-      last_dn[0] = '\0';
-      g_strlcat(last_dn, temp_dn, MAX_DN_STR_LEN);
-    } else {
-      g_strlcat(last_dn, last_rdn, MAX_DN_STR_LEN);
+    /* now append this to the DN */
+    if (last_dn_buf) {
+      if(wmem_strbuf_get_len(last_dn_buf) > 0) {
+        wmem_strbuf_t *temp_dn_buf = wmem_strbuf_new_sized(actx->pinfo->pool, wmem_strbuf_get_len(last_rdn_buf) + wmem_strbuf_get_len(last_dn_buf) + 1);
+        wmem_strbuf_append(temp_dn_buf, wmem_strbuf_get_str(last_rdn_buf));
+        wmem_strbuf_append_c(temp_dn_buf, ',');
+        wmem_strbuf_append(temp_dn_buf, wmem_strbuf_get_str(last_dn_buf));
+        wmem_strbuf_destroy(last_dn_buf);
+        last_dn_buf = temp_dn_buf;
+      } else {
+        wmem_strbuf_append(last_dn_buf, wmem_strbuf_get_str(last_rdn_buf));
+      }
     }
   }
 
-  last_rdn = NULL; /* it will get freed when the next packet is dissected */
+  last_rdn_buf = NULL; /* it will get freed when the next packet is dissected */
 
 #.FN_BODY RelativeDistinguishedName/_item
 
@@ -359,20 +362,20 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
     top_of_rdn = tree;
   } else {
 
-   if(last_rdn)
+   if(last_rdn_buf)
      /* this is an additional value - delimit */
-     g_strlcat(last_rdn, "+", MAX_RDN_STR_LEN);
+     wmem_strbuf_append_c(last_rdn_buf, '+');
   }
 
   %(DEFAULT_BODY)s
 
-  rdn_one_value = TRUE;
+  rdn_one_value = true;
 
 #.FN_BODY RDNSequence
   const char *fmt;
 
-  dn_one_rdn = FALSE; /* reset */
-  last_dn = (char *)wmem_alloc(wmem_packet_scope(), MAX_DN_STR_LEN); *last_dn = '\0';
+  dn_one_rdn = false; /* reset */
+  last_dn_buf = wmem_strbuf_new(actx->pinfo->pool, "");
   top_of_dn = NULL;
   register_frame_end_routine (actx->pinfo, x509if_frame_end);
 
@@ -380,12 +383,12 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
   %(DEFAULT_BODY)s
 
   /* we've finished - append the dn */
-  proto_item_append_text(top_of_dn, " (%%s)", last_dn);
+  proto_item_append_text(top_of_dn, " (%%s)", wmem_strbuf_get_str(last_dn_buf));
 
  /* see if we should append this to the col info */
   if((fmt = val_to_str_const(hf_index, fmt_vals, "")) && *fmt) {
-      /* we have a format */
-	col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s%%s", fmt, last_dn);
+    /* we have a format */
+    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s%%s", fmt, wmem_strbuf_get_str(last_dn_buf));
   }
 
 
@@ -398,12 +401,12 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
 
   %(DEFAULT_BODY)s
 
-  dn_one_rdn = TRUE;
+  dn_one_rdn = true;
 
 #.FN_BODY AttributeValueAssertion
 
 	ava_hf_index = hf_index;
-	last_ava = (char *)wmem_alloc(wmem_packet_scope(), MAX_AVA_STR_LEN); *last_ava = '\0';
+	last_ava = (char *)wmem_alloc(actx->pinfo->pool, MAX_AVA_STR_LEN); *last_ava = '\0';
 	register_frame_end_routine (actx->pinfo, x509if_frame_end);
 
 	%(DEFAULT_BODY)s
@@ -411,7 +414,7 @@ DistinguishedName B "2.16.840.1.101.2.2.1.188" "id-at-primaryMember"
 	ava_hf_index=-1;
 
 #.FN_BODY Attribute
-	doing_attr = TRUE;
+	doing_attr = true;
 	register_frame_end_routine (actx->pinfo, x509if_frame_end);
 
 	%(DEFAULT_BODY)s

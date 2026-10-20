@@ -12,87 +12,51 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="QTreeWidget" name="decodeAsTreeWidget">
+    <widget class="TabnavTreeView" name="decodeAsTreeView">
      <property name="indentation">
       <number>0</number>
      </property>
-     <column>
-      <property name="text">
-       <string>Field</string>
-      </property>
-      <property name="toolTip">
-       <string>Match using this field</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Value</string>
-      </property>
-      <property name="toolTip">
-       <string>Current &quot;Decode As&quot; behavior</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Type</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Default</string>
-      </property>
-      <property name="toolTip">
-       <string>Default &quot;Decode As&quot; behavior</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Current</string>
-      </property>
-      <property name="toolTip">
-       <string>Change behavior when the protocol field matches this value</string>
-      </property>
-     </column>
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,1">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,1">
      <item>
-      <widget class="QToolButton" name="newToolButton">
+      <widget class="StockIconToolButton" name="newToolButton">
        <property name="toolTip">
         <string>Change the dissection behavior for a protocol.</string>
        </property>
        <property name="text">
         <string/>
        </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/plus-8.png</normaloff>:/stock/plus-8.png</iconset>
-       </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="deleteToolButton">
+      <widget class="StockIconToolButton" name="deleteToolButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Remove this dissection behavior.</string>
        </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/minus-8.png</normaloff>:/stock/minus-8.png</iconset>
-       </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="copyToolButton">
+      <widget class="StockIconToolButton" name="copyToolButton">
        <property name="toolTip">
         <string>Copy this dissection behavior.</string>
        </property>
        <property name="text">
         <string/>
        </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/copy-8.png</normaloff>:/stock/copy-8.png</iconset>
+      </widget>
+     </item>
+     <item>
+      <widget class="StockIconToolButton" name="clearToolButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Clear all dissection behaviors.</string>
        </property>
       </widget>
      </item>
@@ -146,12 +110,20 @@
   <customwidget>
    <class>ElidedLabel</class>
    <extends>QLabel</extends>
-   <header>elided_label.h</header>
+   <header>widgets/elided_label.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TabnavTreeView</class>
+   <extends>QTreeView</extends>
+   <header>widgets/tabnav_tree_view.h</header>
+  </customwidget>
+  <customwidget>
+   <class>StockIconToolButton</class>
+   <extends>QToolButton</extends>
+   <header>widgets/stock_icon_tool_button.h</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../../image/toolbar.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>buttonBox</sender>

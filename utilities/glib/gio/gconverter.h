@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2009 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,13 +36,6 @@ G_BEGIN_DECLS
 #define G_IS_CONVERTER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_CONVERTER))
 #define G_CONVERTER_GET_IFACE(obj)  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), G_TYPE_CONVERTER, GConverterIface))
 
-/**
- * GConverter:
- *
- * Seek object for streaming operations.
- *
- * Since: 2.24
- **/
 typedef struct _GConverterIface   GConverterIface;
 
 /**
@@ -73,10 +68,10 @@ struct _GConverterIface
   void  (* reset)   (GConverter *converter);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType            g_converter_get_type     (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType            g_converter_get_type     (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GConverterResult g_converter_convert (GConverter       *converter,
 				      const void       *inbuf,
 				      gsize             inbuf_size,
@@ -86,8 +81,13 @@ GConverterResult g_converter_convert (GConverter       *converter,
 				      gsize            *bytes_read,
 				      gsize            *bytes_written,
 				      GError          **error);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void             g_converter_reset   (GConverter       *converter);
+
+GIO_AVAILABLE_IN_2_82
+GBytes *         g_converter_convert_bytes (GConverter  *converter,
+                                            GBytes      *bytes,
+                                            GError     **error);
 
 
 G_END_DECLS

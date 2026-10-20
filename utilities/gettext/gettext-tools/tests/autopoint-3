@@ -3,6 +3,9 @@
 
 # Test the autopoint program, with Automake.
 
+# Note: This tests fails on Alpine Linux, because the 'gzip' binary on this
+# system does not support the '--best' option.
+
 : ${AUTOCONF=autoconf}
 ${AUTOCONF} --version >/dev/null 2>/dev/null \
   || { echo "Skipping test: autoconf not found"; Exit 77; }
@@ -39,31 +42,21 @@ ${AUTOMAKE} --add-missing >/dev/null 2>/dev/null \
 
 rm -f configure.ac Makefile.am
 
-: ${LIBTOOLIZE=libtoolize}
-${LIBTOOLIZE} --version >/dev/null 2>/dev/null \
-  || { echo "Skipping test: libtoolize not found"; Exit 77; }
-
-: ${MAKE=make}
-${MAKE} --version >/dev/null 2>/dev/null \
-  || { echo "Skipping test: make not found"; Exit 77; }
-
-gettext_datadir=$top_builddir/misc
+gettext_datadir=$top_builddir/autotools
 export gettext_datadir
 
 cat <<EOF >configure.ac
 AC_INIT([hello], [0.0.0], [bug-gnu-gettext@gnu.org])
 AM_INIT_AUTOMAKE([foreign])
-LT_INIT
 
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_PROG_CC
-AM_GNU_GETTEXT([use-libtool])
+AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION([$ARCHIVE_VERSION])
 
-AC_CONFIG_HEADERS([config.h])
+dnl AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([intl/Makefile])
 AC_CONFIG_FILES([po/Makefile.in])
 AC_OUTPUT
 EOF
@@ -75,7 +68,7 @@ cat <<\EOF >Makefile.am
 # Makefile configuration - processed by automake.
 
 # The list of subdirectories containing Makefiles.
-SUBDIRS = intl po
+SUBDIRS = po
 
 # The list of programs that are built.
 bin_PROGRAMS = hello
@@ -90,7 +83,7 @@ DEFS = -DLOCALEDIR=\"$(localedir)\" @DEFS@
 AM_CPPFLAGS = -I. -I$(srcdir)
 
 # Link time dependencies.
-LDADD = @LTLIBINTL@
+LDADD = @LIBINTL@
 EOF
 
 cp -p "$abs_top_srcdir"/gnulib-lib/gettext.h .
@@ -99,7 +92,7 @@ cp -p "$abs_top_srcdir"/examples/hello-c/hello.c .
 $gettext_datadir/autopoint -f >/dev/null 2>autopoint.err
 test $? = 0 || { cat autopoint.err; Exit 1; }
 
-test -d intl || Exit 1
+test ! -d intl || Exit 1
 test -d m4 || Exit 1
 test -d po || Exit 1
 
@@ -109,27 +102,53 @@ test -f po/Makefile.in.in || Exit 1
 cp -p po/Makevars.template po/Makevars
 echo hello.c > po/POTFILES.in
 
-${LIBTOOLIZE} -f -i >/dev/null 2>autopoint.err
-test $? = 0 || { cat autopoint.err; Exit 1; }
-
 ${ACLOCAL} -I m4 >/dev/null 2>autopoint.err
 test $? = 0 || { cat autopoint.err; Exit 1; }
 
-: ${AUTOHEADER=autoheader}
-${AUTOHEADER} >/dev/null 2>autopoint.err
-test $? = 0 || { cat autopoint.err; Exit 1; }
+if false; then
+  : ${AUTOHEADER=autoheader}
+  ${AUTOHEADER} >/dev/null 2>autopoint.err
+  test $? = 0 || { cat autopoint.err; Exit 1; }
+fi
 
 ${AUTOCONF} >/dev/null 2>autopoint.err
 test $? = 0 || { cat autopoint.err; Exit 1; }
 
+# Avoid an Automake 1.16.5 failure, in the presence of Autoconf 2.71, on an ext4
+# file system:
+#   PREFIX/share/automake-1.16/am/depend2.am: error: am__fastdepCC does not appear in AM_CONDITIONAL
+#   PREFIX/share/automake-1.16/am/depend2.am:   The usual way to define 'am__fastdepCC' is to add 'AC_PROG_CC'
+#   PREFIX/share/automake-1.16/am/depend2.am:   to 'configure.ac' and run 'aclocal' and 'autoconf' again
+#   PREFIX/share/automake-1.16/am/depend2.am: error: AMDEP does not appear in AM_CONDITIONAL
+#   PREFIX/share/automake-1.16/am/depend2.am:   The usual way to define 'AMDEP' is to add one of the compiler tests
+#   PREFIX/share/automake-1.16/am/depend2.am:     AC_PROG_CC, AC_PROG_CXX, AC_PROG_OBJC, AC_PROG_OBJCXX,
+#   PREFIX/share/automake-1.16/am/depend2.am:     AM_PROG_AS, AM_PROG_GCJ, AM_PROG_UPC
+#   PREFIX/share/automake-1.16/am/depend2.am:   to 'configure.ac' and run 'aclocal' and 'autoconf' again
+# The cause is described in
+# <https://lists.gnu.org/archive/html/bug-automake/2023-07/msg00020.html>.
+rm -rf autom4te.cache
+
 ${AUTOMAKE} -a -c >/dev/null 2>autopoint.err
 test $? = 0 || { cat autopoint.err; Exit 1; }
 
-# Check if libintl compiles.
+# Check that it all compiles.
 : ${CONFIG_SHELL=${SHELL-/bin/sh}}
-${CONFIG_SHELL} ./configure --with-included-gettext >/dev/null 2>autpoint.err
+${CONFIG_SHELL} ./configure >/dev/null 2>autopoint.err
 test $? = 0 || { cat autopoint.err; Exit 1; }
 
+# The po/Makefile requires GNU make on specific platforms.
+if test -z "${MAKE}"; then
+  case "$host_os" in
+    darwin* | solaris* | aix*)
+      if (gmake --version >/dev/null) 2>/dev/null; then
+        MAKE=gmake
+      else
+        MAKE=make
+      fi
+      ;;
+    *) MAKE=make ;;
+  esac
+fi
 ${MAKE} >/dev/null 2>autopoint.err
 test $? = 0 || { cat autopoint.err; Exit 1; }
 

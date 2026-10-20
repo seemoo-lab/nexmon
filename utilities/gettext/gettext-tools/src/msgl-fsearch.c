@@ -1,6 +1,5 @@
 /* Fast fuzzy searching among messages.
-   Copyright (C) 2006, 2008, 2011, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2006.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "msgl-fsearch.h"
@@ -25,6 +24,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "attribute.h"
 #include "xalloc.h"
 #include "po-charset.h"
 
@@ -106,7 +106,6 @@ new_index (index_ty idx)
 static inline index_list_ty
 addlast_index (index_list_ty list, index_ty idx)
 {
-  index_list_ty result;
   size_t length = list[IL_LENGTH];
 
   /* Look whether it should be inserted.  */
@@ -114,7 +113,7 @@ addlast_index (index_list_ty list, index_ty idx)
     return NULL;
 
   /* Now make room for one more list element.  */
-  result = NULL;
+  index_list_ty result = NULL;
   if (length == list[IL_ALLOCATED])
     {
       size_t new_allocated = 2 * length - (length >> 6);
@@ -130,10 +129,9 @@ addlast_index (index_list_ty list, index_ty idx)
 /* Add a given index to an index list.
    Return the new index list, if it had to be reallocated, or NULL if it
    didn't change.  */
-static inline index_list_ty
+MAYBE_UNUSED static inline index_list_ty
 add_index (index_list_ty list, index_ty idx)
 {
-  index_list_ty result;
   size_t length = list[IL_LENGTH];
 
   /* Look where it should be inserted.  */
@@ -153,7 +151,7 @@ add_index (index_list_ty list, index_ty idx)
     }
 
   /* Now make room for one more list element.  */
-  result = NULL;
+  index_list_ty result = NULL;
   if (length == list[IL_ALLOCATED])
     {
       size_t new_allocated = 2 * length - (length >> 6);
@@ -208,17 +206,14 @@ message_fuzzy_index_alloc (const message_list_ty *mlp,
                            const char *canon_charset)
 {
   message_fuzzy_index_ty *findex = XMALLOC (message_fuzzy_index_ty);
-  size_t count = mlp->nitems;
-  size_t j;
-  size_t l;
-
   findex->messages = mlp->item;
   findex->iterator = po_charset_character_iterator (canon_charset);
 
+  size_t count = mlp->nitems;
+
   /* Setup hash table.  */
-  if (hash_init (&findex->gram4, 10 * count) < 0)
-    xalloc_die ();
-  for (j = 0; j < count; j++)
+  hash_init (&findex->gram4, 10 * count);
+  for (size_t j = 0; j < count; j++)
     {
       message_ty *mp = mlp->item[j];
 
@@ -247,7 +242,6 @@ message_fuzzy_index_alloc (const message_list_ty *mlp,
                                  it to the index j, or extend the existing
                                  hash table entry accordingly.  */
                               void *found;
-
                               if (hash_find_entry (&findex->gram4, p0, p4 - p0,
                                                    &found) == 0)
                                 {
@@ -279,12 +273,10 @@ message_fuzzy_index_alloc (const message_list_ty *mlp,
 
   /* Shrink memory used by the hash table.  */
   {
-    void *iter;
+    void *iter = NULL;
     const void *key;
     size_t keylen;
     void **valuep;
-
-    iter = NULL;
     while (hash_iterate_modify (&findex->gram4, &iter, &key, &keylen, &valuep)
            == 0)
       {
@@ -305,9 +297,9 @@ message_fuzzy_index_alloc (const message_list_ty *mlp,
 
   /* Setup lists of short messages.  */
   findex->short_messages = XNMALLOC (SHORT_MSG_MAX + 1, message_list_ty *);
-  for (l = 0; l <= SHORT_MSG_MAX; l++)
+  for (size_t l = 0; l <= SHORT_MSG_MAX; l++)
     findex->short_messages[l] = message_list_alloc (false);
-  for (j = 0; j < count; j++)
+  for (size_t j = 0; j < count; j++)
     {
       message_ty *mp = mlp->item[j];
 
@@ -322,16 +314,16 @@ message_fuzzy_index_alloc (const message_list_ty *mlp,
     }
 
   /* Shrink memory used by the lists of short messages.  */
-  for (l = 0; l <= SHORT_MSG_MAX; l++)
+  for (size_t l = 0; l <= SHORT_MSG_MAX; l++)
     {
-      message_list_ty *mlp = findex->short_messages[l];
+      message_list_ty *smlp = findex->short_messages[l];
 
-      if (mlp->nitems < mlp->nitems_max)
+      if (smlp->nitems < smlp->nitems_max)
         {
-          mlp->nitems_max = mlp->nitems;
-          mlp->item =
+          smlp->nitems_max = smlp->nitems;
+          smlp->item =
             (message_ty **)
-            xrealloc (mlp->item, mlp->nitems_max * sizeof (message_ty *));
+            xrealloc (smlp->item, smlp->nitems_max * sizeof (message_ty *));
         }
     }
 
@@ -375,19 +367,14 @@ mult_index_list_accumulate (struct mult_index_list *accu, index_list_ty list)
   size_t len1 = accu->nitems;
   size_t len2 = list[IL_LENGTH];
   size_t need = len1 + len2;
-  struct mult_index *ptr1;
-  struct mult_index *ptr1_end;
-  index_ty *ptr2;
-  index_ty *ptr2_end;
-  struct mult_index *destptr;
 
   /* Make the work area large enough.  */
   if (accu->nitems2_max < need)
     {
       size_t new_max = 2 * accu->nitems2_max + 1;
-
       if (new_max < need)
         new_max = need;
+
       if (accu->item2 != NULL)
         free (accu->item2);
       accu->item2 = XNMALLOC (new_max, struct mult_index);
@@ -395,38 +382,41 @@ mult_index_list_accumulate (struct mult_index_list *accu, index_list_ty list)
     }
 
   /* Make a linear pass through accu and list simultaneously.  */
-  ptr1 = accu->item;
-  ptr1_end = ptr1 + len1;
-  ptr2 = list + 2;
-  ptr2_end = ptr2 + len2;
-  destptr = accu->item2;
-  while (ptr1 < ptr1_end && ptr2 < ptr2_end)
+  index_ty *ptr2 = list + 2;
+  index_ty *ptr2_end = ptr2 + len2;
+  struct mult_index *destptr = accu->item2;
+  if (len1 > 0)
     {
-      if (ptr1->index < *ptr2)
+      struct mult_index *ptr1 = accu->item;
+      struct mult_index *ptr1_end = ptr1 + len1;
+      while (ptr1 < ptr1_end && ptr2 < ptr2_end)
+        {
+          if (ptr1->index < *ptr2)
+            {
+              *destptr = *ptr1;
+              ptr1++;
+            }
+          else if (ptr1->index > *ptr2)
+            {
+              destptr->index = *ptr2;
+              destptr->count = 1;
+              ptr2++;
+            }
+          else /* ptr1->index == list[2 + i2] */
+            {
+              destptr->index = ptr1->index;
+              destptr->count = ptr1->count + 1;
+              ptr1++;
+              ptr2++;
+            }
+          destptr++;
+        }
+      while (ptr1 < ptr1_end)
         {
           *destptr = *ptr1;
           ptr1++;
+          destptr++;
         }
-      else if (ptr1->index > *ptr2)
-        {
-          destptr->index = *ptr2;
-          destptr->count = 1;
-          ptr2++;
-        }
-      else /* ptr1->index == list[2 + i2] */
-        {
-          destptr->index = ptr1->index;
-          destptr->count = ptr1->count + 1;
-          ptr1++;
-          ptr2++;
-        }
-      destptr++;
-    }
-  while (ptr1 < ptr1_end)
-    {
-      *destptr = *ptr1;
-      ptr1++;
-      destptr++;
     }
   while (ptr2 < ptr2_end)
     {
@@ -531,7 +521,6 @@ message_fuzzy_index_search (message_fuzzy_index_ty *findex,
                          characters.  Get the hash table entry containing
                          a list of indices, and add it to the accu.  */
                       void *found;
-
                       if (hash_find_entry (&findex->gram4, p0, p4 - p0,
                                            &found) == 0)
                         {
@@ -563,20 +552,16 @@ message_fuzzy_index_search (message_fuzzy_index_ty *findex,
                      to the best_weight which will be quite high already after
                      the first few messages.  */
                   {
-                    size_t count;
-                    struct mult_index *ptr;
-                    message_ty *best_mp;
-                    double best_weight;
-
-                    count = accu.nitems;
+                    size_t count = accu.nitems;
                     if (heuristic)
                       {
                         if (count > findex->firstfew)
                           count = findex->firstfew;
                       }
 
-                    best_weight = lower_bound;
-                    best_mp = NULL;
+                    double best_weight = lower_bound;
+                    message_ty *best_mp = NULL;
+                    struct mult_index *ptr;
                     for (ptr = accu.item; count > 0; ptr++, count--)
                       {
                         message_ty *mp = findex->messages[ptr->index];
@@ -601,11 +586,10 @@ message_fuzzy_index_search (message_fuzzy_index_ty *findex,
     }
 
   /* The string had less than 4 characters.  */
+  size_t lmin;
+  size_t lmax;
   {
     size_t l = strlen (str);
-    size_t lmin, lmax;
-    message_ty *best_mp;
-    double best_weight;
 
     if (!(l <= SHORT_STRING_MAX_BYTES))
       abort ();
@@ -616,51 +600,49 @@ message_fuzzy_index_search (message_fuzzy_index_ty *findex,
     lmax = (int) (l * (2 / FUZZY_THRESHOLD - 1));
     if (!(lmax <= SHORT_MSG_MAX))
       abort ();
-
-    best_weight = lower_bound;
-    best_mp = NULL;
-    for (l = lmin; l <= lmax; l++)
-      {
-        message_list_ty *mlp = findex->short_messages[l];
-        size_t j;
-
-        for (j = 0; j < mlp->nitems; j++)
-          {
-            message_ty *mp = mlp->item[j];
-            double weight =
-              fuzzy_search_goal_function (mp, msgctxt, msgid, best_weight);
-
-            if (weight > best_weight)
-              {
-                best_weight = weight;
-                best_mp = mp;
-              }
-          }
-      }
-
-    return best_mp;
   }
+
+  double best_weight = lower_bound;
+  message_ty *best_mp = NULL;
+  for (size_t l = lmin; l <= lmax; l++)
+    {
+      message_list_ty *mlp = findex->short_messages[l];
+
+      for (size_t j = 0; j < mlp->nitems; j++)
+        {
+          message_ty *mp = mlp->item[j];
+          double weight =
+            fuzzy_search_goal_function (mp, msgctxt, msgid, best_weight);
+
+          if (weight > best_weight)
+            {
+              best_weight = weight;
+              best_mp = mp;
+            }
+        }
+    }
+
+  return best_mp;
 }
 
 /* Free a fuzzy index.  */
 void
 message_fuzzy_index_free (message_fuzzy_index_ty *findex)
 {
-  size_t l;
-  void *iter;
-  const void *key;
-  size_t keylen;
-  void *data;
-
   /* Free the short lists.  */
-  for (l = 0; l <= SHORT_MSG_MAX; l++)
+  for (size_t l = 0; l <= SHORT_MSG_MAX; l++)
     message_list_free (findex->short_messages[l], 1);
   free (findex->short_messages);
 
   /* Free the index lists occurring as values in the hash tables.  */
-  iter = NULL;
-  while (hash_iterate (&findex->gram4, &iter, &key, &keylen, &data) == 0)
-    free ((index_list_ty *) data);
+  {
+    void *iter = NULL;
+    const void *key;
+    size_t keylen;
+    void *data;
+    while (hash_iterate (&findex->gram4, &iter, &key, &keylen, &data) == 0)
+      free ((index_list_ty *) data);
+  }
   /* Free the hash table itself.  */
   hash_destroy (&findex->gram4);
 

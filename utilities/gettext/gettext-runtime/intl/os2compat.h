@@ -1,6 +1,6 @@
 /* OS/2 compatibility defines.
    This file is intended to be included from config.h
-   Copyright (C) 2001-2002, 2015-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -13,7 +13,9 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 /* When included from os2compat.h we need all the original definitions */
 #ifndef OS2_AWARE

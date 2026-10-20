@@ -1,3 +1,6 @@
+# Increment this whenever this file is changed.
+#serial 2
+
 dnl GLIB_GSETTINGS
 dnl Defines GSETTINGS_SCHEMAS_INSTALL which controls whether
 dnl the schema should be compiled
@@ -5,6 +8,10 @@ dnl
 
 AC_DEFUN([GLIB_GSETTINGS],
 [
+  dnl We can't use PKG_PREREQ because that needs 0.29.
+  m4_ifndef([PKG_PROG_PKG_CONFIG],
+            [pkg.m4 version 0.28 or later is required])
+
   m4_pattern_allow([AM_V_GEN])
   AC_ARG_ENABLE(schemas-compile,
                 AS_HELP_STRING([--disable-schemas-compile],
@@ -17,11 +24,9 @@ AC_DEFUN([GLIB_GSETTINGS],
   AC_SUBST([GSETTINGS_DISABLE_SCHEMAS_COMPILE])
   PKG_PROG_PKG_CONFIG([0.16])
   AC_SUBST(gsettingsschemadir, [${datadir}/glib-2.0/schemas])
-  if test x$cross_compiling != xyes; then
-    GLIB_COMPILE_SCHEMAS=`$PKG_CONFIG --variable glib_compile_schemas gio-2.0`
-  else
-    AC_PATH_PROG(GLIB_COMPILE_SCHEMAS, glib-compile-schemas)
-  fi
+  AS_IF([test x$cross_compiling != xyes],
+        [PKG_CHECK_VAR([GLIB_COMPILE_SCHEMAS], [gio-2.0], [glib_compile_schemas])],
+        [AC_PATH_PROG([GLIB_COMPILE_SCHEMAS], [glib-compile-schemas])])
   AC_SUBST(GLIB_COMPILE_SCHEMAS)
   if test "x$GLIB_COMPILE_SCHEMAS" = "x"; then
     ifelse([$2],,[AC_MSG_ERROR([glib-compile-schemas not found.])],[$2])

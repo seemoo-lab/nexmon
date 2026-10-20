@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -42,17 +30,18 @@ static const value_string swipe_packet_type_vals[] = {
 };
 
 /* Initialize the protocol and registered fields */
-static int proto_swipe             = -1;
+static int proto_swipe;
 
-static int hf_swipe_packet_type    = -1;
-static int hf_swipe_len            = -1;
-static int hf_swipe_policy_id      = -1;
-static int hf_swipe_packet_seq     = -1;
-static int hf_swipe_authenticator  = -1;
+static int hf_swipe_packet_type;
+static int hf_swipe_len;
+static int hf_swipe_policy_id;
+static int hf_swipe_packet_seq;
+static int hf_swipe_authenticator;
 
 /* Initialize the subtree pointers */
-static gint ett_swipe              = -1;
+static int ett_swipe;
 
+static dissector_handle_t swipe_handle;
 static dissector_handle_t ipv6_handle;
 
 static int
@@ -66,7 +55,7 @@ dissect_swipe(tvbuff_t *tvb, packet_info * pinfo, proto_tree *tree, void* data _
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "swIPe");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    header_len = tvb_get_guint8(tvb, offset + 1);
+    header_len = tvb_get_uint8(tvb, offset + 1);
     if (tree)
     {
         ti = proto_tree_add_item(tree, proto_swipe, tvb, offset, header_len, ENC_NA);
@@ -109,12 +98,15 @@ proto_register_swipe(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_swipe
     };
 
     /* Register the protocol name and description */
     proto_swipe = proto_register_protocol("swIPe IP Security Protocol", "swIPe", "swipe");
+
+    /* Register the dissector handle */
+    swipe_handle = register_dissector("swipe", dissect_swipe, proto_swipe);
 
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_swipe, hf, array_length(hf));
@@ -124,9 +116,6 @@ proto_register_swipe(void)
 void
 proto_reg_handoff_swipe(void)
 {
-    dissector_handle_t swipe_handle;
-
-    swipe_handle = create_dissector_handle(dissect_swipe, proto_swipe );
     dissector_add_uint("ip.proto", IP_PROTO_SWIPE, swipe_handle);
 
     ipv6_handle = find_dissector_add_dependency("ipv6", proto_swipe );

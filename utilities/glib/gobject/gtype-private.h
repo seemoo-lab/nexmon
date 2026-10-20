@@ -1,10 +1,12 @@
 /* GObject - GLib Type, Object, Parameter and Signal Library
  * Copyright (C) 1998-1999, 2000-2001 Tim Janik and Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,10 +25,31 @@
 
 #include "gboxed.h"
 #include "gclosure.h"
+#include "gobject.h"
+
+/*< private >
+ * GOBJECT_IF_DEBUG:
+ * @debug_type: Currently only OBJECTS and SIGNALS are supported.
+ * @code_block: Custom debug code.
+ *
+ * A convenience macro for debugging GObject.
+ * This macro is only used internally.
+ */
+#ifdef G_ENABLE_DEBUG
+#define GOBJECT_IF_DEBUG(debug_type, code_block) \
+G_STMT_START { \
+    if (_g_type_debug_flags & G_TYPE_DEBUG_ ## debug_type) \
+      { code_block; } \
+} G_STMT_END
+#else   /* !G_ENABLE_DEBUG */
+#define GOBJECT_IF_DEBUG(debug_type, code_block)
+#endif  /* G_ENABLE_DEBUG */
 
 G_BEGIN_DECLS
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 extern GTypeDebugFlags _g_type_debug_flags;
+G_GNUC_END_IGNORE_DEPRECATIONS
 
 typedef struct _GRealClosure  GRealClosure;
 struct _GRealClosure
@@ -72,6 +95,23 @@ void        _g_closure_invoke_va (GClosure       *closure,
 				  int             n_params,
 				  GType          *param_types);
 
+gboolean    _g_object_has_signal_handler     (GObject     *object);
+void        _g_object_set_has_signal_handler (GObject     *object,
+                                              guint        signal_id);
+
+void g_destroy_notify_assert_not_reached (gpointer object);
+
+/**
+ * _G_DEFINE_TYPE_EXTENDED_WITH_PRELUDE:
+ *
+ * See also G_DEFINE_TYPE_EXTENDED().  This macro is generally only
+ * necessary as a workaround for classes which have properties of
+ * object types that may be initialized in distinct threads.  See:
+ * https://bugzilla.gnome.org/show_bug.cgi?id=674885
+ *
+ * Currently private.
+ */
+#define _G_DEFINE_TYPE_EXTENDED_WITH_PRELUDE(TN, t_n, T_P, _f_, _P_, _C_)	    _G_DEFINE_TYPE_EXTENDED_BEGIN_PRE (TN, t_n) {_P_;} _G_DEFINE_TYPE_EXTENDED_BEGIN_REGISTER (TN, t_n, T_P, _f_){_C_;} _G_DEFINE_TYPE_EXTENDED_END()
 
 G_END_DECLS
 

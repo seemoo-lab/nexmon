@@ -8,31 +8,28 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*  Include Files */
 #include "config.h"
 
+#define WS_LOG_DOMAIN "zcl"
+
+#include <wireshark.h>
 #include <epan/packet.h>
+#include <epan/expert.h>
 #include <epan/to_str.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+#include <wsutil/bits_ctz.h>
+#include <wsutil/utf8_entities.h>
+#include <wsutil/wsgcrypt.h>
 
 #include "packet-zbee.h"
 #include "packet-zbee-aps.h"
 #include "packet-zbee-zcl.h"
-
+#include "packet-zbee-security.h"
 
 /* ########################################################################## */
 /* #### (0x0000) BASIC CLUSTER ############################################## */
@@ -41,9 +38,6 @@
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_BASIC_NUM_GENERIC_ETT                  3
-#define ZBEE_ZCL_BASIC_NUM_ETT                          ZBEE_ZCL_BASIC_NUM_GENERIC_ETT
 
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_BASIC_ZCL_VERSION              0x0000  /* ZCL Version */
@@ -59,6 +53,7 @@
 #define ZBEE_ZCL_ATTR_ID_BASIC_DEVICE_ENABLED           0x0012  /* Device Enabled */
 #define ZBEE_ZCL_ATTR_ID_BASIC_ALARM_MASK               0x0013  /* Alarm Mask */
 #define ZBEE_ZCL_ATTR_ID_BASIC_DISABLE_LOCAL_CFG        0x0014  /* Disable Local Config */
+#define ZBEE_ZCL_ATTR_ID_BASIC_SW_BUILD_ID              0x4000  /* SW Build Id */
 
 /* Server Commands Received */
 #define ZBEE_ZCL_CMD_ID_BASIC_RESET_FACTORY_DEFAULTS    0x00  /* Reset to Factory Defaults */
@@ -72,7 +67,7 @@
 #define ZBEE_ZCL_BASIC_PWR_SRC_BATTERY                  0x03    /* Battery */
 #define ZBEE_ZCL_BASIC_PWR_SRC_DC_SRC                   0x04    /* DC source */
 #define ZBEE_ZCL_BASIC_PWR_SRC_EMERGENCY_1              0x05    /* Emergency mains constantly powered */
-#define ZBEE_ZCL_BASIC_PWR_SRC_EMERGENCY_2              0x06    /* Emergency mains and tranfer switch */
+#define ZBEE_ZCL_BASIC_PWR_SRC_EMERGENCY_2              0x06    /* Emergency mains and transfer switch */
 
 /* Device Enable Values */
 #define ZBEE_ZCL_BASIC_DISABLED                         0x00    /* Disabled */
@@ -95,34 +90,31 @@
 void proto_register_zbee_zcl_basic(void);
 void proto_reg_handoff_zbee_zcl_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_basic = -1;
+static int proto_zbee_zcl_basic;
 
-static int hf_zbee_zcl_basic_attr_id = -1;
-static int hf_zbee_zcl_basic_pwr_src = -1;
-static int hf_zbee_zcl_basic_dev_en = -1;
-static int hf_zbee_zcl_basic_alarm_mask = -1;
-static int hf_zbee_zcl_basic_alarm_mask_gen_hw_fault = -1;
-static int hf_zbee_zcl_basic_alarm_mask_gen_sw_fault = -1;
-static int hf_zbee_zcl_basic_alarm_mask_reserved = -1;
-static int hf_zbee_zcl_basic_disable_local_cfg = -1;
-static int hf_zbee_zcl_basic_disable_local_cfg_reset = -1;
-static int hf_zbee_zcl_basic_disable_local_cfg_device_cfg = -1;
-static int hf_zbee_zcl_basic_disable_local_cfg_reserved = -1;
-static int hf_zbee_zcl_basic_srv_rx_cmd_id = -1;
+static int hf_zbee_zcl_basic_attr_id;
+static int hf_zbee_zcl_basic_pwr_src;
+static int hf_zbee_zcl_basic_dev_en;
+static int hf_zbee_zcl_basic_alarm_mask;
+static int hf_zbee_zcl_basic_alarm_mask_gen_hw_fault;
+static int hf_zbee_zcl_basic_alarm_mask_gen_sw_fault;
+static int hf_zbee_zcl_basic_alarm_mask_reserved;
+static int hf_zbee_zcl_basic_disable_local_cfg;
+static int hf_zbee_zcl_basic_disable_local_cfg_reset;
+static int hf_zbee_zcl_basic_disable_local_cfg_device_cfg;
+static int hf_zbee_zcl_basic_disable_local_cfg_reserved;
+static int hf_zbee_zcl_basic_srv_rx_cmd_id;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_basic = -1;
-static gint ett_zbee_zcl_basic_alarm_mask = -1;
-static gint ett_zbee_zcl_basic_dis_local_cfg = -1;
+static int ett_zbee_zcl_basic;
+static int ett_zbee_zcl_basic_alarm_mask;
+static int ett_zbee_zcl_basic_dis_local_cfg;
 
 /* Attributes */
 static const value_string zbee_zcl_basic_attr_names[] = {
@@ -139,6 +131,7 @@ static const value_string zbee_zcl_basic_attr_names[] = {
     { ZBEE_ZCL_ATTR_ID_BASIC_DEVICE_ENABLED,        "Device Enabled" },
     { ZBEE_ZCL_ATTR_ID_BASIC_ALARM_MASK,            "Alarm Mask" },
     { ZBEE_ZCL_ATTR_ID_BASIC_DISABLE_LOCAL_CFG,     "Disable Local Config" },
+    { ZBEE_ZCL_ATTR_ID_BASIC_SW_BUILD_ID,           "Software Build Id" },
     { 0, NULL }
 };
 
@@ -189,8 +182,8 @@ static int
 dissect_zbee_zcl_basic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -207,7 +200,7 @@ dissect_zbee_zcl_basic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 
         if (tree) {
             /* Add the command ID. */
-            proto_tree_add_item(tree, hf_zbee_zcl_basic_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+            proto_tree_add_item(tree, hf_zbee_zcl_basic_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
         }
         /*offset++;*/
 
@@ -236,25 +229,26 @@ dissect_zbee_zcl_basic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
 
-    static const int * alarm_mask[] = {
+    static int * const alarm_mask[] = {
         &hf_zbee_zcl_basic_alarm_mask_gen_hw_fault,
         &hf_zbee_zcl_basic_alarm_mask_gen_sw_fault,
         &hf_zbee_zcl_basic_alarm_mask_reserved,
         NULL
     };
 
-    static const int * local_cfg[] = {
+    static int * const local_cfg[] = {
         &hf_zbee_zcl_basic_disable_local_cfg_reset,
         &hf_zbee_zcl_basic_disable_local_cfg_device_cfg,
         &hf_zbee_zcl_basic_disable_local_cfg_reserved,
@@ -293,8 +287,9 @@ dissect_zcl_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guin
         case ZBEE_ZCL_ATTR_ID_BASIC_DATE_CODE:
         case ZBEE_ZCL_ATTR_ID_BASIC_PHY_ENVIRONMENT:
         case ZBEE_ZCL_ATTR_ID_BASIC_LOCATION_DESCR:
+        case ZBEE_ZCL_ATTR_ID_BASIC_SW_BUILD_ID:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -373,11 +368,11 @@ proto_register_zbee_zcl_basic(void)
     };
 
     /* ZCL Basic subtrees */
-    static gint *ett[ZBEE_ZCL_BASIC_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_basic;
-    ett[1] = &ett_zbee_zcl_basic_alarm_mask;
-    ett[2] = &ett_zbee_zcl_basic_dis_local_cfg;
+    static int *ett[] = {
+        &ett_zbee_zcl_basic,
+        &ett_zbee_zcl_basic_alarm_mask,
+        &ett_zbee_zcl_basic_dis_local_cfg
+    };
 
     /* Register the ZigBee ZCL Basic cluster protocol name and description */
     proto_zbee_zcl_basic = proto_register_protocol("ZigBee ZCL Basic", "ZCL Basic", ZBEE_PROTOABBREV_ZCL_BASIC);
@@ -402,19 +397,16 @@ proto_register_zbee_zcl_basic(void)
 void
 proto_reg_handoff_zbee_zcl_basic(void)
 {
-    dissector_handle_t basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_BASIC, basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_BASIC,
+                            proto_zbee_zcl_basic,
                             ett_zbee_zcl_basic,
                             ZBEE_ZCL_CID_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_basic_attr_id,
                             hf_zbee_zcl_basic_attr_id,
                             hf_zbee_zcl_basic_srv_rx_cmd_id,
                             -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_basic_attr_data
+                            dissect_zcl_basic_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_basic*/
 
@@ -430,12 +422,13 @@ proto_reg_handoff_zbee_zcl_basic(void)
 
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_VOLTAGE           0x0000  /* Mains voltage */
-#define ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_FREQUENCY         0x0001  /* Mains frerquency */
+#define ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_FREQUENCY         0x0001  /* Mains frequency */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_ALARM_MASK        0x0010  /* Mains Alarm Mask */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_VOLTAGE_MIN_THR   0x0011  /* Mains Voltage Min Threshold */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_VOLTAGE_MAX_THR   0x0012  /* Mains Voltage Max Threshold */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_VOLTAGE_DWELL_TP  0x0013  /* Mains Voltage Dwell Trip Point */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_VOLTAGE         0x0020  /* Battery Voltage */
+#define ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_PERCENTAGE      0x0021  /* Battery Percentage Remaining */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_MANUFACTURER    0x0030  /* Battery Manufacturer */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_SIZE            0x0031  /* Battery Size */
 #define ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_AH_RATING       0x0032  /* Battery AHr Rating */
@@ -474,38 +467,36 @@ proto_reg_handoff_zbee_zcl_basic(void)
 void proto_register_zbee_zcl_power_config(void);
 void proto_reg_handoff_zbee_zcl_power_config(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_power_config_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_power_config = -1;
-static int hf_zbee_zcl_power_config_attr_id = -1;
-static int hf_zbee_zcl_power_config_batt_type = -1;
-static int hf_zbee_zcl_power_config_mains_alarm_mask = -1;
-static int hf_zbee_zcl_power_config_mains_alarm_mask_low = -1;
-static int hf_zbee_zcl_power_config_mains_alarm_mask_high = -1;
-static int hf_zbee_zcl_power_config_mains_alarm_mask_reserved = -1;
-static int hf_zbee_zcl_power_config_batt_alarm_mask = -1;
-static int hf_zbee_zcl_power_config_batt_alarm_mask_low = -1;
-static int hf_zbee_zcl_power_config_batt_alarm_mask_reserved = -1;
-static int hf_zbee_zcl_power_config_mains_voltage = -1;
-static int hf_zbee_zcl_power_config_mains_frequency = -1;
-static int hf_zbee_zcl_power_config_mains_voltage_min_thr = -1;
-static int hf_zbee_zcl_power_config_mains_voltage_max_thr = -1;
-static int hf_zbee_zcl_power_config_mains_voltage_dwell_tp = -1;
-static int hf_zbee_zcl_power_config_batt_voltage = -1;
-static int hf_zbee_zcl_power_config_batt_ah_rating = -1;
-static int hf_zbee_zcl_power_config_batt_rated_voltage = -1;
-static int hf_zbee_zcl_power_config_batt_voltage_min_thr = -1;
+static int proto_zbee_zcl_power_config;
+static int hf_zbee_zcl_power_config_attr_id;
+static int hf_zbee_zcl_power_config_batt_type;
+static int hf_zbee_zcl_power_config_mains_alarm_mask;
+static int hf_zbee_zcl_power_config_mains_alarm_mask_low;
+static int hf_zbee_zcl_power_config_mains_alarm_mask_high;
+static int hf_zbee_zcl_power_config_mains_alarm_mask_reserved;
+static int hf_zbee_zcl_power_config_batt_alarm_mask;
+static int hf_zbee_zcl_power_config_batt_alarm_mask_low;
+static int hf_zbee_zcl_power_config_batt_alarm_mask_reserved;
+static int hf_zbee_zcl_power_config_mains_voltage;
+static int hf_zbee_zcl_power_config_mains_frequency;
+static int hf_zbee_zcl_power_config_mains_voltage_min_thr;
+static int hf_zbee_zcl_power_config_mains_voltage_max_thr;
+static int hf_zbee_zcl_power_config_mains_voltage_dwell_tp;
+static int hf_zbee_zcl_power_config_batt_voltage;
+static int hf_zbee_zcl_power_config_batt_percentage;
+static int hf_zbee_zcl_power_config_batt_ah_rating;
+static int hf_zbee_zcl_power_config_batt_rated_voltage;
+static int hf_zbee_zcl_power_config_batt_voltage_min_thr;
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_power_config = -1;
-static gint ett_zbee_zcl_power_config_mains_alarm_mask = -1;
-static gint ett_zbee_zcl_power_config_batt_alarm_mask = -1;
+static int ett_zbee_zcl_power_config;
+static int ett_zbee_zcl_power_config_mains_alarm_mask;
+static int ett_zbee_zcl_power_config_batt_alarm_mask;
 
 /* Attributes */
 static const value_string zbee_zcl_power_config_attr_names[] = {
@@ -516,6 +507,7 @@ static const value_string zbee_zcl_power_config_attr_names[] = {
     { ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_VOLTAGE_MAX_THR,   "Mains Voltage Max Threshold" },
     { ZBEE_ZCL_ATTR_ID_POWER_CONF_MAINS_VOLTAGE_DWELL_TP,  "Mains Voltage Dwell Trip Point" },
     { ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_VOLTAGE,         "Battery Voltage" },
+    { ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_PERCENTAGE,      "Battery Percentage Remaining" },
     { ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_MANUFACTURER,    "Battery Manufacturer" },
     { ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_SIZE,            "Battery Size" },
     { ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_AH_RATING,       "Battery AHr Rating" },
@@ -570,42 +562,61 @@ dissect_zbee_zcl_power_config(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_t
  *  DESCRIPTION
  *    this function decodes voltage values
  *  PARAMETERS
- *      guint *s        - string to display
- *      guint32 value   - value to decode
+ *      unsigned *s        - string to display
+ *      uint32_t value   - value to decode
  *  RETURNS
  *    none
  *---------------------------------------------------------------
  */
 static void
-decode_power_conf_voltage(gchar *s, guint32 value)
+decode_power_conf_voltage(char *s, uint32_t value)
 {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d.%d [V]", value/10, value%10);
+    snprintf(s, ITEM_LABEL_LENGTH, "%d.%d [V]", value/10, value%10);
     return;
 } /*decode_power_conf_voltage*/
 
-/*FUNCTION:------------------------------------------------------
+  /*FUNCTION:------------------------------------------------------
+  *  NAME
+  *    decode_power_conf_percentage
+  *  DESCRIPTION
+  *    this function decodes percentage values
+  *  PARAMETERS
+  *      unsigned *s        - string to display
+  *      uint32_t value   - value to decode
+  *  RETURNS
+  *    none
+  *---------------------------------------------------------------
+  */
+static void
+decode_power_conf_percentage(char *s, uint32_t value)
+{
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1f [%%]", value/2.0);
+    return;
+} /*decode_power_conf_percentage*/
+
+  /*FUNCTION:------------------------------------------------------
  *  NAME
  *    decode_power_conf_frequency
  *  DESCRIPTION
  *    this function decodes mains frequency values
  *  PARAMETERS
- *      guint *s        - string to display
- *      guint32 value   - value to decode
+ *      unsigned *s        - string to display
+ *      uint32_t value   - value to decode
  *  RETURNS
  *    none
  *---------------------------------------------------------------
  */
 static void
-decode_power_conf_frequency(gchar *s, guint32 value)
+decode_power_conf_frequency(char *s, uint32_t value)
 {
     if(value == 0x00)
-        g_snprintf(s, ITEM_LABEL_LENGTH, "Frequency too low to be measured (or DC supply)");
+        snprintf(s, ITEM_LABEL_LENGTH, "Frequency too low to be measured (or DC supply)");
     else if(value == 0xfe)
-        g_snprintf(s, ITEM_LABEL_LENGTH, "Frequency too high to be measured");
+        snprintf(s, ITEM_LABEL_LENGTH, "Frequency too high to be measured");
     else if (value == 0xff)
-        g_snprintf(s, ITEM_LABEL_LENGTH, "Frequency could not be measured");
+        snprintf(s, ITEM_LABEL_LENGTH, "Frequency could not be measured");
     else
-        g_snprintf(s, ITEM_LABEL_LENGTH, "%d [Hz]", value*2);
+        snprintf(s, ITEM_LABEL_LENGTH, "%d [Hz]", value*2);
     return;
 } /*decode_power_conf_frequency*/
 
@@ -615,16 +626,16 @@ decode_power_conf_frequency(gchar *s, guint32 value)
  *  DESCRIPTION
  *    this function decodes battery capacity values
  *  PARAMETERS
- *      guint *s        - string to display
- *      guint32 value   - value to decode
+ *      unsigned *s        - string to display
+ *      uint32_t value   - value to decode
  *  RETURNS
  *    none
  *---------------------------------------------------------------
  */
 static void
-decode_power_conf_batt_AHr(gchar *s, guint32 value)
+decode_power_conf_batt_AHr(char *s, uint32_t value)
 {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d [mAHr]", value*10);
+    snprintf(s, ITEM_LABEL_LENGTH, "%d [mAHr]", value*10);
     return;
 } /*decode_power_conf_batt_AHr*/
 
@@ -637,25 +648,26 @@ decode_power_conf_batt_AHr(gchar *s, guint32 value)
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_power_config_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_power_config_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     proto_item *it;
-    static const int * mains_alarm_mask[] = {
+    static int * const mains_alarm_mask[] = {
         &hf_zbee_zcl_power_config_mains_alarm_mask_low,
         &hf_zbee_zcl_power_config_mains_alarm_mask_high,
         &hf_zbee_zcl_power_config_mains_alarm_mask_reserved,
         NULL
     };
 
-    static const int * batt_alarm_mask[] = {
+    static int * const batt_alarm_mask[] = {
         &hf_zbee_zcl_power_config_batt_alarm_mask_low,
         &hf_zbee_zcl_power_config_batt_alarm_mask_reserved,
         NULL
@@ -696,6 +708,10 @@ dissect_zcl_power_config_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offse
             proto_tree_add_item(tree, hf_zbee_zcl_power_config_batt_voltage, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
             *offset += 1;
             break;
+        case ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_PERCENTAGE:
+            proto_tree_add_item(tree, hf_zbee_zcl_power_config_batt_percentage, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+            *offset += 1;
+            break;
         case ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_AH_RATING:
             proto_tree_add_item(tree, hf_zbee_zcl_power_config_batt_ah_rating, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
             *offset += 2;
@@ -716,7 +732,7 @@ dissect_zcl_power_config_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offse
         case ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_MANUFACTURER:
         case ZBEE_ZCL_ATTR_ID_POWER_CONF_BATTERY_QUANTITY:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -800,6 +816,10 @@ proto_register_zbee_zcl_power_config(void)
             { "Measured Battery Voltage", "zbee_zcl_general.power_config.attr.batt_voltage", FT_UINT8, BASE_CUSTOM, CF_FUNC(decode_power_conf_voltage),
             0x00, NULL, HFILL } },
 
+        { &hf_zbee_zcl_power_config_batt_percentage,
+            { "Remaining Battery Percentage", "zbee_zcl_general.power_config.attr.batt_percentage", FT_UINT8, BASE_CUSTOM, CF_FUNC(decode_power_conf_percentage),
+            0x00, NULL, HFILL } },
+
         { &hf_zbee_zcl_power_config_batt_ah_rating,
             { "Battery Capacity", "zbee_zcl_general.power_config.attr.batt_AHr", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_power_conf_batt_AHr),
             0x00, NULL, HFILL } },
@@ -818,7 +838,7 @@ proto_register_zbee_zcl_power_config(void)
     };
 
     /* ZCL power configuration subtrees */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_zbee_zcl_power_config,
         &ett_zbee_zcl_power_config_mains_alarm_mask,
         &ett_zbee_zcl_power_config_batt_alarm_mask
@@ -847,18 +867,15 @@ proto_register_zbee_zcl_power_config(void)
 void
 proto_reg_handoff_zbee_zcl_power_config(void)
 {
-    dissector_handle_t handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    handle = find_dissector(ZBEE_PROTOABBREV_ZCL_POWER_CONFIG);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_POWER_CONFIG, handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_power_config,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_POWER_CONFIG,
+                            proto_zbee_zcl_power_config,
                             ett_zbee_zcl_power_config,
                             ZBEE_ZCL_CID_POWER_CONFIG,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_power_config_attr_id,
                             hf_zbee_zcl_power_config_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_power_config_attr_data
+                            dissect_zcl_power_config_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_power_config*/
 
@@ -899,26 +916,23 @@ proto_reg_handoff_zbee_zcl_power_config(void)
 void proto_register_zbee_zcl_device_temperature_configuration(void);
 void proto_reg_handoff_zbee_zcl_device_temperature_configuration(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_device_temperature_configuration_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_device_temperature_configuration = -1;
+static int proto_zbee_zcl_device_temperature_configuration;
 
-static int hf_zbee_zcl_device_temperature_configuration_attr_id = -1;
-static int hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask = -1;
-static int hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_too_low = -1;
-static int hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_too_high = -1;
-static int hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_reserved = -1;
+static int hf_zbee_zcl_device_temperature_configuration_attr_id;
+static int hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask;
+static int hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_too_low;
+static int hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_too_high;
+static int hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_reserved;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_device_temperature_configuration = -1;
-static gint ett_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask = -1;
+static int ett_zbee_zcl_device_temperature_configuration;
+static int ett_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask;
 
 /* Attributes */
 static const value_string zbee_zcl_device_temperature_configuration_attr_names[] = {
@@ -955,7 +969,7 @@ static const value_string zbee_zcl_device_temperature_configuration_attr_names[]
 static int
 dissect_zbee_zcl_device_temperature_configuration(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void* data _U_)
 {
-	return tvb_captured_length(tvb);;
+	return tvb_captured_length(tvb);
 } /*dissect_zbee_zcl_device_temperature_configuration*/
 
 
@@ -968,17 +982,18 @@ dissect_zbee_zcl_device_temperature_configuration(tvbuff_t *tvb _U_, packet_info
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_device_temperature_configuration_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_device_temperature_configuration_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int * device_temp_alarm_mask[] = {
+    static int * const device_temp_alarm_mask[] = {
         &hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_too_low,
         &hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_too_high,
         &hf_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask_reserved,
@@ -1002,7 +1017,7 @@ dissect_zcl_device_temperature_configuration_attr_data(proto_tree *tree, tvbuff_
         case ZBEE_ZCL_ATTR_ID_DEVICE_TEMPERATURE_CONFIGURATION_LOW_TEMP_DWELL_TRIP_POINT:
         case ZBEE_ZCL_ATTR_ID_DEVICE_TEMPERATURE_CONFIGURATION_HIGH_TEMP_DWELL_TRIP_POINT:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -1050,7 +1065,7 @@ proto_register_zbee_zcl_device_temperature_configuration(void)
     };
 
     /* ZCL Device Temperature Configuration subtrees */
-    static gint *ett[]={
+    static int *ett[] = {
         &ett_zbee_zcl_device_temperature_configuration,
         &ett_zbee_zcl_device_temperature_configuration_device_temp_alarm_mask
     };
@@ -1078,18 +1093,15 @@ proto_register_zbee_zcl_device_temperature_configuration(void)
 void
 proto_reg_handoff_zbee_zcl_device_temperature_configuration(void)
 {
-    dissector_handle_t device_temperature_config_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    device_temperature_config_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_DEVICE_TEMP_CONFIG);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_DEVICE_TEMP_CONFIG, device_temperature_config_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_device_temperature_configuration,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_DEVICE_TEMP_CONFIG,
+                            proto_zbee_zcl_device_temperature_configuration,
                             ett_zbee_zcl_device_temperature_configuration,
                             ZBEE_ZCL_CID_DEVICE_TEMP_CONFIG,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_device_temperature_configuration_attr_id,
                             hf_zbee_zcl_device_temperature_configuration_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_device_temperature_configuration_attr_data
+                            dissect_zcl_device_temperature_configuration_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_device_temperature_configuration*/
 
@@ -1102,15 +1114,13 @@ proto_reg_handoff_zbee_zcl_device_temperature_configuration(void)
 /* Defines               */
 /*************************/
 
-#define ZBEE_ZCL_IDENTIFY_NUM_GENERIC_ETT               1
-#define ZBEE_ZCL_IDENTIFY_NUM_ETT                       ZBEE_ZCL_IDENTIFY_NUM_GENERIC_ETT
-
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_IDENTIFY_IDENTIFY_TIME         0x0000  /* Identify Time */
 
 /* Server Commands Received */
 #define ZBEE_ZCL_CMD_ID_IDENTIFY_IDENTITY               0x00  /* Identify */
 #define ZBEE_ZCL_CMD_ID_IDENTIFY_IDENTITY_QUERY         0x01  /* Identify Query */
+#define ZBEE_ZCL_CMD_ID_IDENTIFY_TRIGGER_EFFECT         0x40  /* Trigger Effect */
 
 /* Server Commands Generated */
 #define ZBEE_ZCL_CMD_ID_IDENTIFY_IDENTITY_QUERY_RSP     0x00  /* Identify Query Response */
@@ -1124,9 +1134,9 @@ void proto_register_zbee_zcl_identify(void);
 void proto_reg_handoff_zbee_zcl_identify(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_identify_identify               (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_identify_identifyqueryrsp       (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_identify_attr_data              (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
+static void dissect_zcl_identify_identify               (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_identify_identifyqueryrsp       (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_identify_triggereffect          (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
 /* Private functions prototype */
 
@@ -1134,16 +1144,18 @@ static void dissect_zcl_identify_attr_data              (proto_tree *tree, tvbuf
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_identify = -1;
+static int proto_zbee_zcl_identify;
 
-static int hf_zbee_zcl_identify_attr_id = -1;
-static int hf_zbee_zcl_identify_identify_time = -1;
-static int hf_zbee_zcl_identify_identify_timeout = -1;
-static int hf_zbee_zcl_identify_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_identify_srv_tx_cmd_id = -1;
+static int hf_zbee_zcl_identify_attr_id;
+static int hf_zbee_zcl_identify_identify_time;
+static int hf_zbee_zcl_identify_identify_timeout;
+static int hf_zbee_zcl_identify_effect_id;
+static int hf_zbee_zcl_identify_effect_variant;
+static int hf_zbee_zcl_identify_srv_rx_cmd_id;
+static int hf_zbee_zcl_identify_srv_tx_cmd_id;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_identify = -1;
+static int ett_zbee_zcl_identify;
 
 /* Attributes */
 static const value_string zbee_zcl_identify_attr_names[] = {
@@ -1155,12 +1167,24 @@ static const value_string zbee_zcl_identify_attr_names[] = {
 static const value_string zbee_zcl_identify_srv_rx_cmd_names[] = {
     { ZBEE_ZCL_CMD_ID_IDENTIFY_IDENTITY,            "Identify" },
     { ZBEE_ZCL_CMD_ID_IDENTIFY_IDENTITY_QUERY,      "Identify Query" },
+    { ZBEE_ZCL_CMD_ID_IDENTIFY_TRIGGER_EFFECT,      "Trigger Effect" },
     { 0, NULL }
 };
 
 /* Server Commands Generated */
 static const value_string zbee_zcl_identify_srv_tx_cmd_names[] = {
     { ZBEE_ZCL_CMD_ID_IDENTIFY_IDENTITY_QUERY_RSP,  "Identify Query Response" },
+    { 0, NULL }
+};
+
+/* Trigger Effects */
+static const value_string zbee_zcl_identify_effect_id_names[] = {
+    { 0x00,     "Blink" },
+    { 0x01,     "Breathe" },
+    { 0x02,     "Okay" },
+    { 0x0b,     "Channel change" },
+    { 0xfe,     "Finish" },
+    { 0xff,     "Stop" },
     { 0, NULL }
 };
 
@@ -1187,9 +1211,9 @@ dissect_zbee_zcl_identify(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -1205,7 +1229,7 @@ dissect_zbee_zcl_identify(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_identify_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_identify_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -1222,6 +1246,10 @@ dissect_zbee_zcl_identify(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
                     /* without payload*/
                     break;
 
+                case ZBEE_ZCL_CMD_ID_IDENTIFY_TRIGGER_EFFECT:
+                    dissect_zcl_identify_triggereffect(tvb, payload_tree, &offset);
+                    break;
+
                 default:
                     break;
             }
@@ -1234,7 +1262,7 @@ dissect_zbee_zcl_identify(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_identify_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_identify_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -1271,7 +1299,7 @@ dissect_zbee_zcl_identify(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_identify_identify(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_identify_identify(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Identify Time" field */
     proto_tree_add_item(tree, hf_zbee_zcl_identify_identify_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -1294,13 +1322,40 @@ dissect_zcl_identify_identify(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_identify_identifyqueryrsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_identify_identifyqueryrsp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Identify Timeout" field */
     proto_tree_add_item(tree, hf_zbee_zcl_identify_identify_timeout, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
 
 } /*dissect_zcl_identify_identifyqueryrsp*/
+
+ /*FUNCTION:------------------------------------------------------
+ *  NAME
+ *      dissect_zcl_identify_triggereffect
+ *  DESCRIPTION
+ *      this function decodes the Trigger Effect payload.
+ *  PARAMETERS
+ *      tvb     - the tv buffer of the current data_type
+ *      tree    - the tree to append this item to
+ *      offset  - offset of data in tvb
+ *  RETURNS
+ *      none
+ *---------------------------------------------------------------
+ */
+static void
+dissect_zcl_identify_triggereffect(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    /* Retrieve "Trigger Effect Id" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_identify_effect_id, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+    /* Retrieve "Trigger Effect Variant" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_identify_effect_variant, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+} /*dissect_zcl_identify_triggereffect*/
+
 
 /*FUNCTION:------------------------------------------------------
  *  NAME
@@ -1311,15 +1366,16 @@ dissect_zcl_identify_identifyqueryrsp(tvbuff_t *tvb, proto_tree *tree, guint *of
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_identify_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_identify_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch ( attr_id ) {
@@ -1330,7 +1386,7 @@ dissect_zcl_identify_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, g
             break;
 
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -1366,6 +1422,14 @@ proto_register_zbee_zcl_identify(void)
             { "Identify Timeout", "zbee_zcl_general.identify.identify_timeout", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_seconds),
             0x00, NULL, HFILL } },
 
+        { &hf_zbee_zcl_identify_effect_id,
+            { "Effect", "zbee_zcl_general.identify.effect_id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_identify_effect_id_names),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_identify_effect_variant,
+            { "Variant", "zbee_zcl_general.identify.effect_variant", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
         { &hf_zbee_zcl_identify_srv_rx_cmd_id,
           { "Command", "zbee_zcl_general.identify.cmd.srv_rx.id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_identify_srv_rx_cmd_names),
             0x00, NULL, HFILL } },
@@ -1377,8 +1441,9 @@ proto_register_zbee_zcl_identify(void)
     };
 
     /* ZCL Identify subtrees */
-    static gint *ett[ZBEE_ZCL_IDENTIFY_NUM_ETT];
-    ett[0] = &ett_zbee_zcl_identify;
+    static int *ett[] = {
+        &ett_zbee_zcl_identify
+    };
 
     /* Register the ZigBee ZCL Identify cluster protocol name and description */
     proto_zbee_zcl_identify = proto_register_protocol("ZigBee ZCL Identify", "ZCL Identify", ZBEE_PROTOABBREV_ZCL_IDENTIFY);
@@ -1405,19 +1470,16 @@ proto_register_zbee_zcl_identify(void)
 void
 proto_reg_handoff_zbee_zcl_identify(void)
 {
-    dissector_handle_t identify_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    identify_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_IDENTIFY);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_IDENTIFY, identify_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_identify,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_IDENTIFY,
+                            proto_zbee_zcl_identify,
                             ett_zbee_zcl_identify,
                             ZBEE_ZCL_CID_IDENTIFY,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_identify_attr_id,
                             hf_zbee_zcl_identify_attr_id,
                             hf_zbee_zcl_identify_srv_rx_cmd_id,
                             hf_zbee_zcl_identify_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_identify_attr_data
+                            dissect_zcl_identify_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_identify*/
 
@@ -1430,7 +1492,6 @@ proto_reg_handoff_zbee_zcl_identify(void)
 /* Defines               */
 /*************************/
 
-#define ZBEE_ZCL_GROUPS_NUM_ETT                                 2
 #define ZBEE_ZCL_CMD_ID_GROUPS_NAME_SUPPORT_MASK                0x80  /*Name support Mask*/
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_GROUPS_NAME_SUPPORT                    0x0000  /* Groups Name Support*/
@@ -1458,15 +1519,13 @@ void proto_register_zbee_zcl_groups(void);
 void proto_reg_handoff_zbee_zcl_groups(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_groups_add_group_or_if_identifying      (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_groups_view_group                       (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_groups_get_group_membership             (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_groups_remove_group                     (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_groups_add_remove_group_response        (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_groups_view_group_response              (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_groups_get_group_membership_response    (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-
-static void dissect_zcl_groups_attr_data                        (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
+static void dissect_zcl_groups_add_group_or_if_identifying      (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_groups_view_group                       (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_groups_get_group_membership             (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_groups_remove_group                     (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_groups_add_remove_group_response        (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_groups_view_group_response              (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_groups_get_group_membership_response    (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
 /* Private functions prototype */
 
@@ -1474,23 +1533,23 @@ static void dissect_zcl_groups_attr_data                        (proto_tree *tre
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_groups = -1;
+static int proto_zbee_zcl_groups;
 
-static int hf_zbee_zcl_groups_attr_id = -1;
-static int hf_zbee_zcl_groups_group_name_support = -1;
-static int hf_zbee_zcl_groups_group_id = -1;
-static int hf_zbee_zcl_groups_group_count = -1;
-static int hf_zbee_zcl_groups_group_capacity = -1;
-static int hf_zbee_zcl_groups_status = -1;
-static int hf_zbee_zcl_groups_attr_str_len = -1;
-static int hf_zbee_zcl_groups_attr_str = -1;
-static int hf_zbee_zcl_groups_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_groups_srv_tx_cmd_id = -1;
-static int hf_zbee_zcl_groups_group_list = -1;
+static int hf_zbee_zcl_groups_attr_id;
+static int hf_zbee_zcl_groups_group_name_support;
+static int hf_zbee_zcl_groups_group_id;
+static int hf_zbee_zcl_groups_group_count;
+static int hf_zbee_zcl_groups_group_capacity;
+static int hf_zbee_zcl_groups_status;
+static int hf_zbee_zcl_groups_attr_str_len;
+static int hf_zbee_zcl_groups_attr_str;
+static int hf_zbee_zcl_groups_srv_rx_cmd_id;
+static int hf_zbee_zcl_groups_srv_tx_cmd_id;
+static int hf_zbee_zcl_groups_group_list;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_groups = -1;
-static gint ett_zbee_zcl_groups_grp_ctrl = -1;
+static int ett_zbee_zcl_groups;
+static int ett_zbee_zcl_groups_grp_ctrl;
 
 /* Attributes */
 static const value_string zbee_zcl_groups_attr_names[] = {
@@ -1541,9 +1600,9 @@ dissect_zbee_zcl_groups(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -1559,7 +1618,7 @@ dissect_zbee_zcl_groups(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_groups_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_groups_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -1569,7 +1628,7 @@ dissect_zbee_zcl_groups(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             /* Call the appropriate command dissector */
             switch (cmd_id) {
                 case ZBEE_ZCL_CMD_ID_GROUPS_ADD_GROUP:
-                    dissect_zcl_groups_add_group_or_if_identifying(tvb, payload_tree, &offset);
+                    dissect_zcl_groups_add_group_or_if_identifying(tvb, pinfo, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_GROUPS_VIEW_GROUP:
@@ -1589,7 +1648,7 @@ dissect_zbee_zcl_groups(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
                     break;
 
                 case ZBEE_ZCL_CMD_ID_GROUPS_ADD_GROUP_IF_IDENTIFYING:
-                    dissect_zcl_groups_add_group_or_if_identifying(tvb, payload_tree, &offset);
+                    dissect_zcl_groups_add_group_or_if_identifying(tvb, pinfo, payload_tree, &offset);
                     break;
 
                 default:
@@ -1604,7 +1663,7 @@ dissect_zbee_zcl_groups(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_groups_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_groups_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -1618,7 +1677,7 @@ dissect_zbee_zcl_groups(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
                     break;
 
                 case ZBEE_ZCL_CMD_ID_GROUPS_VIEW_GROUP_RESPONSE:
-                    dissect_zcl_groups_view_group_response(tvb, payload_tree, &offset);
+                    dissect_zcl_groups_view_group_response(tvb, pinfo, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_GROUPS_GET_GROUP_MEMBERSHIP_RESPONSE:
@@ -1654,24 +1713,24 @@ dissect_zbee_zcl_groups(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_groups_add_group_or_if_identifying(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_groups_add_group_or_if_identifying(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
-    guint attr_uint;
-    guint8 *attr_string;
+    unsigned attr_uint;
+    uint8_t *attr_string;
 
     /* Retrieve "Group ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_groups_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
 
     /* Retrieve "Group Name" field */
-    attr_uint = tvb_get_guint8(tvb, *offset); /* string length */
+    attr_uint = tvb_get_uint8(tvb, *offset); /* string length */
     if (attr_uint == 0xff) attr_uint = 0;
 
     proto_tree_add_uint(tree, hf_zbee_zcl_groups_attr_str_len, tvb, *offset, 1, attr_uint);
 
     *offset += 1;
 
-    attr_string = tvb_get_string_enc(wmem_packet_scope(), tvb, *offset, attr_uint, ENC_ASCII);
+    attr_string = tvb_get_string_enc(pinfo->pool, tvb, *offset, attr_uint, ENC_ASCII);
 
     proto_item_append_text(tree, ", String: %s", attr_string);
     proto_tree_add_string(tree, hf_zbee_zcl_groups_attr_str, tvb, *offset, attr_uint, attr_string);
@@ -1695,7 +1754,7 @@ dissect_zcl_groups_add_group_or_if_identifying(tvbuff_t *tvb, proto_tree *tree, 
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_groups_view_group(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_groups_view_group(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Groups Timeout" field */
     proto_tree_add_item(tree, hf_zbee_zcl_groups_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -1718,13 +1777,13 @@ dissect_zcl_groups_view_group(tvbuff_t *tvb, proto_tree *tree, guint *offset)
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_groups_get_group_membership(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_groups_get_group_membership(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    proto_item *grp_list;
    proto_tree *grp_list_tree;
-   guint8 count, i;
+   uint8_t count, i;
    /* Retrieve "Group Count" field */
-   count = tvb_get_guint8(tvb, *offset);
+   count = tvb_get_uint8(tvb, *offset);
    proto_tree_add_uint(tree, hf_zbee_zcl_groups_group_count, tvb, *offset, 1, count);
    *offset += 1;
 
@@ -1757,7 +1816,7 @@ dissect_zcl_groups_get_group_membership(tvbuff_t *tvb, proto_tree *tree, guint *
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_groups_remove_group(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_groups_remove_group(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Groups ID" field */
    proto_tree_add_item(tree, hf_zbee_zcl_groups_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -1780,7 +1839,7 @@ dissect_zcl_groups_remove_group(tvbuff_t *tvb, proto_tree *tree, guint *offset)
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_groups_add_remove_group_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_groups_add_remove_group_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Status" field */
    proto_tree_add_item(tree, hf_zbee_zcl_groups_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -1807,10 +1866,10 @@ dissect_zcl_groups_add_remove_group_response(tvbuff_t *tvb, proto_tree *tree, gu
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_groups_view_group_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_groups_view_group_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
-    guint attr_uint;
-    guint8 *attr_string;
+    unsigned attr_uint;
+    uint8_t *attr_string;
    /* Retrieve "Status" field */
    proto_tree_add_item(tree, hf_zbee_zcl_groups_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
    *offset += 1;
@@ -1820,14 +1879,14 @@ dissect_zcl_groups_view_group_response(tvbuff_t *tvb, proto_tree *tree, guint *o
    *offset += 2;
 
    /* Retrieve "Group Name" field */
-   attr_uint = tvb_get_guint8(tvb, *offset); /* string length */
+   attr_uint = tvb_get_uint8(tvb, *offset); /* string length */
    if (attr_uint == 0xff) attr_uint = 0;
 
    proto_tree_add_uint(tree, hf_zbee_zcl_groups_attr_str_len, tvb, *offset, 1, attr_uint);
 
    *offset += 1;
 
-   attr_string = tvb_get_string_enc(wmem_packet_scope(), tvb, *offset, attr_uint, ENC_ASCII);
+   attr_string = tvb_get_string_enc(pinfo->pool, tvb, *offset, attr_uint, ENC_ASCII);
 
    proto_item_append_text(tree, ", String: %s", attr_string);
    proto_tree_add_string(tree, hf_zbee_zcl_groups_attr_str, tvb, *offset, attr_uint, attr_string);
@@ -1850,18 +1909,18 @@ dissect_zcl_groups_view_group_response(tvbuff_t *tvb, proto_tree *tree, guint *o
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_groups_get_group_membership_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_groups_get_group_membership_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    proto_item *grp_list;
    proto_tree *grp_list_tree;
-   guint8  count, i;
+   uint8_t count, i;
 
    /* Retrieve "Capacity" field */
    proto_tree_add_item(tree, hf_zbee_zcl_groups_group_capacity, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
    *offset += 1;
 
    /* Retrieve "Group Count" field */
-   count = tvb_get_guint8(tvb, *offset);
+   count = tvb_get_uint8(tvb, *offset);
    proto_tree_add_uint(tree, hf_zbee_zcl_groups_group_count, tvb, *offset, 1, count);
    *offset += 1;
    if(count > 0)
@@ -1888,15 +1947,16 @@ dissect_zcl_groups_get_group_membership_response(tvbuff_t *tvb, proto_tree *tree
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_groups_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_groups_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch ( attr_id ) {
@@ -1907,7 +1967,7 @@ dissect_zcl_groups_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, gui
             break;
 
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -1936,7 +1996,7 @@ proto_register_zbee_zcl_groups(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_groups_group_name_support,
-            { "Group Name Support", "zbee_zcl_general.groups.attr.group_name_support", FT_BOOLEAN, 8, TFS(&tfs_true_false),
+            { "Group Name Support", "zbee_zcl_general.groups.attr.group_name_support", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_CMD_ID_GROUPS_NAME_SUPPORT_MASK, NULL, HFILL } },
 
         { &hf_zbee_zcl_groups_group_id,
@@ -1978,9 +2038,10 @@ proto_register_zbee_zcl_groups(void)
     };
 
     /* ZCL Groups subtrees */
-    static gint *ett[ZBEE_ZCL_GROUPS_NUM_ETT];
-    ett[0] = &ett_zbee_zcl_groups;
-    ett[1] = &ett_zbee_zcl_groups_grp_ctrl;
+    static int *ett[] = {
+        &ett_zbee_zcl_groups,
+        &ett_zbee_zcl_groups_grp_ctrl
+    };
 
     /* Register the ZigBee ZCL Groups cluster protocol name and description */
     proto_zbee_zcl_groups = proto_register_protocol("ZigBee ZCL Groups", "ZCL Groups", ZBEE_PROTOABBREV_ZCL_GROUPS);
@@ -2007,19 +2068,16 @@ proto_register_zbee_zcl_groups(void)
 void
 proto_reg_handoff_zbee_zcl_groups(void)
 {
-    dissector_handle_t groups_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    groups_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_GROUPS);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_GROUPS, groups_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_groups,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_GROUPS,
+                            proto_zbee_zcl_groups,
                             ett_zbee_zcl_groups,
                             ZBEE_ZCL_CID_GROUPS,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_groups_attr_id,
                             hf_zbee_zcl_groups_attr_id,
                             hf_zbee_zcl_groups_srv_rx_cmd_id,
                             hf_zbee_zcl_groups_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_groups_attr_data
+                            dissect_zcl_groups_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_groups*/
 
@@ -2032,8 +2090,7 @@ proto_reg_handoff_zbee_zcl_groups(void)
 /* Defines               */
 /*************************/
 
-#define ZBEE_ZCL_SCENES_NUM_ETT                                 2
-#define ZBEE_ZCL_CMD_ID_SCENES_SUPPORTED_MASK                   0x80  /* bit     7 */
+#define ZBEE_ZCL_ATTR_SCENES_SCENE_VALID_MASK                   0x01  /* bit     0 */
 
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_SCENES_SCENE_COUNT                     0x0000  /* Scene Count */
@@ -2044,8 +2101,12 @@ proto_reg_handoff_zbee_zcl_groups(void)
 #define ZBEE_ZCL_ATTR_ID_SCENES_LAST_CONFIGURED_BY              0x0005  /* Last Configured By */
 
 /* Scene Name Support */
-#define ZBEE_ZCL_SCENES_NAME_SUPPORTED                          0x80  /* Scene Names Supported */
 #define ZBEE_ZCL_SCENES_NAME_NOT_SUPPORTED                      0x00  /* Scene Names Not Supported */
+#define ZBEE_ZCL_SCENES_NAME_SUPPORTED                          0x01  /* Scene Names Supported */
+
+/* Copy Mode */
+#define ZBEE_ZCL_SCENES_COPY_SPECIFIED                          0x00  /* Copy Specified Scenes */
+#define ZBEE_ZCL_SCENES_COPY_ALL                                0x01  /* Copy All Scenes */
 
 /* Server Commands Received */
 #define ZBEE_ZCL_CMD_ID_SCENES_ADD_SCENE                        0x00  /* Add Scene */
@@ -2055,6 +2116,9 @@ proto_reg_handoff_zbee_zcl_groups(void)
 #define ZBEE_ZCL_CMD_ID_SCENES_STORE_SCENE                      0x04  /* Store Scene */
 #define ZBEE_ZCL_CMD_ID_SCENES_RECALL_SCENE                     0x05  /* Recall Scene */
 #define ZBEE_ZCL_CMD_ID_SCENES_GET_SCENE_MEMBERSHIP             0x06  /* Get Scene Membership */
+#define ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_ADD_SCENE               0x40  /* Enhanced Add Scene */
+#define ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_VIEW_SCENE              0x41  /* Enhanced View Scene */
+#define ZBEE_ZCL_CMD_ID_SCENES_COPY_SCENE                       0x42  /* Copy Scene */
 #define ZBEE_ZCL_CMD_ID_SCENES_NAME_SUPPORT_MASK                0x80
 
 /* Server Commands Generated */
@@ -2064,7 +2128,13 @@ proto_reg_handoff_zbee_zcl_groups(void)
 #define ZBEE_ZCL_CMD_ID_SCENES_REMOVE_ALL_SCENES_RESPONSE       0x03  /* Remove all Scenes Response */
 #define ZBEE_ZCL_CMD_ID_SCENES_STORE_SCENE_RESPONSE             0x04  /* Store Scene Response */
 #define ZBEE_ZCL_CMD_ID_SCENES_GET_SCENE_MEMBERSHIP_RESPONSE    0x06  /* Get Scene Membership Response */
+#define ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_ADD_SCENE_RESPONSE      0x40  /* Enhanced Add Scene Response */
+#define ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_VIEW_SCENE_RESPONSE     0x41  /* Enhanced View Scene Response */
+#define ZBEE_ZCL_CMD_ID_SCENES_COPY_SCENE_RESPONSE              0x42  /* Copy Scene Response */
 
+/* Enhanced */
+#define IS_ENHANCED                                             true
+#define IS_NOT_ENHANCED                                         false
 
 /*************************/
 /* Function Declarations */
@@ -2074,15 +2144,17 @@ void proto_register_zbee_zcl_scenes(void);
 void proto_reg_handoff_zbee_zcl_scenes(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_scenes_add_scene                                    (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_scenes_view_remove_store_recall_scene               (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_scenes_remove_all_get_scene_membership              (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_scenes_add_remove_store_scene_response              (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_scenes_view_scene_response                          (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_scenes_remove_all_scenes_response                   (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_scenes_get_scene_membership_response                (tvbuff_t *tvb, proto_tree *tree, guint *offset);
+static void dissect_zcl_scenes_add_scene                                    (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset, bool enhanced);
+static void dissect_zcl_scenes_view_remove_store_recall_scene               (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_scenes_remove_all_get_scene_membership              (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_scenes_copy_scene                                   (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_scenes_add_remove_store_scene_response              (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_scenes_view_scene_response                          (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset, bool enhanced);
+static void dissect_zcl_scenes_remove_all_scenes_response                   (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_scenes_get_scene_membership_response                (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_scenes_copy_scene_response                          (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
-static void dissect_zcl_scenes_attr_data                                    (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
+static void dissect_zcl_scenes_extension_fields                             (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
 /* Private functions prototype */
 
@@ -2090,26 +2162,50 @@ static void dissect_zcl_scenes_attr_data                                    (pro
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_scenes = -1;
+static int proto_zbee_zcl_scenes;
 
-static int hf_zbee_zcl_scenes_attr_id = -1;
-static int hf_zbee_zcl_scenes_attr_id_scene_valid = -1;
-static int hf_zbee_zcl_scenes_attr_id_name_support = -1;
-static int hf_zbee_zcl_scenes_group_id = -1;
-static int hf_zbee_zcl_scenes_scene_id = -1;
-static int hf_zbee_zcl_scenes_transit_time = -1;
-static int hf_zbee_zcl_scenes_extension_set_field = -1;
-static int hf_zbee_zcl_scenes_status = -1;
-static int hf_zbee_zcl_scenes_capacity = -1;
-static int hf_zbee_zcl_scenes_scene_count = -1;
-static int hf_zbee_zcl_scenes_attr_str_len = -1;
-static int hf_zbee_zcl_scenes_attr_str = -1;
-static int hf_zbee_zcl_scenes_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_scenes_srv_tx_cmd_id = -1;
-static int hf_zbee_zcl_scenes_scene_list = -1;
+static int hf_zbee_zcl_scenes_attr_id;
+static int hf_zbee_zcl_scenes_attr_id_scene_valid;
+static int hf_zbee_zcl_scenes_attr_id_name_support;
+static int hf_zbee_zcl_scenes_group_id;
+static int hf_zbee_zcl_scenes_group_id_from;
+static int hf_zbee_zcl_scenes_group_id_to;
+static int hf_zbee_zcl_scenes_scene_id;
+static int hf_zbee_zcl_scenes_scene_id_from;
+static int hf_zbee_zcl_scenes_scene_id_to;
+static int hf_zbee_zcl_scenes_transit_time;
+static int hf_zbee_zcl_scenes_enh_transit_time;
+static int hf_zbee_zcl_scenes_extension_set_cluster;
+static int hf_zbee_zcl_scenes_extension_set_onoff;
+static int hf_zbee_zcl_scenes_extension_set_level;
+static int hf_zbee_zcl_scenes_extension_set_x;
+static int hf_zbee_zcl_scenes_extension_set_y;
+static int hf_zbee_zcl_scenes_extension_set_hue;
+static int hf_zbee_zcl_scenes_extension_set_saturation;
+static int hf_zbee_zcl_scenes_extension_set_color_loop_active;
+static int hf_zbee_zcl_scenes_extension_set_color_loop_direction;
+static int hf_zbee_zcl_scenes_extension_set_color_loop_time;
+static int hf_zbee_zcl_scenes_extension_set_cooling_setpoint;
+static int hf_zbee_zcl_scenes_extension_set_heating_setpoint;
+static int hf_zbee_zcl_scenes_extension_set_system_mode;
+static int hf_zbee_zcl_scenes_extension_set_lock_state;
+static int hf_zbee_zcl_scenes_extension_set_lift_percentage;
+static int hf_zbee_zcl_scenes_extension_set_tilt_percentage;
+
+static int hf_zbee_zcl_scenes_status;
+static int hf_zbee_zcl_scenes_capacity;
+static int hf_zbee_zcl_scenes_scene_count;
+static int hf_zbee_zcl_scenes_attr_str_len;
+static int hf_zbee_zcl_scenes_attr_str;
+static int hf_zbee_zcl_scenes_srv_rx_cmd_id;
+static int hf_zbee_zcl_scenes_srv_tx_cmd_id;
+static int hf_zbee_zcl_scenes_scene_list;
+static int hf_zbee_zcl_scenes_copy_mode;
+
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_scenes = -1;
-static gint ett_zbee_zcl_scenes_scene_ctrl = -1;
+static int ett_zbee_zcl_scenes;
+static int ett_zbee_zcl_scenes_scene_ctrl;
+static int ett_zbee_zcl_scenes_extension_field_set;
 
 /* Attributes */
 static const value_string zbee_zcl_scenes_attr_names[] = {
@@ -2131,6 +2227,9 @@ static const value_string zbee_zcl_scenes_srv_rx_cmd_names[] = {
     { ZBEE_ZCL_CMD_ID_SCENES_STORE_SCENE,           "Store Scene" },
     { ZBEE_ZCL_CMD_ID_SCENES_RECALL_SCENE,          "Recall Scene" },
     { ZBEE_ZCL_CMD_ID_SCENES_GET_SCENE_MEMBERSHIP,  "Get Scene Membership" },
+    { ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_ADD_SCENE,    "Enhanced Add Scene" },
+    { ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_VIEW_SCENE,   "Enhanced View Scene" },
+    { ZBEE_ZCL_CMD_ID_SCENES_COPY_SCENE,            "Copy Scene" },
     { 0, NULL }
 };
 
@@ -2142,6 +2241,9 @@ static const value_string zbee_zcl_scenes_srv_tx_cmd_names[] = {
     { ZBEE_ZCL_CMD_ID_SCENES_REMOVE_ALL_SCENES_RESPONSE,    "Remove all Scene Response" },
     { ZBEE_ZCL_CMD_ID_SCENES_STORE_SCENE_RESPONSE,          "Store Scene Response" },
     { ZBEE_ZCL_CMD_ID_SCENES_GET_SCENE_MEMBERSHIP_RESPONSE, "Get Scene Membership Response" },
+    { ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_ADD_SCENE_RESPONSE,   "Enhanced Add Scene Response" },
+    { ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_VIEW_SCENE_RESPONSE,  "Enhanced View Scene Response" },
+    { ZBEE_ZCL_CMD_ID_SCENES_COPY_SCENE_RESPONSE,           "Copy Scene Response" },
     { 0, NULL }
 };
 
@@ -2152,10 +2254,59 @@ static const value_string zbee_zcl_scenes_group_names_support_values[] = {
     { 0, NULL }
 };
 
+/* Scene Copy Mode Values */
+static const value_string zbee_zcl_scenes_copy_mode_values[] = {
+    { ZBEE_ZCL_SCENES_COPY_SPECIFIED,   "Copy Specified Scenes" },
+    { ZBEE_ZCL_SCENES_COPY_ALL,         "Copy All Scenes" },
+    { 0, NULL }
+};
+
+/* Color Loop Directions */
+static const value_string zbee_zcl_scenes_color_loop_direction_values[] = {
+    { 0x00,   "Hue is Decrementing" },
+    { 0x01,   "Hue is Incrementing" },
+    { 0, NULL }
+};
+
 
 /*************************/
 /* Function Bodies       */
 /*************************/
+
+/*FUNCTION:------------------------------------------------------
+ *  NAME
+ *    decode_color_xy
+ *  DESCRIPTION
+ *    this function decodes color xy values
+ *  PARAMETERS
+ *      unsigned *s        - string to display
+ *      uint16_t value   - value to decode
+ *  RETURNS
+ *    none
+ *---------------------------------------------------------------
+ */
+static void
+decode_color_xy(char *s, uint16_t value)
+{
+    snprintf(s, ITEM_LABEL_LENGTH, "%.4lf", value/65535.0);
+}
+
+/*FUNCTION:------------------------------------------------------
+ *  NAME
+ *    decode_setpoint
+ *  DESCRIPTION
+ *    this function decodes the setpoint
+ *  PARAMETERS
+ *      unsigned *s        - string to display
+ *      uint16_t value   - value to decode
+ *  RETURNS
+ *    none
+ *---------------------------------------------------------------
+ */
+static void decode_setpoint(char *s, int16_t value)
+{
+    snprintf(s, ITEM_LABEL_LENGTH, "%.2lf [" UTF8_DEGREE_SIGN "C]", value/100.0);
+}
 
 /*FUNCTION:------------------------------------------------------
  *  NAME
@@ -2175,9 +2326,9 @@ dissect_zbee_zcl_scenes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -2193,7 +2344,7 @@ dissect_zbee_zcl_scenes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_scenes_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_scenes_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -2203,19 +2354,28 @@ dissect_zbee_zcl_scenes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             /* Call the appropriate command dissector */
             switch (cmd_id) {
                 case ZBEE_ZCL_CMD_ID_SCENES_ADD_SCENE:
-                    dissect_zcl_scenes_add_scene(tvb, payload_tree, &offset);
+                    dissect_zcl_scenes_add_scene(tvb, pinfo, payload_tree, &offset, IS_NOT_ENHANCED);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_ADD_SCENE:
+                    dissect_zcl_scenes_add_scene(tvb, pinfo, payload_tree, &offset, IS_ENHANCED);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_SCENES_VIEW_SCENE:
                 case ZBEE_ZCL_CMD_ID_SCENES_REMOVE_SCENE:
                 case ZBEE_ZCL_CMD_ID_SCENES_STORE_SCENE:
                 case ZBEE_ZCL_CMD_ID_SCENES_RECALL_SCENE:
+                case ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_VIEW_SCENE:
                     dissect_zcl_scenes_view_remove_store_recall_scene(tvb, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_SCENES_REMOVE_ALL_SCENES:
                 case ZBEE_ZCL_CMD_ID_SCENES_GET_SCENE_MEMBERSHIP:
                     dissect_zcl_scenes_remove_all_get_scene_membership(tvb, payload_tree, &offset);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_SCENES_COPY_SCENE:
+                    dissect_zcl_scenes_copy_scene(tvb, payload_tree, &offset);
                     break;
 
                 default:
@@ -2230,7 +2390,7 @@ dissect_zbee_zcl_scenes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_scenes_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_scenes_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -2242,11 +2402,16 @@ dissect_zbee_zcl_scenes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
                 case ZBEE_ZCL_CMD_ID_SCENES_ADD_SCENE_RESPONSE:
                 case ZBEE_ZCL_CMD_ID_SCENES_REMOVE_SCENE_RESPONSE:
                 case ZBEE_ZCL_CMD_ID_SCENES_STORE_SCENE_RESPONSE:
+                case ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_ADD_SCENE_RESPONSE:
                     dissect_zcl_scenes_add_remove_store_scene_response(tvb, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_SCENES_VIEW_SCENE_RESPONSE:
-                    dissect_zcl_scenes_view_scene_response(tvb, payload_tree, &offset);
+                    dissect_zcl_scenes_view_scene_response(tvb, pinfo, payload_tree, &offset, IS_NOT_ENHANCED);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_SCENES_ENHANCED_VIEW_SCENE_RESPONSE:
+                    dissect_zcl_scenes_view_scene_response(tvb, pinfo, payload_tree, &offset, IS_ENHANCED);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_SCENES_REMOVE_ALL_SCENES_RESPONSE:
@@ -2255,6 +2420,10 @@ dissect_zbee_zcl_scenes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
                 case ZBEE_ZCL_CMD_ID_SCENES_GET_SCENE_MEMBERSHIP_RESPONSE:
                     dissect_zcl_scenes_get_scene_membership_response(tvb, payload_tree, &offset);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_SCENES_COPY_SCENE_RESPONSE:
+                    dissect_zcl_scenes_copy_scene_response(tvb, payload_tree, &offset);
                     break;
 
                 default:
@@ -2273,18 +2442,19 @@ dissect_zbee_zcl_scenes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
  *  DESCRIPTION
  *      this function decodes the Add Scene payload.
  *  PARAMETERS
- *      tvb     - the tv buffer of the current data_type
- *      tree    - the tree to append this item to
- *      offset  - offset of data in tvb
+ *      tvb      - the tv buffer of the current data_type
+ *      tree     - the tree to append this item to
+ *      offset   - offset of data in tvb
+ *      enhanced - use enhanced transition time
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_scenes_add_scene(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_scenes_add_scene(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset, bool enhanced)
 {
-    guint attr_uint;
-    guint8 *attr_string;
+    unsigned attr_uint;
+    uint8_t *attr_string;
 
     /* Retrieve "Group ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_scenes_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -2295,18 +2465,18 @@ dissect_zcl_scenes_add_scene(tvbuff_t *tvb, proto_tree *tree, guint *offset)
     *offset += 1;
 
     /* Retrieve "Transition Time" field */
-    proto_tree_add_item(tree, hf_zbee_zcl_scenes_transit_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(tree, enhanced ? hf_zbee_zcl_scenes_enh_transit_time : hf_zbee_zcl_scenes_transit_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
 
     /* Retrieve Scene Name */
-    attr_uint = tvb_get_guint8(tvb, *offset); /* string length */
+    attr_uint = tvb_get_uint8(tvb, *offset); /* string length */
     if (attr_uint == 0xff) attr_uint = 0;
 
     proto_tree_add_uint(tree, hf_zbee_zcl_scenes_attr_str_len, tvb, *offset, 1, attr_uint);
 
     *offset += 1;
 
-    attr_string = tvb_get_string_enc(wmem_packet_scope(), tvb, *offset, attr_uint, ENC_ASCII);
+    attr_string = tvb_get_string_enc(pinfo->pool, tvb, *offset, attr_uint, ENC_ASCII);
 
     proto_item_append_text(tree, ", String: %s", attr_string);
     proto_tree_add_string(tree, hf_zbee_zcl_scenes_attr_str, tvb, *offset, attr_uint, attr_string);
@@ -2314,7 +2484,7 @@ dissect_zcl_scenes_add_scene(tvbuff_t *tvb, proto_tree *tree, guint *offset)
     *offset += attr_uint;
 
     /* Retrieve "Extension Set" field */
-    proto_tree_add_item(tree, hf_zbee_zcl_scenes_extension_set_field, tvb, *offset, -1, ENC_NA);
+    dissect_zcl_scenes_extension_fields(tvb, tree, offset);
 
 } /*dissect_zcl_scenes_add_scene*/
 
@@ -2333,9 +2503,9 @@ dissect_zcl_scenes_add_scene(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *------------------------------------------------------------------------------
  */
 static void
-dissect_zcl_scenes_view_remove_store_recall_scene(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_scenes_view_remove_store_recall_scene(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    /* Retrieve "Scenes Timeout" field */
+    /* Retrieve "Group ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_scenes_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
 
@@ -2360,13 +2530,52 @@ dissect_zcl_scenes_view_remove_store_recall_scene(tvbuff_t *tvb, proto_tree *tre
 *-----------------------------------------------------------------------------
 */
 static void
-dissect_zcl_scenes_remove_all_get_scene_membership(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_scenes_remove_all_get_scene_membership(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Group ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_scenes_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
 
 } /*dissect_zcl_scenes_remove_all_get_scene_membership*/
+
+
+/*FUNCTION:--------------------------------------------------------------------
+ *  NAME
+ *      dissect_zcl_scenes_copy_scene
+ *  DESCRIPTION
+ *      this function decodes the Copy Scene payload.
+ *  PARAMETERS
+ *      tvb     - the tv buffer of the current data_type
+ *      tree    - the tree to append this item to
+ *      offset  - offset of data in tvb
+ *  RETURNS
+ *      none
+ *------------------------------------------------------------------------------
+ */
+static void
+dissect_zcl_scenes_copy_scene(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    /* Retrieve "Mode" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_scenes_copy_mode, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+    /* Retrieve "Group ID From" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_scenes_group_id_from, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+
+    /* Retrieve "Scene ID From" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_scenes_scene_id_from, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+    /* Retrieve "Group ID To" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_scenes_group_id_to, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+
+    /* Retrieve "Scene ID To" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_scenes_scene_id_to, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+} /*dissect_zcl_scenes_copy_scene*/
 
 
 /*FUNCTION:------------------------------------------------------
@@ -2383,7 +2592,7 @@ dissect_zcl_scenes_remove_all_get_scene_membership(tvbuff_t *tvb, proto_tree *tr
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_scenes_add_remove_store_scene_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_scenes_add_remove_store_scene_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Status" field */
    proto_tree_add_item(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -2406,21 +2615,22 @@ dissect_zcl_scenes_add_remove_store_scene_response(tvbuff_t *tvb, proto_tree *tr
 *  DESCRIPTION
 *      this function decodes the View Scene Response payload.
 *  PARAMETERS
-*      tvb     - the tv buffer of the current data_type
-*      tree    - the tree to append this item to
-*      offset  - offset of data in tvb
+*      tvb      - the tv buffer of the current data_type
+*      tree     - the tree to append this item to
+*      offset   - offset of data in tvb
+*      enhanced - use enhanced transition time
 *  RETURNS
 *      none
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_scenes_view_scene_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_scenes_view_scene_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset, bool enhanced)
 {
-    guint8 status, *attr_string;
-    guint attr_uint;
+    uint8_t status, *attr_string;
+    unsigned attr_uint;
 
     /* Retrieve "Status" field */
-    status = tvb_get_guint8(tvb, *offset);
+    status = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
 
@@ -2435,18 +2645,18 @@ dissect_zcl_scenes_view_scene_response(tvbuff_t *tvb, proto_tree *tree, guint *o
     if(status == ZBEE_ZCL_STAT_SUCCESS)
     {
         /* Retrieve "Transition Time" field */
-        proto_tree_add_item(tree, hf_zbee_zcl_scenes_transit_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(tree, enhanced ? hf_zbee_zcl_scenes_enh_transit_time : hf_zbee_zcl_scenes_transit_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
         *offset += 2;
 
         /* Retrieve Scene Name */
-        attr_uint = tvb_get_guint8(tvb, *offset); /* string length */
+        attr_uint = tvb_get_uint8(tvb, *offset); /* string length */
         if (attr_uint == 0xff) attr_uint = 0;
 
         proto_tree_add_uint(tree, hf_zbee_zcl_scenes_attr_str_len, tvb, *offset, 1, attr_uint);
 
         *offset += 1;
 
-        attr_string = tvb_get_string_enc(wmem_packet_scope(), tvb, *offset, attr_uint, ENC_ASCII);
+        attr_string = tvb_get_string_enc(pinfo->pool, tvb, *offset, attr_uint, ENC_ASCII);
 
         proto_item_append_text(tree, ", String: %s", attr_string);
         proto_tree_add_string(tree, hf_zbee_zcl_scenes_attr_str, tvb, *offset, attr_uint, attr_string);
@@ -2454,7 +2664,7 @@ dissect_zcl_scenes_view_scene_response(tvbuff_t *tvb, proto_tree *tree, guint *o
         *offset += attr_uint;
 
         /* Retrieve "Extension Set" field */
-        proto_tree_add_item(tree, hf_zbee_zcl_scenes_extension_set_field, tvb, *offset, -1, ENC_NA);
+        dissect_zcl_scenes_extension_fields(tvb, tree, offset);
 
     }
 
@@ -2475,7 +2685,7 @@ dissect_zcl_scenes_view_scene_response(tvbuff_t *tvb, proto_tree *tree, guint *o
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_scenes_remove_all_scenes_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_scenes_remove_all_scenes_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Status" field */
    proto_tree_add_item(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -2502,14 +2712,14 @@ dissect_zcl_scenes_remove_all_scenes_response(tvbuff_t *tvb, proto_tree *tree, g
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_scenes_get_scene_membership_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_scenes_get_scene_membership_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    proto_item *scene_list;
    proto_tree *scene_list_tree;
-   guint8 status, count, i;
+   uint8_t status, count, i;
 
    /* Retrieve "Status" field */
-   status = tvb_get_guint8(tvb, *offset);
+   status = tvb_get_uint8(tvb, *offset);
    proto_tree_add_item(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
    *offset += 1;
 
@@ -2524,7 +2734,7 @@ dissect_zcl_scenes_get_scene_membership_response(tvbuff_t *tvb, proto_tree *tree
    if(status == ZBEE_ZCL_STAT_SUCCESS)
    {
        /* Retrieve "Scene Count" field */
-       count = tvb_get_guint8(tvb, *offset);
+       count = tvb_get_uint8(tvb, *offset);
        proto_tree_add_uint(tree, hf_zbee_zcl_scenes_scene_count, tvb, *offset, 1, count);
        *offset += 1;
 
@@ -2546,6 +2756,186 @@ dissect_zcl_scenes_get_scene_membership_response(tvbuff_t *tvb, proto_tree *tree
 
 /*FUNCTION:------------------------------------------------------
  *  NAME
+ *      dissect_zcl_scenes_copy_scene_response
+ *  DESCRIPTION
+ *      this function decodes the Copy Scene payload.
+ *  PARAMETERS
+ *      tvb     - the tv buffer of the current data_type
+ *      tree    - the tree to append this item to
+ *      offset  - offset of data in tvb
+ *  RETURNS
+ *      none
+ *---------------------------------------------------------------
+ */
+static void
+dissect_zcl_scenes_copy_scene_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+   /* Retrieve "Status" field */
+   proto_tree_add_item(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_NA);
+   *offset += 1;
+
+   /* Retrieve "Group ID From" field */
+   proto_tree_add_item(tree, hf_zbee_zcl_scenes_group_id_from, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+   *offset += 2;
+
+   /* Retrieve "Scene ID From" field */
+   proto_tree_add_item(tree, hf_zbee_zcl_scenes_scene_id_from, tvb, *offset, 1, ENC_NA);
+   *offset += 1;
+
+} /*dissect_zcl_scenes_copy_scene_response*/
+
+
+/*FUNCTION:------------------------------------------------------
+ *  NAME
+ *      dissect_zcl_scenes_extension_fields
+ *  DESCRIPTION
+ *      this function decodes the extension set fields
+ *  PARAMETERS
+ *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
+ *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
+ *      unsigned *offset       - pointer to buffer offset
+ *  RETURNS
+ *      none
+ *---------------------------------------------------------------
+ */
+static void dissect_zcl_scenes_extension_fields(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    uint8_t     set = 1;
+    proto_tree *subtree;
+
+    // Is there an extension field?
+    bool hasExtensionField = tvb_offset_exists(tvb, *offset+2);
+
+    while (hasExtensionField)
+    {
+        // Retrieve the cluster and the length
+        uint32_t cluster = tvb_get_uint16(tvb, *offset, ENC_LITTLE_ENDIAN);
+        uint8_t length  = tvb_get_uint8 (tvb, *offset+2);
+
+        // Create a subtree
+        subtree = proto_tree_add_subtree_format(tree, tvb, *offset, length, ett_zbee_zcl_scenes_extension_field_set, NULL, "Extension field set %d", set++);
+        proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_cluster, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 3;
+
+        switch (cluster)
+        {
+        case ZBEE_ZCL_CID_ON_OFF:
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_onoff, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            break;
+
+        case ZBEE_ZCL_CID_LEVEL_CONTROL:
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_level, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            break;
+
+        case ZBEE_ZCL_CID_COLOR_CONTROL:
+            if (length >= 2)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_x, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+                length  -= 2;
+                *offset += 2;
+            }
+            if (length >= 2)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_y, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+                length  -= 2;
+                *offset += 2;
+            }
+            if (length >= 2)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_hue, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+                length  -= 2;
+                *offset += 2;
+            }
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_saturation, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_color_loop_active, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_color_loop_direction, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            if (length >= 2)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_color_loop_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+                length  -= 2;
+                *offset += 2;
+            }
+            break;
+
+        case ZBEE_ZCL_CID_DOOR_LOCK:
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_lock_state, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            break;
+
+        case ZBEE_ZCL_CID_WINDOW_COVERING:
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_lift_percentage, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_tilt_percentage, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            break;
+
+        case ZBEE_ZCL_CID_THERMOSTAT:
+            if (length >= 2)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_cooling_setpoint, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+                length  -= 2;
+                *offset += 2;
+            }
+            if (length >= 2)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_heating_setpoint, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+                length  -= 2;
+                *offset += 2;
+            }
+            if (length >= 1)
+            {
+                proto_tree_add_item(subtree, hf_zbee_zcl_scenes_extension_set_system_mode, tvb, *offset, 1, ENC_NA);
+                length  -= 1;
+                *offset += 1;
+            }
+            break;
+        }
+
+        *offset += length;
+        hasExtensionField = tvb_offset_exists(tvb, *offset+2);
+    }
+}
+
+
+/*FUNCTION:------------------------------------------------------
+ *  NAME
  *      dissect_zcl_scenes_attr_data
  *  DESCRIPTION
  *      this function is called by ZCL foundation dissector in order to decode
@@ -2553,15 +2943,16 @@ dissect_zcl_scenes_get_scene_membership_response(tvbuff_t *tvb, proto_tree *tree
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_scenes_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_scenes_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch ( attr_id ) {
@@ -2581,7 +2972,7 @@ dissect_zcl_scenes_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, gui
         case ZBEE_ZCL_ATTR_ID_SCENES_CURRENT_GROUP:
         case ZBEE_ZCL_ATTR_ID_SCENES_LAST_CONFIGURED_BY:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -2617,12 +3008,32 @@ proto_register_zbee_zcl_scenes(void)
             { "Group ID", "zbee_zcl_general.scenes.group_id", FT_UINT16, BASE_HEX, NULL,
             0x00, NULL, HFILL } },
 
+        { &hf_zbee_zcl_scenes_group_id_from,
+            { "Group ID From", "zbee_zcl_general.scenes.group_id_from", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_scenes_group_id_to,
+            { "Group ID To", "zbee_zcl_general.scenes.group_id_to", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
         { &hf_zbee_zcl_scenes_scene_id,
             { "Scene ID", "zbee_zcl_general.scenes.scene_id", FT_UINT8, BASE_HEX, NULL,
             0x00, NULL, HFILL } },
 
+        { &hf_zbee_zcl_scenes_scene_id_from,
+            { "Scene ID From", "zbee_zcl_general.scenes.scene_id_from", FT_UINT8, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_scenes_scene_id_to,
+            { "Scene ID To", "zbee_zcl_general.scenes.scene_id_to", FT_UINT8, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
         { &hf_zbee_zcl_scenes_transit_time,
-            { "Transition Time", "zbee_zcl_general.scenes.transit_time", FT_UINT16, BASE_HEX, NULL,
+            { "Transition Time", "zbee_zcl_general.scenes.transit_time", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_seconds),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_scenes_enh_transit_time,
+            { "Transition Time", "zbee_zcl_general.scenes.enh_transit_time", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_100ms),
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_scenes_status,
@@ -2642,8 +3053,8 @@ proto_register_zbee_zcl_scenes(void)
             ZBEE_ZCL_CMD_ID_SCENES_NAME_SUPPORT_MASK, NULL, HFILL } },
 
         { &hf_zbee_zcl_scenes_attr_id_scene_valid,
-            { "Scene Validity", "zbee_zcl_general.scenes.scene_valid",  FT_BOOLEAN, 8, TFS(&tfs_true_false),
-            ZBEE_ZCL_CMD_ID_SCENES_SUPPORTED_MASK, NULL, HFILL } },
+            { "Scene Valid", "zbee_zcl_general.scenes.scene_valid", FT_BOOLEAN, 8, NULL,
+            ZBEE_ZCL_ATTR_SCENES_SCENE_VALID_MASK, NULL, HFILL } },
 
         { &hf_zbee_zcl_scenes_attr_str_len,
             { "Length", "zbee_zcl_general.scenes.attr_str_len", FT_UINT8, BASE_DEC, NULL,
@@ -2653,9 +3064,73 @@ proto_register_zbee_zcl_scenes(void)
             { "String", "zbee_zcl_general.scenes.attr_str", FT_STRING, BASE_NONE, NULL,
             0x00, NULL, HFILL }},
 
-        { &hf_zbee_zcl_scenes_extension_set_field,
-            { "Extension Set", "zbee_zcl_general.scenes.extension_set", FT_BYTES, BASE_NONE, NULL,
+        { &hf_zbee_zcl_scenes_extension_set_cluster,
+            { "Cluster", "zbee_zcl_general.scenes.extension_set.cluster", FT_UINT16, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_aps_cid_names),
             0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_onoff,
+            { "On/Off", "zbee_zcl_general.scenes.extension_set.onoff", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_level,
+            { "Level", "zbee_zcl_general.scenes.extension_set.level", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_x,
+            { "Color X", "zbee_zcl_general.scenes.extension_set.color_x", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_color_xy),
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_y,
+            { "Color Y", "zbee_zcl_general.scenes.extension_set.color_y", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_color_xy),
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_hue,
+            { "Enhanced Hue", "zbee_zcl_general.scenes.extension_set.hue", FT_UINT16, BASE_DEC, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_saturation,
+            { "Saturation", "zbee_zcl_general.scenes.extension_set.saturation", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_color_loop_active,
+            { "Color Loop Active", "zbee_zcl_general.scenes.extension_set.color_loop_active", FT_BOOLEAN, BASE_NONE, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_color_loop_direction,
+            { "Color Loop Direction", "zbee_zcl_general.scenes.extension_set.color_loop_direction", FT_UINT8, BASE_DEC, VALS(zbee_zcl_scenes_color_loop_direction_values),
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_color_loop_time,
+            { "Color Loop Time", "zbee_zcl_general.scenes.extension_set.color_loop_time", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_seconds),
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_lock_state,
+            { "Lock State", "zbee_zcl_general.scenes.extension_set.lock_state", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_lift_percentage,
+            { "Current Position Lift Percentage", "zbee_zcl_general.scenes.extension_set.current_position_lift_percentage", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_tilt_percentage,
+            { "Current Position Tilt Percentage", "zbee_zcl_general.scenes.extension_set.current_position_tilt_percentage", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_cooling_setpoint,
+            { "Occupied Cooling Setpoint", "zbee_zcl_general.scenes.extension_set.occupied_cooling_setpoint", FT_INT16, BASE_CUSTOM, CF_FUNC(decode_setpoint),
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_heating_setpoint,
+            { "Occupied Heating Setpoint", "zbee_zcl_general.scenes.extension_set.occupied_heating_setpoint", FT_INT16, BASE_CUSTOM, CF_FUNC(decode_setpoint),
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_extension_set_system_mode,
+            { "System Mode", "zbee_zcl_general.scenes.extension_set.system_mode", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL }},
+
+        { &hf_zbee_zcl_scenes_copy_mode,
+            { "Scene Copy Mode", "zbee_zcl_general.scenes.copy_mode", FT_UINT8, BASE_DEC, VALS(zbee_zcl_scenes_copy_mode_values),
+            0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_scenes_srv_rx_cmd_id,
           { "Command", "zbee_zcl_general.scenes.cmd.srv_rx.id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_scenes_srv_rx_cmd_names),
@@ -2668,9 +3143,11 @@ proto_register_zbee_zcl_scenes(void)
     };
 
     /* ZCL Scenes subtrees */
-    static gint *ett[ZBEE_ZCL_SCENES_NUM_ETT];
-    ett[0] = &ett_zbee_zcl_scenes;
-    ett[1] = &ett_zbee_zcl_scenes_scene_ctrl;
+    static int *ett[] = {
+        &ett_zbee_zcl_scenes,
+        &ett_zbee_zcl_scenes_scene_ctrl,
+        &ett_zbee_zcl_scenes_extension_field_set
+    };
 
     /* Register the ZigBee ZCL Scenes cluster protocol name and description */
     proto_zbee_zcl_scenes = proto_register_protocol("ZigBee ZCL Scenes", "ZCL Scenes", ZBEE_PROTOABBREV_ZCL_SCENES);
@@ -2697,19 +3174,17 @@ proto_register_zbee_zcl_scenes(void)
 void
 proto_reg_handoff_zbee_zcl_scenes(void)
 {
-    dissector_handle_t scenes_handle;
 
-    /* Register our dissector with the ZigBee application dissectors. */
-    scenes_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_SCENES);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_SCENES, scenes_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_scenes,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_SCENES,
+                            proto_zbee_zcl_scenes,
                             ett_zbee_zcl_scenes,
                             ZBEE_ZCL_CID_SCENES,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_scenes_attr_id,
                             hf_zbee_zcl_scenes_attr_id,
                             hf_zbee_zcl_scenes_srv_rx_cmd_id,
                             hf_zbee_zcl_scenes_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_scenes_attr_data
+                            dissect_zcl_scenes_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_scenes*/
 
@@ -2723,12 +3198,23 @@ proto_reg_handoff_zbee_zcl_scenes(void)
 /*************************/
 
 /* Attributes */
-#define ZBEE_ZCL_ON_OFF_ATTR_ID_ONOFF     0x0000
+#define ZBEE_ZCL_ON_OFF_ATTR_ID_ONOFF               0x0000
+#define ZBEE_ZCL_ON_OFF_ATTR_ID_GLOBALSCENECONTROL  0x4000
+#define ZBEE_ZCL_ON_OFF_ATTR_ID_ONTIME              0x4001
+#define ZBEE_ZCL_ON_OFF_ATTR_ID_OFFWAITTIME         0x4002
+#define ZBEE_ZCL_ON_OFF_ATTR_ID_STARTUPONOFF        0x4003
 
 /* Server Commands Received */
-#define ZBEE_ZCL_ON_OFF_CMD_OFF           0x00  /* Off */
-#define ZBEE_ZCL_ON_OFF_CMD_ON            0x01  /* On */
-#define ZBEE_ZCL_ON_OFF_CMD_TOGGLE        0x02  /* Toggle */
+#define ZBEE_ZCL_ON_OFF_CMD_OFF                         0x00  /* Off */
+#define ZBEE_ZCL_ON_OFF_CMD_ON                          0x01  /* On */
+#define ZBEE_ZCL_ON_OFF_CMD_TOGGLE                      0x02  /* Toggle */
+#define ZBEE_ZCL_ON_OFF_CMD_OFF_WITH_EFFECT             0x40  /* Off with effect */
+#define ZBEE_ZCL_ON_OFF_CMD_ON_WITH_RECALL_GLOBAL_SCENE 0x41  /* On with recall global scene */
+#define ZBEE_ZCL_ON_OFF_CMD_ON_WITH_TIMED_OFF           0x42  /* On with timed off */
+
+/* On/Off Control Field */
+#define ZBEE_ZCL_ON_OFF_TIMED_OFF_CONTROL_MASK_ACCEPT_ONLY_WHEN_ON   0x01
+#define ZBEE_ZCL_ON_OFF_TIMED_OFF_CONTROL_MASK_RESERVED              0xFE
 
 /*************************/
 /* Function Declarations */
@@ -2738,7 +3224,7 @@ void proto_register_zbee_zcl_on_off(void);
 void proto_reg_handoff_zbee_zcl_on_off(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_on_off_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
+static void dissect_zcl_on_off_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr);
 
 /* Private functions prototype */
 
@@ -2747,34 +3233,83 @@ static void dissect_zcl_on_off_attr_data(proto_tree *tree, tvbuff_t *tvb, guint 
 /*************************/
 
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_on_off = -1;
+static int proto_zbee_zcl_on_off;
 
-static int hf_zbee_zcl_on_off_attr_id = -1;
-static int hf_zbee_zcl_on_off_attr_onoff = -1;
-static int hf_zbee_zcl_on_off_srv_rx_cmd_id = -1;
+static int hf_zbee_zcl_on_off_attr_id;
+static int hf_zbee_zcl_on_off_attr_onoff;
+static int hf_zbee_zcl_on_off_attr_globalscenecontrol;
+static int hf_zbee_zcl_on_off_attr_ontime;
+static int hf_zbee_zcl_on_off_attr_offwaittime;
+static int hf_zbee_zcl_on_off_attr_startuponoff;
+static int hf_zbee_zcl_on_off_srv_rx_cmd_id;
+
+static int hf_zbee_zcl_on_off_effect_identifier;
+static int hf_zbee_zcl_on_off_effect_variant_delayed_all_off;
+static int hf_zbee_zcl_on_off_effect_variant_dying_light;
+static int hf_zbee_zcl_on_off_effect_variant_reserved;
+
+static int hf_zbee_zcl_on_off_timed_off_control_mask;
+static int hf_zbee_zcl_on_off_timed_off_control_mask_accept_only_when_on;
+static int hf_zbee_zcl_on_off_timed_off_control_mask_reserved;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_on_off = -1;
+static int ett_zbee_zcl_on_off;
+static int ett_zbee_zcl_on_off_timed_off_control_mask;
 
 /* Attributes */
 static const value_string zbee_zcl_on_off_attr_names[] = {
-    { ZBEE_ZCL_ON_OFF_ATTR_ID_ONOFF,    "OnOff" },
+    { ZBEE_ZCL_ON_OFF_ATTR_ID_ONOFF,                "OnOff" },
+    { ZBEE_ZCL_ON_OFF_ATTR_ID_GLOBALSCENECONTROL,   "GlobalSceneControl" },
+    { ZBEE_ZCL_ON_OFF_ATTR_ID_ONTIME,               "OnTime" },
+    { ZBEE_ZCL_ON_OFF_ATTR_ID_OFFWAITTIME,          "OffWaitTime" },
+    { ZBEE_ZCL_ON_OFF_ATTR_ID_STARTUPONOFF,         "StartUpOnOff" },
     { 0, NULL }
 };
 
 /* Server Commands Generated */
 static const value_string zbee_zcl_on_off_srv_rx_cmd_names[] = {
-    { ZBEE_ZCL_ON_OFF_CMD_OFF,          "Off" },
-    { ZBEE_ZCL_ON_OFF_CMD_ON,           "On" },
-    { ZBEE_ZCL_ON_OFF_CMD_TOGGLE,       "Toggle" },
+    { ZBEE_ZCL_ON_OFF_CMD_OFF,                          "Off" },
+    { ZBEE_ZCL_ON_OFF_CMD_ON,                           "On" },
+    { ZBEE_ZCL_ON_OFF_CMD_TOGGLE,                       "Toggle" },
+    { ZBEE_ZCL_ON_OFF_CMD_OFF_WITH_EFFECT,              "Off with effect" },
+    { ZBEE_ZCL_ON_OFF_CMD_ON_WITH_RECALL_GLOBAL_SCENE,  "On with recall global scene" },
+    { ZBEE_ZCL_ON_OFF_CMD_ON_WITH_TIMED_OFF,            "On with timed off" },
     { 0, NULL }
 };
 
-/* OnOff Names */
-static const value_string zbee_zcl_on_off_onoff_names[] = {
-    { 0, "Off" },
-    { 1, "On" },
-    { 0, NULL }
+static const range_string zbee_zcl_on_off_effect_identifier_names[] = {
+    { 0x00, 0x00, "Delayed All Off" },
+    { 0x01, 0x01, "Dying Light" },
+    { 0x02, 0xFF, "Reserved" },
+    { 0, 0, NULL }
+};
+
+static const range_string zbee_zcl_on_off_effect_variant_delayed_all_off_names[] = {
+    { 0x00, 0x00, "Fade to off in 0.8 seconds" },
+    { 0x01, 0x01, "No fade" },
+    { 0x02, 0x02, "50% dim down in 0.8 seconds then fade to off in 12 seconds" },
+    { 0x03, 0xFF, "Reserved" },
+    { 0, 0, NULL }
+};
+
+static const range_string zbee_zcl_on_off_effect_variant_dying_light_names[] = {
+    { 0x00, 0x00, "20% dim up in 0.5s then fade to off in 1 second" },
+    { 0x01, 0xFF, "Reserved" },
+    { 0, 0, NULL }
+};
+
+static const range_string zbee_zcl_on_off_effect_variant_reserved_names[] = {
+    { 0x00, 0xFF, "Reserved" },
+    { 0, 0, NULL }
+};
+
+static const range_string zbee_zcl_on_off_startup_on_off_names[] = {
+    { 0x00, 0x00, "Set the OnOff attribute to Off" },
+    { 0x01, 0x01, "Set the OnOff attribute to On" },
+    { 0x02, 0x02, "Toggle the OnOff attribute" },
+    { 0x03, 0xFE, "Reserved" },
+    { 0xFF, 0xFF, "Set the OnOff attribute to its previous value" },
+    { 0, 0, NULL }
 };
 
 /*************************/
@@ -2798,9 +3333,18 @@ static const value_string zbee_zcl_on_off_onoff_names[] = {
 static int
 dissect_zbee_zcl_on_off(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
+    proto_tree       *payload_tree;
     zbee_zcl_packet  *zcl;
-    guint   offset = 0;
-    guint8  cmd_id;
+    unsigned   offset = 0;
+    uint8_t cmd_id;
+    int     rem_len;
+    uint8_t effect_identifier = 0;
+
+    static int * const onoff_control_mask[] = {
+        &hf_zbee_zcl_on_off_timed_off_control_mask_accept_only_when_on,
+        &hf_zbee_zcl_on_off_timed_off_control_mask_reserved,
+        NULL
+    };
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -2816,8 +3360,41 @@ dissect_zbee_zcl_on_off(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_on_off_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
-        /*offset++;*/
+        proto_tree_add_item(tree, hf_zbee_zcl_on_off_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        rem_len = tvb_reported_length_remaining(tvb, ++offset);
+        if (rem_len > 0) {
+            payload_tree = proto_tree_add_subtree(tree, tvb, offset, rem_len, ett_zbee_zcl_on_off, NULL, "Payload");
+
+            switch (cmd_id) {
+                case ZBEE_ZCL_ON_OFF_CMD_OFF_WITH_EFFECT:
+                    proto_tree_add_item(payload_tree, hf_zbee_zcl_on_off_effect_identifier, tvb, offset, 1, ENC_NA);
+                    effect_identifier = tvb_get_uint8(tvb, offset);
+                    offset += 1;
+                    switch (effect_identifier) {
+                        case 0x00:
+                            proto_tree_add_item(payload_tree, hf_zbee_zcl_on_off_effect_variant_delayed_all_off, tvb, offset, 1, ENC_NA);
+                            break;
+                        case 0x01:
+                            proto_tree_add_item(payload_tree, hf_zbee_zcl_on_off_effect_variant_dying_light, tvb, offset, 1, ENC_NA);
+                            break;
+                        default:
+                            proto_tree_add_item(payload_tree, hf_zbee_zcl_on_off_effect_variant_reserved, tvb, offset, 1, ENC_NA);
+                            break;
+                    }
+                    break;
+
+                case ZBEE_ZCL_ON_OFF_CMD_ON_WITH_TIMED_OFF:
+                    proto_tree_add_bitmask(payload_tree, tvb, offset, hf_zbee_zcl_on_off_timed_off_control_mask, ett_zbee_zcl_on_off_timed_off_control_mask, onoff_control_mask, ENC_LITTLE_ENDIAN);
+                    offset += 1;
+
+                    dissect_zcl_on_off_attr_data(payload_tree, pinfo, tvb, &offset, ZBEE_ZCL_ON_OFF_ATTR_ID_ONTIME, FT_UINT16, false);
+                    dissect_zcl_on_off_attr_data(payload_tree, pinfo, tvb, &offset, ZBEE_ZCL_ON_OFF_ATTR_ID_OFFWAITTIME, FT_UINT16, false);
+                    break;
+
+                default:
+                    break;
+            }
+        }
     }
 
     return tvb_captured_length(tvb);
@@ -2833,15 +3410,16 @@ dissect_zbee_zcl_on_off(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 void
-dissect_zcl_on_off_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+dissect_zcl_on_off_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch (attr_id) {
@@ -2851,13 +3429,32 @@ dissect_zcl_on_off_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, gui
             *offset += 1;
             break;
 
+        case ZBEE_ZCL_ON_OFF_ATTR_ID_GLOBALSCENECONTROL:
+            proto_tree_add_item(tree, hf_zbee_zcl_on_off_attr_globalscenecontrol, tvb, *offset, 1, ENC_NA);
+            *offset += 1;
+            break;
+
+        case ZBEE_ZCL_ON_OFF_ATTR_ID_ONTIME:
+            proto_tree_add_item(tree, hf_zbee_zcl_on_off_attr_ontime, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+            *offset += 2;
+            break;
+
+        case ZBEE_ZCL_ON_OFF_ATTR_ID_OFFWAITTIME:
+            proto_tree_add_item(tree, hf_zbee_zcl_on_off_attr_offwaittime, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+            *offset += 2;
+            break;
+
+        case ZBEE_ZCL_ON_OFF_ATTR_ID_STARTUPONOFF:
+            proto_tree_add_item(tree, hf_zbee_zcl_on_off_attr_startuponoff, tvb, *offset, 1, ENC_NA);
+            *offset += 1;
+            break;
+
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
 } /*dissect_zcl_on_off_attr_data*/
-
 
 /*FUNCTION:------------------------------------------------------
  *  NAME
@@ -2881,8 +3478,52 @@ proto_register_zbee_zcl_on_off(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_on_off_attr_onoff,
-            { "Data Value", "zbee_zcl_general.onoff.attr.onoff", FT_UINT8, BASE_HEX, VALS(zbee_zcl_on_off_onoff_names),
+            { "On/off Control", "zbee_zcl_general.onoff.attr.onoff", FT_BOOLEAN, BASE_NONE, TFS(&tfs_on_off),
             0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_attr_globalscenecontrol,
+            { "Global Scene Control", "zbee_zcl_general.onoff.attr.globalscenecontrol", FT_BOOLEAN, BASE_NONE, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_attr_ontime,
+            { "On Time", "zbee_zcl_general.onoff.attr.ontime", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_100ms),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_attr_offwaittime,
+            { "Off Wait Time", "zbee_zcl_general.onoff.attr.offwaittime", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_100ms),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_attr_startuponoff,
+            { "Startup On Off", "zbee_zcl_general.onoff.attr.startuponoff", FT_UINT8, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_zcl_on_off_startup_on_off_names),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_effect_identifier,
+            { "Effect Identifier", "zbee_zcl_general.onoff.effect_identifier", FT_UINT8, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_zcl_on_off_effect_identifier_names),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_effect_variant_delayed_all_off,
+            { "Effect Variant", "zbee_zcl_general.onoff.effect_variant", FT_UINT8, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_zcl_on_off_effect_variant_delayed_all_off_names),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_effect_variant_dying_light,
+            { "Effect Variant", "zbee_zcl_general.onoff.effect_variant", FT_UINT8, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_zcl_on_off_effect_variant_dying_light_names),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_effect_variant_reserved,
+            { "Effect Variant", "zbee_zcl_general.onoff.effect_variant", FT_UINT8, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_zcl_on_off_effect_variant_reserved_names),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_timed_off_control_mask,
+            { "On/Off Control Mask", "zbee_zcl_general.onoff.onoff_control_mask", FT_UINT8, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_timed_off_control_mask_accept_only_when_on,
+            { "Accept Only When On", "zbee_zcl_general.onoff.onoff_control_mask.accept_only_when_on", FT_UINT8, BASE_DEC, NULL,
+            ZBEE_ZCL_ON_OFF_TIMED_OFF_CONTROL_MASK_ACCEPT_ONLY_WHEN_ON, NULL, HFILL } },
+
+        { &hf_zbee_zcl_on_off_timed_off_control_mask_reserved,
+            { "Reserved", "zbee_zcl_general.onoff.onoff_control_mask.reserved", FT_UINT8, BASE_DEC, NULL,
+            ZBEE_ZCL_ON_OFF_TIMED_OFF_CONTROL_MASK_RESERVED, NULL, HFILL } },
 
         { &hf_zbee_zcl_on_off_srv_rx_cmd_id,
             { "Command", "zbee_zcl_general.onoff.cmd.srv_rx.id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_on_off_srv_rx_cmd_names),
@@ -2890,9 +3531,14 @@ proto_register_zbee_zcl_on_off(void)
 
     };
 
+    /* ZCL OnOff subtrees */
+    static int *ett[] = { &ett_zbee_zcl_on_off,
+                          &ett_zbee_zcl_on_off_timed_off_control_mask };
+
     /* Register the ZigBee ZCL OnOff cluster protocol name and description */
     proto_zbee_zcl_on_off = proto_register_protocol("ZigBee ZCL OnOff", "ZCL OnOff", ZBEE_PROTOABBREV_ZCL_ONOFF);
     proto_register_field_array(proto_zbee_zcl_on_off, hf, array_length(hf));
+    proto_register_subtree_array(ett, array_length(ett));
 
     /* Register the ZigBee ZCL OnOff dissector. */
     register_dissector(ZBEE_PROTOABBREV_ZCL_ONOFF, dissect_zbee_zcl_on_off, proto_zbee_zcl_on_off);
@@ -2912,19 +3558,16 @@ proto_register_zbee_zcl_on_off(void)
 void
 proto_reg_handoff_zbee_zcl_on_off(void)
 {
-    dissector_handle_t on_off_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    on_off_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_ONOFF);
-
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_ON_OFF, on_off_handle);
-    zbee_zcl_init_cluster(  proto_zbee_zcl_on_off,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_ONOFF,
+                            proto_zbee_zcl_on_off,
                             ett_zbee_zcl_on_off,
                             ZBEE_ZCL_CID_ON_OFF,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_on_off_attr_id,
                             hf_zbee_zcl_on_off_attr_id,
                             hf_zbee_zcl_on_off_srv_rx_cmd_id,
                             -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_on_off_attr_data
+                            dissect_zcl_on_off_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_on_off*/
 
@@ -2949,9 +3592,6 @@ proto_reg_handoff_zbee_zcl_on_off(void)
 void proto_register_zbee_zcl_on_off_switch_configuration(void);
 void proto_reg_handoff_zbee_zcl_on_off_switch_configuration(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_on_off_switch_configuration_attr_data     (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
@@ -2959,14 +3599,14 @@ static void dissect_zcl_on_off_switch_configuration_attr_data     (proto_tree *t
 /*************************/
 
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_on_off_switch_configuration = -1;
+static int proto_zbee_zcl_on_off_switch_configuration;
 
-static int hf_zbee_zcl_on_off_switch_configuration_attr_id = -1;
-static int hf_zbee_zcl_on_off_switch_configuration_attr_switch_type = -1;
-static int hf_zbee_zcl_on_off_switch_configuration_attr_switch_actions = -1;
+static int hf_zbee_zcl_on_off_switch_configuration_attr_id;
+static int hf_zbee_zcl_on_off_switch_configuration_attr_switch_type;
+static int hf_zbee_zcl_on_off_switch_configuration_attr_switch_actions;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_on_off_switch_configuration = -1;
+static int ett_zbee_zcl_on_off_switch_configuration;
 
 /* Attributes */
 static const value_string zbee_zcl_on_off_switch_configuration_attr_names[] = {
@@ -3023,15 +3663,16 @@ dissect_zbee_zcl_on_off_switch_configuration(tvbuff_t *tvb _U_, packet_info *pin
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_on_off_switch_configuration_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_on_off_switch_configuration_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch (attr_id) {
@@ -3047,7 +3688,7 @@ dissect_zcl_on_off_switch_configuration_attr_data(proto_tree *tree, tvbuff_t *tv
             break;
 
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -3086,7 +3727,7 @@ proto_register_zbee_zcl_on_off_switch_configuration(void)
     };
 
     /* ZCL Identify subtrees */
-    static gint *ett[]={
+    static int *ett[] = {
         &ett_zbee_zcl_on_off_switch_configuration
     };
 
@@ -3113,18 +3754,15 @@ proto_register_zbee_zcl_on_off_switch_configuration(void)
 void
 proto_reg_handoff_zbee_zcl_on_off_switch_configuration(void)
 {
-    dissector_handle_t on_off_switch_configuration_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    on_off_switch_configuration_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_ONOFF_SWITCH_CONFIG);
-
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_ON_OFF_SWITCH_CONFIG, on_off_switch_configuration_handle);
-    zbee_zcl_init_cluster(  proto_zbee_zcl_on_off_switch_configuration,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_ONOFF_SWITCH_CONFIG,
+                            proto_zbee_zcl_on_off_switch_configuration,
                             ett_zbee_zcl_on_off_switch_configuration,
                             ZBEE_ZCL_CID_ON_OFF_SWITCH_CONFIG,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_on_off_switch_configuration_attr_id,
                             hf_zbee_zcl_on_off_switch_configuration_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_on_off_switch_configuration_attr_data
+                            dissect_zcl_on_off_switch_configuration_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_on_off_switch_configuration*/
 
@@ -3135,8 +3773,6 @@ proto_reg_handoff_zbee_zcl_on_off_switch_configuration(void)
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_ALARMS_NUM_ETT                     1
 
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_ALARMS_ALARM_COUNT         0x0000  /* Alarm Count */
@@ -3164,18 +3800,18 @@ void proto_reg_handoff_zbee_zcl_alarms(void);
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_alarms = -1;
+static int proto_zbee_zcl_alarms;
 
-static int hf_zbee_zcl_alarms_attr_id = -1;
-static int hf_zbee_zcl_alarms_alarm_code = -1;
-static int hf_zbee_zcl_alarms_cluster_id = -1;
-static int hf_zbee_zcl_alarms_status = -1;
-static int hf_zbee_zcl_alarms_timestamp = -1;
-static int hf_zbee_zcl_alarms_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_alarms_srv_tx_cmd_id = -1;
+static int hf_zbee_zcl_alarms_attr_id;
+static int hf_zbee_zcl_alarms_alarm_code;
+static int hf_zbee_zcl_alarms_cluster_id;
+static int hf_zbee_zcl_alarms_status;
+static int hf_zbee_zcl_alarms_timestamp;
+static int hf_zbee_zcl_alarms_srv_rx_cmd_id;
+static int hf_zbee_zcl_alarms_srv_tx_cmd_id;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_alarms = -1;
+static int ett_zbee_zcl_alarms;
 
 /* Attributes */
 static const value_string zbee_zcl_alarms_attr_names[] = {
@@ -3212,20 +3848,21 @@ static const value_string zbee_zcl_alarms_srv_tx_cmd_names[] = {
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *--------------------------------------------------------------- */
 static void
-dissect_zcl_alarms_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+dissect_zcl_alarms_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch ( attr_id ) {
         case ZBEE_ZCL_ATTR_ID_ALARMS_ALARM_COUNT:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -3245,7 +3882,7 @@ dissect_zcl_alarms_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, gui
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_alarms_alarm_and_reset_alarm(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_alarms_alarm_and_reset_alarm(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Alarm Code" field */
     proto_tree_add_item(tree, hf_zbee_zcl_alarms_alarm_code, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -3273,12 +3910,12 @@ dissect_zcl_alarms_alarm_and_reset_alarm(tvbuff_t *tvb, proto_tree *tree, guint 
  */
 
 static void
-dissect_zcl_alarms_get_alarm_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_alarms_get_alarm_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-     guint8 status;
+     uint8_t status;
 
     /* Retrieve "Status" field */
-    status = tvb_get_guint8(tvb, *offset);
+    status = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_alarms_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
 
@@ -3319,9 +3956,9 @@ dissect_zbee_zcl_alarms(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -3337,7 +3974,7 @@ dissect_zbee_zcl_alarms(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_alarms_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_alarms_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -3366,7 +4003,7 @@ dissect_zbee_zcl_alarms(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_alarms_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_alarms_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -3418,7 +4055,7 @@ proto_register_zbee_zcl_alarms(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_alarms_alarm_code,
-            { "Alarm Code", "zbee_zcl_general.alarms.alarm_code", FT_UINT16, BASE_HEX, NULL,
+            { "Alarm Code", "zbee_zcl_general.alarms.alarm_code", FT_UINT8, BASE_HEX, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_alarms_cluster_id,
@@ -3444,8 +4081,9 @@ proto_register_zbee_zcl_alarms(void)
     };
 
     /* ZCL Alarms subtrees */
-    static gint *ett[ZBEE_ZCL_ALARMS_NUM_ETT];
-    ett[0] = &ett_zbee_zcl_alarms;
+    static int *ett[] = {
+        &ett_zbee_zcl_alarms
+    };
 
     /* Register the ZigBee ZCL Alarms cluster protocol name and description */
     proto_zbee_zcl_alarms = proto_register_protocol("ZigBee ZCL Alarms", "ZCL Alarms", ZBEE_PROTOABBREV_ZCL_ALARMS);
@@ -3472,19 +4110,16 @@ proto_register_zbee_zcl_alarms(void)
 void
 proto_reg_handoff_zbee_zcl_alarms(void)
 {
-    dissector_handle_t alarms_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    alarms_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_ALARMS);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_ALARMS, alarms_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_alarms,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_ALARMS,
+                            proto_zbee_zcl_alarms,
                             ett_zbee_zcl_alarms,
                             ZBEE_ZCL_CID_ALARMS,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_alarms_attr_id,
                             hf_zbee_zcl_alarms_attr_id,
                             hf_zbee_zcl_alarms_srv_rx_cmd_id,
                             hf_zbee_zcl_alarms_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_alarms_attr_data
+                            dissect_zcl_alarms_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_alarms*/
 
@@ -3496,8 +4131,6 @@ proto_reg_handoff_zbee_zcl_alarms(void)
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_TIME_NUM_ETT                   2
 
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_TIME_TIME              0x0000  /* Time */
@@ -3533,18 +4166,18 @@ void proto_reg_handoff_zbee_zcl_time(void);
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_time = -1;
+static int proto_zbee_zcl_time;
 
-static int hf_zbee_zcl_time_attr_id = -1;
-static int hf_zbee_zcl_time_status = -1;
-static int hf_zbee_zcl_time_status_master = -1;
-static int hf_zbee_zcl_time_status_synchronized = -1;
-static int hf_zbee_zcl_time_status_master_zone_dst = -1;
-static int hf_zbee_zcl_time_status_superseding = -1;
+static int hf_zbee_zcl_time_attr_id;
+static int hf_zbee_zcl_time_status;
+static int hf_zbee_zcl_time_status_master;
+static int hf_zbee_zcl_time_status_synchronized;
+static int hf_zbee_zcl_time_status_master_zone_dst;
+static int hf_zbee_zcl_time_status_superseding;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_time = -1;
-static gint ett_zbee_zcl_time_status_mask = -1;
+static int ett_zbee_zcl_time;
+static int ett_zbee_zcl_time_status_mask;
 
 /* Attributes */
 static const value_string zbee_zcl_time_attr_names[] = {
@@ -3574,16 +4207,17 @@ static const value_string zbee_zcl_time_attr_names[] = {
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *--------------------------------------------------------------- */
 static void
-dissect_zcl_time_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+dissect_zcl_time_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int * time_status_mask[] = {
+    static int * const time_status_mask[] = {
         &hf_zbee_zcl_time_status_master,
         &hf_zbee_zcl_time_status_synchronized,
         &hf_zbee_zcl_time_status_master_zone_dst,
@@ -3609,7 +4243,7 @@ dissect_zcl_time_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint
         case ZBEE_ZCL_ATTR_ID_TIME_LAST_SET_TIME:
         case ZBEE_ZCL_ATTR_ID_TIME_VALID_UNTIL_TIME:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -3664,28 +4298,28 @@ proto_register_zbee_zcl_time(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_time_status_master,
-            { "Master", "zbee_zcl_general.time.attr.time_status.master",  FT_BOOLEAN, 8, TFS(&tfs_true_false),
+            { "Master", "zbee_zcl_general.time.attr.time_status.master",  FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_TIME_MASTER, NULL, HFILL } },
 
         { &hf_zbee_zcl_time_status_synchronized,
-            { "Synchronized", "zbee_zcl_general.time.attr.time_status.synchronized", FT_BOOLEAN, 8, TFS(&tfs_true_false),
+            { "Synchronized", "zbee_zcl_general.time.attr.time_status.synchronized", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_TIME_SYNCHRONIZED, NULL, HFILL } },
 
         { &hf_zbee_zcl_time_status_master_zone_dst,
-            { "Master for Time Zone and DST", "zbee_zcl_general.time.attr.time_status.master_zone_dst", FT_BOOLEAN, 8, TFS(&tfs_true_false),
+            { "Master for Time Zone and DST", "zbee_zcl_general.time.attr.time_status.master_zone_dst", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_TIME_MASTER_ZONE_DST, NULL, HFILL } },
 
         { &hf_zbee_zcl_time_status_superseding,
-            { "Superseded", "zbee_zcl_general.time.attr.time_status.superseding", FT_BOOLEAN, 8, TFS(&tfs_true_false),
+            { "Superseded", "zbee_zcl_general.time.attr.time_status.superseding", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_TIME_SUPERSEDING, NULL, HFILL } }
         /* end Time Status Mask fields */
     };
 
     /* ZCL Time subtrees */
-    static gint *ett[ZBEE_ZCL_TIME_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_time;
-    ett[1] = &ett_zbee_zcl_time_status_mask;
+    static int *ett[] = {
+        &ett_zbee_zcl_time,
+        &ett_zbee_zcl_time_status_mask
+    };
 
     /* Register the ZigBee ZCL Time cluster protocol name and description */
     proto_zbee_zcl_time = proto_register_protocol("ZigBee ZCL Time", "ZCL Time", ZBEE_PROTOABBREV_ZCL_TIME);
@@ -3710,18 +4344,15 @@ proto_register_zbee_zcl_time(void)
 void
 proto_reg_handoff_zbee_zcl_time(void)
 {
-    dissector_handle_t time_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    time_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_TIME);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_TIME, time_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_time,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_TIME,
+                            proto_zbee_zcl_time,
                             ett_zbee_zcl_time,
                             ZBEE_ZCL_CID_TIME,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_time_attr_id,
                             hf_zbee_zcl_time_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_time_attr_data
+                            dissect_zcl_time_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_time*/
 
@@ -3736,13 +4367,12 @@ proto_reg_handoff_zbee_zcl_time(void)
 /* Defines               */
 /*************************/
 
-#define ZBEE_ZCL_LEVEL_CONTROL_NUM_ETT                          1
-
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_CURRENT_LEVEL            0x0000  /* Current Level */
 #define ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_REMAINING_TIME           0x0001  /* Remaining Time */
 #define ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_ONOFF_TRANSIT_TIME       0x0010  /* OnOff Transition Time */
 #define ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_ON_LEVEL                 0x0011  /* On Level */
+#define ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_STARTUP_LEVEL            0x4000  /* Startup Level */
 
 /* Server Commands Received */
 #define ZBEE_ZCL_CMD_ID_LEVEL_CONTROL_MOVE_TO_LEVEL             0x00  /* Move to Level */
@@ -3767,19 +4397,26 @@ void proto_reg_handoff_zbee_zcl_level_control(void);
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_level_control = -1;
+static int proto_zbee_zcl_level_control;
 
-static int hf_zbee_zcl_level_control_attr_id = -1;
-static int hf_zbee_zcl_level_control_level = -1;
-static int hf_zbee_zcl_level_control_move_mode = -1;
-static int hf_zbee_zcl_level_control_rate = -1;
-static int hf_zbee_zcl_level_control_step_mode = -1;
-static int hf_zbee_zcl_level_control_step_size = -1;
-static int hf_zbee_zcl_level_control_transit_time = -1;
-static int hf_zbee_zcl_level_control_srv_rx_cmd_id = -1;
+static int hf_zbee_zcl_level_control_attr_id;
+static int hf_zbee_zcl_level_control_attr_current_level;
+static int hf_zbee_zcl_level_control_attr_remaining_time;
+static int hf_zbee_zcl_level_control_attr_onoff_transmit_time;
+static int hf_zbee_zcl_level_control_attr_on_level;
+static int hf_zbee_zcl_level_control_attr_startup_level;
+static int hf_zbee_zcl_level_control_level;
+static int hf_zbee_zcl_level_control_move_mode;
+static int hf_zbee_zcl_level_control_rate;
+static int hf_zbee_zcl_level_control_step_mode;
+static int hf_zbee_zcl_level_control_step_size;
+static int hf_zbee_zcl_level_control_transit_time;
+static int hf_zbee_zcl_level_control_options_mask;
+static int hf_zbee_zcl_level_control_options_override;
+static int hf_zbee_zcl_level_control_srv_rx_cmd_id;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_level_control = -1;
+static int ett_zbee_zcl_level_control;
 
 /* Attributes */
 static const value_string zbee_zcl_level_control_attr_names[] = {
@@ -3787,6 +4424,7 @@ static const value_string zbee_zcl_level_control_attr_names[] = {
     { ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_REMAINING_TIME,            "Remaining Time" },
     { ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_ONOFF_TRANSIT_TIME,        "OnOff Transition Time" },
     { ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_ON_LEVEL,                  "On Level" },
+    { ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_STARTUP_LEVEL,             "Startup Level" },
     { 0, NULL }
 };
 
@@ -3810,6 +4448,13 @@ static const value_string zbee_zcl_level_control_move_step_mode_values[] = {
     { 0, NULL }
 };
 
+static const range_string zbee_zcl_level_control_startup_level_names[] = {
+    { 0x00, 0x00, "Set the CurrentLevel attribute to the minimum" },
+    { 0x01, 0xFE, "Set the CurrentLevel attribute to this value" },
+    { 0xFF, 0xFF, "Set the CurrentLevel attribute to its previous value" },
+    { 0, 0, NULL }
+};
+
 /*************************/
 /* Function Bodies       */
 /*************************/
@@ -3827,7 +4472,7 @@ static const value_string zbee_zcl_level_control_move_step_mode_values[] = {
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_level_control_move_to_level(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_level_control_move_to_level(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Level" field */
     proto_tree_add_item(tree, hf_zbee_zcl_level_control_level, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -3836,6 +4481,14 @@ dissect_zcl_level_control_move_to_level(tvbuff_t *tvb, proto_tree *tree, guint *
     /* Retrieve "Transition Time" field */
     proto_tree_add_item(tree, hf_zbee_zcl_level_control_transit_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
+
+    /* Retrieve "OptionMask" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_level_control_options_mask, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "OptionsOverride" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_level_control_options_override, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
 
 } /*dissect_zcl_level_control_move_to_level*/
 
@@ -3855,7 +4508,7 @@ dissect_zcl_level_control_move_to_level(tvbuff_t *tvb, proto_tree *tree, guint *
  */
 
 static void
-dissect_zcl_level_control_move(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_level_control_move(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Move Mode" field */
     proto_tree_add_item(tree, hf_zbee_zcl_level_control_move_mode, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -3882,7 +4535,7 @@ dissect_zcl_level_control_move(tvbuff_t *tvb, proto_tree *tree, guint *offset)
 *-----------------------------------------------------------------------------
 */
 static void
-dissect_zcl_level_control_step(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_level_control_step(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Step Mode" field */
     proto_tree_add_item(tree, hf_zbee_zcl_level_control_step_mode, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -3908,9 +4561,9 @@ dissect_zcl_level_control_step(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
  *  RETURNS
  *      none
  *---------------------------------------------------------------
@@ -3934,9 +4587,9 @@ dissect_zbee_zcl_level_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -3952,7 +4605,7 @@ dissect_zbee_zcl_level_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_level_control_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_level_control_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -3991,16 +4644,37 @@ dissect_zbee_zcl_level_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
 
 static void
-dissect_zcl_level_control_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+dissect_zcl_level_control_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch ( attr_id ) {
         case ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_CURRENT_LEVEL:
+            proto_tree_add_item(tree, hf_zbee_zcl_level_control_attr_current_level, tvb, *offset, 1, ENC_NA);
+            *offset += 1;
+            break;
+
         case ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_REMAINING_TIME:
+            proto_tree_add_item(tree, hf_zbee_zcl_level_control_attr_remaining_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+            *offset += 2;
+            break;
+
         case ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_ONOFF_TRANSIT_TIME:
+            proto_tree_add_item(tree, hf_zbee_zcl_level_control_attr_onoff_transmit_time, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+            *offset += 2;
+            break;
+
         case ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_ON_LEVEL:
+            proto_tree_add_item(tree, hf_zbee_zcl_level_control_attr_on_level, tvb, *offset, 1, ENC_NA);
+            *offset += 1;
+            break;
+
+        case ZBEE_ZCL_ATTR_ID_LEVEL_CONTROL_STARTUP_LEVEL:
+            proto_tree_add_item(tree, hf_zbee_zcl_level_control_attr_startup_level, tvb, *offset, 1, ENC_NA);
+            *offset += 1;
+            break;
+
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -4028,6 +4702,26 @@ proto_register_zbee_zcl_level_control(void)
             { "Attribute", "zbee_zcl_general.level_control.attr_id", FT_UINT16, BASE_HEX, VALS(zbee_zcl_level_control_attr_names),
             0x00, NULL, HFILL } },
 
+        { &hf_zbee_zcl_level_control_attr_current_level,
+            { "Current Level", "zbee_zcl_general.level_control.attr.current_level", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_level_control_attr_remaining_time,
+            { "Remaining Time", "zbee_zcl_general.level_control.attr.remaining_time", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_100ms),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_level_control_attr_onoff_transmit_time,
+            { "Current Level", "zbee_zcl_general.level_control.attr.onoff_transmit_time", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_100ms),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_level_control_attr_on_level,
+            { "On Level", "zbee_zcl_general.level_control.attr.on_level", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_level_control_attr_startup_level,
+            { "Startup Level", "zbee_zcl_general.level_control.attr.startup_level", FT_UINT8, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_zcl_level_control_startup_level_names),
+            0x00, NULL, HFILL } },
+
         { &hf_zbee_zcl_level_control_level,
             { "Level", "zbee_zcl_general.level_control.level", FT_UINT8, BASE_DEC, NULL,
             0x00, NULL, HFILL } },
@@ -4049,7 +4743,15 @@ proto_register_zbee_zcl_level_control(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_level_control_transit_time,
-            { "Transition Time", "zbee_zcl_general.level_control.transit_time", FT_UINT16, BASE_HEX, NULL,
+            { "Transition Time", "zbee_zcl_general.level_control.transit_time", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_100ms),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_level_control_options_mask,
+            { "OptionsMask", "zbee_zcl_general.level_control.options_mask", FT_UINT8, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+	{ &hf_zbee_zcl_level_control_options_override,
+            { "OptionsOverride", "zbee_zcl_general.level_control.options_override", FT_UINT8, BASE_HEX, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_level_control_srv_rx_cmd_id,
@@ -4059,8 +4761,9 @@ proto_register_zbee_zcl_level_control(void)
     };
 
     /* ZCL Identify subtrees */
-    static gint *ett[ZBEE_ZCL_LEVEL_CONTROL_NUM_ETT];
-    ett[0] = &ett_zbee_zcl_level_control;
+    static int *ett[] = {
+        &ett_zbee_zcl_level_control
+    };
 
     /* Register the ZigBee ZCL Level Control cluster protocol name and description */
     proto_zbee_zcl_level_control = proto_register_protocol("ZigBee ZCL Level Control", "ZCL Level Control", ZBEE_PROTOABBREV_ZCL_LEVEL_CONTROL);
@@ -4087,19 +4790,16 @@ proto_register_zbee_zcl_level_control(void)
 void
 proto_reg_handoff_zbee_zcl_level_control(void)
 {
-    dissector_handle_t level_control_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    level_control_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_LEVEL_CONTROL);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_LEVEL_CONTROL, level_control_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_level_control,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_LEVEL_CONTROL,
+                            proto_zbee_zcl_level_control,
                             ett_zbee_zcl_level_control,
                             ZBEE_ZCL_CID_LEVEL_CONTROL,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_level_control_attr_id,
                             hf_zbee_zcl_level_control_attr_id,
                             hf_zbee_zcl_level_control_srv_rx_cmd_id,
                             -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_level_control_attr_data
+                            dissect_zcl_level_control_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_level_control*/
 
@@ -4111,8 +4811,6 @@ proto_reg_handoff_zbee_zcl_level_control(void)
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_RSSI_LOCATION_NUM_ETT                                      3
 
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE                        0x0000  /* Location Type */
@@ -4171,23 +4869,23 @@ void proto_register_zbee_zcl_rssi_location(void);
 void proto_reg_handoff_zbee_zcl_rssi_location(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_rssi_location_set_absolute_location                         (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_set_device_config                             (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_get_device_config                             (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_get_location_data                             (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_rssi_response                                 (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_send_pings                                    (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_anchor_node_announce                          (tvbuff_t *tvb, proto_tree *tree, guint *offset);
+static void dissect_zcl_rssi_location_set_absolute_location                         (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_set_device_config                             (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_get_device_config                             (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_get_location_data                             (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_rssi_response                                 (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_send_pings                                    (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_anchor_node_announce                          (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
-static void dissect_zcl_rssi_location_device_config_response                        (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_location_data_response                        (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_location_data_notif                           (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_compact_location_data_notif                   (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_rssi_ping                                     (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_report_rssi_meas                              (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_rssi_location_request_own_location                          (tvbuff_t *tvb, proto_tree *tree, guint *offset);
+static void dissect_zcl_rssi_location_device_config_response                        (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_location_data_response                        (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_location_data_notif                           (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_compact_location_data_notif                   (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_rssi_ping                                     (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_report_rssi_meas                              (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_rssi_location_request_own_location                          (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
-static void dissect_zcl_rssi_location_attr_data                        (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
+static void dissect_zcl_rssi_location_attr_data                        (proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr);
 
 /* Private functions prototype */
 
@@ -4195,49 +4893,49 @@ static void dissect_zcl_rssi_location_attr_data                        (proto_tr
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_rssi_location = -1;
+static int proto_zbee_zcl_rssi_location;
 
-static int hf_zbee_zcl_rssi_location_attr_id = -1;
-static int hf_zbee_zcl_rssi_location_location_type = -1;
-static int hf_zbee_zcl_rssi_location_location_type_absolute = -1;
-static int hf_zbee_zcl_rssi_location_location_type_2D = -1;
-static int hf_zbee_zcl_rssi_location_location_type_coordinate_system = -1;
-static int hf_zbee_zcl_rssi_location_location_type_reserved = -1;
-static int hf_zbee_zcl_rssi_location_attr_id_location_method = -1;
-static int hf_zbee_zcl_rssi_location_coordinate1 = -1;
-static int hf_zbee_zcl_rssi_location_coordinate2 = -1;
-static int hf_zbee_zcl_rssi_location_coordinate3 = -1;
-static int hf_zbee_zcl_rssi_location_power = -1;
-static int hf_zbee_zcl_rssi_location_path_loss_expo = -1;
-static int hf_zbee_zcl_rssi_location_calc_period = -1;
-static int hf_zbee_zcl_rssi_location_number_rssi_meas = -1;
-static int hf_zbee_zcl_rssi_location_reporting_period = -1;
-static int hf_zbee_zcl_rssi_location_target_add = -1;
-static int hf_zbee_zcl_rssi_location_header = -1;
-static int hf_zbee_zcl_rssi_location_header_abs_only = -1;
-static int hf_zbee_zcl_rssi_location_header_recalc = -1;
-static int hf_zbee_zcl_rssi_location_header_bcast_ind = -1;
-static int hf_zbee_zcl_rssi_location_header_bcast_res = -1;
-static int hf_zbee_zcl_rssi_location_header_compact_res = -1;
-static int hf_zbee_zcl_rssi_location_header_res = -1;
-static int hf_zbee_zcl_rssi_location_number_responses = -1;
-static int hf_zbee_zcl_rssi_location_replaying_device = -1;
-static int hf_zbee_zcl_rssi_location_rssi = -1;
-static int hf_zbee_zcl_rssi_location_anchor_node_add = -1;
-static int hf_zbee_zcl_rssi_location_status = -1;
-static int hf_zbee_zcl_rssi_location_quality_measure = -1;
-static int hf_zbee_zcl_rssi_location_location_age = -1;
-static int hf_zbee_zcl_rssi_location_reporting_add = -1;
-static int hf_zbee_zcl_rssi_location_no_of_neigh = -1;
-static int hf_zbee_zcl_rssi_location_neighbour_add = -1;
-static int hf_zbee_zcl_rssi_location_request_add = -1;
-static int hf_zbee_zcl_rssi_location_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_rssi_location_srv_tx_cmd_id = -1;
+static int hf_zbee_zcl_rssi_location_attr_id;
+static int hf_zbee_zcl_rssi_location_location_type;
+static int hf_zbee_zcl_rssi_location_location_type_absolute;
+static int hf_zbee_zcl_rssi_location_location_type_2D;
+static int hf_zbee_zcl_rssi_location_location_type_coordinate_system;
+static int hf_zbee_zcl_rssi_location_location_type_reserved;
+static int hf_zbee_zcl_rssi_location_attr_id_location_method;
+static int hf_zbee_zcl_rssi_location_coordinate1;
+static int hf_zbee_zcl_rssi_location_coordinate2;
+static int hf_zbee_zcl_rssi_location_coordinate3;
+static int hf_zbee_zcl_rssi_location_power;
+static int hf_zbee_zcl_rssi_location_path_loss_expo;
+static int hf_zbee_zcl_rssi_location_calc_period;
+static int hf_zbee_zcl_rssi_location_number_rssi_meas;
+static int hf_zbee_zcl_rssi_location_reporting_period;
+static int hf_zbee_zcl_rssi_location_target_add;
+static int hf_zbee_zcl_rssi_location_header;
+static int hf_zbee_zcl_rssi_location_header_abs_only;
+static int hf_zbee_zcl_rssi_location_header_recalc;
+static int hf_zbee_zcl_rssi_location_header_bcast_ind;
+static int hf_zbee_zcl_rssi_location_header_bcast_res;
+static int hf_zbee_zcl_rssi_location_header_compact_res;
+static int hf_zbee_zcl_rssi_location_header_res;
+static int hf_zbee_zcl_rssi_location_number_responses;
+static int hf_zbee_zcl_rssi_location_replaying_device;
+static int hf_zbee_zcl_rssi_location_rssi;
+static int hf_zbee_zcl_rssi_location_anchor_node_add;
+static int hf_zbee_zcl_rssi_location_status;
+static int hf_zbee_zcl_rssi_location_quality_measure;
+static int hf_zbee_zcl_rssi_location_location_age;
+static int hf_zbee_zcl_rssi_location_reporting_add;
+static int hf_zbee_zcl_rssi_location_no_of_neigh;
+static int hf_zbee_zcl_rssi_location_neighbour_add;
+static int hf_zbee_zcl_rssi_location_request_add;
+static int hf_zbee_zcl_rssi_location_srv_rx_cmd_id;
+static int hf_zbee_zcl_rssi_location_srv_tx_cmd_id;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_rssi_location = -1;
-static gint ett_zbee_zcl_rssi_location_location_type = -1;
-static gint ett_zbee_zcl_rssi_location_header = -1;
+static int ett_zbee_zcl_rssi_location;
+static int ett_zbee_zcl_rssi_location_location_type;
+static int ett_zbee_zcl_rssi_location_header;
 
 /* Attributes */
 static const value_string zbee_zcl_rssi_location_attr_names[] = {
@@ -4337,9 +5035,9 @@ dissect_zbee_zcl_rssi_location(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -4355,7 +5053,7 @@ dissect_zbee_zcl_rssi_location(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -4404,7 +5102,7 @@ dissect_zbee_zcl_rssi_location(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -4417,19 +5115,19 @@ dissect_zbee_zcl_rssi_location(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
                     dissect_zcl_rssi_location_device_config_response(tvb, payload_tree, &offset);
                     break;
                 case ZBEE_ZCL_CMD_ID_RSSI_LOCATION_LOCATION_DATA_RESPONSE:
-                    dissect_zcl_rssi_location_location_data_response(tvb, payload_tree, &offset);
+                    dissect_zcl_rssi_location_location_data_response(tvb, pinfo, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_RSSI_LOCATION_LOCATION_DATA_NOTIF:
-                    dissect_zcl_rssi_location_location_data_notif(tvb, payload_tree, &offset);
+                    dissect_zcl_rssi_location_location_data_notif(tvb, pinfo, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_RSSI_LOCATION_COMPACT_LOCATION_DATA_NOTIF:
-                    dissect_zcl_rssi_location_compact_location_data_notif(tvb, payload_tree, &offset);
+                    dissect_zcl_rssi_location_compact_location_data_notif(tvb, pinfo, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_RSSI_LOCATION_RSSI_PING:
-                    dissect_zcl_rssi_location_rssi_ping(tvb, payload_tree, &offset);
+                    dissect_zcl_rssi_location_rssi_ping(tvb, pinfo, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_RSSI_LOCATION_RSSI_REQUEST:
@@ -4468,7 +5166,7 @@ dissect_zbee_zcl_rssi_location(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_rssi_location_set_absolute_location(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_set_absolute_location(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Coordinate 1" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_coordinate1, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -4507,7 +5205,7 @@ dissect_zcl_rssi_location_set_absolute_location(tvbuff_t *tvb, proto_tree *tree,
  *------------------------------------------------------------------------------
  */
 static void
-dissect_zcl_rssi_location_set_device_config(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_set_device_config(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Power" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_power, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -4546,7 +5244,7 @@ dissect_zcl_rssi_location_set_device_config(tvbuff_t *tvb, proto_tree *tree, gui
 *-----------------------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_get_device_config(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_get_device_config(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Target Address" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_target_add, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
@@ -4569,11 +5267,11 @@ dissect_zcl_rssi_location_get_device_config(tvbuff_t *tvb, proto_tree *tree, gui
 *-----------------------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_get_location_data(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_get_location_data(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-     guint8 header;
+     uint8_t header;
 
-    static const int * location_header_fields[] = {
+    static int * const location_header_fields[] = {
         &hf_zbee_zcl_rssi_location_header_abs_only,
         &hf_zbee_zcl_rssi_location_header_recalc,
         &hf_zbee_zcl_rssi_location_header_bcast_ind,
@@ -4584,7 +5282,7 @@ dissect_zcl_rssi_location_get_location_data(tvbuff_t *tvb, proto_tree *tree, gui
     };
 
     /* Retrieve "8-bit header" field */
-    header = tvb_get_guint8(tvb, *offset);
+    header = tvb_get_uint8(tvb, *offset);
     proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_rssi_location_header, ett_zbee_zcl_rssi_location_header, location_header_fields, ENC_LITTLE_ENDIAN);
     *offset += 1;
 
@@ -4616,7 +5314,7 @@ dissect_zcl_rssi_location_get_location_data(tvbuff_t *tvb, proto_tree *tree, gui
 *------------------------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_rssi_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_rssi_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Replaying Device" field */
    proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_replaying_device, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
@@ -4639,7 +5337,7 @@ dissect_zcl_rssi_location_rssi_response(tvbuff_t *tvb, proto_tree *tree, guint *
    *offset += 1;
 
    /* Retrieve "Number RSSI Measurements" field */
-   proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_number_rssi_meas, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_number_rssi_meas, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
    *offset += 1;
 
 } /*dissect_zcl_rssi_location_rssi_response*/
@@ -4659,7 +5357,7 @@ dissect_zcl_rssi_location_rssi_response(tvbuff_t *tvb, proto_tree *tree, guint *
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_send_pings(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_send_pings(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Target Address" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_target_add, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
@@ -4690,7 +5388,7 @@ dissect_zcl_rssi_location_send_pings(tvbuff_t *tvb, proto_tree *tree, guint *off
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_anchor_node_announce(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_anchor_node_announce(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Anchor Node Address" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_anchor_node_add, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
@@ -4725,12 +5423,12 @@ dissect_zcl_rssi_location_anchor_node_announce(tvbuff_t *tvb, proto_tree *tree, 
 *------------------------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_device_config_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_device_config_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-   guint8 status;
+   uint8_t status;
 
    /* Retrieve "Status" field */
-   status = tvb_get_guint8(tvb, *offset);
+   status = tvb_get_uint8(tvb, *offset);
    proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
    *offset += 1;
 
@@ -4774,19 +5472,19 @@ dissect_zcl_rssi_location_device_config_response(tvbuff_t *tvb, proto_tree *tree
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_location_data_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_location_data_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
-   guint8 status;
+   uint8_t status;
 
    /* Retrieve "Status" field */
-   status = tvb_get_guint8(tvb, *offset);
+   status = tvb_get_uint8(tvb, *offset);
    proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
    *offset += 1;
 
    if(status == ZBEE_ZCL_STAT_SUCCESS)
    {
        /* Retrieve "Location Type" field */
-       dissect_zcl_rssi_location_attr_data(tree, tvb, offset, ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE, ZBEE_ZCL_8_BIT_DATA);
+       dissect_zcl_rssi_location_attr_data(tree, pinfo, tvb, offset, ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE, ZBEE_ZCL_8_BIT_DATA, false);
 
        /* Retrieve "Coordinate 1" field */
        proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_coordinate1, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -4838,13 +5536,13 @@ dissect_zcl_rssi_location_location_data_response(tvbuff_t *tvb, proto_tree *tree
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_location_data_notif(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_location_data_notif(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
-    guint8 temp;
+    uint8_t temp;
 
     /* Retrieve "Location Type" field */
-    temp = tvb_get_guint8(tvb, *offset);
-    dissect_zcl_rssi_location_attr_data(tree, tvb, offset, ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE, ZBEE_ZCL_8_BIT_DATA);
+    temp = tvb_get_uint8(tvb, *offset);
+    dissect_zcl_rssi_location_attr_data(tree, pinfo, tvb, offset, ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE, ZBEE_ZCL_8_BIT_DATA, false);
 
     /* Retrieve "Coordinate 1" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_coordinate1, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -4902,13 +5600,13 @@ dissect_zcl_rssi_location_location_data_notif(tvbuff_t *tvb, proto_tree *tree, g
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_compact_location_data_notif(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_compact_location_data_notif(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
-    guint8 temp;
+    uint8_t temp;
 
     /* Retrieve "Location Type" field */
-    temp = tvb_get_guint8(tvb, *offset);
-    dissect_zcl_rssi_location_attr_data(tree, tvb, offset, ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE, ZBEE_ZCL_8_BIT_DATA);
+    temp = tvb_get_uint8(tvb, *offset);
+    dissect_zcl_rssi_location_attr_data(tree, pinfo, tvb, offset, ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE, ZBEE_ZCL_8_BIT_DATA, false);
 
     /* Retrieve "Coordinate 1" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_coordinate1, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -4953,10 +5651,10 @@ dissect_zcl_rssi_location_compact_location_data_notif(tvbuff_t *tvb, proto_tree 
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_rssi_ping(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_rssi_ping(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Location Type" field */
-    dissect_zcl_rssi_location_attr_data(tree, tvb, offset, ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE, ZBEE_ZCL_8_BIT_DATA);
+    dissect_zcl_rssi_location_attr_data(tree, pinfo, tvb, offset, ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_LOCATION_TYPE, ZBEE_ZCL_8_BIT_DATA, false);
 
 
 } /*dissect_zcl_rssi_location_rssi_ping*/
@@ -4976,15 +5674,15 @@ dissect_zcl_rssi_location_rssi_ping(tvbuff_t *tvb, proto_tree *tree, guint *offs
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_report_rssi_meas(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_report_rssi_meas(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint8 count, i;
+    uint8_t count, i;
     /* Retrieve "Reporting Address" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_reporting_add, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
     *offset += 8;
 
     /* Retrieve "Number of Neighbours" field */
-    count = tvb_get_guint8(tvb, *offset);
+    count = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_no_of_neigh, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
 
@@ -5032,7 +5730,7 @@ dissect_zcl_rssi_location_report_rssi_meas(tvbuff_t *tvb, proto_tree *tree, guin
 *-----------------------------------------------------------------------------
 */
 static void
-dissect_zcl_rssi_location_request_own_location(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_rssi_location_request_own_location(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Requesting Address Address" field */
     proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_request_add, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
@@ -5050,17 +5748,18 @@ dissect_zcl_rssi_location_request_own_location(tvbuff_t *tvb, proto_tree *tree, 
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 void
-dissect_zcl_rssi_location_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+dissect_zcl_rssi_location_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int *location_type[] = {
+    static int * const location_type[] = {
         &hf_zbee_zcl_rssi_location_location_type_absolute,
         &hf_zbee_zcl_rssi_location_location_type_2D,
         &hf_zbee_zcl_rssi_location_location_type_coordinate_system,
@@ -5093,7 +5792,7 @@ dissect_zcl_rssi_location_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offs
         case ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_CALCULATION_PERIOD:
         case ZBEE_ZCL_ATTR_ID_RSSI_LOCATION_NUMBER_RSSI_MEAS:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -5209,7 +5908,7 @@ proto_register_zbee_zcl_rssi_location(void)
 
         { &hf_zbee_zcl_rssi_location_header_res,
             { "Reserved", "zbee_zcl_general.rssi_location.reserved", FT_BOOLEAN, 8, NULL,
-            0xD0, NULL, HFILL } },
+            0xE0, NULL, HFILL } },
 
         { &hf_zbee_zcl_rssi_location_number_responses,
             { "Number Responses", "zbee_zcl_general.rssi_location.number_responses", FT_UINT8, BASE_HEX, NULL,
@@ -5266,10 +5965,11 @@ proto_register_zbee_zcl_rssi_location(void)
     };
 
     /* ZCL RSSI Location subtrees */
-    static gint *ett[ZBEE_ZCL_RSSI_LOCATION_NUM_ETT];
-    ett[0] = &ett_zbee_zcl_rssi_location;
-    ett[1] = &ett_zbee_zcl_rssi_location_location_type;
-    ett[2] = &ett_zbee_zcl_rssi_location_header;
+    static int *ett[] = {
+        &ett_zbee_zcl_rssi_location,
+        &ett_zbee_zcl_rssi_location_location_type,
+        &ett_zbee_zcl_rssi_location_header
+    };
 
     /* Register the ZigBee ZCL RSSI Location cluster protocol name and description */
     proto_zbee_zcl_rssi_location = proto_register_protocol("ZigBee ZCL RSSI Location", "ZCL RSSI Location", ZBEE_PROTOABBREV_ZCL_RSSI_LOCATION);
@@ -5296,19 +5996,16 @@ proto_register_zbee_zcl_rssi_location(void)
 void
 proto_reg_handoff_zbee_zcl_rssi_location(void)
 {
-    dissector_handle_t rssi_location_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    rssi_location_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_RSSI_LOCATION);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_RSSI_LOCATION, rssi_location_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_rssi_location,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_RSSI_LOCATION,
+                            proto_zbee_zcl_rssi_location,
                             ett_zbee_zcl_rssi_location,
                             ZBEE_ZCL_CID_RSSI_LOCATION,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_rssi_location_attr_id,
                             hf_zbee_zcl_rssi_location_attr_id,
                             hf_zbee_zcl_rssi_location_srv_rx_cmd_id,
                             hf_zbee_zcl_rssi_location_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_rssi_location_attr_data
+                            dissect_zcl_rssi_location_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_rssi_location*/
 
@@ -5351,11 +6048,6 @@ static const value_string zbee_zcl_reliability_names[] = {
 #define ZBEE_ZCL_STATUS_OVERRIDDEN              0x04      /* Overridden Flag */
 #define ZBEE_ZCL_STATUS_OUT_OF_SERVICE          0x08      /* Out of Service Flag */
 
-static const value_string zbee_zcl_status_values[] = {
-    {0, "False"},
-    {1, "True"},
-    {0, NULL}
-};
 
 /* ########################################################################## */
 /* #### (0x000C) ANALOG INPUT (BASIC) CLUSTER ############################### */
@@ -5388,28 +6080,25 @@ static const value_string zbee_zcl_status_values[] = {
 void proto_register_zbee_zcl_analog_input_basic(void);
 void proto_reg_handoff_zbee_zcl_analog_input_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_analog_input_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_analog_input_basic = -1;
+static int proto_zbee_zcl_analog_input_basic;
 
-static int hf_zbee_zcl_analog_input_basic_attr_id = -1;
-static int hf_zbee_zcl_analog_input_basic_reliability = -1;
-static int hf_zbee_zcl_analog_input_basic_status_flags = -1;
-static int hf_zbee_zcl_analog_input_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_analog_input_basic_status_fault = -1;
-static int hf_zbee_zcl_analog_input_basic_status_overridden = -1;
-static int hf_zbee_zcl_analog_input_basic_status_out_of_service = -1;
+static int hf_zbee_zcl_analog_input_basic_attr_id;
+static int hf_zbee_zcl_analog_input_basic_reliability;
+static int hf_zbee_zcl_analog_input_basic_status_flags;
+static int hf_zbee_zcl_analog_input_basic_status_in_alarm;
+static int hf_zbee_zcl_analog_input_basic_status_fault;
+static int hf_zbee_zcl_analog_input_basic_status_overridden;
+static int hf_zbee_zcl_analog_input_basic_status_out_of_service;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_analog_input_basic = -1;
-static gint ett_zbee_zcl_analog_input_basic_status_flags = -1;
+static int ett_zbee_zcl_analog_input_basic;
+static int ett_zbee_zcl_analog_input_basic_status_flags;
 
 /* Attributes */
 static const value_string zbee_zcl_analog_input_basic_attr_names[] = {
@@ -5460,17 +6149,18 @@ dissect_zbee_zcl_analog_input_basic(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_analog_input_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_analog_input_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_analog_input_basic_status_in_alarm,
         &hf_zbee_zcl_analog_input_basic_status_fault,
         &hf_zbee_zcl_analog_input_basic_status_overridden,
@@ -5500,7 +6190,7 @@ dissect_zcl_analog_input_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint 
         case ZBEE_ZCL_ATTR_ID_ANALOG_INPUT_BASIC_ENGINEERING_UNITS:
         case ZBEE_ZCL_ATTR_ID_ANALOG_INPUT_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -5538,25 +6228,25 @@ proto_register_zbee_zcl_analog_input_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_input_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.analog_input_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.analog_input_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_input_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.analog_input_basic.attr.status.fault", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.analog_input_basic.attr.status.fault",FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_input_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.analog_input_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.analog_input_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_input_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.analog_input_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.analog_input_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } }
         /* end Status Flags fields */
     };
 
     /* ZCL Analog Input Basic subtrees */
-    static gint *ett[]={
+    static int *ett[] = {
         &ett_zbee_zcl_analog_input_basic,
         &ett_zbee_zcl_analog_input_basic_status_flags
     };
@@ -5586,15 +6276,12 @@ proto_register_zbee_zcl_analog_input_basic(void)
 void
 proto_reg_handoff_zbee_zcl_analog_input_basic(void)
 {
-    dissector_handle_t analog_input_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    analog_input_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_ANALOG_INPUT_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_ANALOG_INPUT_BASIC, analog_input_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_analog_input_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_ANALOG_INPUT_BASIC,
+                            proto_zbee_zcl_analog_input_basic,
                             ett_zbee_zcl_analog_input_basic,
                             ZBEE_ZCL_CID_ANALOG_INPUT_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_analog_input_basic_attr_id,
                             hf_zbee_zcl_analog_input_basic_attr_id,
                             -1, -1,
                             (zbee_zcl_fn_attr_data)dissect_zcl_analog_input_basic_attr_data
@@ -5635,34 +6322,31 @@ proto_reg_handoff_zbee_zcl_analog_input_basic(void)
 void proto_register_zbee_zcl_analog_output_basic(void);
 void proto_reg_handoff_zbee_zcl_analog_output_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_analog_output_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_analog_output_basic = -1;
+static int proto_zbee_zcl_analog_output_basic;
 
-static int hf_zbee_zcl_analog_output_basic_attr_id = -1;
-static int hf_zbee_zcl_analog_output_basic_reliability = -1;
-static int hf_zbee_zcl_analog_output_basic_status_flags = -1;
-static int hf_zbee_zcl_analog_output_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_analog_output_basic_status_fault = -1;
-static int hf_zbee_zcl_analog_output_basic_status_overridden = -1;
-static int hf_zbee_zcl_analog_output_basic_status_out_of_service = -1;
-static int hf_zbee_zcl_analog_output_basic_priority_array_bool = -1;
-static int hf_zbee_zcl_analog_output_basic_priority_array_sing_prec = -1;
-static int hf_zbee_zcl_analog_output_basic_priority_array = -1;
-static int hf_zbee_zcl_analog_output_basic_structure = -1;
+static int hf_zbee_zcl_analog_output_basic_attr_id;
+static int hf_zbee_zcl_analog_output_basic_reliability;
+static int hf_zbee_zcl_analog_output_basic_status_flags;
+static int hf_zbee_zcl_analog_output_basic_status_in_alarm;
+static int hf_zbee_zcl_analog_output_basic_status_fault;
+static int hf_zbee_zcl_analog_output_basic_status_overridden;
+static int hf_zbee_zcl_analog_output_basic_status_out_of_service;
+static int hf_zbee_zcl_analog_output_basic_priority_array_bool;
+static int hf_zbee_zcl_analog_output_basic_priority_array_sing_prec;
+static int hf_zbee_zcl_analog_output_basic_priority_array;
+static int hf_zbee_zcl_analog_output_basic_structure;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_analog_output_basic = -1;
-static gint ett_zbee_zcl_analog_output_basic_status_flags = -1;
-static gint ett_zbee_zcl_analog_output_basic_priority_array = -1;
-static gint ett_zbee_zcl_analog_output_basic_priority_array_structure = -1;
+static int ett_zbee_zcl_analog_output_basic;
+static int ett_zbee_zcl_analog_output_basic_status_flags;
+static int ett_zbee_zcl_analog_output_basic_priority_array;
+static int ett_zbee_zcl_analog_output_basic_priority_array_structure;
 
 /* Attributes */
 static const value_string zbee_zcl_analog_output_basic_attr_names[] = {
@@ -5715,21 +6399,22 @@ dissect_zbee_zcl_analog_output_basic(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_analog_output_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_analog_output_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     proto_item  *ti = NULL, *tj = NULL;
     proto_tree  *sub_tree = NULL, *sub = NULL;
     int i;
 
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_analog_output_basic_status_in_alarm,
         &hf_zbee_zcl_analog_output_basic_status_fault,
         &hf_zbee_zcl_analog_output_basic_status_overridden,
@@ -5776,7 +6461,7 @@ dissect_zcl_analog_output_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint
         case ZBEE_ZCL_ATTR_ID_ANALOG_OUTPUT_BASIC_ENGINEERING_UNITS:
         case ZBEE_ZCL_ATTR_ID_ANALOG_OUTPUT_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -5802,53 +6487,53 @@ proto_register_zbee_zcl_analog_output_basic(void)
 
         { &hf_zbee_zcl_analog_output_basic_attr_id,
             { "Attribute", "zbee_zcl_general.analog_output_basic.attr_id", FT_UINT16, BASE_HEX, VALS(zbee_zcl_analog_output_basic_attr_names),
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_output_basic_reliability,
             { "Reliability", "zbee_zcl_general.analog_output_basic.attr.reliability", FT_UINT8, BASE_HEX, VALS(zbee_zcl_reliability_names),
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         /* start Status Flags fields */
         { &hf_zbee_zcl_analog_output_basic_status_flags,
             { "Status Flags", "zbee_zcl_general.analog_output_basic.attr.status", FT_UINT8, BASE_HEX, NULL,
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_output_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.analog_output_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.analog_output_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_output_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.analog_output_basic.attr.status.falut", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.analog_output_basic.attr.status.fault", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_output_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.analog_output_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.analog_output_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_output_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.analog_output_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.analog_output_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } },
         /* end Status Flags fields */
 
         { &hf_zbee_zcl_analog_output_basic_priority_array_bool,
-            { "Valid/Invalid", "zbee_zcl_general.analog_output_basic.attr.priority_array.bool", FT_BOOLEAN, 8, TFS(&tfs_invalid_valid),
-            0x00, NULL, HFILL } },
+            { "Valid/Invalid", "zbee_zcl_general.analog_output_basic.attr.priority_array.bool", FT_BOOLEAN, BASE_NONE, TFS(&tfs_invalid_valid),
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_output_basic_priority_array_sing_prec,
-            { "Priority Value", "zbee_zcl_general.analog_output_basic.attr.priority_array.sing_prec", FT_UINT16, BASE_HEX, NULL,
-            0x00, NULL, HFILL } },
+            { "Priority Value", "zbee_zcl_general.analog_output_basic.attr.priority_array.sing_prec", FT_UINT32, BASE_HEX, NULL,
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_output_basic_priority_array,
-            { "Priority Array", "zbee_zcl_general.analog_output_basic.priority_array.", FT_NONE, BASE_NONE, NULL,
-            0x00, NULL, HFILL } },
+            { "Priority Array", "zbee_zcl_general.analog_output_basic.priority_array", FT_NONE, BASE_NONE, NULL,
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_output_basic_structure,
-            { "Structure", "zbee_zcl_general.analog_output_basic.structure.", FT_NONE, BASE_NONE, NULL,
-            0x00, NULL, HFILL } }
+            { "Structure", "zbee_zcl_general.analog_output_basic.structure", FT_NONE, BASE_NONE, NULL,
+            0x0, NULL, HFILL } }
     };
 
     /* ZCL Analog Output Basic subtrees */
-    static gint *ett[]={
+    static int *ett[] = {
         &ett_zbee_zcl_analog_output_basic,
         &ett_zbee_zcl_analog_output_basic_status_flags,
         &ett_zbee_zcl_analog_output_basic_priority_array,
@@ -5880,18 +6565,15 @@ proto_register_zbee_zcl_analog_output_basic(void)
 void
 proto_reg_handoff_zbee_zcl_analog_output_basic(void)
 {
-    dissector_handle_t analog_output_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    analog_output_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_ANALOG_OUTPUT_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_ANALOG_OUTPUT_BASIC, analog_output_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_analog_output_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_ANALOG_OUTPUT_BASIC,
+                            proto_zbee_zcl_analog_output_basic,
                             ett_zbee_zcl_analog_output_basic,
                             ZBEE_ZCL_CID_ANALOG_OUTPUT_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_analog_output_basic_attr_id,
                             hf_zbee_zcl_analog_output_basic_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_analog_output_basic_attr_data
+                            dissect_zcl_analog_output_basic_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_analog_output_basic*/
 
@@ -5926,34 +6608,31 @@ proto_reg_handoff_zbee_zcl_analog_output_basic(void)
 void proto_register_zbee_zcl_analog_value_basic(void);
 void proto_reg_handoff_zbee_zcl_analog_value_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_analog_value_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_analog_value_basic = -1;
+static int proto_zbee_zcl_analog_value_basic;
 
-static int hf_zbee_zcl_analog_value_basic_attr_id = -1;
-static int hf_zbee_zcl_analog_value_basic_reliability = -1;
-static int hf_zbee_zcl_analog_value_basic_status_flags = -1;
-static int hf_zbee_zcl_analog_value_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_analog_value_basic_status_fault = -1;
-static int hf_zbee_zcl_analog_value_basic_status_overridden = -1;
-static int hf_zbee_zcl_analog_value_basic_status_out_of_service = -1;
-static int hf_zbee_zcl_analog_value_basic_priority_array_bool = -1;
-static int hf_zbee_zcl_analog_value_basic_priority_array_sing_prec = -1;
-static int hf_zbee_zcl_analog_value_basic_priority_array = -1;
-static int hf_zbee_zcl_analog_value_basic_structure = -1;
+static int hf_zbee_zcl_analog_value_basic_attr_id;
+static int hf_zbee_zcl_analog_value_basic_reliability;
+static int hf_zbee_zcl_analog_value_basic_status_flags;
+static int hf_zbee_zcl_analog_value_basic_status_in_alarm;
+static int hf_zbee_zcl_analog_value_basic_status_fault;
+static int hf_zbee_zcl_analog_value_basic_status_overridden;
+static int hf_zbee_zcl_analog_value_basic_status_out_of_service;
+static int hf_zbee_zcl_analog_value_basic_priority_array_bool;
+static int hf_zbee_zcl_analog_value_basic_priority_array_sing_prec;
+static int hf_zbee_zcl_analog_value_basic_priority_array;
+static int hf_zbee_zcl_analog_value_basic_structure;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_analog_value_basic = -1;
-static gint ett_zbee_zcl_analog_value_basic_status_flags = -1;
-static gint ett_zbee_zcl_analog_value_basic_priority_array = -1;
-static gint ett_zbee_zcl_analog_value_basic_priority_array_structure = -1;
+static int ett_zbee_zcl_analog_value_basic;
+static int ett_zbee_zcl_analog_value_basic_status_flags;
+static int ett_zbee_zcl_analog_value_basic_priority_array;
+static int ett_zbee_zcl_analog_value_basic_priority_array_structure;
 
 /* Attributes */
 static const value_string zbee_zcl_analog_value_basic_attr_names[] = {
@@ -6003,21 +6682,22 @@ dissect_zbee_zcl_analog_value_basic(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_analog_value_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_analog_value_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     proto_item  *ti = NULL, *tj = NULL;
     proto_tree  *sub_tree = NULL, *sub = NULL;
     int i;
 
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_analog_value_basic_status_in_alarm,
         &hf_zbee_zcl_analog_value_basic_status_fault,
         &hf_zbee_zcl_analog_value_basic_status_overridden,
@@ -6061,7 +6741,7 @@ dissect_zcl_analog_value_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint 
         case ZBEE_ZCL_ATTR_ID_ANALOG_VALUE_BASIC_ENGINEERING_UNITS:
         case ZBEE_ZCL_ATTR_ID_ANALOG_VALUE_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -6099,41 +6779,41 @@ proto_register_zbee_zcl_analog_value_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_value_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.analog_value_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.analog_value_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_value_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.analog_value_basic.attr.status.fault", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.analog_value_basic.attr.status.fault", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_value_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.analog_value_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.analog_value_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_value_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.analog_value_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.analog_value_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } },
         /* end Status Flags fields */
 
         { &hf_zbee_zcl_analog_value_basic_priority_array_bool,
-            { "Valid/Invalid", "zbee_zcl_general.analog_value_basic.attr.priority_array.bool", FT_BOOLEAN, 8, TFS(&tfs_invalid_valid),
+            { "Valid/Invalid", "zbee_zcl_general.analog_value_basic.attr.priority_array.bool", FT_BOOLEAN, BASE_NONE, TFS(&tfs_invalid_valid),
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_value_basic_priority_array_sing_prec,
-            { "Priority Value", "zbee_zcl_general.analog_value_basic.attr.priority_array.sing_prec", FT_UINT16, BASE_HEX, NULL,
+            { "Priority Value", "zbee_zcl_general.analog_value_basic.attr.priority_array.sing_prec", FT_UINT32, BASE_HEX, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_value_basic_priority_array,
-            { "Priority Array", "zbee_zcl_general.analog_value_basic.priority_array.", FT_NONE, BASE_NONE, NULL,
+            { "Priority Array", "zbee_zcl_general.analog_value_basic.priority_array", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_analog_value_basic_structure,
-            { "Structure", "zbee_zcl_general.analog_value_basic.structure.", FT_NONE, BASE_NONE, NULL,
+            { "Structure", "zbee_zcl_general.analog_value_basic.structure", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } }
     };
 
     /* ZCL Analog Value Basic subtrees */
-    static gint *ett[]={
+    static int *ett[] = {
         &ett_zbee_zcl_analog_value_basic,
         &ett_zbee_zcl_analog_value_basic_status_flags,
         &ett_zbee_zcl_analog_value_basic_priority_array,
@@ -6163,18 +6843,15 @@ proto_register_zbee_zcl_analog_value_basic(void)
 void
 proto_reg_handoff_zbee_zcl_analog_value_basic(void)
 {
-    dissector_handle_t analog_value_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    analog_value_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_ANALOG_VALUE_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_ANALOG_VALUE_BASIC, analog_value_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_analog_value_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_ANALOG_VALUE_BASIC,
+                            proto_zbee_zcl_analog_value_basic,
                             ett_zbee_zcl_analog_value_basic,
                             ZBEE_ZCL_CID_ANALOG_VALUE_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_analog_value_basic_attr_id,
                             hf_zbee_zcl_analog_value_basic_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_analog_value_basic_attr_data
+                            dissect_zcl_analog_value_basic_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_analog_value_basic*/
 
@@ -6215,29 +6892,26 @@ static const value_string zbee_zcl_binary_input_polarity_values[] = {
 void proto_register_zbee_zcl_binary_input_basic(void);
 void proto_reg_handoff_zbee_zcl_binary_input_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_binary_input_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_binary_input_basic = -1;
+static int proto_zbee_zcl_binary_input_basic;
 
-static int hf_zbee_zcl_binary_input_basic_attr_id = -1;
-static int hf_zbee_zcl_binary_input_basic_status_flags = -1;
-static int hf_zbee_zcl_binary_input_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_binary_input_basic_status_fault = -1;
-static int hf_zbee_zcl_binary_input_basic_status_overridden = -1;
-static int hf_zbee_zcl_binary_input_basic_status_out_of_service = -1;
-static int hf_zbee_zcl_binary_input_basic_polarity = -1;
-static int hf_zbee_zcl_binary_input_basic_reliability= -1;
+static int hf_zbee_zcl_binary_input_basic_attr_id;
+static int hf_zbee_zcl_binary_input_basic_status_flags;
+static int hf_zbee_zcl_binary_input_basic_status_in_alarm;
+static int hf_zbee_zcl_binary_input_basic_status_fault;
+static int hf_zbee_zcl_binary_input_basic_status_overridden;
+static int hf_zbee_zcl_binary_input_basic_status_out_of_service;
+static int hf_zbee_zcl_binary_input_basic_polarity;
+static int hf_zbee_zcl_binary_input_basic_reliability;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_binary_input_basic = -1;
-static gint ett_zbee_zcl_binary_input_basic_status_flags = -1;
+static int ett_zbee_zcl_binary_input_basic;
+static int ett_zbee_zcl_binary_input_basic_status_flags;
 
 /* Attributes */
 static const value_string zbee_zcl_binary_input_basic_attr_names[] = {
@@ -6287,17 +6961,18 @@ dissect_zbee_zcl_binary_input_basic(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_binary_input_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_binary_input_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_binary_input_basic_status_in_alarm,
         &hf_zbee_zcl_binary_input_basic_status_fault,
         &hf_zbee_zcl_binary_input_basic_status_overridden,
@@ -6330,7 +7005,7 @@ dissect_zcl_binary_input_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint 
         case ZBEE_ZCL_ATTR_ID_BINARY_INPUT_BASIC_PRESENT_VALUE:
         case ZBEE_ZCL_ATTR_ID_BINARY_INPUT_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -6368,19 +7043,19 @@ proto_register_zbee_zcl_binary_input_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_input_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.binary_input_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.binary_input_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_input_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.binary_input_basic.attr.status.fault", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.binary_input_basic.attr.status.fault", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_input_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.binary_input_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.binary_input_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_input_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.binary_input_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.binary_input_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } },
         /* end Status Flags fields */
 
@@ -6391,7 +7066,7 @@ proto_register_zbee_zcl_binary_input_basic(void)
     };
 
     /* ZCL Binary Input Basic subtrees */
-    static gint *ett[]={
+    static int *ett[] = {
              &ett_zbee_zcl_binary_input_basic,
              &ett_zbee_zcl_binary_input_basic_status_flags
     };
@@ -6419,18 +7094,15 @@ proto_register_zbee_zcl_binary_input_basic(void)
 void
 proto_reg_handoff_zbee_zcl_binary_input_basic(void)
 {
-    dissector_handle_t binary_input_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    binary_input_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_BINARY_INPUT_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_BINARY_INPUT_BASIC, binary_input_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_binary_input_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_BINARY_INPUT_BASIC,
+                            proto_zbee_zcl_binary_input_basic,
                             ett_zbee_zcl_binary_input_basic,
                             ZBEE_ZCL_CID_BINARY_INPUT_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_binary_input_basic_attr_id,
                             hf_zbee_zcl_binary_input_basic_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_binary_input_basic_attr_data
+                            dissect_zcl_binary_input_basic_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_binary_input_basic*/
 
@@ -6474,35 +7146,32 @@ static const value_string zbee_zcl_binary_output_polarity_values[] = {
 void proto_register_zbee_zcl_binary_output_basic(void);
 void proto_reg_handoff_zbee_zcl_binary_output_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_binary_output_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_binary_output_basic = -1;
+static int proto_zbee_zcl_binary_output_basic;
 
-static int hf_zbee_zcl_binary_output_basic_attr_id = -1;
-static int hf_zbee_zcl_binary_output_basic_status_flags = -1;
-static int hf_zbee_zcl_binary_output_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_binary_output_basic_status_fault = -1;
-static int hf_zbee_zcl_binary_output_basic_status_overridden = -1;
-static int hf_zbee_zcl_binary_output_basic_status_out_of_service = -1;
-static int hf_zbee_zcl_binary_output_basic_priority_array_bool = -1;
-static int hf_zbee_zcl_binary_output_basic_priority_array_sing_prec = -1;
-static int hf_zbee_zcl_binary_output_basic_polarity = -1;
-static int hf_zbee_zcl_binary_output_basic_reliability = -1;
-static int hf_zbee_zcl_binary_output_basic_priority_array = -1;
-static int hf_zbee_zcl_binary_output_basic_structure = -1;
+static int hf_zbee_zcl_binary_output_basic_attr_id;
+static int hf_zbee_zcl_binary_output_basic_status_flags;
+static int hf_zbee_zcl_binary_output_basic_status_in_alarm;
+static int hf_zbee_zcl_binary_output_basic_status_fault;
+static int hf_zbee_zcl_binary_output_basic_status_overridden;
+static int hf_zbee_zcl_binary_output_basic_status_out_of_service;
+static int hf_zbee_zcl_binary_output_basic_priority_array_bool;
+static int hf_zbee_zcl_binary_output_basic_priority_array_sing_prec;
+static int hf_zbee_zcl_binary_output_basic_polarity;
+static int hf_zbee_zcl_binary_output_basic_reliability;
+static int hf_zbee_zcl_binary_output_basic_priority_array;
+static int hf_zbee_zcl_binary_output_basic_structure;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_binary_output_basic = -1;
-static gint ett_zbee_zcl_binary_output_basic_status_flags = -1;
-static gint ett_zbee_zcl_binary_output_basic_priority_array = -1;
-static gint ett_zbee_zcl_binary_output_basic_priority_array_structure = -1;
+static int ett_zbee_zcl_binary_output_basic;
+static int ett_zbee_zcl_binary_output_basic_status_flags;
+static int ett_zbee_zcl_binary_output_basic_priority_array;
+static int ett_zbee_zcl_binary_output_basic_priority_array_structure;
 
 /* Attributes */
 static const value_string zbee_zcl_binary_output_basic_attr_names[] = {
@@ -6556,21 +7225,22 @@ dissect_zbee_zcl_binary_output_basic(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_binary_output_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_binary_output_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     proto_item  *ti = NULL, *tj = NULL;
     proto_tree  *sub_tree = NULL, *sub = NULL;
     int i;
 
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_binary_output_basic_status_in_alarm,
         &hf_zbee_zcl_binary_output_basic_status_fault,
         &hf_zbee_zcl_binary_output_basic_status_overridden,
@@ -6622,7 +7292,7 @@ dissect_zcl_binary_output_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint
         case ZBEE_ZCL_ATTR_ID_BINARY_OUTPUT_BASIC_RELINQUISH_DEFAULT:
         case ZBEE_ZCL_ATTR_ID_BINARY_OUTPUT_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -6660,19 +7330,19 @@ proto_register_zbee_zcl_binary_output_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_output_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.binary_output_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.binary_output_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_output_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.binary_output_basic.attr.status.fault", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.binary_output_basic.attr.status.fault", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_output_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.binary_output_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.binary_output_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_output_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.binary_output_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.binary_output_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } },
         /* end Status Flags fields */
 
@@ -6681,24 +7351,24 @@ proto_register_zbee_zcl_binary_output_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_output_basic_priority_array_bool,
-            { "Valid/Invalid", "zbee_zcl_general.binary_output_basic.attr.priority_array.bool", FT_BOOLEAN, 8, TFS(&tfs_invalid_valid),
+            { "Valid/Invalid", "zbee_zcl_general.binary_output_basic.attr.priority_array.bool", FT_BOOLEAN, BASE_NONE, TFS(&tfs_invalid_valid),
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_output_basic_priority_array_sing_prec,
-            { "Priority Value", "zbee_zcl_general.binary_output_basic.attr.priority_array.sing_prec", FT_UINT16, BASE_HEX, NULL,
+            { "Priority Value", "zbee_zcl_general.binary_output_basic.attr.priority_array.sing_prec", FT_UINT32, BASE_HEX, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_output_basic_priority_array,
-            { "Priority Array", "zbee_zcl_general.binary_output_basic.priority_array.", FT_NONE, BASE_NONE, NULL,
+            { "Priority Array", "zbee_zcl_general.binary_output_basic.priority_array", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_output_basic_structure,
-            { "Structure", "zbee_zcl_general.binary_output_basic.structure.", FT_NONE, BASE_NONE, NULL,
+            { "Structure", "zbee_zcl_general.binary_output_basic.structure", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } }
     };
 
     /* ZCL Binary Output Basic subtrees */
-    static gint *ett[]={
+    static int *ett[] = {
             &ett_zbee_zcl_binary_output_basic,
             &ett_zbee_zcl_binary_output_basic_status_flags,
             &ett_zbee_zcl_binary_output_basic_priority_array,
@@ -6728,18 +7398,15 @@ proto_register_zbee_zcl_binary_output_basic(void)
 void
 proto_reg_handoff_zbee_zcl_binary_output_basic(void)
 {
-    dissector_handle_t binary_output_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    binary_output_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_BINARY_OUTPUT_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_BINARY_OUTPUT_BASIC, binary_output_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_binary_output_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_BINARY_OUTPUT_BASIC,
+                            proto_zbee_zcl_binary_output_basic,
                             ett_zbee_zcl_binary_output_basic,
                             ZBEE_ZCL_CID_BINARY_OUTPUT_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_binary_output_basic_attr_id,
                             hf_zbee_zcl_binary_output_basic_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_binary_output_basic_attr_data
+                            dissect_zcl_binary_output_basic_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_binary_output_basic*/
 
@@ -6776,34 +7443,31 @@ proto_reg_handoff_zbee_zcl_binary_output_basic(void)
 void proto_register_zbee_zcl_binary_value_basic(void);
 void proto_reg_handoff_zbee_zcl_binary_value_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_binary_value_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_binary_value_basic = -1;
+static int proto_zbee_zcl_binary_value_basic;
 
-static int hf_zbee_zcl_binary_value_basic_attr_id = -1;
-static int hf_zbee_zcl_binary_value_basic_status_flags = -1;
-static int hf_zbee_zcl_binary_value_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_binary_value_basic_status_fault = -1;
-static int hf_zbee_zcl_binary_value_basic_status_overridden = -1;
-static int hf_zbee_zcl_binary_value_basic_status_out_of_service = -1;
-static int hf_zbee_zcl_binary_value_basic_priority_array_bool = -1;
-static int hf_zbee_zcl_binary_value_basic_priority_array_sing_prec = -1;
-static int hf_zbee_zcl_binary_value_basic_reliability = -1;
-static int hf_zbee_zcl_binary_value_basic_priority_array = -1;
-static int hf_zbee_zcl_binary_value_basic_structure = -1;
+static int hf_zbee_zcl_binary_value_basic_attr_id;
+static int hf_zbee_zcl_binary_value_basic_status_flags;
+static int hf_zbee_zcl_binary_value_basic_status_in_alarm;
+static int hf_zbee_zcl_binary_value_basic_status_fault;
+static int hf_zbee_zcl_binary_value_basic_status_overridden;
+static int hf_zbee_zcl_binary_value_basic_status_out_of_service;
+static int hf_zbee_zcl_binary_value_basic_priority_array_bool;
+static int hf_zbee_zcl_binary_value_basic_priority_array_sing_prec;
+static int hf_zbee_zcl_binary_value_basic_reliability;
+static int hf_zbee_zcl_binary_value_basic_priority_array;
+static int hf_zbee_zcl_binary_value_basic_structure;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_binary_value_basic = -1;
-static gint ett_zbee_zcl_binary_value_basic_status_flags = -1;
-static gint ett_zbee_zcl_binary_value_basic_priority_array = -1;
-static gint ett_zbee_zcl_binary_value_basic_priority_array_structure = -1;
+static int ett_zbee_zcl_binary_value_basic;
+static int ett_zbee_zcl_binary_value_basic_status_flags;
+static int ett_zbee_zcl_binary_value_basic_priority_array;
+static int ett_zbee_zcl_binary_value_basic_priority_array_structure;
 
 /* Attributes */
 static const value_string zbee_zcl_binary_value_basic_attr_names[] = {
@@ -6856,21 +7520,22 @@ dissect_zbee_zcl_binary_value_basic(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_binary_value_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_binary_value_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     proto_item  *ti = NULL, *tj = NULL;
     proto_tree  *sub_tree = NULL, *sub = NULL;
     int i;
 
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_binary_value_basic_status_in_alarm,
         &hf_zbee_zcl_binary_value_basic_status_fault,
         &hf_zbee_zcl_binary_value_basic_status_overridden,
@@ -6917,7 +7582,7 @@ dissect_zcl_binary_value_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint 
         case ZBEE_ZCL_ATTR_ID_BINARY_VALUE_BASIC_RELINQUISH_DEFAULT:
         case ZBEE_ZCL_ATTR_ID_BINARY_VALUE_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -6955,41 +7620,41 @@ proto_register_zbee_zcl_binary_value_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_value_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.binary_value_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.binary_value_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_value_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.binary_value_basic.attr.status.fault", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.binary_value_basic.attr.status.fault", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_value_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.binary_value_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.binary_value_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_value_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.binary_value_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.binary_value_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } },
         /* end Status Flags fields */
 
         { &hf_zbee_zcl_binary_value_basic_priority_array_bool,
-            { "Valid/Invalid", "zbee_zcl_general.binary_value_basic.attr.priority_array.bool", FT_BOOLEAN, 8,TFS(&tfs_invalid_valid),
+            { "Valid/Invalid", "zbee_zcl_general.binary_value_basic.attr.priority_array.bool", FT_BOOLEAN, BASE_NONE, TFS(&tfs_invalid_valid),
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_value_basic_priority_array_sing_prec,
-            { "Priority Value", "zbee_zcl_general.binary_value_basic.attr.priority_array.sing_prec", FT_UINT16, BASE_HEX, NULL,
+            { "Priority Value", "zbee_zcl_general.binary_value_basic.attr.priority_array.sing_prec", FT_UINT32, BASE_HEX, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_value_basic_priority_array,
-            { "Priority Array", "zbee_zcl_general.binary_value_basic.priority_array.", FT_NONE, BASE_NONE, NULL,
+            { "Priority Array", "zbee_zcl_general.binary_value_basic.priority_array", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_binary_value_basic_structure,
-            { "Structure", "zbee_zcl_general.binary_value_basic.structure.", FT_NONE, BASE_NONE, NULL,
+            { "Structure", "zbee_zcl_general.binary_value_basic.structure", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } }
     };
 
     /* ZCL Binary Value Basic subtrees */
-    static gint *ett[]={
+    static int *ett[] = {
         &ett_zbee_zcl_binary_value_basic,
         &ett_zbee_zcl_binary_value_basic_status_flags,
         &ett_zbee_zcl_binary_value_basic_priority_array,
@@ -7019,18 +7684,15 @@ proto_register_zbee_zcl_binary_value_basic(void)
 void
 proto_reg_handoff_zbee_zcl_binary_value_basic(void)
 {
-    dissector_handle_t binary_value_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    binary_value_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_BINARY_VALUE_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_BINARY_VALUE_BASIC, binary_value_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_binary_value_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_BINARY_VALUE_BASIC,
+                            proto_zbee_zcl_binary_value_basic,
                             ett_zbee_zcl_binary_value_basic,
                             ZBEE_ZCL_CID_BINARY_VALUE_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_binary_value_basic_attr_id,
                             hf_zbee_zcl_binary_value_basic_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_binary_value_basic_attr_data
+                            dissect_zcl_binary_value_basic_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_binary_value_basic*/
 
@@ -7042,8 +7704,6 @@ proto_reg_handoff_zbee_zcl_binary_value_basic(void)
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_MULTISTATE_INPUT_BASIC_NUM_ETT                                 2
 
 /*Attributes*/
 #define ZBEE_ZCL_ATTR_ID_MULTISTATE_INPUT_BASIC_STATE_TEXT                      0x000E  /* State Text */
@@ -7066,28 +7726,25 @@ proto_reg_handoff_zbee_zcl_binary_value_basic(void)
 void proto_register_zbee_zcl_multistate_input_basic(void);
 void proto_reg_handoff_zbee_zcl_multistate_input_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_multistate_input_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_multistate_input_basic = -1;
+static int proto_zbee_zcl_multistate_input_basic;
 
-static int hf_zbee_zcl_multistate_input_basic_attr_id = -1;
-static int hf_zbee_zcl_multistate_input_basic_status_flags = -1;
-static int hf_zbee_zcl_multistate_input_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_multistate_input_basic_status_fault = -1;
-static int hf_zbee_zcl_multistate_input_basic_status_overridden = -1;
-static int hf_zbee_zcl_multistate_input_basic_status_out_of_service = -1;
-static int hf_zbee_zcl_multistate_input_basic_reliability = -1;
+static int hf_zbee_zcl_multistate_input_basic_attr_id;
+static int hf_zbee_zcl_multistate_input_basic_status_flags;
+static int hf_zbee_zcl_multistate_input_basic_status_in_alarm;
+static int hf_zbee_zcl_multistate_input_basic_status_fault;
+static int hf_zbee_zcl_multistate_input_basic_status_overridden;
+static int hf_zbee_zcl_multistate_input_basic_status_out_of_service;
+static int hf_zbee_zcl_multistate_input_basic_reliability;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_multistate_input_basic = -1;
-static gint ett_zbee_zcl_multistate_input_basic_status_flags = -1;
+static int ett_zbee_zcl_multistate_input_basic;
+static int ett_zbee_zcl_multistate_input_basic_status_flags;
 
 /* Attributes */
 static const value_string zbee_zcl_multistate_input_basic_attr_names[] = {
@@ -7136,17 +7793,18 @@ dissect_zbee_zcl_multistate_input_basic(tvbuff_t *tvb _U_, packet_info *pinfo _U
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_multistate_input_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_multistate_input_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_multistate_input_basic_status_in_alarm,
         &hf_zbee_zcl_multistate_input_basic_status_fault,
         &hf_zbee_zcl_multistate_input_basic_status_overridden,
@@ -7173,7 +7831,7 @@ dissect_zcl_multistate_input_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, gu
         case ZBEE_ZCL_ATTR_ID_MULTISTATE_INPUT_BASIC_PRESENT_VALUE:
         case ZBEE_ZCL_ATTR_ID_MULTISTATE_INPUT_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -7211,28 +7869,28 @@ proto_register_zbee_zcl_multistate_input_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_input_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.multistate_input_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.multistate_input_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_input_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.multistate_input_basic.attr.status.fault", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.multistate_input_basic.attr.status.fault", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_input_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.multistate_input_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.multistate_input_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_input_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.multistate_input_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.multistate_input_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } }
         /* end Status Flags fields */
     };
 
     /* ZCL Multistate Input Basic subtrees */
-    static gint *ett[ZBEE_ZCL_MULTISTATE_INPUT_BASIC_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_multistate_input_basic;
-    ett[1] = &ett_zbee_zcl_multistate_input_basic_status_flags;
+    static int *ett[] = {
+        &ett_zbee_zcl_multistate_input_basic,
+        &ett_zbee_zcl_multistate_input_basic_status_flags
+    };
 
     /* Register the ZigBee ZCL Multistate Input Basic cluster protocol name and description */
     proto_zbee_zcl_multistate_input_basic = proto_register_protocol("ZigBee ZCL Multistate Input Basic", "ZCL Multistate Input Basic", ZBEE_PROTOABBREV_ZCL_MULTISTATE_INPUT_BASIC);
@@ -7257,18 +7915,15 @@ proto_register_zbee_zcl_multistate_input_basic(void)
 void
 proto_reg_handoff_zbee_zcl_multistate_input_basic(void)
 {
-    dissector_handle_t multistate_input_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    multistate_input_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_MULTISTATE_INPUT_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_MULTISTATE_INPUT_BASIC, multistate_input_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_multistate_input_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_MULTISTATE_INPUT_BASIC,
+                            proto_zbee_zcl_multistate_input_basic,
                             ett_zbee_zcl_multistate_input_basic,
                             ZBEE_ZCL_CID_MULTISTATE_INPUT_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_multistate_input_basic_attr_id,
                             hf_zbee_zcl_multistate_input_basic_attr_id,
                             -1, -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_multistate_input_basic_attr_data
+                            dissect_zcl_multistate_input_basic_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_multistate_input_basic*/
 
@@ -7280,8 +7935,6 @@ proto_reg_handoff_zbee_zcl_multistate_input_basic(void)
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_MULTISTATE_OUTPUT_BASIC_NUM_ETT                                 4
 
 /*Attributes*/
 #define ZBEE_ZCL_ATTR_ID_MULTISTATE_OUTPUT_BASIC_STATE_TEXT                      0x000E  /* State Text */
@@ -7306,34 +7959,31 @@ proto_reg_handoff_zbee_zcl_multistate_input_basic(void)
 void proto_register_zbee_zcl_multistate_output_basic(void);
 void proto_reg_handoff_zbee_zcl_multistate_output_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_multistate_output_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_multistate_output_basic = -1;
+static int proto_zbee_zcl_multistate_output_basic;
 
-static int hf_zbee_zcl_multistate_output_basic_attr_id = -1;
-static int hf_zbee_zcl_multistate_output_basic_status_flags = -1;
-static int hf_zbee_zcl_multistate_output_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_multistate_output_basic_status_fault = -1;
-static int hf_zbee_zcl_multistate_output_basic_status_overridden = -1;
-static int hf_zbee_zcl_multistate_output_basic_status_out_of_service = -1;
-static int hf_zbee_zcl_multistate_output_basic_reliability = -1;
-static int hf_zbee_zcl_multistate_output_basic_priority_array_bool = -1;
-static int hf_zbee_zcl_multistate_output_basic_priority_array_sing_prec = -1;
-static int hf_zbee_zcl_multistate_output_basic_priority_array = -1;
-static int hf_zbee_zcl_multistate_output_basic_structure = -1;
+static int hf_zbee_zcl_multistate_output_basic_attr_id;
+static int hf_zbee_zcl_multistate_output_basic_status_flags;
+static int hf_zbee_zcl_multistate_output_basic_status_in_alarm;
+static int hf_zbee_zcl_multistate_output_basic_status_fault;
+static int hf_zbee_zcl_multistate_output_basic_status_overridden;
+static int hf_zbee_zcl_multistate_output_basic_status_out_of_service;
+static int hf_zbee_zcl_multistate_output_basic_reliability;
+static int hf_zbee_zcl_multistate_output_basic_priority_array_bool;
+static int hf_zbee_zcl_multistate_output_basic_priority_array_sing_prec;
+static int hf_zbee_zcl_multistate_output_basic_priority_array;
+static int hf_zbee_zcl_multistate_output_basic_structure;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_multistate_output_basic = -1;
-static gint ett_zbee_zcl_multistate_output_basic_status_flags = -1;
-static gint ett_zbee_zcl_multistate_output_basic_priority_array = -1;
-static gint ett_zbee_zcl_multistate_output_basic_priority_array_structure = -1;
+static int ett_zbee_zcl_multistate_output_basic;
+static int ett_zbee_zcl_multistate_output_basic_status_flags;
+static int ett_zbee_zcl_multistate_output_basic_priority_array;
+static int ett_zbee_zcl_multistate_output_basic_priority_array_structure;
 
 /* Attributes */
 static const value_string zbee_zcl_multistate_output_basic_attr_names[] = {
@@ -7390,21 +8040,22 @@ dissect_zbee_zcl_multistate_output_basic(tvbuff_t *tvb _U_, packet_info *pinfo _
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_multistate_output_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_multistate_output_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     proto_item  *ti = NULL, *tj = NULL;
     proto_tree  *sub_tree = NULL, *sub = NULL;
     int i;
 
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_multistate_output_basic_status_in_alarm,
         &hf_zbee_zcl_multistate_output_basic_status_fault,
         &hf_zbee_zcl_multistate_output_basic_status_overridden,
@@ -7448,7 +8099,7 @@ dissect_zcl_multistate_output_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, g
         case ZBEE_ZCL_ATTR_ID_MULTISTATE_OUTPUT_BASIC_PRESENT_VALUE:
         case ZBEE_ZCL_ATTR_ID_MULTISTATE_OUTPUT_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -7486,19 +8137,19 @@ proto_register_zbee_zcl_multistate_output_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_output_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.multistate_output_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.multistate_output_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_output_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.multistate_output_basic.attr.status.fault", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.multistate_output_basic.attr.status.fault", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_output_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.multistate_output_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.multistate_output_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_output_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.multistate_output_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.multistate_output_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } },
         /* end Status Flags fields */
 
@@ -7507,25 +8158,25 @@ proto_register_zbee_zcl_multistate_output_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_output_basic_priority_array_sing_prec,
-            { "Priority Value", "zbee_zcl_general.multistate_output_basic.attr.priority_array.sing_prec", FT_UINT16, BASE_HEX, NULL,
+            { "Priority Value", "zbee_zcl_general.multistate_output_basic.attr.priority_array.sing_prec", FT_UINT32, BASE_HEX, NULL,
             0x00, NULL, HFILL } } ,
 
         { &hf_zbee_zcl_multistate_output_basic_priority_array,
-            { "Priority Array", "zbee_zcl_general.multistate_output_basic.priority_array.", FT_NONE, BASE_NONE, NULL,
+            { "Priority Array", "zbee_zcl_general.multistate_output_basic.priority_array", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_output_basic_structure,
-            { "Structure", "zbee_zcl_general.multistate_output_basic.structure.", FT_NONE, BASE_NONE, NULL,
+            { "Structure", "zbee_zcl_general.multistate_output_basic.structure", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } }
 };
 
     /* ZCL Multistate Output Basic subtrees */
-    static gint *ett[ZBEE_ZCL_MULTISTATE_OUTPUT_BASIC_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_multistate_output_basic;
-    ett[1] = &ett_zbee_zcl_multistate_output_basic_status_flags;
-    ett[2] = &ett_zbee_zcl_multistate_output_basic_priority_array;
-    ett[3] = &ett_zbee_zcl_multistate_output_basic_priority_array_structure;
+    static int *ett[] = {
+        &ett_zbee_zcl_multistate_output_basic,
+        &ett_zbee_zcl_multistate_output_basic_status_flags,
+        &ett_zbee_zcl_multistate_output_basic_priority_array,
+        &ett_zbee_zcl_multistate_output_basic_priority_array_structure
+    };
 
     /* Register the ZigBee ZCL Multistate Output Basic cluster protocol name and description */
     proto_zbee_zcl_multistate_output_basic = proto_register_protocol("ZigBee ZCL Multistate Output Basic", "ZCL Multistate Output Basic", ZBEE_PROTOABBREV_ZCL_MULTISTATE_OUTPUT_BASIC);
@@ -7550,18 +8201,15 @@ proto_register_zbee_zcl_multistate_output_basic(void)
 void
 proto_reg_handoff_zbee_zcl_multistate_output_basic(void)
 {
-    dissector_handle_t multistate_output_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    multistate_output_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_MULTISTATE_OUTPUT_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_MULTISTATE_OUTPUT_BASIC, multistate_output_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_multistate_output_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_MULTISTATE_OUTPUT_BASIC,
+                            proto_zbee_zcl_multistate_output_basic,
                             ett_zbee_zcl_multistate_output_basic,
                             ZBEE_ZCL_CID_MULTISTATE_OUTPUT_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_multistate_output_basic_attr_id,
                             hf_zbee_zcl_multistate_output_basic_attr_id,
                             -1,-1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_multistate_output_basic_attr_data
+                            dissect_zcl_multistate_output_basic_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_multistate_output_basic*/
 
@@ -7573,8 +8221,6 @@ proto_reg_handoff_zbee_zcl_multistate_output_basic(void)
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_MULTISTATE_VALUE_BASIC_NUM_ETT                                 4
 
 /*Attributes*/
 #define ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_STATE_TEXT                      0x000E  /* State Text */
@@ -7599,35 +8245,32 @@ proto_reg_handoff_zbee_zcl_multistate_output_basic(void)
 void proto_register_zbee_zcl_multistate_value_basic(void);
 void proto_reg_handoff_zbee_zcl_multistate_value_basic(void);
 
-/* Command Dissector Helpers */
-static void dissect_zcl_multistate_value_basic_attr_data      (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-
 /* Private functions prototype */
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_multistate_value_basic = -1;
+static int proto_zbee_zcl_multistate_value_basic;
 
-static int hf_zbee_zcl_multistate_value_basic_attr_id = -1;
-static int hf_zbee_zcl_multistate_value_basic_status_flags = -1;
-static int hf_zbee_zcl_multistate_value_basic_status_in_alarm = -1;
-static int hf_zbee_zcl_multistate_value_basic_status_fault = -1;
-static int hf_zbee_zcl_multistate_value_basic_status_overridden = -1;
-static int hf_zbee_zcl_multistate_value_basic_status_out_of_service = -1;
-static int hf_zbee_zcl_multistate_value_basic_reliability = -1;
-static int hf_zbee_zcl_multistate_value_basic_priority_array_bool = -1;
-static int hf_zbee_zcl_multistate_value_basic_priority_array_sing_prec = -1;
-static int hf_zbee_zcl_multistate_value_basic_priority_array = -1;
-static int hf_zbee_zcl_multistate_value_basic_structure = -1;
+static int hf_zbee_zcl_multistate_value_basic_attr_id;
+static int hf_zbee_zcl_multistate_value_basic_status_flags;
+static int hf_zbee_zcl_multistate_value_basic_status_in_alarm;
+static int hf_zbee_zcl_multistate_value_basic_status_fault;
+static int hf_zbee_zcl_multistate_value_basic_status_overridden;
+static int hf_zbee_zcl_multistate_value_basic_status_out_of_service;
+static int hf_zbee_zcl_multistate_value_basic_reliability;
+static int hf_zbee_zcl_multistate_value_basic_priority_array_bool;
+static int hf_zbee_zcl_multistate_value_basic_priority_array_sing_prec;
+static int hf_zbee_zcl_multistate_value_basic_priority_array;
+static int hf_zbee_zcl_multistate_value_basic_structure;
 
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_multistate_value_basic = -1;
-static gint ett_zbee_zcl_multistate_value_basic_status_flags = -1;
-static gint ett_zbee_zcl_multistate_value_basic_priority_array = -1;
-static gint ett_zbee_zcl_multistate_value_basic_priority_array_structure = -1;
+static int ett_zbee_zcl_multistate_value_basic;
+static int ett_zbee_zcl_multistate_value_basic_status_flags;
+static int ett_zbee_zcl_multistate_value_basic_priority_array;
+static int ett_zbee_zcl_multistate_value_basic_priority_array_structure;
 
 /* Attributes */
 static const value_string zbee_zcl_multistate_value_basic_attr_names[] = {
@@ -7684,21 +8327,22 @@ dissect_zbee_zcl_multistate_value_basic(tvbuff_t *tvb _U_, packet_info *pinfo _U
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_multistate_value_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_multistate_value_basic_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     proto_item  *ti = NULL, *tj = NULL;
     proto_tree  *sub_tree = NULL, *sub = NULL;
     int i;
 
-    static const int * status_flags[] = {
+    static int * const status_flags[] = {
         &hf_zbee_zcl_multistate_value_basic_status_in_alarm,
         &hf_zbee_zcl_multistate_value_basic_status_fault,
         &hf_zbee_zcl_multistate_value_basic_status_overridden,
@@ -7742,7 +8386,7 @@ dissect_zcl_multistate_value_basic_attr_data(proto_tree *tree, tvbuff_t *tvb, gu
         case ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_PRESENT_VALUE:
         case ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_APPLICATION_TYPE:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -7780,19 +8424,19 @@ proto_register_zbee_zcl_multistate_value_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_value_basic_status_in_alarm,
-            { "In Alarm Status", "zbee_zcl_general.multistate_value_basic.attr.status.in_alarm", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "In Alarm Status", "zbee_zcl_general.multistate_value_basic.attr.status.in_alarm", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_IN_ALARM, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_value_basic_status_fault,
-            { "Fault Status", "zbee_zcl_general.multistate_value_basic.attr.status.fault", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Fault Status", "zbee_zcl_general.multistate_value_basic.attr.status.fault", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_FAULT, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_value_basic_status_overridden,
-            { "Overridden Status", "zbee_zcl_general.multistate_value_basic.attr.status.overridden", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Overridden Status", "zbee_zcl_general.multistate_value_basic.attr.status.overridden", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OVERRIDDEN, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_value_basic_status_out_of_service,
-            { "Out of Service Status", "zbee_zcl_general.multistate_value_basic.attr.status.out_of_service", FT_UINT8, BASE_DEC, VALS(zbee_zcl_status_values),
+            { "Out of Service Status", "zbee_zcl_general.multistate_value_basic.attr.status.out_of_service", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_STATUS_OUT_OF_SERVICE, NULL, HFILL } },
         /* end Status Flags fields */
 
@@ -7801,25 +8445,25 @@ proto_register_zbee_zcl_multistate_value_basic(void)
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_value_basic_priority_array_sing_prec,
-            { "Priority Value", "zbee_zcl_general.multistate_value_basic.attr.priority_array.sing_prec", FT_UINT16, BASE_HEX, NULL,
+            { "Priority Value", "zbee_zcl_general.multistate_value_basic.attr.priority_array.sing_prec", FT_UINT32, BASE_HEX, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_value_basic_priority_array,
-            { "Priority Array", "zbee_zcl_general.multistate_value_basic.priority_array.", FT_NONE, BASE_NONE, NULL,
+            { "Priority Array", "zbee_zcl_general.multistate_value_basic.priority_array", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_value_basic_structure,
-            { "Structure", "zbee_zcl_general.multistate_value_basic.structure.", FT_NONE, BASE_NONE, NULL,
+            { "Structure", "zbee_zcl_general.multistate_value_basic.structure", FT_NONE, BASE_NONE, NULL,
             0x00, NULL, HFILL } }
     };
 
     /* ZCL Multistate Value Basic subtrees */
-    static gint *ett[ZBEE_ZCL_MULTISTATE_VALUE_BASIC_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_multistate_value_basic;
-    ett[1] = &ett_zbee_zcl_multistate_value_basic_status_flags;
-    ett[2] = &ett_zbee_zcl_multistate_value_basic_priority_array;
-    ett[3] = &ett_zbee_zcl_multistate_value_basic_priority_array_structure;
+    static int *ett[] = {
+        &ett_zbee_zcl_multistate_value_basic,
+        &ett_zbee_zcl_multistate_value_basic_status_flags,
+        &ett_zbee_zcl_multistate_value_basic_priority_array,
+        &ett_zbee_zcl_multistate_value_basic_priority_array_structure
+    };
 
     /* Register the ZigBee ZCL Multistate Value Basic cluster protocol name and description */
     proto_zbee_zcl_multistate_value_basic = proto_register_protocol("ZigBee ZCL Multistate Value Basic", "ZCL Multistate Value Basic", ZBEE_PROTOABBREV_ZCL_MULTISTATE_VALUE_BASIC);
@@ -7844,15 +8488,12 @@ proto_register_zbee_zcl_multistate_value_basic(void)
 void
 proto_reg_handoff_zbee_zcl_multistate_value_basic(void)
 {
-    dissector_handle_t multistate_value_basic_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    multistate_value_basic_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_MULTISTATE_VALUE_BASIC);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_MULTISTATE_VALUE_BASIC, multistate_value_basic_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_multistate_value_basic,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_MULTISTATE_VALUE_BASIC,
+                            proto_zbee_zcl_multistate_value_basic,
                             ett_zbee_zcl_multistate_value_basic,
                             ZBEE_ZCL_CID_MULTISTATE_VALUE_BASIC,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_multistate_value_basic_attr_id,
                             hf_zbee_zcl_multistate_value_basic_attr_id,
                             -1, -1,
                             (zbee_zcl_fn_attr_data)dissect_zcl_multistate_value_basic_attr_data
@@ -7866,8 +8507,6 @@ proto_reg_handoff_zbee_zcl_multistate_value_basic(void)
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_COMMISSIONING_NUM_ETT                                      3
 
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_COMMISSIONING_SHORT_ADDRESS                        0x0000  /* Short Address */
@@ -7927,12 +8566,10 @@ void proto_register_zbee_zcl_commissioning(void);
 void proto_reg_handoff_zbee_zcl_commissioning(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_commissioning_restart_device                        (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_commissioning_save_restore_startup_parameters       (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_commissioning_reset_startup_parameters              (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_commissioning_response                              (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-
-static void dissect_zcl_commissioning_attr_data                             (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
+static void dissect_zcl_commissioning_restart_device                        (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_commissioning_save_restore_startup_parameters       (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_commissioning_reset_startup_parameters              (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_commissioning_response                              (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
 /* Private functions prototype */
 
@@ -7940,32 +8577,32 @@ static void dissect_zcl_commissioning_attr_data                             (pro
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_commissioning = -1;
+static int proto_zbee_zcl_commissioning;
 
-static int hf_zbee_zcl_commissioning_attr_id = -1;
-static int hf_zbee_zcl_commissioning_attr_stack_profile = -1;
-static int hf_zbee_zcl_commissioning_attr_startup_control = -1;
-static int hf_zbee_zcl_commissioning_restart_device_options = -1;
-static int hf_zbee_zcl_commissioning_restart_device_options_startup_mode = -1;
-static int hf_zbee_zcl_commissioning_restart_device_options_immediate = -1;
-static int hf_zbee_zcl_commissioning_restart_device_options_reserved = -1;
-static int hf_zbee_zcl_commissioning_delay = -1;
-static int hf_zbee_zcl_commissioning_jitter = -1;
-static int hf_zbee_zcl_commissioning_options = -1;
-static int hf_zbee_zcl_commissioning_index = -1;
-static int hf_zbee_zcl_commissioning_reset_startup_options = -1;
-static int hf_zbee_zcl_commissioning_reset_startup_options_reset_current = -1;
-static int hf_zbee_zcl_commissioning_reset_startup_options_reset_all = -1;
-static int hf_zbee_zcl_commissioning_reset_startup_options_erase_index = -1;
-static int hf_zbee_zcl_commissioning_reset_startup_options_reserved = -1;
-static int hf_zbee_zcl_commissioning_status = -1;
-static int hf_zbee_zcl_commissioning_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_commissioning_srv_tx_cmd_id = -1;
+static int hf_zbee_zcl_commissioning_attr_id;
+static int hf_zbee_zcl_commissioning_attr_stack_profile;
+static int hf_zbee_zcl_commissioning_attr_startup_control;
+static int hf_zbee_zcl_commissioning_restart_device_options;
+static int hf_zbee_zcl_commissioning_restart_device_options_startup_mode;
+static int hf_zbee_zcl_commissioning_restart_device_options_immediate;
+static int hf_zbee_zcl_commissioning_restart_device_options_reserved;
+static int hf_zbee_zcl_commissioning_delay;
+static int hf_zbee_zcl_commissioning_jitter;
+static int hf_zbee_zcl_commissioning_options;
+static int hf_zbee_zcl_commissioning_index;
+static int hf_zbee_zcl_commissioning_reset_startup_options;
+static int hf_zbee_zcl_commissioning_reset_startup_options_reset_current;
+static int hf_zbee_zcl_commissioning_reset_startup_options_reset_all;
+static int hf_zbee_zcl_commissioning_reset_startup_options_erase_index;
+static int hf_zbee_zcl_commissioning_reset_startup_options_reserved;
+static int hf_zbee_zcl_commissioning_status;
+static int hf_zbee_zcl_commissioning_srv_rx_cmd_id;
+static int hf_zbee_zcl_commissioning_srv_tx_cmd_id;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_commissioning = -1;
-static gint ett_zbee_zcl_commissioning_restart_device_options = -1;
-static gint ett_zbee_zcl_commissioning_reset_startup_options = -1;
+static int ett_zbee_zcl_commissioning;
+static int ett_zbee_zcl_commissioning_restart_device_options;
+static int ett_zbee_zcl_commissioning_reset_startup_options;
 
 /* Attributes */
 static const value_string zbee_zcl_commissioning_attr_names[] = {
@@ -7998,19 +8635,19 @@ static const value_string zbee_zcl_commissioning_attr_names[] = {
 
 /* Server Commands Received */
 static const value_string zbee_zcl_commissioning_srv_rx_cmd_names[] = {
-    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESTART_DEVICE,                         "Commissioning" },
-    { ZBEE_ZCL_CMD_ID_COMMISSIONING_SAVE_STARTUP_PARAMETERS,                "Commissioning" },
-    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESTORE_STARTUP_PARAMETERS,             "Commissioning" },
-    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESET_STARTUP_PARAMETERS,               "Commissioning" },
+    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESTART_DEVICE,                         "Commissioning - Restart Device" },
+    { ZBEE_ZCL_CMD_ID_COMMISSIONING_SAVE_STARTUP_PARAMETERS,                "Commissioning - Save Startup Parameters" },
+    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESTORE_STARTUP_PARAMETERS,             "Commissioning - Restore Startup Parameters" },
+    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESET_STARTUP_PARAMETERS,               "Commissioning - Reset Startup Parameters" },
     { 0, NULL }
 };
 
 /* Server Commands Generated */
 static const value_string zbee_zcl_commissioning_srv_tx_cmd_names[] = {
-    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESTART_DEVICE_RESPONSE,                "Commissioning" },
-    { ZBEE_ZCL_CMD_ID_COMMISSIONING_SAVE_STARTUP_PARAMETERS_RESPONSE,       "Commissioning" },
-    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESTORE_STARTUP_PARAMETERS_RESPONSE,    "Commissioning" },
-    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESET_STARTUP_PARAMETERS_RESPONSE,      "Commissioning" },
+    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESTART_DEVICE_RESPONSE,                "Commissioning - Restart Device Response" },
+    { ZBEE_ZCL_CMD_ID_COMMISSIONING_SAVE_STARTUP_PARAMETERS_RESPONSE,       "Commissioning - Save Startup Parameters Response" },
+    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESTORE_STARTUP_PARAMETERS_RESPONSE,    "Commissioning - Startup Parameters Response" },
+    { ZBEE_ZCL_CMD_ID_COMMISSIONING_RESET_STARTUP_PARAMETERS_RESPONSE,      "Commissioning - Reset Startup Parameters Response" },
     { 0, NULL }
 };
 
@@ -8056,9 +8693,9 @@ dissect_zbee_zcl_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -8074,7 +8711,7 @@ dissect_zbee_zcl_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_commissioning_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_commissioning_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -8108,7 +8745,7 @@ dissect_zbee_zcl_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_commissioning_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_commissioning_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -8148,9 +8785,9 @@ dissect_zbee_zcl_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_commissioning_restart_device(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_commissioning_restart_device(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    static const int * restart_device_mask[] = {
+    static int * const restart_device_mask[] = {
         &hf_zbee_zcl_commissioning_restart_device_options_startup_mode,
         &hf_zbee_zcl_commissioning_restart_device_options_immediate,
         &hf_zbee_zcl_commissioning_restart_device_options_reserved,
@@ -8186,7 +8823,7 @@ dissect_zcl_commissioning_restart_device(tvbuff_t *tvb, proto_tree *tree, guint 
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_commissioning_save_restore_startup_parameters(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_commissioning_save_restore_startup_parameters(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Options" field */
     proto_tree_add_item(tree, hf_zbee_zcl_commissioning_options, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -8212,9 +8849,9 @@ dissect_zcl_commissioning_save_restore_startup_parameters(tvbuff_t *tvb, proto_t
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_commissioning_reset_startup_parameters(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_commissioning_reset_startup_parameters(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    static const int * reset_startup_mask[] = {
+    static int * const reset_startup_mask[] = {
         &hf_zbee_zcl_commissioning_reset_startup_options_reset_current,
         &hf_zbee_zcl_commissioning_reset_startup_options_reset_all,
         &hf_zbee_zcl_commissioning_reset_startup_options_erase_index,
@@ -8246,7 +8883,7 @@ dissect_zcl_commissioning_reset_startup_parameters(tvbuff_t *tvb, proto_tree *tr
 *---------------------------------------------------------------
 */
 static void
-dissect_zcl_commissioning_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_commissioning_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Status" field */
    proto_tree_add_item(tree, hf_zbee_zcl_commissioning_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -8264,15 +8901,16 @@ dissect_zcl_commissioning_response(tvbuff_t *tvb, proto_tree *tree, guint *offse
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
-void
-dissect_zcl_commissioning_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_commissioning_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch ( attr_id ) {
@@ -8310,7 +8948,7 @@ dissect_zcl_commissioning_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offs
         case ZBEE_ZCL_ATTR_ID_COMMISSIONING_CONCENTRATOR_RADIUS:
         case ZBEE_ZCL_ATTR_ID_COMMISSIONING_CONCENTRATOR_DISCOVERY_TIME:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -8417,10 +9055,11 @@ proto_register_zbee_zcl_commissioning(void)
     };
 
     /* ZCL Commissioning subtrees */
-    static gint *ett[ZBEE_ZCL_COMMISSIONING_NUM_ETT];
-    ett[0] = &ett_zbee_zcl_commissioning;
-    ett[1] = &ett_zbee_zcl_commissioning_restart_device_options;
-    ett[2] = &ett_zbee_zcl_commissioning_reset_startup_options;
+    static int *ett[] = {
+        &ett_zbee_zcl_commissioning,
+        &ett_zbee_zcl_commissioning_restart_device_options,
+        &ett_zbee_zcl_commissioning_reset_startup_options
+    };
 
     /* Register the ZigBee ZCL Commissioning cluster protocol name and description */
     proto_zbee_zcl_commissioning = proto_register_protocol("ZigBee ZCL Commissioning", "ZCL Commissioning", ZBEE_PROTOABBREV_ZCL_COMMISSIONING);
@@ -8447,19 +9086,16 @@ proto_register_zbee_zcl_commissioning(void)
 void
 proto_reg_handoff_zbee_zcl_commissioning(void)
 {
-    dissector_handle_t commissioning_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    commissioning_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_COMMISSIONING);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_COMMISSIONING, commissioning_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_commissioning,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_COMMISSIONING,
+                            proto_zbee_zcl_commissioning,
                             ett_zbee_zcl_commissioning,
                             ZBEE_ZCL_CID_COMMISSIONING,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_commissioning_attr_id,
                             hf_zbee_zcl_commissioning_attr_id,
                             hf_zbee_zcl_commissioning_srv_rx_cmd_id,
                             hf_zbee_zcl_commissioning_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_commissioning_attr_data
+                            dissect_zcl_commissioning_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_commissioning*/
 
@@ -8489,7 +9125,7 @@ proto_reg_handoff_zbee_zcl_commissioning(void)
 /* Attributes */
 #define ZBEE_ZCL_ATTR_ID_PART_MAX_IN_TRANSF_SIZE        0x0000  /* Maximum Incoming Transfer Size */
 #define ZBEE_ZCL_ATTR_ID_PART_MAX_OUT_TRANSF_SIZE       0x0001  /* Maximum Outgoing Transfer Size */
-#define ZBEE_ZCL_ATTR_ID_PART_PARTIONED_FRAME_SIZE      0x0002  /* Partioned Frame Size */
+#define ZBEE_ZCL_ATTR_ID_PART_PARTITIONED_FRAME_SIZE    0x0002  /* Partitioned Frame Size */
 #define ZBEE_ZCL_ATTR_ID_PART_LARGE_FRAME_SIZE          0x0003  /* Large Frame Size */
 #define ZBEE_ZCL_ATTR_ID_PART_ACK_FRAME_NUM             0x0004  /* Number of Ack Frame*/
 #define ZBEE_ZCL_ATTR_ID_PART_NACK_TIMEOUT              0x0005  /* Nack Timeout */
@@ -8516,11 +9152,11 @@ void proto_register_zbee_zcl_part(void);
 void proto_reg_handoff_zbee_zcl_part(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_part_trasfpartframe         (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_part_rdhandshakeparam       (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint *offset);
-static void dissect_zcl_part_wrhandshakeparam       (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint *offset);
-static void dissect_zcl_part_multiack               (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_part_rdhandshakeparamrsp    (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint *offset);
+static void dissect_zcl_part_trasfpartframe         (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_part_rdhandshakeparam       (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned *offset, bool direction);
+static void dissect_zcl_part_wrhandshakeparam       (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned *offset, bool direction);
+static void dissect_zcl_part_multiack               (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_part_rdhandshakeparamrsp    (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned *offset, bool direction);
 
 /* Private functions prototype */
 
@@ -8529,37 +9165,36 @@ static void dissect_zcl_part_rdhandshakeparamrsp    (tvbuff_t *tvb, packet_info 
 /*************************/
 
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_part = -1;
+static int proto_zbee_zcl_part;
 
-static int hf_zbee_zcl_part_attr_id = -1;
-static int hf_zbee_zcl_part_srv_tx_cmd_id = -1;
-static int hf_zbee_zcl_part_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_part_opt = -1;
-static int hf_zbee_zcl_part_opt_first_block = -1;
-static int hf_zbee_zcl_part_opt_indic_len = -1;
-static int hf_zbee_zcl_part_opt_res = -1;
-static int hf_zbee_zcl_part_first_frame_id = -1;
-static int hf_zbee_zcl_part_part_indicator = -1;
-static int hf_zbee_zcl_part_part_frame = -1;
-static int hf_zbee_zcl_part_part_frame_len = -1;
-static int hf_zbee_zcl_part_partitioned_cluster_id = -1;
-static int hf_zbee_zcl_part_ack_opt = -1;
-static int hf_zbee_zcl_part_ack_opt_nack_id_len = -1;
-static int hf_zbee_zcl_part_ack_opt_res = -1;
-static int hf_zbee_zcl_part_nack_id = -1;
+static int hf_zbee_zcl_part_attr_id;
+static int hf_zbee_zcl_part_srv_tx_cmd_id;
+static int hf_zbee_zcl_part_srv_rx_cmd_id;
+static int hf_zbee_zcl_part_opt;
+static int hf_zbee_zcl_part_opt_first_block;
+static int hf_zbee_zcl_part_opt_indic_len;
+static int hf_zbee_zcl_part_opt_res;
+static int hf_zbee_zcl_part_first_frame_id;
+static int hf_zbee_zcl_part_part_indicator;
+static int hf_zbee_zcl_part_part_frame;
+static int hf_zbee_zcl_part_partitioned_cluster_id;
+static int hf_zbee_zcl_part_ack_opt;
+static int hf_zbee_zcl_part_ack_opt_nack_id_len;
+static int hf_zbee_zcl_part_ack_opt_res;
+static int hf_zbee_zcl_part_nack_id;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_part = -1;
-static gint ett_zbee_zcl_part_fragm_options = -1;
-static gint ett_zbee_zcl_part_ack_opts = -1;
-static gint ett_zbee_zcl_part_nack_id_list[ZBEE_ZCL_PART_NUM_NACK_ID_ETT];
-static gint ett_zbee_zcl_part_attrs_id_list[ZBEE_ZCL_PART_NUM_ATTRS_ID_ETT];
+static int ett_zbee_zcl_part;
+static int ett_zbee_zcl_part_fragm_options;
+static int ett_zbee_zcl_part_ack_opts;
+static int ett_zbee_zcl_part_nack_id_list[ZBEE_ZCL_PART_NUM_NACK_ID_ETT];
+static int ett_zbee_zcl_part_attrs_id_list[ZBEE_ZCL_PART_NUM_ATTRS_ID_ETT];
 
 /* Attributes */
 static const value_string zbee_zcl_part_attr_names[] = {
     { ZBEE_ZCL_ATTR_ID_PART_MAX_IN_TRANSF_SIZE,     "Maximum Incoming Transfer Size" },
     { ZBEE_ZCL_ATTR_ID_PART_MAX_OUT_TRANSF_SIZE,    "Maximum Outgoing Transfer Size" },
-    { ZBEE_ZCL_ATTR_ID_PART_PARTIONED_FRAME_SIZE,   "Partioned Frame Size" },
+    { ZBEE_ZCL_ATTR_ID_PART_PARTITIONED_FRAME_SIZE, "Partitioned Frame Size" },
     { ZBEE_ZCL_ATTR_ID_PART_LARGE_FRAME_SIZE,       "Large Frame Size" },
     { ZBEE_ZCL_ATTR_ID_PART_ACK_FRAME_NUM,          "Number of Ack Frame" },
     { ZBEE_ZCL_ATTR_ID_PART_NACK_TIMEOUT,           "Nack Timeout" },
@@ -8615,9 +9250,9 @@ dissect_zbee_zcl_part(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 {
     proto_tree  *payload_tree;
     zbee_zcl_packet  *zcl;
-    guint       offset = 0;
-    guint8      cmd_id;
-    gint        rem_len;
+    unsigned    offset = 0;
+    uint8_t     cmd_id;
+    int         rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -8633,7 +9268,7 @@ dissect_zbee_zcl_part(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_part_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_part_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -8647,11 +9282,11 @@ dissect_zbee_zcl_part(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
                     break;
 
                 case ZBEE_ZCL_CMD_ID_PART_RD_HANDSHAKE_PARAM:
-                    dissect_zcl_part_rdhandshakeparam(tvb, pinfo, payload_tree, &offset);
+                    dissect_zcl_part_rdhandshakeparam(tvb, pinfo, payload_tree, &offset, zcl->direction);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_PART_WR_HANDSHAKE_PARAM:
-                    dissect_zcl_part_wrhandshakeparam(tvb, pinfo, payload_tree, &offset);
+                    dissect_zcl_part_wrhandshakeparam(tvb, pinfo, payload_tree, &offset, zcl->direction);
                     break;
 
                 default:
@@ -8666,7 +9301,7 @@ dissect_zbee_zcl_part(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_part_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_part_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -8680,7 +9315,7 @@ dissect_zbee_zcl_part(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
                     break;
 
                 case ZBEE_ZCL_CMD_ID_PART_RD_HANDSHAKE_PARAM_RSP:
-                    dissect_zcl_part_rdhandshakeparamrsp(tvb, pinfo, payload_tree, &offset);
+                    dissect_zcl_part_rdhandshakeparamrsp(tvb, pinfo, payload_tree, &offset, zcl->direction);
                     break;
 
                 default:
@@ -8705,14 +9340,13 @@ dissect_zbee_zcl_part(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
  *      none
  *---------------------------------------------------------------
  */
-static void dissect_zcl_part_trasfpartframe(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+static void dissect_zcl_part_trasfpartframe(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
 
-    guint8    options;
-    guint16   u16len;
-    guint8    frame_len;
+    uint8_t   options;
+    int       frame_len;
 
-    static const int * part_opt[] = {
+    static int * const part_opt[] = {
         &hf_zbee_zcl_part_opt_first_block,
         &hf_zbee_zcl_part_opt_indic_len,
         &hf_zbee_zcl_part_opt_res,
@@ -8720,7 +9354,7 @@ static void dissect_zcl_part_trasfpartframe(tvbuff_t *tvb, proto_tree *tree, gui
     };
 
     /* Retrieve "Fragmentation Options" field */
-    options = tvb_get_guint8(tvb, *offset);
+    options = tvb_get_uint8(tvb, *offset);
     proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_part_opt, ett_zbee_zcl_part_fragm_options, part_opt, ENC_NA);
     *offset += 1;
 
@@ -8728,26 +9362,17 @@ static void dissect_zcl_part_trasfpartframe(tvbuff_t *tvb, proto_tree *tree, gui
     if ((options & ZBEE_ZCL_PART_OPT_INDIC_LEN) ==  0)
     {
         /* 1-byte length */
-        u16len = (guint16)tvb_get_guint8(tvb, *offset);
-        proto_tree_add_item(tree, hf_zbee_zcl_part_part_indicator, tvb, *offset, 1, (u16len & 0xFF));
+        proto_tree_add_item(tree, hf_zbee_zcl_part_part_indicator, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
         *offset += 1;
     }
     else {
         /* 2-bytes length */
-        u16len = tvb_get_letohs(tvb, *offset);
-        proto_tree_add_item(tree, hf_zbee_zcl_part_part_indicator, tvb, *offset, 2, u16len);
+        proto_tree_add_item(tree, hf_zbee_zcl_part_part_indicator, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
         *offset += 2;
     }
 
-    /* Retrieve PartitionedFrame length field */
-    frame_len = tvb_get_guint8(tvb, *offset); /* string length */
-    if (frame_len == ZBEE_ZCL_INVALID_STR_LENGTH)
-        frame_len = 0;
-    proto_tree_add_item(tree, hf_zbee_zcl_part_part_frame_len, tvb, *offset, 1, ENC_NA);
-    *offset += 1;
-
     /* Retrieve "PartitionedFrame" field */
-    proto_tree_add_item(tree, hf_zbee_zcl_part_part_frame, tvb, *offset, frame_len, ENC_NA);
+    proto_tree_add_item_ret_length(tree, hf_zbee_zcl_part_part_frame, tvb, *offset, 1, ENC_NA|ENC_ZIGBEE, &frame_len);
     *offset += frame_len;
 
 } /*dissect_zcl_part_trasfpartframe*/
@@ -8762,19 +9387,20 @@ static void dissect_zcl_part_trasfpartframe(tvbuff_t *tvb, proto_tree *tree, gui
  *      packet_info *pinfo  - pointer to packet information fields
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      offset              - offset
+ *      direction           - ZCL direction
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_part_rdhandshakeparam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint *offset)
+dissect_zcl_part_rdhandshakeparam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned *offset, bool direction)
 {
     /* Retrieve "Partitioned Cluster ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_part_partitioned_cluster_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
 
     /* Dissect the attribute id list */
-    dissect_zcl_read_attr(tvb, pinfo, tree, offset, ZBEE_ZCL_CID_PARTITION);
+    dissect_zcl_read_attr(tvb, pinfo, tree, offset, ZBEE_ZCL_CID_PARTITION, ZBEE_MFG_CODE_NONE, direction);
 } /*dissect_zcl_part_rdhandshakeparam*/
 
  /*FUNCTION:------------------------------------------------------
@@ -8787,19 +9413,20 @@ dissect_zcl_part_rdhandshakeparam(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
  *      packet_info *pinfo  - pointer to packet information fields
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      offset              - offset
+ *      direction           - ZCL direction
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_part_wrhandshakeparam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint *offset)
+dissect_zcl_part_wrhandshakeparam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned *offset, bool direction)
 {
     /* Retrieve "Partitioned Cluster ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_part_partitioned_cluster_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
 
     /* Dissect the attributes list */
-    dissect_zcl_write_attr(tvb, pinfo, tree, offset, ZBEE_ZCL_CID_PARTITION);
+    dissect_zcl_write_attr(tvb, pinfo, tree, offset, ZBEE_ZCL_CID_PARTITION, ZBEE_MFG_CODE_NONE, direction);
 
 } /*dissect_zcl_part_wrhandshakeparam*/
 
@@ -8821,22 +9448,20 @@ dissect_zcl_part_wrhandshakeparam(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_part_multiack(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_part_multiack(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint   tvb_len = tvb_reported_length(tvb);
-    guint   i = 0;
-    guint8  options;
-    guint16 first_frame_id;
-    guint16 nack_id;
+    unsigned   tvb_len = tvb_reported_length(tvb);
+    unsigned   i = 0;
+    uint8_t options;
 
-    static const int * ack_opts[] = {
+    static int * const ack_opts[] = {
         &hf_zbee_zcl_part_ack_opt_nack_id_len,
         &hf_zbee_zcl_part_ack_opt_res,
         NULL
     };
 
     /* Retrieve "Ack Options" field */
-    options = tvb_get_guint8(tvb, *offset);
+    options = tvb_get_uint8(tvb, *offset);
     proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_part_ack_opt, ett_zbee_zcl_part_ack_opts, ack_opts, ENC_NA);
     *offset += 1;
 
@@ -8844,14 +9469,12 @@ dissect_zcl_part_multiack(tvbuff_t *tvb, proto_tree *tree, guint *offset)
     if ((options & ZBEE_ZCL_PART_ACK_OPT_NACK_LEN) ==  0)
     {
         /* 1-byte length */
-        first_frame_id = (guint16)tvb_get_guint8(tvb, *offset);
-        proto_tree_add_item(tree, hf_zbee_zcl_part_first_frame_id, tvb, *offset, 1, (first_frame_id & 0xFF));
+        proto_tree_add_item(tree, hf_zbee_zcl_part_first_frame_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
         *offset += 1;
     }
     else {
         /* 2-bytes length */
-        first_frame_id = tvb_get_letohs(tvb, *offset);
-        proto_tree_add_item(tree, hf_zbee_zcl_part_first_frame_id, tvb, *offset, 2, first_frame_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_part_first_frame_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
         *offset += 2;
     }
 
@@ -8861,14 +9484,12 @@ dissect_zcl_part_multiack(tvbuff_t *tvb, proto_tree *tree, guint *offset)
         if ((options & ZBEE_ZCL_PART_ACK_OPT_NACK_LEN) ==  0)
         {
             /* 1-byte length */
-            nack_id = (guint16)tvb_get_guint8(tvb, *offset);
-            proto_tree_add_item(tree, hf_zbee_zcl_part_nack_id, tvb, *offset, 1, (nack_id & 0xFF));
+            proto_tree_add_item(tree, hf_zbee_zcl_part_nack_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
             *offset += 1;
         }
         else {
             /* 2-bytes length */
-            nack_id = tvb_get_letohs(tvb, *offset);
-            proto_tree_add_item(tree, hf_zbee_zcl_part_nack_id, tvb, *offset, 2, nack_id);
+            proto_tree_add_item(tree, hf_zbee_zcl_part_nack_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
             *offset += 2;
         }
 
@@ -8886,19 +9507,20 @@ dissect_zcl_part_multiack(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *      packet_info *pinfo  - pointer to packet information fields
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      offset              - offset
+ *      direction           - ZCL direction
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_part_rdhandshakeparamrsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint *offset)
+dissect_zcl_part_rdhandshakeparamrsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned *offset, bool direction)
 {
     /* Retrieve "Partitioned Cluster ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_part_partitioned_cluster_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
 
     /* Dissect the attributes list */
-    dissect_zcl_read_attr_resp(tvb, pinfo, tree, offset, ZBEE_ZCL_CID_PARTITION);
+    dissect_zcl_read_attr_resp(tvb, pinfo, tree, offset, ZBEE_ZCL_CID_PARTITION, ZBEE_MFG_CODE_NONE, direction);
 } /*dissect_zcl_part_rdhandshakeparamrsp*/
 
 
@@ -8911,16 +9533,16 @@ dissect_zcl_part_rdhandshakeparamrsp(tvbuff_t *tvb, packet_info *pinfo, proto_tr
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 void proto_register_zbee_zcl_part(void)
 {
-    guint8  i, j;
+    uint8_t i, j;
 
     static hf_register_info hf[] = {
 
@@ -8960,16 +9582,12 @@ void proto_register_zbee_zcl_part(void)
             { "Partition Indicator", "zbee_zcl_general.part.part_indicator", FT_UINT16, BASE_DEC, NULL,
             0x00, NULL, HFILL } },
 
-        { &hf_zbee_zcl_part_part_frame_len,
-            { "Partition Frame Length", "zbee_zcl_general.part.part_frame_length", FT_UINT8, BASE_DEC, NULL,
-            0x00, NULL, HFILL } },
-
         { &hf_zbee_zcl_part_part_frame,
-            { "Partition Frame", "zbee_zcl_general.part.part_frame", FT_BYTES, SEP_COLON, NULL,
+            { "Partition Frame", "zbee_zcl_general.part.part_frame", FT_UINT_BYTES, SEP_COLON, NULL,
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_part_partitioned_cluster_id,
-            { "Partitioned Cluster ID", "zbee_zcl_general.part.part_cluster_id", FT_UINT16, BASE_HEX, VALS(zbee_aps_cid_names),
+            { "Partitioned Cluster ID", "zbee_zcl_general.part.part_cluster_id", FT_UINT16, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_aps_cid_names),
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_part_ack_opt,
@@ -8986,25 +9604,23 @@ void proto_register_zbee_zcl_part(void)
 
         { &hf_zbee_zcl_part_nack_id,
             { "Nack Id", "zbee_zcl_general.part.nack_id", FT_UINT16, BASE_DEC, NULL,
-            0x00, NULL, HFILL } }
+            0x0, NULL, HFILL } }
 
     };
 
     /* ZCL Partition subtrees */
-    gint *ett[ZBEE_ZCL_PART_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_part;
-    ett[1] = &ett_zbee_zcl_part_fragm_options;
-    ett[2] = &ett_zbee_zcl_part_ack_opts;
+    int *ett[ZBEE_ZCL_PART_NUM_ETT] = {
+        &ett_zbee_zcl_part,
+        &ett_zbee_zcl_part_fragm_options,
+        &ett_zbee_zcl_part_ack_opts
+    };
 
     /* initialize attribute subtree types */
     for ( i = 0, j = ZBEE_ZCL_PART_NUM_GENERIC_ETT; i < ZBEE_ZCL_PART_NUM_NACK_ID_ETT; i++, j++) {
-        ett_zbee_zcl_part_nack_id_list[i] = -1;
         ett[j] = &ett_zbee_zcl_part_nack_id_list[i];
     }
 
     for ( i = 0; i < ZBEE_ZCL_PART_NUM_ATTRS_ID_ETT; i++, j++) {
-        ett_zbee_zcl_part_attrs_id_list[i] = -1;
         ett[j] = &ett_zbee_zcl_part_attrs_id_list[i];
     }
 
@@ -9031,15 +9647,12 @@ void proto_register_zbee_zcl_part(void)
  */
 void proto_reg_handoff_zbee_zcl_part(void)
 {
-    dissector_handle_t part_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    part_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_PART);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_PARTITION, part_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_part,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_PART,
+                            proto_zbee_zcl_part,
                             ett_zbee_zcl_part,
                             ZBEE_ZCL_CID_PARTITION,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_part_attr_id,
                             hf_zbee_zcl_part_attr_id,
                             hf_zbee_zcl_part_srv_rx_cmd_id,
                             hf_zbee_zcl_part_srv_tx_cmd_id,
@@ -9056,11 +9669,8 @@ void proto_reg_handoff_zbee_zcl_part(void)
 /* Defines               */
 /*************************/
 
-#define ZBEE_ZCL_OTA_NUM_GENERIC_ETT                        3
-#define ZBEE_ZCL_OTA_NUM_ETT                                (ZBEE_ZCL_OTA_NUM_GENERIC_ETT)
-
 /* Attributes */
-#define ZBEE_ZCL_ATTR_ID_OTA_UPGRADE_SERVER_ID              0x0000  /* Upgrade Served ID */
+#define ZBEE_ZCL_ATTR_ID_OTA_UPGRADE_SERVER_ID              0x0000  /* Upgrade Server ID */
 #define ZBEE_ZCL_ATTR_ID_OTA_FILE_OFFSET                    0x0001  /* File Offset */
 #define ZBEE_ZCL_ATTR_ID_OTA_CURRENT_FILE_VERSION           0x0002  /* Current File Version */
 #define ZBEE_ZCL_ATTR_ID_OTA_CURRENT_ZB_STACK_VERSION       0x0003  /* Current ZigBee Stack Version */
@@ -9118,21 +9728,29 @@ void proto_reg_handoff_zbee_zcl_part(void)
 #define ZBEE_ZCL_OTA_STATUS_WAIT_FOR_MORE                     0x05  /* Wait for more */
                                                                     /* 0x06-0xff - Reserved */
 /* File Version mask */
-#define ZBEE_ZCL_OTA_FILE_VERS_APPL_RELEASE             0x000000FF  /* Application Release */
-#define ZBEE_ZCL_OTA_FILE_VERS_APPL_BUILD               0x0000FF00  /* Application Build */
-#define ZBEE_ZCL_OTA_FILE_VERS_STACK_RELEASE            0x00FF0000  /* Stack Release */
-#define ZBEE_ZCL_OTA_FILE_VERS_STACK_BUILD              0xFF000000  /* Stack Build */
+#define ZBEE_ZCL_OTA_FILE_VERS_APPL_RELEASE             0xFF000000  /* Application Release */
+#define ZBEE_ZCL_OTA_FILE_VERS_APPL_BUILD               0x00FF0000  /* Application Build */
+#define ZBEE_ZCL_OTA_FILE_VERS_STACK_RELEASE            0x0000FF00  /* Stack Release */
+#define ZBEE_ZCL_OTA_FILE_VERS_STACK_BUILD              0x000000FF  /* Stack Build */
 
-/* Field Control bitmask field list */
-#define ZBEE_ZCL_OTA_FIELD_CTRL_HW_VER_PRESENT                0x01  /* bit     0 */
-#define ZBEE_ZCL_OTA_FIELD_CTRL_RESERVED                      0xfe  /* bit   1-7 */
-#define ZBEE_ZCL_OTA_FIELD_CTRL_IEEE_ADDR_PRESENT             0x01  /* bit     0 - Request nodes IEEE address Present  */
+/* Field Control bitmask field list for Query Next Image Request */
+#define ZBEE_ZCL_OTA_QUERY_NEXT_IMAGE_REQ_FIELD_CTRL_HW_VER_PRESENT         0x01  /* bit 0 */
+#define ZBEE_ZCL_OTA_QUERY_NEXT_IMAGE_REQ_FIELD_CTRL_RESERVED               0xfe  /* bit 1-7 */
+
+/* Field Control bitmask field list for Image Block Request */
+#define ZBEE_ZCL_OTA_IMAGE_BLOCK_REQ_FIELD_CTRL_REQUEST_NODE_ADDR_PRESENT   0x01  /* bit 0 - Request node IEEE address Present */
+#define ZBEE_ZCL_OTA_IMAGE_BLOCK_REQ_FIELD_CTRL_MIN_BLOCK_PERIOD_PRESENT    0x02  /* bit 1 - Minimum block period Present */
+#define ZBEE_ZCL_OTA_IMAGE_BLOCK_REQ_FIELD_CTRL_RESERVED                    0xfc  /* bit 2-7 */
+
+/* Field Control bitmask field list for Image Page Request */
+#define ZBEE_ZCL_OTA_IMAGE_PAGE_REQ_FIELD_CTRL_REQUEST_NODE_ADDR_PRESENT    0x01  /* bit 0 - Request node IEEE address Present */
+#define ZBEE_ZCL_OTA_IMAGE_PAGE_REQ_FIELD_CTRL_RESERVED                     0xfe  /* bit 1-7 */
 
 /* OTA Time */
 #define ZBEE_ZCL_OTA_TIME_NOW                           0x00000000  /* Now */
 #define ZBEE_ZCL_OTA_TIME_UTC_LO                        0x00000001  /* UTC Low Boundary */
 #define ZBEE_ZCL_OTA_TIME_UTC_HI                        0xfffffffe  /* UTC High Boundary */
-#define ZBEE_ZCL_OTA_TIME_WAIT                          0xffffffff  /* Wait for a Upgrade command (not used for RequesTime) */
+#define ZBEE_ZCL_OTA_TIME_WAIT                          0xffffffff  /* Wait for a Upgrade command (not used for RequestTime) */
 
 /*************************/
 /* Function Declarations */
@@ -9145,47 +9763,59 @@ void proto_reg_handoff_zbee_zcl_ota(void);
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_ota = -1;
+static int proto_zbee_zcl_ota;
 
-static int hf_zbee_zcl_ota_attr_id = -1;
-static int hf_zbee_zcl_ota_srv_tx_cmd_id = -1;
-static int hf_zbee_zcl_ota_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_ota_image_upgrade_status = -1;
-static int hf_zbee_zcl_ota_zb_stack_ver = -1;
-static int hf_zbee_zcl_ota_file_offset = -1;
-static int hf_zbee_zcl_ota_payload_type = -1;
-static int hf_zbee_zcl_ota_query_jitter = -1;
-static int hf_zbee_zcl_ota_manufacturer_code = -1;
-static int hf_zbee_zcl_ota_image_type = -1;
-static int hf_zbee_zcl_ota_file_version = -1;
-static int hf_zbee_zcl_ota_file_version_appl_release = -1;
-static int hf_zbee_zcl_ota_file_version_appl_build = -1;
-static int hf_zbee_zcl_ota_file_version_stack_release = -1;
-static int hf_zbee_zcl_ota_file_version_stack_build = -1;
-static int hf_zbee_zcl_ota_field_ctrl = -1;
-static int hf_zbee_zcl_ota_field_ctrl_hw_ver_present = -1;
-static int hf_zbee_zcl_ota_field_ctrl_reserved = -1;
-static int hf_zbee_zcl_ota_hw_version = -1;
-static int hf_zbee_zcl_ota_status = -1;
-static int hf_zbee_zcl_ota_image_size = -1;
-static int hf_zbee_zcl_ota_max_data_size = -1;
-static int hf_zbee_zcl_ota_req_node_addr = -1;
-static int hf_zbee_zcl_ota_current_time = -1;
-static int hf_zbee_zcl_ota_request_time = -1;
-static int hf_zbee_zcl_ota_upgrade_time = -1;
-static int hf_zbee_zcl_ota_data_size = -1;
-static int hf_zbee_zcl_ota_image_data = -1;
-static int hf_zbee_zcl_ota_page_size = -1;
-static int hf_zbee_zcl_ota_rsp_spacing = -1;
+static int hf_zbee_zcl_ota_attr_id;
+static int hf_zbee_zcl_ota_srv_tx_cmd_id;
+static int hf_zbee_zcl_ota_srv_rx_cmd_id;
+static int hf_zbee_zcl_ota_image_upgrade_status;
+static int hf_zbee_zcl_ota_zb_stack_ver;
+static int hf_zbee_zcl_ota_file_offset;
+static int hf_zbee_zcl_ota_payload_type;
+static int hf_zbee_zcl_ota_query_jitter;
+static int hf_zbee_zcl_ota_manufacturer_code;
+static int hf_zbee_zcl_ota_image_type;
+static int hf_zbee_zcl_ota_file_version;
+static int hf_zbee_zcl_ota_file_version_appl_release;
+static int hf_zbee_zcl_ota_file_version_appl_build;
+static int hf_zbee_zcl_ota_file_version_stack_release;
+static int hf_zbee_zcl_ota_file_version_stack_build;
+static int hf_zbee_zcl_ota_query_next_image_req_field_ctrl;
+static int hf_zbee_zcl_ota_query_next_image_req_field_ctrl_hw_ver_present;
+static int hf_zbee_zcl_ota_query_next_image_req_field_ctrl_reserved;
+static int hf_zbee_zcl_ota_image_block_req_field_ctrl;
+static int hf_zbee_zcl_ota_image_block_req_field_ctrl_ieee_addr_present;
+static int hf_zbee_zcl_ota_image_block_req_field_ctrl_min_block_period_present;
+static int hf_zbee_zcl_ota_image_block_req_field_ctrl_reserved;
+static int hf_zbee_zcl_ota_image_page_req_field_ctrl;
+static int hf_zbee_zcl_ota_image_page_req_field_ctrl_ieee_addr_present;
+static int hf_zbee_zcl_ota_image_page_req_field_ctrl_reserved;
+static int hf_zbee_zcl_ota_hw_version;
+static int hf_zbee_zcl_ota_status;
+static int hf_zbee_zcl_ota_image_size;
+static int hf_zbee_zcl_ota_max_data_size;
+static int hf_zbee_zcl_ota_min_block_period;
+static int hf_zbee_zcl_ota_req_node_addr;
+static int hf_zbee_zcl_ota_current_time;
+static int hf_zbee_zcl_ota_request_time_offset;
+static int hf_zbee_zcl_ota_request_time_utc;
+static int hf_zbee_zcl_ota_upgrade_time;
+static int hf_zbee_zcl_ota_upgrade_time_utc;
+static int hf_zbee_zcl_ota_data_size;
+static int hf_zbee_zcl_ota_image_data;
+static int hf_zbee_zcl_ota_page_size;
+static int hf_zbee_zcl_ota_rsp_spacing;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_ota = -1;
-static gint ett_zbee_zcl_ota_field_ctrl = -1;
-static gint ett_zbee_zcl_ota_file_version = -1;
+static int ett_zbee_zcl_ota;
+static int ett_zbee_zcl_ota_query_next_image_req_field_ctrl;
+static int ett_zbee_zcl_ota_image_block_req_field_ctrl;
+static int ett_zbee_zcl_ota_image_page_req_field_ctrl;
+static int ett_zbee_zcl_ota_file_version;
 
 /* Attributes */
 static const value_string zbee_zcl_ota_attr_names[] = {
-    { ZBEE_ZCL_ATTR_ID_OTA_UPGRADE_SERVER_ID,               "Upgrade Served ID" },
+    { ZBEE_ZCL_ATTR_ID_OTA_UPGRADE_SERVER_ID,               "Upgrade Server ID" },
     { ZBEE_ZCL_ATTR_ID_OTA_FILE_OFFSET,                     "File Offset" },
     { ZBEE_ZCL_ATTR_ID_OTA_CURRENT_FILE_VERSION,            "Current File Version" },
     { ZBEE_ZCL_ATTR_ID_OTA_CURRENT_ZB_STACK_VERSION,        "Current ZigBee Stack Version" },
@@ -9259,36 +9889,23 @@ static const range_string zbee_zcl_ota_image_type_names[] = {
     { 0, 0, NULL }
 };
 
+/**
+ * This table matches a Zigbee time value of 0x00000000, which means
+ * "now" in some contexts.
+ */
+const time_value_string now_strings[] = {
+	{ NSTIME_INIT_ZBEE(0x00000000), "Now" },
+	{ NSTIME_INIT_ZERO, NULL }
+};
+
+static const time_value_string upgrade_time_utc_strings[] = {
+	{ NSTIME_INIT_ZBEE(ZBEE_ZCL_OTA_TIME_WAIT), "Wait for upgrade command" },
+	{ NSTIME_INIT_ZERO, NULL }
+};
+
 /*************************/
 /* Function Bodies       */
 /*************************/
-
-/*FUNCTION:------------------------------------------------------
- *  NAME
- *      decode_zcl_ota_curr_time
- *  DESCRIPTION
- *    this function decode the current time field
- *  PARAMETERS
- *  RETURNS
- *      none
- *---------------------------------------------------------------
- */
-static void
-decode_zcl_ota_curr_time(gchar *s, guint32 value)
-{
-    if (value == ZBEE_ZCL_OTA_TIME_NOW) {
-        g_snprintf(s, ITEM_LABEL_LENGTH, "Now");
-    }
-    else {
-        gchar *tmp;
-        value += ZBEE_ZCL_NSTIME_UTC_OFFSET;
-        tmp = abs_time_secs_to_str(NULL, value, ABSOLUTE_TIME_LOCAL, 1);
-        g_snprintf(s, ITEM_LABEL_LENGTH, "%s", tmp);
-        wmem_free(NULL, tmp);
-    }
-
-    return;
-} /*decode_zcl_ota_curr_time*/
 
 /*FUNCTION:------------------------------------------------------
  *  NAME
@@ -9301,15 +9918,15 @@ decode_zcl_ota_curr_time(gchar *s, guint32 value)
  *---------------------------------------------------------------
  */
 static void
-decode_zcl_ota_req_time(gchar *s, guint32 value)
+decode_zcl_ota_req_time(char *s, uint32_t value)
 {
     if (value == ZBEE_ZCL_OTA_TIME_WAIT) {
-        g_snprintf(s, ITEM_LABEL_LENGTH, "Wrong Value");
+        snprintf(s, ITEM_LABEL_LENGTH, "Wrong Value");
     }
     else {
         /* offset from now */
-        gchar *tmp = signed_time_secs_to_str(NULL, value);
-        g_snprintf(s, ITEM_LABEL_LENGTH, "%s from now", tmp);
+        char *tmp = signed_time_secs_to_str(NULL, value);
+        snprintf(s, ITEM_LABEL_LENGTH, "%s from now", tmp);
         wmem_free(NULL, tmp);
     }
 
@@ -9327,15 +9944,15 @@ decode_zcl_ota_req_time(gchar *s, guint32 value)
  *---------------------------------------------------------------
  */
 static void
-decode_zcl_ota_upgr_time(gchar *s, guint32 value)
+decode_zcl_ota_upgr_time(char *s, uint32_t value)
 {
     if (value == ZBEE_ZCL_OTA_TIME_WAIT) {
-        g_snprintf(s, ITEM_LABEL_LENGTH, "Wait for upgrade command");
+        snprintf(s, ITEM_LABEL_LENGTH, "Wait for upgrade command");
     }
     else {
         /* offset from now */
-        gchar *tmp = signed_time_secs_to_str(NULL, value);
-        g_snprintf(s, ITEM_LABEL_LENGTH, "%s from now", tmp);
+        char *tmp = signed_time_secs_to_str(NULL, value);
+        snprintf(s, ITEM_LABEL_LENGTH, "%s from now", tmp);
         wmem_free(NULL, tmp);
     }
 
@@ -9353,9 +9970,9 @@ decode_zcl_ota_upgr_time(gchar *s, guint32 value)
  *---------------------------------------------------------------
  */
 static void
-decode_zcl_ota_size_in_bytes(gchar *s, guint32 value)
+decode_zcl_ota_size_in_bytes(char *s, uint32_t value)
 {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d [Bytes]", value);
+    snprintf(s, ITEM_LABEL_LENGTH, "%d [Bytes]", value);
 } /*decode_zcl_ota_size_in_bytes*/
 
 /*FUNCTION:------------------------------------------------------
@@ -9366,15 +9983,15 @@ decode_zcl_ota_size_in_bytes(gchar *s, guint32 value)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_file_version_field(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_file_version_field(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    static const int * file_version[] = {
+    static int * const file_version[] = {
         &hf_zbee_zcl_ota_file_version_appl_release,
         &hf_zbee_zcl_ota_file_version_appl_build,
         &hf_zbee_zcl_ota_file_version_stack_release,
@@ -9383,7 +10000,12 @@ dissect_zcl_ota_file_version_field(tvbuff_t *tvb, proto_tree *tree, guint *offse
     };
 
     /* 'File Version' field present, retrieves it */
-    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_ota_file_version, ett_zbee_zcl_ota_file_version, file_version, ENC_BIG_ENDIAN);
+    /* File version is Little endian. as well as all ZigBee data structures:
+       "The endianness used in each data field shall be little endian in order
+       to be compliant with general ZigBee messages."
+       File version A: 0x10053519 represents application release 1.0 build 05 with stack release 3.5 b19
+    */
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_ota_file_version, ett_zbee_zcl_ota_file_version, file_version, ENC_LITTLE_ENDIAN);
     *offset += 4;
 } /*dissect_zcl_ota_file_version_field*/
 
@@ -9395,24 +10017,22 @@ dissect_zcl_ota_file_version_field(tvbuff_t *tvb, proto_tree *tree, guint *offse
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
+ *      int hf_hdr          - hf_hdr
+ *      int ett            - ett subtree index
+ *      int* const *fields  - fields an array of pointers to int that lists all the fields of the bitmask
  *  RETURNS
- *      none
+ *      uint8_t             - field ctrl value
  *---------------------------------------------------------------
  */
-static guint8
-dissect_zcl_ota_field_ctrl_field(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+static uint8_t
+dissect_zcl_ota_field_ctrl_field(tvbuff_t *tvb, proto_tree *tree, unsigned *offset, int hf_hdr, int ett, int * const *fields)
 {
-    guint8      field;
-    static const int * field_ctrl[] = {
-        &hf_zbee_zcl_ota_field_ctrl_hw_ver_present,
-        &hf_zbee_zcl_ota_field_ctrl_reserved,
-        NULL
-    };
+    uint8_t     field;
 
     /* Retrieve 'Field Control' field */
-    field = tvb_get_guint8(tvb, *offset);
-    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_ota_field_ctrl, ett_zbee_zcl_ota_field_ctrl, field_ctrl, ENC_BIG_ENDIAN);
+    field = tvb_get_uint8(tvb, *offset);
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_hdr, ett, fields, ENC_NA);
     *offset += 1;
 
     return field;
@@ -9426,18 +10046,18 @@ dissect_zcl_ota_field_ctrl_field(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_imagenotify(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_imagenotify(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint8  payload_type;
+    uint8_t payload_type;
 
     /* Retrieve 'Payload type' field */
-    payload_type = tvb_get_guint8(tvb, *offset);
+    payload_type = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_ota_payload_type, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
@@ -9474,18 +10094,24 @@ dissect_zcl_ota_imagenotify(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_querynextimagereq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_querynextimagereq(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint8  field_ctrl;
+    static int * const fields[] = {
+        &hf_zbee_zcl_ota_query_next_image_req_field_ctrl_hw_ver_present,
+        &hf_zbee_zcl_ota_query_next_image_req_field_ctrl_reserved,
+        NULL
+    };
+
+    uint8_t field_ctrl;
 
     /* Retrieve 'Field Control' field */
-    field_ctrl = dissect_zcl_ota_field_ctrl_field(tvb, tree, offset);
+    field_ctrl = dissect_zcl_ota_field_ctrl_field(tvb, tree, offset, hf_zbee_zcl_ota_query_next_image_req_field_ctrl, ett_zbee_zcl_ota_query_next_image_req_field_ctrl, fields);
 
     /* Retrieve 'Manufacturer Code' field */
     proto_tree_add_item(tree, hf_zbee_zcl_ota_manufacturer_code, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -9499,13 +10125,11 @@ dissect_zcl_ota_querynextimagereq(tvbuff_t *tvb, proto_tree *tree, guint *offset
     dissect_zcl_ota_file_version_field(tvb, tree, offset);
 
     /* Check if there are optional fields */
-
-    if (field_ctrl & ZBEE_ZCL_OTA_FIELD_CTRL_HW_VER_PRESENT) {
+    if (field_ctrl & ZBEE_ZCL_OTA_QUERY_NEXT_IMAGE_REQ_FIELD_CTRL_HW_VER_PRESENT) {
         /* 'Hardware Version' field present, retrieves it */
         proto_tree_add_item(tree, hf_zbee_zcl_ota_hw_version, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
         *offset += 2;
     }
-
 } /*dissect_zcl_ota_querynextimagereq*/
 
 /*FUNCTION:------------------------------------------------------
@@ -9516,18 +10140,18 @@ dissect_zcl_ota_querynextimagereq(tvbuff_t *tvb, proto_tree *tree, guint *offset
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_querynextimagersp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_querynextimagersp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint8  status;
+    uint8_t status;
 
     /* Retrieve 'Status' field */
-    status = tvb_get_guint8(tvb, *offset);
+    status = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
@@ -9559,18 +10183,25 @@ dissect_zcl_ota_querynextimagersp(tvbuff_t *tvb, proto_tree *tree, guint *offset
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_imageblockreq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_imageblockreq(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint8  field_ctrl;
+    static int * const fields[] = {
+        &hf_zbee_zcl_ota_image_block_req_field_ctrl_ieee_addr_present,
+        &hf_zbee_zcl_ota_image_block_req_field_ctrl_min_block_period_present,
+        &hf_zbee_zcl_ota_image_block_req_field_ctrl_reserved,
+        NULL
+    };
+
+    uint8_t field_ctrl;
 
     /* Retrieve 'Field Control' field */
-    field_ctrl = dissect_zcl_ota_field_ctrl_field(tvb, tree, offset);
+    field_ctrl = dissect_zcl_ota_field_ctrl_field(tvb, tree, offset, hf_zbee_zcl_ota_image_block_req_field_ctrl, ett_zbee_zcl_ota_image_block_req_field_ctrl, fields);
 
     /* Retrieve 'Manufacturer Code' field */
     proto_tree_add_item(tree, hf_zbee_zcl_ota_manufacturer_code, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -9592,13 +10223,16 @@ dissect_zcl_ota_imageblockreq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
     *offset += 1;
 
     /* Check if there are optional fields */
-
-    if (field_ctrl & ZBEE_ZCL_OTA_FIELD_CTRL_IEEE_ADDR_PRESENT) {
-        /* 'Request Node Address' field present, retrieves it */
+    if (field_ctrl & ZBEE_ZCL_OTA_IMAGE_BLOCK_REQ_FIELD_CTRL_REQUEST_NODE_ADDR_PRESENT) {
+        /* 'Request Node Address' field present, retrieve it */
         proto_tree_add_item(tree, hf_zbee_zcl_ota_req_node_addr, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
         *offset += 8;
     }
-
+    if (field_ctrl & ZBEE_ZCL_OTA_IMAGE_BLOCK_REQ_FIELD_CTRL_MIN_BLOCK_PERIOD_PRESENT) {
+        /* 'Minimum Block Period' field present, retrieve it */
+        proto_tree_add_item(tree, hf_zbee_zcl_ota_min_block_period, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+    }
 } /*dissect_zcl_ota_imageblockreq*/
 
 /*FUNCTION:------------------------------------------------------
@@ -9609,18 +10243,24 @@ dissect_zcl_ota_imageblockreq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_imagepagereq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_imagepagereq(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint8  field_ctrl;
+    static int * const fields[] = {
+        &hf_zbee_zcl_ota_image_page_req_field_ctrl_ieee_addr_present,
+        &hf_zbee_zcl_ota_image_page_req_field_ctrl_reserved,
+        NULL
+    };
+
+    uint8_t field_ctrl;
 
     /* Retrieve 'Field Control' field */
-    field_ctrl = dissect_zcl_ota_field_ctrl_field(tvb, tree, offset);
+    field_ctrl = dissect_zcl_ota_field_ctrl_field(tvb, tree, offset, hf_zbee_zcl_ota_image_page_req_field_ctrl, ett_zbee_zcl_ota_image_page_req_field_ctrl, fields);
 
     /* Retrieve 'Manufacturer Code' field */
     proto_tree_add_item(tree, hf_zbee_zcl_ota_manufacturer_code, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -9650,13 +10290,11 @@ dissect_zcl_ota_imagepagereq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
     *offset += 2;
 
     /* Check if there are optional fields */
-
-    if (field_ctrl & ZBEE_ZCL_OTA_FIELD_CTRL_IEEE_ADDR_PRESENT) {
+    if (field_ctrl & ZBEE_ZCL_OTA_IMAGE_PAGE_REQ_FIELD_CTRL_REQUEST_NODE_ADDR_PRESENT) {
         /* 'Request Node Address' field present, retrieves it */
         proto_tree_add_item(tree, hf_zbee_zcl_ota_req_node_addr, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
         *offset += 8;
     }
-
 } /*dissect_zcl_ota_imagepagereq*/
 
 /*FUNCTION:------------------------------------------------------
@@ -9667,19 +10305,19 @@ dissect_zcl_ota_imagepagereq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_imageblockrsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_imageblockrsp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint8  status;
-    guint8  data_size;
+    uint8_t status;
+    uint8_t data_size;
 
     /* Retrieve 'Status' field */
-    status = tvb_get_guint8(tvb, *offset);
+    status = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
@@ -9700,7 +10338,7 @@ dissect_zcl_ota_imageblockrsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
         *offset += 4;
 
         /* Retrieve 'Data Size' field */
-        data_size = tvb_get_guint8(tvb, *offset);
+        data_size = tvb_get_uint8(tvb, *offset);
         proto_tree_add_item(tree, hf_zbee_zcl_ota_data_size, tvb, *offset, 1, ENC_NA);
         *offset += 1;
 
@@ -9709,12 +10347,27 @@ dissect_zcl_ota_imageblockrsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
         *offset += data_size;
     }
     else if (status == ZBEE_ZCL_STAT_OTA_WAIT_FOR_DATA) {
+        /* If 'Current Time' is zero, 'Request Time' is an offset from now;
+         * if it's non-zero, 'Request Time' is UTC.
+         */
+        uint32_t current_time;
+
         /* Retrieve 'Current Time' field */
-        proto_tree_add_item(tree, hf_zbee_zcl_ota_current_time, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(tree, hf_zbee_zcl_ota_current_time, tvb, *offset, 4, ENC_TIME_ZBEE_ZCL|ENC_LITTLE_ENDIAN);
+        current_time = tvb_get_letohl(tvb, *offset);
         *offset += 4;
 
         /* Retrieve 'Request Time' field */
-        proto_tree_add_item(tree, hf_zbee_zcl_ota_request_time, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+        if (current_time == 0) {
+	        /* Request Time is offset time from now */
+	        proto_tree_add_item(tree, hf_zbee_zcl_ota_request_time_offset, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+	} else {
+	        /* Request Time is UTC time */
+	        proto_tree_add_item(tree, hf_zbee_zcl_ota_request_time_utc, tvb, *offset, 4, ENC_TIME_ZBEE_ZCL|ENC_LITTLE_ENDIAN);
+		/* XXX - compute delta between Request Time and Current Time
+		 * and display as offset time from now?
+		 */
+	}
         *offset += 4;
     }
     else {
@@ -9731,13 +10384,13 @@ dissect_zcl_ota_imageblockrsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_upgradeendreq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_upgradeendreq(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve 'Status' field */
     proto_tree_add_item(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA);
@@ -9764,14 +10417,16 @@ dissect_zcl_ota_upgradeendreq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_upgradeendrsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_upgradeendrsp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
+    uint32_t current_time = 0;
+
     /* Retrieve 'Manufacturer Code' field */
     proto_tree_add_item(tree, hf_zbee_zcl_ota_manufacturer_code, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
@@ -9784,11 +10439,21 @@ dissect_zcl_ota_upgradeendrsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
     dissect_zcl_ota_file_version_field(tvb, tree, offset);
 
     /* Retrieve 'Current Time' field */
-    proto_tree_add_item(tree, hf_zbee_zcl_ota_current_time, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(tree, hf_zbee_zcl_ota_current_time, tvb, *offset, 4, ENC_TIME_ZBEE_ZCL|ENC_LITTLE_ENDIAN);
+    current_time = tvb_get_letohl(tvb, *offset);
     *offset += 4;
 
     /* Retrieve 'Upgrade Time' field */
-    proto_tree_add_item(tree, hf_zbee_zcl_ota_upgrade_time, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+    if (current_time == 0)
+    {
+        /* Upgrade Time is offset time from now */
+        proto_tree_add_item(tree, hf_zbee_zcl_ota_upgrade_time, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+    }
+    else
+    {
+        /* Upgrade Time is UTC time */
+        proto_tree_add_item(tree, hf_zbee_zcl_ota_upgrade_time_utc, tvb, *offset, 4, ENC_TIME_ZBEE_ZCL|ENC_LITTLE_ENDIAN);
+    }
     *offset += 4;
 
 } /*dissect_zcl_ota_upgradeendrsp*/
@@ -9801,13 +10466,13 @@ dissect_zcl_ota_upgradeendrsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_queryspecfilereq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_queryspecfilereq(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* 'Request Node Address' field present, retrieves it */
     proto_tree_add_item(tree, hf_zbee_zcl_ota_req_node_addr, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
@@ -9838,18 +10503,18 @@ dissect_zcl_ota_queryspecfilereq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_queryspecfilersp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ota_queryspecfilersp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    guint8  status;
+    uint8_t status;
 
     /* Retrieve 'Status' field */
-    status = tvb_get_guint8(tvb, *offset);
+    status = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
@@ -9882,15 +10547,16 @@ dissect_zcl_ota_queryspecfilersp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_ota_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+dissect_zcl_ota_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch ( attr_id )
@@ -9923,7 +10589,7 @@ dissect_zcl_ota_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint1
 
         case ZBEE_ZCL_ATTR_ID_OTA_MIN_BLOCK_REQ_DELAY:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 } /*dissect_zcl_ota_attr_data*/
@@ -9948,9 +10614,9 @@ dissect_zbee_zcl_ota(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -9966,7 +10632,7 @@ dissect_zbee_zcl_ota(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_ota_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_ota_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -10007,7 +10673,7 @@ dissect_zbee_zcl_ota(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_ota_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_ota_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -10054,9 +10720,9 @@ dissect_zbee_zcl_ota(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
  *  RETURNS
  *      none
  *---------------------------------------------------------------
@@ -10102,7 +10768,6 @@ void proto_register_zbee_zcl_ota(void)
             RVALS(zbee_zcl_ota_image_type_names), 0x0, NULL, HFILL } },
 
 /* Begin FileVersion fields */
-
         { &hf_zbee_zcl_ota_file_version,
             { "File Version", "zbee_zcl_general.ota.file.version", FT_UINT32, BASE_HEX, NULL,
             0x0, NULL, HFILL } },
@@ -10124,20 +10789,51 @@ void proto_register_zbee_zcl_ota(void)
             ZBEE_ZCL_OTA_FILE_VERS_STACK_BUILD, NULL, HFILL } },
 /* End FileVersion fields */
 
-/* Begin FieldControl fields */
-
-        { &hf_zbee_zcl_ota_field_ctrl,
-            { "Field Control", "zbee_zcl_general.ota.field_ctrl",
+/* Begin FieldControl fields Query Next Image Request */
+        { &hf_zbee_zcl_ota_query_next_image_req_field_ctrl,
+            { "Field Control", "zbee_zcl_general.ota.query_next_image_req.field_ctrl",
             FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL } },
 
-        { &hf_zbee_zcl_ota_field_ctrl_hw_ver_present,
-            { "Hardware Version", "zbee_zcl_general.ota.field_ctrl_hw_ver_present",
-            FT_BOOLEAN, 8, TFS(&tfs_present_not_present), ZBEE_ZCL_OTA_FIELD_CTRL_HW_VER_PRESENT, NULL, HFILL } },
+        { &hf_zbee_zcl_ota_query_next_image_req_field_ctrl_hw_ver_present,
+            { "Hardware Version", "zbee_zcl_general.ota.query_next_image_req.field_ctrl.hw_ver_present",
+            FT_BOOLEAN, 8, TFS(&tfs_present_not_present), ZBEE_ZCL_OTA_QUERY_NEXT_IMAGE_REQ_FIELD_CTRL_HW_VER_PRESENT, NULL, HFILL } },
 
-        { &hf_zbee_zcl_ota_field_ctrl_reserved,
-            { "Reserved", "zbee_zcl_general.ota.field_ctrl_reserved", FT_UINT8, BASE_HEX, NULL,
-            ZBEE_ZCL_OTA_FIELD_CTRL_RESERVED, NULL, HFILL } },
-/* End FieldControl fields */
+        { &hf_zbee_zcl_ota_query_next_image_req_field_ctrl_reserved,
+            { "Reserved", "zbee_zcl_general.ota.query_next_image_req.field_ctrl.reserved", FT_UINT8, BASE_HEX, NULL,
+            ZBEE_ZCL_OTA_QUERY_NEXT_IMAGE_REQ_FIELD_CTRL_RESERVED, NULL, HFILL } },
+/* End FieldControl fields Query Next Image Request */
+
+/* Begin FieldControl fields Image Block Request */
+        { &hf_zbee_zcl_ota_image_block_req_field_ctrl,
+            { "Field Control", "zbee_zcl_general.ota.image_block_req.field_ctrl",
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ota_image_block_req_field_ctrl_ieee_addr_present,
+            { "Request Node Address", "zbee_zcl_general.ota.image_block_req.field_ctrl.request_node_addr_present",
+            FT_BOOLEAN, 8, TFS(&tfs_present_not_present), ZBEE_ZCL_OTA_IMAGE_BLOCK_REQ_FIELD_CTRL_REQUEST_NODE_ADDR_PRESENT, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ota_image_block_req_field_ctrl_min_block_period_present,
+            { "Minimum Block Period", "zbee_zcl_general.ota.image_block_req.field_ctrl.min_block_period",
+            FT_BOOLEAN, 8, TFS(&tfs_present_not_present), ZBEE_ZCL_OTA_IMAGE_BLOCK_REQ_FIELD_CTRL_MIN_BLOCK_PERIOD_PRESENT, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ota_image_block_req_field_ctrl_reserved,
+            { "Reserved", "zbee_zcl_general.ota.query_next_image_req.field_ctrl.reserved", FT_UINT8, BASE_HEX, NULL,
+            ZBEE_ZCL_OTA_IMAGE_BLOCK_REQ_FIELD_CTRL_RESERVED, NULL, HFILL } },
+/* End FieldControl fields Image Block Request */
+
+/* Begin FieldControl fields Image Page Request */
+        { &hf_zbee_zcl_ota_image_page_req_field_ctrl,
+            { "Field Control", "zbee_zcl_general.ota.image_page_req.field_ctrl",
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ota_image_page_req_field_ctrl_ieee_addr_present,
+            { "Request Node Address", "zbee_zcl_general.ota.query_next_image_req.field_ctrl.request_node_addr_present",
+            FT_BOOLEAN, 8, TFS(&tfs_present_not_present), ZBEE_ZCL_OTA_IMAGE_PAGE_REQ_FIELD_CTRL_REQUEST_NODE_ADDR_PRESENT, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ota_image_page_req_field_ctrl_reserved,
+            { "Reserved", "zbee_zcl_general.ota.image_page_req.field_ctrl.reserved", FT_UINT8, BASE_HEX, NULL,
+            ZBEE_ZCL_OTA_IMAGE_PAGE_REQ_FIELD_CTRL_RESERVED, NULL, HFILL } },
+/* End FieldControl fields Image Page Request */
 
         { &hf_zbee_zcl_ota_hw_version,
             { "Hardware Version", "zbee_zcl_general.ota.hw_ver", FT_UINT16, BASE_HEX, NULL,
@@ -10152,11 +10848,15 @@ void proto_register_zbee_zcl_ota(void)
             0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ota_file_offset,
-            { "File Offset", "zbee_zcl_general.ota.file.offset", FT_UINT32, BASE_HEX, NULL,
+            { "File Offset", "zbee_zcl_general.ota.file.offset", FT_UINT32, BASE_DEC, NULL,
             0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ota_max_data_size,
             { "Max Data Size", "zbee_zcl_general.ota.max_data_size", FT_UINT8, BASE_DEC, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ota_min_block_period,
+            { "Minimum Block Period", "zbee_zcl_general.ota.min_block_period", FT_UINT16, BASE_DEC, NULL,
             0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ota_req_node_addr,
@@ -10172,15 +10872,23 @@ void proto_register_zbee_zcl_ota(void)
             0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ota_current_time,
-            { "Current Time", "zbee_zcl_general.ota.current_time", FT_UINT32, BASE_CUSTOM, CF_FUNC(decode_zcl_ota_curr_time),
+            { "Current Time", "zbee_zcl_general.ota.current_time", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, TIME_VALS(now_strings),
             0x0, NULL, HFILL }},
 
-        { &hf_zbee_zcl_ota_request_time,
-            { "Request Time", "zbee_zcl_general.ota.request_time", FT_UINT32, BASE_CUSTOM, CF_FUNC(decode_zcl_ota_req_time),
+        { &hf_zbee_zcl_ota_request_time_offset,
+            { "Request Time (offset)", "zbee_zcl_general.ota.request_time_offset", FT_UINT32, BASE_CUSTOM, CF_FUNC(decode_zcl_ota_req_time),
+            0x0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_ota_request_time_utc,
+            { "Request Time (UTC)", "zbee_zcl_general.ota.request_time_utc", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, TIME_VALS(now_strings),
             0x0, NULL, HFILL }},
 
         { &hf_zbee_zcl_ota_upgrade_time,
             { "Upgrade Time", "zbee_zcl_general.ota.upgrade_time", FT_UINT32, BASE_CUSTOM, CF_FUNC(decode_zcl_ota_upgr_time),
+            0x0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_ota_upgrade_time_utc,
+            { "Upgrade Time", "zbee_zcl_general.ota.upgrade_time_utc", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_LOCAL, TIME_VALS(upgrade_time_utc_strings),
             0x0, NULL, HFILL }},
 
         { &hf_zbee_zcl_ota_data_size,
@@ -10193,10 +10901,13 @@ void proto_register_zbee_zcl_ota(void)
    };
 
     /* ZCL OTA subtrees */
-    gint *ett[ZBEE_ZCL_OTA_NUM_ETT];
-    ett[0] = &ett_zbee_zcl_ota;
-    ett[1] = &ett_zbee_zcl_ota_field_ctrl;
-    ett[2] = &ett_zbee_zcl_ota_file_version;
+    int *ett[] = {
+        &ett_zbee_zcl_ota,
+        &ett_zbee_zcl_ota_query_next_image_req_field_ctrl,
+        &ett_zbee_zcl_ota_image_block_req_field_ctrl,
+        &ett_zbee_zcl_ota_image_page_req_field_ctrl,
+        &ett_zbee_zcl_ota_file_version
+    };
 
     /* Register ZigBee ZCL Ota protocol with Wireshark. */
     proto_zbee_zcl_ota = proto_register_protocol("ZigBee ZCL OTA", "ZCL OTA", ZBEE_PROTOABBREV_ZCL_OTA);
@@ -10222,19 +10933,16 @@ void proto_register_zbee_zcl_ota(void)
  */
 void proto_reg_handoff_zbee_zcl_ota(void)
 {
-    dissector_handle_t ota_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    ota_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_OTA);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_OTA_UPGRADE, ota_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_ota,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_OTA,
+                            proto_zbee_zcl_ota,
                             ett_zbee_zcl_ota,
                             ZBEE_ZCL_CID_OTA_UPGRADE,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_ota_attr_id,
                             hf_zbee_zcl_ota_attr_id,
                             hf_zbee_zcl_ota_srv_rx_cmd_id,
                             hf_zbee_zcl_ota_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_ota_attr_data
+                            dissect_zcl_ota_attr_data
                          );
 
 } /*proto_reg_handoff_zbee_zcl_ota*/
@@ -10317,76 +11025,74 @@ void proto_register_zbee_zcl_pwr_prof(void);
 void proto_reg_handoff_zbee_zcl_pwr_prof(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_pwr_prof_pwrprofreq                 (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_pwr_prof_getpwrprofpricersp         (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_pwr_prof_getoverallschedpricersp    (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_pwr_prof_enphsschednotif            (tvbuff_t *tvb, proto_tree *tree, guint *offset);
+static void dissect_zcl_pwr_prof_pwrprofreq                 (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_pwr_prof_getpwrprofpricersp         (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_pwr_prof_getoverallschedpricersp    (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_pwr_prof_enphsschednotif            (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
-static void dissect_zcl_energy_phase                        (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_pwr_prof_pwrprofnotif               (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_power_profile                       (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_pwr_prof_pwrprofstatersp            (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_pwr_prof_pwrprofschedcontrsnotif    (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_pwr_prof_pwrprofpriceext            (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-
-static void dissect_zcl_pwr_prof_attr_data  (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
+static void dissect_zcl_energy_phase                        (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_pwr_prof_pwrprofnotif               (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_power_profile                       (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_pwr_prof_pwrprofstatersp            (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_pwr_prof_pwrprofschedcontrsnotif    (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_pwr_prof_pwrprofpriceext            (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
 /* Private functions prototype */
-static void decode_power_profile_id     (gchar *s, guint8 id);
-static void decode_price_in_cents       (gchar *s, guint32 value);
-static void decode_power_in_watt        (gchar *s, guint16 value);
-static void decode_energy               (gchar *s, guint16 value);
+static void decode_power_profile_id     (char *s, uint8_t id);
+static void decode_price_in_cents       (char *s, uint32_t value);
+static void decode_power_in_watt        (char *s, uint16_t value);
+static void decode_energy               (char *s, uint16_t value);
 
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_pwr_prof = -1;
+static int proto_zbee_zcl_pwr_prof;
 
-static int hf_zbee_zcl_pwr_prof_attr_id = -1;
-static int hf_zbee_zcl_pwr_prof_tot_prof_num = -1;
-static int hf_zbee_zcl_pwr_prof_multiple_sched = -1;
-static int hf_zbee_zcl_pwr_prof_energy_format = -1;
-static int hf_zbee_zcl_pwr_prof_energy_format_rdigit = -1;
-static int hf_zbee_zcl_pwr_prof_energy_format_ldigit = -1;
-static int hf_zbee_zcl_pwr_prof_energy_format_noleadingzero = -1;
-static int hf_zbee_zcl_pwr_prof_energy_remote = -1;
-static int hf_zbee_zcl_pwr_prof_sched_mode = -1;
-static int hf_zbee_zcl_pwr_prof_sched_mode_cheapest = -1;
-static int hf_zbee_zcl_pwr_prof_sched_mode_greenest = -1;
-static int hf_zbee_zcl_pwr_prof_sched_mode_reserved = -1;
-static int hf_zbee_zcl_pwr_prof_srv_tx_cmd_id = -1;
-static int hf_zbee_zcl_pwr_prof_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_pwr_prof_pwr_prof_id = -1;
-static int hf_zbee_zcl_pwr_prof_currency = -1;
-static int hf_zbee_zcl_pwr_prof_price = -1;
-static int hf_zbee_zcl_pwr_prof_price_trailing_digit = -1;
-static int hf_zbee_zcl_pwr_prof_num_of_sched_phases = -1;
-static int hf_zbee_zcl_pwr_prof_scheduled_time = -1;
-static int hf_zbee_zcl_pwr_prof_pwr_prof_count = -1;
-static int hf_zbee_zcl_pwr_prof_num_of_trans_phases = -1;
-static int hf_zbee_zcl_pwr_prof_energy_phase_id = -1;
-static int hf_zbee_zcl_pwr_prof_macro_phase_id = -1;
-static int hf_zbee_zcl_pwr_prof_expect_duration = -1;
-static int hf_zbee_zcl_pwr_prof_peak_power = -1;
-static int hf_zbee_zcl_pwr_prof_energy = -1;
-static int hf_zbee_zcl_pwr_prof_max_active_delay = -1;
-static int hf_zbee_zcl_pwr_prof_pwr_prof_rem_ctrl = -1;
-static int hf_zbee_zcl_pwr_prof_pwr_prof_state = -1;
-static int hf_zbee_zcl_pwr_prof_start_after = -1;
-static int hf_zbee_zcl_pwr_prof_stop_before = -1;
-static int hf_zbee_zcl_pwr_prof_options = -1;
-static int hf_zbee_zcl_pwr_prof_options_01 = -1;
-static int hf_zbee_zcl_pwr_prof_options_res = -1;
-static int hf_zbee_zcl_pwr_prof_pwr_prof_stime = -1;
+static int hf_zbee_zcl_pwr_prof_attr_id;
+static int hf_zbee_zcl_pwr_prof_tot_prof_num;
+static int hf_zbee_zcl_pwr_prof_multiple_sched;
+static int hf_zbee_zcl_pwr_prof_energy_format;
+static int hf_zbee_zcl_pwr_prof_energy_format_rdigit;
+static int hf_zbee_zcl_pwr_prof_energy_format_ldigit;
+static int hf_zbee_zcl_pwr_prof_energy_format_noleadingzero;
+static int hf_zbee_zcl_pwr_prof_energy_remote;
+static int hf_zbee_zcl_pwr_prof_sched_mode;
+static int hf_zbee_zcl_pwr_prof_sched_mode_cheapest;
+static int hf_zbee_zcl_pwr_prof_sched_mode_greenest;
+static int hf_zbee_zcl_pwr_prof_sched_mode_reserved;
+static int hf_zbee_zcl_pwr_prof_srv_tx_cmd_id;
+static int hf_zbee_zcl_pwr_prof_srv_rx_cmd_id;
+static int hf_zbee_zcl_pwr_prof_pwr_prof_id;
+static int hf_zbee_zcl_pwr_prof_currency;
+static int hf_zbee_zcl_pwr_prof_price;
+static int hf_zbee_zcl_pwr_prof_price_trailing_digit;
+static int hf_zbee_zcl_pwr_prof_num_of_sched_phases;
+static int hf_zbee_zcl_pwr_prof_scheduled_time;
+static int hf_zbee_zcl_pwr_prof_pwr_prof_count;
+static int hf_zbee_zcl_pwr_prof_num_of_trans_phases;
+static int hf_zbee_zcl_pwr_prof_energy_phase_id;
+static int hf_zbee_zcl_pwr_prof_macro_phase_id;
+static int hf_zbee_zcl_pwr_prof_expect_duration;
+static int hf_zbee_zcl_pwr_prof_peak_power;
+static int hf_zbee_zcl_pwr_prof_energy;
+static int hf_zbee_zcl_pwr_prof_max_active_delay;
+static int hf_zbee_zcl_pwr_prof_pwr_prof_rem_ctrl;
+static int hf_zbee_zcl_pwr_prof_pwr_prof_state;
+static int hf_zbee_zcl_pwr_prof_start_after;
+static int hf_zbee_zcl_pwr_prof_stop_before;
+static int hf_zbee_zcl_pwr_prof_options;
+static int hf_zbee_zcl_pwr_prof_options_01;
+static int hf_zbee_zcl_pwr_prof_options_res;
+static int hf_zbee_zcl_pwr_prof_pwr_prof_stime;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_pwr_prof = -1;
-static gint ett_zbee_zcl_pwr_prof_options = -1;
-static gint ett_zbee_zcl_pwr_prof_en_format = -1;
-static gint ett_zbee_zcl_pwr_prof_sched_mode = -1;
-static gint ett_zbee_zcl_pwr_prof_pwrprofiles[ZBEE_ZCL_PWR_PROF_NUM_PWR_PROF_ETT];
-static gint ett_zbee_zcl_pwr_prof_enphases[ZBEE_ZCL_PWR_PROF_NUM_EN_PHS_ETT];
+static int ett_zbee_zcl_pwr_prof;
+static int ett_zbee_zcl_pwr_prof_options;
+static int ett_zbee_zcl_pwr_prof_en_format;
+static int ett_zbee_zcl_pwr_prof_sched_mode;
+static int ett_zbee_zcl_pwr_prof_pwrprofiles[ZBEE_ZCL_PWR_PROF_NUM_PWR_PROF_ETT];
+static int ett_zbee_zcl_pwr_prof_enphases[ZBEE_ZCL_PWR_PROF_NUM_EN_PHS_ETT];
 
 /* Attributes */
 static const value_string zbee_zcl_pwr_prof_attr_names[] = {
@@ -10472,9 +11178,9 @@ dissect_zbee_zcl_pwr_prof (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -10490,7 +11196,7 @@ dissect_zbee_zcl_pwr_prof (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -10535,7 +11241,7 @@ dissect_zbee_zcl_pwr_prof (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -10596,13 +11302,13 @@ dissect_zbee_zcl_pwr_prof (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_pwrprofreq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_pwr_prof_pwrprofreq(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Power Profile Id" field */
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_pwr_prof_id, tvb, *offset, 1, ENC_NA);
@@ -10620,13 +11326,13 @@ dissect_zcl_pwr_prof_pwrprofreq(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_getpwrprofpricersp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_pwr_prof_getpwrprofpricersp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Power Profile Id" field */
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_pwr_prof_id, tvb, *offset, 1, ENC_NA);
@@ -10656,13 +11362,13 @@ dissect_zcl_pwr_prof_getpwrprofpricersp(tvbuff_t *tvb, proto_tree *tree, guint *
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_getoverallschedpricersp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_pwr_prof_getoverallschedpricersp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Currency" field */
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_currency, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -10688,13 +11394,13 @@ dissect_zcl_pwr_prof_getoverallschedpricersp(tvbuff_t *tvb, proto_tree *tree, gu
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_sched_energy_phase(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_sched_energy_phase(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Energy Phase ID */
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_energy_phase_id, tvb, *offset, 1, ENC_NA);
@@ -10716,25 +11422,25 @@ dissect_zcl_sched_energy_phase(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_enphsschednotif(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_pwr_prof_enphsschednotif(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     proto_tree  *sub_tree = NULL;
 
-    guint i;
-    guint8 num_of_sched_phases;
+    unsigned i;
+    uint8_t num_of_sched_phases;
 
     /* Retrieve "Power Profile Id" field */
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_pwr_prof_id, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
     /* Retrieve "Number of Scheduled Phases" field */
-    num_of_sched_phases = tvb_get_guint8(tvb, *offset);
+    num_of_sched_phases = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_num_of_sched_phases, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
@@ -10758,13 +11464,13 @@ dissect_zcl_pwr_prof_enphsschednotif(tvbuff_t *tvb, proto_tree *tree, guint *off
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_energy_phase(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_energy_phase(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_energy_phase_id, tvb, *offset, 1, ENC_NA);
     *offset += 1;
@@ -10796,22 +11502,22 @@ dissect_zcl_energy_phase(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_pwrprofnotif(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_pwr_prof_pwrprofnotif(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     proto_tree  *sub_tree = NULL;
 
-    guint i;
-    guint8 total_profile_number;
-    guint8 num_of_transferred_phases;
+    unsigned i;
+    uint8_t total_profile_number;
+    uint8_t num_of_transferred_phases;
 
     /* Retrieve "Total Profile Number" field */
-    total_profile_number = tvb_get_guint8(tvb, *offset);
+    total_profile_number = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_tot_prof_num, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
@@ -10821,7 +11527,7 @@ dissect_zcl_pwr_prof_pwrprofnotif(tvbuff_t *tvb, proto_tree *tree, guint *offset
         *offset += 1;
 
         /* Retrieve "Number of Transferred Phases" field */
-        num_of_transferred_phases = tvb_get_guint8(tvb, *offset);
+        num_of_transferred_phases = tvb_get_uint8(tvb, *offset);
         proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_num_of_trans_phases, tvb, *offset, 1, ENC_NA);
         *offset += 1;
 
@@ -10846,13 +11552,13 @@ dissect_zcl_pwr_prof_pwrprofnotif(tvbuff_t *tvb, proto_tree *tree, guint *offset
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_power_profile(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_power_profile(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Power Profile Id */
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_pwr_prof_id, tvb, *offset, 1, ENC_NA);
@@ -10882,21 +11588,21 @@ dissect_zcl_power_profile(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_pwrprofstatersp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_pwr_prof_pwrprofstatersp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     proto_tree  *sub_tree = NULL;
 
-    guint i;
-    guint8 power_profile_count;
+    unsigned i;
+    uint8_t power_profile_count;
 
     /* Retrieve "Total Profile Number" field */
-    power_profile_count = MIN(tvb_get_guint8(tvb, *offset), ZBEE_ZCL_PWR_PROF_NUM_PWR_PROF_ETT);
+    power_profile_count = MIN(tvb_get_uint8(tvb, *offset), ZBEE_ZCL_PWR_PROF_NUM_PWR_PROF_ETT);
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_pwr_prof_count, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
@@ -10920,13 +11626,13 @@ dissect_zcl_pwr_prof_pwrprofstatersp(tvbuff_t *tvb, proto_tree *tree, guint *off
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_pwrprofschedcontrsnotif(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_pwr_prof_pwrprofschedcontrsnotif(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Power Profile Id" field */
     proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_pwr_prof_id, tvb, *offset, 1, ENC_NA);
@@ -10952,15 +11658,15 @@ dissect_zcl_pwr_prof_pwrprofschedcontrsnotif(tvbuff_t *tvb, proto_tree *tree, gu
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_pwrprofpriceext(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_pwr_prof_pwrprofpriceext(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    static const int * options[] = {
+    static int * const options[] = {
         &hf_zbee_zcl_pwr_prof_options_01,
         &hf_zbee_zcl_pwr_prof_options_res,
         NULL
@@ -10990,23 +11696,24 @@ dissect_zcl_pwr_prof_pwrprofpriceext(tvbuff_t *tvb, proto_tree *tree, guint *off
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_pwr_prof_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+dissect_zcl_pwr_prof_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int * format_fields[] = {
+    static int * const format_fields[] = {
         &hf_zbee_zcl_pwr_prof_energy_format_rdigit,
         &hf_zbee_zcl_pwr_prof_energy_format_ldigit,
         &hf_zbee_zcl_pwr_prof_energy_format_noleadingzero,
         NULL
     };
-    static const int * modes[] = {
+    static int * const modes[] = {
         &hf_zbee_zcl_pwr_prof_sched_mode_cheapest,
         &hf_zbee_zcl_pwr_prof_sched_mode_greenest,
         &hf_zbee_zcl_pwr_prof_sched_mode_reserved,
@@ -11042,7 +11749,7 @@ dissect_zcl_pwr_prof_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, g
             break;
 
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
         break;
     }
 } /*dissect_zcl_pwr_prof_attr_data*/
@@ -11054,20 +11761,20 @@ dissect_zcl_pwr_prof_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, g
  *  DESCRIPTION
  *      this function decodes the power profile custom type
  *  PARAMETERS
- *      guint *s        - string to display
- *      guint16 value   - value to decode
+ *      unsigned *s        - string to display
+ *      uint16_t value   - value to decode
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-decode_power_profile_id(gchar *s, guint8 id)
+decode_power_profile_id(char *s, uint8_t id)
 {
     if (id == 0) {
-        g_snprintf(s, ITEM_LABEL_LENGTH, "%d (All)", id);
+        snprintf(s, ITEM_LABEL_LENGTH, "%d (All)", id);
     }
     else {
-        g_snprintf(s, ITEM_LABEL_LENGTH, "%d", id);
+        snprintf(s, ITEM_LABEL_LENGTH, "%d", id);
     }
 } /*decode_power_profile_id*/
 
@@ -11078,16 +11785,16 @@ decode_power_profile_id(gchar *s, guint8 id)
  *  DESCRIPTION
  *      this function decodes price type variable
  *  PARAMETERS
- *      guint *s        - string to display
- *      guint16 value   - value to decode
+ *      unsigned *s        - string to display
+ *      uint16_t value   - value to decode
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-decode_price_in_cents(gchar *s, guint32 value)
+decode_price_in_cents(char *s, uint32_t value)
 {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d cents", value);
+    snprintf(s, ITEM_LABEL_LENGTH, "%d cents", value);
 } /* decode_price_in_cents */
 
 
@@ -11097,16 +11804,16 @@ decode_price_in_cents(gchar *s, guint32 value)
  *  DESCRIPTION
  *      this function decodes watt power type variable
  *  PARAMETERS
- *      guint *s        - string to display
- *      guint16 value   - value to decode
+ *      unsigned *s        - string to display
+ *      uint16_t value   - value to decode
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-decode_power_in_watt(gchar *s, guint16 value)
+decode_power_in_watt(char *s, uint16_t value)
 {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d Watt", value);
+    snprintf(s, ITEM_LABEL_LENGTH, "%d Watt", value);
 } /* decode_power_in_watt */
 
 /*FUNCTION:------------------------------------------------------
@@ -11115,16 +11822,16 @@ decode_power_in_watt(gchar *s, guint16 value)
  *  DESCRIPTION
  *      this function decodes energy type variable
  *  PARAMETERS
- *      guint *s        - string to display
- *      guint16 value   - value to decode
+ *      unsigned *s        - string to display
+ *      uint16_t value   - value to decode
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-decode_energy(gchar *s, guint16 value)
+decode_energy(char *s, uint16_t value)
 {
-    g_snprintf(s, ITEM_LABEL_LENGTH, "%d Watt per hours", value);
+    snprintf(s, ITEM_LABEL_LENGTH, "%d Watt per hours", value);
 } /* decode_energy */
 
 /*FUNCTION:------------------------------------------------------
@@ -11133,20 +11840,20 @@ decode_energy(gchar *s, guint16 value)
  *  DESCRIPTION
  *    this function decodes minute delay type variable
  *  PARAMETERS
- *      guint *s        - string to display
- *      guint16 value   - value to decode
+ *      unsigned *s        - string to display
+ *      uint16_t value   - value to decode
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-func_decode_delayinminute(gchar *s, guint16 value)
+func_decode_delayinminute(char *s, uint16_t value)
 {
     if (value == 0) {
-        g_snprintf(s, ITEM_LABEL_LENGTH, "%d minutes (Not permitted)", value);
+        snprintf(s, ITEM_LABEL_LENGTH, "%d minutes (Not permitted)", value);
     }
     else {
-        g_snprintf(s, ITEM_LABEL_LENGTH, "%d minutes", value);
+        snprintf(s, ITEM_LABEL_LENGTH, "%d minutes", value);
     }
 
 } /* func_decode_delayinminute*/
@@ -11166,7 +11873,7 @@ func_decode_delayinminute(gchar *s, guint16 value)
 void
 proto_register_zbee_zcl_pwr_prof(void)
 {
-    guint i, j;
+    unsigned i, j;
 
     static hf_register_info hf[] = {
 
@@ -11193,7 +11900,7 @@ proto_register_zbee_zcl_pwr_prof(void)
 
         { &hf_zbee_zcl_pwr_prof_energy_format_noleadingzero,
             { "Suppress leading zeros.", "zbee_zcl_general.pwrprof.attr.energyformat.noleadingzero",
-            FT_BOOLEAN, 8, TFS(&tfs_true_false), ZBEE_ZCL_OPT_PWRPROF_NO_LEADING_ZERO, NULL, HFILL } },
+            FT_BOOLEAN, 8, NULL, ZBEE_ZCL_OPT_PWRPROF_NO_LEADING_ZERO, NULL, HFILL } },
 /* End EnergyFormatting fields */
 
         { &hf_zbee_zcl_pwr_prof_energy_remote,
@@ -11263,7 +11970,7 @@ proto_register_zbee_zcl_pwr_prof(void)
             "Identifier of the specific energy phase.", HFILL } },
 
         { &hf_zbee_zcl_pwr_prof_expect_duration,
-            { "Expected Duration", "zbee_zcl_general.pwrprof.expecduration", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_minutes), 0x0,
+            { "Expected Duration", "zbee_zcl_general.pwrprof.expectduration", FT_UINT16, BASE_CUSTOM, CF_FUNC(decode_zcl_time_in_minutes), 0x0,
             "The estimated duration of the specific phase.", HFILL } },
 
         { &hf_zbee_zcl_pwr_prof_num_of_trans_phases,
@@ -11308,7 +12015,7 @@ proto_register_zbee_zcl_pwr_prof(void)
             0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_pwr_prof_options_01,
-            { "PowerProfileStartTime Field Present", "zbee_zcl_general.pwrprof.options.01", FT_BOOLEAN, 8, TFS(&tfs_true_false),
+            { "PowerProfileStartTime Field Present", "zbee_zcl_general.pwrprof.options.01", FT_BOOLEAN, 8, NULL,
             ZBEE_ZCL_OPT_PWRPROF_STIME_PRESENT, NULL, HFILL } },
 
         { &hf_zbee_zcl_pwr_prof_options_res,
@@ -11323,21 +12030,19 @@ proto_register_zbee_zcl_pwr_prof(void)
   };
 
     /* ZCL PowerProfile subtrees */
-    static gint *ett[ZBEE_ZCL_PWR_PROF_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_pwr_prof;
-    ett[1] = &ett_zbee_zcl_pwr_prof_options;
-    ett[2] = &ett_zbee_zcl_pwr_prof_en_format;
-    ett[3] = &ett_zbee_zcl_pwr_prof_sched_mode;
+    static int *ett[ZBEE_ZCL_PWR_PROF_NUM_ETT] = {
+        &ett_zbee_zcl_pwr_prof,
+        &ett_zbee_zcl_pwr_prof_options,
+        &ett_zbee_zcl_pwr_prof_en_format,
+        &ett_zbee_zcl_pwr_prof_sched_mode
+    };
 
     /* initialize attribute subtree types */
     for ( i = 0, j = ZBEE_ZCL_PWR_PROF_NUM_GENERIC_ETT; i < ZBEE_ZCL_PWR_PROF_NUM_PWR_PROF_ETT; i++, j++ ) {
-        ett_zbee_zcl_pwr_prof_pwrprofiles[i] = -1;
         ett[j] = &ett_zbee_zcl_pwr_prof_pwrprofiles[i];
     }
 
     for ( i = 0; i < ZBEE_ZCL_PWR_PROF_NUM_EN_PHS_ETT; i++, j++ ) {
-        ett_zbee_zcl_pwr_prof_enphases[i] = -1;
         ett[j] = &ett_zbee_zcl_pwr_prof_enphases[i];
     }
 
@@ -11365,19 +12070,16 @@ proto_register_zbee_zcl_pwr_prof(void)
 void
 proto_reg_handoff_zbee_zcl_pwr_prof(void)
 {
-    dissector_handle_t pwr_prof_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    pwr_prof_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_PWRPROF);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_POWER_PROFILE, pwr_prof_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_pwr_prof,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_PWRPROF,
+                            proto_zbee_zcl_pwr_prof,
                             ett_zbee_zcl_pwr_prof,
                             ZBEE_ZCL_CID_POWER_PROFILE,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_pwr_prof_attr_id,
                             hf_zbee_zcl_pwr_prof_attr_id,
                             hf_zbee_zcl_pwr_prof_srv_rx_cmd_id,
                             hf_zbee_zcl_pwr_prof_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_pwr_prof_attr_data
+                            dissect_zcl_pwr_prof_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_pwr_prof*/
 
@@ -11480,13 +12182,12 @@ void proto_register_zbee_zcl_appl_ctrl(void);
 void proto_reg_handoff_zbee_zcl_appl_ctrl(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_appl_ctrl_exec_cmd              (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_appl_ctrl_attr_func             (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_appl_ctrl_wr_funcs              (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_appl_ctrl_ovrl_warning          (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_appl_ctrl_signal_state_rsp      (tvbuff_t *tvb, proto_tree *tree, guint *offset);
+static void dissect_zcl_appl_ctrl_exec_cmd              (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_appl_ctrl_wr_funcs              (tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_appl_ctrl_ovrl_warning          (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_appl_ctrl_signal_state_rsp      (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
-static void dissect_zcl_appl_ctrl_attr_data             (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
+static void dissect_zcl_appl_ctrl_attr_data             (proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr);
 
 /* Private functions prototype */
 
@@ -11494,30 +12195,30 @@ static void dissect_zcl_appl_ctrl_attr_data             (proto_tree *tree, tvbuf
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_appl_ctrl = -1;
+static int proto_zbee_zcl_appl_ctrl;
 
-static int hf_zbee_zcl_appl_ctrl_attr_id = -1;
-static int hf_zbee_zcl_appl_ctrl_time = -1;
-static int hf_zbee_zcl_appl_ctrl_time_mm = -1;
-static int hf_zbee_zcl_appl_ctrl_time_encoding_type = -1;
-static int hf_zbee_zcl_appl_ctrl_time_hh = -1;
-static int hf_zbee_zcl_appl_ctrl_srv_tx_cmd_id = -1;
-static int hf_zbee_zcl_appl_ctrl_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_appl_ctrl_exec_cmd_id = -1;
-static int hf_zbee_zcl_appl_ctrl_attr_func_id = -1;
-static int hf_zbee_zcl_appl_ctrl_attr_func_data_type = -1;
-static int hf_zbee_zcl_appl_ctrl_warning_id = -1;
-static int hf_zbee_zcl_appl_ctrl_appl_status = -1;
-static int hf_zbee_zcl_appl_ctrl_rem_en_flags_raw = -1;
-static int hf_zbee_zcl_appl_ctrl_rem_en_flags = -1;
-static int hf_zbee_zcl_appl_ctrl_status2 = -1;
-static int hf_zbee_zcl_appl_ctrl_status2_array = -1;
+static int hf_zbee_zcl_appl_ctrl_attr_id;
+static int hf_zbee_zcl_appl_ctrl_time;
+static int hf_zbee_zcl_appl_ctrl_time_mm;
+static int hf_zbee_zcl_appl_ctrl_time_encoding_type;
+static int hf_zbee_zcl_appl_ctrl_time_hh;
+static int hf_zbee_zcl_appl_ctrl_srv_tx_cmd_id;
+static int hf_zbee_zcl_appl_ctrl_srv_rx_cmd_id;
+static int hf_zbee_zcl_appl_ctrl_exec_cmd_id;
+static int hf_zbee_zcl_appl_ctrl_attr_func_id;
+static int hf_zbee_zcl_appl_ctrl_attr_func_data_type;
+static int hf_zbee_zcl_appl_ctrl_warning_id;
+static int hf_zbee_zcl_appl_ctrl_appl_status;
+static int hf_zbee_zcl_appl_ctrl_rem_en_flags_raw;
+static int hf_zbee_zcl_appl_ctrl_rem_en_flags;
+static int hf_zbee_zcl_appl_ctrl_status2;
+static int hf_zbee_zcl_appl_ctrl_status2_array;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_appl_ctrl = -1;
-static gint ett_zbee_zcl_appl_ctrl_flags = -1;
-static gint ett_zbee_zcl_appl_ctrl_time = -1;
-static gint ett_zbee_zcl_appl_ctrl_func[ZBEE_ZCL_APPL_CTRL_NUM_FUNC_ETT];
+static int ett_zbee_zcl_appl_ctrl;
+static int ett_zbee_zcl_appl_ctrl_flags;
+static int ett_zbee_zcl_appl_ctrl_time;
+static int ett_zbee_zcl_appl_ctrl_func[ZBEE_ZCL_APPL_CTRL_NUM_FUNC_ETT];
 
 /* Attributes */
 static const value_string zbee_zcl_appl_ctrl_attr_names[] = {
@@ -11553,7 +12254,7 @@ static const value_string zbee_zcl_appl_ctrl_exec_cmd_names[] = {
     { ZBEE_ZCL_APPL_CTRL_EXEC_CMD_ID_STOP,                      "Stop" },
     { ZBEE_ZCL_APPL_CTRL_EXEC_CMD_ID_PAUSE,                     "Pause" },
     { ZBEE_ZCL_APPL_CTRL_EXEC_CMD_ID_START_SUPERFREEZING,       "Start Superfreezing" },
-    { ZBEE_ZCL_APPL_CTRL_EXEC_CMD_ID_START_SUPERFREEZING,       "Stop Superfreezing" },
+    { ZBEE_ZCL_APPL_CTRL_EXEC_CMD_ID_STOP_SUPERFREEZING,        "Stop Superfreezing" },
     { ZBEE_ZCL_APPL_CTRL_EXEC_CMD_ID_START_SUPERCOOLING,        "Start Supercooling" },
     { ZBEE_ZCL_APPL_CTRL_EXEC_CMD_ID_STOP_SUPERCOOLING,         "Stop Supercooling" },
     { ZBEE_ZCL_APPL_CTRL_EXEC_CMD_ID_DISABLE_GAS,               "Disable Gas" },
@@ -11572,7 +12273,7 @@ static const value_string zbee_zcl_appl_ctrl_appl_status_names[] = {
     { ZBEE_ZCL_APPL_CTRL_ID_STATUS_PAUSE,                       "Pause" },
     { ZBEE_ZCL_APPL_CTRL_ID_STATUS_END_PRG,                     "End Programmed" },
     { ZBEE_ZCL_APPL_CTRL_ID_STATUS_FAILURE,                     "Failure" },
-    { ZBEE_ZCL_APPL_CTRL_ID_STATUS_PRG_INTERRUPTED,             "Programme Interrupted" },
+    { ZBEE_ZCL_APPL_CTRL_ID_STATUS_PRG_INTERRUPTED,             "Programming Interrupted" },
     { ZBEE_ZCL_APPL_CTRL_ID_STATUS_IDLE,                        "Idle" },
     { ZBEE_ZCL_APPL_CTRL_ID_STATUS_RINSE_HOLD,                  "Raise Hold" },
     { ZBEE_ZCL_APPL_CTRL_ID_STATUS_SERVICE,                     "Service" },
@@ -11639,9 +12340,9 @@ dissect_zbee_zcl_appl_ctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -11657,7 +12358,7 @@ dissect_zbee_zcl_appl_ctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -11677,7 +12378,7 @@ dissect_zbee_zcl_appl_ctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                     break;
 
                 case ZBEE_ZCL_CMD_ID_APPL_CTRL_WRITE_FUNCS:
-                    dissect_zcl_appl_ctrl_wr_funcs(tvb, payload_tree, &offset);
+                    dissect_zcl_appl_ctrl_wr_funcs(tvb, pinfo, payload_tree, &offset);
                     break;
 
                 case ZBEE_ZCL_CMD_ID_APPL_CTRL_OVERLOAD_WARNING:
@@ -11696,7 +12397,7 @@ dissect_zbee_zcl_appl_ctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check is this command has a payload, than add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -11729,13 +12430,13 @@ dissect_zbee_zcl_appl_ctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_appl_ctrl_exec_cmd(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_appl_ctrl_exec_cmd(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Command Id" field */
     proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_exec_cmd_id, tvb, *offset, 1, ENC_NA);
@@ -11751,16 +12452,16 @@ dissect_zcl_appl_ctrl_exec_cmd(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_appl_ctrl_attr_func(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_appl_ctrl_attr_func(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
-    guint8  func_data_type;
-    guint16 func_id;
+    uint8_t func_data_type;
+    uint16_t func_id;
 
     /* ID */
     func_id = tvb_get_letohs(tvb, *offset);
@@ -11771,12 +12472,12 @@ dissect_zcl_appl_ctrl_attr_func(tvbuff_t *tvb, proto_tree *tree, guint *offset)
     val_to_str_ext_const(func_id, &zbee_zcl_appl_ctrl_attr_names_ext, "Reserved"));
 
     /* Data Type */
-    func_data_type = tvb_get_guint8(tvb, *offset);
+    func_data_type = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_attr_func_data_type, tvb, *offset, 1, ENC_NA);
     *offset += 1;
 
     /* Function Data Dissector */
-    dissect_zcl_appl_ctrl_attr_data(tree, tvb, offset, func_id, func_data_type);
+    dissect_zcl_appl_ctrl_attr_data(tree, pinfo, tvb, offset, func_id, func_data_type, false);
 
 } /*dissect_zcl_appl_ctrl_attr_func*/
 
@@ -11790,17 +12491,17 @@ dissect_zcl_appl_ctrl_attr_func(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_appl_ctrl_wr_funcs(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_appl_ctrl_wr_funcs(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
   proto_tree  *sub_tree = NULL;
-  guint tvb_len;
-  guint i = 0;
+  unsigned tvb_len;
+  unsigned i = 0;
 
   tvb_len = tvb_reported_length(tvb);
   while ( *offset < tvb_len && i < ZBEE_ZCL_APPL_CTRL_NUM_FUNC_ETT ) {
@@ -11810,7 +12511,7 @@ dissect_zcl_appl_ctrl_wr_funcs(tvbuff_t *tvb, proto_tree *tree, guint *offset)
     i++;
 
     /* Dissect the attribute identifier */
-    dissect_zcl_appl_ctrl_attr_func(tvb, sub_tree, offset);
+    dissect_zcl_appl_ctrl_attr_func(tvb, pinfo, sub_tree, offset);
   }
 
 } /*dissect_zcl_appl_ctrl_wr_funcs*/
@@ -11825,13 +12526,13 @@ dissect_zcl_appl_ctrl_wr_funcs(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_appl_ctrl_ovrl_warning(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_appl_ctrl_ovrl_warning(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Warning Id" field */
     proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_warning_id, tvb, *offset, 1, ENC_NA);
@@ -11849,15 +12550,15 @@ dissect_zcl_appl_ctrl_ovrl_warning(tvbuff_t *tvb, proto_tree *tree, guint *offse
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
- *      guint *offset       - pointer to buffer offset
+ *      unsigned *offset       - pointer to buffer offset
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_appl_ctrl_signal_state_rsp(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_appl_ctrl_signal_state_rsp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-    static const int * flags[] = {
+    static int * const flags[] = {
         &hf_zbee_zcl_appl_ctrl_rem_en_flags,
         &hf_zbee_zcl_appl_ctrl_status2,
         NULL
@@ -11884,17 +12585,18 @@ dissect_zcl_appl_ctrl_signal_state_rsp(tvbuff_t *tvb, proto_tree *tree, guint *o
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_appl_ctrl_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+dissect_zcl_appl_ctrl_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
-    static const int * flags[] = {
+    static int * const flags[] = {
         &hf_zbee_zcl_appl_ctrl_time_mm,
         &hf_zbee_zcl_appl_ctrl_time_encoding_type,
         &hf_zbee_zcl_appl_ctrl_time_hh,
@@ -11912,7 +12614,7 @@ dissect_zcl_appl_ctrl_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, 
             break;
 
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 } /*dissect_zcl_appl_ctrl_attr_data*/
@@ -11933,7 +12635,7 @@ dissect_zcl_appl_ctrl_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, 
 void
 proto_register_zbee_zcl_appl_ctrl(void)
 {
-    guint i, j;
+    unsigned i, j;
 
     static hf_register_info hf[] = {
 
@@ -12004,15 +12706,14 @@ proto_register_zbee_zcl_appl_ctrl(void)
     };
 
     /* ZCL ApplianceControl subtrees */
-    gint *ett[ZBEE_ZCL_APPL_CTRL_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_appl_ctrl;
-    ett[1] = &ett_zbee_zcl_appl_ctrl_flags;
-    ett[2] = &ett_zbee_zcl_appl_ctrl_time;
+    int *ett[ZBEE_ZCL_APPL_CTRL_NUM_ETT] = {
+        &ett_zbee_zcl_appl_ctrl,
+        &ett_zbee_zcl_appl_ctrl_flags,
+        &ett_zbee_zcl_appl_ctrl_time
+    };
 
     /* initialize attribute subtree types */
     for ( i = 0, j = ZBEE_ZCL_APPL_CTRL_NUM_GENERIC_ETT; i < ZBEE_ZCL_APPL_CTRL_NUM_FUNC_ETT; i++, j++) {
-        ett_zbee_zcl_appl_ctrl_func[i] = -1;
         ett[j] = &ett_zbee_zcl_appl_ctrl_func[i];
     }
 
@@ -12040,19 +12741,16 @@ proto_register_zbee_zcl_appl_ctrl(void)
 void
 proto_reg_handoff_zbee_zcl_appl_ctrl(void)
 {
-    dissector_handle_t appl_ctrl_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    appl_ctrl_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_APPLCTRL);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_APPLIANCE_CONTROL, appl_ctrl_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_appl_ctrl,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_APPLCTRL,
+                            proto_zbee_zcl_appl_ctrl,
                             ett_zbee_zcl_appl_ctrl,
                             ZBEE_ZCL_CID_APPLIANCE_CONTROL,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_appl_ctrl_attr_id,
                             hf_zbee_zcl_appl_ctrl_attr_id,
                             hf_zbee_zcl_appl_ctrl_srv_rx_cmd_id,
                             hf_zbee_zcl_appl_ctrl_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_appl_ctrl_attr_data
+                            dissect_zcl_appl_ctrl_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_appl_ctrl*/
 
@@ -12063,8 +12761,6 @@ proto_reg_handoff_zbee_zcl_appl_ctrl(void)
 /*************************/
 /* Defines               */
 /*************************/
-
-#define ZBEE_ZCL_POLL_CTRL_NUM_ETT                      1
 
 /* Poll Control Attributes */
 #define ZBEE_ZCL_ATTR_ID_POLL_CTRL_CHECK_IN             0x0000
@@ -12110,17 +12806,17 @@ static const value_string zbee_zcl_poll_ctrl_srv_rx_cmd_names[] = {
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_poll_ctrl = -1;
+static int proto_zbee_zcl_poll_ctrl;
 
-static int hf_zbee_zcl_poll_ctrl_attr_id = -1;
-static int hf_zbee_zcl_poll_ctrl_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_poll_ctrl_srv_tx_cmd_id = -1;
-static int hf_zbee_zcl_poll_ctrl_start_fast_polling = -1;
-static int hf_zbee_zcl_poll_ctrl_fast_poll_timeout = -1;
-static int hf_zbee_zcl_poll_ctrl_new_long_poll_interval = -1;
-static int hf_zbee_zcl_poll_ctrl_new_short_poll_interval = -1;
+static int hf_zbee_zcl_poll_ctrl_attr_id;
+static int hf_zbee_zcl_poll_ctrl_srv_rx_cmd_id;
+static int hf_zbee_zcl_poll_ctrl_srv_tx_cmd_id;
+static int hf_zbee_zcl_poll_ctrl_start_fast_polling;
+static int hf_zbee_zcl_poll_ctrl_fast_poll_timeout;
+static int hf_zbee_zcl_poll_ctrl_new_long_poll_interval;
+static int hf_zbee_zcl_poll_ctrl_new_short_poll_interval;
 
-static gint ett_zbee_zcl_poll_ctrl = -1;
+static int ett_zbee_zcl_poll_ctrl;
 
 /*************************/
 /* Function Declarations */
@@ -12146,8 +12842,8 @@ static int
 dissect_zbee_zcl_poll_ctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -12162,7 +12858,7 @@ dissect_zbee_zcl_poll_ctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_poll_ctrl_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_poll_ctrl_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
         offset++;
 
         /* Handle the command dissection. */
@@ -12220,18 +12916,19 @@ dissect_zbee_zcl_poll_ctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
  *  PARAMETERS
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
- *      guint *offset       - pointer to buffer offset
- *      guint16 attr_id     - attribute identifier
- *      guint data_type     - attribute data type
+ *      unsigned *offset       - pointer to buffer offset
+ *      uint16_t attr_id     - attribute identifier
+ *      unsigned data_type     - attribute data type
+ *      bool client_attr- ZCL client
  *  RETURNS
  *      none
  *---------------------------------------------------------------
  */
 static void
-dissect_zcl_poll_ctrl_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id _U_, guint data_type)
+dissect_zcl_poll_ctrl_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id _U_, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
-    dissect_zcl_attr_data(tvb, tree, offset, data_type);
+    dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
 
 } /*dissect_zcl_poll_ctrl_attr_data*/
 
@@ -12265,7 +12962,7 @@ proto_register_zbee_zcl_poll_ctrl(void)
                 VALS(zbee_zcl_poll_ctrl_srv_tx_cmd_names), 0x0, NULL, HFILL }},
 
         { &hf_zbee_zcl_poll_ctrl_start_fast_polling,
-            { "Start Fast Polling", "zbee_zcl_general.poll.start", FT_BOOLEAN, 8, TFS(&tfs_true_false), 0x0,
+            { "Start Fast Polling", "zbee_zcl_general.poll.start", FT_BOOLEAN, BASE_NONE, NULL, 0x0,
                 NULL, HFILL }},
 
         { &hf_zbee_zcl_poll_ctrl_fast_poll_timeout,
@@ -12282,9 +12979,9 @@ proto_register_zbee_zcl_poll_ctrl(void)
     };
 
     /* ZCL Poll Control subtrees */
-    static gint *ett[ZBEE_ZCL_POLL_CTRL_NUM_ETT];
-
-    ett[0] = &ett_zbee_zcl_poll_ctrl;
+    static int *ett[] = {
+        &ett_zbee_zcl_poll_ctrl
+    };
 
     /* Register the ZigBee ZCL Poll Control cluster protocol name and description */
     proto_zbee_zcl_poll_ctrl = proto_register_protocol("ZigBee ZCL Poll Control", "ZCL Poll Control", ZBEE_PROTOABBREV_ZCL_POLL);
@@ -12309,19 +13006,16 @@ proto_register_zbee_zcl_poll_ctrl(void)
 void
 proto_reg_handoff_zbee_zcl_poll_ctrl(void)
 {
-    dissector_handle_t poll_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    poll_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_POLL);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_POLL_CONTROL, poll_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_poll_ctrl,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_POLL,
+                            proto_zbee_zcl_poll_ctrl,
                             ett_zbee_zcl_poll_ctrl,
                             ZBEE_ZCL_CID_POLL_CONTROL,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_poll_ctrl_attr_id,
                             hf_zbee_zcl_poll_ctrl_attr_id,
                             hf_zbee_zcl_poll_ctrl_srv_rx_cmd_id,
                             hf_zbee_zcl_poll_ctrl_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_poll_ctrl_attr_data
+                            dissect_zcl_poll_ctrl_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_poll_ctrl*/
 
@@ -12501,6 +13195,12 @@ static const value_string zbee_gp_pc_actions[] = {
     { 0, NULL }
 };
 
+static const value_string zbee_zcl_gp_proxy_sink_tbl_req_type[] = {
+    { 0, "Request table entries by GPD ID" },
+    { 1, "Request table entries by Index" },
+    { 0, NULL }
+};
+
 #define ZBEE_ZCL_GP_PROXY_COMMISSIONING_MODE_OPTION_ACTION                             1
 #define ZBEE_ZCL_GP_PROXY_COMMISSIONING_MODE_OPTION_EXIT_MODE                          (7<<1)
 #define ZBEE_ZCL_GP_PROXY_COMMISSIONING_MODE_OPTION_ON_COMMISSIONING_WINDOW_EXPIRATION ((1<<0)<<1)
@@ -12573,147 +13273,407 @@ static const value_string zbee_gp_pc_actions[] = {
 #define ZBEE_ZCL_GP_CLUSTER_LIST_LEN_CLI                                               (0xf<<4)
 #define ZBEE_ZCL_GP_CLUSTER_LIST_LEN_CLI_SHIFT                                         4
 
+#define ZBEE_ZCL_GP_PROXY_SINK_TBL_REQ_CMD_APP_ID                                      (0x07<<0)
+#define ZBEE_ZCL_GP_PROXY_SINK_TBL_REQ_CMD_REQ_TYPE                                    (0x03<<3)
+#define ZBEE_ZCL_GP_PROXY_SINK_TBL_REQ_CMD_REQ_TYPE_SHIFT                              3
+
+#define ZBEE_ZCL_GP_SINK_TBL_OPT_APP_ID                                                (7<<0)
+#define ZBEE_ZCL_GP_SINK_TBL_OPT_COMMUNICATION_MODE                                    (3<<3)
+#define ZBEE_ZCL_GP_SINK_TBL_OPT_SEQ_NUMBER_CAP                                        (1<<5)
+#define ZBEE_ZCL_GP_SINK_TBL_OPT_RX_ON_CAP                                             (1<<6)
+#define ZBEE_ZCL_GP_SINK_TBL_OPT_FIXED_LOCATION                                        (1<<7)
+#define ZBEE_ZCL_GP_SINK_TBL_OPT_ASSIGNED_ALIAS                                        (1<<8)
+#define ZBEE_ZCL_GP_SINK_TBL_OPT_SECURITY_USE                                          (1<<9)
+
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_APP_ID                                               (7<<0)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_ENTRY_ACTIVE                                         (1<<3)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_ENTRY_VALID                                          (1<<4)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_SEQ_NUMBER_CAP                                       (1<<5)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_LW_UCAST_GPS                                         (1<<6)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_DERIVED_GROUP_GPS                                    (1<<7)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_COMM_GROUP_GPS                                       (1<<8)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_FIRST_TO_FORWARD                                     (1<<9)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_IN_RANGE                                             (1<<10)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_GPD_FIXED                                            (1<<11)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_HAS_ALL_UCAST_ROUTES                                 (1<<12)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_ASSIGNED_ALIAS                                       (1<<13)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_SECURITY_USE                                         (1<<14)
+#define ZBEE_ZCL_GP_PROXY_TBL_OPT_OPTIONS_EXTENTIONS                                   (1<<15)
+
+#define ZBEE_ZCL_GP_PROXY_TBL_EXT_OPT_FULL_UCAST_GPS                                   (1<<0)
+
+#define ZBEE_ZCL_GP_SECUR_OPT_SECUR_LEVEL                                              (3<<0)
+#define ZBEE_ZCL_GP_SECUR_OPT_SECUR_KEY_TYPE                                           (7<<2)
+
+/* Sink Commissioning Mode command */
+#define ZBEE_ZCL_GP_CMD_SINK_COMM_MODE_OPTIONS_FLD_ACTION                              (1<<0)
+#define ZBEE_ZCL_GP_CMD_SINK_COMM_MODE_OPTIONS_FLD_INV_GPM_IN_SECUR                    (1<<1)
+#define ZBEE_ZCL_GP_CMD_SINK_COMM_MODE_OPTIONS_FLD_INV_GPM_IN_PAIRING                  (1<<2)
+#define ZBEE_ZCL_GP_CMD_SINK_COMM_MODE_OPTIONS_FLD_INV_PROXIES                         (1<<3)
+
+/* gppFunctionality attribute */
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GP_FEATURE                                       (1<<0)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_DIRECT_COMM                                      (1<<1)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_DERIVED_GCAST_COMM                               (1<<2)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_PRE_COMMISSIONED_GCAST_COMM                      (1<<3)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_FULL_UCAST_COMM                                  (1<<4)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_LW_UCAST_COMM                                    (1<<5)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_BIDIR_OP                                         (1<<7)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_PROXY_TBL_MAINTENANCE                            (1<<8)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GP_COMMISSIONING                                 (1<<10)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_CT_BASED_COMMISSIONING                           (1<<11)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_MAINTENANCE_OF_GPD                               (1<<12)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_SECUR_LVL_00                                 (1<<13)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_SECUR_LVL_01                                 (1<<14)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_SECUR_LVL_10                                 (1<<15)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_SECUR_LVL_11                                 (1<<16)
+#define ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_IEEE_ADDRESS                                 (1<<19)
+/* gppActiveFunctionality attribute */
+#define ZBEE_ZCL_GP_ATTR_GPP_ACTIVE_FUNC_FLD_GP_FUNCTIONALITY                          (1<<0)
+
+/* gpsFunctionality attribute */
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GP_FEATURE                                       (1<<0)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_DIRECT_COMM                                      (1<<1)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_DERIVED_GCAST_COMM                               (1<<2)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_PRE_COMMISSIONED_GCAST_COMM                      (1<<3)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_FULL_UCAST_COMM                                  (1<<4)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_LW_UCAST_COMM                                    (1<<5)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_PROXIMITY_BIDIR_OP                               (1<<6)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_MULTI_HOP_BIDIR_OP                               (1<<7)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_PROXY_TBL_MAINTENANCE                            (1<<8)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_PROXIMITY_COMMISSIONING                          (1<<9)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_MULTI_HOP_COMMISSIONING                          (1<<10)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_CT_BASED_COMMISSIONING                           (1<<11)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_MAINTENANCE_OF_GPD                               (1<<12)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_SECUR_LVL_00                                 (1<<13)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_SECUR_LVL_01                                 (1<<14)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_SECUR_LVL_10                                 (1<<15)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_SECUR_LVL_11                                 (1<<16)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_SINK_TBL_BASED_GCAST_FORWARDING                  (1<<17)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_TRANSLATION_TABLE                                (1<<18)
+#define ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_IEEE_ADDRESS                                 (1<<19)
+/* gpsActiveFunctionality attribute */
+#define ZBEE_ZCL_GP_ATTR_GPS_ACTIVE_FUNC_FLD_GP_FUNCTIONALITY                          (1<<0)
+
+/* gpsCommissioningExitMode attribute */
+#define ZBEE_ZCL_GP_ATTR_GPS_COMM_EXIT_MODE_FLD_ON_COMM_WINDOW_EXPIRE                  (1<<0)
+#define ZBEE_ZCL_GP_ATTR_GPS_COMM_EXIT_MODE_FLD_ON_PAIRING_SUCCESS                     (1<<1)
+#define ZBEE_ZCL_GP_ATTR_GPS_COMM_EXIT_MODE_FLD_ON_GP_PROXY_COMM_MODE                  (1<<2)
+
+/* gpsCommunicationMode attribute */
+#define ZBEE_ZCL_GP_ATTR_GPS_COMMUNICATION_MODE_FLD_MODE                               (3<<0)
+
+/* gpsSecurityLevel attribute */
+#define ZBEE_ZCL_GP_ATTR_GPS_SECUR_LVL_FLD_MIN_GPD_SECUR_LVL                           (3<<0)
+#define ZBEE_ZCL_GP_ATTR_GPS_SECUR_LVL_FLD_PROTECTION_WITH_GP_LINK_KEY                 (1<<2)
+#define ZBEE_ZCL_GP_ATTR_GPS_SECUR_LVL_FLD_INVOLVE_TC                                  (1<<3)
+
+/* Definitions for application IDs. */
+#define ZBEE_ZCL_GP_APP_ID_DEFAULT                                                     0x00
+#define ZBEE_ZCL_GP_APP_ID_ZGP                                                         0x02
+
+/** Definitions for Request type sub-field of the Options field of the
+ *  GP Sink Table Request and GP Proxy Table request commands
+ */
+#define ZBEE_ZCL_GP_PROXY_SINK_TABLE_REQ_CMD_REQUSET_BY_GPD_ID                          0
+#define ZBEE_ZCL_GP_PROXY_SINK_TABLE_REQ_CMD_REQUSET_BY_INDEX                           1
+
 /*************************/
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_gp = -1;
+static int proto_zbee_zcl_gp;
 
-static int hf_zbee_zcl_gp_attr_id = -1;
-static int hf_zbee_zcl_gp_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_gp_srv_tx_cmd_id = -1;
+static int hf_zbee_zcl_gp_attr_id;
+static int hf_zbee_zcl_gp_srv_rx_cmd_id;
+static int hf_zbee_zcl_gp_srv_tx_cmd_id;
 
-static gint ett_zbee_zcl_gp = -1;
+static int ett_zbee_zcl_gp;
 
 /* GP_PROXY_COMMISSIONING_MODE */
-static gint ett_zbee_gp_cmd_proxy_commissioning_mode_options = -1;
-static gint ett_zbee_gp_cmd_proxy_commissioning_mode_exit_mode = -1;
-static gint hf_zbee_gp_cmd_proxy_commissioning_mode_options = -1;
-static gint hf_zbee_gp_cmd_pcm_opt_action = -1;
-static gint hf_zbee_gp_cmd_pcm_opt_exit_mode = -1;
-static gint hf_zbee_gp_cmd_pcm_opt_channel_present = -1;
-static gint hf_zbee_gp_cmd_pcm_opt_unicast_comm = -1;
-static gint hf_zbee_gp_cmd_proxy_commissioning_mode_exit_mode = -1;
-static gint hf_zbee_gp_cmd_pcm_exit_mode_on_comm_window_expire = -1;
-static gint hf_zbee_gp_cmd_pcm_exit_mode_on_pairing_success = -1;
-static gint hf_zbee_gp_cmd_pcm_exit_mode_on_gp_proxy_comm_mode = -1;
-static gint hf_zbee_zcl_gp_commissioning_window = -1;
-static gint hf_zbee_zcl_gp_channel = -1;
+static int ett_zbee_gp_cmd_proxy_commissioning_mode_options;
+static int ett_zbee_gp_cmd_proxy_commissioning_mode_exit_mode;
+static int hf_zbee_gp_cmd_proxy_commissioning_mode_options;
+static int hf_zbee_gp_cmd_pcm_opt_action;
+static int hf_zbee_gp_cmd_pcm_opt_exit_mode;
+static int hf_zbee_gp_cmd_pcm_opt_channel_present;
+static int hf_zbee_gp_cmd_pcm_opt_unicast_comm;
+static int hf_zbee_gp_cmd_proxy_commissioning_mode_exit_mode;
+static int hf_zbee_gp_cmd_pcm_exit_mode_on_comm_window_expire;
+static int hf_zbee_gp_cmd_pcm_exit_mode_on_pairing_success;
+static int hf_zbee_gp_cmd_pcm_exit_mode_on_gp_proxy_comm_mode;
+static int hf_zbee_zcl_gp_commissioning_window;
+static int hf_zbee_zcl_gp_channel;
 
 /* GP_COMMISSIONING_NOTIFICATION */
-static gint hf_zbee_gp_cmd_comm_notif_opt_app_id = -1;
-static gint hf_zbee_gp_cmd_comm_notif_opt_rx_after_tx = -1;
-static gint hf_zbee_gp_cmd_comm_notif_opt_secur_level = -1;
-static gint hf_zbee_gp_cmd_comm_notif_opt_secur_key_type = -1;
-static gint hf_zbee_gp_cmd_comm_notif_opt_secur_fail = -1;
-static gint hf_zbee_gp_cmd_comm_notif_opt_bidir_cap = -1;
-static gint hf_zbee_gp_cmd_comm_notif_opt_proxy_info_present = -1;
-static gint hf_zbee_gp_cmd_commissioning_notification_options = -1;
-static gint ett_zbee_gp_cmd_commissioning_notification_options = -1;
-static gint hf_zbee_gp_src_id = -1;
-static gint hf_zbee_gp_ieee = -1;
-static gint hf_zbee_gp_endpoint = -1;
-static gint hf_zbee_gp_secur_frame_counter = -1;
-static gint hf_zbee_gp_gpd_command_id = -1;
-static gint hf_zbee_gp_short_addr = -1;
-static gint hf_zbee_gp_gpp_gpd_link = -1;
-static gint hf_zbee_gp_mic = -1;
-static gint ett_zbee_gp_gpp_gpd_link = -1;
-static gint hf_zbee_gpp_gpd_link_rssi = -1;
-static gint hf_zbee_gpp_gpd_link_lqi = -1;
-static gint hf_zbee_gp_gpd_payload_size = -1;
+static int hf_zbee_gp_cmd_comm_notif_opt_app_id;
+static int hf_zbee_gp_cmd_comm_notif_opt_rx_after_tx;
+static int hf_zbee_gp_cmd_comm_notif_opt_secur_level;
+static int hf_zbee_gp_cmd_comm_notif_opt_secur_key_type;
+static int hf_zbee_gp_cmd_comm_notif_opt_secur_fail;
+static int hf_zbee_gp_cmd_comm_notif_opt_bidir_cap;
+static int hf_zbee_gp_cmd_comm_notif_opt_proxy_info_present;
+static int hf_zbee_gp_cmd_commissioning_notification_options;
+static int ett_zbee_gp_cmd_commissioning_notification_options;
+static int hf_zbee_gp_src_id;
+static int hf_zbee_gp_ieee;
+static int hf_zbee_gp_endpoint;
+static int hf_zbee_gp_secur_frame_counter;
+static int hf_zbee_gp_gpd_command_id;
+static int hf_zbee_gp_short_addr;
+static int hf_zbee_gp_gpp_gpd_link;
+static int hf_zbee_gp_mic;
+static int ett_zbee_gp_gpp_gpd_link;
+static int hf_zbee_gpp_gpd_link_rssi;
+static int hf_zbee_gpp_gpd_link_lqi;
+static int hf_zbee_gp_gpd_payload_size;
 
 
 /* GP_NOTIFICATION */
-static gint hf_zbee_gp_cmd_notification_options = -1;
-static gint ett_zbee_gp_cmd_notification_options = -1;
-static gint hf_zbee_gp_cmd_notif_opt_app_id = -1;
-static gint hf_zbee_gp_cmd_notif_opt_also_unicast = -1;
-static gint hf_zbee_gp_cmd_notif_opt_also_derived_group = -1;
-static gint hf_zbee_gp_cmd_notif_opt_also_comm_group = -1;
-static gint hf_zbee_gp_cmd_notif_opt_secur_level = -1;
-static gint hf_zbee_gp_cmd_notif_opt_secur_key_type = -1;
-static gint hf_zbee_gp_cmd_notif_opt_rx_after_tx = -1;
-static gint hf_zbee_gp_cmd_notif_opt_tx_q_full = -1;
-static gint hf_zbee_gp_cmd_notif_opt_bidir_cap = -1;
-static gint hf_zbee_gp_cmd_notif_opt_proxy_info_present = -1;
+static int hf_zbee_gp_cmd_notification_options;
+static int ett_zbee_gp_cmd_notification_options;
+static int hf_zbee_gp_cmd_notif_opt_app_id;
+static int hf_zbee_gp_cmd_notif_opt_also_unicast;
+static int hf_zbee_gp_cmd_notif_opt_also_derived_group;
+static int hf_zbee_gp_cmd_notif_opt_also_comm_group;
+static int hf_zbee_gp_cmd_notif_opt_secur_level;
+static int hf_zbee_gp_cmd_notif_opt_secur_key_type;
+static int hf_zbee_gp_cmd_notif_opt_rx_after_tx;
+static int hf_zbee_gp_cmd_notif_opt_tx_q_full;
+static int hf_zbee_gp_cmd_notif_opt_bidir_cap;
+static int hf_zbee_gp_cmd_notif_opt_proxy_info_present;
 
 /* GP_PAIRING */
-static gint hf_zbee_gp_cmd_pairing_opt_app_id = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_add_sink = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_remove_gpd = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_communication_mode = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_gpd_fixed = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_gpd_mac_seq_num_cap = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_secur_level = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_secur_key_type = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_gpd_frame_cnt_present = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_gpd_secur_key_present = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_assigned_alias_present = -1;
-static gint hf_zbee_gp_cmd_pairing_opt_fwd_radius_present = -1;
-static gint hf_zbee_gp_cmd_pairing_options = -1;
-static gint ett_zbee_gp_cmd_pairing_options = -1;
-static gint hf_zbee_gp_sink_ieee = -1;
-static gint hf_zbee_gp_sink_nwk = -1;
-static gint hf_zbee_gp_sink_group_id = -1;
-static gint hf_zbee_gp_device_id = -1;
-static gint hf_zbee_gp_assigned_alias = -1;
-static gint hf_zbee_gp_forwarding_radius = -1;
-static gint hf_zbee_gp_gpd_key = -1;
+static int hf_zbee_gp_cmd_pairing_opt_app_id;
+static int hf_zbee_gp_cmd_pairing_opt_add_sink;
+static int hf_zbee_gp_cmd_pairing_opt_remove_gpd;
+static int hf_zbee_gp_cmd_pairing_opt_communication_mode;
+static int hf_zbee_gp_cmd_pairing_opt_gpd_fixed;
+static int hf_zbee_gp_cmd_pairing_opt_gpd_mac_seq_num_cap;
+static int hf_zbee_gp_cmd_pairing_opt_secur_level;
+static int hf_zbee_gp_cmd_pairing_opt_secur_key_type;
+static int hf_zbee_gp_cmd_pairing_opt_gpd_frame_cnt_present;
+static int hf_zbee_gp_cmd_pairing_opt_gpd_secur_key_present;
+static int hf_zbee_gp_cmd_pairing_opt_assigned_alias_present;
+static int hf_zbee_gp_cmd_pairing_opt_fwd_radius_present;
+static int hf_zbee_gp_cmd_pairing_options;
+static int ett_zbee_gp_cmd_pairing_options;
+static int hf_zbee_gp_sink_ieee;
+static int hf_zbee_gp_sink_nwk;
+static int hf_zbee_gp_sink_group_id;
+static int hf_zbee_gp_device_id;
+static int hf_zbee_gp_assigned_alias;
+static int hf_zbee_gp_forwarding_radius;
+static int hf_zbee_gp_gpd_key;
+static int hf_zbee_gp_groupcast_radius;
 
 /* GP Response */
-static gint hf_zbee_gp_cmd_response_options = -1;
-static gint ett_zbee_gp_cmd_response_options = -1;
-static gint hf_zbee_gp_cmd_response_tx_channel = -1;
-static gint ett_zbee_gp_cmd_response_tx_channel = -1;
-static gint hf_zbee_gp_cmd_resp_opt_app_id = -1;
-static gint hf_zbee_gp_cmd_resp_opt_tx_on_ep_match = -1;
-static gint hf_zbee_gp_tmp_master_short_addr = -1;
-static gint hf_zbee_gp_cmd_resp_tx_channel = -1;
+static int hf_zbee_gp_cmd_response_options;
+static int ett_zbee_gp_cmd_response_options;
+static int hf_zbee_gp_cmd_response_tx_channel;
+static int ett_zbee_gp_cmd_response_tx_channel;
+static int hf_zbee_gp_cmd_resp_opt_app_id;
+static int hf_zbee_gp_cmd_resp_opt_tx_on_ep_match;
+static int hf_zbee_gp_tmp_master_short_addr;
+static int hf_zbee_gp_cmd_resp_tx_channel;
 
 /* GP_PAIRING_CONFIGURATION */
-static guint hf_zbee_gp_cmd_pc_actions_action = -1;
-static guint hf_zbee_gp_cmd_pc_actions_send_gp_pairing = -1;
-static guint hf_zbee_gp_cmd_pc_opt_app_id = -1;
-static guint hf_zbee_gp_cmd_pc_opt_communication_mode = -1;
-static guint hf_zbee_gp_cmd_pc_opt_seq_number_cap = -1;
-static guint hf_zbee_gp_cmd_px_opt_rx_on_cap = -1;
-static guint hf_zbee_gp_cmd_pc_opt_fixed_location = -1;
-static guint hf_zbee_gp_cmd_pc_opt_assigned_alias = -1;
-static guint hf_zbee_gp_cmd_pc_opt_security_use = -1;
-static guint hf_zbee_gp_cmd_pc_opt_app_info_present = -1;
-static guint hf_zbee_gp_cmd_pc_secur_level = -1;
-static guint hf_zbee_gp_cmd_pc_secur_key_type = -1;
-static guint hf_zbee_gp_cmd_pc_app_info_manuf_id_present = -1;
-static guint hf_zbee_gp_cmd_pc_app_info_model_id_present = -1;
-static guint hf_zbee_gp_cmd_pc_app_info_gpd_commands_present = -1;
-static guint hf_zbee_gp_cmd_pc_app_info_cluster_list_present = -1;
-static guint hf_zbee_gp_cmd_pc_actions = -1;
-static guint ett_zbee_gp_cmd_pc_actions = -1;
-static guint hf_zbee_gp_cmd_pc_options = -1;
-static guint ett_zbee_gp_cmd_pc_options = -1;
-static guint ett_zbee_zcl_gp_group_list = -1;
-static guint hf_zbee_gp_group_list_len = -1;
-static guint hf_zbee_gp_group_list_group_id = -1;
-static guint hf_zbee_gp_group_list_alias = -1;
-static guint hf_zbee_gp_cmd_pc_secur_options = -1;
-static guint ett_zbee_gp_cmd_pc_secur_options = -1;
-static guint hf_zbee_gp_n_paired_endpoints = -1;
-static guint hf_zbee_gp_paired_endpoint = -1;
-static guint hf_zbee_gp_cmd_pc_app_info = -1;
-static guint ett_zbee_gp_cmd_pc_app_info = -1;
-static guint hf_zbee_zcl_gp_manufacturer_id = -1;
-static guint hf_zbee_zcl_gp_model_id = -1;
-static guint hf_zbee_gp_n_gpd_commands = -1;
-static guint hf_zbee_gp_gpd_command = -1;
-static guint hf_zbee_gp_n_srv_clusters = -1;
-static guint hf_zbee_gp_n_cli_clusters = -1;
-static guint hf_zbee_gp_gpd_cluster_id = -1;
-static guint ett_zbee_zcl_gp_ep = -1;
-static guint ett_zbee_zcl_gp_cmds = -1;
-static guint ett_zbee_zcl_gp_clusters = -1;
-static guint ett_zbee_zcl_gp_srv_clusters = -1;
-static guint ett_zbee_zcl_gp_cli_clusters = -1;
+static int hf_zbee_gp_cmd_pc_actions_action;
+static int hf_zbee_gp_cmd_pc_actions_send_gp_pairing;
+static int hf_zbee_gp_cmd_pc_opt_app_id;
+static int hf_zbee_gp_cmd_pc_opt_communication_mode;
+static int hf_zbee_gp_cmd_pc_opt_seq_number_cap;
+static int hf_zbee_gp_cmd_px_opt_rx_on_cap;
+static int hf_zbee_gp_cmd_pc_opt_fixed_location;
+static int hf_zbee_gp_cmd_pc_opt_assigned_alias;
+static int hf_zbee_gp_cmd_pc_opt_security_use;
+static int hf_zbee_gp_cmd_pc_opt_app_info_present;
+static int hf_zbee_gp_cmd_pc_secur_level;
+static int hf_zbee_gp_cmd_pc_secur_key_type;
+static int hf_zbee_gp_cmd_pc_app_info_manuf_id_present;
+static int hf_zbee_gp_cmd_pc_app_info_model_id_present;
+static int hf_zbee_gp_cmd_pc_app_info_gpd_commands_present;
+static int hf_zbee_gp_cmd_pc_app_info_cluster_list_present;
+static int hf_zbee_gp_cmd_pc_actions;
+static int ett_zbee_gp_cmd_pc_actions;
+static int hf_zbee_gp_cmd_pc_options;
+static int ett_zbee_gp_cmd_pc_options;
+static int ett_zbee_zcl_gp_group_list;
+static int hf_zbee_gp_group_list_len;
+static int hf_zbee_gp_group_list_group_id;
+static int hf_zbee_gp_group_list_alias;
+static int hf_zbee_gp_cmd_pc_secur_options;
+static int ett_zbee_gp_cmd_pc_secur_options;
+static int hf_zbee_gp_n_paired_endpoints;
+static int hf_zbee_gp_paired_endpoint;
+static int hf_zbee_gp_cmd_pc_app_info;
+static int ett_zbee_gp_cmd_pc_app_info;
+static int hf_zbee_zcl_gp_manufacturer_id;
+static int hf_zbee_zcl_gp_model_id;
+static int hf_zbee_gp_n_gpd_commands;
+static int hf_zbee_gp_gpd_command;
+static int hf_zbee_gp_n_srv_clusters;
+static int hf_zbee_gp_n_cli_clusters;
+static int hf_zbee_gp_gpd_cluster_id;
+static int ett_zbee_zcl_gp_ep;
+static int ett_zbee_zcl_gp_cmds;
+static int ett_zbee_zcl_gp_clusters;
+static int ett_zbee_zcl_gp_srv_clusters;
+static int ett_zbee_zcl_gp_cli_clusters;
+
+/* GP_SINK_TABLE_REQUEST and GP_PROXY_TABLE_REQUEST */
+static int ett_zbee_zcl_proxy_sink_tbl_req_options;
+static int hf_zbee_zcl_proxy_sink_tbl_req_options;
+static int hf_zbee_zcl_proxy_sink_tbl_req_fld_app_id;
+static int hf_zbee_zcl_proxy_sink_tbl_req_fld_req_type;
+static int hf_zbee_zcl_proxy_sink_tbl_req_index;
+
+/* GP_SINK_TABLE_RESPONSE and GP_PROXY_TABLE_RESPONSE */
+static int hf_zbee_zcl_proxy_sink_tbl_resp_status;
+static int hf_zbee_zcl_proxy_sink_tbl_resp_entries_total;
+static int hf_zbee_zcl_proxy_sink_tbl_resp_start_index;
+static int hf_zbee_zcl_proxy_sink_tbl_resp_entries_count;
+
+/* GP SINK_COMMISSIONING_MODE */
+static int ett_zbee_zcl_gp_cmd_sink_comm_mode_options;
+static int hf_zbee_zcl_gp_cmd_sink_comm_mode_options;
+
+static int hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_action;
+static int hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_gpm_in_secur;
+static int hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_gpm_in_pairing;
+static int hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_proxies;
+
+static int hf_zbee_gp_zcl_cmd_sink_comm_mode_gpm_addr_for_secur;
+static int hf_zbee_gp_zcl_cmd_sink_comm_mode_gpm_addr_for_pairing;
+static int hf_zbee_gp_zcl_cmd_sink_comm_mode_sink_ep;
+
+/* GP Sink Table Attribute */
+static int ett_zbee_gp_sink_tbl;
+static int ett_zbee_gp_sink_tbl_entry;
+static int ett_zbee_gp_sink_tbl_entry_options;
+
+static int hf_zbee_gp_sink_tbl_length;
+static int hf_zbee_gp_sink_tbl_entry_options;
+
+static int hf_zbee_gp_sink_tbl_entry_options_app_id;
+static int hf_zbee_gp_sink_tbl_entry_options_comm_mode;
+static int hf_zbee_gp_sink_tbl_entry_options_seq_num_cap;
+static int hf_zbee_gp_sink_tbl_entry_options_rx_on_cap;
+static int hf_zbee_gp_sink_tbl_entry_options_fixed_loc;
+static int hf_zbee_gp_sink_tbl_entry_options_assigned_alias;
+static int hf_zbee_gp_sink_tbl_entry_options_sec_use;
+
+static int ett_zbee_gp_sec_options;
+static int hf_zbee_gp_sec_options;
+static int hf_zbee_gp_sec_options_sec_level;
+static int hf_zbee_gp_sec_options_sec_key_type;
+
+/* GP Proxy Table Attribute */
+static int ett_zbee_gp_proxy_tbl;
+static int ett_zbee_gp_proxy_tbl_entry;
+static int ett_zbee_gp_proxy_tbl_entry_options;
+static int ett_zbee_gp_proxy_tbl_entry_ext_options;
+
+static int hf_zbee_gp_proxy_tbl_length;
+static int hf_zbee_gp_proxy_tbl_entry_options;
+static int hf_zbee_gp_proxy_tbl_entry_ext_options;
+
+static int hf_zbee_gp_proxy_tbl_entry_options_app_id;
+static int hf_zbee_gp_proxy_tbl_entry_options_entry_active;
+static int hf_zbee_gp_proxy_tbl_entry_options_entry_valid;
+static int hf_zbee_gp_proxy_tbl_entry_options_seq_num_cap;
+static int hf_zbee_gp_proxy_tbl_entry_options_lw_ucast_gps;
+static int hf_zbee_gp_proxy_tbl_entry_options_derived_group_gps;
+static int hf_zbee_gp_proxy_tbl_entry_options_comm_group_gps;
+static int hf_zbee_gp_proxy_tbl_entry_options_first_to_forward;
+static int hf_zbee_gp_proxy_tbl_entry_options_in_range;
+static int hf_zbee_gp_proxy_tbl_entry_options_gpd_fixed;
+static int hf_zbee_gp_proxy_tbl_entry_options_has_all_ucast_routes;
+static int hf_zbee_gp_proxy_tbl_entry_options_assigned_alias;
+static int hf_zbee_gp_proxy_tbl_entry_options_sec_use;
+static int hf_zbee_gp_proxy_tbl_entry_options_opt_ext;
+
+static int hf_zbee_gp_proxy_tbl_entry_search_counter;
+
+static int hf_zbee_gp_proxy_tbl_entry_ext_options_full_ucast_gps;
+
+static int ett_zbee_gp_sink_address_list;
+static int hf_zbee_gp_sink_address_list_length;
+
+/* GP gppFunctionality Attribute */
+static int ett_zbee_zcl_gp_attr_gpp_func;
+static int hf_zbee_zcl_gp_attr_gpp_func;
+
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_gp_feature;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_direct_comm;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_derived_gcast_comm;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_pre_commissioned_gcast_comm;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_full_ucast_comm;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_lw_ucast_comm;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_bidir_op;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_proxy_tbl_maintenance;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_gp_commissioning;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_ct_based_commissioning;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_maintenance_of_gpd;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_00;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_01;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_10;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_11;
+static int hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_ieee_address;
+
+/* GP gppActiveFunctionality Attribute */
+static int ett_zbee_zcl_gp_attr_gpp_active_func;
+static int hf_zbee_zcl_gp_attr_gpp_active_func;
+static int hf_zbee_zcl_gp_attr_gpp_active_func_fld_gp_functionality;
+
+/* GP gpsFunctionality Attribute */
+static int ett_zbee_zcl_gp_attr_gps_func;
+static int hf_zbee_zcl_gp_attr_gps_func;
+
+static int hf_zbee_zcl_gp_attr_gps_func_fld_gp_feature;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_direct_comm;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_derived_gcast_comm;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_pre_commissioned_gcast_comm;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_full_ucast_comm;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_lw_ucast_comm;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_proximity_bidir_op;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_multi_hop_bidir_op;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_proxy_tbl_maintenance;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_proximity_commissioning;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_multi_hop_commissioning;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_ct_based_commissioning;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_maintenance_of_gpd;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_00;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_01;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_10;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_11;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_sink_tbl_based_gcast_forwarding;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_translation_table;
+static int hf_zbee_zcl_gp_attr_gps_func_fld_gpd_ieee_address;
+
+/* GP gppActiveFunctionality Attribute */
+static int ett_zbee_zcl_gp_attr_gps_active_func;
+static int hf_zbee_zcl_gp_attr_gps_active_func;
+static int hf_zbee_zcl_gp_attr_gps_active_func_fld_gp_functionality;
+
+/* GP gpsCommissioningExitMode Attribute */
+static int ett_zbee_zcl_gp_attr_gps_comm_exit_mode;
+static int hf_zbee_zcl_gp_attr_gps_comm_exit_mode;
+static int hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_comm_window_expire;
+static int hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_pairing_success;
+static int hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_gp_proxy_comm_mode;
+
+/* GP gpsCommunicationMode Attribute */
+static int ett_zbee_zcl_gp_attr_gps_communication_mode;
+static int hf_zbee_zcl_gp_attr_gps_communication_mode;
+static int hf_zbee_zcl_gp_attr_gps_communication_mode_fld_mode;
+
+/* GP gpsSecurityLevel Attribute */
+static int ett_zbee_zcl_gp_attr_gps_secur_lvl;
+static int hf_zbee_zcl_gp_attr_gps_secur_lvl;
+static int hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_min_gpd_secur_lvl;
+static int hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_protection_with_gp_link_key;
+static int hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_involve_tc;
 
 /* reuse ZGPD command names */
 extern value_string_ext zbee_nwk_gp_cmd_names_ext;
@@ -12742,35 +13702,774 @@ static dissector_handle_t zgp_handle;
  *      @return new offset.
  */
 static int
-dissect_zbee_zcl_gp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+dissect_zbee_zcl_gp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint             payload_size;
+    unsigned          payload_size;
 
     proto_tree_add_item(tree, hf_zbee_gp_gpd_command_id, tvb, offset, 1, ENC_NA);
     offset += 1;
 
-    payload_size = tvb_get_guint8(tvb, offset);
+    payload_size = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_zbee_gp_gpd_payload_size, tvb, offset, 1, ENC_NA);
     offset += 1;
 
     if (payload_size != 0 && payload_size != 0xff) {
         tvbuff_t *gtvb = tvb_new_composite();
-        gboolean writable = col_get_writable(pinfo->cinfo, COL_INFO);
+        bool writable = col_get_writable(pinfo->cinfo, COL_INFO);
 
         /* remove payload length and put command id instead */
         tvb_composite_append(gtvb, tvb_new_subset_length(tvb, offset-2, 1));
         tvb_composite_append(gtvb, tvb_new_subset_length(tvb, offset, payload_size));
         tvb_composite_finalize(gtvb);
         /* prevent overwriting COL_INFO */
-        col_set_writable(pinfo->cinfo, COL_INFO, FALSE);
-        /* Actually dissect_zbee_nwk_gp_cmd wants zbee_nwk_green_power_packet*
-         * as a data but never uses it. */
+        col_set_writable(pinfo->cinfo, COL_INFO, false);
         call_dissector_only(zgp_handle, gtvb, pinfo, tree, NULL);
         col_set_writable(pinfo->cinfo, COL_INFO, writable);
         offset += payload_size;
     }
     return offset;
 }
+
+/**
+ *      dissect_zbee_zcl_gp_group_list
+ *
+ *      ZigBee ZCL Green Power Group List dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *      @param text   - string attached to Group list subtree
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_group_list(tvbuff_t *tvb, proto_tree *tree, unsigned offset, const char* text)
+{
+    uint8_t len = tvb_get_uint8(tvb, offset);
+    proto_tree *gl_tree  = proto_tree_add_subtree_format(tree, tvb, offset, len*4+1,
+                               ett_zbee_zcl_gp_group_list, NULL, "%s #%d", text, len);
+
+    proto_tree_add_item(gl_tree, hf_zbee_gp_group_list_len, tvb, offset, 1, ENC_NA);
+    offset += 1;
+    while (len) {
+        proto_tree_add_item(gl_tree, hf_zbee_gp_group_list_group_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+        proto_tree_add_item(gl_tree, hf_zbee_gp_group_list_alias, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+        len--;
+    }
+
+    return offset;
+} /*dissect_zbee_zcl_gp_group_list*/
+
+/**
+ *      dissect_zbee_zcl_gp_sink_address_list
+ *
+ *      ZigBee ZCL Green Power Sink Address List dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *      @param text   - string attached to Sink Address list subtree
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_sink_address_list(tvbuff_t *tvb, proto_tree *tree, unsigned offset, const char* text)
+{
+    uint8_t len = tvb_get_uint8(tvb, offset);
+    proto_tree *subtree  = proto_tree_add_subtree_format(tree, tvb, offset, len*10+1,
+                               ett_zbee_gp_sink_address_list, NULL, "%s #%d", text, len);
+
+    proto_tree_add_item(subtree, hf_zbee_gp_sink_address_list_length, tvb, offset, 1, ENC_NA);
+    offset += 1;
+    while (len) {
+        proto_tree_add_item(subtree, hf_zbee_gp_sink_ieee, tvb, offset, 8, ENC_LITTLE_ENDIAN);
+        offset += 8;
+        proto_tree_add_item(subtree, hf_zbee_gp_sink_nwk, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+        len--;
+    }
+
+    return offset;
+} /*dissect_zbee_zcl_gp_sink_address_list*/
+
+/**
+ *      dissect_zbee_zcl_gp_sink_table_entry
+ *
+ *      ZigBee ZCL Green Power Sink Table entry dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *      @param idx    - entry index
+ *
+ *      @return 1 if entry parsed, 0 - otherwise.
+ */
+static int
+dissect_zbee_zcl_gp_sink_table_entry(tvbuff_t *tvb, proto_tree *tree, unsigned *offset, unsigned idx)
+{
+    uint16_t options = 0;
+    uint16_t app_id, comm_mode;
+    proto_tree *subtree;
+    static int * const n_options[] = {
+        &hf_zbee_gp_sink_tbl_entry_options_app_id,
+        &hf_zbee_gp_sink_tbl_entry_options_comm_mode,
+        &hf_zbee_gp_sink_tbl_entry_options_seq_num_cap,
+        &hf_zbee_gp_sink_tbl_entry_options_rx_on_cap,
+        &hf_zbee_gp_sink_tbl_entry_options_fixed_loc,
+        &hf_zbee_gp_sink_tbl_entry_options_assigned_alias,
+        &hf_zbee_gp_sink_tbl_entry_options_sec_use,
+        NULL
+    };
+    static int * const n_secur_options[] = {
+        &hf_zbee_gp_sec_options_sec_level,
+        &hf_zbee_gp_sec_options_sec_key_type,
+        NULL
+    };
+
+    subtree = proto_tree_add_subtree_format(tree, tvb, *offset, -1, ett_zbee_gp_sink_tbl_entry,
+                                            NULL, "Sink Table Entry #%d", idx);
+
+    /* Options - 2 bytes */
+    options = tvb_get_uint16(tvb, *offset, ENC_LITTLE_ENDIAN);
+    proto_tree_add_bitmask(subtree, tvb, *offset, hf_zbee_gp_sink_tbl_entry_options,
+                           ett_zbee_gp_sink_tbl_entry_options, n_options, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+
+    app_id = (options & ZBEE_ZCL_GP_SINK_TBL_OPT_APP_ID) >> ws_ctz(ZBEE_ZCL_GP_SINK_TBL_OPT_APP_ID);
+    switch (app_id) {
+        case ZBEE_ZCL_GP_APP_ID_DEFAULT:
+            /* Add 4 byte SRC ID */
+            proto_tree_add_item(subtree, hf_zbee_gp_src_id, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+            *offset += 4;
+            break;
+        case ZBEE_ZCL_GP_APP_ID_ZGP:
+            /* Add IEEE address and endpoint (9 bytes) */
+            proto_tree_add_item(subtree, hf_zbee_gp_ieee, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+            *offset += 8;
+            proto_tree_add_item(subtree, hf_zbee_gp_endpoint, tvb, *offset, 1, ENC_NA);
+            *offset += 1;
+            break;
+        default:
+            /* Bad entry - stop Sink Table Entry parsing */
+            return 0;
+    }
+
+    /* Device ID - 1 byte */
+    proto_tree_add_item(subtree, hf_zbee_gp_device_id, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+    /* Group list */
+    comm_mode = (options & ZBEE_ZCL_GP_SINK_TBL_OPT_COMMUNICATION_MODE) >>
+        ws_ctz(ZBEE_ZCL_GP_SINK_TBL_OPT_COMMUNICATION_MODE);
+    if (comm_mode == ZBEE_ZCL_GP_COMMUNICATION_MODE_GROUPCAST_PRECOMMISSIONED) {
+        *offset = dissect_zbee_zcl_gp_group_list(tvb, subtree, *offset, "GroupList");
+    }
+
+    /* GPD Assigned Alias: 2 bytes */
+    if (options & ZBEE_ZCL_GP_SINK_TBL_OPT_ASSIGNED_ALIAS) {
+        proto_tree_add_item(subtree, hf_zbee_gp_assigned_alias, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+    }
+
+    /* Groupcast radius: 1 byte */
+    proto_tree_add_item(subtree, hf_zbee_gp_groupcast_radius, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+    /* Security options: 1 byte */
+    if (options & ZBEE_ZCL_GP_SINK_TBL_OPT_SECURITY_USE) {
+        proto_tree_add_bitmask(subtree, tvb, *offset, hf_zbee_gp_sec_options,
+                               ett_zbee_gp_sec_options, n_secur_options, ENC_NA);
+        *offset += 1;
+    }
+
+    /* GPD Frame Counter: 4 bytes */
+    if ((options & ZBEE_ZCL_GP_SINK_TBL_OPT_SECURITY_USE) || (options & ZBEE_ZCL_GP_SINK_TBL_OPT_SEQ_NUMBER_CAP)) {
+        proto_tree_add_item(subtree, hf_zbee_gp_secur_frame_counter, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+        *offset += 4;
+    }
+
+    /* GPD key: 16 bytes */
+    if (options & ZBEE_ZCL_GP_SINK_TBL_OPT_SECURITY_USE) {
+      proto_tree_add_item(subtree, hf_zbee_gp_gpd_key, tvb, *offset, 16, ENC_NA);
+      *offset += 16;
+    }
+
+    return 1;
+}
+
+/**
+ *      dissect_zbee_zcl_gp_sink_table
+ *
+ *      ZigBee ZCL Green Power Sink Table dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_sink_table(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    uint16_t sink_tbl_len, n_parsed_octets;
+    uint8_t n_tbl_entries;
+    proto_tree *sink_tbl_tree;
+
+    n_parsed_octets = 0;
+    n_tbl_entries = 0;
+    sink_tbl_len = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
+
+    sink_tbl_tree = proto_tree_add_subtree_format(tree, tvb, offset, sink_tbl_len,
+                         ett_zbee_gp_sink_tbl, NULL, "Sink Table: length = %d", sink_tbl_len);
+    proto_tree_add_item(sink_tbl_tree, hf_zbee_gp_sink_tbl_length, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+    offset += 2;
+    if (sink_tbl_len == 0) {
+        return offset;
+    }
+
+    while (n_parsed_octets < sink_tbl_len) {
+        unsigned old_offset = offset;
+        if (dissect_zbee_zcl_gp_sink_table_entry(tvb, sink_tbl_tree, &offset, n_tbl_entries + 1)) {
+            n_parsed_octets += offset - old_offset;
+        }
+        else {
+            /* Bad Sink Table Entry - stop Sink Table attribute dissection */
+            break;
+        }
+
+        ++n_tbl_entries;
+    }
+
+    return offset;
+} /*dissect_zbee_zcl_gp_sink_table*/
+
+/**
+ *      dissect_zbee_zcl_gp_proxy_table_entry
+ *
+ *      ZigBee ZCL Green Power Proxy Table entry dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *      @param idx    - entry index
+ *
+ *      @return 1 if entry parsed, 0 - otherwise.
+ */
+static int
+dissect_zbee_zcl_gp_proxy_table_entry(tvbuff_t *tvb, proto_tree *tree, unsigned *offset, unsigned idx)
+{
+    uint16_t options = 0;
+    uint16_t ext_options = 0;
+    uint16_t app_id;
+    proto_tree *subtree;
+    static int * const n_options[] = {
+        &hf_zbee_gp_proxy_tbl_entry_options_app_id,
+        &hf_zbee_gp_proxy_tbl_entry_options_entry_active,
+        &hf_zbee_gp_proxy_tbl_entry_options_entry_valid,
+        &hf_zbee_gp_proxy_tbl_entry_options_seq_num_cap,
+        &hf_zbee_gp_proxy_tbl_entry_options_lw_ucast_gps,
+        &hf_zbee_gp_proxy_tbl_entry_options_derived_group_gps,
+        &hf_zbee_gp_proxy_tbl_entry_options_comm_group_gps,
+        &hf_zbee_gp_proxy_tbl_entry_options_first_to_forward,
+        &hf_zbee_gp_proxy_tbl_entry_options_in_range,
+        &hf_zbee_gp_proxy_tbl_entry_options_gpd_fixed,
+        &hf_zbee_gp_proxy_tbl_entry_options_has_all_ucast_routes,
+        &hf_zbee_gp_proxy_tbl_entry_options_assigned_alias,
+        &hf_zbee_gp_proxy_tbl_entry_options_sec_use,
+        &hf_zbee_gp_proxy_tbl_entry_options_opt_ext,
+        NULL
+    };
+    static int * const n_ext_options[] = {
+        &hf_zbee_gp_proxy_tbl_entry_ext_options_full_ucast_gps,
+        NULL
+    };
+    static int * const n_secur_options[] = {
+        &hf_zbee_gp_sec_options_sec_level,
+        &hf_zbee_gp_sec_options_sec_key_type,
+        NULL
+    };
+
+    subtree = proto_tree_add_subtree_format(tree, tvb, *offset, -1,
+                  ett_zbee_gp_proxy_tbl_entry, NULL, "Proxy Table Entry #%d", idx);
+
+    /* Options - 2 bytes */
+    options = tvb_get_uint16(tvb, *offset, ENC_LITTLE_ENDIAN);
+    proto_tree_add_bitmask(subtree, tvb, *offset, hf_zbee_gp_proxy_tbl_entry_options,
+                           ett_zbee_gp_proxy_tbl_entry_options, n_options, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+
+    app_id = (options & ZBEE_ZCL_GP_PROXY_TBL_OPT_APP_ID) >> ws_ctz(ZBEE_ZCL_GP_PROXY_TBL_OPT_APP_ID);
+    switch (app_id) {
+        case ZBEE_ZCL_GP_APP_ID_DEFAULT:
+            /* Add 4 byte SRC ID */
+            proto_tree_add_item(subtree, hf_zbee_gp_src_id, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+            *offset += 4;
+            break;
+        case ZBEE_ZCL_GP_APP_ID_ZGP:
+            /* Add IEEE address and endpoint (9 bytes) */
+            proto_tree_add_item(subtree, hf_zbee_gp_ieee, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+            *offset += 8;
+            proto_tree_add_item(subtree, hf_zbee_gp_endpoint, tvb, *offset, 1, ENC_NA);
+            *offset += 1;
+            break;
+        default:
+            /* Bad entry - stop Proxy Table entry parsing */
+            return 0;
+    }
+
+
+    /* Assigned Alias - 2 bytes */
+    if (options & ZBEE_ZCL_GP_PROXY_TBL_OPT_ASSIGNED_ALIAS) {
+        proto_tree_add_item(subtree, hf_zbee_gp_assigned_alias, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+    }
+
+    /* Security Options - 1 byte */
+    if (options & ZBEE_ZCL_GP_PROXY_TBL_OPT_SECURITY_USE) {
+        proto_tree_add_bitmask(subtree, tvb, *offset, hf_zbee_gp_sec_options,
+                               ett_zbee_gp_sec_options, n_secur_options, ENC_NA);
+        *offset += 1;
+    }
+
+    /* GPD Frame Counter: 4 bytes */
+    if ((options & ZBEE_ZCL_GP_PROXY_TBL_OPT_SECURITY_USE) || (options & ZBEE_ZCL_GP_PROXY_TBL_OPT_SEQ_NUMBER_CAP)) {
+        proto_tree_add_item(subtree, hf_zbee_gp_secur_frame_counter, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+        *offset += 4;
+    }
+
+    /* GPD key: 16 bytes */
+    if (options & ZBEE_ZCL_GP_PROXY_TBL_OPT_SECURITY_USE) {
+      proto_tree_add_item(subtree, hf_zbee_gp_gpd_key, tvb, *offset, 16, ENC_NA);
+      *offset += 16;
+    }
+
+    if (options & ZBEE_ZCL_GP_PROXY_TBL_OPT_LW_UCAST_GPS) {
+        *offset = dissect_zbee_zcl_gp_sink_address_list(tvb, subtree, *offset, "Lightweight Sink Address list");
+    }
+
+    /* Sink Group list */
+    if (options & ZBEE_ZCL_GP_PROXY_TBL_OPT_COMM_GROUP_GPS) {
+        *offset = dissect_zbee_zcl_gp_group_list(tvb, subtree, *offset, "Sink GroupList");
+    }
+
+    /* Groupcast radius: 1 byte */
+    proto_tree_add_item(subtree, hf_zbee_gp_groupcast_radius, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+    /* Search Counter: 1 byte */
+    if (!(options & ZBEE_ZCL_GP_PROXY_TBL_OPT_ENTRY_ACTIVE) || !(options & ZBEE_ZCL_GP_PROXY_TBL_OPT_ENTRY_VALID)) {
+        proto_tree_add_item(subtree, hf_zbee_gp_proxy_tbl_entry_search_counter, tvb, *offset, 1, ENC_NA);
+        *offset += 1;
+    }
+
+    /* Extended Options: 2 bytes */
+    if (options & ZBEE_ZCL_GP_PROXY_TBL_OPT_OPTIONS_EXTENTIONS) {
+      ext_options = tvb_get_uint16(tvb, *offset, ENC_LITTLE_ENDIAN);
+      proto_tree_add_bitmask(subtree, tvb, *offset, hf_zbee_gp_proxy_tbl_entry_ext_options,
+                             ett_zbee_gp_proxy_tbl_entry_ext_options, n_ext_options, ENC_LITTLE_ENDIAN);
+      *offset += 1;
+    }
+
+    /* Full unicast sink address list */
+    if (ext_options & ZBEE_ZCL_GP_PROXY_TBL_EXT_OPT_FULL_UCAST_GPS) {
+        *offset = dissect_zbee_zcl_gp_sink_address_list(tvb, subtree, *offset, "Full unicast Sink Address list");
+    }
+
+    return 1;
+}
+
+/**
+ *      dissect_zbee_zcl_gp_proxy_table
+ *
+ *      ZigBee ZCL Green Power Proxy Table dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_proxy_table(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    uint16_t proxy_tbl_len, n_parsed_octets;
+    uint8_t n_tbl_entries;
+    proto_tree *proxy_tbl_tree;
+
+    n_parsed_octets = 0;
+    n_tbl_entries = 0;
+    proxy_tbl_len = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
+
+    proxy_tbl_tree = proto_tree_add_subtree_format(tree, tvb, offset, proxy_tbl_len,
+                         ett_zbee_gp_proxy_tbl, NULL, "Proxy Table: length = %d", proxy_tbl_len);
+    proto_tree_add_item(proxy_tbl_tree, hf_zbee_gp_proxy_tbl_length, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+    offset += 2;
+    if (proxy_tbl_len == 0) {
+        return offset;
+    }
+
+    while (n_parsed_octets < proxy_tbl_len) {
+        unsigned old_offset = offset;
+        if (dissect_zbee_zcl_gp_proxy_table_entry(tvb, proxy_tbl_tree, &offset, n_tbl_entries + 1)) {
+            n_parsed_octets += offset - old_offset;
+        }
+        else {
+            /* Bad Proxy Table entry - stop Proxy Table attribute dissection */
+            break;
+        }
+
+        ++n_tbl_entries;
+    }
+
+    return offset;
+} /*dissect_zbee_zcl_gp_proxy_table*/
+
+/**
+ *      dissect_zbee_zcl_gp_attr_gpp_functionality
+ *
+ *      ZigBee ZCL Green Power gppFunctionality dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_attr_gpp_functionality(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    static int * const n_fields[] = {
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_gp_feature,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_direct_comm,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_derived_gcast_comm,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_pre_commissioned_gcast_comm,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_full_ucast_comm,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_lw_ucast_comm,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_bidir_op,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_proxy_tbl_maintenance,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_gp_commissioning,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_ct_based_commissioning,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_maintenance_of_gpd,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_00,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_01,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_10,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_11,
+        &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_ieee_address,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_zcl_gp_attr_gpp_func,
+                           ett_zbee_zcl_gp_attr_gpp_func, n_fields, ENC_LITTLE_ENDIAN);
+    offset += 3;
+
+    return offset;
+} /*dissect_zbee_zcl_gp_attr_gpp_functionality*/
+
+/**
+ *      dissect_zbee_zcl_gp_attr_gpp_active_functionality
+ *
+ *      ZigBee ZCL Green Power gppActiveFunctionality dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_attr_gpp_active_functionality(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    static int * const n_fields[] = {
+        &hf_zbee_zcl_gp_attr_gpp_active_func_fld_gp_functionality,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_zcl_gp_attr_gpp_active_func,
+                           ett_zbee_zcl_gp_attr_gpp_active_func, n_fields, ENC_LITTLE_ENDIAN);
+    offset += 3;
+
+    return offset;
+} /*dissect_zbee_zcl_gp_attr_gpp_active_functionality*/
+
+/**
+ *      dissect_zbee_zcl_gp_attr_gps_functionality
+ *
+ *      ZigBee ZCL Green Power gpsFunctionality dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_attr_gps_functionality(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    static int * const n_fields[] = {
+        &hf_zbee_zcl_gp_attr_gps_func_fld_gp_feature,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_direct_comm,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_derived_gcast_comm,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_pre_commissioned_gcast_comm,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_full_ucast_comm,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_lw_ucast_comm,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_proximity_bidir_op,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_multi_hop_bidir_op,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_proxy_tbl_maintenance,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_proximity_commissioning,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_multi_hop_commissioning,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_ct_based_commissioning,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_maintenance_of_gpd,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_00,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_01,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_10,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_11,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_sink_tbl_based_gcast_forwarding,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_translation_table,
+        &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_ieee_address,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_zcl_gp_attr_gps_func,
+                           ett_zbee_zcl_gp_attr_gps_func, n_fields, ENC_LITTLE_ENDIAN);
+    offset += 3;
+
+    return offset;
+} /*dissect_zbee_zcl_gp_attr_gps_functionality*/
+
+/**
+ *      dissect_zbee_zcl_gp_attr_gps_active_functionality
+ *
+ *      ZigBee ZCL Green Power gpsActiveFunctionality dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_attr_gps_active_functionality(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    static int * const n_fields[] = {
+        &hf_zbee_zcl_gp_attr_gps_active_func_fld_gp_functionality,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_zcl_gp_attr_gps_active_func,
+                           ett_zbee_zcl_gp_attr_gps_active_func, n_fields, ENC_LITTLE_ENDIAN);
+    offset += 3;
+
+    return offset;
+} /*dissect_zbee_zcl_gp_attr_gps_active_functionality*/
+
+/**
+ *      dissect_zbee_zcl_gp_attr_gps_communication_mode
+ *
+ *      ZigBee ZCL Green Power gpsCommunicationMode dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_attr_gps_communication_mode(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    static int * const n_fields[] = {
+        &hf_zbee_zcl_gp_attr_gps_communication_mode_fld_mode,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_zcl_gp_attr_gps_communication_mode,
+                           ett_zbee_zcl_gp_attr_gps_communication_mode, n_fields, ENC_NA);
+    offset += 1;
+
+    return offset;
+} /*dissect_zbee_zcl_gp_attr_gps_communication_mode*/
+
+/**
+ *      dissect_zbee_zcl_gp_attr_gps_comm_exit_mode
+ *
+ *      ZigBee ZCL Green Power gpsCommissioningExitMode dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_attr_gps_comm_exit_mode(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    static int * const n_fields[] = {
+        &hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_comm_window_expire,
+        &hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_pairing_success,
+        &hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_gp_proxy_comm_mode,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_zcl_gp_attr_gps_comm_exit_mode,
+                           ett_zbee_zcl_gp_attr_gps_comm_exit_mode, n_fields, ENC_NA);
+    offset += 1;
+
+    return offset;
+} /*dissect_zbee_zcl_gp_attr_gps_comm_exit_mode*/
+
+/**
+ *      dissect_zbee_zcl_gp_attr_gps_secur_lvl
+ *
+ *      ZigBee ZCL Green Power gpsSecurityLevel dissector for wireshark.
+ *
+ *      @param tvb    - pointer to buffer containing raw packet.
+ *      @param tree   - pointer to data tree Wireshark uses to display packet.
+ *      @param offset - offset in a buffer
+ *
+ *      @return new offset.
+ */
+static int
+dissect_zbee_zcl_gp_attr_gps_secur_lvl(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+{
+    static int * const n_fields[] = {
+        &hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_min_gpd_secur_lvl,
+        &hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_protection_with_gp_link_key,
+        &hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_involve_tc,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_zcl_gp_attr_gps_secur_lvl,
+                           ett_zbee_zcl_gp_attr_gps_secur_lvl, n_fields, ENC_NA);
+    offset += 1;
+
+    return offset;
+} /*dissect_zbee_zcl_gp_attr_gps_secur_lvl*/
+
+/**
+ *      dissect_zcl_gp_proxy_sink_table_request
+ *
+ *      ZigBee ZCL Green Power cluster dissector for Proxy Table Request
+ *      and Sink Table Request commands
+ *
+ *      @param tree      - pointer to data tree Wireshark uses to display packet.
+ *      @param tvb       - pointer to buffer containing raw packet.
+ *      @param offset    - pointer to buffer offset
+ */
+static void
+dissect_zcl_gp_proxy_sink_table_request(proto_tree *tree, tvbuff_t *tvb, unsigned *offset)
+{
+    /* get Options field */
+    uint8_t options = tvb_get_uint8(tvb, *offset);
+    uint8_t app_id, req_type;
+    static int * const n_options[] = {
+        &hf_zbee_zcl_proxy_sink_tbl_req_fld_app_id,
+        &hf_zbee_zcl_proxy_sink_tbl_req_fld_req_type,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_proxy_sink_tbl_req_options,
+                           ett_zbee_zcl_proxy_sink_tbl_req_options, n_options, ENC_NA);
+    *offset += 1;
+    app_id = options & ZBEE_ZCL_GP_PROXY_SINK_TBL_REQ_CMD_APP_ID;
+    req_type = (options & ZBEE_ZCL_GP_PROXY_SINK_TBL_REQ_CMD_REQ_TYPE) >>
+        ZBEE_ZCL_GP_PROXY_SINK_TBL_REQ_CMD_REQ_TYPE_SHIFT;
+    if (req_type == ZBEE_ZCL_GP_PROXY_SINK_TABLE_REQ_CMD_REQUSET_BY_GPD_ID) {
+        /* Include GPD ID and/or Endpoint */
+        if (app_id == ZBEE_ZCL_GP_APP_ID_DEFAULT) {
+            /* App_id = 000: GPD SRC ID only */
+            proto_tree_add_item(tree, hf_zbee_gp_src_id, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+            *offset += 4;
+        }
+        else if (app_id == ZBEE_ZCL_GP_APP_ID_ZGP) {
+            /* App_id = 010: MAC address + Endpoint */
+            proto_tree_add_item(tree, hf_zbee_gp_ieee, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+            *offset += 8;
+            proto_tree_add_item(tree, hf_zbee_gp_endpoint, tvb, *offset, 1, ENC_NA);
+            *offset += 1;
+        }
+    }
+    else if (req_type == ZBEE_ZCL_GP_PROXY_SINK_TABLE_REQ_CMD_REQUSET_BY_INDEX) {
+        /* Include index only */
+        proto_tree_add_item(tree, hf_zbee_zcl_proxy_sink_tbl_req_index, tvb, *offset, 1, ENC_NA);
+        *offset += 1;
+    }
+} /*dissect_zcl_gp_proxy_sink_table_request*/
+
+/**
+ *      dissect_zcl_gp_proxy_sink_table_response
+ *
+ *      ZigBee ZCL Green Power cluster dissector for Proxy Table response
+ *      and Sink Table Request commands
+ *
+ *      @param tree      - pointer to data tree Wireshark uses to display packet.
+ *      @param tvb       - pointer to buffer containing raw packet.
+ *      @param offset    - pointer to buffer offset
+ *      @param attr_id   - attribute (should be ZBEE_ZCL_ATTR_GPS_SINK_TABLE or
+ *                         ZBEE_ZCL_ATTR_GPP_PROXY_TABLE) that will be reported
+ */
+static void
+dissect_zcl_gp_proxy_sink_table_response(proto_tree *tree, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id)
+{
+    uint8_t entries_count, start_index;
+    unsigned i, stop;
+
+    if ( !((attr_id == ZBEE_ZCL_ATTR_GPS_SINK_TABLE) || (attr_id == ZBEE_ZCL_ATTR_GPP_PROXY_TABLE)) ) {
+        return;
+    }
+
+    proto_tree_add_item(tree, hf_zbee_zcl_proxy_sink_tbl_resp_status, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_proxy_sink_tbl_resp_entries_total, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+    start_index = tvb_get_uint8(tvb, *offset);
+    proto_tree_add_item(tree, hf_zbee_zcl_proxy_sink_tbl_resp_start_index, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+    entries_count = tvb_get_uint8(tvb, *offset);
+    proto_tree_add_item(tree, hf_zbee_zcl_proxy_sink_tbl_resp_entries_count, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+
+    for (i = 0, stop = 0; i < entries_count && !stop; i++) {
+        switch (attr_id) {
+            case ZBEE_ZCL_ATTR_GPS_SINK_TABLE:
+                stop = !dissect_zbee_zcl_gp_sink_table_entry(tvb, tree, (unsigned*) offset, start_index + i);
+                break;
+            case ZBEE_ZCL_ATTR_GPP_PROXY_TABLE:
+                stop = !dissect_zbee_zcl_gp_proxy_table_entry(tvb, tree, (unsigned*) offset, start_index + i);
+                break;
+        }
+    }
+} /*dissect_zcl_gp_proxy_sink_table_response*/
+
+/**
+ *      dissect_zcl_gp_sink_comm_mode
+ *
+ *      ZigBee ZCL Green Power cluster dissector for Sink Commissioning Mode
+ *      and Sink Table Request commands
+ *
+ *      @param tree      - pointer to data tree Wireshark uses to display packet.
+ *      @param tvb       - pointer to buffer containing raw packet.
+ *      @param offset    - pointer to buffer offset
+ */
+static void
+dissect_zcl_gp_sink_comm_mode(proto_tree *tree, tvbuff_t *tvb, unsigned *offset)
+{
+    static int * const n_options[] = {
+        &hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_action,
+        &hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_gpm_in_secur,
+        &hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_gpm_in_pairing,
+        &hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_proxies,
+        NULL
+    };
+
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_gp_cmd_sink_comm_mode_options,
+                           ett_zbee_zcl_gp_cmd_sink_comm_mode_options, n_options, ENC_NA);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_gp_zcl_cmd_sink_comm_mode_gpm_addr_for_secur, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_gp_zcl_cmd_sink_comm_mode_gpm_addr_for_pairing, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_gp_zcl_cmd_sink_comm_mode_sink_ep, tvb, *offset, 1, ENC_NA);
+    *offset += 1;
+} /*dissect_zcl_gp_sink_comm_mode*/
 
 /**
  *      dissect_zbee_zcl_gp
@@ -12787,15 +14486,15 @@ dissect_zbee_zcl_gp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 static int
 dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
-    static const int * gpp_gpd_link[] = {
+    static int * const gpp_gpd_link[] = {
         &hf_zbee_gpp_gpd_link_rssi,
         &hf_zbee_gpp_gpd_link_lqi,
         NULL
     };
 
     zbee_zcl_packet   *zcl;
-    volatile guint             offset = 0;
-    guint8            cmd_id;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -12817,7 +14516,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
         switch (cmd_id) {
             case ZBEE_CMD_ID_GP_NOTIFICATION:
             {
-                static const int * n_options[] = {
+                static int * const n_options[] = {
                     &hf_zbee_gp_cmd_notif_opt_app_id,
                     &hf_zbee_gp_cmd_notif_opt_also_unicast,
                     &hf_zbee_gp_cmd_notif_opt_also_derived_group,
@@ -12830,7 +14529,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                     &hf_zbee_gp_cmd_notif_opt_proxy_info_present,
                     NULL
                 };
-                guint16 options = tvb_get_guint16(tvb, offset, ENC_LITTLE_ENDIAN);
+                uint16_t options = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
 
                 proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_gp_cmd_notification_options,
                                        ett_zbee_gp_cmd_notification_options, n_options, ENC_LITTLE_ENDIAN);
@@ -12868,7 +14567,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
             case ZBEE_CMD_ID_GP_COMMISSIONING_NOTIFICATION:
             {
-                static const int * commn_options[] = {
+                static int * const commn_options[] = {
                     &hf_zbee_gp_cmd_comm_notif_opt_app_id,
                     &hf_zbee_gp_cmd_comm_notif_opt_rx_after_tx,
                     &hf_zbee_gp_cmd_comm_notif_opt_secur_level,
@@ -12878,7 +14577,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                     &hf_zbee_gp_cmd_comm_notif_opt_proxy_info_present,
                     NULL
                 };
-                guint16 options = tvb_get_guint16(tvb, offset, ENC_LITTLE_ENDIAN);
+                uint16_t options = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
 
                 proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_gp_cmd_commissioning_notification_options,
                                        ett_zbee_gp_cmd_commissioning_notification_options, commn_options, ENC_LITTLE_ENDIAN);
@@ -12915,12 +14614,12 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
             case ZBEE_CMD_ID_GP_PAIRING_CONFIGURATION:
             {
-                static const int * pc_actions[] = {
+                static int * const pc_actions[] = {
                     &hf_zbee_gp_cmd_pc_actions_action,
                     &hf_zbee_gp_cmd_pc_actions_send_gp_pairing,
                     NULL
                 };
-                static const int * pc_options[] = {
+                static int * const pc_options[] = {
                     &hf_zbee_gp_cmd_pc_opt_app_id,
                     &hf_zbee_gp_cmd_pc_opt_communication_mode,
                     &hf_zbee_gp_cmd_pc_opt_seq_number_cap,
@@ -12931,13 +14630,13 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                     &hf_zbee_gp_cmd_pc_opt_app_info_present,
                     NULL
                 };
-                guint16 options;
+                uint16_t options;
 
                 proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_gp_cmd_pc_actions,
                                        ett_zbee_gp_cmd_pc_actions, pc_actions, ENC_NA);
                 offset += 1;
 
-                options = tvb_get_guint16(tvb, offset, ENC_LITTLE_ENDIAN);
+                options = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
 
                 proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_gp_cmd_pc_options,
                                        ett_zbee_gp_cmd_pc_options, pc_options, ENC_LITTLE_ENDIAN);
@@ -12959,7 +14658,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
                 if (((options & ZBEE_ZCL_GP_CMD_PC_OPT_COMMUNICATION_MODE) >> ZBEE_ZCL_GP_PAIRING_CONFIGURATION_OPTION_COMMUNICATION_MODE_SHIFT)
                     == ZBEE_ZCL_GP_COMMUNICATION_MODE_GROUPCAST_PRECOMMISSIONED) {
-                    guint8      len = tvb_get_guint8(tvb, offset);
+                    uint8_t     len = tvb_get_uint8(tvb, offset);
                     proto_tree  *gl_tree  = proto_tree_add_subtree_format(tree, tvb, offset, len*4+1, ett_zbee_zcl_gp_group_list, NULL, "GroupList #%d", len);
 
                     proto_tree_add_item(gl_tree, hf_zbee_gp_group_list_len, tvb, offset, 1, ENC_NA);
@@ -12983,7 +14682,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                 offset += 1;
 
                 if (options & ZBEE_ZCL_GP_CMD_PC_OPT_SECURITY_USE) {
-                    static const int * secur_options[] = {
+                    static int * const secur_options[] = {
                         &hf_zbee_gp_cmd_pc_secur_level,
                         &hf_zbee_gp_cmd_pc_secur_key_type,
                         NULL
@@ -12997,7 +14696,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                     offset += 16;
                 }
                 {
-                    guint8 n_paired_endpoints = tvb_get_guint8(tvb, offset);
+                    uint8_t n_paired_endpoints = tvb_get_uint8(tvb, offset);
                     proto_tree  *ep_tree  = proto_tree_add_subtree_format(tree, tvb, offset, n_paired_endpoints+1, ett_zbee_zcl_gp_ep, NULL, "Paired Endpoints #%d", n_paired_endpoints);
                     proto_tree_add_item(ep_tree, hf_zbee_gp_n_paired_endpoints, tvb, offset, 1, ENC_NA);
                     offset += 1;
@@ -13013,14 +14712,14 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                     }
                 }
                 if (options & ZBEE_ZCL_GP_CMD_PC_OPT_APP_INFO_PRESENT) {
-                    static const int * app_info[] = {
+                    static int * const app_info[] = {
                         &hf_zbee_gp_cmd_pc_app_info_manuf_id_present,
                         &hf_zbee_gp_cmd_pc_app_info_model_id_present,
                         &hf_zbee_gp_cmd_pc_app_info_gpd_commands_present,
                         &hf_zbee_gp_cmd_pc_app_info_cluster_list_present,
                         NULL
                     };
-                    guint8 appi = tvb_get_guint8(tvb, offset);
+                    uint8_t appi = tvb_get_uint8(tvb, offset);
 
                     proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_gp_cmd_pc_app_info,
                                            ett_zbee_gp_cmd_pc_app_info, app_info, ENC_NA);
@@ -13034,7 +14733,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                         offset += 2;
                     }
                     if (appi & ZBEE_ZCL_GP_CMD_PC_APP_INFO_GPD_COMMANDS_PRESENT) {
-                        guint8 n_commands = tvb_get_guint8(tvb, offset);
+                        uint8_t n_commands = tvb_get_uint8(tvb, offset);
                         proto_tree  *c_tree  = proto_tree_add_subtree_format(tree, tvb, offset, n_commands+1, ett_zbee_zcl_gp_cmds, NULL, "GPD CommandID list #%d", n_commands);
                         proto_tree_add_item(c_tree, hf_zbee_gp_n_gpd_commands, tvb, offset, 1, ENC_NA);
                         offset += 1;
@@ -13046,9 +14745,9 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                         }
                     }
                     if (appi & ZBEE_ZCL_GP_CMD_PC_APP_INFO_CLUSTER_LIST_PRESENT) {
-                        guint8 n = tvb_get_guint8(tvb, offset);
-                        guint8 n_srv_clusters = n & ZBEE_ZCL_GP_CLUSTER_LIST_LEN_SRV;
-                        guint8 n_cli_clusters = (n & ZBEE_ZCL_GP_CLUSTER_LIST_LEN_CLI) >> ZBEE_ZCL_GP_CLUSTER_LIST_LEN_CLI_SHIFT;
+                        uint8_t n = tvb_get_uint8(tvb, offset);
+                        uint8_t n_srv_clusters = n & ZBEE_ZCL_GP_CLUSTER_LIST_LEN_SRV;
+                        uint8_t n_cli_clusters = (n & ZBEE_ZCL_GP_CLUSTER_LIST_LEN_CLI) >> ZBEE_ZCL_GP_CLUSTER_LIST_LEN_CLI_SHIFT;
                         proto_tree  *cl_tree  = proto_tree_add_subtree_format(tree, tvb, offset, n*2+1, ett_zbee_zcl_gp_clusters, NULL, "Cluster List #%d/%d", n_srv_clusters, n_cli_clusters);
                         proto_tree_add_item(cl_tree, hf_zbee_gp_n_srv_clusters, tvb, offset, 1, ENC_NA);
                         proto_tree_add_item(cl_tree, hf_zbee_gp_n_cli_clusters, tvb, offset, 1, ENC_NA);
@@ -13079,11 +14778,17 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
             }
 
             case ZBEE_CMD_ID_GP_SINK_COMMISSIONING_MODE:
+                dissect_zcl_gp_sink_comm_mode(tree, tvb, &offset);
+                break;
             case ZBEE_CMD_ID_GP_TRANSLATION_TABLE_UPDATE_COMMAND:
             case ZBEE_CMD_ID_GP_TRANSLATION_TABLE_REQUEST:
-            case ZBEE_CMD_ID_GP_SINK_TABLE_REQUEST:
-            case ZBEE_CMD_ID_GP_PROXY_TABLE_RESPONSE:
                 /* TODO: add commands parse */
+                break;
+            case ZBEE_CMD_ID_GP_SINK_TABLE_REQUEST:
+                dissect_zcl_gp_proxy_sink_table_request(tree, tvb, &offset);
+                break;
+            case ZBEE_CMD_ID_GP_PROXY_TABLE_RESPONSE:
+                dissect_zcl_gp_proxy_sink_table_response(tree, tvb, &offset, ZBEE_ZCL_ATTR_GPP_PROXY_TABLE);
                 break;
 
             default:
@@ -13107,7 +14812,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
             case ZBEE_ZCL_CMD_ID_GP_PAIRING:
             {
-                static const int * p_options[] = {
+                static int * const p_options[] = {
                     &hf_zbee_gp_cmd_pairing_opt_app_id,
                     &hf_zbee_gp_cmd_pairing_opt_add_sink,
                     &hf_zbee_gp_cmd_pairing_opt_remove_gpd,
@@ -13122,7 +14827,7 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                     &hf_zbee_gp_cmd_pairing_opt_fwd_radius_present,
                     NULL
                 };
-                guint32 options = tvb_get_guint24(tvb, offset, ENC_LITTLE_ENDIAN);
+                uint32_t options = tvb_get_uint24(tvb, offset, ENC_LITTLE_ENDIAN);
 
                 proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_gp_cmd_pairing_options,
                                        ett_zbee_gp_cmd_pairing_options, p_options, ENC_LITTLE_ENDIAN);
@@ -13176,18 +14881,18 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
             case ZBEE_ZCL_CMD_ID_GP_PROXY_COMMISSIONING_MODE:
             {
-                static const int * pcm_options[] = {
+                static int * const pcm_options[] = {
                     &hf_zbee_gp_cmd_pcm_opt_action,
                     &hf_zbee_gp_cmd_pcm_opt_exit_mode,
                     &hf_zbee_gp_cmd_pcm_opt_channel_present,
                     &hf_zbee_gp_cmd_pcm_opt_unicast_comm,
                     NULL
                 };
-                guint8 options = tvb_get_guint8(tvb, offset);
+                uint8_t options = tvb_get_uint8(tvb, offset);
                 proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_gp_cmd_proxy_commissioning_mode_options,
                                        ett_zbee_gp_cmd_proxy_commissioning_mode_options, pcm_options, ENC_NA);
                 if (options & ZBEE_ZCL_GP_PROXY_COMMISSIONING_MODE_OPTION_ACTION) {
-                    static const int * exit_mode[] = {
+                    static int * const exit_mode[] = {
                         &hf_zbee_gp_cmd_pcm_exit_mode_on_comm_window_expire,
                         &hf_zbee_gp_cmd_pcm_exit_mode_on_pairing_success,
                         &hf_zbee_gp_cmd_pcm_exit_mode_on_gp_proxy_comm_mode,
@@ -13210,16 +14915,16 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
             case ZBEE_ZCL_CMD_ID_GP_RESPONSE:
             {
-                static const int * rsp_options[] = {
+                static int * const rsp_options[] = {
                     &hf_zbee_gp_cmd_resp_opt_app_id,
                     &hf_zbee_gp_cmd_resp_opt_tx_on_ep_match,
                     NULL
                 };
-                static const int * tx_ch[] = {
+                static int * const tx_ch[] = {
                     &hf_zbee_gp_cmd_resp_tx_channel,
                     NULL
                 };
-                guint8 options = tvb_get_guint8(tvb, offset);
+                uint8_t options = tvb_get_uint8(tvb, offset);
 
                 proto_tree_add_bitmask(tree, tvb, offset, hf_zbee_gp_cmd_response_options,
                                        ett_zbee_gp_cmd_response_options, rsp_options, ENC_LITTLE_ENDIAN);
@@ -13245,9 +14950,13 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
                 break;
             }
             case ZBEE_ZCL_CMD_ID_GP_TRANS_TBL_RESPONSE:
-            case ZBEE_ZCL_CMD_ID_GP_SINK_TABLE_RESPONSE:
-            case ZBEE_ZCL_CMD_ID_GP_PROXY_TABLE_REQUEST:
                 /* TODO: add commands parse */
+                break;
+            case ZBEE_ZCL_CMD_ID_GP_SINK_TABLE_RESPONSE:
+                dissect_zcl_gp_proxy_sink_table_response(tree, tvb, &offset, ZBEE_ZCL_ATTR_GPS_SINK_TABLE);
+                break;
+            case ZBEE_ZCL_CMD_ID_GP_PROXY_TABLE_REQUEST:
+                dissect_zcl_gp_proxy_sink_table_request(tree, tvb, &offset);
                 break;
             default:
                 break;
@@ -13269,17 +14978,49 @@ dissect_zbee_zcl_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
  *      this function is called by ZCL foundation dissector in order to decode
  *      specific cluster attributes data.
  *
- *      @param tree      - pointer to data tree Wireshark uses to display packet.
- *      @param tvb       - pointer to buffer containing raw packet.
- *      @param offset    - pointer to buffer offset
- *      @param attr_id   - attribute identifier
- *      @param data_type - attribute data type
+ *      @param tree        - pointer to data tree Wireshark uses to display packet.
+ *      @param tvb         - pointer to buffer containing raw packet.
+ *      @param offset      - pointer to buffer offset
+ *      @param attr_id     - attribute identifier
+ *      @param data_type   - attribute data type
+ *      @param client_attr - ZCL client
  */
 static void
-dissect_zcl_gp_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id _U_, guint data_type)
+dissect_zcl_gp_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id _U_, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
-    dissect_zcl_attr_data(tvb, tree, offset, data_type);
+    switch (attr_id) {
+        case ZBEE_ZCL_ATTR_GPS_SINK_TABLE:
+            *offset = dissect_zbee_zcl_gp_sink_table(tvb, tree, *offset);
+            break;
+        case ZBEE_ZCL_ATTR_GPS_COMMUNICATION_MODE:
+            *offset = dissect_zbee_zcl_gp_attr_gps_communication_mode(tvb, tree, *offset);
+            break;
+        case ZBEE_ZCL_ATTR_GPS_COMMISSIONING_EXIT_MODE:
+            *offset = dissect_zbee_zcl_gp_attr_gps_comm_exit_mode(tvb, tree, *offset);
+            break;
+        case ZBEE_ZCL_ATTR_GPS_SECURITY_LEVEL:
+            *offset = dissect_zbee_zcl_gp_attr_gps_secur_lvl(tvb, tree, *offset);
+            break;
+        case ZBEE_ZCL_ATTR_GPS_FUNCTIONALITY:
+            *offset = dissect_zbee_zcl_gp_attr_gps_functionality(tvb, tree, *offset);
+            break;
+        case ZBEE_ZCL_ATTR_GPS_ACTIVE_FUNCTIONALITY:
+            *offset = dissect_zbee_zcl_gp_attr_gps_active_functionality(tvb, tree, *offset);
+            break;
+        case ZBEE_ZCL_ATTR_GPP_PROXY_TABLE:
+            *offset = dissect_zbee_zcl_gp_proxy_table(tvb, tree, *offset);
+            break;
+        case ZBEE_ZCL_ATTR_GPP_FUNCTIONALITY:
+            *offset = dissect_zbee_zcl_gp_attr_gpp_functionality(tvb, tree, *offset);
+            break;
+        case ZBEE_ZCL_ATTR_GPP_ACTIVE_FUNCTIONALITY:
+            *offset = dissect_zbee_zcl_gp_attr_gpp_active_functionality(tvb, tree, *offset);
+            break;
+        default:
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
+    }
+
 
 } /*dissect_zcl_gp_attr_data*/
 
@@ -13314,7 +15055,7 @@ proto_register_zbee_zcl_gp(void)
           { "Commissioning window", "zbee_zcl_general.gp.proxy_comm_mode.comm_window", FT_UINT16, BASE_DEC,
             NULL, 0x0, "Commissioning window in seconds", HFILL }},
         { &hf_zbee_zcl_gp_channel,
-          { "Channel", "zbee_zcl_general.gp.proxy_comm_mode.cnannel", FT_UINT8, BASE_DEC,
+          { "Channel", "zbee_zcl_general.gp.proxy_comm_mode.channel", FT_UINT8, BASE_DEC,
             NULL, 0x0, "Identifier of the channel the devices SHOULD switch to on reception", HFILL }},
         { &hf_zbee_gp_cmd_pcm_opt_action,
           { "Action", "zbee_zcl_general.gp.proxy_comm_mode.opt.action", FT_UINT8, BASE_DEC,
@@ -13462,7 +15203,7 @@ proto_register_zbee_zcl_gp(void)
           { "SecurityKeyType", "zbee_zcl_general.gp.pairing.opt.secur_key_type", FT_UINT24, BASE_HEX,
             VALS(zbee_zcl_gp_secur_key_types), ZBEE_ZCL_GP_PAIRING_OPTION_SECUR_KEY_TYPE, NULL, HFILL }},
         { &hf_zbee_gp_cmd_pairing_opt_gpd_frame_cnt_present,
-          { "Frame Counter present", "zbee_zcl_general.gp.pairing.opt.seq_num_cap", FT_BOOLEAN, 24,
+          { "Frame Counter present", "zbee_zcl_general.gp.pairing.opt.frame_counter_present", FT_BOOLEAN, 24,
             NULL, ZBEE_ZCL_GP_PAIRING_OPTION_GPD_FRAME_CNT_PRESENT, "GPD security Frame Counter present", HFILL }},
         { &hf_zbee_gp_cmd_pairing_opt_gpd_secur_key_present,
           { "Key present", "zbee_zcl_general.gp.pairing.opt.key_present", FT_BOOLEAN, 24,
@@ -13496,6 +15237,9 @@ proto_register_zbee_zcl_gp(void)
             NULL, 0, NULL, HFILL }},
         { &hf_zbee_gp_gpd_key,
           { "GPD key", "zbee_zcl_general.gp.gpd_key", FT_BYTES, BASE_NONE,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_gp_groupcast_radius,
+          { "Groupcast radius", "zbee_zcl_general.gp.groupcast_radius", FT_UINT8, BASE_DEC,
             NULL, 0, NULL, HFILL }},
 
         /* GP Response */
@@ -13574,13 +15318,13 @@ proto_register_zbee_zcl_gp(void)
           { "Options", "zbee_zcl_general.gp.pc.options", FT_UINT16, BASE_HEX,
             NULL, 0, NULL, HFILL }},
         { &hf_zbee_gp_group_list_len,
-          { "Group list length", "zbee_zcl_general.gp.pc.group_list.len", FT_UINT8, BASE_DEC,
+          { "Group list length", "zbee_zcl_general.gp.group_list.len", FT_UINT8, BASE_DEC,
             NULL, 0, NULL, HFILL }},
         { &hf_zbee_gp_group_list_group_id,
-          { "Group id", "zbee_zcl_general.gp.pc.group_list.group", FT_UINT16, BASE_HEX,
+          { "Group id", "zbee_zcl_general.gp.group_list.group", FT_UINT16, BASE_HEX,
             NULL, 0, NULL, HFILL }},
         { &hf_zbee_gp_group_list_alias,
-          { "Alias", "zbee_zcl_general.gp.pc.group_list.alias", FT_UINT16, BASE_HEX,
+          { "Alias", "zbee_zcl_general.gp.group_list.alias", FT_UINT16, BASE_HEX,
             NULL, 0, NULL, HFILL }},
         { &hf_zbee_gp_cmd_pc_secur_options,
           { "Security Options", "zbee_zcl_general.gp.pc.secur_options", FT_UINT8, BASE_HEX,
@@ -13610,15 +15354,354 @@ proto_register_zbee_zcl_gp(void)
           { "Number of Server clusters", "zbee_zcl_general.gp.pc.n_srv_clusters", FT_UINT8, BASE_DEC,
             NULL, ZBEE_ZCL_GP_CLUSTER_LIST_LEN_SRV, NULL, HFILL }},
         { &hf_zbee_gp_n_cli_clusters,
-          { "Number of Client clusters", "zbee_zcl_general.gp.pc.n_srv_clusters", FT_UINT8, BASE_DEC,
+          { "Number of Client clusters", "zbee_zcl_general.gp.pc.n_clnt_clusters", FT_UINT8, BASE_DEC,
             NULL, ZBEE_ZCL_GP_CLUSTER_LIST_LEN_CLI, NULL, HFILL }},
         { &hf_zbee_gp_gpd_cluster_id,
-          { "Cluster ID", "zbee_zcl_general.gp.pc.cluster", FT_UINT8, BASE_HEX, VALS(zbee_aps_cid_names),
+          { "Cluster ID", "zbee_zcl_general.gp.pc.cluster", FT_UINT16, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_aps_cid_names),
             0x0, NULL, HFILL }},
+
+        /* GP Sink Table Request and  GP Proxy Table Request commands */
+        { &hf_zbee_zcl_proxy_sink_tbl_req_options,
+          { "Options", "zbee_zcl_general.gp.proxy_sink_tbl_req.options", FT_UINT8, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_zcl_proxy_sink_tbl_req_fld_app_id,
+          { "Application ID", "zbee_zcl_general.gp.proxy_sink_tbl_req.options.app_id", FT_UINT8, BASE_HEX,
+            NULL, ZBEE_ZCL_GP_PROXY_SINK_TBL_REQ_CMD_APP_ID, NULL, HFILL }},
+        { &hf_zbee_zcl_proxy_sink_tbl_req_fld_req_type,
+          { "Request type", "zbee_zcl_general.gp.proxy_sink_tbl_req.options.req_type", FT_UINT8, BASE_HEX,
+            VALS(zbee_zcl_gp_proxy_sink_tbl_req_type), ZBEE_ZCL_GP_PROXY_SINK_TBL_REQ_CMD_REQ_TYPE, NULL, HFILL }},
+        { &hf_zbee_zcl_proxy_sink_tbl_req_index,
+          { "Index", "zbee_zcl_general.gp.proxy_sink_tbl_req.index", FT_UINT8, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+
+        /* GP Sink Table Response and  GP Proxy Table Response commands */
+        { &hf_zbee_zcl_proxy_sink_tbl_resp_status,
+          { "Status", "zbee_zcl_general.gp.proxy_sink_tbl_resp.status", FT_UINT8, BASE_HEX,
+            VALS(zbee_zcl_status_names), 0, NULL, HFILL }},
+        { &hf_zbee_zcl_proxy_sink_tbl_resp_entries_total,
+          { "Total number of non-empty entries", "zbee_zcl_general.gp.proxy_sink_tbl_resp.entries_total", FT_UINT8, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_zcl_proxy_sink_tbl_resp_start_index,
+          { "Start index", "zbee_zcl_general.gp.proxy_sink_tbl_resp.start_index", FT_UINT8, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_zcl_proxy_sink_tbl_resp_entries_count,
+          { "Entries count", "zbee_zcl_general.gp.proxy_sink_tbl_resp.entries_count", FT_UINT8, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+
+        /* GP Sink Commissioning Mode command */
+        { &hf_zbee_zcl_gp_cmd_sink_comm_mode_options,
+          { "Options", "zbee_zcl_general.gp.sink_comm_mode.options", FT_UINT8, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_action,
+          { "Action", "zbee_zcl_general.gp.sink_comm_mode.options.action", FT_BOOLEAN, 8,
+            NULL, ZBEE_ZCL_GP_CMD_SINK_COMM_MODE_OPTIONS_FLD_ACTION, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_gpm_in_secur,
+          { "Involve GPM in security", "zbee_zcl_general.gp.sink_comm_mode.options.inv_gpm_in_secur", FT_BOOLEAN, 8,
+            NULL, ZBEE_ZCL_GP_CMD_SINK_COMM_MODE_OPTIONS_FLD_INV_GPM_IN_SECUR, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_gpm_in_pairing,
+          { "Involve GPM in pairing", "zbee_zcl_general.gp.sink_comm_mode.options.inv_gpm_in_pairing", FT_BOOLEAN, 8,
+            NULL, ZBEE_ZCL_GP_CMD_SINK_COMM_MODE_OPTIONS_FLD_INV_GPM_IN_PAIRING, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_cmd_sink_comm_mode_options_fld_inv_proxies,
+          { "Involve proxies", "zbee_zcl_general.gp.sink_comm_mode.options.inv_proxies", FT_BOOLEAN, 8,
+            NULL, ZBEE_ZCL_GP_CMD_SINK_COMM_MODE_OPTIONS_FLD_INV_PROXIES, NULL, HFILL }},
+
+        { &hf_zbee_gp_zcl_cmd_sink_comm_mode_gpm_addr_for_secur,
+          { "GPM address for security", "zbee_zcl_general.gp.sink_comm_mode.gpm_addr_for_secur", FT_UINT16, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_gp_zcl_cmd_sink_comm_mode_gpm_addr_for_pairing,
+          { "GPM address for pairing", "zbee_zcl_general.gp.sink_comm_mode.gpm_addr_for_pairing", FT_UINT16, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_gp_zcl_cmd_sink_comm_mode_sink_ep,
+          { "Sink Endpoint", "zbee_zcl_general.gp.sink_comm_mode.sink_ep", FT_UINT8, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+
+        /* GP Sink Table attribute */
+        { &hf_zbee_gp_sink_tbl_length,
+          { "Sink Table length", "zbee_zcl_general.gp.sink_tbl_len", FT_UINT16, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_gp_sink_tbl_entry_options,
+          { "Options", "zbee_zcl_general.gp.sink_tbl.entry.opt", FT_UINT16, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_gp_sec_options,
+          { "Security Options", "zbee_zcl_general.gp.secur", FT_UINT8, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_gp_sink_tbl_entry_options_app_id,
+          { "ApplicationID", "zbee_zcl_general.gp.sink_tbl.entry.opt.app_id", FT_UINT16, BASE_HEX,
+            NULL, ZBEE_ZCL_GP_SINK_TBL_OPT_APP_ID, NULL, HFILL }},
+        { &hf_zbee_gp_sink_tbl_entry_options_comm_mode,
+          { "Communication Mode", "zbee_zcl_general.gp.sink_tbl.entry.opt.comm_mode", FT_UINT16, BASE_HEX,
+            VALS(zbee_zcl_gp_communication_modes), ZBEE_ZCL_GP_SINK_TBL_OPT_COMMUNICATION_MODE, NULL, HFILL }},
+        { &hf_zbee_gp_sink_tbl_entry_options_seq_num_cap,
+          { "Sequence number capabilities", "zbee_zcl_general.gp.sink_tbl.entry.opt.seq_num_cap", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_SINK_TBL_OPT_SEQ_NUMBER_CAP, NULL, HFILL }},
+        { &hf_zbee_gp_sink_tbl_entry_options_rx_on_cap,
+          { "Rx On Capability", "zbee_zcl_general.gp.sink_tbl.entry.opt.rx_on_cap", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_SINK_TBL_OPT_RX_ON_CAP, NULL, HFILL }},
+        { &hf_zbee_gp_sink_tbl_entry_options_fixed_loc,
+          { "Fixed Location", "zbee_zcl_general.gp.sink_tbl.entry.opt.fixed_loc", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_SINK_TBL_OPT_FIXED_LOCATION, NULL, HFILL }},
+        { &hf_zbee_gp_sink_tbl_entry_options_assigned_alias,
+          { "Assigned Alias", "zbee_zcl_general.gp.sink_tbl.entry.opt.asn_alias", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_SINK_TBL_OPT_ASSIGNED_ALIAS, NULL, HFILL }},
+        { &hf_zbee_gp_sink_tbl_entry_options_sec_use,
+          { "Security use", "zbee_zcl_general.gp.sink_tbl.entry.opt.secur_use", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_SINK_TBL_OPT_SECURITY_USE, NULL, HFILL }},
+
+        { &hf_zbee_gp_sec_options_sec_level,
+          { "Security Level", "zbee_zcl_general.gp.secur.secur_lev", FT_UINT8, BASE_HEX,
+            VALS(zbee_zcl_gp_secur_levels), ZBEE_ZCL_GP_SECUR_OPT_SECUR_LEVEL, NULL, HFILL }},
+        { &hf_zbee_gp_sec_options_sec_key_type,
+          { "Security Key Type", "zbee_zcl_general.gp.secur.secur_key_type", FT_UINT8, BASE_HEX,
+            VALS(zbee_zcl_gp_secur_key_types), ZBEE_ZCL_GP_SECUR_OPT_SECUR_KEY_TYPE, NULL, HFILL }},
+
+        /* GP Proxy Table attribute */
+        { &hf_zbee_gp_proxy_tbl_length,
+          { "Proxy Table length", "zbee_zcl_general.gp.proxy_tbl_len", FT_UINT16, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options,
+          { "Options", "zbee_zcl_general.gp.proxy_tbl.entry.opt", FT_UINT16, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_ext_options,
+          { "Extended Options", "zbee_zcl_general.gp.proxy_tbl.entry.ext_opt", FT_UINT8, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_gp_proxy_tbl_entry_options_app_id,
+          { "ApplicationID", "zbee_zcl_general.gp.proxy_tbl.entry.opt.app_id", FT_UINT16, BASE_HEX,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_APP_ID, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_entry_active,
+          { "EntryActive", "zbee_zcl_general.gp.proxy_tbl.entry.opt.entry_active", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_ENTRY_ACTIVE, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_entry_valid,
+          { "EntryValid", "zbee_zcl_general.gp.proxy_tbl.entry.opt.entry_valid", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_ENTRY_VALID, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_seq_num_cap,
+          { "Sequence number capabilities", "zbee_zcl_general.gp.proxy_tbl.entry.opt.seq_num_cap", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_SEQ_NUMBER_CAP, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_lw_ucast_gps,
+          { "Lightweight Unicast GPS", "zbee_zcl_general.gp.proxy_tbl.entry.opt.lw_ucast_gps", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_LW_UCAST_GPS, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_derived_group_gps,
+          { "Derived  Group GPS", "zbee_zcl_general.gp.proxy_tbl.entry.opt.derived_group_gps", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_DERIVED_GROUP_GPS, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_comm_group_gps,
+          { "Commissioned Group GPS", "zbee_zcl_general.gp.proxy_tbl.entry.opt.comm_group_gps", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_COMM_GROUP_GPS, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_first_to_forward,
+          { "FirstToForward", "zbee_zcl_general.gp.proxy_tbl.entry.opt.first_to_forward", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_FIRST_TO_FORWARD, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_in_range,
+          { "InRange", "zbee_zcl_general.gp.proxy_tbl.entry.opt.in_range", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_IN_RANGE, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_gpd_fixed,
+          { "GPD Fixed", "zbee_zcl_general.gp.proxy_tbl.entry.opt.gpd_fixed", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_GPD_FIXED, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_has_all_ucast_routes,
+          { "HasAllUnicastRoutes", "zbee_zcl_general.gp.proxy_tbl.entry.opt.has_all_ucast_routes", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_HAS_ALL_UCAST_ROUTES, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_assigned_alias,
+          { "AssignedAlias", "zbee_zcl_general.gp.proxy_tbl.entry.opt.asn_alias", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_ASSIGNED_ALIAS, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_sec_use,
+          { "SecurityUse", "zbee_zcl_general.gp.proxy_tbl.entry.opt.secur_use", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_SECURITY_USE, NULL, HFILL }},
+        { &hf_zbee_gp_proxy_tbl_entry_options_opt_ext,
+          { "Options Extension", "zbee_zcl_general.gp.proxy_tbl.entry.opt.ext_opt", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_OPT_OPTIONS_EXTENTIONS, NULL, HFILL }},
+
+        { &hf_zbee_gp_proxy_tbl_entry_search_counter,
+          { "Search Counter", "zbee_zcl_general.gp.proxy_tbl.entry.search_counter", FT_UINT8, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_gp_proxy_tbl_entry_ext_options_full_ucast_gps,
+          { "Full unicast GPS", "zbee_zcl_general.gp.proxy_tbl.entry.ext_opt.full_ucast_gps", FT_BOOLEAN, 16,
+            NULL, ZBEE_ZCL_GP_PROXY_TBL_EXT_OPT_FULL_UCAST_GPS, NULL, HFILL }},
+
+        { &hf_zbee_gp_sink_address_list_length,
+          { "Sink Address list length", "zbee_zcl_general.gp.sink_addr_list_len", FT_UINT8, BASE_DEC,
+            NULL, 0, NULL, HFILL }},
+
+        /* gppFunctionality attribute */
+        { &hf_zbee_zcl_gp_attr_gpp_func,
+          { "gppFunctionality", "zbee_zcl_general.gp.attr.gpp_func", FT_UINT24, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_gp_feature,
+          { "GP feature", "zbee_zcl_general.gp.attr.gpp_func.gp_feature", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GP_FEATURE, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_direct_comm,
+          { "Direct communication", "zbee_zcl_general.gp.attr.gpp_func.direct_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_DIRECT_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_derived_gcast_comm,
+          { "Derived groupcast communication", "zbee_zcl_general.gp.attr.gpp_func.derived_gcast_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_DERIVED_GCAST_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_pre_commissioned_gcast_comm,
+          { "Pre-commissioned groupcast communication", "zbee_zcl_general.gp.attr.gpp_func.pre_commissioned_gcast_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_PRE_COMMISSIONED_GCAST_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_full_ucast_comm,
+          { "Full unicast communication", "zbee_zcl_general.gp.attr.gpp_func.full_ucast_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_FULL_UCAST_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_lw_ucast_comm,
+          { "Lightweight unicast communication", "zbee_zcl_general.gp.attr.gpp_func.lw_ucast_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_LW_UCAST_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_bidir_op,
+          { "Bidirectional operation", "zbee_zcl_general.gp.attr.gpp_func.bidir_op", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_BIDIR_OP, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_proxy_tbl_maintenance,
+          { "Proxy Table maintenance", "zbee_zcl_general.gp.attr.gpp_func.proxy_tbl_maintenance", FT_BOOLEAN, 24,
+              NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_PROXY_TBL_MAINTENANCE, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_gp_commissioning,
+          { "GP commissioning", "zbee_zcl_general.gp.attr.gpp_func.gp_commissioning", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GP_COMMISSIONING, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_ct_based_commissioning,
+          { "CT-based commissioning", "zbee_zcl_general.gp.attr.gpp_func.ct_based_commissioning", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_CT_BASED_COMMISSIONING, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_maintenance_of_gpd,
+          { "Maintenance of GPD", "zbee_zcl_general.gp.attr.gpp_func.maintenance_of_gpd", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_MAINTENANCE_OF_GPD, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_00,
+          { "gpdSecurityLevel = 0b00", "zbee_zcl_general.gp.attr.gpp_func.gpd_secur_lvl_00", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_SECUR_LVL_00, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_01,
+          { "Deprecated: gpdSecurityLevel = 0b01", "zbee_zcl_general.gp.attr.gpp_func.gpd_secur_lvl_01", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_SECUR_LVL_01, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_10,
+          { "gpdSecurityLevel = 0b10", "zbee_zcl_general.gp.attr.gpp_func.gpd_secur_lvl_10", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_SECUR_LVL_10, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_secur_lvl_11,
+          { "gpdSecurityLevel = 0b11", "zbee_zcl_general.gp.attr.gpp_func.gpd_secur_lvl_11", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_SECUR_LVL_11, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gpp_func_fld_gpd_ieee_address,
+          { "GPD IEEE address", "zbee_zcl_general.gp.attr.gpp_func.gpd_ieee_address", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_FUNC_FLD_GPD_IEEE_ADDRESS, NULL, HFILL }},
+
+        /* gppActiveFunctionality attribute */
+        { &hf_zbee_zcl_gp_attr_gpp_active_func,
+          { "gppActiveFunctionality", "zbee_zcl_general.gp.attr.gpp_active_func", FT_UINT24, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_gp_attr_gpp_active_func_fld_gp_functionality,
+          { "GP functionality", "zbee_zcl_general.gp.attr.gpp_active_func.gp_functionality", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPP_ACTIVE_FUNC_FLD_GP_FUNCTIONALITY, NULL, HFILL }},
+
+        /* gpsFunctionality attribute */
+        { &hf_zbee_zcl_gp_attr_gps_func,
+          { "gpsFunctionality", "zbee_zcl_general.gp.attr.gps_func", FT_UINT24, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_gp_feature,
+          { "GP feature", "zbee_zcl_general.gp.attr.gps_func.gp_feature", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GP_FEATURE, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_direct_comm,
+          { "Direct communication", "zbee_zcl_general.gp.attr.gps_func.direct_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_DIRECT_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_derived_gcast_comm,
+          { "Derived groupcast communication", "zbee_zcl_general.gp.attr.gps_func.derived_gcast_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_DERIVED_GCAST_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_pre_commissioned_gcast_comm,
+          { "Pre-commissioned groupcast communication", "zbee_zcl_general.gp.attr.gps_func.pre_commissioned_gcast_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_PRE_COMMISSIONED_GCAST_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_full_ucast_comm,
+          { "Full unicast communication", "zbee_zcl_general.gp.attr.gps_func.full_ucast_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_FULL_UCAST_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_lw_ucast_comm,
+          { "Lightweight unicast communication", "zbee_zcl_general.gp.attr.gps_func.lw_ucast_comm", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_LW_UCAST_COMM, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_proximity_bidir_op,
+          { "Proximity bidirectional operation", "zbee_zcl_general.gp.attr.gps_func.proximity_bidir_op", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_PROXIMITY_BIDIR_OP, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_multi_hop_bidir_op,
+          { "Multi-hop bidirectional operation", "zbee_zcl_general.gp.attr.gps_func.multi_hop_bidir_op", FT_BOOLEAN, 24,
+              NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_MULTI_HOP_BIDIR_OP, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_proxy_tbl_maintenance,
+          { "Proxy Table maintenance", "zbee_zcl_general.gp.attr.gps_func.proxy_tbl_maintenance", FT_BOOLEAN, 24,
+              NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_PROXY_TBL_MAINTENANCE, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_proximity_commissioning,
+          { "Proximity commissioning", "zbee_zcl_general.gp.attr.gps_func.proximity_commissioning", FT_BOOLEAN, 24,
+              NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_PROXIMITY_COMMISSIONING, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_multi_hop_commissioning,
+          { "Multi-hop commissioning","zbee_zcl_general.gp.attr.gps_func.multi_hop_commissioning", FT_BOOLEAN, 24,
+              NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_MULTI_HOP_COMMISSIONING, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_ct_based_commissioning,
+          { "CT-based commissioning", "zbee_zcl_general.gp.attr.gps_func.ct_based_commissioning", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_CT_BASED_COMMISSIONING, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_maintenance_of_gpd,
+          { "Maintenance of GPD", "zbee_zcl_general.gp.attr.gps_func.maintenance_of_gpd", FT_BOOLEAN, 24,
+              NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_MAINTENANCE_OF_GPD, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_00,
+          { "gpdSecurityLevel = 0b00", "zbee_zcl_general.gp.attr.gps_func.gpd_secur_lvl_00", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_SECUR_LVL_00, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_01,
+          { "Deprecated: gpdSecurityLevel = 0b01", "zbee_zcl_general.gp.attr.gps_func.gpd_secur_lvl_01", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_SECUR_LVL_01, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_10,
+          { "gpdSecurityLevel = 0b10", "zbee_zcl_general.gp.attr.gps_func.gpd_secur_lvl_10", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_SECUR_LVL_10, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_secur_lvl_11,
+          { "gpdSecurityLevel = 0b11", "zbee_zcl_general.gp.attr.gps_func.gpd_secur_lvl_11", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_SECUR_LVL_11, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_sink_tbl_based_gcast_forwarding,
+          { "Sink Table-based groupcast forwarding", "zbee_zcl_general.gp.attr.gps_func.sink_tbl_based_gcast_forwarding", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_SINK_TBL_BASED_GCAST_FORWARDING, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_translation_table,
+          { "Translation Table", "zbee_zcl_general.gp.attr.gps_func.translation_table", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_TRANSLATION_TABLE, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_func_fld_gpd_ieee_address,
+          { "GPD IEEE address", "zbee_zcl_general.gp.attr.gps_func.gpd_ieee_address", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_FUNC_FLD_GPD_IEEE_ADDRESS, NULL, HFILL }},
+
+        /* gpsActiveFunctionality attribute */
+        { &hf_zbee_zcl_gp_attr_gps_active_func,
+          { "gpsActiveFunctionality", "zbee_zcl_general.gp.attr.gps_active_func", FT_UINT24, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_gp_attr_gps_active_func_fld_gp_functionality,
+          { "GP functionality", "zbee_zcl_general.gp.attr.gps_active_func.gp_functionality", FT_BOOLEAN, 24,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_ACTIVE_FUNC_FLD_GP_FUNCTIONALITY, NULL, HFILL }},
+
+        /* gpsCommunicationMode attribute */
+        { &hf_zbee_zcl_gp_attr_gps_communication_mode,
+          { "gpsCommunicationMode", "zbee_zcl_general.gp.attr.gps_communication_mode", FT_UINT8, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_gp_attr_gps_communication_mode_fld_mode,
+          { "Mode", "zbee_zcl_general.gp.attr.gps_communication_mode.mode", FT_UINT8, BASE_HEX,
+            VALS(zbee_zcl_gp_communication_modes), ZBEE_ZCL_GP_ATTR_GPS_COMMUNICATION_MODE_FLD_MODE, NULL, HFILL }},
+
+        /* gpsCommissioningExitMode attribute */
+        { &hf_zbee_zcl_gp_attr_gps_comm_exit_mode,
+          { "gpsCommissioningExitMode", "zbee_zcl_general.gp.attr.gps_comm_exit_mode", FT_UINT8, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_comm_window_expire,
+          { "On CommissioningWindow expiration", "zbee_zcl_general.gp.attr.gps_comm_exit_mode.on_comm_window_expire",
+            FT_BOOLEAN, 8, NULL, ZBEE_ZCL_GP_ATTR_GPS_COMM_EXIT_MODE_FLD_ON_COMM_WINDOW_EXPIRE, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_pairing_success,
+          { "On first Pairing success", "zbee_zcl_general.gp.attr.gps_comm_exit_mode.on_pairing_success",
+            FT_BOOLEAN, 8, NULL, ZBEE_ZCL_GP_ATTR_GPS_COMM_EXIT_MODE_FLD_ON_PAIRING_SUCCESS, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_comm_exit_mode_fld_on_gp_proxy_comm_mode,
+          { "On GP Proxy Commissioning Mode (exit)", "zbee_zcl_general.gp.attr.gps_comm_exit_mode.on_gp_proxy_comm_mode",
+            FT_BOOLEAN, 8, NULL, ZBEE_ZCL_GP_ATTR_GPS_COMM_EXIT_MODE_FLD_ON_GP_PROXY_COMM_MODE, NULL, HFILL }},
+
+        /* gpsSecurityLevel attribute */
+        { &hf_zbee_zcl_gp_attr_gps_secur_lvl,
+          { "gpsSecurityLevel", "zbee_zcl_general.gp.attr.gps_secur_lvl", FT_UINT8, BASE_HEX,
+            NULL, 0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_min_gpd_secur_lvl,
+          { "Minimal GPD Security Level", "zbee_zcl_general.gp.attr.gps_secur_lvl.min_gpd_secur_lvl", FT_UINT8, BASE_HEX,
+            VALS(zbee_zcl_gp_secur_levels), ZBEE_ZCL_GP_ATTR_GPS_SECUR_LVL_FLD_MIN_GPD_SECUR_LVL, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_protection_with_gp_link_key,
+          { "Protection with  gpLinkKey", "zbee_zcl_general.gp.attr.gps_secur_lvl.protection_with_gp_link_key", FT_BOOLEAN, 8,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_SECUR_LVL_FLD_PROTECTION_WITH_GP_LINK_KEY, NULL, HFILL }},
+        { &hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_involve_tc,
+          { "Involve TC", "zbee_zcl_general.gp.attr.gps_secur_lvl.involve_tc", FT_BOOLEAN, 8,
+            NULL, ZBEE_ZCL_GP_ATTR_GPS_SECUR_LVL_FLD_INVOLVE_TC, NULL, HFILL }}
     };
 
     /* ZCL Green Power subtrees */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_zbee_zcl_gp,
         &ett_zbee_gp_cmd_proxy_commissioning_mode_options,
         &ett_zbee_gp_cmd_proxy_commissioning_mode_exit_mode,
@@ -13637,7 +15720,25 @@ proto_register_zbee_zcl_gp(void)
         &ett_zbee_zcl_gp_cmds,
         &ett_zbee_zcl_gp_clusters,
         &ett_zbee_zcl_gp_srv_clusters,
-        &ett_zbee_zcl_gp_cli_clusters
+        &ett_zbee_zcl_gp_cli_clusters,
+        &ett_zbee_zcl_proxy_sink_tbl_req_options,
+        &ett_zbee_zcl_gp_cmd_sink_comm_mode_options,
+        &ett_zbee_gp_sink_tbl,
+        &ett_zbee_gp_sink_tbl_entry,
+        &ett_zbee_gp_sink_tbl_entry_options,
+        &ett_zbee_gp_sec_options,
+        &ett_zbee_gp_proxy_tbl,
+        &ett_zbee_gp_proxy_tbl_entry,
+        &ett_zbee_gp_proxy_tbl_entry_options,
+        &ett_zbee_gp_proxy_tbl_entry_ext_options,
+        &ett_zbee_gp_sink_address_list,
+        &ett_zbee_zcl_gp_attr_gpp_func,
+        &ett_zbee_zcl_gp_attr_gpp_active_func,
+        &ett_zbee_zcl_gp_attr_gps_func,
+        &ett_zbee_zcl_gp_attr_gps_active_func,
+        &ett_zbee_zcl_gp_attr_gps_communication_mode,
+        &ett_zbee_zcl_gp_attr_gps_comm_exit_mode,
+        &ett_zbee_zcl_gp_attr_gps_secur_lvl
     };
 
 
@@ -13658,26 +15759,1187 @@ proto_register_zbee_zcl_gp(void)
 void
 proto_reg_handoff_zbee_zcl_gp(void)
 {
-    dissector_handle_t handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    handle = find_dissector(ZBEE_PROTOABBREV_ZCL_GP);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_GP, handle);
     zgp_handle = find_dissector(ZBEE_PROTOABBREV_NWK_GP_CMD);
 
-    zbee_zcl_init_cluster(  proto_zbee_zcl_gp,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_GP,
+                            proto_zbee_zcl_gp,
                             ett_zbee_zcl_gp,
                             ZBEE_ZCL_CID_GP,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_gp_attr_id,
                             hf_zbee_zcl_gp_attr_id,
                             hf_zbee_zcl_gp_srv_rx_cmd_id,
                             hf_zbee_zcl_gp_srv_tx_cmd_id,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_gp_attr_data
+                            dissect_zcl_gp_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_gp*/
 
+/* ########################################################################## */
+/* #### (0x1000) TOUCHLINK COMMISSIONING CLUSTER ############################ */
+/* ########################################################################## */
+
+/*************************/
+/* Defines               */
+/*************************/
+/*Server commands received*/
+#define ZBEE_ZCL_CMD_ID_SCAN_REQUEST                    0x00
+#define ZBEE_ZCL_CMD_ID_DEVICE_INFO_REQUEST             0x02
+#define ZBEE_ZCL_CMD_ID_IDENTIFY_REQUEST                0x06
+#define ZBEE_ZCL_CMD_ID_FACTORT_RESET_REQUEST           0x07
+#define ZBEE_ZCL_CMD_ID_NETWORK_START_REQUEST           0x10
+#define ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ROUTER_REQUEST     0x12
+#define ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ENDDEV_REQUEST     0x14
+#define ZBEE_ZCL_CMD_ID_NETWORK_UPDATE_REQUEST          0x16
+#define ZBEE_ZCL_CMD_ID_GET_GROUP_IDENTIFIERS_REQUEST   0x41
+#define ZBEE_ZCL_CMD_ID_GET_ENDPOINT_LIST_REQUEST       0x42
+
+/*Server commands generated*/
+#define ZBEE_ZCL_CMD_ID_SCAN_RESPONSE                   0x01
+#define ZBEE_ZCL_CMD_ID_DEVICE_INFO_RESPONSE            0x03
+#define ZBEE_ZCL_CMD_ID_NETWORK_START_RESPONSE          0x11
+#define ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ROUTER_RESPONSE    0x13
+#define ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ENDDEV_RESPONSE    0x15
+#define ZBEE_ZCL_CMD_ID_ENDPOINT_INFORMATION            0x40
+#define ZBEE_ZCL_CMD_ID_GET_GROUP_IDENTIFIERS_RESPONSE  0x41
+#define ZBEE_ZCL_CMD_ID_GET_ENDPOINT_LIST_RESPONSE      0x42
+
+/*ZigBee Information Mask Value*/
+#define ZBEE_ZCL_TOUCHLINK_ZBEE_INFO_TYPE       0x03
+#define ZBEE_ZCL_TOUCHLINK_ZBEE_INFO_RXIDLE     0x04
+
+/*Touchlink Information Mask Values*/
+#define ZBEE_ZCL_TOUCHLINK_INFO_FACTORY         0x01
+#define ZBEE_ZCL_TOUCHLINK_INFO_ASSIGNMENT      0x02
+#define ZBEE_ZCL_TOUCHLINK_INFO_INITIATOR       0x10
+#define ZBEE_ZCL_TOUCHLINK_INFO_UNDEFINED       0x20
+#define ZBEE_ZCL_TOUCHLINK_INFO_PROFILE_INTEROP 0x80
+
+/*Touchlink Key Indices*/
+#define ZBEE_ZCL_TOUCHLINK_KEYID_DEVELOPMENT    0
+#define ZBEE_ZCL_TOUCHLINK_KEYID_MASTER         4
+#define ZBEE_ZCL_TOUCHLINK_KEYID_CERTIFICATION  15
+
+/*************************/
+/* Function Declarations */
+/*************************/
+void proto_register_zbee_zcl_touchlink(void);
+void proto_reg_handoff_zbee_zcl_touchlink(void);
+
+/*************************/
+/* Global Variables      */
+/*************************/
+/* Initialize the protocol and registered fields */
+static int proto_zbee_zcl_touchlink;
+
+static int hf_zbee_zcl_touchlink_rx_cmd_id;
+static int hf_zbee_zcl_touchlink_tx_cmd_id;
+static int hf_zbee_zcl_touchlink_transaction_id;
+static int hf_zbee_zcl_touchlink_zbee;
+static int hf_zbee_zcl_touchlink_zbee_type;
+static int hf_zbee_zcl_touchlink_zbee_rxidle;
+static int hf_zbee_zcl_touchlink_info;
+static int hf_zbee_zcl_touchlink_info_factory;
+static int hf_zbee_zcl_touchlink_info_assignment;
+static int hf_zbee_zcl_touchlink_info_initiator;
+static int hf_zbee_zcl_touchlink_info_undefined;
+static int hf_zbee_zcl_touchlink_info_profile_introp;
+static int hf_zbee_zcl_touchlink_start_index;
+static int hf_zbee_zcl_touchlink_ident_duration;
+
+static int hf_zbee_zcl_touchlink_rssi_correction;
+static int hf_zbee_zcl_touchlink_response_id;
+static int hf_zbee_zcl_touchlink_ext_panid;
+static int hf_zbee_zcl_touchlink_nwk_update_id;
+static int hf_zbee_zcl_touchlink_channel;
+static int hf_zbee_zcl_touchlink_nwk_addr;
+static int hf_zbee_zcl_touchlink_ext_addr;
+static int hf_zbee_zcl_touchlink_panid;
+static int hf_zbee_zcl_touchlink_sub_devices;
+static int hf_zbee_zcl_touchlink_total_groups;
+static int hf_zbee_zcl_touchlink_total_endpoints;
+static int hf_zbee_zcl_touchlink_endpoint;
+static int hf_zbee_zcl_touchlink_profile_id;
+static int hf_zbee_zcl_touchlink_device_id;
+static int hf_zbee_zcl_touchlink_version;
+static int hf_zbee_zcl_touchlink_group_count;
+static int hf_zbee_zcl_touchlink_group_begin;
+static int hf_zbee_zcl_touchlink_group_end;
+static int hf_zbee_zcl_touchlink_group_type;
+static int hf_zbee_zcl_touchlink_group_id;
+static int hf_zbee_zcl_touchlink_addr_range_begin;
+static int hf_zbee_zcl_touchlink_addr_range_end;
+static int hf_zbee_zcl_touchlink_group_range_begin;
+static int hf_zbee_zcl_touchlink_group_range_end;
+static int hf_zbee_zcl_touchlink_key_bitmask;
+static int hf_zbee_zcl_touchlink_key_bit_dev;
+static int hf_zbee_zcl_touchlink_key_bit_master;
+static int hf_zbee_zcl_touchlink_key_bit_cert;
+static int hf_zbee_zcl_touchlink_key_index;
+static int hf_zbee_zcl_touchlink_key;
+static int hf_zbee_zcl_touchlink_network_key;
+static int hf_zbee_zcl_touchlink_init_addr;
+static int hf_zbee_zcl_touchlink_init_eui64;
+static int hf_zbee_zcl_touchlink_status;
+static int hf_zbee_zcl_touchlink_device_record_count;
+static int hf_zbee_zcl_touchlink_sort;
+
+/* Initialize the subtree pointers */
+static int ett_zbee_zcl_touchlink;
+static int ett_zbee_zcl_touchlink_zbee;
+static int ett_zbee_zcl_touchlink_info;
+static int ett_zbee_zcl_touchlink_keybits;
+static int ett_zbee_zcl_touchlink_groups;
+static int ett_zbee_zcl_touchlink_device_record;
+static int ett_zbee_zcl_touchlink_device_records;
+static int ett_zbee_zcl_touchlink_endpoint;
+static int ett_zbee_zcl_touchlink_endpoints;
+
+static expert_field ei_zbee_zcl_touchlink_no_key = EI_INIT;
+
+static GHashTable * zcl_touchlink_commissioning_map = NULL;
+
+struct zcl_touchlink_commissioning_data {
+    unsigned transaction_id;
+    unsigned response_id;
+};
+
+/* Command names */
+static const value_string zbee_zcl_touchlink_rx_cmd_names[] = {
+    { ZBEE_ZCL_CMD_ID_SCAN_REQUEST, "Scan Request" },
+    { ZBEE_ZCL_CMD_ID_DEVICE_INFO_REQUEST, "Device Information Request" },
+    { ZBEE_ZCL_CMD_ID_IDENTIFY_REQUEST, "Identify Request" },
+    { ZBEE_ZCL_CMD_ID_FACTORT_RESET_REQUEST, "Reset to Factory New Request" },
+    { ZBEE_ZCL_CMD_ID_NETWORK_START_REQUEST, "Network Start Request" },
+    { ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ROUTER_REQUEST, "Network Join Router Request" },
+    { ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ENDDEV_REQUEST, "Network Join End Device Request" },
+    { ZBEE_ZCL_CMD_ID_NETWORK_UPDATE_REQUEST, "Network Update Request" },
+    { ZBEE_ZCL_CMD_ID_GET_GROUP_IDENTIFIERS_REQUEST, "Get Group Identifiers Request" },
+    { ZBEE_ZCL_CMD_ID_GET_ENDPOINT_LIST_REQUEST, "Get Endpoint List Request" },
+    { 0, NULL }
+};
+static const value_string zbee_zcl_touchlink_tx_cmd_names[] = {
+    { ZBEE_ZCL_CMD_ID_SCAN_RESPONSE, "Scan Response" },
+    { ZBEE_ZCL_CMD_ID_DEVICE_INFO_RESPONSE, "Device Information Response" },
+    { ZBEE_ZCL_CMD_ID_NETWORK_START_RESPONSE, "Network Start Response" },
+    { ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ROUTER_RESPONSE, "Network Join Router Response" },
+    { ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ENDDEV_RESPONSE, "Network Join End Device Response" },
+    { ZBEE_ZCL_CMD_ID_ENDPOINT_INFORMATION, "Endpoint Information" },
+    { ZBEE_ZCL_CMD_ID_GET_GROUP_IDENTIFIERS_RESPONSE, "Get Group Identifiers Response" },
+    { ZBEE_ZCL_CMD_ID_GET_ENDPOINT_LIST_RESPONSE, "Get Endpoint List Response" },
+    { 0, NULL }
+};
+
+/* ZigBee logical types */
+static const value_string zbee_zcl_touchlink_zbee_type_names[] = {
+    { 0, "coordinator" },
+    { 1, "router" },
+    { 2, "end device" },
+    { 0, NULL }
+};
+
+static const value_string zbee_zcl_touchlink_status_names[] = {
+    { 0x00, "Success" },
+    { 0x01, "Failure" },
+    { 0, NULL }
+};
+
+static const value_string zbee_zcl_touchlink_profile_interop_names[] = {
+    { 0, "ZLL" },
+    { 1, "Zigbee 3.0" },
+    { 0, NULL }
+};
+
+static const value_string zbee_zcl_touchlink_keyid_names[] = {
+    { ZBEE_ZCL_TOUCHLINK_KEYID_DEVELOPMENT, "Development Key" },
+    { ZBEE_ZCL_TOUCHLINK_KEYID_MASTER, "Master Key" },
+    { ZBEE_ZCL_TOUCHLINK_KEYID_CERTIFICATION, "Certification Key" },
+    { 0, NULL }
+};
+
+#define ZBEE_ZCL_TOUCHLINK_NUM_KEYID    16
+#define ZBEE_ZCL_TOUCHLINK_KEY_SIZE     16
+
+/*************************/
+/* Function Bodies       */
+/*************************/
+
+/* Functions for Touchlink Comissionning hashtables. {{{ */
+static int
+zcl_touchlink_comissioning_equal (gconstpointer v, gconstpointer v2)
+{
+    if (v == NULL || v2 == NULL) {
+        return 0;
+    }
+
+    const unsigned *val1;
+    const unsigned *val2;
+    val1 = (const unsigned *)v;
+    val2 = (const unsigned *)v2;
+
+    if (*val1 == *val2) {
+        return 1;
+    }
+    return 0;
+}
+
+static unsigned
+zcl_touchlink_comissioning_hash (gconstpointer v)
+{
+    unsigned hash;
+    const unsigned * id;
+
+    if (v == NULL) {
+        return 0;
+    }
+
+    id = (const unsigned*) v;
+    hash = *id;
+
+    return hash;
+}
+/* Functions for Touchlink Comissionning hashtables. }}} */
+
+/**
+ *This function decodes the Scan Request payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_scan_request(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    static int * const zbee_info_flags[] = {
+        &hf_zbee_zcl_touchlink_zbee_type,
+        &hf_zbee_zcl_touchlink_zbee_rxidle,
+        NULL
+    };
+    static int * const zll_info_flags[] = {
+        &hf_zbee_zcl_touchlink_info_factory,
+        &hf_zbee_zcl_touchlink_info_assignment,
+        &hf_zbee_zcl_touchlink_info_initiator,
+        &hf_zbee_zcl_touchlink_info_undefined,
+        &hf_zbee_zcl_touchlink_info_profile_introp,
+        NULL
+    };
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_touchlink_zbee, ett_zbee_zcl_touchlink_zbee, zbee_info_flags, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_touchlink_info, ett_zbee_zcl_touchlink_info, zll_info_flags, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+} /*dissect_zcl_touchlink_scan_request*/
+
+/**
+ *This function decodes the Identify Request payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_identify_request(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_ident_duration, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+} /*dissect_zcl_touchlink_identify_request*/
+
+/**
+ *This function decodes the Network Start Request payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_network_start_request(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_ext_panid, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+    *offset += 8;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_key_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_key, tvb, *offset, 16, ENC_NA);
+    *offset += 16;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_channel, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_panid, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_addr, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_begin, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_end, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_addr_range_begin, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_addr_range_end, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_range_begin, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_range_end, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_init_eui64, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+    *offset += 8;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_init_addr, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+} /*dissect_zcl_touchlink_network_start_request*/
+
+/**
+ *This function decodes the Network Join Router/EndDevice Request payloads.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_network_join_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned *offset, struct zcl_touchlink_commissioning_data * commissioning_data)
+{
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_ext_panid, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+    *offset += 8;
+    uint32_t key_index;
+    proto_tree_add_item_ret_uint(tree, hf_zbee_zcl_touchlink_key_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &key_index);
+    *offset += 1;
+    proto_item* it_key = proto_tree_add_item(tree, hf_zbee_zcl_touchlink_key, tvb, *offset, 16, ENC_NA);
+    const char *encrypted_network_key = (const char *)tvb_get_ptr(tvb, *offset, 16);
+    *offset += 16;
+
+    static const uint8_t Touchlink_Certification_Key[16] = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf};
+    uint8_t Touchlink_Master_Key[16];
+    char   network_key[16] = {0};
+    const uint8_t * key = NULL;
+    uint8_t * decrypted_network_key = NULL;
+    if(key_index == ZBEE_ZCL_TOUCHLINK_KEYID_MASTER || key_index == ZBEE_ZCL_TOUCHLINK_KEYID_CERTIFICATION){
+        if(key_index == ZBEE_ZCL_TOUCHLINK_KEYID_MASTER){
+            if(!zbee_sec_get_key_from_keyring("Touchlink Master Key", Touchlink_Master_Key)){
+                expert_add_info_format(pinfo, it_key, &ei_zbee_zcl_touchlink_no_key, "No key named 'Touchlink Master Key' found, cannot decrypt transport key");
+            }else{
+                key = Touchlink_Master_Key;
+            }
+        }else if(key_index == ZBEE_ZCL_TOUCHLINK_KEYID_CERTIFICATION){
+            key = Touchlink_Certification_Key;
+        }
+        if(key){
+            uint8_t expanded_input[16];
+            expanded_input[0x0] = (commissioning_data->transaction_id >> 24) & 0xFF;
+            expanded_input[0x1] = (commissioning_data->transaction_id >> 16) & 0xFF;
+            expanded_input[0x2] = (commissioning_data->transaction_id >>  8) & 0xFF;
+            expanded_input[0x3] = (commissioning_data->transaction_id >>  0) & 0xFF;
+            expanded_input[0x4] = (commissioning_data->transaction_id >> 24) & 0xFF;
+            expanded_input[0x5] = (commissioning_data->transaction_id >> 16) & 0xFF;
+            expanded_input[0x6] = (commissioning_data->transaction_id >>  8) & 0xFF;
+            expanded_input[0x7] = (commissioning_data->transaction_id >>  0) & 0xFF;
+            expanded_input[0x8] = (commissioning_data->response_id >> 24) & 0xFF;
+            expanded_input[0x9] = (commissioning_data->response_id >> 16) & 0xFF;
+            expanded_input[0xA] = (commissioning_data->response_id >>  8) & 0xFF;
+            expanded_input[0xB] = (commissioning_data->response_id >>  0) & 0xFF;
+            expanded_input[0xC] = (commissioning_data->response_id >> 24) & 0xFF;
+            expanded_input[0xD] = (commissioning_data->response_id >> 16) & 0xFF;
+            expanded_input[0xE] = (commissioning_data->response_id >>  8) & 0xFF;
+            expanded_input[0xF] = (commissioning_data->response_id >>  0) & 0xFF;
+            ws_debug("expanded_input: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", expanded_input[0x0], expanded_input[0x1], expanded_input[0x2], expanded_input[0x3], expanded_input[0x4], expanded_input[0x5], expanded_input[0x6], expanded_input[0x7], expanded_input[0x8], expanded_input[0x9], expanded_input[0xA], expanded_input[0xB], expanded_input[0xC], expanded_input[0xD], expanded_input[0xE], expanded_input[0xF]);
+            ws_debug("key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", key[0x0], key[0x1], key[0x2], key[0x3], key[0x4], key[0x5], key[0x6], key[0x7], key[0x8], key[0x9], key[0xA], key[0xB], key[0xC], key[0xD], key[0xE], key[0xF]);
+
+            gcry_cipher_hd_t hd1;
+            gcry_error_t err;
+            if (gcry_cipher_open(&hd1, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_ECB, 0)) {
+                gcry_cipher_close(hd1);
+                ws_debug("touchlink: can't open aes128 cipher handle");
+                return;
+            }
+            if ((err = gcry_cipher_setkey(hd1, key, 16))) {
+                gcry_cipher_close(hd1);
+                ws_debug("touchlink: can't set aes128 cipher key");
+                ws_debug("libgcrypt: %d %s %s", gcry_err_code(err), gcry_strsource(err), gcry_strerror(err));
+                return;
+            }
+
+            char   transport_key[16] = {0};
+            if (gcry_cipher_encrypt(hd1, transport_key, 16, expanded_input, 16)) {
+                ws_debug("can\'t decrypt aes128");
+                return;
+            }
+
+            ws_debug("transport_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)transport_key[0x0], (uint8_t)transport_key[0x1], (uint8_t)transport_key[0x2], (uint8_t)transport_key[0x3], (uint8_t)transport_key[0x4], (uint8_t)transport_key[0x5], (uint8_t)transport_key[0x6], (uint8_t)transport_key[0x7], (uint8_t)transport_key[0x8], (uint8_t)transport_key[0x9], (uint8_t)transport_key[0xA], (uint8_t)transport_key[0xB], (uint8_t)transport_key[0xC], (uint8_t)transport_key[0xD], (uint8_t)transport_key[0xE], (uint8_t)transport_key[0xF]);
+
+            gcry_cipher_close(hd1);
+
+            gcry_cipher_hd_t hd2;
+            if (gcry_cipher_open(&hd2, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_ECB, 0)) {
+                gcry_cipher_close(hd2);
+                ws_debug("touchlink: can't open aes128 cipher handle");
+                return;
+            }
+            if ((err = gcry_cipher_setkey(hd2, transport_key, 16))) {
+                gcry_cipher_close(hd2);
+                ws_debug("touchlink: can't set aes128 cipher key");
+                ws_debug("libgcrypt: %d %s %s", gcry_err_code(err), gcry_strsource(err), gcry_strerror(err));
+                return;
+            }
+
+            ws_debug("encrypted_network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)encrypted_network_key[0x0], (uint8_t)encrypted_network_key[0x1], (uint8_t)encrypted_network_key[0x2], (uint8_t)encrypted_network_key[0x3], (uint8_t)encrypted_network_key[0x4], (uint8_t)encrypted_network_key[0x5], (uint8_t)encrypted_network_key[0x6], (uint8_t)encrypted_network_key[0x7], (uint8_t)encrypted_network_key[0x8], (uint8_t)encrypted_network_key[0x9], (uint8_t)encrypted_network_key[0xA], (uint8_t)encrypted_network_key[0xB], (uint8_t)encrypted_network_key[0xC], (uint8_t)encrypted_network_key[0xD], (uint8_t)encrypted_network_key[0xE], (uint8_t)encrypted_network_key[0xF]);
+
+            if (gcry_cipher_decrypt(hd2, network_key, 16, encrypted_network_key, 16)) {
+                ws_debug("can\'t decrypt aes128");
+                return;
+            }
+
+            ws_debug("network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)network_key[0x0], (uint8_t)network_key[0x1], (uint8_t)network_key[0x2], (uint8_t)network_key[0x3], (uint8_t)network_key[0x4], (uint8_t)network_key[0x5], (uint8_t)network_key[0x6], (uint8_t)network_key[0x7], (uint8_t)network_key[0x8], (uint8_t)network_key[0x9], (uint8_t)network_key[0xA], (uint8_t)network_key[0xB], (uint8_t)network_key[0xC], (uint8_t)network_key[0xD], (uint8_t)network_key[0xE], (uint8_t)network_key[0xF]);
+
+            gcry_cipher_close(hd2);
+
+            proto_tree_add_bytes(tree, hf_zbee_zcl_touchlink_network_key, tvb, *offset-16, 16, network_key);
+            decrypted_network_key = network_key;
+        }
+    }else if(key_index == ZBEE_ZCL_TOUCHLINK_KEYID_DEVELOPMENT){
+        uint8_t expanded_input[16];
+        expanded_input[0x0] = 'P';
+        expanded_input[0x1] = 'h';
+        expanded_input[0x2] = 'L';
+        expanded_input[0x3] = 'i';
+        expanded_input[0x4] = (commissioning_data->transaction_id >> 24) & 0xFF;
+        expanded_input[0x5] = (commissioning_data->transaction_id >> 16) & 0xFF;
+        expanded_input[0x6] = (commissioning_data->transaction_id >>  8) & 0xFF;
+        expanded_input[0x7] = (commissioning_data->transaction_id >>  0) & 0xFF;
+        expanded_input[0x8] = 'C';
+        expanded_input[0x9] = 'L';
+        expanded_input[0xA] = 'S';
+        expanded_input[0xB] = 'N';
+        expanded_input[0xC] = (commissioning_data->response_id >> 24) & 0xFF;
+        expanded_input[0xD] = (commissioning_data->response_id >> 16) & 0xFF;
+        expanded_input[0xE] = (commissioning_data->response_id >>  8) & 0xFF;
+        expanded_input[0xF] = (commissioning_data->response_id >>  0) & 0xFF;
+        ws_debug("expanded_input: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", expanded_input[0x0], expanded_input[0x1], expanded_input[0x2], expanded_input[0x3], expanded_input[0x4], expanded_input[0x5], expanded_input[0x6], expanded_input[0x7], expanded_input[0x8], expanded_input[0x9], expanded_input[0xA], expanded_input[0xB], expanded_input[0xC], expanded_input[0xD], expanded_input[0xE], expanded_input[0xF]);
+
+        gcry_cipher_hd_t hd;
+        gcry_error_t err;
+        if (gcry_cipher_open(&hd, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_ECB, 0)) {
+            gcry_cipher_close(hd);
+            ws_debug("touchlink: can't open aes128 cipher handle");
+            return;
+        }
+        if ((err = gcry_cipher_setkey(hd, expanded_input, 16))) {
+            gcry_cipher_close(hd);
+            ws_debug("touchlink: can't set aes128 cipher key");
+            ws_debug("libgcrypt: %d %s %s", gcry_err_code(err), gcry_strsource(err), gcry_strerror(err));
+            return;
+        }
+
+        ws_debug("encrypted_network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)encrypted_network_key[0x0], (uint8_t)encrypted_network_key[0x1], (uint8_t)encrypted_network_key[0x2], (uint8_t)encrypted_network_key[0x3], (uint8_t)encrypted_network_key[0x4], (uint8_t)encrypted_network_key[0x5], (uint8_t)encrypted_network_key[0x6], (uint8_t)encrypted_network_key[0x7], (uint8_t)encrypted_network_key[0x8], (uint8_t)encrypted_network_key[0x9], (uint8_t)encrypted_network_key[0xA], (uint8_t)encrypted_network_key[0xB], (uint8_t)encrypted_network_key[0xC], (uint8_t)encrypted_network_key[0xD], (uint8_t)encrypted_network_key[0xE], (uint8_t)encrypted_network_key[0xF]);
+
+        if (gcry_cipher_decrypt(hd, network_key, 16, encrypted_network_key, 16)) {
+            ws_debug("can\'t decrypt aes128");
+            return;
+        }
+
+        ws_debug("network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)network_key[0x0], (uint8_t)network_key[0x1], (uint8_t)network_key[0x2], (uint8_t)network_key[0x3], (uint8_t)network_key[0x4], (uint8_t)network_key[0x5], (uint8_t)network_key[0x6], (uint8_t)network_key[0x7], (uint8_t)network_key[0x8], (uint8_t)network_key[0x9], (uint8_t)network_key[0xA], (uint8_t)network_key[0xB], (uint8_t)network_key[0xC], (uint8_t)network_key[0xD], (uint8_t)network_key[0xE], (uint8_t)network_key[0xF]);
+
+        gcry_cipher_close(hd);
+
+        proto_tree_add_bytes(tree, hf_zbee_zcl_touchlink_network_key, tvb, *offset-16, 16, network_key);
+        decrypted_network_key = network_key;
+    }else{
+        expert_add_info_format(pinfo, it_key, &ei_zbee_zcl_touchlink_no_key, "Unsupported key %d, cannot decrypt transport key", key_index);
+    }
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_update_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_channel, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    uint32_t panid;
+    proto_tree_add_item_ret_uint(tree, hf_zbee_zcl_touchlink_panid, tvb, *offset, 2, ENC_LITTLE_ENDIAN, &panid);
+    *offset += 2;
+    if(decrypted_network_key){
+        zbee_sec_add_key_to_keyring_panid(pinfo, decrypted_network_key, panid);
+    }
+
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_addr, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_begin, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_end, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_addr_range_begin, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_addr_range_end, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_range_begin, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_range_end, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+} /*dissect_zcl_touchlink_network_join_request*/
+
+/**
+ *This function decodes the Scan Response payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_network_update_request(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_ext_panid, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+    *offset += 8;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_update_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_channel, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_panid, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_addr, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+} /*dissect_zcl_touchlink_network_update_request*/
+
+
+/**
+ *This function decodes the Scan Response payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_scan_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset, struct zcl_touchlink_commissioning_data * commissioning_data)
+{
+    static int * const zbee_info_flags[] = {
+        &hf_zbee_zcl_touchlink_zbee_type,
+        &hf_zbee_zcl_touchlink_zbee_rxidle,
+        NULL
+    };
+    static int * const zll_info_flags[] = {
+        &hf_zbee_zcl_touchlink_info_factory,
+        &hf_zbee_zcl_touchlink_info_assignment,
+        &hf_zbee_zcl_touchlink_info_initiator,
+        &hf_zbee_zcl_touchlink_info_undefined,
+        &hf_zbee_zcl_touchlink_info_profile_introp,
+        NULL
+    };
+    static int * const zll_keybit_flags[] = {
+        &hf_zbee_zcl_touchlink_key_bit_dev,
+        &hf_zbee_zcl_touchlink_key_bit_master,
+        &hf_zbee_zcl_touchlink_key_bit_cert,
+        NULL
+    };
+    uint8_t subdev;
+
+    /* Parse out the fixed-format stuff */
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_rssi_correction, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_touchlink_zbee, ett_zbee_zcl_touchlink_zbee, zbee_info_flags, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_touchlink_info, ett_zbee_zcl_touchlink_info, zll_info_flags, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_bitmask(tree, tvb, *offset, hf_zbee_zcl_touchlink_key_bitmask, ett_zbee_zcl_touchlink_keybits, zll_keybit_flags, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item_ret_uint(tree, hf_zbee_zcl_touchlink_response_id, tvb, *offset, 4, ENC_LITTLE_ENDIAN, &commissioning_data->response_id);
+    *offset += 4;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_ext_panid, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+    *offset += 8;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_update_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_channel, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_panid, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_addr, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    subdev = tvb_get_uint8(tvb, *offset);
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_sub_devices, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_total_groups, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* The remaining fields are only present when sub-devices is one. */
+    if (subdev == 1) {
+        proto_tree_add_item(tree, hf_zbee_zcl_touchlink_endpoint, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+        proto_tree_add_item(tree, hf_zbee_zcl_touchlink_profile_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+        proto_tree_add_item(tree, hf_zbee_zcl_touchlink_device_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+        proto_tree_add_item(tree, hf_zbee_zcl_touchlink_version, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+        proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+    }
+} /*dissect_zcl_touchlink_scan_response*/
+
+/**
+ *This function decodes the Network Start Response payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_network_start_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_ext_panid, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+    *offset += 8;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_update_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_channel, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_panid, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+} /* dissect_zcl_touchlink_network_start_response */
+
+/**
+ *This function decodes the Device Information Response payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_device_info_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    proto_tree *list_tree;
+    uint8_t count, idx;
+
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_transaction_id, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+    *offset += 4;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_sub_devices, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    count = tvb_get_uint8(tvb, *offset);
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_device_record_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    list_tree = proto_tree_add_subtree(tree, tvb, *offset, count * 16, ett_zbee_zcl_touchlink_device_records, NULL, "Device Records");
+    for (idx = 0; idx < count; idx++) {
+        proto_tree *record_tree;
+        unsigned record_start = *offset;
+
+        // Create subtree for this record
+        record_tree = proto_tree_add_subtree_format(
+            list_tree, tvb, record_start, 16,
+            ett_zbee_zcl_touchlink_device_record, NULL,
+            "Device Record %u", (idx + 1) // numbering
+        );
+
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_ext_addr, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+        *offset += 8;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_endpoint, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_profile_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_device_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_version, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_group_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_sort, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+    }
+} /* dissect_zcl_touchlink_device_info_response */
+
+/**
+ *This function decodes the Endpoint Information payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_endpoint_info(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_ext_addr, tvb, *offset, 8, ENC_LITTLE_ENDIAN);
+    *offset += 8;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_addr, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_endpoint, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_profile_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_device_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_version, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+} /* dissect_zcl_touchlink_endpoint_info */
+
+/**
+ *This function decodes the Get Group Identifiers Response payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_group_id_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    proto_tree *list_tree;
+    uint8_t count;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_total_groups, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    count = tvb_get_uint8(tvb, *offset);
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    list_tree = proto_tree_add_subtree(tree, tvb, *offset, count * 3, ett_zbee_zcl_touchlink_groups, NULL, "Group Information Records");
+    while (count--) {
+        proto_tree_add_item(list_tree, hf_zbee_zcl_touchlink_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+        proto_tree_add_item(list_tree, hf_zbee_zcl_touchlink_group_type, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+    }
+} /* dissect_zcl_touchlink_group_id_response */
+
+/**
+ *This function decodes the Get Endpoint List Response payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_endpoint_list_response(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    proto_tree *list_tree;
+    uint8_t count, idx;
+
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_total_endpoints, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+    count = tvb_get_uint8(tvb, *offset);
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    list_tree = proto_tree_add_subtree(tree, tvb, *offset, count * 8, ett_zbee_zcl_touchlink_endpoints, NULL, "Endpoint Information Records");
+    for (idx = 0; idx < count; idx++) {
+        proto_tree *record_tree;
+        unsigned record_start = *offset;
+
+        // Create subtree for this record
+        record_tree = proto_tree_add_subtree_format(
+            list_tree, tvb, record_start, 8,
+            ett_zbee_zcl_touchlink_endpoint, NULL,
+            "Endpoint Record %u", (idx + 1) // numbering
+        );
+
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_nwk_addr, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_endpoint, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_profile_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_device_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 2;
+        proto_tree_add_item(record_tree, hf_zbee_zcl_touchlink_version, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+        *offset += 1;
+    }
+} /* dissect_zcl_touchlink_endpoint_list_response */
+
+/**
+ *ZigBee ZCL Touchlink Commissioining cluster dissector for wireshark.
+ *
+ *@param tvb pointer to buffer containing raw packet.
+ *@param pinfo pointer to packet information fields
+ *@param tree pointer to data tree Wireshark uses to display packet.
+*/
+static int
+dissect_zbee_zcl_touchlink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
+{
+    zbee_zcl_packet   *zcl;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               hf_cmd_id;
+    const value_string *vals_cmd_id;
+    struct zcl_touchlink_commissioning_data *commissioning_data = NULL;
+
+    /* Reject the packet if data is NULL */
+    if (data == NULL)
+        return 0;
+    zcl = (zbee_zcl_packet *)data;
+    cmd_id = zcl->cmd_id;
+
+    if (zcl->direction == ZBEE_ZCL_FCF_TO_SERVER) {
+        hf_cmd_id = hf_zbee_zcl_touchlink_rx_cmd_id;
+        vals_cmd_id = zbee_zcl_touchlink_rx_cmd_names;
+    } else {
+        hf_cmd_id = hf_zbee_zcl_touchlink_tx_cmd_id;
+        vals_cmd_id = zbee_zcl_touchlink_tx_cmd_names;
+    }
+
+    /* Append the command name to the info column. */
+    col_append_fstr(pinfo->cinfo, COL_INFO, "%s, Seq: %u",
+        val_to_str_const(cmd_id, vals_cmd_id, "Unknown Command"),
+        zcl->tran_seqno);
+    /* Add the command ID. */
+    if (tree) {
+        proto_tree_add_item(tree, hf_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+    }
+    offset++;
+
+    /* All commands in the touchlink commissioning command set (0x00-0x3f)
+     * are cluster inter-PAN command frames and begin with a transaction
+     * identifier. */
+    unsigned transaction_id = 0;
+    if (cmd_id < 0x40) {
+        proto_tree_add_item_ret_uint(tree, hf_zbee_zcl_touchlink_transaction_id, tvb, offset, 4, ENC_LITTLE_ENDIAN, &transaction_id);
+        offset += 4;
+    }
+
+    ws_noisy("transaction_id=%08X\n", transaction_id);
+    commissioning_data = (struct zcl_touchlink_commissioning_data *)g_hash_table_lookup(zcl_touchlink_commissioning_map, &transaction_id);
+    if(!commissioning_data){
+        ws_debug("creating commissioning_data for transaction_id=%08X\n", transaction_id);
+        commissioning_data = wmem_new0(wmem_file_scope(), struct zcl_touchlink_commissioning_data);
+        commissioning_data->transaction_id = transaction_id;
+        g_hash_table_insert(zcl_touchlink_commissioning_map, &commissioning_data->transaction_id, commissioning_data);
+    }
+
+    /*  Create a subtree for the ZCL Command frame, and add the command ID to it. */
+    if (zcl->direction == ZBEE_ZCL_FCF_TO_SERVER) {
+        /* Call the appropriate command dissector */
+        switch (cmd_id) {
+            case ZBEE_ZCL_CMD_ID_SCAN_REQUEST:
+                dissect_zcl_touchlink_scan_request(tvb, tree, &offset);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_IDENTIFY_REQUEST:
+                dissect_zcl_touchlink_identify_request(tvb, tree, &offset);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_FACTORT_RESET_REQUEST:
+                /* No payload */
+                break;
+
+            case ZBEE_ZCL_CMD_ID_NETWORK_START_REQUEST:
+                dissect_zcl_touchlink_network_start_request(tvb, tree, &offset);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ROUTER_REQUEST:
+            case ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ENDDEV_REQUEST:
+                dissect_zcl_touchlink_network_join_request(tvb, pinfo, tree, &offset, commissioning_data);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_NETWORK_UPDATE_REQUEST:
+                dissect_zcl_touchlink_network_update_request(tvb, tree, &offset);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_DEVICE_INFO_REQUEST:
+            case ZBEE_ZCL_CMD_ID_GET_GROUP_IDENTIFIERS_REQUEST:
+            case ZBEE_ZCL_CMD_ID_GET_ENDPOINT_LIST_REQUEST:
+                proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+                offset++;
+                break;
+
+            default:
+                break;
+        }
+    }
+    else {
+        /* Call the appropriate command dissector */
+        switch (cmd_id) {
+            case ZBEE_ZCL_CMD_ID_SCAN_RESPONSE:
+                dissect_zcl_touchlink_scan_response(tvb, tree, &offset, commissioning_data);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_NETWORK_START_RESPONSE:
+                dissect_zcl_touchlink_network_start_response(tvb, tree, &offset);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ROUTER_RESPONSE:
+            case ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ENDDEV_RESPONSE:
+                proto_tree_add_item(tree, hf_zbee_zcl_touchlink_status, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+                offset++;
+                break;
+
+            case ZBEE_ZCL_CMD_ID_DEVICE_INFO_RESPONSE:
+                dissect_zcl_touchlink_device_info_response(tvb, tree, &offset);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_ENDPOINT_INFORMATION:
+                dissect_zcl_touchlink_endpoint_info(tvb, tree, &offset);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_GET_GROUP_IDENTIFIERS_RESPONSE:
+                dissect_zcl_touchlink_group_id_response(tvb, tree, &offset);
+                break;
+
+            case ZBEE_ZCL_CMD_ID_GET_ENDPOINT_LIST_RESPONSE:
+                dissect_zcl_touchlink_endpoint_list_response(tvb, tree, &offset);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    /* Dump leftover data. */
+    if (tvb_captured_length_remaining(tvb, offset) > 0) {
+        tvbuff_t *excess = tvb_new_subset_remaining(tvb, offset);
+        call_data_dissector(excess, pinfo, proto_tree_get_root(tree));
+    }
+    return offset;
+} /*dissect_zbee_zcl_touchlink*/
+
+/**
+ *ZigBee ZCL Touchlink Commissioning cluster protocol registration routine.
+ *
+*/
+void
+proto_register_zbee_zcl_touchlink(void)
+{
+    /* Setup list of header fields */
+    static hf_register_info hf[] = {
+        { &hf_zbee_zcl_touchlink_rx_cmd_id,
+            { "Command", "zbee_zcl_general.touchlink.rx_cmd_id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_touchlink_rx_cmd_names),
+            0x00, NULL, HFILL } },
+        { &hf_zbee_zcl_touchlink_tx_cmd_id,
+            { "Command", "zbee_zcl_general.touchlink.tx_cmd_id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_touchlink_tx_cmd_names),
+            0x00, NULL, HFILL } },
+        { &hf_zbee_zcl_touchlink_transaction_id,
+            { "Transaction ID", "zbee_zcl_general.touchlink.transaction_id", FT_UINT32, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        /* ZigBee Information Bitmask */
+        { &hf_zbee_zcl_touchlink_zbee,
+            { "ZigBee Information", "zbee_zcl_general.touchlink.zbee", FT_UINT8, BASE_HEX, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_touchlink_zbee_type,
+            { "Logical type", "zbee_zcl_general.touchlink.zbee.type", FT_UINT8, BASE_HEX, VALS(zbee_zcl_touchlink_zbee_type_names),
+            ZBEE_ZCL_TOUCHLINK_ZBEE_INFO_TYPE, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_zbee_rxidle,
+            { "Rx on when idle", "zbee_zcl_general.touchlink.zbee.rxidle", FT_BOOLEAN, 8, TFS(&tfs_yes_no),
+            ZBEE_ZCL_TOUCHLINK_ZBEE_INFO_RXIDLE, NULL, HFILL } },
+
+        /* Touchlink Information Bitmask */
+        { &hf_zbee_zcl_touchlink_info,
+            { "Touchlink Information", "zbee_zcl_general.touchlink.info", FT_UINT8, BASE_HEX, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_zcl_touchlink_info_factory,
+            { "Factory new", "zbee_zcl_general.touchlink.info.factory", FT_BOOLEAN, 8, TFS(&tfs_yes_no),
+            ZBEE_ZCL_TOUCHLINK_INFO_FACTORY, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_info_assignment,
+            { "Address assignment", "zbee_zcl_general.touchlink.info.assignment", FT_BOOLEAN, 8, TFS(&tfs_yes_no),
+            ZBEE_ZCL_TOUCHLINK_INFO_ASSIGNMENT, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_info_initiator,
+            { "Link initiator", "zbee_zcl_general.touchlink.info.initiator", FT_BOOLEAN, 8, TFS(&tfs_yes_no),
+            ZBEE_ZCL_TOUCHLINK_INFO_INITIATOR, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_info_undefined,
+            { "Undefined", "zbee_zcl_general.touchlink.info.undefined", FT_BOOLEAN, 8, NULL,
+            ZBEE_ZCL_TOUCHLINK_INFO_UNDEFINED, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_info_profile_introp,
+            { "Profile Interop", "zbee_zcl_general.touchlink.info.profile.interop", FT_UINT8, BASE_HEX, VALS(zbee_zcl_touchlink_profile_interop_names),
+            ZBEE_ZCL_TOUCHLINK_INFO_PROFILE_INTEROP, NULL, HFILL } },
+
+        /* Touchlink Key Information Bitmask */
+        { &hf_zbee_zcl_touchlink_key_bitmask,
+            { "Key Bitmask", "zbee_zcl_general.touchlink.key_bitmask", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_key_bit_dev,
+            { "Development Key", "zbee_zcl_general.touchlink.key_bitmask.dev", FT_BOOLEAN, 16, TFS(&tfs_yes_no),
+            (1<<ZBEE_ZCL_TOUCHLINK_KEYID_DEVELOPMENT), NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_key_bit_master,
+            { "Master Key", "zbee_zcl_general.touchlink.key_bitmask.master", FT_BOOLEAN, 16, TFS(&tfs_yes_no),
+            (1<<ZBEE_ZCL_TOUCHLINK_KEYID_MASTER), NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_key_bit_cert,
+            { "Certification Key", "zbee_zcl_general.touchlink.key_bitmask.cert", FT_BOOLEAN, 16, TFS(&tfs_yes_no),
+            (1<<ZBEE_ZCL_TOUCHLINK_KEYID_CERTIFICATION), NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_start_index,
+            { "Start index", "zbee_zcl_general.touchlink.index", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_device_record_count,
+            { "Device Record Count", "zbee_zcl_general.touchlink.device_record_count", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_sort,
+            { "Sort", "zbee_zcl_general.touchlink.sort", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_ident_duration,
+            { "Identify duration", "zbee_zcl_general.touchlink.duration", FT_UINT16, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_rssi_correction,
+            { "RSSI Correction", "zbee_zcl_general.touchlink.rssi_correction", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_response_id,
+            { "Response ID", "zbee_zcl_general.touchlink.response_id", FT_UINT32, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_ext_panid,
+            { "Extended PAN ID", "zbee_zcl_general.touchlink.ext_panid", FT_EUI64, BASE_NONE, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_nwk_update_id,
+            { "Network Update ID", "zbee_zcl_general.touchlink.nwk_update_id", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_channel,
+            { "Logical Channel", "zbee_zcl_general.touchlink.channel", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_nwk_addr,
+            { "Network Address", "zbee_zcl_general.touchlink.nwk_addr", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_ext_addr,
+            { "Extended Address", "zbee_zcl_general.touchlink.ext_addr", FT_EUI64, BASE_NONE, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_panid,
+            { "PAN ID", "zbee_zcl_general.touchlink.panid", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_sub_devices,
+            { "Sub-devices", "zbee_zcl_general.touchlink.sub_devices", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_total_groups,
+            { "Total Group Identifiers", "zbee_zcl_general.touchlink.total_groups", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_total_endpoints,
+            { "Total Endpoints", "zbee_zcl_general.touchlink.total_endpoints", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_endpoint,
+            { "Endpoint", "zbee_zcl_general.touchlink.endpoint", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_profile_id,
+            { "Profile ID", "zbee_zcl_general.touchlink.profile_id", FT_UINT16, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_aps_apid_names),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_device_id,
+            { "Device ID", "zbee_zcl_general.touchlink.device_id", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_version,
+            { "Version", "zbee_zcl_general.touchlink.version", FT_UINT8, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_group_count,
+            { "Group ID Count", "zbee_zcl_general.touchlink.group_count", FT_UINT8, BASE_DEC, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_group_begin,
+            { "Group ID Begin", "zbee_zcl_general.touchlink.group_begin", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_group_end,
+            { "Group ID End", "zbee_zcl_general.touchlink.group_end", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_group_type,
+            { "Group Type", "zbee_zcl_general.touchlink.group_type", FT_UINT8, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_group_id,
+            { "Group ID", "zbee_zcl_general.touchlink.group_id", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_addr_range_begin,
+            { "Free Address Range Begin", "zbee_zcl_general.touchlink.addr_range_begin", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_addr_range_end,
+            { "Free Address Range End", "zbee_zcl_general.touchlink.addr_range_end", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_group_range_begin,
+            { "Free Group ID Range Begin", "zbee_zcl_general.touchlink.group_range_begin", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_group_range_end,
+            { "Free Group ID Range End", "zbee_zcl_general.touchlink.group_range_end", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_key_index,
+            { "Key Index", "zbee_zcl_general.touchlink.key_index", FT_UINT8, BASE_DEC, VALS(zbee_zcl_touchlink_keyid_names),
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_key,
+            { "Encrypted Network Key", "zbee_zcl_general.touchlink.key", FT_BYTES, BASE_NONE, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_network_key,
+            { "Decrypted Network Key", "zbee_zcl_general.touchlink.network_key", FT_BYTES, BASE_NONE, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_init_eui64,
+            { "Initiator Extended Address", "zbee_zcl_general.touchlink.init_eui", FT_EUI64, BASE_NONE, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_init_addr,
+            { "Initiator Network Address", "zbee_zcl_general.touchlink.init_addr", FT_UINT16, BASE_HEX, NULL,
+            0x00, NULL, HFILL } },
+
+        { &hf_zbee_zcl_touchlink_status,
+            { "Status", "zbee_zcl_general.touchlink.status", FT_UINT8, BASE_HEX, VALS(zbee_zcl_touchlink_status_names),
+            0x00, NULL, HFILL } },
+    };
+
+    /* ZCL Touchlink subtrees */
+    static int *ett[] = {
+        &ett_zbee_zcl_touchlink,
+        &ett_zbee_zcl_touchlink_zbee,
+        &ett_zbee_zcl_touchlink_info,
+        &ett_zbee_zcl_touchlink_keybits,
+        &ett_zbee_zcl_touchlink_groups,
+        &ett_zbee_zcl_touchlink_device_records,
+        &ett_zbee_zcl_touchlink_endpoints,
+    };
+
+    static ei_register_info ei[] = {
+        { &ei_zbee_zcl_touchlink_no_key,        { "zbee_zcl_general.touchlink.no_key.expert", PI_DECRYPTION, PI_WARN, "Cannot decrypt transport key", EXPFILL }},
+    };
+
+    expert_module_t *expert_zbee_zcl;
+
+    /* Register the ZigBee ZCL Touchlink cluster protocol name and description */
+    proto_zbee_zcl_touchlink = proto_register_protocol("ZigBee ZCL Touchlink", "ZCL Touchlink", ZBEE_PROTOABBREV_ZCL_TOUCHLINK);
+    proto_register_field_array(proto_zbee_zcl_touchlink, hf, array_length(hf));
+    proto_register_subtree_array(ett, array_length(ett));
+    expert_zbee_zcl = expert_register_protocol(proto_zbee_zcl_touchlink);
+    expert_register_field_array(expert_zbee_zcl, ei, array_length(ei));
+
+    zcl_touchlink_commissioning_map = g_hash_table_new(zcl_touchlink_comissioning_hash, zcl_touchlink_comissioning_equal);
+
+    /* Register the ZigBee ZCL Touchlink Commissioning dissector. */
+    register_dissector(ZBEE_PROTOABBREV_ZCL_TOUCHLINK, dissect_zbee_zcl_touchlink, proto_zbee_zcl_touchlink);
+} /*proto_register_zbee_zcl_touchlink*/
+
+/**
+ *Hands off the ZCL Touchlink Commissioning dissector.
+ *
+*/
+void
+proto_reg_handoff_zbee_zcl_touchlink(void)
+{
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_TOUCHLINK,
+                            proto_zbee_zcl_touchlink,
+                            ett_zbee_zcl_touchlink,
+                            ZBEE_ZCL_CID_ZLL,
+                            ZBEE_MFG_CODE_NONE,
+                            -1, -1,
+                            hf_zbee_zcl_touchlink_rx_cmd_id, hf_zbee_zcl_touchlink_tx_cmd_id,
+                            NULL
+                         );
+} /*proto_reg_handoff_zbee_zcl_touchlink*/
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

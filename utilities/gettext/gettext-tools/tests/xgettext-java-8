@@ -1,0 +1,343 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Java support: formatted and format strings.
+
+: ${XGETTEXT=xgettext}
+
+cat <<\EOF > xg-j-8.java
+"<b>%s</b>".formatted(_("Hello 1"));
+_("Explanation: %s").formatted(_("Hello 2"));
+_("test case 1");
+_("test case 2").formatted();
+(_("test case 3"));
+(_("test case 4")).formatted();
+((_("test case 5")));
+((_("test case 6"))).formatted();
+return _("test case 10");
+return _("test case 11").formatted();
+return (_("test case 12").formatted());
+return (_("test case 13")).formatted();
+foo (_("test case 15"));
+foo (_("test case 16")).formatted();
+(foo (_("test case 17"))).formatted();
+(foo (_("test case 18")).formatted());
+foo (_("test case 19").formatted());
+foo + _("test case 20");
+foo + _("test case 21").formatted();
+(foo + _("test case 22")).formatted();
+_("test case 23") + foo;
+_("test case 24").formatted() + foo;
+(_("test case 25") + foo).formatted();
+_("test case 26 a") + _("test case 26 b");
+_("test case 27 a").formatted() + _("test case 27 b");
+_("test case 28 a") + _("test case 28 b").formatted();
+_("test case 29 a").formatted() + _("test case 29 b").formatted();
+(_("test case 30 a") + _("test case 30 b")).formatted();
+return _("test case 31 a") + _("test case 31 b");
+return _("test case 32 a").formatted() + _("test case 32 b");
+return _("test case 33 a") + _("test case 33 b").formatted();
+return _("test case 34 a").formatted() + _("test case 34 b").formatted();
+return (_("test case 35 a") + _("test case 35 b")).formatted();
+return _("test case 36 a") + (_("test case 36 b")).formatted() + _("test case 36 c").formatted();
+return _("test case 37 a") + _("test case 37 b").formatted() + (_("test case 37 c")).formatted();
+return _("test case 38 a") + (_("test case 38 b")).formatted() + (_("test case 38 c")).formatted();
+foo ? _("test case 40 a") : _("test case 40 b");
+foo ? _("test case 41 a").formatted() : _("test case 41 b");
+foo ? _("test case 42 a") : _("test case 42 b").formatted();
+foo ? _("test case 43 a").formatted() : _("test case 43 b").formatted();
+(foo ? _("test case 44 a") : _("test case 44 b"));
+(foo ? _("test case 45 a") : _("test case 45 b")).formatted();
+s = (_("test case 46")).formatted();
+(s = _("test case 47")).formatted();
+s += (_("test case 48")).formatted();
+(s += _("test case 49")).formatted();
+return _("test case 50 a")
+       + _("test case 50 b").formatted()
+       + (_("test case 50 c")).formatted()
+       + foo(_("test case 50 d")).formatted()
+       + (b ? _("test case 50 e") : _("test case 50 f")).formatted()
+       + (b ? foo + _("test case 50 g") : _("test case 50 h") + bar).formatted();
+EOF
+
+${XGETTEXT} --omit-header --no-location \
+            -k_ --flag=_:1:pass-java-format --flag=_:1:pass-java-printf-format \
+            -o xg-j-8.tmp xg-j-8.java \
+  || Exit 1
+func_filter_POT_Creation_Date xg-j-8.tmp xg-j-8.po
+
+cat <<\EOF > xg-j-8.ok
+msgid "Hello 1"
+msgstr ""
+
+#, java-printf-format
+msgid "Explanation: %s"
+msgstr ""
+
+msgid "Hello 2"
+msgstr ""
+
+msgid "test case 1"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 2"
+msgstr ""
+
+msgid "test case 3"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 4"
+msgstr ""
+
+msgid "test case 5"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 6"
+msgstr ""
+
+msgid "test case 10"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 11"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 12"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 13"
+msgstr ""
+
+msgid "test case 15"
+msgstr ""
+
+msgid "test case 16"
+msgstr ""
+
+msgid "test case 17"
+msgstr ""
+
+msgid "test case 18"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 19"
+msgstr ""
+
+msgid "test case 20"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 21"
+msgstr ""
+
+msgid "test case 22"
+msgstr ""
+
+msgid "test case 23"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 24"
+msgstr ""
+
+msgid "test case 25"
+msgstr ""
+
+msgid "test case 26 a"
+msgstr ""
+
+msgid "test case 26 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 27 a"
+msgstr ""
+
+msgid "test case 27 b"
+msgstr ""
+
+msgid "test case 28 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 28 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 29 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 29 b"
+msgstr ""
+
+msgid "test case 30 a"
+msgstr ""
+
+msgid "test case 30 b"
+msgstr ""
+
+msgid "test case 31 a"
+msgstr ""
+
+msgid "test case 31 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 32 a"
+msgstr ""
+
+msgid "test case 32 b"
+msgstr ""
+
+msgid "test case 33 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 33 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 34 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 34 b"
+msgstr ""
+
+msgid "test case 35 a"
+msgstr ""
+
+msgid "test case 35 b"
+msgstr ""
+
+msgid "test case 36 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 36 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 36 c"
+msgstr ""
+
+msgid "test case 37 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 37 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 37 c"
+msgstr ""
+
+msgid "test case 38 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 38 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 38 c"
+msgstr ""
+
+msgid "test case 40 a"
+msgstr ""
+
+msgid "test case 40 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 41 a"
+msgstr ""
+
+msgid "test case 41 b"
+msgstr ""
+
+msgid "test case 42 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 42 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 43 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 43 b"
+msgstr ""
+
+msgid "test case 44 a"
+msgstr ""
+
+msgid "test case 44 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 45 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 45 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 46"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 47"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 48"
+msgstr ""
+
+msgid "test case 49"
+msgstr ""
+
+msgid "test case 50 a"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 50 b"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 50 c"
+msgstr ""
+
+msgid "test case 50 d"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 50 e"
+msgstr ""
+
+#, java-printf-format
+msgid "test case 50 f"
+msgstr ""
+
+msgid "test case 50 g"
+msgstr ""
+
+msgid "test case 50 h"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-j-8.ok xg-j-8.po
+result=$?
+
+exit $result

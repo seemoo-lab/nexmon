@@ -1,0 +1,149 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
+@pindex printf_ngettext
+@cindex @code{printf_ngettext} program, usage
+@example
+printf_ngettext [@var{option}] @var{format} @var{format-plural} @var{count} [@var{argument}]...
+@end example
+
+@cindex lookup format string translation with plural
+@cindex formatted output in Shell
+The @code{printf_ngettext} program produces formatted output,
+applying the native language translation of
+@var{format} and @var{format-plural}, depending on @var{count},
+to the @var{argument}s.
+
+@noindent @strong{Options and arguments}
+
+@table @samp
+@item -c @var{context}
+@itemx --context=@var{context}
+@opindex -c@r{, @code{printf_ngettext} option}
+@opindex --context@r{, @code{printf_ngettext} option}
+Specify the context for the format string to be translated.
+See @ref{Contexts} for details.
+
+@item @var{format}
+English singular form of format string.
+
+@item @var{format-plural}
+English plural form of format string.
+
+@item @var{count}
+A cardinal number.
+The singular/plural form is chosen based on this value.
+
+@item @var{argument}
+A string or numeric argument.
+
+@end table
+
+@noindent @strong{Informative output}
+
+@table @samp
+@item -h
+@itemx --help
+@opindex -h@r{, @code{printf_ngettext} option}
+@opindex --help@r{, @code{printf_ngettext} option}
+Display this help and exit.
+
+@item -V
+@itemx --version
+@opindex -V@r{, @code{printf_ngettext} option}
+@opindex --version@r{, @code{printf_ngettext} option}
+Output version information and exit.
+
+@end table
+
+Each format string consists of
+@itemize @bullet
+@item
+plain text,
+@item
+directives, that start with @samp{%},
+@item
+escape sequences, that start with a backslash.
+@end itemize
+
+A directive that consumes an argument
+@itemize @bullet
+@item
+starts with @samp{%} or @samp{%@var{m}$} where @var{m} is a positive integer,
+@item
+is optionally followed by any of the characters
+@samp{#}, @samp{0}, @samp{-}, @samp{ }, @samp{+},
+each of which acts as a flag,
+@item
+is optionally followed by a width specification (a nonnegative integer),
+@item
+is optionally followed by @samp{.} and a precision specification
+(an optional nonnegative integer),
+@item
+is finished by a specifier
+@itemize @bullet
+@item
+@samp{c}, that prints a character,
+@item
+@samp{s}, that prints a string,
+@item
+@samp{i}, @samp{d}, that print an integer,
+@item
+@samp{u}, @samp{o}, @samp{x}, @samp{X},
+that print an unsigned (nonnegative) integer,
+@item
+@samp{e}, @samp{E}, that print a floating-point number in scientific notation,
+@item
+@samp{f}, @samp{F}, that print a floating-point number without an exponent,
+@item
+@samp{g}, @samp{G}, that print a floating-point number in general notation,
+@item
+@samp{a}, @samp{A}, that print a floating-point number in hexadecimal notation.
+@end itemize
+@end itemize
+
+Some flag+specifier combinations are invalid:
+@itemize @bullet
+@item
+The @samp{#} flag with the specifiers
+@samp{c}, @samp{s}, @samp{i}, @samp{d}, @samp{u}.
+@item
+The @samp{0} flag with the specifiers
+@samp{c}, @samp{s}.
+@end itemize
+
+Additionally there is the directive @samp{%%}, that prints a single @code{%}.
+
+If a directive specifies the argument by its number (@samp{%@var{m}$} notation),
+all directives that consume an argument must do so.
+
+The escape sequences are:
+@table @code
+@item \\
+backslash
+@item \a
+alert (BEL)
+@item \b
+backspace (BS)
+@item \f
+form feed (FF)
+@item \n
+new line (LF)
+@item \r
+carriage return (CR)
+@item \t
+horizontal tab (HT)
+@item \v
+vertical tab (VT)
+@item \@var{nnn}
+octal number with 1 to 3 octal digits
+@end table
+
+@noindent @strong{Environment Variables}
+
+The translation of the format string is looked up in the translation domain
+given by the environment variable @code{TEXTDOMAIN}.
+
+It is looked up in the catalogs directory given by the environment variable
+@code{TEXTDOMAINDIR} or, if not present, in the default catalogs directory.

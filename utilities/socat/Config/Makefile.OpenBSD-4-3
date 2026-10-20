@@ -83,7 +83,7 @@ OSFILES = Config/Makefile.Linux-2-6-24 Config/config.Linux-2-6-24.h \
 	Config/Makefile.NetBSD-4-0 Config/config.NetBSD-4-0.h \
 	Config/Makefile.OpenBSD-4-3 Config/config.OpenBSD-4-3.h
 
-all: progs
+all: progs doc
 
 scmclean: gitclean
 
@@ -126,11 +126,13 @@ doc: doc/xio.help
 strip: progs
 	strip $(PROGS)
 
-install: progs
+install: progs $(srcdir)/doc/socat.1
 	mkdir -p $(DESTDIR)$(BINDEST)
 	$(INSTALL) -m 755 socat $(DESTDIR)$(BINDEST)
 	$(INSTALL) -m 755 procan $(DESTDIR)$(BINDEST)
 	$(INSTALL) -m 755 filan $(DESTDIR)$(BINDEST)
+	mkdir -p $(DESTDIR)$(MANDEST)/man1
+	$(INSTALL) -m 644 $(srcdir)/doc/socat.1 $(DESTDIR)$(MANDEST)/man1/
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDEST)/socat

@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,6 +18,7 @@
 #include <epan/conversation.h>
 #include <epan/expert.h>
 #include <epan/uat.h>
+#include <wsutil/array.h>
 
 #include <epan/asn1.h>
 #include <epan/oids.h>
@@ -51,63 +40,63 @@ void proto_register_pres(void);
 void proto_reg_handoff_pres(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_pres = -1;
+static int proto_pres;
 
-/* Initialize the connectionles protocol */
-static int proto_clpres = -1;
+/* Initialize the connectionless protocol */
+static int proto_clpres;
 
 /*      pointers for acse dissector  */
-proto_tree *global_tree  = NULL;
-packet_info *global_pinfo = NULL;
+proto_tree *global_tree;
+packet_info *global_pinfo;
 
 static const char *abstract_syntax_name_oid;
-static guint32 presentation_context_identifier;
+static uint32_t presentation_context_identifier;
 
 /* to keep track of presentation context identifiers and protocol-oids */
 typedef struct _pres_ctx_oid_t {
-	guint32 ctx_id;
+	uint32_t ctx_id;
 	char *oid;
-	guint32 idx;
+	uint32_t idx;
 } pres_ctx_oid_t;
-static GHashTable *pres_ctx_oid_table = NULL;
+static wmem_map_t *pres_ctx_oid_table;
 
 typedef struct _pres_user_t {
-   guint ctx_id;
+   unsigned ctx_id;
    char *oid;
 } pres_user_t;
 
 static pres_user_t *pres_users;
-static guint num_pres_users;
+static unsigned num_pres_users;
 
-static int hf_pres_CP_type = -1;
-static int hf_pres_CPA_PPDU = -1;
-static int hf_pres_Abort_type = -1;
-static int hf_pres_CPR_PPDU = -1;
-static int hf_pres_Typed_data_type = -1;
+static int hf_pres_CP_type;
+static int hf_pres_CPA_PPDU;
+static int hf_pres_Abort_type;
+static int hf_pres_CPR_PPDU;
+static int hf_pres_Typed_data_type;
 
 #include "packet-pres-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_pres           = -1;
+static int ett_pres;
 
 #include "packet-pres-ett.c"
 
-static expert_field ei_pres_dissector_not_available = EI_INIT;
-static expert_field ei_pres_wrong_spdu_type = EI_INIT;
-static expert_field ei_pres_invalid_offset = EI_INIT;
+static expert_field ei_pres_dissector_not_available;
+static expert_field ei_pres_wrong_spdu_type;
+static expert_field ei_pres_invalid_offset;
 
 UAT_DEC_CB_DEF(pres_users, ctx_id, pres_user_t)
 UAT_CSTRING_CB_DEF(pres_users, oid, pres_user_t)
 
-static guint
-pres_ctx_oid_hash(gconstpointer k)
+static unsigned
+pres_ctx_oid_hash(const void *k)
 {
 	const pres_ctx_oid_t *pco=(const pres_ctx_oid_t *)k;
 	return pco->ctx_id;
 }
 
-static gint
-pres_ctx_oid_equal(gconstpointer k1, gconstpointer k2)
+static int
+pres_ctx_oid_equal(const void *k1, const void *k2)
 {
 	const pres_ctx_oid_t *pco1=(const pres_ctx_oid_t *)k1;
 	const pres_ctx_oid_t *pco2=(const pres_ctx_oid_t *)k2;
@@ -115,21 +104,7 @@ pres_ctx_oid_equal(gconstpointer k1, gconstpointer k2)
 }
 
 static void
-pres_init(void)
-{
-	pres_ctx_oid_table = g_hash_table_new(pres_ctx_oid_hash,
-			pres_ctx_oid_equal);
-
-}
-
-static void
-pres_cleanup(void)
-{
-	g_hash_table_destroy(pres_ctx_oid_table);
-}
-
-static void
-register_ctx_id_and_oid(packet_info *pinfo _U_, guint32 idx, const char *oid)
+register_ctx_id_and_oid(packet_info *pinfo _U_, uint32_t idx, const char *oid)
 {
 	pres_ctx_oid_t *pco, *tmppco;
 	conversation_t *conversation;
@@ -142,8 +117,7 @@ register_ctx_id_and_oid(packet_info *pinfo _U_, guint32 idx, const char *oid)
 	pco=wmem_new(wmem_file_scope(), pres_ctx_oid_t);
 	pco->ctx_id=idx;
 	pco->oid=wmem_strdup(wmem_file_scope(), oid);
-	conversation=find_conversation (pinfo->num, &pinfo->src, &pinfo->dst,
-			pinfo->ptype, pinfo->srcport, pinfo->destport, 0);
+	conversation=find_conversation_pinfo(pinfo, 0);
 	if (conversation) {
 		pco->idx = conversation->conv_index;
 	} else {
@@ -151,17 +125,17 @@ register_ctx_id_and_oid(packet_info *pinfo _U_, guint32 idx, const char *oid)
 	}
 
 	/* if this ctx already exists, remove the old one first */
-	tmppco=(pres_ctx_oid_t *)g_hash_table_lookup(pres_ctx_oid_table, pco);
+	tmppco=(pres_ctx_oid_t *)wmem_map_lookup(pres_ctx_oid_table, pco);
 	if (tmppco) {
-		g_hash_table_remove(pres_ctx_oid_table, tmppco);
+		wmem_map_remove(pres_ctx_oid_table, tmppco);
 	}
-	g_hash_table_insert(pres_ctx_oid_table, pco, pco);
+	wmem_map_insert(pres_ctx_oid_table, pco, pco);
 }
 
 static char *
-find_oid_in_users_table(packet_info *pinfo, guint32 ctx_id)
+find_oid_in_users_table(packet_info *pinfo, uint32_t ctx_id)
 {
-	guint i;
+	unsigned i;
 
 	for (i = 0; i < num_pres_users; i++) {
 		pres_user_t *u = &(pres_users[i]);
@@ -177,21 +151,20 @@ find_oid_in_users_table(packet_info *pinfo, guint32 ctx_id)
 }
 
 char *
-find_oid_by_pres_ctx_id(packet_info *pinfo, guint32 idx)
+find_oid_by_pres_ctx_id(packet_info *pinfo, uint32_t idx)
 {
 	pres_ctx_oid_t pco, *tmppco;
 	conversation_t *conversation;
 
 	pco.ctx_id=idx;
-	conversation=find_conversation (pinfo->num, &pinfo->src, &pinfo->dst,
-			pinfo->ptype, pinfo->srcport, pinfo->destport, 0);
+	conversation=find_conversation_pinfo(pinfo, 0);
 	if (conversation) {
 		pco.idx = conversation->conv_index;
 	} else {
 		pco.idx = 0;
 	}
 
-	tmppco=(pres_ctx_oid_t *)g_hash_table_lookup(pres_ctx_oid_table, &pco);
+	tmppco=(pres_ctx_oid_t *)wmem_map_lookup(pres_ctx_oid_table, &pco);
 	if (tmppco) {
 		return tmppco->oid;
 	}
@@ -233,7 +206,7 @@ dissect_ppdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, st
 	proto_tree *pres_tree;
 	struct SESSION_DATA_STRUCTURE* session;
 	asn1_ctx_t asn1_ctx;
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	/* do we have spdu type from the session dissector?  */
 	if (local_session == NULL) {
@@ -250,7 +223,7 @@ dissect_ppdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, st
 
 	/*  set up type of PPDU */
 	col_add_str(pinfo->cinfo, COL_INFO,
-		    val_to_str_ext(session->spdu_type, &ses_vals_ext, "Unknown PPDU type (0x%02x)"));
+		    val_to_str_ext(pinfo->pool, session->spdu_type, &ses_vals_ext, "Unknown PPDU type (0x%02x)"));
 
 	asn1_ctx.private_data = session;
 
@@ -259,32 +232,32 @@ dissect_ppdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, st
 
 	switch (session->spdu_type) {
 		case SES_CONNECTION_REQUEST:
-			offset = dissect_pres_CP_type(FALSE, tvb, offset, &asn1_ctx, pres_tree, hf_pres_CP_type);
+			offset = dissect_pres_CP_type(false, tvb, offset, &asn1_ctx, pres_tree, hf_pres_CP_type);
 			break;
 		case SES_CONNECTION_ACCEPT:
-			offset = dissect_pres_CPA_PPDU(FALSE, tvb, offset, &asn1_ctx, pres_tree, hf_pres_CPA_PPDU);
+			offset = dissect_pres_CPA_PPDU(false, tvb, offset, &asn1_ctx, pres_tree, hf_pres_CPA_PPDU);
 			break;
 		case SES_ABORT:
 		case SES_ABORT_ACCEPT:
-			offset = dissect_pres_Abort_type(FALSE, tvb, offset, &asn1_ctx, pres_tree, hf_pres_Abort_type);
+			offset = dissect_pres_Abort_type(false, tvb, offset, &asn1_ctx, pres_tree, hf_pres_Abort_type);
 			break;
 		case SES_DATA_TRANSFER:
-			offset = dissect_pres_CPC_type(FALSE, tvb, offset, &asn1_ctx, pres_tree, hf_pres_user_data);
+			offset = dissect_pres_CPC_type(false, tvb, offset, &asn1_ctx, pres_tree, hf_pres_user_data);
 			break;
 		case SES_TYPED_DATA:
-			offset = dissect_pres_Typed_data_type(FALSE, tvb, offset, &asn1_ctx, pres_tree, hf_pres_Typed_data_type);
+			offset = dissect_pres_Typed_data_type(false, tvb, offset, &asn1_ctx, pres_tree, hf_pres_Typed_data_type);
 			break;
 		case SES_RESYNCHRONIZE:
-			offset = dissect_pres_RS_PPDU(FALSE, tvb, offset, &asn1_ctx, pres_tree, -1);
+			offset = dissect_pres_RS_PPDU(false, tvb, offset, &asn1_ctx, pres_tree, -1);
 			break;
 		case SES_RESYNCHRONIZE_ACK:
-			offset = dissect_pres_RSA_PPDU(FALSE, tvb, offset, &asn1_ctx, pres_tree, -1);
+			offset = dissect_pres_RSA_PPDU(false, tvb, offset, &asn1_ctx, pres_tree, -1);
 			break;
 		case SES_REFUSE:
-			offset = dissect_pres_CPR_PPDU(FALSE, tvb, offset, &asn1_ctx, pres_tree, hf_pres_CPR_PPDU);
+			offset = dissect_pres_CPR_PPDU(false, tvb, offset, &asn1_ctx, pres_tree, hf_pres_CPR_PPDU);
 			break;
 		default:
-			offset = dissect_pres_CPC_type(FALSE, tvb, offset, &asn1_ctx, pres_tree, hf_pres_user_data);
+			offset = dissect_pres_CPC_type(false, tvb, offset, &asn1_ctx, pres_tree, hf_pres_user_data);
 			break;
 	}
 
@@ -304,7 +277,7 @@ dissect_pres(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	if (!tvb_bytes_exist(tvb, 0, 4)) {
 		if (session && session->spdu_type != SES_MAJOR_SYNC_POINT) {
 			proto_tree_add_item(parent_tree, hf_pres_user_data, tvb, offset,
-					    tvb_reported_length_remaining(tvb,offset), ENC_NA);
+					tvb_reported_length_remaining(tvb,offset), ENC_BIG_ENDIAN);
 			return 0;  /* no, it isn't a presentation PDU */
 		}
 	}
@@ -345,7 +318,7 @@ dissect_pres(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 			call_ber_oid_callback (oid, tvb, offset, pinfo, parent_tree, session);
 		} else {
 			proto_tree_add_item(parent_tree, hf_pres_user_data, tvb, offset,
-					    tvb_reported_length_remaining(tvb,offset), ENC_NA);
+			                    tvb_reported_length_remaining(tvb,offset), ENC_BIG_ENDIAN);
 		}
 		return tvb_captured_length(tvb);
 	}
@@ -393,7 +366,7 @@ void proto_register_pres(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 		&ett_pres,
 #include "packet-pres-ettarr.c"
   };
@@ -401,7 +374,7 @@ void proto_register_pres(void) {
   static ei_register_info ei[] = {
      { &ei_pres_dissector_not_available, { "pres.dissector_not_available", PI_UNDECODED, PI_WARN, "Dissector is not available", EXPFILL }},
      { &ei_pres_wrong_spdu_type, { "pres.wrong_spdu_type", PI_PROTOCOL, PI_WARN, "Internal error:can't get spdu type from session dissector", EXPFILL }},
-     { &ei_pres_invalid_offset, { "pres.invalid_offset", PI_MALFORMED, PI_ERROR, "Internal error:can't get spdu type from session dissector", EXPFILL }},
+     { &ei_pres_invalid_offset, { "pres.invalid_offset", PI_MALFORMED, PI_ERROR, "Internal error: PPDU made offset go backwards", EXPFILL }},
   };
 
   static uat_field_t users_flds[] = {
@@ -413,7 +386,7 @@ void proto_register_pres(void) {
   uat_t* users_uat = uat_new("PRES Users Context List",
                              sizeof(pres_user_t),
                              "pres_context_list",
-                             TRUE,
+                             true,
                              &pres_users,
                              &num_pres_users,
                              UAT_AFFECTS_DISSECTION, /* affects dissection of packets, but not set of named fields */
@@ -421,6 +394,7 @@ void proto_register_pres(void) {
                              pres_copy_cb,
                              NULL,
                              pres_free_cb,
+                             NULL,
                              NULL,
                              users_flds);
 
@@ -439,8 +413,7 @@ void proto_register_pres(void) {
   proto_register_subtree_array(ett, array_length(ett));
   expert_pres = expert_register_protocol(proto_pres);
   expert_register_field_array(expert_pres, ei, array_length(ei));
-  register_init_routine(pres_init);
-  register_cleanup_routine(pres_cleanup);
+  pres_ctx_oid_table = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), pres_ctx_oid_hash, pres_ctx_oid_equal);
 
   pres_module = prefs_register_protocol(proto_pres, NULL);
 

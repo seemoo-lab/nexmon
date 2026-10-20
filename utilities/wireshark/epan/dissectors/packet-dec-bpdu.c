@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,6 +15,7 @@
 #include <epan/packet.h>
 #include <epan/etypes.h>
 #include <epan/ppptypes.h>
+#include <epan/tfs.h>
 
 /* Offsets of fields within a BPDU */
 
@@ -56,27 +45,29 @@
 void proto_register_dec_bpdu(void);
 void proto_reg_handoff_dec_bpdu(void);
 
-static int proto_dec_bpdu = -1;
-static int hf_dec_bpdu_proto_id = -1;
-static int hf_dec_bpdu_type = -1;
-static int hf_dec_bpdu_version_id = -1;
-static int hf_dec_bpdu_flags = -1;
-static int hf_dec_bpdu_flags_short_timers = -1;
-static int hf_dec_bpdu_flags_tcack = -1;
-static int hf_dec_bpdu_flags_tc = -1;
-static int hf_dec_bpdu_root_pri = -1;
-static int hf_dec_bpdu_root_mac = -1;
-static int hf_dec_bpdu_root_cost = -1;
-static int hf_dec_bpdu_bridge_pri = -1;
-static int hf_dec_bpdu_bridge_mac = -1;
-static int hf_dec_bpdu_port_id = -1;
-static int hf_dec_bpdu_msg_age = -1;
-static int hf_dec_bpdu_hello_time = -1;
-static int hf_dec_bpdu_max_age = -1;
-static int hf_dec_bpdu_forward_delay = -1;
+static dissector_handle_t dec_bpdu_handle;
 
-static gint ett_dec_bpdu = -1;
-static gint ett_dec_bpdu_flags = -1;
+static int proto_dec_bpdu;
+static int hf_dec_bpdu_proto_id;
+static int hf_dec_bpdu_type;
+static int hf_dec_bpdu_version_id;
+static int hf_dec_bpdu_flags;
+static int hf_dec_bpdu_flags_short_timers;
+static int hf_dec_bpdu_flags_tcack;
+static int hf_dec_bpdu_flags_tc;
+static int hf_dec_bpdu_root_pri;
+static int hf_dec_bpdu_root_mac;
+static int hf_dec_bpdu_root_cost;
+static int hf_dec_bpdu_bridge_pri;
+static int hf_dec_bpdu_bridge_mac;
+static int hf_dec_bpdu_port_id;
+static int hf_dec_bpdu_msg_age;
+static int hf_dec_bpdu_hello_time;
+static int hf_dec_bpdu_max_age;
+static int hf_dec_bpdu_forward_delay;
+
+static int ett_dec_bpdu;
+static int ett_dec_bpdu_flags;
 
 static const value_string protocol_id_vals[] = {
     { 0xe1, "DEC Spanning Tree Protocol" },
@@ -95,10 +86,10 @@ static const value_string bpdu_type_vals[] = {
 static int
 dissect_dec_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint8  bpdu_type;
+    uint8_t bpdu_type;
     proto_tree *bpdu_tree;
     proto_item *ti;
-    static const int * bpdu_flags[] = {
+    static int * const bpdu_flags[] = {
         &hf_dec_bpdu_flags_short_timers,
         &hf_dec_bpdu_flags_tcack,
         &hf_dec_bpdu_flags_tc,
@@ -108,10 +99,10 @@ dissect_dec_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "DEC_STP");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    bpdu_type = tvb_get_guint8(tvb, BPDU_TYPE);
+    bpdu_type = tvb_get_uint8(tvb, BPDU_TYPE);
 
     col_add_str(pinfo->cinfo, COL_INFO,
-                val_to_str(bpdu_type, bpdu_type_vals,
+                val_to_str(pinfo->pool, bpdu_type, bpdu_type_vals,
                            "Unknown BPDU type (%u)"));
 
     set_actual_length(tvb, DEC_BPDU_SIZE);
@@ -230,7 +221,7 @@ proto_register_dec_bpdu(void)
             FT_UINT8,       BASE_DEC,       NULL,   0x0,
             NULL, HFILL }},
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_dec_bpdu,
         &ett_dec_bpdu_flags,
     };
@@ -239,22 +230,21 @@ proto_register_dec_bpdu(void)
                                              "DEC_STP", "dec_stp");
     proto_register_field_array(proto_dec_bpdu, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    dec_bpdu_handle = register_dissector("dec_stp", dissect_dec_bpdu,
+                                              proto_dec_bpdu);
 }
 
 void
 proto_reg_handoff_dec_bpdu(void)
 {
-    dissector_handle_t dec_bpdu_handle;
-
-    dec_bpdu_handle = create_dissector_handle(dissect_dec_bpdu,
-                                              proto_dec_bpdu);
     dissector_add_uint("ethertype", ETHERTYPE_DEC_LB, dec_bpdu_handle);
     dissector_add_uint("chdlc.protocol", ETHERTYPE_DEC_LB, dec_bpdu_handle);
     dissector_add_uint("ppp.protocol", PPP_DEC_LB, dec_bpdu_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

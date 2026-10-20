@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2003 Noah Levitt
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,12 +22,24 @@
 #define __G_UNICODE_PRIVATE_H__
 
 #include "gtypes.h"
+#include "gunicode.h"
 
 G_BEGIN_DECLS
 
 gunichar *_g_utf8_normalize_wc (const gchar    *str,
                                 gssize          max_len,
 				GNormalizeMode  mode);
+
+void
+g_utf8_to_utf16_make_valid (const char  *utf8,
+                            gunichar2   *buffer,
+                            size_t       buffer_len,
+                            gunichar2  **out_utf16,
+                            size_t      *out_utf16_len);
+
+size_t
+g_utf8_to_utf16_make_valid_backtrack (const char *utf8,
+                                      size_t      utf16_len);
 
 G_END_DECLS
 

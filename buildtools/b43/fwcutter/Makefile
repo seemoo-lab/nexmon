@@ -17,7 +17,7 @@ endif
 
 PREFIX ?= /usr/local
 CFLAGS		?= -Os -fomit-frame-pointer
-CFLAGS		+= -std=c99 -Wall -pedantic -D_BSD_SOURCE
+CFLAGS		+= -std=c99 -Wall -pedantic -D_DEFAULT_SOURCE
 LDFLAGS		?=
 
 SRCS = fwcutter.c md5.c

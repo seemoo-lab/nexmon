@@ -29,7 +29,7 @@ MY_OBJS_WC		:= src/wpaclean.c
 MY_CFLAGS		:= -g -W -Wall -O3 -DANDROID -D_REVISION=0 -D_FILE_OFFSET_BITS=64 \
 	-Wno-unused-but-set-variable -Wno-array-bounds -Wno-unused-parameter -Wno-unused-variable \
 	-I $(LOCAL_PATH)/src -I $(LOCAL_PATH)/src/include -D__int8_t_defined \
-	-fPIC -mandroid -DANDROID -DOS_ANDROID -DLinux -DHAVE_SQLITE
+	-fPIC -DANDROID -DOS_ANDROID -DLinux -DHAVE_SQLITE
 
 
 include $(CLEAR_VARS)

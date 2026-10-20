@@ -3,42 +3,20 @@
  *  Copyright (C) 1999, 2000 Tom Tromey
  *  Copyright 2000 Red Hat, Inc.
  *
- * The Gnome Library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  *
- * The Gnome Library is distributed in the hope that it will be useful,
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with the Gnome Library; see the file COPYING.LIB.  If not,
- * see <http://www.gnu.org/licenses/>.
- */
-
-/**
- * SECTION:unicode
- * @Title: Unicode Manipulation
- * @Short_description: functions operating on Unicode characters and
- *     UTF-8 strings
- * @See_also: g_locale_to_utf8(), g_locale_from_utf8()
- *
- * This section describes a number of functions for dealing with
- * Unicode characters and strings. There are analogues of the
- * traditional `ctype.h` character classification and case conversion
- * functions, UTF-8 analogues of some string utility functions,
- * functions to perform normalization, case conversion and collation
- * on UTF-8 strings and finally functions to convert between the UTF-8,
- * UTF-16 and UCS-4 encodings of Unicode.
- *
- * The implementations of the Unicode functions in GLib are based
- * on the Unicode Character Data tables, which are available from
- * [www.unicode.org](http://www.unicode.org/).
- * GLib 2.8 supports Unicode 4.0, GLib 2.10 supports Unicode 4.1,
- * GLib 2.12 supports Unicode 5.0, GLib 2.16.3 supports Unicode 5.1,
- * GLib 2.30 supports Unicode 6.0.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -48,6 +26,7 @@
 #include "gunicode.h"
 #include "gunidecomp.h"
 #include "gmem.h"
+#include "gtestutils.h"
 #include "gunicomp.h"
 #include "gunicodeprivate.h"
 
@@ -98,7 +77,7 @@ g_unichar_combining_class (gunichar uc)
 
 /**
  * g_unicode_canonical_ordering:
- * @string: a UCS-4 encoded string.
+ * @string: (array length=len) (element-type gunichar): a UCS-4 encoded string.
  * @len: the maximum length of @string to use.
  *
  * Computes the canonical ordering of a string in-place.  
@@ -328,7 +307,7 @@ combine (gunichar  a,
   
   index_b = COMPOSE_INDEX(b);
 
-  if (index_b >= COMPOSE_SECOND_SINGLE_START)
+  if (index_b >= COMPOSE_SECOND_SINGLE_START && index_b < COMPOSE_EITHER_START)
     {
       if (a == compose_second_single[index_b - COMPOSE_SECOND_SINGLE_START][0])
 	{
@@ -351,6 +330,18 @@ combine (gunichar  a,
 	}
     }
 
+  if (index_a >= COMPOSE_EITHER_START &&
+      index_b >= COMPOSE_EITHER_START)
+    {
+      gunichar res = compose_either_array[index_a - COMPOSE_EITHER_START][index_b - COMPOSE_EITHER_START];
+
+      if (res)
+        {
+          *result = res;
+          return TRUE;
+        }
+    }
+
   return FALSE;
 }
 
@@ -368,14 +359,40 @@ _g_utf8_normalize_wc (const gchar    *str,
   gboolean do_compose = (mode == G_NORMALIZE_NFC ||
 			 mode == G_NORMALIZE_NFKC);
 
+  /* Do a first pass to work out the length of the normalised string so we can
+   * allocate a buffer. */
   n_wc = 0;
   p = str;
   while ((max_len < 0 || p < str + max_len) && *p)
     {
       const gchar *decomp;
-      gunichar wc = g_utf8_get_char (p);
+      const char *next, *between;
+      gunichar wc;
 
-      if (wc >= SBase && wc < SBase + SCount)
+      next = g_utf8_next_char (p);
+      /* Avoid reading truncated multibyte characters
+         which run past the end of the buffer */
+      if (max_len < 0)
+        {
+          /* Does the character contain a NUL terminator? */
+          for (between = &p[1]; between < next; between++)
+            {
+              if (G_UNLIKELY (!*between))
+                return NULL;
+            }
+        }
+      else
+        {
+          if (G_UNLIKELY (next > str + max_len))
+            return NULL;
+        }
+      wc = g_utf8_get_char (p);
+
+      if (G_UNLIKELY (wc == (gunichar) -1))
+        {
+          return NULL;
+        }
+      else if (wc >= SBase && wc < SBase + SCount)
         {
           gsize result_len;
           decompose_hangul (wc, NULL, &result_len);
@@ -391,11 +408,13 @@ _g_utf8_normalize_wc (const gchar    *str,
             n_wc++;
         }
 
-      p = g_utf8_next_char (p);
+      p = next;
     }
 
+  /* Allocate the buffer for the result. */
   wc_buffer = g_new (gunichar, n_wc + 1);
 
+  /* Do another pass to fill the buffer with the normalised string. */
   last_start = 0;
   n_wc = 0;
   p = str;
@@ -426,16 +445,16 @@ _g_utf8_normalize_wc (const gchar    *str,
             wc_buffer[n_wc++] = wc;
         }
 
-      if (n_wc > 0)
-	{
-	  cc = COMBINING_CLASS (wc_buffer[old_n_wc]);
+      /* Each code path above *must* have appended at least gunichar to wc_buffer. */
+      g_assert (n_wc > old_n_wc);
 
-	  if (cc == 0)
-	    {
-	      g_unicode_canonical_ordering (wc_buffer + last_start, n_wc - last_start);
-	      last_start = old_n_wc;
-	    }
-	}
+      cc = COMBINING_CLASS (wc_buffer[old_n_wc]);
+
+      if (cc == 0)
+        {
+          g_unicode_canonical_ordering (wc_buffer + last_start, n_wc - last_start);
+          last_start = old_n_wc;
+        }
       
       p = g_utf8_next_char (p);
     }
@@ -444,6 +463,7 @@ _g_utf8_normalize_wc (const gchar    *str,
     {
       g_unicode_canonical_ordering (wc_buffer + last_start, n_wc - last_start);
       last_start = n_wc;
+      (void) last_start;
     }
 	  
   wc_buffer[n_wc] = 0;
@@ -522,9 +542,9 @@ _g_utf8_normalize_wc (const gchar    *str,
  * a legacy encoding or pass it to a system with
  * less capable Unicode handling.
  *
- * Returns: a newly allocated string, that is the
- *   normalized form of @str, or %NULL if @str is not
- *   valid UTF-8.
+ * Returns: (nullable): a newly allocated string, that
+ *   is the normalized form of @str, or %NULL if @str
+ *   is not valid UTF-8.
  **/
 gchar *
 g_utf8_normalize (const gchar    *str,
@@ -532,10 +552,13 @@ g_utf8_normalize (const gchar    *str,
 		  GNormalizeMode  mode)
 {
   gunichar *result_wc = _g_utf8_normalize_wc (str, len, mode);
-  gchar *result;
+  gchar *result = NULL;
 
-  result = g_ucs4_to_utf8 (result_wc, -1, NULL, NULL, NULL);
-  g_free (result_wc);
+  if (G_LIKELY (result_wc != NULL))
+    {
+      result = g_ucs4_to_utf8 (result_wc, -1, NULL, NULL, NULL);
+      g_free (result_wc);
+    }
 
   return result;
 }
@@ -572,8 +595,8 @@ decompose_hangul_step (gunichar  ch,
 /**
  * g_unichar_decompose:
  * @ch: a Unicode character
- * @a: return location for the first component of @ch
- * @b: return location for the second component of @ch
+ * @a: (out) (not optional): return location for the first component of @ch
+ * @b: (out) (not optional): return location for the second component of @ch
  *
  * Performs a single decomposition step of the
  * Unicode canonical decomposition algorithm.
@@ -582,10 +605,10 @@ decompose_hangul_step (gunichar  ch,
  * decompositions. It does, however, include algorithmic
  * Hangul Jamo decomposition, as well as 'singleton'
  * decompositions which replace a character by a single
- * other character. In the case of singletons *@b will
+ * other character. In the case of singletons `*b` will
  * be set to zero.
  *
- * If @ch is not decomposable, *@a is set to @ch and *@b
+ * If @ch is not decomposable, `*a` is set to @ch and `*b`
  * is set to zero.
  *
  * Note that the way Unicode decomposition pairs are
@@ -647,7 +670,7 @@ g_unichar_decompose (gunichar  ch,
  * g_unichar_compose:
  * @a: a Unicode character
  * @b: a Unicode character
- * @ch: return location for the composed character
+ * @ch: (out) (not optional): return location for the composed character
  *
  * Performs a single composition step of the
  * Unicode canonical composition algorithm.
@@ -686,7 +709,7 @@ g_unichar_compose (gunichar  a,
  * g_unichar_fully_decompose:
  * @ch: a Unicode character.
  * @compat: whether perform canonical or compatibility decomposition
- * @result: (allow-none): location to store decomposed result, or %NULL
+ * @result: (optional) (out caller-allocates): location to store decomposed result, or %NULL
  * @result_len: length of @result
  *
  * Computes the canonical or compatibility decomposition of a

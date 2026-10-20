@@ -1,9 +1,9 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test awk support: --add-comments option.
+# Test awk support: --add-comments option, string concatenation.
 
-cat <<EOF > xg-a-1.awk
+cat <<\EOF > xg-a-1.awk
 # This comment will not be extracted.
 print _"help"
 #  TRANSLATORS: This is an extracted comment.
@@ -13,6 +13,12 @@ print _"Hey Jude"
 # TRANSLATORS:
 #    Nickname of the Beatles
 print _"The Fabulous Four"
+# This string is not extracted.
+print "not extracted"
+# String concatenation in regular contexts.
+print dcgettext("Olivia" " " "Newton-John")
+# String concatenation *not* happening right after the _ marker.
+print _"hello" " world"
 EOF
 
 : ${XGETTEXT=xgettext}
@@ -20,7 +26,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-a-1.tmp xg-a-1.awk || Exit 1
 LC_ALL=C tr -d '\r' < xg-a-1.tmp.po > xg-a-1.po || Exit 1
 
-cat <<EOF > xg-a-1.ok
+cat <<\EOF > xg-a-1.ok
 msgid "help"
 msgstr ""
 
@@ -34,6 +40,12 @@ msgstr ""
 #. TRANSLATORS:
 #. Nickname of the Beatles
 msgid "The Fabulous Four"
+msgstr ""
+
+msgid "Olivia Newton-John"
+msgstr ""
+
+msgid "hello"
 msgstr ""
 EOF
 

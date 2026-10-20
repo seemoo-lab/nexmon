@@ -1,48 +1,48 @@
-/*--------------------------------------------------------------- 
- * Copyright (c) 1999,2000,2001,2002,2003                              
- * The Board of Trustees of the University of Illinois            
- * All Rights Reserved.                                           
- *--------------------------------------------------------------- 
- * Permission is hereby granted, free of charge, to any person    
- * obtaining a copy of this software (Iperf) and associated       
- * documentation files (the "Software"), to deal in the Software  
- * without restriction, including without limitation the          
- * rights to use, copy, modify, merge, publish, distribute,        
- * sublicense, and/or sell copies of the Software, and to permit     
+/*---------------------------------------------------------------
+ * Copyright (c) 1999,2000,2001,2002,2003
+ * The Board of Trustees of the University of Illinois
+ * All Rights Reserved.
+ *---------------------------------------------------------------
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software (Iperf) and associated
+ * documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit
  * persons to whom the Software is furnished to do
- * so, subject to the following conditions: 
+ * so, subject to the following conditions:
  *
- *     
- * Redistributions of source code must retain the above 
- * copyright notice, this list of conditions and 
- * the following disclaimers. 
  *
- *     
- * Redistributions in binary form must reproduce the above 
- * copyright notice, this list of conditions and the following 
- * disclaimers in the documentation and/or other materials 
- * provided with the distribution. 
- * 
- *     
- * Neither the names of the University of Illinois, NCSA, 
- * nor the names of its contributors may be used to endorse 
+ * Redistributions of source code must retain the above
+ * copyright notice, this list of conditions and
+ * the following disclaimers.
+ *
+ *
+ * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following
+ * disclaimers in the documentation and/or other materials
+ * provided with the distribution.
+ *
+ *
+ * Neither the names of the University of Illinois, NCSA,
+ * nor the names of its contributors may be used to endorse
  * or promote products derived from this Software without
- * specific prior written permission. 
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
- * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT 
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+ * specific prior written permission.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * ________________________________________________________________
- * National Laboratory for Applied Network Research 
- * National Center for Supercomputing Applications 
- * University of Illinois at Urbana-Champaign 
+ * National Laboratory for Applied Network Research
+ * National Center for Supercomputing Applications
+ * University of Illinois at Urbana-Champaign
  * http://www.ncsa.uiuc.edu
- * ________________________________________________________________ 
+ * ________________________________________________________________
  *
  * headers.h
  * by Mark Gates <mgates@nlanr.net>
@@ -71,12 +71,6 @@
     #endif
 #endif /* HAVE_CONFIG_H */
 
-/* turn off assert debugging */
-#ifdef NDEBUG
-    #undef NDEBUG
-#endif
-#define NDEBUG
-
 /* standard C headers */
 #include <stdlib.h>
 #include <stdio.h>
@@ -88,6 +82,85 @@
 #include <float.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <inttypes.h>
+#include <limits.h>
+
+#ifdef HAVE_STDBOOL_H
+# include <stdbool.h>
+#else
+# ifndef HAVE__BOOL
+#  ifdef __cplusplus
+typedef bool _Bool;
+#  else
+#   define _Bool signed char
+#  endif
+# endif
+# define bool _Bool
+# define false 0
+# define true 1
+# define __bool_true_false_are_defined 1
+#endif
+
+
+// v4: 1470 bytes UDP payload will fill one and only one ethernet datagram (IPv4 overhead is 20 bytes)
+#define  kDefault_UDPBufLen 1470
+// v6: 1450 bytes UDP payload will fill one and only one ethernet datagram (IPv6 overhead is 40 bytes)
+#define  kDefault_UDPBufLenV6 1450
+#define  IPV4HDRLEN 20
+#define  IPV6HDRLEN 40
+#define  UDPHDRLEN  8
+
+#if ((defined HAVE_SSM_MULTICAST) || (defined HAVE_DECL_SO_BINDTODEVICE))  && (defined HAVE_NET_IF_H)
+#include <net/if.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+#ifdef HAVE_SYS_SOCKIO_H
+#include <sys/sockio.h>
+#endif
+#ifdef HAVE_LINUX_SOCKIOS_H
+#include <linux/sockios.h>
+#endif
+#if defined(HAVE_LINUX_FILTER_H) && defined(HAVE_AF_PACKET)
+#include <net/ethernet.h>
+#endif
+#if ((HAVE_TUNTAP_TAP) || (HAVE_TUNTAP_TUN))
+#include <linux/if_tun.h>
+#endif
+
+// AF_PACKET HEADERS
+#if defined(HAVE_LINUX_FILTER_H) && defined(HAVE_AF_PACKET)
+// Bummer, AF_PACKET requires kernel headers as <netpacket/packet.h> isn't sufficient
+#include <linux/filter.h>
+#include <linux/if_packet.h>
+#include <netinet/ip.h>
+#include <netinet/udp.h>
+// In older linux kernels, the kernel headers and glibc headers are in conflict,
+// specificially <linux/in6.h> and <netinit/in.h>
+// preventing the following include:
+//   #include <linux/ipv6.h> (which includes <linux/in6.h>)
+//   and the use of sizeof(struct ipv6hdr)
+//
+// See https://patchwork.ozlabs.org/patch/631400/
+//
+// "In upstream kernel 56c176c9 the _UAPI prefix was stripped and
+// this broke our synchronized headers again. We now need to check
+// for _LINUX_IN6_H and _IPV6_H, and keep checking the old versions
+// of the header guard checks for maximum backwards compatibility
+// with older Linux headers (the history is actually a bit muddled
+// here and it appears upstream linus kernel broke this 10 months
+// *before* our fix was ever applied to glibc, but without glibc
+// testing we didn't notice and distro kernels have their own
+// testing to fix this)."
+//
+// The use cases fixed by this patch are:
+// #include <linux/in6.h>
+// #include <netinet/in.h>
+//
+// force the ipv6hdr length to 40 vs use of sizeof(struct ipv6hdr)
+
+#endif // HAVE_AF_PACKET
 
 #ifdef WIN32
 
@@ -113,7 +186,7 @@
 /* Visual C++ has INT64, but not 'long long'.
  * Metrowerks has 'long long', but INT64 doesn't work. */
     #ifdef __MWERKS__
-        #define int64_t  long long 
+        #define int64_t  long long
     #else
         #define int64_t  INT64
     #endif // __MWERKS__
@@ -169,15 +242,17 @@ SPECIAL_OSF1_EXTERN_C_START
     #include <netdb.h>
 SPECIAL_OSF1_EXTERN_C_STOP
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
-#include <netinet/tcp.h>
 SPECIAL_OSF1_EXTERN_C_START
     #include <arpa/inet.h>   /* netinet/in.h must be before this on SunOS */
 SPECIAL_OSF1_EXTERN_C_STOP
 #endif
-
-
+#if HAVE_LINUX_TCP_H && HAVE_DECL_TCP_TX_DELAY
+#include <linux/tcp.h>
+#elif HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
+#endif
 
 #ifdef HAVE_POSIX_THREAD
 #include <pthread.h>
@@ -191,7 +266,7 @@ SPECIAL_OSF1_EXTERN_C_STOP
 #endif
 
 //#ifdef __cplusplus
-    #ifdef HAVE_IPV6
+    #if HAVE_IPV6
         #define REPORT_ADDRLEN (INET6_ADDRSTRLEN + 1)
 typedef struct sockaddr_storage iperf_sockaddr;
     #else
@@ -200,11 +275,15 @@ typedef struct sockaddr_in iperf_sockaddr;
     #endif
 //#endif
 
-// Rationalize stdint definitions and sizeof, thanks to ac_create_stdint_h.m4
-// from the gnu archive
+// inttypes.h is already included
 
-#include <iperf-int.h>
-typedef uint64_t max_size_t;
+#ifdef HAVE_FASTSAMPLING
+#define IPERFTimeFrmt "%4.4f-%4.4f"
+#define IPERFTimeSpace "            "
+#else
+#define IPERFTimeFrmt "%4.2f-%4.2f"
+#define IPERFTimeSpace "        "
+#endif
 
 /* in case the OS doesn't have these, we provide our own implementations */
 #include "gettimeofday.h"
@@ -217,10 +296,8 @@ typedef uint64_t max_size_t;
     #define SHUT_RDWR 2
 #endif // SHUT_RD
 
+/* Internal debug */
+//#define INITIAL_PACKETID 0x7FFFFF00LL
+//#define SHOW_PACKETID
+
 #endif /* HEADERS_H */
-
-
-
-
-
-

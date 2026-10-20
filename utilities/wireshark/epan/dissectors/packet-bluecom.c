@@ -12,19 +12,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,6 +20,8 @@
 #include <epan/packet.h>
 #include <epan/etypes.h>
 #include <epan/to_str.h>
+#include <epan/exceptions.h>
+#include <epan/show_exception.h>
 
 /* bluecom protocol defines */
 
@@ -83,74 +73,74 @@ void proto_register_bluecom(void);
 static dissector_handle_t bcp_handle;
 static dissector_table_t bcp_subdissector_table;
 
-static gint proto_bcp = -1;
-static gint ett_bcp = -1;
-static gint ett_bcp_header = -1;
-static gint ett_bcp_blockheader = -1;
-static gint ett_bcp_data = -1;
+static int proto_bcp;
+static int ett_bcp;
+static int ett_bcp_header;
+static int ett_bcp_blockheader;
+static int ett_bcp_data;
 
 /* protocol data id */
-static gint hf_bcp_hdr_version = -1;
-static gint hf_bcp_hdr_format = -1;
-static gint hf_bcp_hdr_protflags = -1;
-static gint hf_bcp_hdr_blocknb = -1;
-static gint hf_bcp_hdr_segcode = -1;
-static gint hf_bcp_hdr_auth = -1;
-static gint hf_bcp_hdr_sourceid = -1;
-static gint hf_bcp_hdr_destid = -1;
-static gint hf_bcp_hdr_transid = -1;
-static gint hf_bcp_hdr_cmd = -1;
-static gint hf_bcp_hdr_slavestate = -1;
-static gint hf_bcp_hdr_blockflags = -1;
-static gint hf_bcp_hdr_len = -1;
-static gint hf_bcp_hdr_timestamp = -1;
-static gint hf_bcp_hdr_fragoffset = -1;
+static int hf_bcp_hdr_version;
+static int hf_bcp_hdr_format;
+static int hf_bcp_hdr_protflags;
+static int hf_bcp_hdr_blocknb;
+static int hf_bcp_hdr_segcode;
+static int hf_bcp_hdr_auth;
+static int hf_bcp_hdr_sourceid;
+static int hf_bcp_hdr_destid;
+static int hf_bcp_hdr_transid;
+static int hf_bcp_hdr_cmd;
+static int hf_bcp_hdr_slavestate;
+static int hf_bcp_hdr_blockflags;
+static int hf_bcp_hdr_len;
+static int hf_bcp_hdr_timestamp;
+static int hf_bcp_hdr_fragoffset;
 
-static gint hf_bcp_sync_starttime = -1;
-static gint hf_bcp_sync_cycletime = -1;
-static gint hf_bcp_sync_dataratio = -1;
-static gint hf_bcp_sync_identify = -1;
-static gint hf_bcp_sync_vlantag = -1;
-static gint hf_bcp_sync_ethaddr = -1;
-static gint hf_bcp_sync_ethaddr2 = -1;
+static int hf_bcp_sync_starttime;
+static int hf_bcp_sync_cycletime;
+static int hf_bcp_sync_dataratio;
+static int hf_bcp_sync_identify;
+static int hf_bcp_sync_vlantag;
+static int hf_bcp_sync_ethaddr;
+static int hf_bcp_sync_ethaddr2;
 
-static gint hf_bcp_identify_error = -1;
-static gint hf_bcp_identify_starttime = -1;
-static gint hf_bcp_identify_ipaddr = -1;
-static gint hf_bcp_identify_name = -1;
-static gint hf_bcp_identify_ethaddr = -1;
-static gint hf_bcp_identify_ethaddr2 = -1;
+static int hf_bcp_identify_error;
+static int hf_bcp_identify_starttime;
+static int hf_bcp_identify_ipaddr;
+static int hf_bcp_identify_name;
+static int hf_bcp_identify_ethaddr;
+static int hf_bcp_identify_ethaddr2;
 
-static gint hf_bcp_searchreq_addrtype = -1;
-static gint hf_bcp_searchreq_reserved = -1;
-static gint hf_bcp_searchreq_name = -1;
-static gint hf_bcp_searchreq_ipaddrfirst = -1;
-static gint hf_bcp_searchreq_ipaddrlast = -1;
-static gint hf_bcp_searchreq_addrdata = -1;
+static int hf_bcp_searchreq_addrtype;
+static int hf_bcp_searchreq_reserved;
+static int hf_bcp_searchreq_name;
+static int hf_bcp_searchreq_ipaddrfirst;
+static int hf_bcp_searchreq_ipaddrlast;
+static int hf_bcp_searchreq_addrdata;
 
-static gint hf_bcp_searchrsp_error = -1;
-static gint hf_bcp_searchrsp_starttime = -1;
-static gint hf_bcp_searchrsp_lenin = -1;
-static gint hf_bcp_searchrsp_lenout = -1;
-static gint hf_bcp_searchrsp_ipaddr = -1;
-static gint hf_bcp_searchrsp_name = -1;
-static gint hf_bcp_searchrsp_ethaddr = -1;
-static gint hf_bcp_searchrsp_ethaddr2 = -1;
+static int hf_bcp_searchrsp_error;
+static int hf_bcp_searchrsp_starttime;
+static int hf_bcp_searchrsp_lenin;
+static int hf_bcp_searchrsp_lenout;
+static int hf_bcp_searchrsp_ipaddr;
+static int hf_bcp_searchrsp_name;
+static int hf_bcp_searchrsp_ethaddr;
+static int hf_bcp_searchrsp_ethaddr2;
 
-static gint hf_bcp_connectreq_lenin = -1;
-static gint hf_bcp_connectreq_lenout = -1;
-static gint hf_bcp_connectreq_cycletime = -1;
-static gint hf_bcp_connectreq_offlinefactor = -1;
-static gint hf_bcp_connectreq_ipaddr = -1;
-static gint hf_bcp_connectreq_name = -1;
-static gint hf_bcp_connectreq_ethaddr = -1;
-static gint hf_bcp_connectreq_ethaddr2 = -1;
+static int hf_bcp_connectreq_lenin;
+static int hf_bcp_connectreq_lenout;
+static int hf_bcp_connectreq_cycletime;
+static int hf_bcp_connectreq_offlinefactor;
+static int hf_bcp_connectreq_ipaddr;
+static int hf_bcp_connectreq_name;
+static int hf_bcp_connectreq_ethaddr;
+static int hf_bcp_connectreq_ethaddr2;
 
-static gint hf_bcp_connectrsp_error = -1;
-static gint hf_bcp_connectrsp_lenin = -1;
-static gint hf_bcp_connectrsp_lenout = -1;
+static int hf_bcp_connectrsp_error;
+static int hf_bcp_connectrsp_lenin;
+static int hf_bcp_connectrsp_lenout;
 
-static gint hf_bcp_userdata = -1;
+static int hf_bcp_userdata;
 
 /* command defines */
 static const value_string bcp_cmds[] = {
@@ -165,268 +155,250 @@ static const value_string bcp_cmds[] = {
 /*
  * dissector function of connect data (request and response)
  *
- * input: tree, buffer (data), offset (data pointer), length of data, flags (req or rsp)
- * output: offset
+ * input: tree, buffer (block data), flags (req or rsp)
  * return: nothing
  */
 static void
-dissect_bcp_connect_data(proto_tree *bcp_tree, tvbuff_t *tvb,
-                        guint *offset, guint len, gint flags)
+dissect_bcp_connect_data(packet_info *pinfo, proto_tree *bcp_tree, tvbuff_t *tvb, int flags)
 {
     proto_tree *bcp_subtree = NULL;
-    guint offset_base = *offset;
+    unsigned offset = 0;
+    unsigned offset_base = offset;
+    unsigned len = tvb_reported_length(tvb);
 
     if (flags & BCP_PROT_FLG_REQ)
     {
-        bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, len, ett_bcp_data, NULL,
+        bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, len, ett_bcp_data, NULL,
                                                     "BCP Connect Request: Name=%s IpAddr=%s",
-                                                    tvb_get_string_enc(wmem_packet_scope(), tvb, *offset + 16, BCP_NAME_LEN, ENC_ASCII),
-                                                    tvb_ip_to_str(tvb, *offset + 12));
+                                                    tvb_get_string_enc(pinfo->pool, tvb, offset + 16, BCP_NAME_LEN, ENC_ASCII),
+                                                    tvb_ip_to_str(pinfo->pool, tvb, offset + 12));
 
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_lenin, tvb, *offset, 2, ENC_BIG_ENDIAN);
-        *offset += 2;
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_lenout, tvb, *offset, 2, ENC_BIG_ENDIAN);
-        *offset += 2;
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_cycletime, tvb, *offset, 4, ENC_BIG_ENDIAN);
-        *offset += 4;
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_offlinefactor, tvb, *offset, 2, ENC_BIG_ENDIAN);
-        *offset += 4;
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_ipaddr, tvb, *offset, 4, ENC_BIG_ENDIAN);
-        *offset += 4;
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_name, tvb, *offset, BCP_NAME_LEN, ENC_ASCII|ENC_NA);
-        *offset += BCP_NAME_LEN;
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_ethaddr, tvb, *offset, BCP_ETHADDR_LEN, ENC_NA);
-        *offset += BCP_ETHADDR_LEN;
-        if((len-(*offset-offset_base)))
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_lenin, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_lenout, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_cycletime, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_offlinefactor, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_ipaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_name, tvb, offset, BCP_NAME_LEN, ENC_ASCII);
+        offset += BCP_NAME_LEN;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_ethaddr, tvb, offset, BCP_ETHADDR_LEN, ENC_NA);
+        offset += BCP_ETHADDR_LEN;
+        if((len-(offset-offset_base)))
         {
-            proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_ethaddr2, tvb, *offset, BCP_ETHADDR_LEN, ENC_NA);
-            *offset += BCP_ETHADDR_LEN;
+            proto_tree_add_item(bcp_subtree, hf_bcp_connectreq_ethaddr2, tvb, offset, BCP_ETHADDR_LEN, ENC_NA);
+            offset += BCP_ETHADDR_LEN;
         }
     }
 
     if (flags & BCP_PROT_FLG_RSP)
     {
-        bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, len, ett_bcp_data, NULL,
+        bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, len, ett_bcp_data, NULL,
                                                     "BCP Connect Response: Error=%d",
-                                                    tvb_get_ntohl(tvb, *offset));
+                                                    tvb_get_ntohl(tvb, offset));
 
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectrsp_error, tvb, *offset, 4, ENC_BIG_ENDIAN);
-        *offset += 4;
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectrsp_lenin, tvb, *offset, 2, ENC_BIG_ENDIAN);
-        *offset += 2;
-        proto_tree_add_item(bcp_subtree, hf_bcp_connectrsp_lenout, tvb, *offset, 2, ENC_BIG_ENDIAN);
-        *offset += 2;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectrsp_error, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectrsp_lenin, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+        proto_tree_add_item(bcp_subtree, hf_bcp_connectrsp_lenout, tvb, offset, 2, ENC_BIG_ENDIAN);
     }
-
-    *offset = offset_base + len;
 }
 
 /*
  * dissector function of search data (request and response)
  *
- * input: tree, buffer (data), offset (data pointer), length of data, flags (req or rsp)
- * output: offset
+ * input: tree, buffer (block data) flags (req or rsp)
  * return: nothing
  */
 static void
-dissect_bcp_search_data(proto_tree *bcp_tree, tvbuff_t *tvb,
-                       guint *offset, guint len, gint flags)
+dissect_bcp_search_data(packet_info *pinfo, proto_tree *bcp_tree, tvbuff_t *tvb, int flags)
 {
     proto_tree *bcp_subtree = NULL;
-    guint type = 0;
-    guint offset_base = *offset;
+    unsigned type = 0;
+    unsigned offset = 0;
+    unsigned offset_base = offset;
+    unsigned len = tvb_reported_length(tvb);
 
     if (flags & BCP_PROT_FLG_REQ)
     {
-        type = tvb_get_ntohl(tvb, *offset);
+        type = tvb_get_ntohl(tvb, offset);
         switch (type)
         {
             case BCP_SEARCH_IPADDR:
-                bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, len, ett_bcp_data, NULL,
+                bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, len, ett_bcp_data, NULL,
                                   "BCP Search Request: IpAddrFirst=%s, IpAddrLast=%s",
-                                  tvb_ip_to_str(tvb, *offset + 8),
-                                  tvb_ip_to_str(tvb, *offset + 12)
+                                  tvb_ip_to_str(pinfo->pool, tvb, offset + 8),
+                                  tvb_ip_to_str(pinfo->pool, tvb, offset + 12)
                                   );
                 break;
 
             case BCP_SEARCH_NAME:
-                bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, len, ett_bcp_data, NULL,
+                bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, len, ett_bcp_data, NULL,
                                   "BCP Search Request: Name=%s",
-                                  tvb_get_string_enc(wmem_packet_scope(), tvb, *offset + 8, BCP_NAME_LEN, ENC_ASCII)
+                                  tvb_get_string_enc(pinfo->pool, tvb, offset + 8, BCP_NAME_LEN, ENC_ASCII)
                                   );
                 break;
 
             default:
-                bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, len, ett_bcp_data, NULL,
+                bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, len, ett_bcp_data, NULL,
                                   "BCP Search Request: Unknown AddrType");
                 break;
         }
 
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_addrtype, tvb, *offset, 4, ENC_BIG_ENDIAN);
-        *offset += 4;
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_reserved, tvb, *offset, 4, ENC_BIG_ENDIAN);
-        *offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_addrtype, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_reserved, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
 
         switch (type)
         {
             case BCP_SEARCH_IPADDR:
-                proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_ipaddrfirst, tvb, *offset, 4, ENC_BIG_ENDIAN);
-                proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_ipaddrlast, tvb, *offset + 4, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_ipaddrfirst, tvb, offset, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_ipaddrlast, tvb, offset + 4, 4, ENC_BIG_ENDIAN);
                 break;
 
             case BCP_SEARCH_NAME:
-                proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_name, tvb, *offset, BCP_NAME_LEN, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(bcp_subtree, hf_bcp_searchreq_name, tvb, offset, BCP_NAME_LEN, ENC_ASCII);
                 break;
 
             default:
-                proto_tree_add_bytes_format(bcp_subtree, hf_bcp_searchreq_addrdata, tvb, *offset, BCP_NAME_LEN,
+                proto_tree_add_bytes_format(bcp_subtree, hf_bcp_searchreq_addrdata, tvb, offset, BCP_NAME_LEN,
                                             NULL, "Unknown Address Data (%u bytes)", BCP_NAME_LEN);
                 break;
         }
-        *offset += BCP_NAME_LEN;
+        offset += BCP_NAME_LEN;
     }
 
     if (flags & BCP_PROT_FLG_RSP)
     {
-        bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, len, ett_bcp_data, NULL,
+        bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, len, ett_bcp_data, NULL,
                           "BCP Search Response: Name=%s, IpAddr=%s Error=%d",
-                          tvb_get_string_enc(wmem_packet_scope(), tvb, *offset + 16, BCP_NAME_LEN, ENC_ASCII),
-                          tvb_ip_to_str(tvb, *offset + 12),
-                          tvb_get_letohl(tvb, *offset)
+                          tvb_get_string_enc(pinfo->pool, tvb, offset + 16, BCP_NAME_LEN, ENC_ASCII),
+                          tvb_ip_to_str(pinfo->pool, tvb, offset + 12),
+                          tvb_get_letohl(tvb, offset)
                           );
 
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_error, tvb, *offset, 4, ENC_NA);
-        *offset += 4;
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_starttime, tvb, *offset, 4, ENC_BIG_ENDIAN);
-        *offset += 4;
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_lenin, tvb, *offset, 2, ENC_BIG_ENDIAN);
-        *offset += 2;
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_lenout, tvb, *offset, 2, ENC_BIG_ENDIAN);
-        *offset += 2;
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_ipaddr, tvb, *offset, 4, ENC_BIG_ENDIAN);
-        *offset += 4;
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_name, tvb, *offset, BCP_NAME_LEN, ENC_ASCII|ENC_NA);
-        *offset += BCP_NAME_LEN;
-        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_ethaddr, tvb, *offset, BCP_ETHADDR_LEN, ENC_NA);
-        *offset += BCP_ETHADDR_LEN;
-        if((len-(*offset-offset_base)))
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_error, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_starttime, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_lenin, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_lenout, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_ipaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_name, tvb, offset, BCP_NAME_LEN, ENC_ASCII);
+        offset += BCP_NAME_LEN;
+        proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_ethaddr, tvb, offset, BCP_ETHADDR_LEN, ENC_NA);
+        offset += BCP_ETHADDR_LEN;
+        if((len-(offset-offset_base)))
         {
-            proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_ethaddr2, tvb, *offset, BCP_ETHADDR_LEN, ENC_NA);
-            *offset += BCP_ETHADDR_LEN;
+            proto_tree_add_item(bcp_subtree, hf_bcp_searchrsp_ethaddr2, tvb, offset, BCP_ETHADDR_LEN, ENC_NA);
         }
     }
-    *offset = offset_base + len;
 }
 
 /*
  * dissector function of identify data (request)
  *
- * input: tree, buffer (data), offset (data pointer), length of data, flags (req or rsp)
- * output: offset
+ * input: tree, buffer (block data), flags (req or rsp)
  * return: nothing
  */
 static void
-dissect_bcp_identify_data(proto_tree *bcp_tree, tvbuff_t *tvb,
-                          guint *offset, guint len)
+dissect_bcp_identify_data(packet_info *pinfo, proto_tree *bcp_tree, tvbuff_t *tvb)
 {
     proto_tree *bcp_subtree = NULL;
-    guint offset_base = *offset;
+    unsigned offset = 0;
+    unsigned offset_base = offset;
+    unsigned len = tvb_reported_length(tvb);
 
-    bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, len, ett_bcp_data, NULL,
+    bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, len, ett_bcp_data, NULL,
                     "BCP Identify Request: Name=%s, IpAddr=%s",
-                    tvb_get_string_enc(wmem_packet_scope(), tvb, *offset + 12, BCP_NAME_LEN, ENC_ASCII),
-                    tvb_ip_to_str(tvb, *offset + 8)
+                    tvb_get_string_enc(pinfo->pool, tvb, offset + 12, BCP_NAME_LEN, ENC_ASCII),
+                    tvb_ip_to_str(pinfo->pool, tvb, offset + 8)
                     );
 
-    proto_tree_add_item(bcp_subtree, hf_bcp_identify_error, tvb, *offset, 4, ENC_BIG_ENDIAN);
-    *offset += 4;
-    proto_tree_add_item(bcp_subtree, hf_bcp_identify_starttime, tvb, *offset, 4, ENC_BIG_ENDIAN);
-    *offset += 4;
-    proto_tree_add_item(bcp_subtree, hf_bcp_identify_ipaddr, tvb, *offset, 4, ENC_BIG_ENDIAN);
-    *offset += 4;
-    proto_tree_add_item(bcp_subtree, hf_bcp_identify_name, tvb, *offset, BCP_NAME_LEN, ENC_ASCII|ENC_NA);
-    *offset += BCP_NAME_LEN;
-    proto_tree_add_item(bcp_subtree, hf_bcp_identify_ethaddr, tvb, *offset, BCP_ETHADDR_LEN, ENC_NA);
-    *offset += BCP_ETHADDR_LEN;
-    if((len-(*offset-offset_base)))
+    proto_tree_add_item(bcp_subtree, hf_bcp_identify_error, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(bcp_subtree, hf_bcp_identify_starttime, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(bcp_subtree, hf_bcp_identify_ipaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(bcp_subtree, hf_bcp_identify_name, tvb, offset, BCP_NAME_LEN, ENC_ASCII);
+    offset += BCP_NAME_LEN;
+    proto_tree_add_item(bcp_subtree, hf_bcp_identify_ethaddr, tvb, offset, BCP_ETHADDR_LEN, ENC_NA);
+    offset += BCP_ETHADDR_LEN;
+    if((len-(offset-offset_base)))
     {
-        proto_tree_add_item(bcp_subtree, hf_bcp_identify_ethaddr2, tvb, *offset, BCP_ETHADDR_LEN, ENC_NA);
-        *offset += BCP_ETHADDR_LEN;
+        proto_tree_add_item(bcp_subtree, hf_bcp_identify_ethaddr2, tvb, offset, BCP_ETHADDR_LEN, ENC_NA);
     }
-
-    *offset = offset_base + len;
 }
 
 /*
  * dissector function of sync data
  *
- * input: tree, buffer (data), offset (data pointer), length of data
- * output: offset
+ * input: tree, buffer (block data)
  * return: nothing
  */
 static void
-dissect_bcp_sync_data(proto_tree *bcp_tree, tvbuff_t *tvb,
-                      guint *offset, guint len)
+dissect_bcp_sync_data(proto_tree *bcp_tree, tvbuff_t *tvb)
 {
     proto_tree *bcp_subtree = NULL;
-    guint offset_base = *offset;
+    unsigned offset = 0;
+    unsigned offset_base = offset;
+    unsigned len = tvb_reported_length(tvb);
 
-    bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, len, ett_bcp_data, NULL,
+    bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, len, ett_bcp_data, NULL,
                                              "BCP Sync Data: Identify=%s",
-                                             BOOLSTR(tvb_get_guint8(tvb, *offset + 9)));
-    proto_tree_add_item(bcp_subtree, hf_bcp_sync_starttime, tvb, *offset, 4, ENC_BIG_ENDIAN);
-    *offset += 4;
-    proto_tree_add_item(bcp_subtree, hf_bcp_sync_cycletime, tvb, *offset, 4, ENC_BIG_ENDIAN);
-    *offset += 4;
-    proto_tree_add_item(bcp_subtree, hf_bcp_sync_dataratio, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 1;
-    proto_tree_add_item(bcp_subtree, hf_bcp_sync_identify, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 1;
-    proto_tree_add_item(bcp_subtree, hf_bcp_sync_vlantag, tvb, *offset, 2, ENC_BIG_ENDIAN);
-    *offset += 2;
+                                             BOOLSTR(tvb_get_uint8(tvb, offset + 9)));
+    proto_tree_add_item(bcp_subtree, hf_bcp_sync_starttime, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(bcp_subtree, hf_bcp_sync_cycletime, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(bcp_subtree, hf_bcp_sync_dataratio, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(bcp_subtree, hf_bcp_sync_identify, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(bcp_subtree, hf_bcp_sync_vlantag, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
 
     /* protocol expansion*/
-    if((len-(*offset-offset_base)))
+    if((len-(offset-offset_base)))
     {
-        proto_tree_add_item(bcp_subtree, hf_bcp_sync_ethaddr, tvb, *offset, BCP_ETHADDR_LEN, ENC_NA);
-        *offset += BCP_ETHADDR_LEN;
-        proto_tree_add_item(bcp_subtree, hf_bcp_sync_ethaddr2, tvb, *offset, BCP_ETHADDR_LEN, ENC_NA);
-        *offset += BCP_ETHADDR_LEN;
+        proto_tree_add_item(bcp_subtree, hf_bcp_sync_ethaddr, tvb, offset, BCP_ETHADDR_LEN, ENC_NA);
+        offset += BCP_ETHADDR_LEN;
+        proto_tree_add_item(bcp_subtree, hf_bcp_sync_ethaddr2, tvb, offset, BCP_ETHADDR_LEN, ENC_NA);
     }
-
-    *offset = offset_base + len;
 }
 
 /*
  * dissector function of data command
  *
- * input: tree, buffer (data), offset (data pointer), length of data
- * output: offset
+ * input: tree, buffer (block data)
  * return: nothing
  */
 static void
 dissect_bcp_data(proto_tree *bcp_tree, packet_info *pinfo, tvbuff_t *tvb,
-                 guint *offset, guint len, gint segcode)
+                 unsigned segcode)
 {
     dissector_handle_t  handle;
-    tvbuff_t    *next_tvb;
 
     /* Probably a sub-dissector exists for this type/version combination. */
     handle = dissector_get_uint_handle(bcp_subdissector_table, segcode);
 
     if (handle)
     {
-        /* Generate a new tvb for the rest. */
-        next_tvb = tvb_new_subset(tvb, *offset, len, len);
-
         /* Call the sub-dissector. */
-        call_dissector(handle, next_tvb, pinfo, bcp_tree);
-        *offset += len;
+        call_dissector(handle, tvb, pinfo, bcp_tree);
     }
     else
     {
-        proto_tree_add_item(bcp_tree, hf_bcp_userdata, tvb, *offset, len, ENC_NA);
-        *offset += len;
+        proto_tree_add_item(bcp_tree, hf_bcp_userdata, tvb, 0, -1, ENC_NA);
     }
 }
 
@@ -435,79 +407,82 @@ dissect_bcp_data(proto_tree *bcp_tree, packet_info *pinfo, tvbuff_t *tvb,
  * dissector function of block header
  *
  * input: tree, buffer (data), offset (data pointer), number of header block
- * output: offset, command from header, length of following data
- * return: nothing
+ * output: command from header, length of following data
+ * return: updated offset
  */
-static void
-dissect_bcp_block_header(proto_tree *bcp_tree, tvbuff_t *tvb, guint *offset,
-                         gint blocknb, gint *cmd, guint *len)
+static unsigned
+dissect_bcp_block_header(proto_tree *bcp_tree, tvbuff_t *tvb, unsigned offset,
+                         unsigned blocknb, unsigned *cmd, unsigned *len)
 {
     proto_tree *bcp_subtree = NULL;
 
-    *cmd = tvb_get_guint8(tvb, *offset + 6);
-    *len = tvb_get_ntohs(tvb, *offset + 12);
+    *cmd = tvb_get_uint8(tvb, offset + 6);
+    *len = tvb_get_ntohs(tvb, offset + 12);
 
-    bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, *offset, BCP_BLOCK_HDR_LEN, ett_bcp_blockheader, NULL,
-               "BCP Block Header (%d): Cmd=%s (%d), Len=%d",
+    bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, offset, BCP_BLOCK_HDR_LEN, ett_bcp_blockheader, NULL,
+               "BCP Block Header (%u): Cmd=%s (%u), Len=%u",
                blocknb,
-               val_to_str(*cmd, bcp_cmds, "UNKNOWN"), *cmd,
+               val_to_str_const(*cmd, bcp_cmds, "UNKNOWN"), *cmd,
                *len
                );
 
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_sourceid, tvb, *offset, 2, ENC_BIG_ENDIAN);
-    *offset += 2;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_destid, tvb, *offset, 2, ENC_BIG_ENDIAN);
-    *offset += 2;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_transid, tvb, *offset, 2, ENC_BIG_ENDIAN);
-    *offset += 2;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_cmd, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 1;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_slavestate, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 1;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_blockflags, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 4;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_len, tvb, *offset, 2, ENC_BIG_ENDIAN);
-    *offset += 2;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_fragoffset, tvb, *offset, 2, ENC_BIG_ENDIAN);
-    *offset += 2;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_timestamp, tvb, *offset, 8, ENC_BIG_ENDIAN);
-    *offset += 8;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_sourceid, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_destid, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_transid, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_cmd, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_slavestate, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_blockflags, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_len, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_fragoffset, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_timestamp, tvb, offset, 8, ENC_BIG_ENDIAN);
+    offset += 8;
+    return offset;
 }
 
 /*
  * dissector function of protocol header
  *
  * input: tree, buffer (data), offset (data pointer)
- * output: offset, flags from header
- * return: nothing
+ * output: flags, block count, segcode from header
+ * return: updated offset
  */
-static void
+static unsigned
 dissect_bcp_protocol_header(proto_tree *bcp_tree, tvbuff_t *tvb,
-                            guint *offset, gint *flags, gint *blocknb, gint *segcode)
+                            unsigned offset, int *flags, unsigned *blocknb,
+                            unsigned *segcode)
 {
     proto_tree *bcp_subtree = NULL;
 
-    *flags = tvb_get_guint8(tvb, *offset + 2);
-    *blocknb = tvb_get_guint8(tvb, *offset + 3);
-    *segcode = tvb_get_ntohs(tvb, *offset + 4);
+    *flags = tvb_get_uint8(tvb, offset + 2);
+    *blocknb = tvb_get_uint8(tvb, offset + 3);
+    *segcode = tvb_get_ntohs(tvb, offset + 4);
 
     bcp_subtree = proto_tree_add_subtree_format(bcp_tree, tvb, 0, BCP_PROTOCOL_HDR_LEN, ett_bcp_header, NULL,
                                                 "BCP Protocol Header: BlockNb=%d, SegCode=%d",
-                                                tvb_get_guint8(tvb, *offset + 3),
-                                                tvb_get_ntohs(tvb, *offset + 4));
+                                                *blocknb,
+                                                *segcode);
 
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_version, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 1;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_format, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 1;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_protflags, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 1;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_blocknb, tvb, *offset, 1, ENC_BIG_ENDIAN);
-    *offset += 1;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_segcode, tvb, *offset, 2, ENC_BIG_ENDIAN);
-    *offset += 2;
-    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_auth, tvb, *offset, 4, ENC_BIG_ENDIAN);
-    *offset += 4;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_version, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_format, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_protflags, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_blocknb, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_segcode, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(bcp_subtree, hf_bcp_hdr_auth, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    return offset;
 }
 
 
@@ -516,12 +491,14 @@ dissect_bcp_protocol_header(proto_tree *bcp_tree, tvbuff_t *tvb,
  */
 static int dissect_bluecom(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    gint cmd, flags, blocknb, segcode=0;
-    gint data_cnt = 0;
-    guint len, rlen;
-    guint offset = 0;
+    unsigned cmd, flags, blocknb;
+    volatile unsigned block;
+    unsigned len;
+    volatile unsigned offset = 0;
     proto_tree *bcp_tree = NULL;
     proto_item *bcp_item_base = NULL;
+    tvbuff_t *block_tvb;
+    unsigned segcode = 0;
 
     /* set protocol name column */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "bluecom");
@@ -534,129 +511,58 @@ static int dissect_bluecom(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     bcp_tree = proto_item_add_subtree(bcp_item_base, ett_bcp);
 
     /* BCP header  */
-    dissect_bcp_protocol_header(bcp_tree, tvb, &offset, &flags, &blocknb, &segcode);
-    /* BCP block header*/
-    dissect_bcp_block_header(bcp_tree, tvb, &offset, data_cnt, &cmd, &len);
+    offset = dissect_bcp_protocol_header(bcp_tree, tvb, offset, &flags, &blocknb, &segcode);
 
     /* set info column */
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%s (%d) segcode=%d blocks=%d",
-                    val_to_str(cmd, bcp_cmds, "UNKNOWN"), cmd, segcode, blocknb);
+    col_append_fstr(pinfo->cinfo, COL_INFO, "segcode=%u blocks=%u",
+                    segcode, blocknb);
 
-    /* append text to BCP base */
-    proto_item_append_text(bcp_item_base, ", %s (%d) len=%d",
-                           val_to_str(cmd, bcp_cmds, "UNKNOWN"), cmd, tvb_reported_length(tvb));
+    /* Iterate over blocks */
+    for (block = 0; block < blocknb; block++)
+    {
+        /* BCP block header*/
+        offset = dissect_bcp_block_header(bcp_tree, tvb, offset, block, &cmd, &len);
 
-    switch (cmd) {
-        case BCP_BLK_CMD_SYNC:
-            dissect_bcp_sync_data(bcp_tree, tvb, &offset, len);
-            break;
+        /* append text to BCP base */
+        proto_item_append_text(bcp_item_base, ", %s (%u) len=%u",
+                               val_to_str_const(cmd, bcp_cmds, "UNKNOWN"), cmd, len);
 
-        case BCP_BLK_CMD_IDENTIFY:
-            dissect_bcp_identify_data(bcp_tree, tvb, &offset, len);
-            rlen = tvb_captured_length_remaining(tvb, offset);
-
-            /* ignore additional bytes if < block header. Could be padding or cut of recording */
-            while (rlen >= BCP_BLOCK_HDR_LEN)
+        block_tvb = tvb_new_subset_length(tvb, offset, len);
+        TRY {
+            switch (cmd)
             {
-                /* BCP block header*/
-                dissect_bcp_block_header(bcp_tree, tvb, &offset, ++data_cnt, &cmd, &len);
-                rlen = tvb_captured_length_remaining(tvb, offset);
-                /* calculate remaining data length */
-                if (len > rlen)
-                {
-                    len = rlen;
-                    col_append_fstr(pinfo->cinfo, COL_INFO, " [data len of block %d limited to %d]",
-                                    data_cnt, len);
-                    break;
-                }
-                dissect_bcp_identify_data(bcp_tree, tvb, &offset, len);
-                rlen = tvb_captured_length_remaining(tvb, offset);
+            case BCP_BLK_CMD_SYNC:
+                dissect_bcp_sync_data(bcp_tree, block_tvb);
+                break;
+
+            case BCP_BLK_CMD_IDENTIFY:
+                dissect_bcp_identify_data(pinfo, bcp_tree, block_tvb);
+                break;
+
+            case BCP_BLK_CMD_SEARCH:
+                col_append_str(pinfo->cinfo, COL_INFO, REQRSP(flags));
+                dissect_bcp_search_data(pinfo, bcp_tree, block_tvb, flags);
+                break;
+
+            case BCP_BLK_CMD_CONNECT:
+                col_append_str(pinfo->cinfo, COL_INFO, REQRSP(flags));
+                dissect_bcp_connect_data(pinfo, bcp_tree, block_tvb, flags);
+                break;
+
+            case BCP_BLK_CMD_DATA:
+            default:
+                dissect_bcp_data(bcp_tree, pinfo, block_tvb, segcode);
+                break;
             }
-            offset += rlen;
-            break;
-
-        case BCP_BLK_CMD_SEARCH:
-            col_append_str(pinfo->cinfo, COL_INFO, REQRSP(flags));
-            dissect_bcp_search_data(bcp_tree, tvb, &offset, len, flags);
-            rlen = tvb_captured_length_remaining(tvb, offset);
-
-            /* ignore additional bytes if < block header. Could be padding or cut of recording */
-            while (rlen >= BCP_BLOCK_HDR_LEN)
-            {
-                /* BCP block header*/
-                dissect_bcp_block_header(bcp_tree, tvb, &offset, ++data_cnt, &cmd, &len);
-                rlen = tvb_captured_length_remaining(tvb, offset);
-                /* calculate remaining data length */
-                if (len > rlen)
-                {
-                    len = rlen;
-                    col_append_fstr(pinfo->cinfo, COL_INFO, " [data len of block %d limited to %d]",
-                                    data_cnt, len);
-                    break;
-                }
-                dissect_bcp_search_data(bcp_tree, tvb, &offset, len, flags);
-                rlen = tvb_captured_length_remaining(tvb, offset);
-            }
-            offset += rlen;
-            break;
-
-        case BCP_BLK_CMD_CONNECT:
-            col_append_str(pinfo->cinfo, COL_INFO, REQRSP(flags));
-            dissect_bcp_connect_data(bcp_tree, tvb, &offset, len, flags);
-            rlen = tvb_captured_length_remaining(tvb, offset);
-
-            /* ignore additional bytes if < block header. Could be padding or cut of recording */
-            while (rlen >= BCP_BLOCK_HDR_LEN)
-            {
-                /* BCP block header*/
-                dissect_bcp_block_header(bcp_tree, tvb, &offset, ++data_cnt, &cmd, &len);
-                rlen = tvb_captured_length_remaining(tvb, offset);
-                /* calculate remaining data length */
-                if (len > rlen)
-                {
-                    len = rlen;
-                    col_append_fstr(pinfo->cinfo, COL_INFO, " [data len of block %d limited to %d]",
-                                    data_cnt, len);
-                    break;
-                }
-                dissect_bcp_connect_data(bcp_tree, tvb, &offset, len, flags);
-                rlen = tvb_captured_length_remaining(tvb, offset);
-            }
-            offset += rlen;
-            break;
-
-        case BCP_BLK_CMD_DATA:
-        default:
-            /* check if data packet was limited */
-            rlen = tvb_captured_length_remaining(tvb, offset);
-            if (len > rlen)
-            {
-                len = rlen;
-                col_append_fstr(pinfo->cinfo, COL_INFO, " [data len of block %d limited to %d]",
-                                data_cnt, len);
-            }
-            dissect_bcp_data(bcp_tree, pinfo, tvb, &offset, len, segcode);
-            rlen = tvb_captured_length_remaining(tvb, offset);
-
-            /* ignore additional bytes if < block header. Could be padding or cut of recording */
-            while (rlen >= BCP_BLOCK_HDR_LEN)
-            {
-                /* BCP block header*/
-                dissect_bcp_block_header(bcp_tree, tvb, &offset, ++data_cnt, &cmd, &len);
-                rlen = tvb_captured_length_remaining(tvb, offset);
-                /* calculate remaining data length */
-                if (len > rlen)
-                {
-                    len = rlen;
-                    col_append_fstr(pinfo->cinfo, COL_INFO, " [data len of block %d limited to %d]",
-                                    data_cnt, len);
-                    break;
-                }
-                dissect_bcp_data(bcp_tree, pinfo, tvb, &offset, len, segcode);
-                rlen = tvb_captured_length_remaining(tvb, offset);
-            }
-            offset += rlen;
-            break;
+        } CATCH_NONFATAL_ERRORS {
+            /*
+             * Somebody threw an exception that means that there was
+             * a problem dissecting the block. Just show the exception
+             * and then continue to dissect blocks.
+             */
+            show_exception(block_tvb, pinfo, tree, EXCEPT_CODE, GET_MESSAGE);
+        } ENDTRY;
+	offset += len;
     }
 
     return offset;
@@ -700,7 +606,7 @@ proto_register_bluecom(void)
             "TransId", "bluecom.hdr.transid", FT_UINT16,
             BASE_DEC_HEX, NULL, 0, NULL, HFILL }},
         { &hf_bcp_hdr_cmd, {
-            "Cmd", "bluecom.hdr.cmd", FT_UINT32,
+            "Cmd", "bluecom.hdr.cmd", FT_UINT8,
             BASE_HEX, VALS(bcp_cmds), 0, NULL, HFILL }},
         { &hf_bcp_hdr_slavestate, {
             "SlaveState", "bluecom.hdr.slavestate", FT_UINT8,
@@ -709,7 +615,7 @@ proto_register_bluecom(void)
             "Flags", "bluecom.hdr.blockflags", FT_UINT8,
              BASE_DEC_HEX, NULL, 0, NULL, HFILL }},
         { &hf_bcp_hdr_len, {
-            "Len", "bluecom.hdr.len", FT_UINT8,
+            "Len", "bluecom.hdr.len", FT_UINT16,
             BASE_DEC_HEX, NULL, 0, NULL, HFILL }},
         { &hf_bcp_hdr_fragoffset, {
             "FragOffset", "bluecom.hdr.fragoffset", FT_UINT16,
@@ -730,7 +636,7 @@ proto_register_bluecom(void)
             BASE_DEC_HEX, NULL, 0, NULL, HFILL }},
         { &hf_bcp_sync_identify, {
             "Identify", "bluecom.sync.identify", FT_BOOLEAN,
-            BASE_DEC_HEX, NULL, 0, NULL, HFILL }},
+            BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_bcp_sync_vlantag, {
             "VlanTag", "bluecom.sync.vlantag", FT_UINT16,
             BASE_DEC_HEX, NULL, 0, NULL, HFILL }},
@@ -753,7 +659,7 @@ proto_register_bluecom(void)
             BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_bcp_identify_name, {
             "Name", "bluecom.identify.name", FT_STRING,
-            STR_ASCII, NULL, 0, NULL, HFILL }},
+            BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_bcp_identify_ethaddr, {
             "EthAddr", "bluecom.identify.ethaddr", FT_ETHER,
             BASE_NONE, NULL, 0, NULL, HFILL }},
@@ -770,7 +676,7 @@ proto_register_bluecom(void)
              BASE_DEC_HEX, NULL, 0, NULL, HFILL }},
         { &hf_bcp_searchreq_name, {
             "Name", "bluecom.searchreq.name", FT_STRING,
-            STR_ASCII, NULL, 0, NULL, HFILL }},
+            BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_bcp_searchreq_ipaddrfirst, {
             "IpAddrFirst", "bluecom.searchreq.ipaddrfirst", FT_IPv4,
             BASE_NONE, NULL, 0, NULL, HFILL }},
@@ -799,7 +705,7 @@ proto_register_bluecom(void)
             BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_bcp_searchrsp_name, {
             "Name", "bluecom.searchrsp.name", FT_STRING,
-            STR_ASCII, NULL, 0, NULL, HFILL }},
+            BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_bcp_searchrsp_ethaddr, {
             "EthAddr", "bluecom.searchrsp.ethaddr", FT_ETHER,
             BASE_NONE, NULL, 0, NULL, HFILL }},
@@ -825,7 +731,7 @@ proto_register_bluecom(void)
             BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_bcp_connectreq_name, {
             "Name", "bluecom.connectreq.name", FT_STRING,
-            STR_ASCII, NULL, 0, NULL, HFILL }},
+            BASE_NONE, NULL, 0, NULL, HFILL }},
         { &hf_bcp_connectreq_ethaddr, {
             "EthAddr", "bluecom.connectreq.ethaddr", FT_ETHER,
             BASE_NONE, NULL, 0, NULL, HFILL }},
@@ -851,7 +757,7 @@ proto_register_bluecom(void)
     };
 
     /* define subtree elements - this is used for behavior of tree display  */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_bcp,
         &ett_bcp_header,
         &ett_bcp_blockheader,

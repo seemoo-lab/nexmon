@@ -1,0 +1,49 @@
+WARNING
+=======
+
+This directory gets automatically mirrored at
+
+  https://github.com/emacsmirror/po-mode/
+
+where users can enable it by putting this into their Emacs initialization file
+(cf. https://www.emacswiki.org/emacs/InitFile and
+https://github.com/melpa/melpa/blob/master/README.md ):
+
+  (require 'package)
+  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+
+Therefore, don't make untested changes in this directory!
+
+
+Testing
+=======
+
+Testing changes done in this directory:
+
+/some/bin/emacs -q -l `pwd`/start-po.el -l `pwd`/po-mode.el ~/clisp.de.po
+
+
+Fixing bugs due to regressions in Emacs
+=======================================
+
+* Look in the Emacs NEWS file.
+
+* Bisect from one release to the next. Example:
+
+version=20230801; git checkout deb8b933bce29f99c90f5f305d0d1b75c6d27527        OK
+<Add intermediate versions here.>
+version=20250223; git checkout 8334a9bd73f01a714ba352a49b1f040264ed4eac        KO
+
+Commands:
+
+- Build:
+./autogen.sh; mkdir bb$version; cd bb$version; PKG_CONFIG_PATH=/arch/x86_64-linux-gnu/gnu/lib/pkgconfig ../configure --host=x86_64-pc-linux-gnu --prefix=/arch/x86_64-linux-gnu/gnu-inst-emacs-nox/$version CPPFLAGS=-Wall --disable-silent-rules --without-x --without-toolkit-scroll-bars --with-gif=ifavailable --with-gnutls=ifavailable && make && make install
+
+- Test that version:
+/arch/x86_64-linux-gnu/gnu-inst-emacs-nox/$version/bin/emacs -q -l /GETTEXT/gettext/gettext-tools/emacs/start-po.el -l /GETTEXT/gettext/gettext-tools/emacs/po-mode.el ~/clisp.de.po
+
+- Cleanup the build:
+cd ..
+rm -f build-aux/config.guess build-aux/config.sub build-aux/install-sh exec/config.guess exec/config.h.in exec/config.sub exec/install-sh lisp/loaddefs.el `find lisp -name '*.elc'`; git diff | patch -p1 -R
+
+- Select new version to test, and loop.

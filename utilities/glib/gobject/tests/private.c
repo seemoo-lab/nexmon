@@ -1,3 +1,8 @@
+/* We are testing some deprecated APIs here */
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
+
 #include <glib-object.h>
 
 typedef struct {
@@ -128,7 +133,9 @@ G_DEFINE_TYPE (TestMixed, test_mixed, test_object_get_type ())
 static void
 test_mixed_class_init (TestMixedClass *klass)
 {
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   g_type_class_add_private (klass, sizeof (TestMixedPrivate));
+G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 static void

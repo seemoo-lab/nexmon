@@ -1,0 +1,4 @@
+This example contains two programs:
+  - hello, a simple "hello world" program,
+  - hello2, a more elaborate program that demonstrates advanced Gtk 3 features:
+    derived GObject classes, widget templates, GSettings.

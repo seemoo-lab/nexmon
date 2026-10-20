@@ -6,51 +6,42 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
 #include "packet-mpeg-sect.h"
 #include "packet-mpeg-descriptor.h"
 
 void proto_register_dvb_sdt(void);
 void proto_reg_handoff_dvb_sdt(void);
 
-static int proto_dvb_sdt = -1;
-static int hf_dvb_sdt_transport_stream_id = -1;
-static int hf_dvb_sdt_reserved1 = -1;
-static int hf_dvb_sdt_version_number = -1;
-static int hf_dvb_sdt_current_next_indicator = -1;
-static int hf_dvb_sdt_section_number = -1;
-static int hf_dvb_sdt_last_section_number = -1;
+static dissector_handle_t dvb_sdt_handle;
 
-static int hf_dvb_sdt_original_network_id = -1;
-static int hf_dvb_sdt_reserved2 = -1;
+static int proto_dvb_sdt;
+static int hf_dvb_sdt_transport_stream_id;
+static int hf_dvb_sdt_reserved1;
+static int hf_dvb_sdt_version_number;
+static int hf_dvb_sdt_current_next_indicator;
+static int hf_dvb_sdt_section_number;
+static int hf_dvb_sdt_last_section_number;
 
-static int hf_dvb_sdt_service_id = -1;
-static int hf_dvb_sdt_reserved3 = -1;
-static int hf_dvb_sdt_eit_schedule_flag = -1;
-static int hf_dvb_sdt_eit_present_following_flag = -1;
-static int hf_dvb_sdt_running_status = -1;
-static int hf_dvb_sdt_free_ca_mode = -1;
-static int hf_dvb_sdt_descriptors_loop_length = -1;
+static int hf_dvb_sdt_original_network_id;
+static int hf_dvb_sdt_reserved2;
 
-static gint ett_dvb_sdt = -1;
-static gint ett_dvb_sdt_service = -1;
+static int hf_dvb_sdt_service_id;
+static int hf_dvb_sdt_reserved3;
+static int hf_dvb_sdt_eit_schedule_flag;
+static int hf_dvb_sdt_eit_present_following_flag;
+static int hf_dvb_sdt_running_status;
+static int hf_dvb_sdt_free_ca_mode;
+static int hf_dvb_sdt_descriptors_loop_length;
+
+static int ett_dvb_sdt;
+static int ett_dvb_sdt_service;
 
 #define DVB_SDT_RESERVED1_MASK                  0xC0
 #define DVB_SDT_VERSION_NUMBER_MASK             0x3E
@@ -63,14 +54,6 @@ static gint ett_dvb_sdt_service = -1;
 #define DVB_SDT_RUNNING_STATUS_MASK             0xE000
 #define DVB_SDT_FREE_CA_MODE_MASK               0x1000
 #define DVB_SDT_DESCRIPTORS_LOOP_LENGTH_MASK    0x0FFF
-
-
-static const value_string dvb_sdt_cur_next_vals[] = {
-    { 0, "Not yet applicable" },
-    { 1, "Currently applicable" },
-
-    { 0, NULL }
-};
 
 static const value_string dvb_sdt_running_status_vals[] = {
     { 0, "Undefined" },
@@ -94,9 +77,9 @@ static int
 dissect_dvb_sdt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 
-    guint       offset = 0, length = 0;
-    guint       descriptor_len;
-    guint16     svc_id;
+    unsigned    offset = 0, length = 0;
+    unsigned    descriptor_len;
+    uint16_t    svc_id;
 
     proto_item *ti;
     proto_tree *dvb_sdt_tree;
@@ -157,7 +140,7 @@ dissect_dvb_sdt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
         descriptor_len = tvb_get_ntohs(tvb, offset) & DVB_SDT_DESCRIPTORS_LOOP_LENGTH_MASK;
         offset += 2;
 
-        offset += proto_mpeg_descriptor_loop_dissect(tvb, offset, descriptor_len, dvb_sdt_service_tree);
+        offset += proto_mpeg_descriptor_loop_dissect(tvb, pinfo, offset, descriptor_len, dvb_sdt_service_tree);
     }
 
     offset += packet_mpeg_sect_crc(tvb, pinfo, dvb_sdt_tree, 0, offset);
@@ -189,7 +172,7 @@ proto_register_dvb_sdt(void)
 
         { &hf_dvb_sdt_current_next_indicator, {
             "Current/Next Indicator", "dvb_sdt.cur_next_ind",
-            FT_UINT8, BASE_DEC, VALS(dvb_sdt_cur_next_vals), DVB_SDT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
+            FT_BOOLEAN, 8, TFS(&tfs_current_not_yet), DVB_SDT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
         } },
 
         { &hf_dvb_sdt_section_number, {
@@ -245,12 +228,12 @@ proto_register_dvb_sdt(void)
 
         { &hf_dvb_sdt_descriptors_loop_length, {
             "Descriptors Loop Length", "dvb_sdt.svc.descr_loop_len",
-            FT_UINT16, BASE_HEX, NULL, DVB_SDT_DESCRIPTORS_LOOP_LENGTH_MASK, NULL, HFILL
+            FT_UINT16, BASE_DEC, NULL, DVB_SDT_DESCRIPTORS_LOOP_LENGTH_MASK, NULL, HFILL
         } }
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_dvb_sdt,
         &ett_dvb_sdt_service
     };
@@ -260,21 +243,19 @@ proto_register_dvb_sdt(void)
     proto_register_field_array(proto_dvb_sdt, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
+    dvb_sdt_handle = register_dissector("dvb_sdt", dissect_dvb_sdt, proto_dvb_sdt);
 }
 
 
 void proto_reg_handoff_dvb_sdt(void)
 {
-    dissector_handle_t dvb_sdt_handle;
-
-    dvb_sdt_handle = create_dissector_handle(dissect_dvb_sdt, proto_dvb_sdt);
     dissector_add_uint("mpeg_sect.tid", DVB_SDT_TID_ACTUAL, dvb_sdt_handle);
     dissector_add_uint("mpeg_sect.tid", DVB_SDT_TID_OTHER, dvb_sdt_handle);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

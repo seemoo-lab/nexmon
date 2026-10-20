@@ -9,48 +9,40 @@
  *
  * Partially copied from packet-ipmi.c.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_ipmi_session(void);
 void proto_reg_handoff_ipmi_session(void);
 
+static dissector_handle_t ipmi_session_handle;
+
 #define RMCP_CLASS_IPMI 0x07
 
-static int proto_ipmi_session = -1;
+static int proto_ipmi_session;
 
-static gint ett_ipmi_session = -1;
-static gint ett_ipmi_session_payloadtype = -1;
+static int ett_ipmi_session;
+static int ett_ipmi_session_payloadtype;
 
 /* IPMI session header */
-static int hf_ipmi_session_id = -1;
-static int hf_ipmi_session_authtype = -1;
-static int hf_ipmi_session_payloadtype = -1;
-static int hf_ipmi_session_payloadtype_auth = -1;
-static int hf_ipmi_session_payloadtype_enc = -1;
-static int hf_ipmi_session_oem_iana = -1;
-static int hf_ipmi_session_oem_payload_id = -1;
-static int hf_ipmi_session_sequence = -1;
-static int hf_ipmi_session_authcode = -1;
-static int hf_ipmi_session_msg_len_1b = -1;
-static int hf_ipmi_session_msg_len_2b = -1;
-static int hf_ipmi_session_trailer = -1;
+static int hf_ipmi_session_id;
+static int hf_ipmi_session_authtype;
+static int hf_ipmi_session_payloadtype;
+static int hf_ipmi_session_payloadtype_auth;
+static int hf_ipmi_session_payloadtype_enc;
+static int hf_ipmi_session_oem_iana;
+static int hf_ipmi_session_oem_payload_id;
+static int hf_ipmi_session_sequence;
+static int hf_ipmi_session_authcode;
+static int hf_ipmi_session_msg_len_1b;
+static int hf_ipmi_session_msg_len_2b;
+static int hf_ipmi_session_trailer;
 
 static dissector_handle_t ipmi_handle;
 
@@ -113,17 +105,17 @@ dissect_ipmi_session(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 	proto_tree	*sess_tree = NULL, *s_tree;
 	proto_item	*ti;
 	tvbuff_t	*next_tvb;
-	guint32		session_id;
-	guint8		authtype, payloadtype = 0;
-	guint32		msg_start, msg_len, offset = 0;
-	gboolean	payloadtype_auth = 0, payloadtype_enc = 0;
+	uint32_t		session_id;
+	uint8_t		authtype, payloadtype = 0;
+	uint32_t		msg_start, msg_len, offset = 0;
+	bool	payloadtype_auth = 0, payloadtype_enc = 0;
 
 	/* session authtype, 0=no authcode present, 6=RMCP+ */
-	authtype = tvb_get_guint8(tvb, 0);
+	authtype = tvb_get_uint8(tvb, 0);
 	if (authtype == IPMI_AUTH_RMCPP) {
 		/* Fetch additional info before trying to interpret
 		   the packet. It may not be IPMI at all! */
-		payloadtype = tvb_get_guint8(tvb, 1);
+		payloadtype = tvb_get_uint8(tvb, 1);
 		payloadtype_auth = (payloadtype >> 6) & 1;
 		payloadtype_enc = (payloadtype >> 7);
 		payloadtype &= 0x3f;
@@ -148,10 +140,10 @@ dissect_ipmi_session(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 		session_id = tvb_get_letohl(tvb, 5);
 		if (authtype == IPMI_AUTH_NONE) {
 			msg_start = 10;
-			msg_len = tvb_get_guint8(tvb, 9);
+			msg_len = tvb_get_uint8(tvb, 9);
 		} else {
 			msg_start = 26;
-			msg_len = tvb_get_guint8(tvb, 25);
+			msg_len = tvb_get_uint8(tvb, 25);
 		}
 	}
 
@@ -222,7 +214,7 @@ dissect_ipmi_session(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 	}
 
 	/* If we can parse the embedded message, do so */
-	next_tvb = tvb_new_subset(tvb, msg_start, msg_len, -1);
+	next_tvb = tvb_new_subset_length_caplen(tvb, msg_start, msg_len, -1);
 	if (payloadtype_enc) {
 		/* This is RMCP+, and payload is encrypted. In this case,
 		   there is a 'confidentiality header/trailer', whose lengths
@@ -299,28 +291,25 @@ proto_register_ipmi_session(void)
 			FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = { &ett_ipmi_session, &ett_ipmi_session_payloadtype };
+	static int *ett[] = { &ett_ipmi_session, &ett_ipmi_session_payloadtype };
 
-	proto_ipmi_session = proto_register_protocol(
-			"Intelligent Platform Management Interface (Session Wrapper)", "IPMI Session",
-			"ipmi_session");
+	proto_ipmi_session = proto_register_protocol("Intelligent Platform Management Interface (Session Wrapper)", "IPMI Session", "ipmi_session");
 	proto_register_field_array(proto_ipmi_session, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	ipmi_session_handle = register_dissector("ipmi_session", dissect_ipmi_session, proto_ipmi_session);
 }
 
 void
 proto_reg_handoff_ipmi_session(void)
 {
-	dissector_handle_t ipmi_session_handle;
-
-	ipmi_session_handle = create_dissector_handle(dissect_ipmi_session, proto_ipmi_session);
 	dissector_add_uint("rmcp.class", RMCP_CLASS_IPMI, ipmi_session_handle);
 
 	ipmi_handle = find_dissector_add_dependency("ipmi", proto_ipmi_session);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

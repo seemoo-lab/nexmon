@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,6 +18,8 @@
 void proto_register_ath(void);
 void proto_reg_handoff_ath(void);
 
+static dissector_handle_t ath_handle;
+
 /* IMPORTANT IMPLEMENTATION NOTES
  *
  * You need to be looking at:
@@ -40,7 +30,7 @@ void proto_reg_handoff_ath(void);
  *
  *     - UDP heartbeats to maintain a status of all the members of the cluster
  *
- *     - TCP RMI to send data accross members
+ *     - TCP RMI to send data across members
  *
  * This dissector is about UDP heartbeats, that we will call ATH, standing for
  *   Apache Tribes Heartbeat. Tribes is the name of the clustering libraries
@@ -48,33 +38,46 @@ void proto_reg_handoff_ath(void);
  *
  */
 
-#define ATH_PORT 45564
+#define ATH_PORT 45564 /* Not IANA registered */
 
-static int proto_ath = -1;
+static int proto_ath;
 
-static int hf_ath_begin   = -1;
-static int hf_ath_padding = -1;
-static int hf_ath_length  = -1;
-static int hf_ath_alive   = -1;
-static int hf_ath_port    = -1;
-static int hf_ath_sport   = -1;
-static int hf_ath_uport   = -1;
-static int hf_ath_hlen    = -1;
-static int hf_ath_ipv4    = -1;
-static int hf_ath_ipv6    = -1;
-static int hf_ath_clen    = -1;
-static int hf_ath_comm    = -1;
-static int hf_ath_dlen    = -1;
-static int hf_ath_domain  = -1;
-static int hf_ath_unique  = -1;
-static int hf_ath_plen    = -1;
-static int hf_ath_payload = -1;
-static int hf_ath_end     = -1;
+static int hf_ath_begin;
+static int hf_ath_padding;
+static int hf_ath_length;
+static int hf_ath_alive;
+static int hf_ath_port;
+static int hf_ath_sport;
+static int hf_ath_uport;
+static int hf_ath_hlen;
+static int hf_ath_ipv4;
+static int hf_ath_ipv6;
+static int hf_ath_clen;
+static int hf_ath_comm;
+static int hf_ath_dlen;
+static int hf_ath_domain;
+static int hf_ath_unique;
+static int hf_ath_plen;
+static int hf_ath_payload;
+static int hf_ath_end;
 
-static gint ett_ath = -1;
+static int ett_ath;
 
-static expert_field ei_ath_hlen_invalid  = EI_INIT;
-static expert_field ei_ath_hmark_invalid = EI_INIT;
+static expert_field ei_ath_hlen_invalid;
+static expert_field ei_ath_hmark_invalid;
+
+static bool
+test_ath(tvbuff_t *tvb)
+{
+  /* Apache Tribes packets start with "TRIBES-B" in ASCII.
+   * tvb_strneql returns -1 if there aren't enough bytes.
+   */
+  if (tvb_strneql(tvb, 0, "TRIBES-B", 8) != 0) {
+    return false;
+  }
+
+  return true;
+}
 
 static int
 dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
@@ -82,21 +85,25 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
   int offset = 0;
 
   /* various lengths as reported in the packet itself */
-  guint8 hlen = 0;
-  gint32 clen = 0;
-  gint32 dlen = 0;
-  gint32 plen = 0;
+  uint8_t hlen = 0;
+  int32_t clen = 0;
+  int32_t dlen = 0;
+  int32_t plen = 0;
 
   /* detect the Tribes (Tomcat) version */
-  gint   tribes_version_mark;
+  int    tribes_version_mark;
 
   /* store the info */
-  const gchar *info_srcaddr = "";
-  const gchar *info_domain  = "";
-  const gchar *info_command = "";
+  const char *info_srcaddr = "";
+  const char *info_domain  = "";
+  const char *info_command = "";
 
   proto_item *ti, *hlen_item;
   proto_tree *ath_tree;
+
+  if (!test_ath(tvb)) {
+    return 0;
+  }
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "ATH");
 
@@ -120,7 +127,7 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     /* BEGIN
      */
-      proto_tree_add_item(ath_tree, hf_ath_begin, tvb, offset, 8, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_begin, tvb, offset, 8, ENC_ASCII);
       offset += 8;
 
       /* LENGTH
@@ -146,17 +153,17 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
       /* HOST LENGTH
        */
       hlen_item = proto_tree_add_item(ath_tree, hf_ath_hlen, tvb, offset, 1, ENC_BIG_ENDIAN);
-      hlen = tvb_get_guint8(tvb, offset);
+      hlen = tvb_get_uint8(tvb, offset);
       offset += 1;
 
       /* HOST
        */
       if (hlen == 4) {
         proto_tree_add_item(ath_tree, hf_ath_ipv4, tvb, offset, 4, ENC_BIG_ENDIAN);
-        info_srcaddr = tvb_ip_to_str(tvb, offset);
+        info_srcaddr = tvb_ip_to_str(pinfo->pool, tvb, offset);
       } else if (hlen == 6) {
         proto_tree_add_item(ath_tree, hf_ath_ipv6, tvb, offset, 6, ENC_NA);
-        info_srcaddr = tvb_ip6_to_str(tvb, offset);
+        info_srcaddr = tvb_ip6_to_str(pinfo->pool, tvb, offset);
       } else {
         expert_add_info(pinfo, hlen_item, &ei_ath_hlen_invalid);
       }
@@ -169,9 +176,9 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
       /* COMMAND
        */
-      proto_tree_add_item(ath_tree, hf_ath_comm, tvb, offset, clen, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_comm, tvb, offset, clen, ENC_ASCII);
       if (clen != -1)
-        info_command = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, clen, ENC_ASCII);
+        info_command = tvb_get_string_enc(pinfo->pool, tvb, offset, clen, ENC_ASCII);
       offset += clen;
 
       /* DOMAIN LENGTH
@@ -181,9 +188,9 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
       /* DOMAIN
        */
-      proto_tree_add_item(ath_tree, hf_ath_domain, tvb, offset, dlen, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_domain, tvb, offset, dlen, ENC_ASCII);
       if (dlen != 0)
-        info_domain = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, dlen, ENC_ASCII);
+        info_domain = tvb_get_string_enc(pinfo->pool, tvb, offset, dlen, ENC_ASCII);
       offset += dlen;
 
       /* UNIQUEID
@@ -198,12 +205,12 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
       /* PAYLOAD
        */
-      proto_tree_add_item(ath_tree, hf_ath_payload, tvb, offset, plen, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_payload, tvb, offset, plen, ENC_ASCII);
       offset += plen;
 
       /* END
        */
-      proto_tree_add_item(ath_tree, hf_ath_end, tvb, offset, 8, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_end, tvb, offset, 8, ENC_ASCII);
   }
 
   /* dissecting a Tomcat 7/8 packet
@@ -212,10 +219,10 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     /* BEGIN
      */
-      proto_tree_add_item(ath_tree, hf_ath_begin, tvb, offset, 8, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_begin, tvb, offset, 8, ENC_ASCII);
       offset += 8;
 
-      proto_tree_add_item(ath_tree, hf_ath_padding, tvb, offset, 2, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_padding, tvb, offset, 2, ENC_BIG_ENDIAN);
       offset += 2;
 
       /* LENGTH
@@ -246,17 +253,17 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
       /* HOST LENGTH
        */
       hlen_item = proto_tree_add_item(ath_tree, hf_ath_hlen, tvb, offset, 1, ENC_BIG_ENDIAN);
-      hlen = tvb_get_guint8(tvb, offset);
+      hlen = tvb_get_uint8(tvb, offset);
       offset += 1;
 
       /* HOST
        */
       if (hlen == 4) {
         proto_tree_add_item(ath_tree, hf_ath_ipv4, tvb, offset, 4, ENC_BIG_ENDIAN);
-        info_srcaddr = tvb_ip_to_str(tvb, offset);
+        info_srcaddr = tvb_ip_to_str(pinfo->pool, tvb, offset);
       } else if (hlen == 6) {
         proto_tree_add_item(ath_tree, hf_ath_ipv6, tvb, offset, 6, ENC_NA);
-        info_srcaddr = tvb_ip6_to_str(tvb, offset);
+        info_srcaddr = tvb_ip6_to_str(pinfo->pool, tvb, offset);
       } else {
         expert_add_info(pinfo, hlen_item, &ei_ath_hlen_invalid);
       }
@@ -269,9 +276,9 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
       /* COMMAND
        */
-      proto_tree_add_item(ath_tree, hf_ath_comm, tvb, offset, clen, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_comm, tvb, offset, clen, ENC_ASCII);
       if (clen != -1)
-        info_command = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, clen, ENC_ASCII);
+        info_command = tvb_get_string_enc(pinfo->pool, tvb, offset, clen, ENC_ASCII);
       offset += clen;
 
       /* DOMAIN LENGTH
@@ -281,9 +288,9 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
       /* DOMAIN
        */
-      proto_tree_add_item(ath_tree, hf_ath_domain, tvb, offset, dlen, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_domain, tvb, offset, dlen, ENC_ASCII);
       if (dlen != 0)
-        info_domain = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, dlen, ENC_ASCII);
+        info_domain = tvb_get_string_enc(pinfo->pool, tvb, offset, dlen, ENC_ASCII);
       offset += dlen;
 
       /* UNIQUEID
@@ -298,12 +305,12 @@ dissect_ath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
       /* PAYLOAD
        */
-      proto_tree_add_item(ath_tree, hf_ath_payload, tvb, offset, plen, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_payload, tvb, offset, plen, ENC_ASCII);
       offset += plen;
 
       /* END
        */
-      proto_tree_add_item(ath_tree, hf_ath_end, tvb, offset, 8, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(ath_tree, hf_ath_end, tvb, offset, 8, ENC_ASCII);
 
   } else {
     proto_tree_add_expert(tree, pinfo, &ei_ath_hmark_invalid, tvb, offset, -1);
@@ -423,7 +430,7 @@ proto_register_ath(void)
     { &ei_ath_hmark_invalid, { "ath.hmark.invalid", PI_MALFORMED, PI_ERROR, "Decode aborted: not an ATH packet", EXPFILL }},
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_ath,
   };
 
@@ -433,15 +440,13 @@ proto_register_ath(void)
   expert_ath = expert_register_protocol(proto_ath);
   expert_register_field_array(expert_ath, ei, array_length(ei));
 
+  ath_handle = register_dissector("ath", dissect_ath, proto_ath);
 }
 
 void
 proto_reg_handoff_ath(void)
 {
-  static dissector_handle_t ath_handle;
-
-  ath_handle = create_dissector_handle(dissect_ath, proto_ath);
-  dissector_add_uint("udp.port", ATH_PORT, ath_handle);
+  dissector_add_uint_with_preference("udp.port", ATH_PORT, ath_handle);
 }
 
 /*

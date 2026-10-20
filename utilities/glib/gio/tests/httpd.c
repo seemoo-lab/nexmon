@@ -6,7 +6,7 @@ static char *root = NULL;
 static GOptionEntry cmd_entries[] = {
   {"port", 'p', 0, G_OPTION_ARG_INT, &port,
    "Local port to bind to", NULL},
-  {NULL}
+  G_OPTION_ENTRY_NULL
 };
 
 static void
@@ -67,12 +67,19 @@ handler (GThreadedSocketService *service,
 
   version = NULL;
   tmp = strchr (escaped, ' ');
-  if (tmp != NULL)
+  if (tmp == NULL)
     {
-      *tmp = 0;
-      version = tmp + 1;
+      send_error (out, 400, "Bad Request");
+      goto out;
     }
-  version = version; /* To avoid -Wunused-but-set-variable */
+  *tmp = 0;
+
+  version = tmp + 1;
+  if (!g_str_has_prefix (version, "HTTP/1."))
+    {
+      send_error(out, 505, "HTTP Version Not Supported");
+      goto out;
+    }
 
   query = strchr (escaped, '?');
   if (query != NULL)

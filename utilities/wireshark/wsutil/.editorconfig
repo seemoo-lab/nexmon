@@ -1,7 +1,7 @@
 #
 # Editor configuration
 #
-# http://editorconfig.org/
+# https://editorconfig.org/
 #
 
 [adler32.[ch]]
@@ -11,7 +11,7 @@ indent_size = 2
 indent_style = tab
 indent_size = tab
 
-[airpdcap_wep.[ch]]
+[dot11decrypt_wep.[ch]]
 indent_style = tab
 indent_size = tab
 
@@ -33,10 +33,6 @@ indent_size = tab
 [clopts_common.[ch]]
 indent_size = 2
 
-[copyright_info.[ch]]
-indent_style = tab
-indent_size = tab
-
 [crash_info.[ch]]
 indent_style = tab
 indent_size = tab
@@ -53,22 +49,7 @@ indent_size = tab
 indent_style = tab
 indent_size = tab
 
-[file_util.[ch]]
-indent_size = 6
-
 [g711.[ch]]
-indent_style = tab
-indent_size = tab
-
-[inet_aton.[ch]]
-indent_style = tab
-indent_size = tab
-
-[inet_ntop.[ch]]
-indent_style = tab
-indent_size = tab
-
-[inet_pton.[ch]]
 indent_style = tab
 indent_size = tab
 
@@ -102,13 +83,6 @@ indent_size = 2
 indent_style = tab
 indent_size = tab
 
-[str_util.[ch]]
-indent_style = tab
-indent_size = tab
-
-[strptime.[ch]]
-indent_size = 2
-
 [tempfile.[ch]]
 indent_size = 2
 
@@ -116,14 +90,20 @@ indent_size = 2
 indent_style = tab
 indent_size = tab
 
+[to_str.[ch]]
+indent_style = tab
+indent_size = tab
+
 [type_util.[ch]]
 indent_size = 2
 
-[u3.[ch]]
-indent_size = 2
+[version_info.[ch]]
+indent_style = tab
+indent_size = tab
 
-[unicode-utils.[ch]]
-indent_size = 2
+[ws_getopt.[ch]]
+indent_style = tab
+indent_size = tab
 
 [ws_mempbrk.[ch]]
 indent_style = tab
@@ -132,5 +112,7 @@ indent_size = tab
 [ws_mempbrk_sse42.[ch]]
 indent_size = 2
 
-[wsgetopt.[ch]]
-indent_size = 2
+[ws_strptime.[ch]]
+indent_style = tab
+indent_size = tab
+

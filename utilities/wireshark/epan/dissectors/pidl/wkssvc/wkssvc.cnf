@@ -6,7 +6,7 @@ TFS hf_wkssvc_wkssvc_joinflags_WKSSVC_JOIN_FLAGS_JOIN_UNSECURE "Performs an unse
 
 TFS hf_wkssvc_wkssvc_joinflags_WKSSVC_JOIN_FLAGS_DOMAIN_JOIN_IF_JOINED "Allow a join to a new domain even if the computer is already joined to a domain" "Do not allow join to a new domain if the computer is already joined to a domain"
 
-TFS hf_wkssvc_wkssvc_joinflags_WKSSVC_JOIN_FLAGS_WIN9X_UPGRADE "The join operation is occuring as part of an upgrade of Windows 9x" "The join operation is not part of a Windows 9x upgrade"
+TFS hf_wkssvc_wkssvc_joinflags_WKSSVC_JOIN_FLAGS_WIN9X_UPGRADE "The join operation is occurring as part of an upgrade of Windows 9x" "The join operation is not part of a Windows 9x upgrade"
 
 TFS hf_wkssvc_wkssvc_joinflags_WKSSVC_JOIN_FLAGS_ACCOUNT_DELETE "Delete the account when a domain is left" "Do not delete the account when a domain is left"
 
@@ -36,17 +36,9 @@ TYPE lsa_String "offset=cnf_dissect_lsa_String(tvb, offset, pinfo, tree, di, dre
 TYPE hyper "offset=cnf_dissect_hyper(tvb, offset, pinfo, tree, di, drep, @PARAM@, @HF@);" FT_UINT64 BASE_DEC 0 NULL 8 
 
 CODE START
-/* Bug in pidl.  Can not handle these dependencies properly yet */
-static int
-wkssvc_dissect_struct_srvsvc_PlatformId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
-{
-	offset = srvsvc_dissect_enum_PlatformId(tvb,offset,pinfo,tree,di,drep,hf_wkssvc_platform_id,0);
-
-	return offset;
-}
 
 static int
-cnf_dissect_lsa_String(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *parent_tree, dcerpc_info* di, guint8 *drep, guint32 param, int hfindex)
+cnf_dissect_lsa_String(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *parent_tree, dcerpc_info* di, uint8_t *drep, uint32_t param, int hfindex)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -77,7 +69,7 @@ cnf_dissect_lsa_String(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
 }
 
 static int
-cnf_dissect_hyper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, guint32 param _U_, int hfindex)
+cnf_dissect_hyper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, uint32_t param _U_, int hfindex)
 {
 	offset = dissect_ndr_uint64(tvb, offset, pinfo, tree, di, drep, hfindex, NULL);
 

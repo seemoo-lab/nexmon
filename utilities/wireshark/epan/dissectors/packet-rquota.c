@@ -8,51 +8,49 @@
  *
  * Copied from packet-ypxfr.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
+#include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-rpc.h"
-#include "packet-rquota.h"
 
 void proto_register_rquota(void);
 void proto_reg_handoff_rquota(void);
 
-static int proto_rquota = -1;
-static int hf_rquota_procedure_v1 = -1;
-static int hf_rquota_procedure_v2 = -1;
-static int hf_rquota_pathp = -1;
-static int hf_rquota_uid = -1;
-static int hf_rquota_type = -1;
-static int hf_rquota_id = -1;
-static int hf_rquota_status = -1;
-static int hf_rquota_rquota = -1;
-static int hf_rquota_bsize = -1;
-static int hf_rquota_active = -1;
-static int hf_rquota_bhardlimit = -1;
-static int hf_rquota_bsoftlimit = -1;
-static int hf_rquota_curblocks = -1;
-static int hf_rquota_fhardlimit = -1;
-static int hf_rquota_fsoftlimit = -1;
-static int hf_rquota_curfiles = -1;
-static int hf_rquota_btimeleft = -1;
-static int hf_rquota_ftimeleft = -1;
+static int proto_rquota;
+static int hf_rquota_procedure_v1;
+static int hf_rquota_procedure_v2;
+static int hf_rquota_pathp;
+static int hf_rquota_uid;
+static int hf_rquota_type;
+static int hf_rquota_id;
+static int hf_rquota_status;
+static int hf_rquota_rquota;
+static int hf_rquota_bsize;
+static int hf_rquota_active;
+static int hf_rquota_bhardlimit;
+static int hf_rquota_bsoftlimit;
+static int hf_rquota_curblocks;
+static int hf_rquota_fhardlimit;
+static int hf_rquota_fsoftlimit;
+static int hf_rquota_curfiles;
+static int hf_rquota_btimeleft;
+static int hf_rquota_ftimeleft;
 
-static gint ett_rquota = -1;
-static gint ett_rquota_rquota = -1;
+static int ett_rquota;
+static int ett_rquota_rquota;
+
+#define RQUOTAPROC_NULL 		0
+#define RQUOTAPROC_GETQUOTA		1
+#define RQUOTAPROC_GETACTIVEQUOTA	2
+#define RQUOTAPROC_SETQUOTA		3
+#define RQUOTAPROC_SETACTIVEQUOTA	4
+
+#define RQUOTA_PROGRAM 100011
 
 static const value_string names_rquota_status[] =
 {
@@ -114,7 +112,7 @@ dissect_rquota(tvbuff_t *tvb, int offset, proto_tree *tree)
 static int
 dissect_getquota_result(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
 {
-	gint32	status;
+	int32_t	status;
 	int offset = 0;
 
 	status = tvb_get_ntohl(tvb, offset);
@@ -130,11 +128,11 @@ dissect_getquota_result(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 }
 
 static int
-dissect_getquota_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_getquota_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_rquota_pathp, offset, NULL);
 
 	offset = dissect_rpc_uint32(tvb, tree,
@@ -166,11 +164,11 @@ static const value_string rquota1_proc_vals[] = {
 
 
 static int
-dissect_getquota2_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_getquota2_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_rquota_pathp, offset, NULL);
 
 	offset = dissect_rpc_uint32(tvb, tree,
@@ -284,13 +282,12 @@ proto_register_rquota(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_rquota,
 		&ett_rquota_rquota,
 	};
 
-	proto_rquota = proto_register_protocol("Remote Quota",
-	    "RQUOTA", "rquota");
+	proto_rquota = proto_register_protocol("Remote Quota", "RQUOTA", "rquota");
 
 	proto_register_field_array(proto_rquota, hf, array_length(hf));
 
@@ -306,7 +303,7 @@ proto_reg_handoff_rquota(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

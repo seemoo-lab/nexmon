@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -64,9 +66,9 @@ struct _GLocalFileMonitorClass
 };
 
 #ifdef G_OS_UNIX
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 #endif
-GType           g_local_file_monitor_get_type (void) G_GNUC_CONST;
+GType           g_local_file_monitor_get_type (void);
 
 /* for glocalfile.c */
 GFileMonitor *
@@ -87,10 +89,11 @@ g_local_file_monitor_new_in_worker (const gchar           *pathname,
                                     GFileMonitorFlags      flags,
                                     GFileMonitorCallback   callback,
                                     gpointer               user_data,
+                                    GClosureNotify         destroy_user_data,
                                     GError               **error);
 
 /* for implementations of GLocalFileMonitor */
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 gboolean
 g_file_monitor_source_handle_event (GFileMonitorSource *fms,
                                     GFileMonitorEvent   event_type,

@@ -9,11 +9,11 @@ m4/backupfile.m4
 
 Depends-on:
 argmatch
-basename
+basename-lgpl
 closedir
 opendir
 readdir
-unistd
+unistd-h
 
 configure.ac:
 gt_PREREQ_BACKUPFILE

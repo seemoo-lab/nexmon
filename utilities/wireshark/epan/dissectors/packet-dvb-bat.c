@@ -6,51 +6,42 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
 #include "packet-mpeg-sect.h"
 #include "packet-mpeg-descriptor.h"
 
 void proto_register_dvb_bat(void);
 void proto_reg_handoff_dvb_bat(void);
 
-static int proto_dvb_bat = -1;
-static int hf_dvb_bat_bouquet_id = -1;
-static int hf_dvb_bat_reserved1 = -1;
-static int hf_dvb_bat_version_number = -1;
-static int hf_dvb_bat_current_next_indicator = -1;
-static int hf_dvb_bat_section_number = -1;
-static int hf_dvb_bat_last_section_number = -1;
+static dissector_handle_t dvb_bat_handle;
 
-static int hf_dvb_bat_reserved2 = -1;
-static int hf_dvb_bat_bouquet_descriptors_length = -1;
+static int proto_dvb_bat;
+static int hf_dvb_bat_bouquet_id;
+static int hf_dvb_bat_reserved1;
+static int hf_dvb_bat_version_number;
+static int hf_dvb_bat_current_next_indicator;
+static int hf_dvb_bat_section_number;
+static int hf_dvb_bat_last_section_number;
 
-static int hf_dvb_bat_reserved3 = -1;
-static int hf_dvb_bat_transport_stream_loop_length = -1;
+static int hf_dvb_bat_reserved2;
+static int hf_dvb_bat_bouquet_descriptors_length;
 
-static int hf_dvb_bat_transport_stream_id = -1;
-static int hf_dvb_bat_original_network_id = -1;
-static int hf_dvb_bat_reserved4 = -1;
-static int hf_dvb_bat_transport_descriptors_length = -1;
+static int hf_dvb_bat_reserved3;
+static int hf_dvb_bat_transport_stream_loop_length;
 
-static gint ett_dvb_bat = -1;
-static gint ett_dvb_bat_transport_stream = -1;
+static int hf_dvb_bat_transport_stream_id;
+static int hf_dvb_bat_original_network_id;
+static int hf_dvb_bat_reserved4;
+static int hf_dvb_bat_transport_descriptors_length;
+
+static int ett_dvb_bat;
+static int ett_dvb_bat_transport_stream;
 
 
 #define DVB_BAT_RESERVED1_MASK                      0xC0
@@ -65,13 +56,6 @@ static gint ett_dvb_bat_transport_stream = -1;
 
 #define DVB_BAT_RESERVED4_MASK                    0xF000
 #define DVB_BAT_TRANSPORT_DESCRIPTORS_LENGTH_MASK 0x0FFF
-
-static const value_string dvb_bat_cur_next_vals[] = {
-    { 0, "Not yet applicable" },
-    { 1, "Currently applicable" },
-
-    { 0, NULL }
-};
 
 #if 0
 static const value_string dvb_bat_running_status_vals[] = {
@@ -97,8 +81,8 @@ static int
 dissect_dvb_bat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 
-    guint   offset = 0, length = 0, ts_loop_end;
-    guint16 ts_id, descriptor_len, ts_loop_len;
+    unsigned   offset = 0, length = 0, ts_loop_end;
+    uint16_t ts_id, descriptor_len, ts_loop_len;
 
     proto_item *ti;
     proto_tree *dvb_bat_tree;
@@ -131,7 +115,7 @@ dissect_dvb_bat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     proto_tree_add_item(dvb_bat_tree, hf_dvb_bat_bouquet_descriptors_length,   tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
-    offset += proto_mpeg_descriptor_loop_dissect(tvb, offset, descriptor_len, dvb_bat_tree);
+    offset += proto_mpeg_descriptor_loop_dissect(tvb, pinfo, offset, descriptor_len, dvb_bat_tree);
 
     ts_loop_len = tvb_get_ntohs(tvb, offset) & DVB_BAT_TRANSPORT_STREAM_LOOP_LENGTH_MASK;
     proto_tree_add_item(dvb_bat_tree, hf_dvb_bat_reserved3,                    tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -156,7 +140,7 @@ dissect_dvb_bat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
         proto_tree_add_item(transport_stream_tree, hf_dvb_bat_transport_descriptors_length, tvb, offset, 2, ENC_BIG_ENDIAN);
         offset += 2;
 
-        offset += proto_mpeg_descriptor_loop_dissect(tvb, offset, descriptor_len, transport_stream_tree);
+        offset += proto_mpeg_descriptor_loop_dissect(tvb, pinfo, offset, descriptor_len, transport_stream_tree);
     }
 
     offset += packet_mpeg_sect_crc(tvb, pinfo, dvb_bat_tree, 0, offset);
@@ -188,7 +172,7 @@ proto_register_dvb_bat(void)
 
         { &hf_dvb_bat_current_next_indicator, {
             "Current/Next Indicator", "dvb_bat.cur_next_ind",
-            FT_UINT8, BASE_DEC, VALS(dvb_bat_cur_next_vals), DVB_BAT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
+            FT_BOOLEAN, 8, TFS(&tfs_current_not_yet), DVB_BAT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
         } },
 
         { &hf_dvb_bat_section_number, {
@@ -243,12 +227,13 @@ proto_register_dvb_bat(void)
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_dvb_bat,
         &ett_dvb_bat_transport_stream
     };
 
     proto_dvb_bat = proto_register_protocol("DVB Bouquet Association Table", "DVB BAT", "dvb_bat");
+    dvb_bat_handle = register_dissector("dvb_bat", dissect_dvb_bat, proto_dvb_bat);
 
     proto_register_field_array(proto_dvb_bat, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
@@ -258,15 +243,11 @@ proto_register_dvb_bat(void)
 
 void proto_reg_handoff_dvb_bat(void)
 {
-    dissector_handle_t dvb_bat_handle;
-
-    dvb_bat_handle = create_dissector_handle(dissect_dvb_bat, proto_dvb_bat);
-
     dissector_add_uint("mpeg_sect.tid", DVB_BAT_TID, dvb_bat_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

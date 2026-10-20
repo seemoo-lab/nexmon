@@ -1,5 +1,5 @@
 /* Fetch an URL's contents.
- * Copyright (C) 2001, 2008, 2015-2016 Free Software Foundation, Inc.
+ * Copyright (C) 2001, 2008, 2020 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package gnu.gettext;
@@ -56,7 +56,10 @@ public class GetURL {
       };
     timeoutThread.start();
     try {
-      InputStream istream = new BufferedInputStream(url.openStream());
+      URLConnection connection = url.openConnection();
+      // Override the User-Agent string, so as to not reveal the Java version.
+      connection.setRequestProperty("User-Agent", "urlget");
+      InputStream istream = new BufferedInputStream(connection.getInputStream());
       OutputStream ostream = new BufferedOutputStream(System.out);
       for (;;) {
         int b = istream.read();

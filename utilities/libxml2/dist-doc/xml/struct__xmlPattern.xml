@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlPattern" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlPattern</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlPattern_1a735984d41155bc1032e09bece8f8d66d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* data</definition>
+        <argsstring></argsstring>
+        <name>data</name>
+        <qualifiedname>_xmlPattern::data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="165" column="10" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="165" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPattern_1a2f89a426c195c2ad019b65e822791a21" prot="public" static="no" mutable="no">
+        <type>xmlDictPtr</type>
+        <definition>xmlDictPtr dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>_xmlPattern::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="166" column="16" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="166" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPattern_1a7d4fb343dd0d3016f45fb1c512b6333a" prot="public" static="no" mutable="no">
+        <type>struct _xmlPattern *</type>
+        <definition>struct _xmlPattern* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlPattern::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="167" column="22" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="167" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPattern_1a2c90bbd562c83c143e5c7ea355cc5cb0" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* pattern</definition>
+        <argsstring></argsstring>
+        <name>pattern</name>
+        <qualifiedname>_xmlPattern::pattern</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="168" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="168" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPattern_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlPattern::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="169" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="169" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPattern_1adfbda717a0c93c03bd532b01afff8023" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbStep</definition>
+        <argsstring></argsstring>
+        <name>nbStep</name>
+        <qualifiedname>_xmlPattern::nbStep</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="170" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="170" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPattern_1a68defcf610c5210aa9a2b73fb4de6fbe" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxStep</definition>
+        <argsstring></argsstring>
+        <name>maxStep</name>
+        <qualifiedname>_xmlPattern::maxStep</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="171" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="171" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPattern_1a68d648461f4ab5fc3e95a5500b43eefb" prot="public" static="no" mutable="no">
+        <type>xmlStepOpPtr</type>
+        <definition>xmlStepOpPtr steps</definition>
+        <argsstring></argsstring>
+        <name>steps</name>
+        <qualifiedname>_xmlPattern::steps</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="172" column="18" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="172" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPattern_1a6eece27a906d19226ec3c8c632da437f" prot="public" static="no" mutable="no">
+        <type>xmlStreamCompPtr</type>
+        <definition>xmlStreamCompPtr stream</definition>
+        <argsstring></argsstring>
+        <name>stream</name>
+        <qualifiedname>_xmlPattern::stream</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="173" column="22" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="173" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>_xmlDict</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDictStrings</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlPattern</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="1" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>stream</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlStepOp</label>
+      </node>
+      <node id="5">
+        <label>_xmlStreamComp</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlStreamStep</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/pattern.c" line="164" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="164" bodyend="174"/>
+    <listofallmembers>
+      <member refid="struct__xmlPattern_1a735984d41155bc1032e09bece8f8d66d" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>data</name></member>
+      <member refid="struct__xmlPattern_1a2f89a426c195c2ad019b65e822791a21" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>dict</name></member>
+      <member refid="struct__xmlPattern_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>flags</name></member>
+      <member refid="struct__xmlPattern_1a68defcf610c5210aa9a2b73fb4de6fbe" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>maxStep</name></member>
+      <member refid="struct__xmlPattern_1adfbda717a0c93c03bd532b01afff8023" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>nbStep</name></member>
+      <member refid="struct__xmlPattern_1a7d4fb343dd0d3016f45fb1c512b6333a" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>next</name></member>
+      <member refid="struct__xmlPattern_1a2c90bbd562c83c143e5c7ea355cc5cb0" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>pattern</name></member>
+      <member refid="struct__xmlPattern_1a68d648461f4ab5fc3e95a5500b43eefb" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>steps</name></member>
+      <member refid="struct__xmlPattern_1a6eece27a906d19226ec3c8c632da437f" prot="public" virt="non-virtual"><scope>_xmlPattern</scope><name>stream</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

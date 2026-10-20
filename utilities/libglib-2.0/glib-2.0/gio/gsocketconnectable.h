@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,11 +34,6 @@ G_BEGIN_DECLS
 #define G_IS_SOCKET_CONNECTABLE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_SOCKET_CONNECTABLE))
 #define G_SOCKET_CONNECTABLE_GET_IFACE(obj)  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), G_TYPE_SOCKET_CONNECTABLE, GSocketConnectableIface))
 
-/**
- * GSocketConnectable:
- *
- * Interface for objects that contain or generate #GSocketAddress<!-- -->es.
- */
 typedef struct _GSocketConnectableIface GSocketConnectableIface;
 
 /**
@@ -63,16 +60,16 @@ struct _GSocketConnectableIface
   gchar                    * (* to_string)       (GSocketConnectable *connectable);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType                     g_socket_connectable_get_type  (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType                     g_socket_connectable_get_type  (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GSocketAddressEnumerator *g_socket_connectable_enumerate (GSocketConnectable *connectable);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GSocketAddressEnumerator *g_socket_connectable_proxy_enumerate (GSocketConnectable *connectable);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gchar                    *g_socket_connectable_to_string (GSocketConnectable *connectable);
 
 G_END_DECLS

@@ -1,0 +1,48 @@
+./test/HTML/doc3.htm:148: HTML parser error : Unexpected end tag : p
+  </P></TD></TR></TBODY></TABLE></CENTER></TD></TR></TBODY></TABLE></CENTER></P>
+                                                                               ^
+./test/HTML/doc3.htm:236: HTML parser error : Unexpected end tag : font
+            Specials<BR><BR></FONT></A><BR></FONT></A><B><FONT color=yellow 
+                                                  ^
+./test/HTML/doc3.htm:236: HTML parser error : Unexpected end tag : a
+            Specials<BR><BR></FONT></A><BR></FONT></A><B><FONT color=yellow 
+                                                      ^
+./test/HTML/doc3.htm:747: HTML parser error : Unexpected end tag : li
+light.com/ad_static.asp?pid=2097&sid=1881&asid=7708"></a></IFRAME></CENTER></LI>
+                                                                               ^
+./test/HTML/doc3.htm:747: HTML parser error : Unexpected end tag : font
+om/ad_static.asp?pid=2097&sid=1881&asid=7708"></a></IFRAME></CENTER></LI></FONT>
+                                                                               ^
+./test/HTML/doc3.htm:747: HTML parser error : Unexpected end tag : p
+=7708"></a></IFRAME></CENTER></LI></FONT></TD></TR></TBODY></TABLE></CENTER></P>
+                                                                               ^
+./test/HTML/doc3.htm:772: HTML parser error : Unexpected end tag : form
+            archive</A></FONT> </FORM></CENTER></TD></TR></TBODY></TABLE><!--			
+                                      ^
+./test/HTML/doc3.htm:820: HTML parser error : Unexpected end tag : a
+            </A></A></B><B></NOSCRIPT></B><B><!-- END GoTo.com Search Box --></B
+                    ^
+./test/HTML/doc3.htm:820: HTML parser error : Unexpected end tag : noscript
+            </A></A></B><B></NOSCRIPT></B><B><!-- END GoTo.com Search Box --></B
+                                      ^
+./test/HTML/doc3.htm:826: HTML parser error : Opening and ending tag mismatch: form and center
+            </FORM><!-- Pricewatch Search Box --><A 
+                   ^
+./test/HTML/doc3.htm:833: HTML parser error : Unexpected end tag : p
+            Special<BR>Code:BP6-hd</FONT></A> </P></CENTER></TD></TR></TBODY></T
+                                                  ^
+./test/HTML/doc3.htm:833: HTML parser error : Opening and ending tag mismatch: center and td
+            Special<BR>Code:BP6-hd</FONT></A> </P></CENTER></TD></TR></TBODY></T
+                                                           ^
+./test/HTML/doc3.htm:839: HTML parser error : Unexpected end tag : p
+width="100%">&nbsp;</TD></TR></TBODY></TABLE></P></CENTER></TR></TBODY></TABLE><
+                                                 ^
+./test/HTML/doc3.htm:840: HTML parser error : Unexpected end tag : td
+<CENTER></CENTER></TD></TR><TR><TD COLSPAN="3" VALIGN="TOP" 
+                      ^
+./test/HTML/doc3.htm:840: HTML parser error : Unexpected end tag : tr
+<CENTER></CENTER></TD></TR><TR><TD COLSPAN="3" VALIGN="TOP" 
+                           ^
+./test/HTML/doc3.htm:841: HTML parser error : Unexpected end tag : table
+HEIGHT="70">&nbsp;</TD> </TR></TABLE>
+                                     ^

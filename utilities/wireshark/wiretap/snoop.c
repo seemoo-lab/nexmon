@@ -3,29 +3,26 @@
  * Wiretap Library
  * Copyright (c) 1998 by Gilbert Ramirez <gram@alumni.rice.edu>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-#include <errno.h>
+#include "snoop.h"
+
 #include <string.h>
-#include "wtap-int.h"
+#include "wtap_module.h"
 #include "file_wrappers.h"
 #include "atm.h"
-#include "snoop.h"
+#include <wsutil/802_11-utils.h>
+#include <wsutil/array.h>
+#include <wsutil/ws_roundup.h>
+#include <wsutil/pint.h>
+
 /* See RFC 1761 for a description of the "snoop" file format. */
+
+typedef struct {
+	bool is_shomiti;
+} snoop_t;
 
 /* Magic number in "snoop" files. */
 static const char snoop_magic[] = {
@@ -34,27 +31,27 @@ static const char snoop_magic[] = {
 
 /* "snoop" file header (minus magic number). */
 struct snoop_hdr {
-	guint32	version;	/* version number (should be 2) */
-	guint32	network;	/* network type */
+	uint32_t	version;	/* version number (should be 2) */
+	uint32_t	network;	/* network type */
 };
 
 /* "snoop" record header. */
 struct snooprec_hdr {
-	guint32	orig_len;	/* actual length of packet */
-	guint32	incl_len;	/* number of octets captured in file */
-	guint32	rec_len;	/* length of record */
-	guint32	cum_drops;	/* cumulative number of dropped packets */
-	guint32	ts_sec;		/* timestamp seconds */
-	guint32	ts_usec;	/* timestamp microseconds */
+	uint32_t	orig_len;	/* actual length of packet */
+	uint32_t	incl_len;	/* number of octets captured in file */
+	uint32_t	rec_len;	/* length of record */
+	uint32_t	cum_drops;	/* cumulative number of dropped packets */
+	uint32_t	ts_sec;		/* timestamp seconds */
+	uint32_t	ts_usec;	/* timestamp microseconds */
 };
 
 /*
  * The link-layer header on ATM packets.
  */
 struct snoop_atm_hdr {
-	guint8	flags;		/* destination and traffic type */
-	guint8	vpi;		/* VPI */
-	guint16	vci;		/* VCI */
+	uint8_t	flags;		/* destination and traffic type */
+	uint8_t	vpi;		/* VPI */
+	uint16_t	vci;		/* VCI */
 };
 
 /*
@@ -62,11 +59,11 @@ struct snoop_atm_hdr {
  * captures.
  */
 struct shomiti_trailer {
-	guint16	phy_rx_length;	/* length on the wire, including FCS? */
-	guint16	phy_rx_status;	/* status flags */
-	guint32	ts_40_ns_lsb;	/* 40 ns time stamp, low-order bytes? */
-	guint32	ts_40_ns_msb;	/* 40 ns time stamp, low-order bytes? */
-	gint32	frame_id;	/* "FrameID"? */
+	uint16_t	phy_rx_length;	/* length on the wire, including FCS? */
+	uint16_t	phy_rx_status;	/* status flags */
+	uint32_t	ts_40_ns_lsb;	/* 40 ns time stamp, low-order bytes? */
+	uint32_t	ts_40_ns_msb;	/* 40 ns time stamp, low-order bytes? */
+	int32_t	frame_id;	/* "FrameID"? */
 };
 
 /*
@@ -83,31 +80,36 @@ struct shomiti_trailer {
 #define RX_STATUS_FIFO_ERROR		0x0080	/* receive FIFO error */
 #define RX_STATUS_TRIGGERED		0x0001	/* frame did trigger */
 
-static gboolean snoop_read(wtap *wth, int *err, gchar **err_info,
-    gint64 *data_offset);
-static gboolean snoop_seek_read(wtap *wth, gint64 seek_off,
-    struct wtap_pkthdr *phdr, Buffer *buf, int *err, gchar **err_info);
-static int snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
-    Buffer *buf, int *err, gchar **err_info);
-static gboolean snoop_read_atm_pseudoheader(FILE_T fh,
-    union wtap_pseudo_header *pseudo_header, int *err, gchar **err_info);
-static gboolean snoop_read_shomiti_wireless_pseudoheader(FILE_T fh,
-    union wtap_pseudo_header *pseudo_header, int *err, gchar **err_info,
+static bool snoop_read(wtap *wth, wtap_rec *rec,
+    int *err, char **err_info, int64_t *data_offset);
+static bool snoop_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+    int *err, char **err_info);
+static int snoop_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
+    int *err, char **err_info);
+static bool snoop_read_atm_pseudoheader(FILE_T fh,
+    union wtap_pseudo_header *pseudo_header, int *err, char **err_info);
+static bool snoop_read_shomiti_wireless_pseudoheader(FILE_T fh,
+    union wtap_pseudo_header *pseudo_header, int *err, char **err_info,
     int *header_size);
-static gboolean snoop_dump(wtap_dumper *wdh, const struct wtap_pkthdr *phdr,
-    const guint8 *pd, int *err, gchar **err_info);
+static bool snoop_dump(wtap_dumper *wdh, const wtap_rec *rec,
+    int *err, char **err_info);
+
+static int snoop_file_type_subtype = -1;
+static int shomiti_file_type_subtype = -1;
+
+void register_snoop(void);
 
 /*
  * See
  *
- *	http://www.opengroup.org/onlinepubs/9638599/apdxf.htm
+ *	https://pubs.opengroup.org/onlinepubs/9638599/apdxf.htm
  *
  * for the "dlpi.h" header file specified by The Open Group, which lists
  * the DL_ values for various protocols; Solaris 7 uses the same values.
  *
  * See
  *
- *	http://www.iana.org/assignments/snoop-datalink-types/snoop-datalink-types.xml
+ *	https://www.iana.org/assignments/snoop-datalink-types
  *
  * for the IETF list of snoop datalink types.
  *
@@ -116,7 +118,7 @@ static gboolean snoop_dump(wtap_dumper *wdh, const struct wtap_pkthdr *phdr,
  *	http://mrpink.lerc.nasa.gov/118x/support.html
  *
  * had links to modified versions of "tcpdump" and "libpcap" for SUNatm
- * DLPI support; they suggested that the 3.0 verson of SUNatm uses those
+ * DLPI support; they suggested that the 3.0 version of SUNatm uses those
  * values.  The Wayback Machine archived that page, but not the stuff
  * to which it linked, unfortunately.
  *
@@ -167,7 +169,7 @@ static gboolean snoop_dump(wtap_dumper *wdh, const struct wtap_pkthdr *phdr,
  * if it can't, this may be useful reference information for anybody doing
  * code to use DLPI to do raw packet captures on those network types.
  *
- *	http://web.archive.org/web/20010906213807/http://www.shomiti.com/support/TNCapFileFormat.htm
+ *	https://web.archive.org/web/20010906213807/http://www.shomiti.com/support/TNCapFileFormat.htm
  *
  * gives information on Shomiti's mutant flavor of snoop.  For some unknown
  * reason, they decided not to just Go With The DLPI Flow, and instead used
@@ -176,13 +178,13 @@ static gboolean snoop_dump(wtap_dumper *wdh, const struct wtap_pkthdr *phdr,
  * 4MB from 16MB Token Ring, and distinguishing both of them from the
  * "Shomiti" versions of same.
  */
-wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
+wtap_open_return_val snoop_open(wtap *wth, int *err, char **err_info)
 {
 	char magic[sizeof snoop_magic];
 	struct snoop_hdr hdr;
 	struct snooprec_hdr rec_hdr;
-	guint padbytes;
-	gboolean is_shomiti;
+	unsigned padbytes;
+	bool is_shomiti;
 	static const int snoop_encap[] = {
 		WTAP_ENCAP_ETHERNET,	/* IEEE 802.3 */
 		WTAP_ENCAP_UNKNOWN,	/* IEEE 802.4 Token Bus */
@@ -212,7 +214,7 @@ wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
 		WTAP_ENCAP_UNKNOWN,	/* 100BaseT (but that's just Ethernet) */
 		WTAP_ENCAP_IP_OVER_IB_SNOOP,	/* Infiniband */
 	};
-	#define NUM_SNOOP_ENCAPS (sizeof snoop_encap / sizeof snoop_encap[0])
+	#define NUM_SNOOP_ENCAPS array_length(snoop_encap)
 	#define SNOOP_PRIVATE_BIT 0x80000000
 	static const int snoop_private_encap[] = {
 		WTAP_ENCAP_UNKNOWN,	/* Not Used */
@@ -224,7 +226,7 @@ wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
 		WTAP_ENCAP_UNKNOWN,	/* IPMP stub interface */
 		WTAP_ENCAP_UNKNOWN,	/* 6to4 Tunnel Link */
 	};
-	#define NUM_SNOOP_PRIVATE_ENCAPS (sizeof snoop_private_encap / sizeof snoop_private_encap[0])
+	#define NUM_SNOOP_PRIVATE_ENCAPS array_length(snoop_private_encap)
 	static const int shomiti_encap[] = {
 		WTAP_ENCAP_ETHERNET,	/* IEEE 802.3 */
 		WTAP_ENCAP_UNKNOWN,	/* IEEE 802.4 Token Bus */
@@ -247,9 +249,10 @@ wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
 		WTAP_ENCAP_IEEE_802_11_WITH_RADIO, /* IEEE 802.11 with Radio Header */
 		WTAP_ENCAP_ETHERNET,	/* 10 Gigabit Ethernet */
 	};
-	#define NUM_SHOMITI_ENCAPS (sizeof shomiti_encap / sizeof shomiti_encap[0])
+	#define NUM_SHOMITI_ENCAPS array_length(shomiti_encap)
 	int file_encap;
-	gint64 saved_offset;
+	int64_t saved_offset;
+	snoop_t *snoop;
 
 	/* Read in the string that should be at the start of a "snoop" file */
 	if (!wtap_read_bytes(wth->fh, magic, sizeof magic, err, err_info)) {
@@ -282,7 +285,7 @@ wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
 
 	default:
 		*err = WTAP_ERR_UNSUPPORTED;
-		*err_info = g_strdup_printf("snoop: version %u unsupported", hdr.version);
+		*err_info = ws_strdup_printf("snoop: version %u unsupported", hdr.version);
 		return WTAP_OPEN_ERROR;
 	}
 
@@ -314,7 +317,7 @@ wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
 	/*
 	 * Start out assuming it's not a Shomiti capture.
 	 */
-	is_shomiti = FALSE;
+	is_shomiti = false;
 
 	/* Read first record header. */
 	saved_offset = file_tell(wth->fh);
@@ -348,7 +351,7 @@ wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
 			 * Well, we have padding; how much?
 			 */
 			padbytes = g_ntohl(rec_hdr.rec_len) -
-			    ((guint)sizeof rec_hdr + g_ntohl(rec_hdr.incl_len));
+			    ((unsigned)sizeof rec_hdr + g_ntohl(rec_hdr.incl_len));
 
 			/*
 			 * Is it at least the size of a Shomiti trailer?
@@ -369,38 +372,29 @@ wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
 		if (hdr.network >= NUM_SHOMITI_ENCAPS
 		    || shomiti_encap[hdr.network] == WTAP_ENCAP_UNKNOWN) {
 			*err = WTAP_ERR_UNSUPPORTED;
-			*err_info = g_strdup_printf("snoop: Shomiti network type %u unknown or unsupported",
+			*err_info = ws_strdup_printf("snoop: Shomiti network type %u unknown or unsupported",
 			    hdr.network);
 			return WTAP_OPEN_ERROR;
 		}
 		file_encap = shomiti_encap[hdr.network];
-
-		/* This is a Shomiti file */
-		wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_SHOMITI;
 	} else if (hdr.network & SNOOP_PRIVATE_BIT) {
 		if ((hdr.network^SNOOP_PRIVATE_BIT) >= NUM_SNOOP_PRIVATE_ENCAPS
 		    || snoop_private_encap[hdr.network^SNOOP_PRIVATE_BIT] == WTAP_ENCAP_UNKNOWN) {
 			*err = WTAP_ERR_UNSUPPORTED;
-			*err_info = g_strdup_printf("snoop: private network type %u unknown or unsupported",
+			*err_info = ws_strdup_printf("snoop: private network type %u unknown or unsupported",
 			    hdr.network);
 			return WTAP_OPEN_ERROR;
 		}
 		file_encap = snoop_private_encap[hdr.network^SNOOP_PRIVATE_BIT];
-
-		/* This is a snoop file */
-		wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_SNOOP;
 	} else {
 		if (hdr.network >= NUM_SNOOP_ENCAPS
 		    || snoop_encap[hdr.network] == WTAP_ENCAP_UNKNOWN) {
 			*err = WTAP_ERR_UNSUPPORTED;
-			*err_info = g_strdup_printf("snoop: network type %u unknown or unsupported",
+			*err_info = ws_strdup_printf("snoop: network type %u unknown or unsupported",
 			    hdr.network);
 			return WTAP_OPEN_ERROR;
 		}
 		file_encap = snoop_encap[hdr.network];
-
-		/* This is a snoop file */
-		wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_SNOOP;
 	}
 
 	/*
@@ -408,73 +402,108 @@ wtap_open_return_val snoop_open(wtap *wth, int *err, gchar **err_info)
 	 * records, so we use the same routines to read snoop and
 	 * Shomiti files.
 	 */
+	wth->file_type_subtype = is_shomiti ? shomiti_file_type_subtype : snoop_file_type_subtype;
+	snoop = g_new0(snoop_t, 1);
+	wth->priv = (void *)snoop;
 	wth->subtype_read = snoop_read;
 	wth->subtype_seek_read = snoop_seek_read;
 	wth->file_encap = file_encap;
 	wth->snapshot_length = 0;	/* not available in header */
 	wth->file_tsprec = WTAP_TSPREC_USEC;
+	snoop->is_shomiti = is_shomiti;
+
+	/*
+	 * Add an IDB; we don't know how many interfaces were
+	 * involved, so we just say one interface, about which
+	 * we only know the link-layer type, snapshot length,
+	 * and time stamp resolution.
+	 */
+	wtap_add_generated_idb(wth);
+
 	return WTAP_OPEN_MINE;
 }
 
+/*
+ * XXX - pad[3] is the length of the header, not including
+ * the length of the pad field; is it a 1-byte field, a 2-byte
+ * field with pad[2] usually being 0, a 3-byte field with
+ * pad[1] and pad[2] usually being 0, or a 4-byte field?
+ *
+ * If it's not a 4-byte field, is there anything significant
+ * in the other bytes?
+ *
+ * Can the header length ever be less than 8, so that not
+ * all the fields following pad are present?
+ *
+ * What's in undecrypt?  In captures I've seen, undecrypt[0]
+ * is usually 0x00 but sometimes 0x02 or 0x06, and undecrypt[1]
+ * is either 0x00 or 0x02.
+ *
+ * What's in preamble?  In captures I've seen, it's 0x00.
+ *
+ * What's in code?  In captures I've seen, it's 0x01 or 0x03.
+ *
+ * If the header is longer than 8 bytes, what are the other fields?
+ */
 typedef struct {
-	guint8 pad[4];
-	guint8 undecrypt[2];
-	guint8 rate;
-	guint8 preamble;
-	guint8 code;
-	guint8 signal;
-	guint8 qual;
-	guint8 channel;
+	uint8_t pad[4];
+	uint8_t undecrypt[2];
+	uint8_t rate;
+	uint8_t preamble;
+	uint8_t code;
+	uint8_t signal;
+	uint8_t qual;
+	uint8_t channel;
 } shomiti_wireless_header;
 
 
 /* Read the next packet */
-static gboolean snoop_read(wtap *wth, int *err, gchar **err_info,
-    gint64 *data_offset)
+static bool snoop_read(wtap *wth, wtap_rec *rec,
+    int *err, char **err_info, int64_t *data_offset)
 {
 	int	padbytes;
 
 	*data_offset = file_tell(wth->fh);
 
-	padbytes = snoop_read_packet(wth, wth->fh, &wth->phdr,
-	    wth->frame_buffer, err, err_info);
+	padbytes = snoop_read_packet(wth, wth->fh, rec, err, err_info);
 	if (padbytes == -1)
-		return FALSE;
+		return false;
 
 	/*
 	 * Skip over the padding, if any.
 	 */
 	if (padbytes != 0) {
-		if (!file_skip(wth->fh, padbytes, err))
-			return FALSE;
+		if (!wtap_read_bytes(wth->fh, NULL, padbytes, err, err_info))
+			return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
-static gboolean
-snoop_seek_read(wtap *wth, gint64 seek_off,
-    struct wtap_pkthdr *phdr, Buffer *buf, int *err, gchar **err_info)
+static bool
+snoop_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+    int *err, char **err_info)
 {
 	if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
-		return FALSE;
+		return false;
 
-	if (snoop_read_packet(wth, wth->random_fh, phdr, buf, err, err_info) == -1) {
+	if (snoop_read_packet(wth, wth->random_fh, rec, err, err_info) == -1) {
 		if (*err == 0)
 			*err = WTAP_ERR_SHORT_READ;
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
 static int
-snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
-    Buffer *buf, int *err, gchar **err_info)
+snoop_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
+    int *err, char **err_info)
 {
+	snoop_t *snoop = (snoop_t *)wth->priv;
 	struct snooprec_hdr hdr;
-	guint32 rec_size;
-	guint32	packet_size;
-	guint32 orig_size;
+	uint32_t rec_size;
+	uint32_t	packet_size;
+	uint32_t orig_size;
 	int header_size;
 
 	/* Read record header. */
@@ -484,24 +513,24 @@ snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 	rec_size = g_ntohl(hdr.rec_len);
 	orig_size = g_ntohl(hdr.orig_len);
 	packet_size = g_ntohl(hdr.incl_len);
-	if (orig_size > WTAP_MAX_PACKET_SIZE) {
+	if (orig_size > WTAP_MAX_PACKET_SIZE_STANDARD) {
 		/*
 		 * Probably a corrupt capture file; don't blow up trying
 		 * to allocate space for an immensely-large packet.
 		 */
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("snoop: File has %u-byte original length, bigger than maximum of %u",
-		    orig_size, WTAP_MAX_PACKET_SIZE);
+		*err_info = ws_strdup_printf("snoop: File has %u-byte original length, bigger than maximum of %u",
+		    orig_size, WTAP_MAX_PACKET_SIZE_STANDARD);
 		return -1;
 	}
-	if (packet_size > WTAP_MAX_PACKET_SIZE) {
+	if (packet_size > WTAP_MAX_PACKET_SIZE_STANDARD) {
 		/*
 		 * Probably a corrupt capture file; don't blow up trying
 		 * to allocate space for an immensely-large packet.
 		 */
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("snoop: File has %u-byte packet, bigger than maximum of %u",
-		    packet_size, WTAP_MAX_PACKET_SIZE);
+		*err_info = ws_strdup_printf("snoop: File has %u-byte packet, bigger than maximum of %u",
+		    packet_size, WTAP_MAX_PACKET_SIZE_STANDARD);
 		return -1;
 	}
 	if (packet_size > rec_size) {
@@ -509,7 +538,7 @@ snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 		 * Probably a corrupt capture file.
 		 */
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("snoop: File has %u-byte packet, bigger than record size %u",
+		*err_info = ws_strdup_printf("snoop: File has %u-byte packet, bigger than record size %u",
 		    packet_size, rec_size);
 		return -1;
 	}
@@ -529,20 +558,20 @@ snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 			 * have a pseudo-header.
 			 */
 			*err = WTAP_ERR_BAD_FILE;
-			*err_info = g_strdup_printf("snoop: atmsnoop file has a %u-byte packet, too small to have even an ATM pseudo-header",
+			*err_info = ws_strdup_printf("snoop: atmsnoop file has a %u-byte packet, too small to have even an ATM pseudo-header",
 			    packet_size);
 			return -1;
 		}
-		if (!snoop_read_atm_pseudoheader(fh, &phdr->pseudo_header,
+		if (!snoop_read_atm_pseudoheader(fh, &rec->rec_header.packet_header.pseudo_header,
 		    err, err_info))
 			return -1;	/* Read error */
 
 		/*
 		 * Don't count the pseudo-header as part of the packet.
 		 */
-		rec_size -= (guint32)sizeof (struct snoop_atm_hdr);
-		orig_size -= (guint32)sizeof (struct snoop_atm_hdr);
-		packet_size -= (guint32)sizeof (struct snoop_atm_hdr);
+		rec_size -= (uint32_t)sizeof (struct snoop_atm_hdr);
+		orig_size -= (uint32_t)sizeof (struct snoop_atm_hdr);
+		packet_size -= (uint32_t)sizeof (struct snoop_atm_hdr);
 		break;
 
 	case WTAP_ENCAP_ETHERNET:
@@ -551,10 +580,10 @@ snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 		 * this frame; if this is a Shomit file, we assume there
 		 * is.  (XXX - or should we treat it a "maybe"?)
 		 */
-		if (wth->file_type_subtype == WTAP_FILE_TYPE_SUBTYPE_SHOMITI)
-			phdr->pseudo_header.eth.fcs_len = 4;
+		if (snoop->is_shomiti)
+			rec->rec_header.packet_header.pseudo_header.eth.fcs_len = 4;
 		else
-			phdr->pseudo_header.eth.fcs_len = 0;
+			rec->rec_header.packet_header.pseudo_header.eth.fcs_len = 0;
 		break;
 
 	case WTAP_ENCAP_IEEE_802_11_WITH_RADIO:
@@ -564,12 +593,12 @@ snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 			 * have a pseudo-header.
 			 */
 			*err = WTAP_ERR_BAD_FILE;
-			*err_info = g_strdup_printf("snoop: Shomiti wireless file has a %u-byte packet, too small to have even a wireless pseudo-header",
+			*err_info = ws_strdup_printf("snoop: Shomiti wireless file has a %u-byte packet, too small to have even a wireless pseudo-header",
 			    packet_size);
 			return -1;
 		}
 		if (!snoop_read_shomiti_wireless_pseudoheader(fh,
-		    &phdr->pseudo_header, err, err_info, &header_size))
+		    &rec->rec_header.packet_header.pseudo_header, err, err_info, &header_size))
 			return -1;	/* Read error */
 
 		/*
@@ -581,19 +610,20 @@ snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 		break;
 	}
 
-	phdr->rec_type = REC_TYPE_PACKET;
-	phdr->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
-	phdr->ts.secs = g_ntohl(hdr.ts_sec);
-	phdr->ts.nsecs = g_ntohl(hdr.ts_usec) * 1000;
-	phdr->caplen = packet_size;
-	phdr->len = orig_size;
+	wtap_setup_packet_rec(rec, wth->file_encap);
+	rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
+	rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
+	rec->ts.secs = g_ntohl(hdr.ts_sec);
+	rec->ts.nsecs = g_ntohl(hdr.ts_usec) * 1000;
+	rec->rec_header.packet_header.caplen = packet_size;
+	rec->rec_header.packet_header.len = orig_size;
 
 	if (rec_size < (sizeof hdr + packet_size)) {
 		/*
 		 * What, *negative* padding?  Bogus.
 		 */
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("snoop: File has %u-byte record with packet size of %u",
+		*err_info = ws_strdup_printf("snoop: File has %u-byte record with packet size of %u",
 		    rec_size, packet_size);
 		return -1;
 	}
@@ -601,7 +631,7 @@ snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 	/*
 	 * Read the packet data.
 	 */
-	if (!wtap_read_packet_bytes(fh, buf, packet_size, err, err_info))
+	if (!wtap_read_bytes_buffer(fh, &rec->data, packet_size, err, err_info))
 		return -1;	/* failed */
 
 	/*
@@ -609,26 +639,26 @@ snoop_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 	 * traffic it is based on the packet contents.
 	 */
 	if (wth->file_encap == WTAP_ENCAP_ATM_PDUS &&
-	    phdr->pseudo_header.atm.type == TRAF_LANE) {
-		atm_guess_lane_type(phdr, ws_buffer_start_ptr(buf));
+	    rec->rec_header.packet_header.pseudo_header.atm.type == TRAF_LANE) {
+		atm_guess_lane_type(rec);
 	}
 
-	return rec_size - ((guint)sizeof hdr + packet_size);
+	return rec_size - ((unsigned)sizeof hdr + packet_size);
 }
 
-static gboolean
+static bool
 snoop_read_atm_pseudoheader(FILE_T fh, union wtap_pseudo_header *pseudo_header,
-    int *err, gchar **err_info)
+    int *err, char **err_info)
 {
 	struct snoop_atm_hdr atm_phdr;
-	guint8	vpi;
-	guint16	vci;
+	uint8_t	vpi;
+	uint16_t	vci;
 
 	if (!wtap_read_bytes(fh, &atm_phdr, sizeof atm_phdr, err, err_info))
-		return FALSE;
+		return false;
 
 	vpi = atm_phdr.vpi;
-	vci = pntoh16(&atm_phdr.vci);
+	vci = pntohu16(&atm_phdr.vci);
 
 	/*
 	 * The lower 4 bits of the first byte of the header indicate
@@ -699,19 +729,19 @@ snoop_read_atm_pseudoheader(FILE_T fh, union wtap_pseudo_header *pseudo_header,
 	pseudo_header->atm.aal5t_len = 0;
 	pseudo_header->atm.aal5t_chksum = 0;
 
-	return TRUE;
+	return true;
 }
 
-static gboolean
+static bool
 snoop_read_shomiti_wireless_pseudoheader(FILE_T fh,
-    union wtap_pseudo_header *pseudo_header, int *err, gchar **err_info,
+    union wtap_pseudo_header *pseudo_header, int *err, char **err_info,
     int *header_size)
 {
 	shomiti_wireless_header whdr;
 	int	rsize;
 
 	if (!wtap_read_bytes(fh, &whdr, sizeof whdr, err, err_info))
-		return FALSE;
+		return false;
 
 	/* the 4th byte of the pad is actually a header length,
 	 * we've already read 8 bytes of it, and it must never
@@ -720,40 +750,56 @@ snoop_read_shomiti_wireless_pseudoheader(FILE_T fh,
 	 * XXX - presumably that means that the header length
 	 * doesn't include the length field, as we've read
 	 * 12 bytes total.
-	 *
-	 * XXX - what's in the other 3 bytes of the padding?  Is it a
-	 * 4-byte length field?
-	 * XXX - is there anything in the rest of the header of interest?
-	 * XXX - are there any files where the header is shorter than
-	 * 4 bytes of length plus 8 bytes of information?
 	 */
 	if (whdr.pad[3] < 8) {
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("snoop: Header length in Surveyor record is %u, less than minimum of 8",
+		*err_info = ws_strdup_printf("snoop: Header length in Surveyor record is %u, less than minimum of 8",
 		    whdr.pad[3]);
-		return FALSE;
+		return false;
 	}
 	/* Skip the header. */
 	rsize = ((int) whdr.pad[3]) - 8;
-	if (file_seek(fh, rsize, SEEK_CUR, err) == -1)
-		return FALSE;
+	if (!wtap_read_bytes(fh, NULL, rsize, err, err_info))
+		return false;
 
 	memset(&pseudo_header->ieee_802_11, 0, sizeof(pseudo_header->ieee_802_11));
 	pseudo_header->ieee_802_11.fcs_len = 4;
-	pseudo_header->ieee_802_11.decrypted = FALSE;
-	pseudo_header->ieee_802_11.datapad = FALSE;
+	pseudo_header->ieee_802_11.decrypted = false;
+	pseudo_header->ieee_802_11.datapad = false;
 	pseudo_header->ieee_802_11.phy = PHDR_802_11_PHY_UNKNOWN;
-	pseudo_header->ieee_802_11.has_channel = TRUE;
+	pseudo_header->ieee_802_11.has_channel = true;
 	pseudo_header->ieee_802_11.channel = whdr.channel;
-	pseudo_header->ieee_802_11.has_data_rate = TRUE;
+	pseudo_header->ieee_802_11.has_data_rate = true;
 	pseudo_header->ieee_802_11.data_rate = whdr.rate;
-	pseudo_header->ieee_802_11.has_signal_percent = TRUE;
+	pseudo_header->ieee_802_11.has_signal_percent = true;
 	pseudo_header->ieee_802_11.signal_percent = whdr.signal;
+
+	/*
+	 * We don't know they PHY, but we do have the data rate;
+	 * try to guess the PHY based on the data rate and channel.
+	 */
+	if (RATE_IS_DSSS(pseudo_header->ieee_802_11.data_rate)) {
+		/* 11b */
+		pseudo_header->ieee_802_11.phy = PHDR_802_11_PHY_11B;
+		pseudo_header->ieee_802_11.phy_info.info_11b.has_short_preamble = false;
+	} else if (RATE_IS_OFDM(pseudo_header->ieee_802_11.data_rate)) {
+		/* 11a or 11g, depending on the band. */
+		if (CHAN_IS_BG(pseudo_header->ieee_802_11.channel)) {
+			/* 11g */
+			pseudo_header->ieee_802_11.phy = PHDR_802_11_PHY_11G;
+			pseudo_header->ieee_802_11.phy_info.info_11g.has_mode = false;
+		} else {
+			/* 11a */
+			pseudo_header->ieee_802_11.phy = PHDR_802_11_PHY_11A;
+			pseudo_header->ieee_802_11.phy_info.info_11a.has_channel_type = false;
+			pseudo_header->ieee_802_11.phy_info.info_11a.has_turbo_type = false;
+		}
+	}
 
 	/* add back the header and don't forget the pad as well */
 	*header_size = rsize + 8 + 4;
 
-	return TRUE;
+	return true;
 }
 
 static const int wtap_encap[] = {
@@ -772,11 +818,11 @@ static const int wtap_encap[] = {
 	-1,		/* WTAP_ENCAP_LAPB -> unsupported*/
 	0x12,		/* WTAP_ENCAP_ATM_PDUS -> DL_IPATM */
 };
-#define NUM_WTAP_ENCAPS (sizeof wtap_encap / sizeof wtap_encap[0])
+#define NUM_WTAP_ENCAPS array_length(wtap_encap)
 
 /* Returns 0 if we could write the specified encapsulation type,
    an error indication otherwise. */
-int snoop_dump_can_write_encap(int encap)
+static int snoop_dump_can_write_encap(int encap)
 {
 	/* Per-packet encapsulations aren't supported. */
 	if (encap == WTAP_ENCAP_PER_PACKET)
@@ -788,9 +834,9 @@ int snoop_dump_can_write_encap(int encap)
 	return 0;
 }
 
-/* Returns TRUE on success, FALSE on failure; sets "*err" to an error code on
+/* Returns true on success, false on failure; sets "*err" to an error code on
    failure */
-gboolean snoop_dump_open(wtap_dumper *wdh, int *err)
+static bool snoop_dump_open(wtap_dumper *wdh, int *err, char **err_info _U_)
 {
 	struct snoop_hdr file_hdr;
 
@@ -799,66 +845,75 @@ gboolean snoop_dump_open(wtap_dumper *wdh, int *err)
 
 	/* Write the file header. */
 	if (!wtap_dump_file_write(wdh, &snoop_magic, sizeof snoop_magic, err))
-		return FALSE;
+		return false;
 
 	/* current "snoop" format is 2 */
 	file_hdr.version = g_htonl(2);
-	file_hdr.network = g_htonl(wtap_encap[wdh->encap]);
+	file_hdr.network = g_htonl(wtap_encap[wdh->file_encap]);
 	if (!wtap_dump_file_write(wdh, &file_hdr, sizeof file_hdr, err))
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
 /* Write a record for a packet to a dump file.
-   Returns TRUE on success, FALSE on failure. */
-static gboolean snoop_dump(wtap_dumper *wdh,
-	const struct wtap_pkthdr *phdr,
-	const guint8 *pd, int *err, gchar **err_info _U_)
+   Returns true on success, false on failure. */
+static bool snoop_dump(wtap_dumper *wdh, const wtap_rec *rec,
+	int *err, char **err_info _U_)
 {
-	const union wtap_pseudo_header *pseudo_header = &phdr->pseudo_header;
+	const union wtap_pseudo_header *pseudo_header = &rec->rec_header.packet_header.pseudo_header;
 	struct snooprec_hdr rec_hdr;
 	int reclen;
-	guint padlen;
+	unsigned padlen;
 	static const char zeroes[4] = {0};
 	struct snoop_atm_hdr atm_hdr;
 	int atm_hdrsize;
 
 	/* We can only write packet records. */
-	if (phdr->rec_type != REC_TYPE_PACKET) {
+	if (rec->rec_type != REC_TYPE_PACKET) {
 		*err = WTAP_ERR_UNWRITABLE_REC_TYPE;
-		return FALSE;
+		*err_info = wtap_unwritable_rec_type_err_string(rec);
+		return false;
 	}
 
-	if (wdh->encap == WTAP_ENCAP_ATM_PDUS)
+	/*
+	 * Make sure this packet doesn't have a link-layer type that
+	 * differs from the one for the file.
+	 */
+	if (wdh->file_encap != rec->rec_header.packet_header.pkt_encap) {
+		*err = WTAP_ERR_ENCAP_PER_PACKET_UNSUPPORTED;
+		return false;
+	}
+
+	if (wdh->file_encap == WTAP_ENCAP_ATM_PDUS)
 		atm_hdrsize = sizeof (struct snoop_atm_hdr);
 	else
 		atm_hdrsize = 0;
 
 	/* Record length = header length plus data length... */
-	reclen = (int)sizeof rec_hdr + phdr->caplen + atm_hdrsize;
+	reclen = (int)sizeof rec_hdr + rec->rec_header.packet_header.caplen + atm_hdrsize;
 
 
 	/* ... plus enough bytes to pad it to a 4-byte boundary. */
-	padlen = ((reclen + 3) & ~3) - reclen;
+	padlen = WS_ROUNDUP_4(reclen) - reclen;
 	reclen += padlen;
 
 	/* Don't write anything we're not willing to read. */
-	if (phdr->caplen + atm_hdrsize > WTAP_MAX_PACKET_SIZE) {
+	if (rec->rec_header.packet_header.caplen + atm_hdrsize > WTAP_MAX_PACKET_SIZE_STANDARD) {
 		*err = WTAP_ERR_PACKET_TOO_LARGE;
-		return FALSE;
+		return false;
 	}
 
-	rec_hdr.orig_len = g_htonl(phdr->len + atm_hdrsize);
-	rec_hdr.incl_len = g_htonl(phdr->caplen + atm_hdrsize);
+	rec_hdr.orig_len = g_htonl(rec->rec_header.packet_header.len + atm_hdrsize);
+	rec_hdr.incl_len = g_htonl(rec->rec_header.packet_header.caplen + atm_hdrsize);
 	rec_hdr.rec_len = g_htonl(reclen);
 	rec_hdr.cum_drops = 0;
-	rec_hdr.ts_sec = g_htonl(phdr->ts.secs);
-	rec_hdr.ts_usec = g_htonl(phdr->ts.nsecs / 1000);
+	rec_hdr.ts_sec = g_htonl(rec->ts.secs);
+	rec_hdr.ts_usec = g_htonl(rec->ts.nsecs / 1000);
 	if (!wtap_dump_file_write(wdh, &rec_hdr, sizeof rec_hdr, err))
-		return FALSE;
+		return false;
 
-	if (wdh->encap == WTAP_ENCAP_ATM_PDUS) {
+	if (wdh->file_encap == WTAP_ENCAP_ATM_PDUS) {
 		/*
 		 * Write the ATM header.
 		 */
@@ -891,23 +946,65 @@ static gboolean snoop_dump(wtap_dumper *wdh,
 			}
 			break;
 		}
-		atm_hdr.vpi = (guint8) pseudo_header->atm.vpi;
+		atm_hdr.vpi = (uint8_t) pseudo_header->atm.vpi;
 		atm_hdr.vci = g_htons(pseudo_header->atm.vci);
 		if (!wtap_dump_file_write(wdh, &atm_hdr, sizeof atm_hdr, err))
-			return FALSE;
+			return false;
 	}
 
-	if (!wtap_dump_file_write(wdh, pd, phdr->caplen, err))
-		return FALSE;
+	if (!wtap_dump_file_write(wdh, ws_buffer_start_ptr(&rec->data),
+	    rec->rec_header.packet_header.caplen, err))
+		return false;
 
 	/* Now write the padding. */
 	if (!wtap_dump_file_write(wdh, zeroes, padlen, err))
-		return FALSE;
-	return TRUE;
+		return false;
+	return true;
+}
+
+static const struct supported_block_type snoop_blocks_supported[] = {
+	/*
+	 * We support packet blocks, with no comments or other options.
+	 */
+	{ WTAP_BLOCK_PACKET, MULTIPLE_BLOCKS_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info snoop_info = {
+	"Sun snoop", "snoop", "snoop", "cap",
+	false, BLOCKS_SUPPORTED(snoop_blocks_supported),
+	snoop_dump_can_write_encap, snoop_dump_open, NULL
+};
+
+static const struct supported_block_type shomiti_blocks_supported[] = {
+	/*
+	 * We support packet blocks, with no comments or other options.
+	 */
+	{ WTAP_BLOCK_PACKET, MULTIPLE_BLOCKS_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info shomiti_info = {
+	"Shomiti/Finisar Surveyor", "shomiti", "cap", NULL,
+	false, BLOCKS_SUPPORTED(shomiti_blocks_supported),
+	NULL, NULL, NULL
+};
+
+void register_snoop(void)
+{
+	snoop_file_type_subtype = wtap_register_file_type_subtype(&snoop_info);
+	shomiti_file_type_subtype = wtap_register_file_type_subtype(&shomiti_info);
+
+	/*
+	 * Register names for backwards compatibility with the
+	 * wtap_filetypes table in Lua.
+	 */
+	wtap_register_backwards_compatibility_lua_name("SNOOP",
+	    snoop_file_type_subtype);
+	wtap_register_backwards_compatibility_lua_name("SHOMITI",
+	    shomiti_file_type_subtype);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

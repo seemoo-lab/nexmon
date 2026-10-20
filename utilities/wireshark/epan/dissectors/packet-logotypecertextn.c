@@ -1,11 +1,8 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-logotypecertextn.c                                                  */
-/* asn2wrs.py -b -p logotypecertextn -c ./logotypecertextn.cnf -s ./packet-logotypecertextn-template -D . -O ../.. LogotypeCertExtn.asn */
+/* asn2wrs.py -b -q -L -p logotypecertextn -c ./logotypecertextn.cnf -s ./packet-logotypecertextn-template -D . -O ../.. LogotypeCertExtn.asn */
 
-/* Input file: packet-logotypecertextn-template.c */
-
-#line 1 "./asn1/logotypecertextn/packet-logotypecertextn-template.c"
 /* packet-logotypecertextn.c
  * Routines for RFC3709 Logotype Certificate Extensions packet dissection
  *   Ronnie Sahlberg 2004
@@ -14,24 +11,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-logotypecertextn.h"
@@ -45,90 +31,75 @@ void proto_register_logotypecertextn(void);
 void proto_reg_handoff_logotypecertextn(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_logotypecertextn = -1;
-
-/*--- Included file: packet-logotypecertextn-hf.c ---*/
-#line 1 "./asn1/logotypecertextn/packet-logotypecertextn-hf.c"
-static int hf_logotypecertextn_LogotypeExtn_PDU = -1;  /* LogotypeExtn */
-static int hf_logotypecertextn_communityLogos = -1;  /* SEQUENCE_OF_LogotypeInfo */
-static int hf_logotypecertextn_communityLogos_item = -1;  /* LogotypeInfo */
-static int hf_logotypecertextn_issuerLogo = -1;   /* LogotypeInfo */
-static int hf_logotypecertextn_subjectLogo = -1;  /* LogotypeInfo */
-static int hf_logotypecertextn_otherLogos = -1;   /* SEQUENCE_OF_OtherLogotypeInfo */
-static int hf_logotypecertextn_otherLogos_item = -1;  /* OtherLogotypeInfo */
-static int hf_logotypecertextn_direct = -1;       /* LogotypeData */
-static int hf_logotypecertextn_indirect = -1;     /* LogotypeReference */
-static int hf_logotypecertextn_image = -1;        /* SEQUENCE_OF_LogotypeImage */
-static int hf_logotypecertextn_image_item = -1;   /* LogotypeImage */
-static int hf_logotypecertextn_audio = -1;        /* SEQUENCE_OF_LogotypeAudio */
-static int hf_logotypecertextn_audio_item = -1;   /* LogotypeAudio */
-static int hf_logotypecertextn_imageDetails = -1;  /* LogotypeDetails */
-static int hf_logotypecertextn_imageInfo = -1;    /* LogotypeImageInfo */
-static int hf_logotypecertextn_audioDetails = -1;  /* LogotypeDetails */
-static int hf_logotypecertextn_audioInfo = -1;    /* LogotypeAudioInfo */
-static int hf_logotypecertextn_mediaType = -1;    /* IA5String */
-static int hf_logotypecertextn_logotypeHash = -1;  /* SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue */
-static int hf_logotypecertextn_logotypeHash_item = -1;  /* HashAlgAndValue */
-static int hf_logotypecertextn_logotypeURI = -1;  /* T_logotypeURI */
-static int hf_logotypecertextn_logotypeURI_item = -1;  /* T_logotypeURI_item */
-static int hf_logotypecertextn_type = -1;         /* LogotypeImageType */
-static int hf_logotypecertextn_fileSize = -1;     /* INTEGER */
-static int hf_logotypecertextn_xSize = -1;        /* INTEGER */
-static int hf_logotypecertextn_ySize = -1;        /* INTEGER */
-static int hf_logotypecertextn_resolution = -1;   /* LogotypeImageResolution */
-static int hf_logotypecertextn_language = -1;     /* IA5String */
-static int hf_logotypecertextn_numBits = -1;      /* INTEGER */
-static int hf_logotypecertextn_tableSize = -1;    /* INTEGER */
-static int hf_logotypecertextn_playTime = -1;     /* INTEGER */
-static int hf_logotypecertextn_channels = -1;     /* INTEGER */
-static int hf_logotypecertextn_sampleRate = -1;   /* INTEGER */
-static int hf_logotypecertextn_logotypeType = -1;  /* OBJECT_IDENTIFIER */
-static int hf_logotypecertextn_info = -1;         /* LogotypeInfo */
-static int hf_logotypecertextn_refStructHash = -1;  /* SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue */
-static int hf_logotypecertextn_refStructHash_item = -1;  /* HashAlgAndValue */
-static int hf_logotypecertextn_refStructURI = -1;  /* T_refStructURI */
-static int hf_logotypecertextn_refStructURI_item = -1;  /* T_refStructURI_item */
-static int hf_logotypecertextn_hashAlg = -1;      /* AlgorithmIdentifier */
-static int hf_logotypecertextn_hashValue = -1;    /* OCTET_STRING */
-
-/*--- End of included file: packet-logotypecertextn-hf.c ---*/
-#line 42 "./asn1/logotypecertextn/packet-logotypecertextn-template.c"
+static int proto_logotypecertextn;
+static int hf_logotypecertextn_LogotypeExtn_PDU;  /* LogotypeExtn */
+static int hf_logotypecertextn_communityLogos;    /* SEQUENCE_OF_LogotypeInfo */
+static int hf_logotypecertextn_communityLogos_item;  /* LogotypeInfo */
+static int hf_logotypecertextn_issuerLogo;        /* LogotypeInfo */
+static int hf_logotypecertextn_subjectLogo;       /* LogotypeInfo */
+static int hf_logotypecertextn_otherLogos;        /* SEQUENCE_OF_OtherLogotypeInfo */
+static int hf_logotypecertextn_otherLogos_item;   /* OtherLogotypeInfo */
+static int hf_logotypecertextn_direct;            /* LogotypeData */
+static int hf_logotypecertextn_indirect;          /* LogotypeReference */
+static int hf_logotypecertextn_image;             /* SEQUENCE_OF_LogotypeImage */
+static int hf_logotypecertextn_image_item;        /* LogotypeImage */
+static int hf_logotypecertextn_audio;             /* SEQUENCE_OF_LogotypeAudio */
+static int hf_logotypecertextn_audio_item;        /* LogotypeAudio */
+static int hf_logotypecertextn_imageDetails;      /* LogotypeDetails */
+static int hf_logotypecertextn_imageInfo;         /* LogotypeImageInfo */
+static int hf_logotypecertextn_audioDetails;      /* LogotypeDetails */
+static int hf_logotypecertextn_audioInfo;         /* LogotypeAudioInfo */
+static int hf_logotypecertextn_mediaType;         /* IA5String */
+static int hf_logotypecertextn_logotypeHash;      /* SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue */
+static int hf_logotypecertextn_logotypeHash_item;  /* HashAlgAndValue */
+static int hf_logotypecertextn_logotypeURI;       /* T_logotypeURI */
+static int hf_logotypecertextn_logotypeURI_item;  /* T_logotypeURI_item */
+static int hf_logotypecertextn_type;              /* LogotypeImageType */
+static int hf_logotypecertextn_fileSize;          /* INTEGER */
+static int hf_logotypecertextn_xSize;             /* INTEGER */
+static int hf_logotypecertextn_ySize;             /* INTEGER */
+static int hf_logotypecertextn_resolution;        /* LogotypeImageResolution */
+static int hf_logotypecertextn_language;          /* IA5String */
+static int hf_logotypecertextn_numBits;           /* INTEGER */
+static int hf_logotypecertextn_tableSize;         /* INTEGER */
+static int hf_logotypecertextn_playTime;          /* INTEGER */
+static int hf_logotypecertextn_channels;          /* INTEGER */
+static int hf_logotypecertextn_sampleRate;        /* INTEGER */
+static int hf_logotypecertextn_logotypeType;      /* OBJECT_IDENTIFIER */
+static int hf_logotypecertextn_info;              /* LogotypeInfo */
+static int hf_logotypecertextn_refStructHash;     /* SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue */
+static int hf_logotypecertextn_refStructHash_item;  /* HashAlgAndValue */
+static int hf_logotypecertextn_refStructURI;      /* T_refStructURI */
+static int hf_logotypecertextn_refStructURI_item;  /* T_refStructURI_item */
+static int hf_logotypecertextn_hashAlg;           /* AlgorithmIdentifier */
+static int hf_logotypecertextn_hashValue;         /* OCTET_STRING */
 
 /* Initialize the subtree pointers */
-
-/*--- Included file: packet-logotypecertextn-ett.c ---*/
-#line 1 "./asn1/logotypecertextn/packet-logotypecertextn-ett.c"
-static gint ett_logotypecertextn_LogotypeExtn = -1;
-static gint ett_logotypecertextn_SEQUENCE_OF_LogotypeInfo = -1;
-static gint ett_logotypecertextn_SEQUENCE_OF_OtherLogotypeInfo = -1;
-static gint ett_logotypecertextn_LogotypeInfo = -1;
-static gint ett_logotypecertextn_LogotypeData = -1;
-static gint ett_logotypecertextn_SEQUENCE_OF_LogotypeImage = -1;
-static gint ett_logotypecertextn_SEQUENCE_OF_LogotypeAudio = -1;
-static gint ett_logotypecertextn_LogotypeImage = -1;
-static gint ett_logotypecertextn_LogotypeAudio = -1;
-static gint ett_logotypecertextn_LogotypeDetails = -1;
-static gint ett_logotypecertextn_SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue = -1;
-static gint ett_logotypecertextn_T_logotypeURI = -1;
-static gint ett_logotypecertextn_LogotypeImageInfo = -1;
-static gint ett_logotypecertextn_LogotypeImageResolution = -1;
-static gint ett_logotypecertextn_LogotypeAudioInfo = -1;
-static gint ett_logotypecertextn_OtherLogotypeInfo = -1;
-static gint ett_logotypecertextn_LogotypeReference = -1;
-static gint ett_logotypecertextn_T_refStructURI = -1;
-static gint ett_logotypecertextn_HashAlgAndValue = -1;
-
-/*--- End of included file: packet-logotypecertextn-ett.c ---*/
-#line 45 "./asn1/logotypecertextn/packet-logotypecertextn-template.c"
+static int ett_logotypecertextn_LogotypeExtn;
+static int ett_logotypecertextn_SEQUENCE_OF_LogotypeInfo;
+static int ett_logotypecertextn_SEQUENCE_OF_OtherLogotypeInfo;
+static int ett_logotypecertextn_LogotypeInfo;
+static int ett_logotypecertextn_LogotypeData;
+static int ett_logotypecertextn_SEQUENCE_OF_LogotypeImage;
+static int ett_logotypecertextn_SEQUENCE_OF_LogotypeAudio;
+static int ett_logotypecertextn_LogotypeImage;
+static int ett_logotypecertextn_LogotypeAudio;
+static int ett_logotypecertextn_LogotypeDetails;
+static int ett_logotypecertextn_SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue;
+static int ett_logotypecertextn_T_logotypeURI;
+static int ett_logotypecertextn_LogotypeImageInfo;
+static int ett_logotypecertextn_LogotypeImageResolution;
+static int ett_logotypecertextn_LogotypeAudioInfo;
+static int ett_logotypecertextn_OtherLogotypeInfo;
+static int ett_logotypecertextn_LogotypeReference;
+static int ett_logotypecertextn_T_refStructURI;
+static int ett_logotypecertextn_HashAlgAndValue;
 
 
-
-/*--- Included file: packet-logotypecertextn-fn.c ---*/
-#line 1 "./asn1/logotypecertextn/packet-logotypecertextn-fn.c"
 
 
 static int
-dissect_logotypecertextn_IA5String(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_IA5String(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_restricted_string(implicit_tag, BER_UNI_TAG_IA5String,
                                             actx, tree, tvb, offset, hf_index,
                                             NULL);
@@ -139,7 +110,7 @@ dissect_logotypecertextn_IA5String(gboolean implicit_tag _U_, tvbuff_t *tvb _U_,
 
 
 static int
-dissect_logotypecertextn_OCTET_STRING(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_OCTET_STRING(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index,
                                        NULL);
 
@@ -154,7 +125,7 @@ static const ber_sequence_t HashAlgAndValue_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_HashAlgAndValue(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_HashAlgAndValue(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    HashAlgAndValue_sequence, hf_index, ett_logotypecertextn_HashAlgAndValue);
 
@@ -167,7 +138,7 @@ static const ber_sequence_t SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue_sequence_of[1
 };
 
 static int
-dissect_logotypecertextn_SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue_sequence_of, hf_index, ett_logotypecertextn_SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue);
 
@@ -177,14 +148,12 @@ dissect_logotypecertextn_SEQUENCE_SIZE_1_MAX_OF_HashAlgAndValue(gboolean implici
 
 
 static int
-dissect_logotypecertextn_T_logotypeURI_item(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_T_logotypeURI_item(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_restricted_string(implicit_tag, BER_UNI_TAG_IA5String,
                                             actx, tree, tvb, offset, hf_index,
                                             NULL);
 
-#line 16 "./asn1/logotypecertextn/logotypecertextn.cnf"
-	   PROTO_ITEM_SET_URL(actx->created_item);
-
+	   proto_item_set_url(actx->created_item);
 
   return offset;
 }
@@ -195,7 +164,7 @@ static const ber_sequence_t T_logotypeURI_sequence_of[1] = {
 };
 
 static int
-dissect_logotypecertextn_T_logotypeURI(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_T_logotypeURI(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       T_logotypeURI_sequence_of, hf_index, ett_logotypecertextn_T_logotypeURI);
 
@@ -211,7 +180,7 @@ static const ber_sequence_t LogotypeDetails_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeDetails(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeDetails(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    LogotypeDetails_sequence, hf_index, ett_logotypecertextn_LogotypeDetails);
 
@@ -227,7 +196,7 @@ static const value_string logotypecertextn_LogotypeImageType_vals[] = {
 
 
 static int
-dissect_logotypecertextn_LogotypeImageType(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeImageType(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_integer(implicit_tag, actx, tree, tvb, offset, hf_index,
                                                 NULL);
 
@@ -237,7 +206,7 @@ dissect_logotypecertextn_LogotypeImageType(gboolean implicit_tag _U_, tvbuff_t *
 
 
 static int
-dissect_logotypecertextn_INTEGER(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_INTEGER(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_integer(implicit_tag, actx, tree, tvb, offset, hf_index,
                                                 NULL);
 
@@ -258,7 +227,7 @@ static const ber_choice_t LogotypeImageResolution_choice[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeImageResolution(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeImageResolution(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  LogotypeImageResolution_choice, hf_index, ett_logotypecertextn_LogotypeImageResolution,
                                  NULL);
@@ -278,7 +247,7 @@ static const ber_sequence_t LogotypeImageInfo_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeImageInfo(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeImageInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    LogotypeImageInfo_sequence, hf_index, ett_logotypecertextn_LogotypeImageInfo);
 
@@ -293,7 +262,7 @@ static const ber_sequence_t LogotypeImage_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeImage(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeImage(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    LogotypeImage_sequence, hf_index, ett_logotypecertextn_LogotypeImage);
 
@@ -306,7 +275,7 @@ static const ber_sequence_t SEQUENCE_OF_LogotypeImage_sequence_of[1] = {
 };
 
 static int
-dissect_logotypecertextn_SEQUENCE_OF_LogotypeImage(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_SEQUENCE_OF_LogotypeImage(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       SEQUENCE_OF_LogotypeImage_sequence_of, hf_index, ett_logotypecertextn_SEQUENCE_OF_LogotypeImage);
 
@@ -324,7 +293,7 @@ static const ber_sequence_t LogotypeAudioInfo_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeAudioInfo(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeAudioInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    LogotypeAudioInfo_sequence, hf_index, ett_logotypecertextn_LogotypeAudioInfo);
 
@@ -339,7 +308,7 @@ static const ber_sequence_t LogotypeAudio_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeAudio(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeAudio(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    LogotypeAudio_sequence, hf_index, ett_logotypecertextn_LogotypeAudio);
 
@@ -352,7 +321,7 @@ static const ber_sequence_t SEQUENCE_OF_LogotypeAudio_sequence_of[1] = {
 };
 
 static int
-dissect_logotypecertextn_SEQUENCE_OF_LogotypeAudio(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_SEQUENCE_OF_LogotypeAudio(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       SEQUENCE_OF_LogotypeAudio_sequence_of, hf_index, ett_logotypecertextn_SEQUENCE_OF_LogotypeAudio);
 
@@ -367,7 +336,7 @@ static const ber_sequence_t LogotypeData_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeData(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeData(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    LogotypeData_sequence, hf_index, ett_logotypecertextn_LogotypeData);
 
@@ -377,14 +346,12 @@ dissect_logotypecertextn_LogotypeData(gboolean implicit_tag _U_, tvbuff_t *tvb _
 
 
 static int
-dissect_logotypecertextn_T_refStructURI_item(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_T_refStructURI_item(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_restricted_string(implicit_tag, BER_UNI_TAG_IA5String,
                                             actx, tree, tvb, offset, hf_index,
                                             NULL);
 
-#line 19 "./asn1/logotypecertextn/logotypecertextn.cnf"
-	   PROTO_ITEM_SET_URL(actx->created_item);
-
+	   proto_item_set_url(actx->created_item);
 
   return offset;
 }
@@ -395,7 +362,7 @@ static const ber_sequence_t T_refStructURI_sequence_of[1] = {
 };
 
 static int
-dissect_logotypecertextn_T_refStructURI(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_T_refStructURI(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       T_refStructURI_sequence_of, hf_index, ett_logotypecertextn_T_refStructURI);
 
@@ -410,7 +377,7 @@ static const ber_sequence_t LogotypeReference_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeReference(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeReference(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    LogotypeReference_sequence, hf_index, ett_logotypecertextn_LogotypeReference);
 
@@ -431,7 +398,7 @@ static const ber_choice_t LogotypeInfo_choice[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeInfo(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  LogotypeInfo_choice, hf_index, ett_logotypecertextn_LogotypeInfo,
                                  NULL);
@@ -445,7 +412,7 @@ static const ber_sequence_t SEQUENCE_OF_LogotypeInfo_sequence_of[1] = {
 };
 
 static int
-dissect_logotypecertextn_SEQUENCE_OF_LogotypeInfo(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_SEQUENCE_OF_LogotypeInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       SEQUENCE_OF_LogotypeInfo_sequence_of, hf_index, ett_logotypecertextn_SEQUENCE_OF_LogotypeInfo);
 
@@ -455,7 +422,7 @@ dissect_logotypecertextn_SEQUENCE_OF_LogotypeInfo(gboolean implicit_tag _U_, tvb
 
 
 static int
-dissect_logotypecertextn_OBJECT_IDENTIFIER(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_OBJECT_IDENTIFIER(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_object_identifier(implicit_tag, actx, tree, tvb, offset, hf_index, NULL);
 
   return offset;
@@ -469,7 +436,7 @@ static const ber_sequence_t OtherLogotypeInfo_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_OtherLogotypeInfo(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_OtherLogotypeInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    OtherLogotypeInfo_sequence, hf_index, ett_logotypecertextn_OtherLogotypeInfo);
 
@@ -482,7 +449,7 @@ static const ber_sequence_t SEQUENCE_OF_OtherLogotypeInfo_sequence_of[1] = {
 };
 
 static int
-dissect_logotypecertextn_SEQUENCE_OF_OtherLogotypeInfo(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_SEQUENCE_OF_OtherLogotypeInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       SEQUENCE_OF_OtherLogotypeInfo_sequence_of, hf_index, ett_logotypecertextn_SEQUENCE_OF_OtherLogotypeInfo);
 
@@ -499,7 +466,7 @@ static const ber_sequence_t LogotypeExtn_sequence[] = {
 };
 
 static int
-dissect_logotypecertextn_LogotypeExtn(gboolean implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_logotypecertextn_LogotypeExtn(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    LogotypeExtn_sequence, hf_index, ett_logotypecertextn_LogotypeExtn);
 
@@ -511,14 +478,11 @@ dissect_logotypecertextn_LogotypeExtn(gboolean implicit_tag _U_, tvbuff_t *tvb _
 static int dissect_LogotypeExtn_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-  offset = dissect_logotypecertextn_LogotypeExtn(FALSE, tvb, offset, &asn1_ctx, tree, hf_logotypecertextn_LogotypeExtn_PDU);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+  offset = dissect_logotypecertextn_LogotypeExtn(false, tvb, offset, &asn1_ctx, tree, hf_logotypecertextn_LogotypeExtn_PDU);
   return offset;
 }
 
-
-/*--- End of included file: packet-logotypecertextn-fn.c ---*/
-#line 48 "./asn1/logotypecertextn/packet-logotypecertextn-template.c"
 
 
 /*--- proto_register_logotypecertextn ----------------------------------------------*/
@@ -526,9 +490,6 @@ void proto_register_logotypecertextn(void) {
 
   /* List of fields */
   static hf_register_info hf[] = {
-
-/*--- Included file: packet-logotypecertextn-hfarr.c ---*/
-#line 1 "./asn1/logotypecertextn/packet-logotypecertextn-hfarr.c"
     { &hf_logotypecertextn_LogotypeExtn_PDU,
       { "LogotypeExtn", "logotypecertextn.LogotypeExtn_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -693,16 +654,10 @@ void proto_register_logotypecertextn(void) {
       { "hashValue", "logotypecertextn.hashValue",
         FT_BYTES, BASE_NONE, NULL, 0,
         "OCTET_STRING", HFILL }},
-
-/*--- End of included file: packet-logotypecertextn-hfarr.c ---*/
-#line 56 "./asn1/logotypecertextn/packet-logotypecertextn-template.c"
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
-
-/*--- Included file: packet-logotypecertextn-ettarr.c ---*/
-#line 1 "./asn1/logotypecertextn/packet-logotypecertextn-ettarr.c"
+  static int *ett[] = {
     &ett_logotypecertextn_LogotypeExtn,
     &ett_logotypecertextn_SEQUENCE_OF_LogotypeInfo,
     &ett_logotypecertextn_SEQUENCE_OF_OtherLogotypeInfo,
@@ -722,9 +677,6 @@ void proto_register_logotypecertextn(void) {
     &ett_logotypecertextn_LogotypeReference,
     &ett_logotypecertextn_T_refStructURI,
     &ett_logotypecertextn_HashAlgAndValue,
-
-/*--- End of included file: packet-logotypecertextn-ettarr.c ---*/
-#line 61 "./asn1/logotypecertextn/packet-logotypecertextn-template.c"
   };
 
   /* Register protocol */
@@ -739,15 +691,9 @@ void proto_register_logotypecertextn(void) {
 
 /*--- proto_reg_handoff_logotypecertextn -------------------------------------------*/
 void proto_reg_handoff_logotypecertextn(void) {
-
-/*--- Included file: packet-logotypecertextn-dis-tab.c ---*/
-#line 1 "./asn1/logotypecertextn/packet-logotypecertextn-dis-tab.c"
   register_ber_oid_dissector("1.3.6.1.5.5.7.1.12", dissect_LogotypeExtn_PDU, proto_logotypecertextn, "id-pe-logotype");
   register_ber_oid_dissector("1.3.6.1.5.5.7.20.1", dissect_LogotypeExtn_PDU, proto_logotypecertextn, "id-pe-logo-loyalty");
   register_ber_oid_dissector("1.3.6.1.5.5.7.20.2", dissect_LogotypeExtn_PDU, proto_logotypecertextn, "id-pe-logo-background");
 
-
-/*--- End of included file: packet-logotypecertextn-dis-tab.c ---*/
-#line 76 "./asn1/logotypecertextn/packet-logotypecertextn-template.c"
 }
 

@@ -1,371 +1,168 @@
-/* preference_utils.h
+/* preference_utils.c
  * Routines for handling preferences
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <errno.h>
 
-
 #include <epan/column.h>
 #include <wsutil/filesystem.h>
+#include <wsutil/wslog.h>
 #include <epan/prefs.h>
 #include <epan/prefs-int.h>
+#include <epan/packet.h>
+#include <epan/decode_as.h>
+#include <epan/uat-int.h>
+#include <ui/recent.h>
 
 #ifdef HAVE_LIBPCAP
-#include "capture_opts.h"
+#include "ui/capture_opts.h"
 #include "ui/capture_globals.h"
 #endif
 
 #include "ui/preference_utils.h"
 #include "ui/simple_dialog.h"
 
-guint
-pref_stash(pref_t *pref, gpointer unused _U_)
-{
-  switch (pref->type) {
-
-  case PREF_UINT:
-    pref->stashed_val.uint = *pref->varp.uint;
-    break;
-
-  case PREF_BOOL:
-    pref->stashed_val.boolval = *pref->varp.boolp;
-    break;
-
-  case PREF_ENUM:
-    pref->stashed_val.enumval = *pref->varp.enump;
-    break;
-
-  case PREF_STRING:
-  case PREF_FILENAME:
-  case PREF_DIRNAME:
-    g_free(pref->stashed_val.string);
-    pref->stashed_val.string = g_strdup(*pref->varp.string);
-    break;
-
-  case PREF_RANGE:
-    g_free(pref->stashed_val.range);
-    pref->stashed_val.range = range_copy(*pref->varp.range);
-    break;
-
-  case PREF_COLOR:
-    pref->stashed_val.color = *pref->varp.colorp;
-    break;
-
-  case PREF_STATIC_TEXT:
-  case PREF_UAT:
-  case PREF_CUSTOM:
-    break;
-
-  case PREF_OBSOLETE:
-    g_assert_not_reached();
-    break;
-  }
-  return 0;
-}
-
-guint
-pref_unstash(pref_t *pref, gpointer changed_p)
-{
-  gboolean *pref_changed_p = (gboolean *)changed_p;
-
-  /* Revert the preference to its saved value. */
-  switch (pref->type) {
-
-  case PREF_UINT:
-    if (*pref->varp.uint != pref->stashed_val.uint) {
-      *pref_changed_p = TRUE;
-      *pref->varp.uint = pref->stashed_val.uint;
-    }
-    break;
-
-  case PREF_BOOL:
-    if (*pref->varp.boolp != pref->stashed_val.boolval) {
-      *pref_changed_p = TRUE;
-      *pref->varp.boolp = pref->stashed_val.boolval;
-    }
-    break;
-
-  case PREF_ENUM:
-    if (*pref->varp.enump != pref->stashed_val.enumval) {
-      *pref_changed_p = TRUE;
-      *pref->varp.enump = pref->stashed_val.enumval;
-    }
-    break;
-
-  case PREF_STRING:
-  case PREF_FILENAME:
-  case PREF_DIRNAME:
-    if (strcmp(*pref->varp.string, pref->stashed_val.string) != 0) {
-      *pref_changed_p = TRUE;
-      g_free(*pref->varp.string);
-      *pref->varp.string = g_strdup(pref->stashed_val.string);
-    }
-    break;
-
-  case PREF_RANGE:
-    if (!ranges_are_equal(*pref->varp.range, pref->stashed_val.range)) {
-      *pref_changed_p = TRUE;
-      g_free(*pref->varp.range);
-      *pref->varp.range = range_copy(pref->stashed_val.range);
-    }
-    break;
-
-  case PREF_COLOR:
-    *pref->varp.colorp = pref->stashed_val.color;
-    break;
-
-  case PREF_STATIC_TEXT:
-  case PREF_UAT:
-  case PREF_CUSTOM:
-    break;
-
-  case PREF_OBSOLETE:
-    g_assert_not_reached();
-    break;
-  }
-  return 0;
-}
-
-void
-reset_stashed_pref(pref_t *pref) {
-  switch (pref->type) {
-
-  case PREF_UINT:
-    pref->stashed_val.uint = pref->default_val.uint;
-    break;
-
-  case PREF_BOOL:
-    pref->stashed_val.boolval = pref->default_val.boolval;
-    break;
-
-  case PREF_ENUM:
-    pref->stashed_val.enumval = pref->default_val.enumval;
-    break;
-
-  case PREF_STRING:
-  case PREF_FILENAME:
-  case PREF_DIRNAME:
-    g_free(pref->stashed_val.string);
-    pref->stashed_val.string = g_strdup(pref->default_val.string);
-    break;
-
-  case PREF_RANGE:
-    g_free(pref->stashed_val.range);
-    pref->stashed_val.range = range_copy(pref->default_val.range);
-    break;
-
-  case PREF_COLOR:
-    memcpy(&pref->stashed_val.color, &pref->default_val.color, sizeof(color_t));
-    break;
-
-  case PREF_STATIC_TEXT:
-  case PREF_UAT:
-  case PREF_CUSTOM:
-    break;
-
-  case PREF_OBSOLETE:
-    g_assert_not_reached();
-    break;
-  }
-}
-
-guint
-pref_clean_stash(pref_t *pref, gpointer unused _U_)
-{
-  switch (pref->type) {
-
-  case PREF_UINT:
-    break;
-
-  case PREF_BOOL:
-    break;
-
-  case PREF_ENUM:
-    break;
-
-  case PREF_STRING:
-  case PREF_FILENAME:
-  case PREF_DIRNAME:
-    if (pref->stashed_val.string != NULL) {
-      g_free(pref->stashed_val.string);
-      pref->stashed_val.string = NULL;
-    }
-    break;
-
-  case PREF_RANGE:
-    if (pref->stashed_val.range != NULL) {
-      g_free(pref->stashed_val.range);
-      pref->stashed_val.range = NULL;
-    }
-    break;
-
-  case PREF_STATIC_TEXT:
-  case PREF_UAT:
-  case PREF_COLOR:
-  case PREF_CUSTOM:
-    break;
-
-  case PREF_OBSOLETE:
-    g_assert_not_reached();
-    break;
-  }
-  return 0;
-}
-
 /* Fill in capture options with values from the preferences */
 void
 prefs_to_capture_opts(void)
 {
 #ifdef HAVE_LIBPCAP
-  /* Set promiscuous mode from the preferences setting. */
-  /* the same applies to other preferences settings as well. */
+    /* Set promiscuous mode from the preferences setting. */
+    /* the same applies to other preferences settings as well. */
     global_capture_opts.default_options.promisc_mode = prefs.capture_prom_mode;
+    global_capture_opts.default_options.monitor_mode = prefs.capture_monitor_mode;
     global_capture_opts.use_pcapng                   = prefs.capture_pcap_ng;
-    global_capture_opts.show_info                    = prefs.capture_show_info; /* GTK+ only */
+    global_capture_opts.show_info                    = prefs.capture_show_info;
     global_capture_opts.real_time_mode               = prefs.capture_real_time;
-    auto_scroll_live                                 = prefs.capture_auto_scroll;
+    global_capture_opts.update_interval              = prefs.capture_update_interval;
 #endif /* HAVE_LIBPCAP */
 }
 
 void
 prefs_main_write(void)
 {
-  int   err;
-  char *pf_dir_path;
-  char *pf_path;
+    int   err;
+    char *pf_dir_path;
+    char *pf_path;
 
-  /* Create the directory that holds personal configuration files, if
-     necessary.  */
-  if (create_persconffile_dir(&pf_dir_path) == -1) {
-    simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK,
-                  "Can't create directory\n\"%s\"\nfor preferences file: %s.", pf_dir_path,
-                  g_strerror(errno));
-    g_free(pf_dir_path);
-  } else {
-    /* Write the preferencs out. */
-    err = write_prefs(&pf_path);
-    if (err != 0) {
-      simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK,
+    /* Create the directory that holds personal configuration files, if
+       necessary.  */
+    if (create_persconffile_dir(&pf_dir_path) == -1) {
+        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK,
+                "Can't create directory\n\"%s\"\nfor preferences file: %s.", pf_dir_path,
+                g_strerror(errno));
+        g_free(pf_dir_path);
+    } else {
+        /* Write the preferences out. */
+        err = write_prefs(&pf_path);
+        if (err != 0) {
+            simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK,
                     "Can't open preferences file\n\"%s\": %s.", pf_path,
                     g_strerror(err));
-      g_free(pf_path);
+            g_free(pf_path);
+        }
+        /* Write recent and recent_common files out to ensure sync with prefs. */
+        write_profile_recent();
+        write_recent();
     }
-  }
 }
 
-static gboolean
+static unsigned int
 prefs_store_ext_helper(const char * module_name, const char *pref_name, const char *pref_value)
 {
-  module_t * module = NULL;
-  pref_t * pref = NULL;
-  gboolean pref_changed = TRUE;
+    pref_t * pref = NULL;
+    unsigned int pref_changed = 0;
 
-  if ( ! prefs_is_registered_protocol(module_name))
-    return FALSE;
+    if ( !prefs_is_registered_protocol(module_name))
+        return 0;
 
-  module = prefs_find_module(module_name);
-  if ( ! module )
-    return FALSE;
+    pref = prefs_find_preference(prefs_find_module(module_name), pref_name);
 
-  pref = prefs_find_preference(module, pref_name);
+    if (!pref)
+        return 0;
 
-  if (!pref)
-    return FALSE;
-
-  if ( pref->type == PREF_STRING )
-  {
-    g_free((void *)pref->stashed_val.string);
-    pref->stashed_val.string = (gchar *) g_strdup(pref_value);
-    /* unstash - taken from preferences_util */
-    if (strcmp(*pref->varp.string, pref->stashed_val.string) != 0)
+    if (prefs_get_type(pref) == PREF_STRING || prefs_get_type(pref) == PREF_DISSECTOR)
     {
-      pref_changed = TRUE;
-      g_free(*pref->varp.string);
-      *pref->varp.string = g_strdup(pref->stashed_val.string);
+        pref_changed |= prefs_set_string_value(pref, pref_value, pref_stashed);
+        if ( !pref_changed || prefs_get_string_value(pref, pref_stashed) != 0 )
+            pref_changed |= prefs_set_string_value(pref, pref_value, pref_current);
+    } else if (prefs_get_type(pref) == PREF_PASSWORD )
+    {
+        pref_changed |= prefs_set_password_value(pref, pref_value, pref_stashed);
+        if ( !pref_changed || prefs_get_password_value(pref, pref_stashed) != 0 )
+            pref_changed |= prefs_set_password_value(pref, pref_value, pref_current);
     }
-  }
 
-  return pref_changed;
+    return pref_changed;
 }
 
-gboolean
+unsigned int
 prefs_store_ext(const char * module_name, const char *pref_name, const char *pref_value)
 {
-  if ( prefs_store_ext_helper(module_name, pref_name, pref_value) )
-  {
-    prefs_main_write();
-    prefs_apply_all();
-    prefs_to_capture_opts();
-    return TRUE;
-  }
+    unsigned int changed_flags = prefs_store_ext_helper(module_name, pref_name, pref_value);
+    if ( changed_flags )
+    {
+        prefs_main_write();
+        prefs_apply_all();
+        prefs_to_capture_opts();
+        return changed_flags;
+    }
 
-  return FALSE;
+    return 0;
 }
 
-gboolean
+bool
 prefs_store_ext_multiple(const char * module, GHashTable * pref_values)
 {
-  gboolean pref_changed = FALSE;
-  GList * keys = NULL;
+    bool pref_changed = false;
+    GList * keys = NULL;
 
-  if ( ! prefs_is_registered_protocol(module))
-    return pref_changed;
+    if ( !prefs_is_registered_protocol(module))
+        return pref_changed;
 
-  keys = g_hash_table_get_keys(pref_values);
-  if ( ! keys )
-    return pref_changed;
+    keys = g_hash_table_get_keys(pref_values);
+    if ( !keys )
+        return pref_changed;
 
-  while ( keys != NULL )
-  {
-    gchar * pref_name = (gchar *)keys->data;
-    gchar * pref_value = (gchar *) g_hash_table_lookup(pref_values, keys->data);
-
-    if ( pref_name && pref_value )
+    for ( GList * key = keys; key != NULL; key = g_list_next(key) )
     {
-      if ( prefs_store_ext_helper(module, pref_name, pref_value) )
-        pref_changed = TRUE;
+        char * pref_name = (char *)key->data;
+        char * pref_value = (char *) g_hash_table_lookup(pref_values, key->data);
+
+        if ( pref_name && pref_value )
+        {
+            if ( prefs_store_ext_helper(module, pref_name, pref_value) )
+                pref_changed = true;
+        }
     }
-    keys = g_list_next(keys);
-  }
+    g_list_free(keys);
 
-  if ( pref_changed )
-  {
-    prefs_main_write();
-    prefs_apply_all();
-    prefs_to_capture_opts();
-  }
+    if ( pref_changed )
+    {
+        prefs_main_write();
+        prefs_apply_all();
+        prefs_to_capture_opts();
+    }
 
-  return TRUE;
+    return true;
 }
 
-gint
-column_prefs_add_custom(gint fmt, const gchar *title, const gchar *custom_fields, gint custom_occurrence)
+int
+column_prefs_add_custom(int fmt, const char *title, const char *custom_fields, int position)
 {
     GList *clp;
     fmt_data *cfmt, *last_cfmt;
-    gint colnr;
+    int colnr;
 
-    cfmt = (fmt_data *) g_malloc(sizeof(fmt_data));
+    cfmt = g_new(fmt_data, 1);
     /*
      * Because a single underscore is interpreted as a signal that the next character
      * is going to be marked as accelerator for this header (i.e. is going to be
@@ -374,16 +171,24 @@ column_prefs_add_custom(gint fmt, const gchar *title, const gchar *custom_fields
     cfmt->title = g_strdup(title);
     cfmt->fmt = fmt;
     cfmt->custom_fields = g_strdup(custom_fields);
-    cfmt->custom_occurrence = custom_occurrence;
-    cfmt->resolved = TRUE;
+    cfmt->custom_occurrence = 0;
+    if (column_prefs_custom_display_strings(custom_fields)) {
+        cfmt->display = COLUMN_DISPLAY_STRINGS;
+    } else {
+        cfmt->display = COLUMN_DISPLAY_VALUES;
+    }
 
     colnr = g_list_length(prefs.col_list);
 
     if (custom_fields) {
-        cfmt->visible = TRUE;
+        cfmt->visible = true;
         clp = g_list_last(prefs.col_list);
         last_cfmt = (fmt_data *) clp->data;
-        if (last_cfmt->fmt == COL_INFO) {
+        if (position > 0 && position <= colnr) {
+            /* Custom fields may be added at any position, depending on the given argument */
+            colnr = position;
+            prefs.col_list = g_list_insert(prefs.col_list, cfmt, colnr);
+        } else if (last_cfmt->fmt == COL_INFO) {
             /* Last column is COL_INFO, add custom column before this */
             colnr -= 1;
             prefs.col_list = g_list_insert(prefs.col_list, cfmt, colnr);
@@ -391,11 +196,89 @@ column_prefs_add_custom(gint fmt, const gchar *title, const gchar *custom_fields
             prefs.col_list = g_list_append(prefs.col_list, cfmt);
         }
     } else {
-        cfmt->visible = FALSE;  /* Will be set to TRUE in visible_toggled() when added to list */
+        cfmt->visible = false;  /* Will be set to true in visible_toggled() when added to list */
         prefs.col_list = g_list_append(prefs.col_list, cfmt);
+    }
+    recent_insert_column(colnr);
+
+    return colnr;
+}
+
+int
+column_prefs_has_custom(const char *custom_field)
+{
+    GList *clp;
+    fmt_data *cfmt;
+    int colnr = -1;
+
+    for (int i = 0; i < prefs.num_cols; i++) {
+        clp = g_list_nth(prefs.col_list, i);
+        if (clp == NULL) /* Sanity check, invalid column requested */
+            continue;
+
+        cfmt = (fmt_data *) clp->data;
+        if (cfmt->fmt == COL_CUSTOM && cfmt->custom_occurrence == 0 && strcmp(custom_field, cfmt->custom_fields) == 0) {
+            colnr = i;
+            break;
+        }
     }
 
     return colnr;
+}
+
+bool
+column_prefs_custom_display_strings(const char* custom_field)
+{
+    char **fields;
+    header_field_info *hfi;
+    bool resolve = false;
+
+    fields = g_regex_split_simple(COL_CUSTOM_PRIME_REGEX, custom_field,
+                                  (GRegexCompileFlags) (G_REGEX_RAW),
+                                  0);
+
+    for (unsigned i = 0; i < g_strv_length(fields); i++) {
+        if (fields[i] && *fields[i]) {
+            hfi = proto_registrar_get_byname(fields[i]);
+            if (hfi && ((hfi->type == FT_OID) || (hfi->type == FT_REL_OID) || (hfi->type == FT_ETHER) || (hfi->type == FT_BYTES) || (hfi->type == FT_IPv4) || (hfi->type == FT_IPv6) || (hfi->type == FT_FCWWN) || (hfi->type == FT_BOOLEAN) ||
+                    ((hfi->strings != NULL) &&
+                     (FT_IS_INT(hfi->type) || FT_IS_UINT(hfi->type)))))
+                {
+                    resolve = true;
+                    break;
+                }
+        }
+    }
+
+    g_strfreev(fields);
+
+    return resolve;
+}
+
+bool
+column_prefs_custom_display_details(const char* custom_field)
+{
+    char **fields;
+    header_field_info *hfi;
+    bool resolve = false;
+
+    fields = g_regex_split_simple(COL_CUSTOM_PRIME_REGEX, custom_field,
+                                  (GRegexCompileFlags) (G_REGEX_RAW),
+                                  0);
+
+    for (unsigned i = 0; i < g_strv_length(fields); i++) {
+        if (fields[i] && *fields[i]) {
+            hfi = proto_registrar_get_byname(fields[i]);
+            if (hfi && !(hfi->display & BASE_NO_DISPLAY_VALUE)) {
+                resolve = true;
+                break;
+            }
+        }
+    }
+
+    g_strfreev(fields);
+
+    return resolve;
 }
 
 void
@@ -411,23 +294,29 @@ column_prefs_remove_link(GList *col_link)
     g_free(cfmt->custom_fields);
     g_free(cfmt);
     prefs.col_list = g_list_remove_link(prefs.col_list, col_link);
+    g_list_free_1(col_link);
 }
 
 void
-column_prefs_remove_nth(gint col)
+column_prefs_remove_nth(int col)
 {
     column_prefs_remove_link(g_list_nth(prefs.col_list, col));
+    recent_remove_column(col);
 }
 
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 2
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=2 tabstop=8 expandtab:
- * :indentSize=2:tabSize=8:noTabs=true:
- */
+void save_migrated_uat(const char *uat_name, bool *old_pref)
+{
+    char *err = NULL;
+
+    if (!uat_save(uat_get_table_by_name(uat_name), &err)) {
+        ws_warning("Unable to save %s: %s", uat_name, err);
+        g_free(err);
+        return;
+    }
+
+    // Ensure that any old preferences are removed after successful migration.
+    if (*old_pref) {
+        *old_pref = false;
+        prefs_main_write();
+    }
+}

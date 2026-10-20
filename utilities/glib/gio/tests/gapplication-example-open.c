@@ -15,10 +15,10 @@ activate (GApplication *application)
 }
 
 static void
-open (GApplication  *application,
-      GFile        **files,
-      gint           n_files,
-      const gchar   *hint)
+app_open (GApplication  *application,
+          GFile        **files,
+          gint           n_files,
+          const gchar   *hint)
 {
   gint i;
 
@@ -45,7 +45,7 @@ main (int argc, char **argv)
   app = g_application_new ("org.gtk.TestApplication",
                            G_APPLICATION_HANDLES_OPEN);
   g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
-  g_signal_connect (app, "open", G_CALLBACK (open), NULL);
+  g_signal_connect (app, "open", G_CALLBACK (app_open), NULL);
   g_application_set_inactivity_timeout (app, 10000);
 
   status = g_application_run (app, argc, argv);

@@ -1,4 +1,4 @@
-.TH TKIPTUN-NG 8 "February 2016" "Version 1.2-rc4"
+.TH TKIPTUN-NG 8 "May 2022" "Version 1.7.0"
 
 .SH NAME
 tkiptun-ng - inject a few frames into a WPA TKIP network with QoS
@@ -55,11 +55,11 @@ Set destination MAC address.
 .I -h <smac>
 Set source MAC address.
 .TP
-.I -F
-Choose first matching packet.
-.TP
 .I -e <essid>
 Set target SSID.
+.TP
+.I -M <sec>
+MIC error timeout in seconds. Default: 60 seconds
 .PP
 .TP
 .B Debug options:
@@ -134,3 +134,5 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .B packetforge-ng(1)
 .br
 .B wpaclean(1)
+.br
+.B airventriloquist(8)

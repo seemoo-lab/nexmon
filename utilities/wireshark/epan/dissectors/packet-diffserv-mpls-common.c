@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -57,12 +45,12 @@ const value_string phbid_bit15_vals[] = {
 
 void
 dissect_diffserv_mpls_common(tvbuff_t *tvb, proto_tree *tree, int type,
-                             int offset, int **hfindexes, gint **etts)
+                             int offset, int **hfindexes, int **etts)
 {
     proto_item  *ti = NULL, *sub_ti;
     proto_tree  *tree2 = NULL, *phbid_subtree;
     int exp;
-    guint16 phbid;
+    uint16_t phbid;
 
     switch (type) {
     case 1:  /* E-LSP */
@@ -70,7 +58,7 @@ dissect_diffserv_mpls_common(tvbuff_t *tvb, proto_tree *tree, int type,
         tree2 = proto_item_add_subtree(ti, ett_map);
         proto_item_set_text(ti, "MAP: ");
         offset ++;
-        exp = tvb_get_guint8(tvb, offset) & 7;
+        exp = tvb_get_uint8(tvb, offset) & 7;
         proto_tree_add_uint(tree2, hf_exp, tvb, offset, 1, exp);
         proto_item_append_text(ti, "EXP %u, ", exp);
         offset ++;
@@ -109,7 +97,7 @@ dissect_diffserv_mpls_common(tvbuff_t *tvb, proto_tree *tree, int type,
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -72,7 +72,8 @@ const GDBusInterfaceVTable manager_vtable =
 {
   manager_method_call,
   NULL,                 /* get_property */
-  NULL                  /* set_property */
+  NULL,                 /* set_property */
+  { 0 }
 };
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -187,6 +188,7 @@ const GDBusInterfaceVTable block_vtable =
   block_method_call,
   block_get_property,
   block_set_property,
+  { 0 }
 };
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -223,8 +225,9 @@ partition_method_call (GDBusConnection       *connection,
 const GDBusInterfaceVTable partition_vtable =
 {
   partition_method_call,
-  //partition_get_property,
-  //partition_set_property
+  NULL,
+  NULL,
+  { 0 }
 };
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -321,7 +324,8 @@ const GDBusSubtreeVTable subtree_vtable =
 {
   subtree_enumerate,
   subtree_introspect,
-  subtree_dispatch
+  subtree_dispatch,
+  { 0 }
 };
 
 /* ---------------------------------------------------------------------------------------------------- */

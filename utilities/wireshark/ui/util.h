@@ -1,27 +1,18 @@
-/* util.h
+/** @file
+ *
  * Utility definitions
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __UTIL_H__
 #define __UTIL_H__
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,8 +26,8 @@ char *get_args_as_string(int argc, char **argv, int optindex);
 /* Compute the difference between two seconds/microseconds time stamps.
  * Beware: we're using nanosecond resolution now and function is currently unused
  */
-void compute_timestamp_diff(gint *diffsec, gint *diffusec,
-                            guint32 sec1, guint32 usec1, guint32 sec2, guint32 usec2);
+void compute_timestamp_diff(int *diffsec, int *diffusec,
+                            uint32_t sec1, uint32_t usec1, uint32_t sec2, uint32_t usec2);
 
 /* Try to figure out if we're remotely connected, e.g. via ssh or
     Terminal Server, and create a capture filter that matches aspects of the
@@ -51,32 +42,30 @@ void compute_timestamp_diff(gint *diffsec, gint *diffusec,
 const char *get_conn_cfilter(void);
 
 /** Check if we're running on a remote connection.
- * @return TRUE if we're running remotely, FALSE if local.
+ * @return true if we're running remotely, false if local.
  */
-gboolean display_is_remote(void);
+bool display_is_remote(void);
 
-/** Set the latest opened directory.
- *  Will already be done when using file_selection_new().
+/** Get the latest directory in which a file has been opened.
+ *
+ * @return the dirname
+ */
+extern const char *get_last_open_dir(void);
+
+/** Set the latest directory in which a file has been opened.
  *
  * @param dirname the dirname
  */
 extern void set_last_open_dir(const char *dirname);
+
+/** Get the initial directory to use in file open dialogs.
+ *
+ * @return the dirname
+ */
+extern const char *get_open_dialog_initial_dir(void);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 #endif /* __UTIL_H__ */
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

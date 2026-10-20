@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /*
  * LAPD bitstream over RTP handling
@@ -39,62 +27,62 @@
 
 #include <epan/packet.h>
 #include <epan/conversation.h>
-#include <epan/xdlc.h>
 #include <epan/crc16-tvb.h>
 #include <epan/prefs.h>
 #include <wiretap/wtap.h>
 #include <epan/lapd_sapi.h>
 #include <epan/expert.h>
 #include <epan/proto_data.h>
-#include "packet-l2tp.h"
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+#include "packet-xdlc.h"
 
 void proto_register_lapd(void);
 void proto_reg_handoff_lapd(void);
 
-static int proto_lapd = -1;
-static int hf_lapd_direction = -1;
-static int hf_lapd_address = -1;
-static int hf_lapd_sapi = -1;
-static int hf_lapd_gsm_sapi = -1;
-static int hf_lapd_cr = -1;
-static int hf_lapd_ea1 = -1;
-static int hf_lapd_tei = -1;
-static int hf_lapd_ea2 = -1;
-static int hf_lapd_control = -1;
-static int hf_lapd_n_r = -1;
-static int hf_lapd_n_s = -1;
-static int hf_lapd_p = -1;
-static int hf_lapd_p_ext = -1;
-static int hf_lapd_f = -1;
-static int hf_lapd_f_ext = -1;
-static int hf_lapd_s_ftype = -1;
-static int hf_lapd_u_modifier_cmd = -1;
-static int hf_lapd_u_modifier_resp = -1;
-static int hf_lapd_ftype_i = -1;
-static int hf_lapd_ftype_s_u = -1;
-static int hf_lapd_ftype_s_u_ext = -1;
-static int hf_lapd_checksum = -1;
-static int hf_lapd_checksum_status = -1;
+static int proto_lapd;
+static int hf_lapd_direction;
+static int hf_lapd_address;
+static int hf_lapd_sapi;
+static int hf_lapd_gsm_sapi;
+static int hf_lapd_cr;
+static int hf_lapd_ea1;
+static int hf_lapd_tei;
+static int hf_lapd_ea2;
+static int hf_lapd_control;
+static int hf_lapd_n_r;
+static int hf_lapd_n_s;
+static int hf_lapd_p;
+static int hf_lapd_p_ext;
+static int hf_lapd_f;
+static int hf_lapd_f_ext;
+static int hf_lapd_s_ftype;
+static int hf_lapd_u_modifier_cmd;
+static int hf_lapd_u_modifier_resp;
+static int hf_lapd_ftype_i;
+static int hf_lapd_ftype_s_u;
+static int hf_lapd_ftype_s_u_ext;
+static int hf_lapd_checksum;
+static int hf_lapd_checksum_status;
 
-static gint ett_lapd = -1;
-static gint ett_lapd_address = -1;
-static gint ett_lapd_control = -1;
-static gint ett_lapd_checksum = -1;
+static int ett_lapd;
+static int ett_lapd_address;
+static int ett_lapd_control;
+static int ett_lapd_checksum;
 
-static guint pref_lapd_rtp_payload_type = 0;
-static guint pref_lapd_sctp_ppi = 0;
-
-static expert_field ei_lapd_abort = EI_INIT;
-static expert_field ei_lapd_checksum_bad = EI_INIT;
+static expert_field ei_lapd_abort;
+static expert_field ei_lapd_checksum_bad;
 
 static dissector_handle_t lapd_handle;
+static dissector_handle_t lapd_phdr_handle;
+static dissector_handle_t linux_lapd_handle;
 static dissector_handle_t lapd_bitstream_handle;
 
 static dissector_table_t lapd_sapi_dissector_table;
 static dissector_table_t lapd_gsm_sapi_dissector_table;
 
 /* Whether to use GSM SAPI vals or not */
-static gboolean global_lapd_gsm_sapis = FALSE;
+static bool global_lapd_gsm_sapis;
 
 /*
  * Bits in the address field.
@@ -107,10 +95,13 @@ static gboolean global_lapd_gsm_sapis = FALSE;
 #define	LAPD_TEI_SHIFT		1
 #define	LAPD_EA2		0x0001	/* Second Address Extension bit */
 
+#define LAPD_DIR_USER_TO_NETWORK	0
+#define LAPD_DIR_NETWORK_TO_USER	1
+
 static const value_string lapd_direction_vals[] = {
-	{ P2P_DIR_RECV,		"Network->User"},
-	{ P2P_DIR_SENT,		"User->Network"},
-	{ 0,			NULL }
+	{ LAPD_DIR_USER_TO_NETWORK,		"User->Network"},
+	{ LAPD_DIR_NETWORK_TO_USER,		"Network->User"},
+	{ 0,					NULL }
 };
 
 static const value_string lapd_sapi_vals[] = {
@@ -171,7 +162,7 @@ typedef struct lapd_byte_state {
 } lapd_byte_state_t;
 
 typedef struct lapd_ppi {
-	gboolean		has_crc; 		/* CRC is captured with LAPD the frames */
+	bool		has_crc; 		/* CRC is captured with LAPD the frames */
 	lapd_byte_state_t	start_byte_state; 	/* LAPD bitstream byte state at the beginning of processing the packet */
 } lapd_ppi_t;
 
@@ -191,15 +182,15 @@ fill_lapd_byte_state(lapd_byte_state_t *ptr, enum lapd_bitstream_states state, c
 typedef struct lapd_convo_data {
 	address		addr_a;
 	address		addr_b;
-	guint32		port_a;
-	guint32		port_b;
+	uint32_t		port_a;
+	uint32_t		port_b;
 	lapd_byte_state_t	*byte_state_a;
 	lapd_byte_state_t	*byte_state_b;
 } lapd_convo_data_t;
 
 
 static void
-dissect_lapd_full(tvbuff_t*, packet_info*, proto_tree*, gboolean);
+dissect_lapd_full(tvbuff_t*, packet_info*, proto_tree*, uint32_t);
 
 /* got new LAPD frame byte */
 static void new_byte(char full_byte, char data[], int *data_len) {
@@ -212,7 +203,7 @@ static void new_byte(char full_byte, char data[], int *data_len) {
 }
 
 static void
-lapd_log_abort(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset, const char *msg)
+lapd_log_abort(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char *msg)
 {
 	proto_item *ti;
 
@@ -220,15 +211,25 @@ lapd_log_abort(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset
 	expert_add_info_format(pinfo, ti, &ei_lapd_abort, "%s", msg);
 }
 
+/*
+ * Flags to pass to dissect_lapd_full.
+ */
+#define LAPD_HAS_CRC			0x00000001
+#define LAPD_HAS_DIRECTION		0x00000002
+#define LAPD_HAS_LINUX_SLL		0x00000004
+#define LAPD_USER_TO_NETWORK		0x00000008
+#define LAPD_NETWORK_IS_REMOTE		0x00000010
+#define LAPD_USER_IS_REMOTE		0x00000020
+
 static int
 dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dissector_data _U_)
 {
-	guint8		byte, full_byte = 0x00, bit_offset = 0;
-	gboolean	bit;
-	guint8		i, ones = 0, data[MAX_LAPD_PACKET_LEN];
+	uint8_t		byte, full_byte = 0x00, bit_offset = 0;
+	bool	bit;
+	uint8_t		i, ones = 0, data[MAX_LAPD_PACKET_LEN];
 	int		data_len = 0;
-	gint		offset = 0, available;
-	guint8		*buff;
+	int		offset = 0, available;
+	uint8_t		*buff;
 	tvbuff_t	*new_tvb;
 
 	enum lapd_bitstream_states state = OUT_OF_SYNC;
@@ -236,7 +237,7 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 	conversation_t		*conversation = NULL;
 	lapd_convo_data_t	*convo_data = NULL;
 	lapd_byte_state_t	*lapd_byte_state, *prev_byte_state = NULL;
-	gboolean		forward_stream = TRUE;
+	bool		forward_stream = true;
 
 	/* get remaining data from previous packets */
 	conversation = find_or_create_conversation(pinfo);
@@ -260,14 +261,14 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 					&& convo_data-> port_a == pinfo->srcport
 					&& convo_data-> port_b == pinfo->destport) {
 				/* "forward" direction */
-				forward_stream = TRUE;
+				forward_stream = true;
 				prev_byte_state = convo_data->byte_state_a;
 			} else if (addresses_equal(&convo_data-> addr_b, &pinfo->src)
 					&& addresses_equal(&convo_data->addr_a, &pinfo->dst)
 					&& convo_data-> port_b == pinfo->srcport
 					&& convo_data-> port_a == pinfo->destport) {
 				/* "backward" direction */
-				forward_stream = FALSE;
+				forward_stream = false;
 				prev_byte_state = convo_data->byte_state_b;
 			}
 		}
@@ -285,10 +286,10 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 	/* Consume tvb bytes */
 	available = tvb_reported_length_remaining(tvb, offset);
 	while (offset < available) {
-		byte = tvb_get_guint8(tvb,offset);
+		byte = tvb_get_uint8(tvb,offset);
 		offset++;
 		for (i=0; i < 8; i++) { /* cycle through bits */
-			bit = byte & (0x80 >> i) ? TRUE : FALSE;
+			bit = byte & (0x80 >> i) ? true : false;
 
 			/* consume a bit */
 			if (bit) {
@@ -298,10 +299,9 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 				if (ones == 5 && state == DATA) {
 					/* we don't increase bit_offset, it is an inserted zero */
 				} else if (ones == 6 && state == DATA) { /* probably starting flag sequence */
-					buff = (guint8 *)g_memdup(data, data_len);
+					buff = (uint8_t *)wmem_memdup(pinfo->pool, data, data_len);
 					/* Allocate new tvb for the LAPD frame */
 					new_tvb = tvb_new_child_real_data(tvb, buff, data_len, data_len);
-					tvb_set_free_cb(new_tvb, g_free);
 					add_new_data_source(pinfo, new_tvb, "Decoded LAPD bitstream");
 					data_len = 0;
 					state = FLAGS;
@@ -313,7 +313,7 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 						lapd_log_abort(tvb, pinfo, tree, offset, "Abort! 6 ones that don't match 0x7e!");
 
 					}
-					dissect_lapd_full(new_tvb, pinfo, tree, TRUE);
+					dissect_lapd_full(new_tvb, pinfo, tree, LAPD_HAS_CRC);
 				} else if (ones >= 7) { /* frame reset or 11111111 flag byte */
 					data_len = 0;
 					state = OUT_OF_SYNC;
@@ -366,7 +366,7 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 		if (NULL == p_get_proto_data(wmem_file_scope(), pinfo, proto_lapd, 0)) {
 			/* Per packet information */
 			lapd_ppi = wmem_new(wmem_file_scope(), lapd_ppi_t);
-			lapd_ppi->has_crc = TRUE;
+			lapd_ppi->has_crc = true;
 			if (prev_byte_state)
 				fill_lapd_byte_state(&lapd_ppi->start_byte_state, prev_byte_state->state,
 						prev_byte_state->full_byte, prev_byte_state->bit_offset,
@@ -381,9 +381,11 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 
 			if (conversation) {
 				if (convo_data) { /* already have lapd convo data */
-					if (forward_stream)
+					if (forward_stream) {
+						if (!convo_data->byte_state_a)
+							convo_data->byte_state_a = wmem_new(wmem_file_scope(), lapd_byte_state_t);
 						fill_lapd_byte_state(convo_data->byte_state_a, state, full_byte, bit_offset, ones, data, data_len);
-					else {
+					} else {
 						if (!convo_data->byte_state_b)
 							convo_data->byte_state_b = wmem_new(wmem_file_scope(), lapd_byte_state_t);
 						fill_lapd_byte_state(convo_data->byte_state_b, state, full_byte, bit_offset, ones, data, data_len);
@@ -392,8 +394,8 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 					lapd_byte_state = wmem_new(wmem_file_scope(), lapd_byte_state_t);
 					fill_lapd_byte_state(lapd_byte_state, state, full_byte, bit_offset, ones, data, data_len);
 					convo_data = wmem_new(wmem_file_scope(), lapd_convo_data_t);
-					copy_address(&convo_data->addr_a, &pinfo->src);
-					copy_address(&convo_data->addr_b, &pinfo->dst);
+					copy_address_wmem(wmem_file_scope(), &convo_data->addr_a, &pinfo->src);
+					copy_address_wmem(wmem_file_scope(), &convo_data->addr_b, &pinfo->dst);
 					convo_data->port_a = pinfo->srcport;
 					convo_data->port_b = pinfo->destport;
 					convo_data->byte_state_a = lapd_byte_state;
@@ -407,22 +409,123 @@ dissect_lapd_bitstream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 }
 
 static int
-dissect_lapd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+dissect_linux_lapd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	dissect_lapd_full(tvb, pinfo, tree, FALSE);
+	uint32_t flags = LAPD_HAS_LINUX_SLL | LAPD_HAS_DIRECTION;
+
+	/* frame is captured via libpcap */
+	if (pinfo->pseudo_header->lapd.pkttype == 4 /*PACKET_OUTGOING*/) {
+		if (pinfo->pseudo_header->lapd.we_network) {
+			/*
+			 * We're the network side, so the user is remote,
+			 * and we're sending it, so this is Network->User.
+			 */
+			flags |= LAPD_USER_IS_REMOTE;
+		} else {
+			/*
+			 * We're the user side, so the network is remote,
+			 * and we're sending it, so this is User->Network.
+			 */
+			flags |= LAPD_NETWORK_IS_REMOTE | LAPD_USER_TO_NETWORK;
+		}
+	}
+	else if (pinfo->pseudo_header->lapd.pkttype == 3 /*PACKET_OTHERHOST*/) {
+		/*
+		 * We must be a TE, sniffing what other TE transmit, so
+		 * both sides are remote.
+		 *
+		 * XXX - do we know whether it's User->Network or
+		 * Network->User?
+		 */
+		flags |= LAPD_USER_IS_REMOTE | LAPD_NETWORK_IS_REMOTE | LAPD_USER_TO_NETWORK;
+	}
+	else {
+		/* The frame is incoming */
+		if (pinfo->pseudo_header->lapd.we_network) {
+			/*
+			 * We're the network side, so the user is remote,
+			 * and we received it, so this is User->Network.
+			 */
+			flags |= LAPD_USER_IS_REMOTE | LAPD_USER_TO_NETWORK;
+		} else {
+			/*
+			 * We're the user side, so the network is remote,
+			 * and we received it, so this is Network->User.
+			 */
+			flags |= LAPD_NETWORK_IS_REMOTE;
+		}
+	}
+	dissect_lapd_full(tvb, pinfo, tree, flags);
+	return tvb_captured_length(tvb);
+}
+
+/*
+ * Called from dissectors, such as the ISDN dissector, that supply a
+ * struct isdn_pndr giving the packet direction.
+ */
+static int
+dissect_lapd_phdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+	struct isdn_phdr *isdn = (struct isdn_phdr *)data;
+	uint32_t flags = LAPD_HAS_DIRECTION;
+
+	if (isdn->uton)
+		flags |= LAPD_USER_TO_NETWORK;
+	dissect_lapd_full(tvb, pinfo, tree, flags);
+	return tvb_captured_length(tvb);
+}
+
+/*
+ * Called for link-layer encapsulation.
+ */
+static int
+dissect_lapd_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+	uint32_t flags;
+	uint32_t lapd_flags = 0;
+
+	/*
+	 * If we have direction flags, we have a direction;
+	 * "outbound" packets are presumed to be User->Network and
+	 * "inbound" packets are presumed to be Network->User.
+	 * Other packets, we have no idea.
+	 */
+	if (WTAP_OPTTYPE_SUCCESS == wtap_block_get_uint32_option_value(pinfo->rec->block, OPT_PKT_FLAGS, &flags)) {
+		switch (PACK_FLAGS_DIRECTION(flags)) {
+
+		case PACK_FLAGS_DIRECTION_OUTBOUND:
+			lapd_flags |= LAPD_HAS_DIRECTION | LAPD_USER_TO_NETWORK;
+			break;
+
+		case PACK_FLAGS_DIRECTION_INBOUND:
+			lapd_flags |= LAPD_HAS_DIRECTION;
+			break;
+
+		default:
+			break;
+		}
+	}
+	dissect_lapd_full(tvb, pinfo, tree, lapd_flags);
+	return tvb_captured_length(tvb);
+}
+
+static int
+dissect_lapd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+	/* XXX - direction is unknown */
+	dissect_lapd_full(tvb, pinfo, tree, 0);
 	return tvb_captured_length(tvb);
 }
 
 static void
-dissect_lapd_full(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean has_crc)
+dissect_lapd_full(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t flags)
 {
 	proto_tree	*lapd_tree, *addr_tree;
 	proto_item	*lapd_ti, *addr_ti;
-	int		direction;
-	guint16		control;
+	uint16_t		control;
 	int		lapd_header_len, checksum_offset;
-	guint16		addr, cr, sapi, tei;
-	gboolean	is_response = 0;
+	uint16_t		addr, cr, sapi, tei;
+	bool	is_response = 0;
 	tvbuff_t	*next_tvb;
 	const char	*srcname = "?";
 	const char	*dstname = "?";
@@ -436,64 +539,39 @@ dissect_lapd_full(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean 
 	sapi = (addr & LAPD_SAPI) >> LAPD_SAPI_SHIFT;
 	lapd_header_len = 2;	/* addr */
 
-	col_add_fstr(pinfo->cinfo, COL_TEI, "%u", tei);
-
 	/* Append TEI to info field */
 	col_append_fstr(pinfo->cinfo, COL_INFO, "TEI:%02u ", tei);
 	col_set_fence(pinfo->cinfo, COL_INFO);
 
-	if (pinfo->pkt_encap == WTAP_ENCAP_LINUX_LAPD) {
-		/* frame is captured via libpcap */
-		if (pinfo->pseudo_header->lapd.pkttype == 4 /*PACKET_OUTGOING*/) {
-			if (pinfo->pseudo_header->lapd.we_network) {
-				is_response = cr ? FALSE : TRUE;
-				srcname = "Local Network";
-				dstname = "Remote User";
-				direction = P2P_DIR_RECV;	/* Network->User */
+	if (flags & LAPD_HAS_DIRECTION) {
+		if (flags & LAPD_USER_TO_NETWORK) {
+			is_response = cr ? true : false;
+			if (flags & LAPD_HAS_LINUX_SLL) {
+				srcname = (flags & LAPD_USER_IS_REMOTE) ?
+				    "Remote User" : "Local User";
+				dstname = (flags & LAPD_NETWORK_IS_REMOTE) ?
+				    "Remote Network" : "Local Network";
 			} else {
-				srcname = "Local User";
-				dstname = "Remote Network";
-				direction = P2P_DIR_SENT;	/* User->Network */
+				srcname = "User";
+				dstname = "Network";
 			}
-		}
-		else if (pinfo->pseudo_header->lapd.pkttype == 3 /*PACKET_OTHERHOST*/) {
-			/* We must be a TE, sniffing what other TE transmit */
-
-			is_response = cr ? TRUE : FALSE;
-			srcname = "Remote User";
-			dstname = "Remote Network";
-			direction = P2P_DIR_SENT;	/* User->Network */
-		}
-		else {
-			/* The frame is incoming */
-			if (pinfo->pseudo_header->lapd.we_network) {
-				is_response = cr ? TRUE : FALSE;
-				srcname = "Remote User";
-				dstname = "Local Network";
-				direction = P2P_DIR_SENT;	/* User->Network */
+		} else {
+			is_response = cr ? false : true;
+			if (flags & LAPD_HAS_LINUX_SLL) {
+				srcname = (flags & LAPD_NETWORK_IS_REMOTE) ?
+				    "Remote Network" : "Local Network";
+				dstname = (flags & LAPD_USER_IS_REMOTE) ?
+				    "Remote User" : "Local User";
 			} else {
-				is_response = cr ? FALSE : TRUE;
-				srcname = "Remote Network";
-				dstname = "Local User";
-				direction = P2P_DIR_RECV;	/* Network->User */
+				srcname = "Network";
+				dstname = "User";
 			}
-		}
-	} else {
-		direction = pinfo->p2p_dir;
-		if (pinfo->p2p_dir == P2P_DIR_RECV) {
-			is_response = cr ? FALSE : TRUE;
-			srcname = "Network";
-			dstname = "User";
-		}
-		else if (pinfo->p2p_dir == P2P_DIR_SENT) {
-			is_response = cr ? TRUE : FALSE;
-			srcname = "User";
-			dstname = "Network";
 		}
 	}
-
-	col_set_str(pinfo->cinfo, COL_RES_DL_SRC, srcname);
-	col_set_str(pinfo->cinfo, COL_RES_DL_DST, dstname);
+	set_address(&pinfo->dl_dst, AT_STRINGZ, (int)strlen(dstname) + 1, dstname);
+	set_address(&pinfo->dl_src, AT_STRINGZ, (int)strlen(srcname) + 1, srcname);
+	copy_address_shallow(&pinfo->dst, &pinfo->dl_dst);
+	copy_address_shallow(&pinfo->src, &pinfo->dl_src);
 
 	if (tree) {
 		proto_item *direction_ti;
@@ -505,10 +583,11 @@ dissect_lapd_full(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean 
 		/*
 		 * Don't show the direction if we don't know it.
 		 */
-		if (direction != P2P_DIR_UNKNOWN) {
+		if (flags & LAPD_HAS_DIRECTION) {
 			direction_ti = proto_tree_add_uint(lapd_tree, hf_lapd_direction,
-			                                   tvb, 0, 0, pinfo->p2p_dir);
-			PROTO_ITEM_SET_GENERATED(direction_ti);
+			                                   tvb, 0, 0,
+			                                   (flags & LAPD_USER_TO_NETWORK) ? LAPD_DIR_USER_TO_NETWORK : LAPD_DIR_NETWORK_TO_USER);
+			proto_item_set_generated(direction_ti);
 		}
 
 		addr_ti = proto_tree_add_uint(lapd_tree, hf_lapd_address, tvb,
@@ -532,13 +611,13 @@ dissect_lapd_full(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean 
 
 	control = dissect_xdlc_control(tvb, 2, pinfo, lapd_tree, hf_lapd_control,
 	    ett_lapd_control, &lapd_cf_items, &lapd_cf_items_ext, NULL, NULL,
-	    is_response, TRUE, FALSE);
-	lapd_header_len += XDLC_CONTROL_LEN(control, TRUE);
+	    is_response, true, false);
+	lapd_header_len += XDLC_CONTROL_LEN(control, true);
 
 	if (tree)
 		proto_item_set_len(lapd_ti, lapd_header_len);
 
-	if (has_crc) {
+	if (flags & LAPD_HAS_CRC) {
 
 		/* check checksum */
 		checksum_offset = tvb_reported_length(tvb) - 2;
@@ -570,40 +649,18 @@ dissect_lapd_full(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean 
 		call_data_dissector(next_tvb, pinfo, tree);
 }
 
-static gboolean
-dissect_udp_lapd(tvbuff_t *tvb, packet_info *pinfo _U_ , proto_tree *tree, void *data _U_)
-{
-	if (pinfo->srcport < 3001 || pinfo->srcport > 3015
-		|| pinfo->destport < 3001 || pinfo->destport > 3015
-		|| pinfo->destport != pinfo->srcport)
-			return FALSE;
-
-	/*
-	 * XXX - check for a valid LAPD address field.
-	 */
-
-	/*
-	 * OK, check whether the control field looks valid.
-	 */
-	if (!check_xdlc_control(tvb, 2, NULL, NULL, FALSE, FALSE))
-		return FALSE;
-
-    dissect_lapd(tvb, pinfo, tree, data);
-	return TRUE;
-}
-
 void
 proto_register_lapd(void)
 {
 	static hf_register_info hf[] = {
 
 		{ &hf_lapd_direction,
-		  { "Direction", "lapd.direction", FT_UINT8, BASE_DEC, VALS(lapd_direction_vals), 0x0,
+		  { "Direction", "lapd.direction", FT_UINT32, BASE_DEC, VALS(lapd_direction_vals), 0x0,
 		    NULL, HFILL }},
 
 		{ &hf_lapd_address,
 		  { "Address Field", "lapd.address", FT_UINT16, BASE_HEX, NULL, 0x0,
-		    "Address", HFILL }},
+		    NULL, HFILL }},
 
 		{ &hf_lapd_sapi,
 		  { "SAPI", "lapd.sapi", FT_UINT16, BASE_DEC, VALS(lapd_sapi_vals), LAPD_SAPI,
@@ -683,13 +740,13 @@ proto_register_lapd(void)
 
 		{ &hf_lapd_checksum,
 		  { "Checksum", "lapd.checksum", FT_UINT16, BASE_HEX,
-		    NULL, 0x0, "Details at: http://www.wireshark.org/docs/wsug_html_chunked/ChAdvChecksums.html", HFILL }},
+		    NULL, 0x0, "Details at: https://www.wireshark.org/docs/wsug_html_chunked/ChAdvChecksums.html", HFILL }},
 
 		{ &hf_lapd_checksum_status,
 		  { "Checksum Status", "lapd.checksum.status", FT_UINT8, BASE_NONE,
 		    VALS(proto_checksum_vals), 0x0, NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_lapd,
 		&ett_lapd_address,
 		&ett_lapd_control,
@@ -712,6 +769,8 @@ proto_register_lapd(void)
 	expert_register_field_array(expert_lapd, ei, array_length(ei));
 
 	lapd_handle = register_dissector("lapd", dissect_lapd, proto_lapd);
+	lapd_phdr_handle = register_dissector("lapd-phdr", dissect_lapd_phdr, proto_lapd);
+	linux_lapd_handle = register_dissector("linux-lapd", dissect_linux_lapd, proto_lapd);
 	lapd_bitstream_handle = register_dissector("lapd-bitstream", dissect_lapd_bitstream, proto_lapd);
 
 	lapd_sapi_dissector_table = register_dissector_table("lapd.sapi",
@@ -720,60 +779,35 @@ proto_register_lapd(void)
 	lapd_gsm_sapi_dissector_table = register_dissector_table("lapd.gsm.sapi",
 								 "LAPD GSM SAPI", proto_lapd, FT_UINT16, BASE_DEC);
 
-	lapd_module = prefs_register_protocol(proto_lapd, proto_reg_handoff_lapd);
+	lapd_module = prefs_register_protocol(proto_lapd, NULL);
 
 	prefs_register_bool_preference(lapd_module, "use_gsm_sapi_values",
 				       "Use GSM SAPI values",
 				       "Use SAPI values as specified in TS 48 056",
 				       &global_lapd_gsm_sapis);
-	prefs_register_uint_preference(lapd_module, "rtp_payload_type",
-				       "RTP payload type for embedded LAPD",
-				       "RTP payload type for embedded LAPD. It must be one of the dynamic types "
-				       "from 96 to 127. Set it to 0 to disable.",
-				       10, &pref_lapd_rtp_payload_type);
-	prefs_register_uint_preference(lapd_module, "sctp_payload_protocol_identifier",
-				       "SCTP Payload Protocol Identifier for LAPD",
-				       "SCTP Payload Protocol Identifier for LAPD. It is a "
-				       "32 bits value from 0 to 4294967295. Set it to 0 to disable.",
-				       10, &pref_lapd_sctp_ppi);
+	prefs_register_obsolete_preference(lapd_module, "rtp_payload_type");
 }
 
 void
 proto_reg_handoff_lapd(void)
 {
-	static gboolean init = FALSE;
-	static guint lapd_rtp_payload_type;
-	static guint lapd_sctp_ppi;
+	dissector_handle_t lapd_frame_handle;
 
-	if (!init) {
-		dissector_add_uint("wtap_encap", WTAP_ENCAP_LINUX_LAPD, lapd_handle);
-		dissector_add_uint("wtap_encap", WTAP_ENCAP_LAPD, lapd_handle);
-		dissector_add_uint("l2tp.pw_type", L2TPv3_PROTOCOL_LAPD, lapd_handle);
-		heur_dissector_add("udp", dissect_udp_lapd, "LAPD over UDP", "lapd_udp", proto_lapd, HEURISTIC_ENABLE);
+	dissector_add_uint("wtap_encap", WTAP_ENCAP_LINUX_LAPD, linux_lapd_handle);
 
-		dissector_add_for_decode_as("sctp.ppi", lapd_handle);
-		dissector_add_for_decode_as("sctp.port", lapd_handle);
+	lapd_frame_handle = create_dissector_handle(dissect_lapd_frame, proto_lapd);
+	dissector_add_uint("wtap_encap", WTAP_ENCAP_LAPD, lapd_frame_handle);
 
-		init = TRUE;
-	} else {
-		if ((lapd_rtp_payload_type > 95) && (lapd_rtp_payload_type < 128))
-			dissector_delete_uint("rtp.pt", lapd_rtp_payload_type, lapd_bitstream_handle);
+	dissector_add_for_decode_as("l2tp.pw_type", lapd_handle);
+	dissector_add_for_decode_as_with_preference("sctp.ppi", lapd_handle);
+	dissector_add_for_decode_as("sctp.port", lapd_handle);
+	dissector_add_uint_range_with_preference("udp.port", "", lapd_handle);
+	dissector_add_uint_range_with_preference("rtp.pt", "", lapd_bitstream_handle);
 
-		if (lapd_sctp_ppi > 0)
-			dissector_delete_uint("sctp.ppi", lapd_sctp_ppi, lapd_handle);
-	}
-
-	lapd_rtp_payload_type = pref_lapd_rtp_payload_type;
-	if ((lapd_rtp_payload_type > 95) && (lapd_rtp_payload_type < 128))
-		dissector_add_uint("rtp.pt", lapd_rtp_payload_type, lapd_bitstream_handle);
-
-	lapd_sctp_ppi = pref_lapd_sctp_ppi;
-	if (lapd_sctp_ppi > 0)
-		dissector_add_uint("sctp.ppi", lapd_sctp_ppi, lapd_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

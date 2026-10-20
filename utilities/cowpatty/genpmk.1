@@ -1,0 +1,41 @@
+.TH GENPMK "1" "June 2018" "genmpk 4.6" "User Commands"
+.SH NAME
+genmpk \- WPA-PSK precomputation attack
+.SH DESCRIPTION
+Precompute hash files to use with cowpatty
+.SH SYNOPSIS
+\fB genmpk\fR \fB-f\fR \fIWORDLIST\fR \fB-d\fR \fIOUTPUT-FILE\fR \fB-s\fR \fISSID\fR
+.SH OPTIONS
+.TP
+\fB\-f\fR
+Dictionary file
+.TP
+\fB\-d\fR
+Output hash file
+.TP
+\fB\-s\fR
+Network SSID (enclose in quotes if SSID includes spaces)
+.TP
+\fB\-h\fR
+Print this help information and exit
+.TP
+\fB\-v\fR
+Print verbose information (more \fB\-v\fR for more verbosity)
+.TP
+\fB\-V\fR
+Print program version and exit
+.SH AUTHOR
+genmpk was developed Joshua Wright <jwright@hwillhackforsushi.com>.
+.PP
+This manual page was written by Samuel Henrique <samueloph@debian.org> for the Debian project, it was based on \fBgenmpk -h\fR output and can be used by other projects as well.
+.SH SEE ALSO
+.br
+.B cowpatty(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B wifite(1)

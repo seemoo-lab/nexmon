@@ -73,7 +73,19 @@ public class Assets {
                 out.flush();
                 out.close();
 
-                Shell.SU.run("chmod 777 " + filesPath + "/" + filename);
+                // Make the extracted binary owner-only. It is later executed as
+                // root (e.g. by MonitorModeService), so it must NOT be
+                // world-writable: on this shared filesDir a world-writable,
+                // root-exec'd binary lets another local app/user swap it out
+                // before root runs it. Use the Java File API (owner-only) rather
+                // than a shell "chmod 777" so there is no shell string built
+                // from the filename either.
+                outFile.setReadable(false, false);
+                outFile.setWritable(false, false);
+                outFile.setExecutable(false, false);
+                outFile.setReadable(true, true);
+                outFile.setWritable(true, true);
+                outFile.setExecutable(true, true);
 
                 upToDateFiles.add(filename);
 

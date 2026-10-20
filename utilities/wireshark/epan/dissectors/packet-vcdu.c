@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.com>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,42 +22,42 @@ void proto_register_vcdu(void);
 void proto_reg_handoff_vcdu(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_vcdu = -1;
+static int proto_vcdu;
 
-static int hf_smex_gsc = -1;
-/* static int hf_smex_unused = -1; */
-static int hf_smex_version = -1;
-static int hf_smex_framelen = -1;
-static int hf_smex_rs_error = -1;
-static int hf_smex_rs_enable = -1;
-static int hf_smex_crc_enable = -1;
-static int hf_smex_crc_error = -1;
-static int hf_smex_mcs_enable = -1;
-static int hf_smex_mcs_num_error = -1;
-static int hf_smex_data_inv = -1;
-static int hf_smex_frame_sync = -1;
-static int hf_smex_data_dir = -1;
-static int hf_smex_data_class = -1;
-static int hf_smex_pb5 = -1;
-static int hf_smex_jday = -1;
-static int hf_smex_seconds = -1;
-static int hf_smex_msec = -1;
-/* static int hf_smex_spare = -1; */
+static int hf_smex_gsc;
+/* static int hf_smex_unused; */
+static int hf_smex_version;
+static int hf_smex_framelen;
+static int hf_smex_rs_error;
+static int hf_smex_rs_enable;
+static int hf_smex_crc_enable;
+static int hf_smex_crc_error;
+static int hf_smex_mcs_enable;
+static int hf_smex_mcs_num_error;
+static int hf_smex_data_inv;
+static int hf_smex_frame_sync;
+static int hf_smex_data_dir;
+static int hf_smex_data_class;
+static int hf_smex_pb5;
+static int hf_smex_jday;
+static int hf_smex_seconds;
+static int hf_smex_msec;
+/* static int hf_smex_spare; */
 
-static int hf_vcdu_version = -1;
-static int hf_vcdu_sp_id = -1;
-static int hf_vcdu_vc_id = -1;
-static int hf_vcdu_seq = -1;
-static int hf_vcdu_replay = -1;
+static int hf_vcdu_version;
+static int hf_vcdu_sp_id;
+static int hf_vcdu_vc_id;
+static int hf_vcdu_seq;
+static int hf_vcdu_replay;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_vcdu_data = -1;
-static int hf_vcdu_ground_receipt_time = -1;
-static int hf_vcdu_ccsds_all_fill = -1;
-static int hf_vcdu_bitream_all_fill = -1;
-static int hf_vcdu_bitream_all_data = -1;
-static int hf_vcdu_bitream_all_data_anomaly = -1;
-static int hf_vcdu_ccsds_continuation_packet = -1;
+static int hf_vcdu_data;
+static int hf_vcdu_ground_receipt_time;
+static int hf_vcdu_ccsds_all_fill;
+static int hf_vcdu_bitream_all_fill;
+static int hf_vcdu_bitream_all_data;
+static int hf_vcdu_bitream_all_data_anomaly;
+static int hf_vcdu_ccsds_continuation_packet;
 
 /* although technically not part of the vcdu header, the
  * first header pointer (for ccsds), and the last bit
@@ -77,19 +65,19 @@ static int hf_vcdu_ccsds_continuation_packet = -1;
  * simply adding them to the tail end of the vcdu header
  * branch rather than creating a distinct branch for them
  */
-static int hf_vcdu_fhp = -1;
-static int hf_vcdu_lbp = -1;
+static int hf_vcdu_fhp;
+static int hf_vcdu_lbp;
 
 static dissector_handle_t vcdu_handle;
 
 static dissector_handle_t ccsds_handle;
 
 /* Initialize the subtree pointers */
-static gint ett_vcdu  = -1;
-static gint ett_smex  = -1;
-static gint ett_vcduh = -1;
+static int ett_vcdu;
+static int ett_smex;
+static int ett_vcduh;
 
-static expert_field ei_vcdu_fhp_too_close_to_end_of_vcdu = EI_INIT;
+static expert_field ei_vcdu_fhp_too_close_to_end_of_vcdu;
 
 /*
  * Bits in the first 16-bit header word
@@ -116,7 +104,7 @@ static expert_field ei_vcdu_fhp_too_close_to_end_of_vcdu = EI_INIT;
 #define FHP_CONTINUATION      0x7ff
 
 #define LBP_MASK 0x3fff
-#define FHP_MASK 0x7ff
+#define FHP_MASK 0x07ff
 
 /* leap year macro */
 #ifndef Leap
@@ -173,30 +161,30 @@ static int bitstream_channels[] =
 };
 
 typedef struct {
-    guint channel;
+    unsigned channel;
 } uat_channel_t;
 
-static uat_channel_t *uat_bitchannels  = NULL;
-static uat_t         *vcdu_uat         = NULL;
-static guint          num_channels_uat = 0;
+static uat_channel_t *uat_bitchannels;
+static uat_t         *vcdu_uat;
+static unsigned       num_channels_uat;
 
 UAT_DEC_CB_DEF(uat_bitchannels, channel, uat_channel_t)
 
-static gboolean
+static bool
 vcdu_uat_data_update_cb(void *p, char **err) {
     uat_channel_t *ud = (uat_channel_t *)p;
 
     if (ud->channel >= 64) {
         *err = g_strdup("Channel must be between 0-63.");
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 static void
 vcdu_prefs_apply_cb(void)
 {
-    guint i;
+    unsigned i;
 
     if (num_channels_uat > 0)
     {
@@ -214,7 +202,7 @@ vcdu_prefs_apply_cb(void)
  * note:  this is not true PB5 time either, but a tsi specific version, although it is similar
  */
 static const char *
-smex_time_to_string (int pb5_days_since_midnight_9_10_oct_1995, int pb5_seconds, int pb5_milliseconds)
+smex_time_to_string (wmem_allocator_t *pool, int pb5_days_since_midnight_9_10_oct_1995, int pb5_seconds, int pb5_milliseconds)
 {
     static int utcdiff = 0;
     nstime_t t;
@@ -255,7 +243,7 @@ smex_time_to_string (int pb5_days_since_midnight_9_10_oct_1995, int pb5_seconds,
     t.secs = (pb5_days_since_midnight_9_10_oct_1995 * 86400) + pb5_seconds + utcdiff;
     t.nsecs = pb5_milliseconds*1000000; /* msecs to nsecs */
 
-    return abs_time_to_str(wmem_packet_scope(), &t, ABSOLUTE_TIME_DOY_UTC, TRUE);
+    return abs_time_to_str(pool, &t, ABSOLUTE_TIME_DOY_UTC, true);
 }
 
 
@@ -263,7 +251,7 @@ static int
 dissect_vcdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int offset           = 0;
-    gboolean ccsds_tree_added = FALSE;
+    bool ccsds_tree_added = false;
 
     proto_item *smex_header;
     proto_tree *smex_tree;
@@ -271,8 +259,8 @@ dissect_vcdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_tree *vcdu_tree;
     proto_item *vcdu_item;
 
-    guint16 first_word;
-    guint32 long_word;
+    uint16_t first_word;
+    uint32_t long_word;
 
     int vcid, pb5_days, pb5_seconds, pb5_milliseconds;
     const char *time_string;
@@ -326,7 +314,7 @@ dissect_vcdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     offset += 2;
 
     /* format ground receipt time into human readable time format for display */
-    time_string = smex_time_to_string(pb5_days, pb5_seconds, pb5_milliseconds);
+    time_string = smex_time_to_string(pinfo->pool, pb5_days, pb5_seconds, pb5_milliseconds);
     proto_tree_add_string(smex_tree, hf_vcdu_ground_receipt_time, tvb, offset-6, 6, time_string);
 
     proto_item_set_end(smex_header, tvb, offset);
@@ -354,7 +342,7 @@ dissect_vcdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     /* do bitstream channel processing */
     if (bitstream_channels[vcid])
     {
-        guint16 new_ptr;
+        uint16_t new_ptr;
 
         /* extract last bit pointer for bitstream channels */
         new_ptr = first_word & LBP_MASK;
@@ -384,7 +372,7 @@ dissect_vcdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     /* do ccsds channel processing */
     else
     {
-        guint16 new_ptr;
+        uint16_t new_ptr;
 
         /* extract first header pointer for ccsds channels */
         new_ptr = first_word & FHP_MASK;
@@ -421,7 +409,7 @@ dissect_vcdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                 int ccsds_len;
                 tvbuff_t *new_tvb;
 
-                ccsds_tree_added = TRUE;
+                ccsds_tree_added = true;
                 ccsds_len = tvb_get_ntohs(tvb, new_offset+4);
 
                 new_tvb = tvb_new_subset_remaining(tvb, new_offset);
@@ -558,7 +546,7 @@ proto_register_vcdu(void)
 #if 0
         { &hf_smex_spare,
           { "Spare",           "vcdu.smex.spare",
-            FT_UINT16, BASE_DEC, NULL, 0x03f,
+            FT_UINT16, BASE_DEC, NULL, 0x003f,
             "SMEX Spare", HFILL }
         },
 #endif
@@ -580,7 +568,7 @@ proto_register_vcdu(void)
         },
         { &hf_vcdu_seq,
           { "Sequence Count",           "vcdu.seq",
-            FT_UINT16, BASE_DEC, NULL, 0xffffff,
+            FT_UINT24, BASE_DEC, NULL, 0x0,
             "VCDU Sequence Count", HFILL }
         },
         { &hf_vcdu_replay,
@@ -617,7 +605,7 @@ proto_register_vcdu(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_vcdu,
         &ett_smex,
         &ett_vcduh,
@@ -646,13 +634,14 @@ proto_register_vcdu(void)
     vcdu_uat = uat_new("Bitstream Channel Table",
         sizeof(uat_channel_t),
         "vcdu_bitstream_channels",
-        TRUE,
+        true,
         &uat_bitchannels,
         &num_channels_uat,
         UAT_AFFECTS_DISSECTION, /* affects dissection of packets, but not set of named fields */
         NULL,
         NULL,
         vcdu_uat_data_update_cb,
+        NULL,
         NULL,
         NULL,
         vcdu_uat_flds);
@@ -669,12 +658,12 @@ proto_register_vcdu(void)
 void
 proto_reg_handoff_vcdu(void)
 {
-    dissector_add_for_decode_as("udp.port", vcdu_handle);
+    dissector_add_for_decode_as_with_preference("udp.port", vcdu_handle);
     ccsds_handle = find_dissector_add_dependency("ccsds", proto_vcdu);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

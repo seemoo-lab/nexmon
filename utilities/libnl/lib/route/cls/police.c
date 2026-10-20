@@ -1,35 +1,29 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/police.c	Policer
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2006 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  */
 
-#include <netlink-local.h>
-#include <netlink-tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink/route/tc.h>
 #include <netlink/route/classifier.h>
-#include <netlink/route/classifier-modules.h>
 #include <netlink/route/cls/police.h>
+
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /**
  * @name Policer Type
  * @{
  */
 
-static struct trans_tbl police_types[] = {
-	__ADD(TC_POLICE_UNSPEC,unspec)
-	__ADD(TC_POLICE_OK,ok)
-	__ADD(TC_POLICE_RECLASSIFY,reclassify)
-	__ADD(TC_POLICE_SHOT,shot)
+static const struct trans_tbl police_types[] = {
+	__ADD(TC_POLICE_UNSPEC,unspec),
+	__ADD(TC_POLICE_OK,ok),
+	__ADD(TC_POLICE_RECLASSIFY,reclassify),
+	__ADD(TC_POLICE_SHOT,shot),
 #ifdef TC_POLICE_PIPE
-	__ADD(TC_POLICE_PIPE,pipe)
+	__ADD(TC_POLICE_PIPE,pipe),
 #endif
 };
 

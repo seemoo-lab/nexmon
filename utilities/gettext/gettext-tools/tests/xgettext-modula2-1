@@ -1,0 +1,102 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Modula-2 support: Simple things.
+
+cat <<\EOF > xg-m2-1.mod
+BEGIN
+  (* A one-line comment. *)
+  test1 = Gettext("Test String 1");
+  (* Two one-line *)
+  (* comments *)
+  test2 = Gettext("Test String 2");
+  (* A multi-line
+     comment.  *)
+  test3 = Gettext("Test String 3");
+  (* A (* nesting *) (* one-line *) comment. *)
+  test4 = Gettext("Test String 4");
+  (* A (*
+     nesting
+     *)
+     (*
+     multi-line *)
+     comment. *)
+  test5 = Gettext("Test String 5");
+  (*
+    Gettext("Not extracted");
+  *)
+  dummy;
+  (* Modula-2 has string literal concatenation. *)
+  test6 = Gettext("Test " +
+  "String "
+  + "6");
+  (* Empty string. *)
+  test7 = Gettext("");
+
+  (* Sprintf1 expects a format string. *)
+  Sprintf1(Gettext("weight %u"), w);
+
+  WriteString(Gettext("Test string 10"));
+  WriteString(Sprintf1(NGettext("%0s piece of cake", "%s pieces of cake", n), s));
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -c -d xg-m2-1.tmp xg-m2-1.mod || Exit 1
+LC_ALL=C tr -d '\r' < xg-m2-1.tmp.po > xg-m2-1.po || Exit 1
+
+cat <<\EOF > xg-m2-1.ok
+#. A one-line comment.
+msgid "Test String 1"
+msgstr ""
+
+#. Two one-line
+#. comments
+msgid "Test String 2"
+msgstr ""
+
+#. A multi-line
+#. comment.
+msgid "Test String 3"
+msgstr ""
+
+#. A (* nesting *) (* one-line *) comment.
+msgid "Test String 4"
+msgstr ""
+
+#. A (*
+#. nesting
+#. *)
+#. (*
+#. multi-line *)
+#. comment.
+msgid "Test String 5"
+msgstr ""
+
+#. Modula-2 has string literal concatenation.
+msgid "Test String 6"
+msgstr ""
+
+#. Empty string.
+msgid ""
+msgstr ""
+
+#. Sprintf1 expects a format string.
+#, modula2-format
+msgid "weight %u"
+msgstr ""
+
+msgid "Test string 10"
+msgstr ""
+
+#, modula2-format
+msgid "%0s piece of cake"
+msgid_plural "%s pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-m2-1.ok xg-m2-1.po || Exit 1
+
+exit 0

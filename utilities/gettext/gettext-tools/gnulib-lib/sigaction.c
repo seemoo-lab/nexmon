@@ -1,19 +1,19 @@
 /* POSIX compatible signal blocking.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
    Written by Eric Blake <ebb9@byu.net>, 2008.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -67,7 +67,7 @@
 /* On native Windows, as of 2008, the signal SIGABRT_COMPAT is an alias
    for the signal SIGABRT.  Only one signal handler is stored for both
    SIGABRT and SIGABRT_COMPAT.  SIGABRT_COMPAT is not a signal of its own.  */
-#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
+#if defined _WIN32 && ! defined __CYGWIN__
 # undef SIGABRT_COMPAT
 # define SIGABRT_COMPAT 6
 #endif
@@ -83,9 +83,6 @@ static struct sigaction volatile action_array[NSIG] /* = 0 */;
 static void
 sigaction_handler (int sig)
 {
-  handler_t handler;
-  sigset_t mask;
-  sigset_t oldmask;
   int saved_errno = errno;
   if (sig < 0 || NSIG <= sig || !action_array[sig].sa_handler)
     {
@@ -103,16 +100,17 @@ sigaction_handler (int sig)
      asynchronous instance of the same signal occurring before we
      reinstall the handler will trigger the default handler; oh
      well.  */
-  handler = action_array[sig].sa_handler;
+  handler_t handler = action_array[sig].sa_handler;
   if ((action_array[sig].sa_flags & SA_RESETHAND) == 0)
     signal (sig, sigaction_handler);
   else
     action_array[sig].sa_handler = NULL;
 
   /* Block appropriate signals.  */
-  mask = action_array[sig].sa_mask;
+  sigset_t mask = action_array[sig].sa_mask;
   if ((action_array[sig].sa_flags & SA_NODEFER) == 0)
     sigaddset (&mask, sig);
+  sigset_t oldmask;
   sigprocmask (SIG_BLOCK, &mask, &oldmask);
 
   /* Invoke the user's handler, then restore prior mask.  */
@@ -131,10 +129,6 @@ int
 sigaction (int sig, const struct sigaction *restrict act,
            struct sigaction *restrict oact)
 {
-  sigset_t mask;
-  sigset_t oldmask;
-  int saved_errno;
-
   if (sig < 0 || NSIG <= sig || sig == SIGKILL || sig == SIGSTOP
       || (act && act->sa_handler == SIG_ERR))
     {
@@ -157,7 +151,9 @@ sigaction (int sig, const struct sigaction *restrict act,
      replacement does not try to use sigaction() from its handler.  */
   if (!act && !oact)
     return 0;
+  sigset_t mask;
   sigfillset (&mask);
+  sigset_t oldmask;
   sigprocmask (SIG_BLOCK, &mask, &oldmask);
   if (oact)
     {
@@ -197,8 +193,10 @@ sigaction (int sig, const struct sigaction *restrict act,
   return 0;
 
  failure:
-  saved_errno = errno;
-  sigprocmask (SIG_SETMASK, &oldmask, NULL);
-  errno = saved_errno;
-  return -1;
+  {
+    int saved_errno = errno;
+    sigprocmask (SIG_SETMASK, &oldmask, NULL);
+    errno = saved_errno;
+    return -1;
+  }
 }

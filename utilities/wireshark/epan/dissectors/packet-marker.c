@@ -1,6 +1,6 @@
 /* packet-marker.c
  * Routines for Link Aggregation Marker protocol dissection.
- * IEEE Std 802.1AX
+ * IEEE Std 802.1AX-2014 Section 6.5
  *
  * Copyright 2002 Steve Housley <steve_housley@3com.com>
  * Copyright 2005 Dominique Bastien <dbastien@accedian.com>
@@ -9,136 +9,137 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/to_str.h>
+#include <epan/expert.h>
 #include <epan/slow_protocol_subtypes.h>
 
 /* General declarations */
 void proto_register_marker(void);
 void proto_reg_handoff_marker(void);
 
+static dissector_handle_t marker_handle;
+
 /* MARKER TLVs subtype */
-#define MARKERPDU_END_MARKER            0x0
+#define MARKER_TERMINATOR               0x0
 #define MARKERPDU_MARKER_INFO           0x1
 #define MARKERPDU_MARKER_RESPONSE       0x2
 
 static const value_string marker_vals[] = {
+    { MARKER_TERMINATOR,         "Marker Terminator" },
     { MARKERPDU_MARKER_INFO,     "Marker Information" },
     { MARKERPDU_MARKER_RESPONSE, "Marker Response Information" },
     { 0, NULL }
 };
 
 /* Initialise the protocol and registered fields */
-static int proto_marker = -1;
+static int proto_marker;
 
-static int hf_marker_version_number = -1;
-static int hf_marker_tlv_type = -1;
-static int hf_marker_tlv_length = -1;
-static int hf_marker_req_port = -1;
-static int hf_marker_req_system = -1;
-static int hf_marker_req_trans_id = -1;
+static int hf_marker_version_number;
+static int hf_marker_tlv_type;
+static int hf_marker_tlv_length;
+static int hf_marker_req_port;
+static int hf_marker_req_system;
+static int hf_marker_req_trans_id;
+static int hf_marker_req_pad;
+static int hf_marker_reserved;
+
+/* Expert Items */
+static expert_field ei_marker_wrong_tlv_type;
+static expert_field ei_marker_wrong_tlv_length;
+static expert_field ei_marker_wrong_pad_value;
 
 /* Initialise the subtree pointers */
+static int ett_marker;
 
-static gint ett_marker = -1;
-
-/*
- * Name: dissect_marker
- *
- * Description:
- *    This function is used to dissect the Link Aggregation Marker Protocol
- *    slow protocols defined in IEEE802.3 clause 43.5 (The PDUs are defined
- *    in section 43.5.3.2). The TLV types are 0x01 for a marker TLV and 0x02
- *    for a marker response. A value of 0x00 indicates an end of message.
- *
- * Input Arguments:
- *    tvb:   buffer associated with the rcv packet (see tvbuff.h).
- *    pinfo: structure associated with the rcv packet (see packet_info.h).
- *    tree:  the protocol tree associated with the rcv packet (see proto.h).
- *
- * Return Values: None
- *
- * Notes:
- *    Dominique Bastien (dbastien@accedian.com)
- *      + add support for MARKER and MARKER Response PDUs.
- */
 static int
 dissect_marker(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    int     offset = 0;
-    guint8  raw_octet;
+    int           offset = 0;
+    unsigned      tlv_type, tlv_length;
+    unsigned      port, transactionid, pad;
+    const char   *sysidstr;
 
     proto_tree *marker_tree;
-    proto_item *marker_item;
-
+    proto_item *marker_item, *tlv_type_item, *tlv_length_item, *pad_item;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Marker");
     col_set_str(pinfo->cinfo, COL_INFO, "Marker Protocol");
 
-    if (tree)
-    {
-        marker_item = proto_tree_add_protocol_format(tree, proto_marker, tvb,
-                            0, -1, "Marker Protocol");
-        marker_tree = proto_item_add_subtree(marker_item, ett_marker);
+    marker_item = proto_tree_add_protocol_format(tree, proto_marker, tvb,
+        0, -1, "Marker Protocol");
+    marker_tree = proto_item_add_subtree(marker_item, ett_marker);
 
-        /* Version Number */
-        proto_tree_add_item(marker_tree, hf_marker_version_number, tvb,
-                offset, 1, ENC_BIG_ENDIAN);
-        offset += 1;
+    proto_tree_add_item(marker_tree, hf_marker_version_number, tvb,
+        offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
 
-        while (1)
-        {
-            /* TLV Type */
-            raw_octet = tvb_get_guint8(tvb, offset);
+    tlv_type_item = proto_tree_add_item_ret_uint(marker_tree, hf_marker_tlv_type, tvb,
+        offset, 1, ENC_BIG_ENDIAN, &tlv_type);
+    offset += 1;
 
-            if (raw_octet == MARKERPDU_END_MARKER)
-                break;
+    tlv_length_item = proto_tree_add_item_ret_uint(marker_tree, hf_marker_tlv_length, tvb,
+        offset, 1, ENC_BIG_ENDIAN, &tlv_length);
+    offset += 1;
 
-            proto_tree_add_uint(marker_tree, hf_marker_tlv_type, tvb,
-                    offset, 1, raw_octet);
-            offset += 1;
-
-            /* TLV Length */
-            proto_tree_add_item(marker_tree, hf_marker_tlv_length, tvb,
-                    offset, 1, ENC_BIG_ENDIAN);
-            offset += 1;
-
-            /* Requester Port */
-            proto_tree_add_item(marker_tree, hf_marker_req_port, tvb,
-                    offset, 2, ENC_BIG_ENDIAN);
-            offset += 2;
-
-            /* Requester System */
-            proto_tree_add_item(marker_tree, hf_marker_req_system, tvb,
-                    offset, 6, ENC_NA);
-            offset += 6;
-
-            /* Requester Transaction ID */
-            proto_tree_add_item(marker_tree, hf_marker_req_trans_id, tvb,
-                    offset, 4, ENC_BIG_ENDIAN);
-            offset += 4;
-
-            /* Pad to align */
-            offset += 2;
-        }
+    if (tlv_type == MARKERPDU_MARKER_INFO) {
+        col_set_str(pinfo->cinfo, COL_INFO, "Information");
+    } else if (tlv_type == MARKERPDU_MARKER_RESPONSE) {
+        col_set_str(pinfo->cinfo, COL_INFO, "Response");
+    } else {
+        expert_add_info(pinfo, tlv_type_item, &ei_marker_wrong_tlv_type);
     }
-    return tvb_captured_length(tvb);
+    if (tlv_length != 16) {
+        expert_add_info(pinfo, tlv_length_item, &ei_marker_wrong_tlv_length);
+    }
+    proto_tree_add_item_ret_uint(marker_tree, hf_marker_req_port, tvb,
+        offset, 2, ENC_BIG_ENDIAN, &port);
+    offset += 2;
+
+    proto_tree_add_item(marker_tree, hf_marker_req_system, tvb,
+        offset, 6, ENC_NA);
+    sysidstr = tvb_ether_to_str(pinfo->pool, tvb, offset);
+    offset += 6;
+
+    proto_tree_add_item_ret_uint(marker_tree, hf_marker_req_trans_id, tvb,
+        offset, 4, ENC_BIG_ENDIAN, &transactionid);
+    offset += 4;
+
+    col_append_fstr(pinfo->cinfo, COL_INFO, " SysId=%s, P=%d, TId=%d",
+        sysidstr, port, transactionid);
+
+    pad_item = proto_tree_add_item_ret_uint(marker_tree, hf_marker_req_pad, tvb,
+        offset, 2, ENC_BIG_ENDIAN, &pad);
+    if (pad != 0) {
+        expert_add_info(pinfo, pad_item, &ei_marker_wrong_pad_value);
+    }
+    offset += 2;
+
+    proto_tree_add_item_ret_uint(marker_tree, hf_marker_tlv_type, tvb,
+        offset, 1, ENC_BIG_ENDIAN, &tlv_type);
+    offset += 1;
+
+    proto_tree_add_item_ret_uint(marker_tree, hf_marker_tlv_length, tvb,
+        offset, 1, ENC_BIG_ENDIAN, &tlv_length);
+    offset += 1;
+
+    if (tlv_type == MARKER_TERMINATOR) {
+        if (tlv_length != 0) {
+            expert_add_info(pinfo, tlv_type_item, &ei_marker_wrong_tlv_length);
+        }
+    } else {
+        expert_add_info(pinfo, tlv_type_item, &ei_marker_wrong_tlv_type);
+    }
+
+    proto_tree_add_item(marker_tree, hf_marker_reserved, tvb,
+        offset, 90, ENC_NA);
+    offset += 90;
+    return offset;
 }
 
 /* Register the protocol with Wireshark */
@@ -177,35 +178,56 @@ proto_register_marker(void)
           { "Requester Transaction ID",  "marker.requesterTransId",
             FT_UINT32,    BASE_DEC,    NULL,    0x0,
             NULL, HFILL }},
+
+        { &hf_marker_req_pad,
+          { "Requester Pad",  "marker.requesterPad",
+            FT_UINT32,    BASE_DEC,    NULL,    0x0,
+            NULL, HFILL }},
+
+        { &hf_marker_reserved,
+          { "Reserved",  "marker.reserved",
+            FT_BYTES,    BASE_NONE,    NULL,    0x0,
+            NULL, HFILL }},
     };
 
     /* Setup protocol subtree array */
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_marker,
     };
 
+    static ei_register_info ei[] = {
+    { &ei_marker_wrong_tlv_type,   { "marker.wrong_tlv_type",   PI_MALFORMED, PI_ERROR, "TLV is not expected type",   EXPFILL }},
+    { &ei_marker_wrong_tlv_length, { "marker.wrong_tlv_length", PI_MALFORMED, PI_ERROR, "TLV is not expected length", EXPFILL }},
+    { &ei_marker_wrong_pad_value,  { "marker.wrong_pad_value",  PI_PROTOCOL,  PI_WARN,  "pad value is not 0",         EXPFILL }},
+    };
+
+    expert_module_t* expert_marker;
+
+
+
     /* Register the protocol name and description */
 
-    proto_marker = proto_register_protocol("Marker", "Link Aggregation Marker Protocol", "marker");
+    proto_marker = proto_register_protocol("Link Aggregation Marker Protocol", "Marker", "marker");
 
     /* Required function calls to register the header fields and subtrees used */
 
     proto_register_field_array(proto_marker, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    expert_marker = expert_register_protocol(proto_marker);
+    expert_register_field_array(expert_marker, ei, array_length(ei));
+
+    marker_handle = register_dissector("marker", dissect_marker, proto_marker);
 }
 
 void
 proto_reg_handoff_marker(void)
 {
-    dissector_handle_t marker_handle;
-
-    marker_handle = create_dissector_handle(dissect_marker, proto_marker);
     dissector_add_uint("slow.subtype", MARKER_SUBTYPE, marker_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

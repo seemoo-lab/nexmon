@@ -1,3 +1,36 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * daniel@veillard.com
+ */
+
 /*
  * buf.c: memory buffers for libxml2
  *
@@ -6,10 +39,6 @@
  * and stay 64 bits clean.
  * The new entry point use the xmlBufPtr opaque structure and
  * xmlBuf...() counterparts to the old xmlBuf...() functions
- *
- * See Copyright for the status of this software.
- *
- * daniel@veillard.com
  */
 
 #define IN_LIBXML
@@ -49,7 +78,7 @@ struct _xmlBuf {
     size_t use;		        /* The buffer size used */
     size_t size;		/* The buffer size */
     xmlBufferPtr buffer;        /* wrapper for an old buffer */
-    int error;                  /* an error code if a failure occured */
+    int error;                  /* an error code if a failure occurred */
 };
 
 #ifdef WITH_BUFFER_COMPAT
@@ -231,7 +260,7 @@ xmlBufPtr
 xmlBufCreateStatic(void *mem, size_t size) {
     xmlBufPtr ret;
 
-    if ((mem == NULL) || (size == 0))
+    if (mem == NULL)
         return(NULL);
 
     ret = (xmlBufPtr) xmlMalloc(sizeof(xmlBuf));
@@ -701,7 +730,7 @@ xmlBufUse(const xmlBufPtr buf)
  * used in the buffer. It does not account for the terminating zero
  * usually needed
  *
- * Returns the amount or 0 if none or an error occured
+ * Returns the amount or 0 if none or an error occurred
  */
 
 size_t

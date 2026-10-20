@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,20 +33,17 @@
 
 
 /**
- * SECTION:gfileinputstream
- * @short_description: File input streaming operations
- * @include: gio/gio.h
- * @see_also: #GInputStream, #GDataInputStream, #GSeekable
+ * GFileInputStream:
  *
- * GFileInputStream provides input streams that take their
+ * `GFileInputStream` provides input streams that take their
  * content from a file.
  *
- * GFileInputStream implements #GSeekable, which allows the input 
+ * `GFileInputStream` implements [iface@Gio.Seekable], which allows the input
  * stream to jump to arbitrary positions in the file, provided the 
  * filesystem of the file allows it. To find the position of a file
- * input stream, use g_seekable_tell(). To find out if a file input
- * stream supports seeking, use g_seekable_can_seek().
- * To position a file input stream, use g_seekable_seek().
+ * input stream, use [method@Gio.Seekable.tell]. To find out if a file input
+ * stream supports seeking, use [vfunc@Gio.Seekable.can_seek].
+ * To position a file input stream, use [vfunc@Gio.Seekable.seek].
  **/
 
 static void       g_file_input_stream_seekable_iface_init    (GSeekableIface       *iface);
@@ -107,7 +106,7 @@ g_file_input_stream_init (GFileInputStream *stream)
  * g_file_input_stream_query_info:
  * @stream: a #GFileInputStream.
  * @attributes: a file attribute query string.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore. 
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore. 
  * @error: a #GError location to store the error occurring, or %NULL to 
  * ignore.
  *
@@ -146,7 +145,7 @@ g_file_input_stream_query_info (GFileInputStream  *stream,
     info = class->query_info (stream, attributes, cancellable, error);
   else
     g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                         _("Stream doesn't support query_info"));
+                         _("Stream doesn’t support query_info"));
 
   if (cancellable)
     g_cancellable_pop_current (cancellable);
@@ -173,10 +172,11 @@ async_ready_callback_wrapper (GObject      *source_object,
  * g_file_input_stream_query_info_async:
  * @stream: a #GFileInputStream.
  * @attributes: a file attribute query string.
- * @io_priority: the [I/O priority][io-priority] of the request
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore. 
- * @callback: (scope async): callback to call when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore. 
+ * @callback: (scope async): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  * 
  * Queries the stream information asynchronously.
  * When the operation is finished @callback will be called. 
@@ -391,7 +391,7 @@ query_info_async_thread (GTask        *task,
     info = class->query_info (stream, attributes, cancellable, &error);
   else
     g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                         _("Stream doesn't support query_info"));
+                         _("Stream doesn’t support query_info"));
 
   if (info == NULL)
     g_task_return_error (task, error);
@@ -410,6 +410,7 @@ g_file_input_stream_real_query_info_async (GFileInputStream    *stream,
   GTask *task;
 
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_input_stream_real_query_info_async);
   g_task_set_task_data (task, g_strdup (attributes), g_free);
   g_task_set_priority (task, io_priority);
   

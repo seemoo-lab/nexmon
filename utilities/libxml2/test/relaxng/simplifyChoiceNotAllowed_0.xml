@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<_>
+    <entryWithoutRef>
+        <form/>
+        <!-- The second element should not be reported as an error -->
+        <form/>
+        <notAllowed/>
+    </entryWithoutRef>
+    <entryWithRef>
+        <form/>
+        <!-- The second element should not be reported as an error -->
+        <form/>
+        <notAllowed/> 
+    </entryWithRef>
+</_>
+    
+    

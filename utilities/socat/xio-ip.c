@@ -125,7 +125,9 @@ int xiogetaddrinfo(const char *node, const char *service,
    int port = -1;	/* port number in network byte order */
    char *numnode = NULL;
    size_t nodelen;
+#if HAVE_RESOLV_H
    unsigned long save_res_opts = 0;
+#endif
 #if HAVE_GETADDRINFO
    struct addrinfo hints = {0};
    struct addrinfo *res = NULL;

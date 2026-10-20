@@ -23,6 +23,26 @@ _ // test
 )
 
 NSLocalizedString(@"Information", @"")
+
+// This is a C format string.
+printf (gettext ("foo %s"));
+
+// This is an Objective-C format string without Objective-C extensions.
+// Therefore it's OK to label it as a C format string.
+stringWithFormat (gettext ("bar %s"));
+
+// It is unknown whether this is used as a C format string or as an Objective-C
+// format string. But in any case, it does not have Objective-C extensions.
+// Therefore it's OK to label it as a C format string.
+gettext ("baz %s");
+
+// This is an Objective-C format string with Objective-C extensions.
+stringWithFormat (gettext ("objcbar %@"));
+
+// This is a format string with Objective-C extensions. It cannot be used as a
+// C format string. Therefore it is better to label it as an Objective-C format
+// string.
+gettext ("objcbaz %@");
 EOF
 
 : ${XGETTEXT=xgettext}
@@ -48,6 +68,31 @@ msgstr ""
 
 #: xg-ob-1.m:19
 msgid "Information"
+msgstr ""
+
+#: xg-ob-1.m:22
+#, c-format
+msgid "foo %s"
+msgstr ""
+
+#: xg-ob-1.m:26
+#, c-format
+msgid "bar %s"
+msgstr ""
+
+#: xg-ob-1.m:31
+#, c-format
+msgid "baz %s"
+msgstr ""
+
+#: xg-ob-1.m:34
+#, objc-format
+msgid "objcbar %@"
+msgstr ""
+
+#: xg-ob-1.m:39
+#, objc-format
+msgid "objcbaz %@"
 msgstr ""
 EOF
 

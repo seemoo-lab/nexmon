@@ -24,14 +24,13 @@
  * Lesser General Public License for more details.
  * 
  * You should have received a copy of the GNU Lesser General Public License
- * along with this library, in a file named COPYING; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  * 
  * For licensing issues, contact <license@farsiweb.info>.
  */
 
 #include <glib.h>
+#include <glib/gstdio.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -139,7 +138,7 @@ read_bidi_mirroring_txt (
 
       k = sscanf (s, "%lx; %lx", &i, &j);
       if (k != 2 || i >= UNICODE_CHARS || j >= UNICODE_CHARS)
-	die4 ("invalid pair in input at line %ld: %04lX, %04lX", l, i, j);
+	die4 ("invalid pair in input at line %lu: %04lX, %04lX", l, i, j);
       dist = ((signed long) j - (signed long) i);
       table[i] = dist;
       if (dist > max_dist)
@@ -158,7 +157,7 @@ read_data (
   FILE *f;
 
   fprintf (stderr, "Reading '%s'\n", data_file_name);
-  if (!(f = fopen (data_file_name, "rt")))
+  if (!(f = g_fopen (data_file_name, "rte")))
     die2 ("error: cannot open '%s' for reading", data_file_name);
 
   if (!strcmp (data_file_type, "BidiMirroring.txt"))

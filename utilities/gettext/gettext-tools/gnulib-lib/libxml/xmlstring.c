@@ -1,16 +1,45 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * UTF8 string routines from:
+ * William Brack <wbrack@mmm.com.hk>
+ *
+ * daniel@veillard.com
+ */
+
 /*
  * string.c : an XML string utilities module
  *
  * This module provides various utility functions for manipulating
  * the xmlChar* type. All functions named xmlStr* have been moved here
  * from the parser.c file (their original home).
- *
- * See Copyright for the status of this software.
- *
- * UTF8 string routines from:
- * William Brack <wbrack@mmm.com.hk>
- *
- * daniel@veillard.com
  */
 
 #define IN_LIBXML
@@ -440,8 +469,8 @@ xmlStrlen(const xmlChar *str) {
  * first bytes of @add. Note that if @len < 0 then this is an API error
  * and NULL will be returned.
  *
- * Returns a new xmlChar *, the original @cur is reallocated if needed
- * and should not be freed
+ * Returns a new xmlChar *, the original @cur is reallocated and should
+ * not be freed.
  */
 
 xmlChar *
@@ -457,6 +486,8 @@ xmlStrncat(xmlChar *cur, const xmlChar *add, int len) {
         return(xmlStrndup(add, len));
 
     size = xmlStrlen(cur);
+    if (size < 0)
+        return(NULL);
     ret = (xmlChar *) xmlRealloc(cur, (size + len + 1) * sizeof(xmlChar));
     if (ret == NULL) {
         xmlErrMemory(NULL, NULL);
@@ -484,14 +515,19 @@ xmlStrncatNew(const xmlChar *str1, const xmlChar *str2, int len) {
     int size;
     xmlChar *ret;
 
-    if (len < 0)
+    if (len < 0) {
         len = xmlStrlen(str2);
+        if (len < 0)
+            return(NULL);
+    }
     if ((str2 == NULL) || (len == 0))
         return(xmlStrdup(str1));
     if (str1 == NULL)
         return(xmlStrndup(str2, len));
 
     size = xmlStrlen(str1);
+    if (size < 0)
+        return(NULL);
     ret = (xmlChar *) xmlMalloc((size + len + 1) * sizeof(xmlChar));
     if (ret == NULL) {
         xmlErrMemory(NULL, NULL);
@@ -512,7 +548,8 @@ xmlStrncatNew(const xmlChar *str1, const xmlChar *str2, int len) {
  * encoded in UTF-8 or an encoding with 8bit based chars, we assume
  * a termination mark of '0'.
  *
- * Returns a new xmlChar * containing the concatenated string.
+ * Returns a new xmlChar * containing the concatenated string. The original
+ * @cur is reallocated and should not be freed.
  */
 xmlChar *
 xmlStrcat(xmlChar *cur, const xmlChar *add) {
@@ -538,7 +575,7 @@ xmlStrcat(xmlChar *cur, const xmlChar *add) {
  * Returns the number of characters written to @buf or -1 if an error occurs.
  */
 int XMLCDECL
-xmlStrPrintf(xmlChar *buf, int len, const xmlChar *msg, ...) {
+xmlStrPrintf(xmlChar *buf, int len, const char *msg, ...) {
     va_list args;
     int ret;
 
@@ -566,7 +603,7 @@ xmlStrPrintf(xmlChar *buf, int len, const xmlChar *msg, ...) {
  * Returns the number of characters written to @buf or -1 if an error occurs.
  */
 int
-xmlStrVPrintf(xmlChar *buf, int len, const xmlChar *msg, va_list ap) {
+xmlStrVPrintf(xmlChar *buf, int len, const char *msg, va_list ap) {
     int ret;
 
     if((buf == NULL) || (msg == NULL)) {
@@ -815,7 +852,7 @@ xmlCheckUTF8(const unsigned char *utf)
  * @len:  the number of characters in the array
  *
  * storage size of an UTF8 string
- * the behaviour is not garanteed if the input string is not UTF-8
+ * the behaviour is not guaranteed if the input string is not UTF-8
  *
  * Returns the storage size of
  * the first 'len' characters of ARRAY
@@ -837,8 +874,8 @@ xmlUTF8Strsize(const xmlChar *utf, int len) {
             break;
         if ( (ch = *ptr++) & 0x80)
             while ((ch<<=1) & 0x80 ) {
-                ptr++;
 		if (*ptr == 0) break;
+                ptr++;
 	    }
     }
     return (ptr - utf);
@@ -978,6 +1015,61 @@ xmlUTF8Strsub(const xmlChar *utf, int start, int len) {
     }
 
     return(xmlUTF8Strndup(utf, len));
+}
+
+/**
+ * xmlEscapeFormatString:
+ * @msg:  a pointer to the string in which to escape '%' characters.
+ * Must be a heap-allocated buffer created by libxml2 that may be
+ * returned, or that may be freed and replaced.
+ *
+ * Replaces the string pointed to by 'msg' with an escaped string.
+ * Returns the same string with all '%' characters escaped.
+ */
+xmlChar *
+xmlEscapeFormatString(xmlChar **msg)
+{
+    xmlChar *msgPtr = NULL;
+    xmlChar *result = NULL;
+    xmlChar *resultPtr = NULL;
+    size_t count = 0;
+    size_t msgLen = 0;
+    size_t resultLen = 0;
+
+    if (!msg || !*msg)
+        return(NULL);
+
+    for (msgPtr = *msg; *msgPtr != '\0'; ++msgPtr) {
+        ++msgLen;
+        if (*msgPtr == '%')
+            ++count;
+    }
+
+    if (count == 0)
+        return(*msg);
+
+    resultLen = msgLen + count + 1;
+    result = (xmlChar *) xmlMallocAtomic(resultLen * sizeof(xmlChar));
+    if (result == NULL) {
+        /* Clear *msg to prevent format string vulnerabilities in
+           out-of-memory situations. */
+        xmlFree(*msg);
+        *msg = NULL;
+        xmlErrMemory(NULL, NULL);
+        return(NULL);
+    }
+
+    for (msgPtr = *msg, resultPtr = result; *msgPtr != '\0'; ++msgPtr, ++resultPtr) {
+        *resultPtr = *msgPtr;
+        if (*msgPtr == '%')
+            *(++resultPtr) = '%';
+    }
+    result[resultLen - 1] = '\0';
+
+    xmlFree(*msg);
+    *msg = result;
+
+    return *msg;
 }
 
 #define bottom_xmlstring

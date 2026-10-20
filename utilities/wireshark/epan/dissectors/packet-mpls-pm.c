@@ -11,25 +11,16 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-ip.h"
+#include "packet-mpls.h"
 
 void proto_register_mpls_pm(void);
 void proto_reg_handoff_mpls_pm(void);
@@ -46,83 +37,83 @@ void proto_reg_handoff_mpls_pm(void);
 #define MPLS_PM_DFLAGS_RES  0x30
 #define MPLS_PM_DFLAGS_MASK 0xF0
 
-static gint proto_mpls_pm_dlm = -1;
-static gint proto_mpls_pm_ilm = -1;
-static gint proto_mpls_pm_dm = -1;
-static gint proto_mpls_pm_dlm_dm = -1;
-static gint proto_mpls_pm_ilm_dm = -1;
+static int proto_mpls_pm_dlm;
+static int proto_mpls_pm_ilm;
+static int proto_mpls_pm_dm;
+static int proto_mpls_pm_dlm_dm;
+static int proto_mpls_pm_ilm_dm;
 
-static gint ett_mpls_pm = -1;
-static gint ett_mpls_pm_flags = -1;
-static gint ett_mpls_pm_dflags = -1;
+static int ett_mpls_pm;
+static int ett_mpls_pm_flags;
+static int ett_mpls_pm_dflags;
 
-static int hf_mpls_pm_version = -1;
-static int hf_mpls_pm_flags = -1;
-static int hf_mpls_pm_flags_r = -1;
-static int hf_mpls_pm_flags_t = -1;
-static int hf_mpls_pm_flags_res = -1;
-static int hf_mpls_pm_query_ctrl_code = -1;
-static int hf_mpls_pm_response_ctrl_code = -1;
-static int hf_mpls_pm_length = -1;
-static int hf_mpls_pm_dflags = -1;
-static int hf_mpls_pm_dflags_x = -1;
-static int hf_mpls_pm_dflags_b = -1;
-static int hf_mpls_pm_dflags_res = -1;
-static int hf_mpls_pm_otf = -1;
-static int hf_mpls_pm_session_id = -1;
-static int hf_mpls_pm_ds = -1;
-static int hf_mpls_pm_origin_timestamp_null = -1;
-static int hf_mpls_pm_origin_timestamp_seq = -1;
-static int hf_mpls_pm_origin_timestamp_ntp = -1;
-static int hf_mpls_pm_origin_timestamp_ptp = -1;
-static int hf_mpls_pm_origin_timestamp_unk = -1;
-static int hf_mpls_pm_counter1 = -1;
-static int hf_mpls_pm_counter2 = -1;
-static int hf_mpls_pm_counter3 = -1;
-static int hf_mpls_pm_counter4 = -1;
-static int hf_mpls_pm_qtf = -1;
-static int hf_mpls_pm_qtf_combined = -1;
-static int hf_mpls_pm_rtf = -1;
-static int hf_mpls_pm_rtf_combined = -1;
-static int hf_mpls_pm_rptf = -1;
-static int hf_mpls_pm_rptf_combined = -1;
-static int hf_mpls_pm_timestamp1_q_null = -1;
-static int hf_mpls_pm_timestamp1_r_null = -1;
-static int hf_mpls_pm_timestamp1_q_seq = -1;
-static int hf_mpls_pm_timestamp1_r_seq = -1;
-static int hf_mpls_pm_timestamp1_q_ntp = -1;
-static int hf_mpls_pm_timestamp1_r_ntp = -1;
-static int hf_mpls_pm_timestamp1_q_ptp = -1;
-static int hf_mpls_pm_timestamp1_r_ptp = -1;
-static int hf_mpls_pm_timestamp1_unk = -1;
-static int hf_mpls_pm_timestamp2_q_null = -1;
-static int hf_mpls_pm_timestamp2_r_null = -1;
-static int hf_mpls_pm_timestamp2_q_seq = -1;
-static int hf_mpls_pm_timestamp2_r_seq = -1;
-static int hf_mpls_pm_timestamp2_q_ntp = -1;
-static int hf_mpls_pm_timestamp2_r_ntp = -1;
-static int hf_mpls_pm_timestamp2_q_ptp = -1;
-static int hf_mpls_pm_timestamp2_r_ptp = -1;
-static int hf_mpls_pm_timestamp2_unk = -1;
-static int hf_mpls_pm_timestamp3_null = -1;
-static int hf_mpls_pm_timestamp3_r_null = -1;
-static int hf_mpls_pm_timestamp3_r_seq = -1;
-static int hf_mpls_pm_timestamp3_r_ntp = -1;
-static int hf_mpls_pm_timestamp3_r_ptp = -1;
-static int hf_mpls_pm_timestamp3_unk = -1;
-static int hf_mpls_pm_timestamp4_null = -1;
-static int hf_mpls_pm_timestamp4_r_null = -1;
-static int hf_mpls_pm_timestamp4_r_seq = -1;
-static int hf_mpls_pm_timestamp4_r_ntp = -1;
-static int hf_mpls_pm_timestamp4_r_ptp = -1;
-static int hf_mpls_pm_timestamp4_unk = -1;
+static int hf_mpls_pm_version;
+static int hf_mpls_pm_flags;
+static int hf_mpls_pm_flags_r;
+static int hf_mpls_pm_flags_t;
+static int hf_mpls_pm_flags_res;
+static int hf_mpls_pm_query_ctrl_code;
+static int hf_mpls_pm_response_ctrl_code;
+static int hf_mpls_pm_length;
+static int hf_mpls_pm_dflags;
+static int hf_mpls_pm_dflags_x;
+static int hf_mpls_pm_dflags_b;
+static int hf_mpls_pm_dflags_res;
+static int hf_mpls_pm_otf;
+static int hf_mpls_pm_session_id;
+static int hf_mpls_pm_ds;
+static int hf_mpls_pm_origin_timestamp_null;
+static int hf_mpls_pm_origin_timestamp_seq;
+static int hf_mpls_pm_origin_timestamp_ntp;
+static int hf_mpls_pm_origin_timestamp_ptp;
+static int hf_mpls_pm_origin_timestamp_unk;
+static int hf_mpls_pm_counter1;
+static int hf_mpls_pm_counter2;
+static int hf_mpls_pm_counter3;
+static int hf_mpls_pm_counter4;
+static int hf_mpls_pm_qtf;
+static int hf_mpls_pm_qtf_combined;
+static int hf_mpls_pm_rtf;
+static int hf_mpls_pm_rtf_combined;
+static int hf_mpls_pm_rptf;
+static int hf_mpls_pm_rptf_combined;
+static int hf_mpls_pm_timestamp1_q_null;
+static int hf_mpls_pm_timestamp1_r_null;
+static int hf_mpls_pm_timestamp1_q_seq;
+static int hf_mpls_pm_timestamp1_r_seq;
+static int hf_mpls_pm_timestamp1_q_ntp;
+static int hf_mpls_pm_timestamp1_r_ntp;
+static int hf_mpls_pm_timestamp1_q_ptp;
+static int hf_mpls_pm_timestamp1_r_ptp;
+static int hf_mpls_pm_timestamp1_unk;
+static int hf_mpls_pm_timestamp2_q_null;
+static int hf_mpls_pm_timestamp2_r_null;
+static int hf_mpls_pm_timestamp2_q_seq;
+static int hf_mpls_pm_timestamp2_r_seq;
+static int hf_mpls_pm_timestamp2_q_ntp;
+static int hf_mpls_pm_timestamp2_r_ntp;
+static int hf_mpls_pm_timestamp2_q_ptp;
+static int hf_mpls_pm_timestamp2_r_ptp;
+static int hf_mpls_pm_timestamp2_unk;
+static int hf_mpls_pm_timestamp3_null;
+static int hf_mpls_pm_timestamp3_r_null;
+static int hf_mpls_pm_timestamp3_r_seq;
+static int hf_mpls_pm_timestamp3_r_ntp;
+static int hf_mpls_pm_timestamp3_r_ptp;
+static int hf_mpls_pm_timestamp3_unk;
+static int hf_mpls_pm_timestamp4_null;
+static int hf_mpls_pm_timestamp4_r_null;
+static int hf_mpls_pm_timestamp4_r_seq;
+static int hf_mpls_pm_timestamp4_r_ntp;
+static int hf_mpls_pm_timestamp4_r_ptp;
+static int hf_mpls_pm_timestamp4_unk;
 
 /*
  * FF: please keep this list in sync with
  * http://www.iana.org/assignments/mpls-lsp-ping-parameters
  * Registry Name: 'Loss/Delay Measurement Control Code: Query Codes'
  */
-const range_string mpls_pm_query_ctrl_code_rvals[] = {
+static const range_string mpls_pm_query_ctrl_code_rvals[] = {
     { 0x00, 0x00, "In-band Response Requested"     },
     { 0x01, 0x01, "Out-of-band Response Requested" },
     { 0x02, 0x02, "No Response Requested"          },
@@ -135,7 +126,7 @@ const range_string mpls_pm_query_ctrl_code_rvals[] = {
  * http://www.iana.org/assignments/mpls-lsp-ping-parameters
  * Registry Name: 'Loss/Delay Measurement Control Code: Response Codes'
  */
-const range_string mpls_pm_response_ctrl_code_rvals[] = {
+static const range_string mpls_pm_response_ctrl_code_rvals[] = {
     { 0x00, 0x00, "Reserved"                            },
     { 0x01, 0x01, "Success"                             },
     { 0x02, 0x02, "Data Format Invalid"                 },
@@ -185,7 +176,7 @@ static const value_string pmt_vals[] = {
 #define MPLS_PM_TSF_SEQ 1
 #define MPLS_PM_TSF_NTP 2
 #define MPLS_PM_TSF_PTP 3
-const range_string mpls_pm_time_stamp_format_rvals[] = {
+static const range_string mpls_pm_time_stamp_format_rvals[] = {
     { MPLS_PM_TSF_NULL, MPLS_PM_TSF_NULL,
       "Null Timestamp"                                   },
     { MPLS_PM_TSF_SEQ, MPLS_PM_TSF_SEQ,
@@ -200,8 +191,8 @@ const range_string mpls_pm_time_stamp_format_rvals[] = {
 
 static void
 mpls_pm_dissect_counter(tvbuff_t *tvb, proto_tree *pm_tree,
-                        guint32 offset, gboolean query, gboolean bflag,
-                        guint8 i)
+                        uint32_t offset, bool query, bool bflag,
+                        uint8_t i)
 {
     proto_item *ti;
     /*
@@ -209,7 +200,7 @@ mpls_pm_dissect_counter(tvbuff_t *tvb, proto_tree *pm_tree,
      *  fields represent octet counts.  Otherwise Counter 1-4 fields
      *  represent packet counts
      */
-    const gchar *unit = bflag ? "octets" : "packets";
+    const char *unit = bflag ? "octets" : "packets";
 
     if (query) {
         switch (i) {
@@ -265,8 +256,8 @@ mpls_pm_dissect_counter(tvbuff_t *tvb, proto_tree *pm_tree,
 
 static void
 mpls_pm_dissect_timestamp(tvbuff_t *tvb, proto_tree *pm_tree,
-                          guint32 offset, guint8 qtf, guint8 rtf,
-                          gboolean query, guint8 i)
+                          uint32_t offset, uint8_t qtf, uint8_t rtf,
+                          bool query, uint8_t i)
 {
     if (query) {
         /*
@@ -296,13 +287,8 @@ mpls_pm_dissect_timestamp(tvbuff_t *tvb, proto_tree *pm_tree,
                                     offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN);
                 break;
             case MPLS_PM_TSF_PTP:
-                {
-                    nstime_t ts;
-                    ts.secs = tvb_get_ntohl(tvb, offset);
-                    ts.nsecs = tvb_get_ntohl(tvb, offset + 4);
-                    proto_tree_add_time(pm_tree, hf_mpls_pm_timestamp1_q_ptp,
-                                        tvb, offset, 8, &ts);
-                }
+                proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp1_q_ptp, tvb,
+                                    offset, 8, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
                 break;
             default:
                 proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp1_unk, tvb,
@@ -326,13 +312,8 @@ mpls_pm_dissect_timestamp(tvbuff_t *tvb, proto_tree *pm_tree,
                                     offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN);
                 break;
             case MPLS_PM_TSF_PTP:
-                {
-                    nstime_t ts;
-                    ts.secs = tvb_get_ntohl(tvb, offset);
-                    ts.nsecs = tvb_get_ntohl(tvb, offset + 4);
-                    proto_tree_add_time(pm_tree, hf_mpls_pm_timestamp2_q_ptp,
-                                        tvb, offset, 8, &ts);
-                }
+                proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp2_q_ptp, tvb,
+                                    offset, 8, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
                 break;
             default:
                 proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp2_unk, tvb,
@@ -383,13 +364,8 @@ mpls_pm_dissect_timestamp(tvbuff_t *tvb, proto_tree *pm_tree,
                                     offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN);
                 break;
             case MPLS_PM_TSF_PTP:
-                {
-                    nstime_t ts;
-                    ts.secs = tvb_get_ntohl(tvb, offset);
-                    ts.nsecs = tvb_get_ntohl(tvb, offset + 4);
-                    proto_tree_add_time(pm_tree, hf_mpls_pm_timestamp1_r_ptp,
-                                        tvb, offset, 8, &ts);
-                }
+                proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp1_r_ptp, tvb,
+                                    offset, 8, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
                 break;
             default:
                 proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp1_unk, tvb,
@@ -413,13 +389,8 @@ mpls_pm_dissect_timestamp(tvbuff_t *tvb, proto_tree *pm_tree,
                                     offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN);
                 break;
             case MPLS_PM_TSF_PTP:
-                {
-                    nstime_t ts;
-                    ts.secs = tvb_get_ntohl(tvb, offset);
-                    ts.nsecs = tvb_get_ntohl(tvb, offset + 4);
-                    proto_tree_add_time(pm_tree, hf_mpls_pm_timestamp2_r_ptp,
-                                        tvb, offset, 8, &ts);
-                }
+                proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp2_r_ptp, tvb,
+                                    offset, 8, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
                 break;
             default:
                 proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp2_unk, tvb,
@@ -443,13 +414,8 @@ mpls_pm_dissect_timestamp(tvbuff_t *tvb, proto_tree *pm_tree,
                                     offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN);
                 break;
             case MPLS_PM_TSF_PTP:
-                {
-                    nstime_t ts;
-                    ts.secs = tvb_get_ntohl(tvb, offset);
-                    ts.nsecs = tvb_get_ntohl(tvb, offset + 4);
-                    proto_tree_add_time(pm_tree, hf_mpls_pm_timestamp3_r_ptp,
-                                        tvb, offset, 8, &ts);
-                }
+                proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp3_r_ptp, tvb,
+                                    offset, 8, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
                 break;
             default:
                 proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp3_unk, tvb,
@@ -473,13 +439,8 @@ mpls_pm_dissect_timestamp(tvbuff_t *tvb, proto_tree *pm_tree,
                                     offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN);
                 break;
             case MPLS_PM_TSF_PTP:
-                {
-                    nstime_t ts;
-                    ts.secs = tvb_get_ntohl(tvb, offset);
-                    ts.nsecs = tvb_get_ntohl(tvb, offset + 4);
-                    proto_tree_add_time(pm_tree, hf_mpls_pm_timestamp4_r_ptp,
-                                        tvb, offset, 8, &ts);
-                }
+                proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp4_r_ptp, tvb,
+                                    offset, 8, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
                 break;
             default:
                 proto_tree_add_item(pm_tree, hf_mpls_pm_timestamp4_unk, tvb,
@@ -496,17 +457,17 @@ mpls_pm_dissect_timestamp(tvbuff_t *tvb, proto_tree *pm_tree,
 
 static void
 mpls_pm_build_cinfo(tvbuff_t *tvb, packet_info *pinfo, const char *str_pmt,
-                    gboolean *query, gboolean *response,
-                    gboolean *class_specific,
-                    guint32  *sid, guint8 *code)
+                    bool *query, bool *response,
+                    bool *class_specific,
+                    uint32_t *sid, uint8_t *code)
 {
     col_add_fstr(pinfo->cinfo, COL_PROTOCOL, "MPLS PM (%s)", str_pmt);
     col_clear(pinfo->cinfo, COL_INFO);
 
-    *response = (tvb_get_guint8(tvb, 0) & 0x08) ? TRUE : FALSE;
-    *class_specific = (tvb_get_guint8(tvb, 0) & 0x04) ? TRUE : FALSE;
+    *response = (tvb_get_uint8(tvb, 0) & 0x08) ? true : false;
+    *class_specific = (tvb_get_uint8(tvb, 0) & 0x04) ? true : false;
     *query = !(*response);
-    *code = tvb_get_guint8(tvb, 1);
+    *code = tvb_get_uint8(tvb, 1);
 
     if (!(*class_specific)) {
         /*
@@ -525,9 +486,9 @@ mpls_pm_build_cinfo(tvbuff_t *tvb, packet_info *pinfo, const char *str_pmt,
         col_add_fstr(pinfo->cinfo, COL_INFO,
                      "Response, sid: %u, code: %s (%u)",
                      *sid,
-                     rval_to_str(*code,
-                                 mpls_pm_response_ctrl_code_rvals,
-                                 "Unknown"),
+                     rval_to_str_const(*code,
+                                       mpls_pm_response_ctrl_code_rvals,
+                                       "Unknown"),
                      *code);
     }
 }
@@ -535,21 +496,21 @@ mpls_pm_build_cinfo(tvbuff_t *tvb, packet_info *pinfo, const char *str_pmt,
 /* FF: the message formats for direct and inferred LM are identical */
 static void
 dissect_mpls_pm_loss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                     guint8 pmt)
+                     uint8_t pmt)
 {
     proto_item *ti             = NULL;
     proto_tree *pm_tree;
     proto_tree *pm_tree_flags;
     proto_tree *pm_tree_dflags;
-    guint32     offset         = 0;
-    gboolean    query          = 0;
-    gboolean    response       = 0;
-    gboolean    class_specific = 0;
-    guint32     sid            = 0;
-    guint8      code           = 0;
-    guint8      otf;
-    gboolean    bflag;
-    guint8      i;
+    uint32_t    offset         = 0;
+    bool        query          = 0;
+    bool        response       = 0;
+    bool        class_specific = 0;
+    uint32_t    sid            = 0;
+    uint8_t     code           = 0;
+    uint8_t     otf;
+    bool        bflag;
+    uint8_t     i;
 
     mpls_pm_build_cinfo(tvb, pinfo,
                         val_to_str_const(pmt, pmt_vals, ""),
@@ -603,13 +564,13 @@ dissect_mpls_pm_loss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     pm_tree_dflags = proto_item_add_subtree(ti, ett_mpls_pm_dflags);
     proto_tree_add_item(pm_tree_dflags, hf_mpls_pm_dflags_x, tvb,
                         offset, 1, ENC_NA);
-    bflag = (tvb_get_guint8(tvb, offset) & 0x40) ? TRUE : FALSE;
+    bflag = (tvb_get_uint8(tvb, offset) & 0x40) ? true : false;
     proto_tree_add_item(pm_tree_dflags, hf_mpls_pm_dflags_b, tvb,
                         offset, 1, ENC_NA);
     proto_tree_add_item(pm_tree_dflags, hf_mpls_pm_dflags_res, tvb,
                         offset, 1, ENC_NA);
 
-    otf = tvb_get_guint8(tvb, offset) & 0x0F;
+    otf = tvb_get_uint8(tvb, offset) & 0x0F;
     proto_tree_add_item(pm_tree, hf_mpls_pm_otf, tvb,
                         offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -638,13 +599,8 @@ dissect_mpls_pm_loss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                             offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN);
         break;
     case MPLS_PM_TSF_PTP:
-        {
-            nstime_t ts;
-            ts.secs = tvb_get_ntohl(tvb, offset);
-            ts.nsecs = tvb_get_ntohl(tvb, offset + 4);
-            proto_tree_add_time(pm_tree, hf_mpls_pm_origin_timestamp_ptp, tvb,
-                                offset, 8, &ts);
-        }
+        proto_tree_add_item(pm_tree, hf_mpls_pm_origin_timestamp_ptp, tvb,
+                            offset, 8, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
         break;
     default:
         proto_tree_add_item(pm_tree, hf_mpls_pm_origin_timestamp_unk, tvb,
@@ -682,15 +638,15 @@ dissect_mpls_pm_delay(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
     proto_item *ti;
     proto_tree *pm_tree;
     proto_tree *pm_tree_flags;
-    guint32     offset         = 0;
-    gboolean    query          = 0;
-    gboolean    response       = 0;
-    gboolean    class_specific = 0;
-    guint32     sid            = 0;
-    guint8      code           = 0;
-    guint8      qtf;
-    guint8      rtf;
-    guint8      i;
+    uint32_t    offset         = 0;
+    bool        query          = 0;
+    bool        response       = 0;
+    bool        class_specific = 0;
+    uint32_t    sid            = 0;
+    uint8_t     code           = 0;
+    uint8_t     qtf;
+    uint8_t     rtf;
+    uint8_t     i;
 
     mpls_pm_build_cinfo(tvb, pinfo,
                         "DM",
@@ -728,11 +684,11 @@ dissect_mpls_pm_delay(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
     offset += 2;
 
     /* qtf, rtf */
-    qtf = (tvb_get_guint8(tvb, offset) & 0xF0) >> 4;
+    qtf = (tvb_get_uint8(tvb, offset) & 0xF0) >> 4;
     proto_tree_add_item(pm_tree, hf_mpls_pm_qtf, tvb,
                         offset, 1, ENC_BIG_ENDIAN);
 
-    rtf = tvb_get_guint8(tvb, offset) & 0x0F;
+    rtf = tvb_get_uint8(tvb, offset) & 0x0F;
     proto_tree_add_item(pm_tree, hf_mpls_pm_rtf, tvb,
                         offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -761,22 +717,22 @@ dissect_mpls_pm_delay(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 
 static void
 dissect_mpls_pm_combined(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                         guint8 pmt)
+                         uint8_t pmt)
 {
     proto_item *ti             = NULL;
     proto_tree *pm_tree;
     proto_tree *pm_tree_flags;
     proto_tree *pm_tree_dflags;
-    guint32     offset         = 0;
-    gboolean    query          = 0;
-    gboolean    response       = 0;
-    gboolean    class_specific = 0;
-    guint32     sid            = 0;
-    guint8      code           = 0;
-    guint8      qtf;
-    guint8      rtf;
-    gboolean    bflag;
-    guint8      i;
+    uint32_t    offset         = 0;
+    bool        query          = 0;
+    bool        response       = 0;
+    bool        class_specific = 0;
+    uint32_t    sid            = 0;
+    uint8_t     code           = 0;
+    uint8_t     qtf;
+    uint8_t     rtf;
+    bool        bflag;
+    uint8_t     i;
 
     mpls_pm_build_cinfo(tvb, pinfo,
                         val_to_str_const(pmt, pmt_vals, ""),
@@ -830,7 +786,7 @@ dissect_mpls_pm_combined(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     pm_tree_dflags = proto_item_add_subtree(ti, ett_mpls_pm_dflags);
     proto_tree_add_item(pm_tree_dflags, hf_mpls_pm_dflags_x, tvb,
                         offset, 1, ENC_NA);
-    bflag = (tvb_get_guint8(tvb, offset) & 0x40) ? TRUE : FALSE;
+    bflag = (tvb_get_uint8(tvb, offset) & 0x40) ? true : false;
     proto_tree_add_item(pm_tree_dflags, hf_mpls_pm_dflags_b, tvb,
                         offset, 1, ENC_NA);
     proto_tree_add_item(pm_tree_dflags, hf_mpls_pm_dflags_res, tvb,
@@ -840,13 +796,13 @@ dissect_mpls_pm_combined(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
      * FF: the roles of the OTF and Origin Timestamp fields for LM are
      * here played by the QTF and Timestamp 1 fields, respectively.
      */
-    qtf = tvb_get_guint8(tvb, offset) & 0x0F;
+    qtf = tvb_get_uint8(tvb, offset) & 0x0F;
     proto_tree_add_item(pm_tree, hf_mpls_pm_qtf_combined, tvb,
                         offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
 
     /* rtf, rptf */
-    rtf = tvb_get_guint8(tvb, offset) & 0xF0 >> 4;
+    rtf = tvb_get_uint8(tvb, offset) & 0xF0 >> 4;
     proto_tree_add_item(pm_tree, hf_mpls_pm_rtf_combined, tvb,
                         offset, 1, ENC_BIG_ENDIAN);
 
@@ -915,7 +871,7 @@ proto_register_mpls_pm(void)
             &hf_mpls_pm_flags_r,
             {
                 "Response indicator (R)", "mpls_pm.flags.r",
-                FT_BOOLEAN, 4, TFS(&tfs_set_notset), MPLS_PM_FLAGS_R,
+                FT_BOOLEAN, 8, TFS(&tfs_set_notset), MPLS_PM_FLAGS_R,
                 NULL, HFILL
             }
         },
@@ -924,7 +880,7 @@ proto_register_mpls_pm(void)
             {
                 "Traffic-class-specific measurement indicator (T)",
                 "mpls_pm.flags.t",
-                FT_BOOLEAN, 4, TFS(&tfs_set_notset), MPLS_PM_FLAGS_T,
+                FT_BOOLEAN, 8, TFS(&tfs_set_notset), MPLS_PM_FLAGS_T,
                 NULL, HFILL
             }
         },
@@ -933,7 +889,7 @@ proto_register_mpls_pm(void)
             {
                 "Reserved",
                 "mpls_pm.flags.res",
-                FT_BOOLEAN, 4, TFS(&tfs_set_notset), MPLS_PM_FLAGS_RES,
+                FT_BOOLEAN, 8, TFS(&tfs_set_notset), MPLS_PM_FLAGS_RES,
                 NULL, HFILL
             }
         },
@@ -978,7 +934,7 @@ proto_register_mpls_pm(void)
             &hf_mpls_pm_dflags_x,
             {
                 "Extended counter format indicator (X)", "mpls_pm.dflags.x",
-                FT_BOOLEAN, 4, TFS(&tfs_set_notset), MPLS_PM_DFLAGS_X,
+                FT_BOOLEAN, 8, TFS(&tfs_set_notset), MPLS_PM_DFLAGS_X,
                 NULL, HFILL
             }
         },
@@ -986,7 +942,7 @@ proto_register_mpls_pm(void)
             &hf_mpls_pm_dflags_b,
             {
                 "Octet/Byte count indicator (B)", "mpls_pm.dflags.b",
-                FT_BOOLEAN, 4, TFS(&tfs_set_notset), MPLS_PM_DFLAGS_B,
+                FT_BOOLEAN, 8, TFS(&tfs_set_notset), MPLS_PM_DFLAGS_B,
                 NULL, HFILL
             }
         },
@@ -995,7 +951,7 @@ proto_register_mpls_pm(void)
             {
                 "Reserved",
                 "mpls_pm.dflags.res",
-                FT_BOOLEAN, 4, NULL, MPLS_PM_DFLAGS_RES,
+                FT_BOOLEAN, 8, NULL, MPLS_PM_DFLAGS_RES,
                 NULL, HFILL
             }
         },
@@ -1481,7 +1437,7 @@ proto_register_mpls_pm(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mpls_pm,
         &ett_mpls_pm_flags,
         &ett_mpls_pm_dflags
@@ -1526,21 +1482,20 @@ proto_reg_handoff_mpls_pm(void)
     dissector_handle_t mpls_pm_dlm_handle, mpls_pm_ilm_handle, mpls_pm_dm_handle,
                        mpls_pm_dlm_dm_handle, mpls_pm_ilm_dm_handle;
 
-    mpls_pm_dlm_handle    = create_dissector_handle( dissect_mpls_pm_dlm, proto_mpls_pm_dlm );
-    dissector_add_uint("pwach.channel_type", 0x000A, mpls_pm_dlm_handle); /* FF: MPLS PM, RFC 6374, DLM */
-    mpls_pm_ilm_handle    = create_dissector_handle( dissect_mpls_pm_ilm, proto_mpls_pm_ilm );
-    dissector_add_uint("pwach.channel_type", 0x000B, mpls_pm_ilm_handle); /* FF: MPLS PM, RFC 6374, ILM */
-    mpls_pm_dm_handle    = create_dissector_handle( dissect_mpls_pm_delay, proto_mpls_pm_dm );
-    dissector_add_uint("pwach.channel_type", 0x000C, mpls_pm_dm_handle); /* FF: MPLS PM, RFC 6374, DM */
-    mpls_pm_dlm_dm_handle    = create_dissector_handle( dissect_mpls_pm_dlm_dm, proto_mpls_pm_dlm_dm );
-    dissector_add_uint("pwach.channel_type", 0x000D, mpls_pm_dlm_dm_handle); /* FF: MPLS PM, RFC 6374, DLM+DM */
-    mpls_pm_ilm_dm_handle    = create_dissector_handle( dissect_mpls_pm_ilm_dm, proto_mpls_pm_ilm_dm );
-    dissector_add_uint("pwach.channel_type", 0x000E, mpls_pm_ilm_dm_handle); /* FF: MPLS PM, RFC 6374, ILM+DM */
-
+    mpls_pm_dlm_handle = create_dissector_handle( dissect_mpls_pm_dlm, proto_mpls_pm_dlm );
+    dissector_add_uint("pwach.channel_type", PW_ACH_TYPE_DLM, mpls_pm_dlm_handle);
+    mpls_pm_ilm_handle = create_dissector_handle( dissect_mpls_pm_ilm, proto_mpls_pm_ilm );
+    dissector_add_uint("pwach.channel_type", PW_ACH_TYPE_ILM, mpls_pm_ilm_handle);
+    mpls_pm_dm_handle = create_dissector_handle( dissect_mpls_pm_delay, proto_mpls_pm_dm );
+    dissector_add_uint("pwach.channel_type", PW_ACH_TYPE_DM, mpls_pm_dm_handle);
+    mpls_pm_dlm_dm_handle = create_dissector_handle( dissect_mpls_pm_dlm_dm, proto_mpls_pm_dlm_dm );
+    dissector_add_uint("pwach.channel_type", PW_ACH_TYPE_DLM_DM, mpls_pm_dlm_dm_handle);
+    mpls_pm_ilm_dm_handle = create_dissector_handle( dissect_mpls_pm_ilm_dm, proto_mpls_pm_ilm_dm );
+    dissector_add_uint("pwach.channel_type", PW_ACH_TYPE_ILM_DM, mpls_pm_ilm_dm_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

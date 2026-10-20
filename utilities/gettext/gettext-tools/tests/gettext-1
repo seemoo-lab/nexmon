@@ -13,7 +13,7 @@ TEXTDOMAINDIR=. LANGUAGE=gt-1 \
 ${GETTEXT} --env LC_ALL=en -e test 'SYS_(C)\n' | LC_ALL=C tr -d '\r' > gt-test1.out
 
 # Create correct file.
-cat <<EOF > gtmf-test1.ok
+cat <<\EOF > gtmf-test1.ok
 MSGFMT(1) portable message object file compiler
 Copyright (C) 1995 Free Software Foundation
 Report bugs to <bug-gnu-utils@gnu.org>

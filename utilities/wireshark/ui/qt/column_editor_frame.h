@@ -1,22 +1,10 @@
-/* column_editor_frame.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef COLUMN_EDITOR_FRAME_H
@@ -33,12 +21,16 @@ class ColumnEditorFrame : public AccordionFrame
     Q_OBJECT
 
 public:
-    explicit ColumnEditorFrame(QWidget *parent = 0);
+    explicit ColumnEditorFrame(QWidget *parent = nullptr);
     ~ColumnEditorFrame();
     void editColumn(int column);
 
 signals:
     void columnEdited();
+
+protected:
+    virtual void showEvent(QShowEvent *event);
+    virtual void keyPressEvent(QKeyEvent *event);
 
 private slots:
     void on_typeComboBox_activated(int index);
@@ -46,26 +38,16 @@ private slots:
     void on_occurrenceLineEdit_textEdited(const QString &occurrence);
     void on_buttonBox_rejected();
     void on_buttonBox_accepted();
+    void checkCanResolve(void);
 
 private:
+    bool syntaxIsValid(void);
     Ui::ColumnEditorFrame *ui;
     int cur_column_;
     QString saved_fields_;
     QString saved_occurrence_;
     void setFields(int index);
+    void typeChanged(int index);
 };
 
 #endif // COLUMN_EDITOR_FRAME_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

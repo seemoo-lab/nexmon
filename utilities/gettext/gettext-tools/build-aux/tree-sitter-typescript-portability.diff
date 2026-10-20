@@ -1,0 +1,64 @@
+diff --git a/tsx/src/parser.c b/tsx/src/parser.c
+index faa8aa4..726e493 100644
+--- a/tsx/src/parser.c
++++ b/tsx/src/parser.c
+@@ -282905,8 +282905,10 @@ void tree_sitter_tsx_external_scanner_deserialize(void *, const char *, unsigned
+ #define TS_PUBLIC
+ #elif defined(_WIN32)
+ #define TS_PUBLIC __declspec(dllexport)
+-#else
++#elif defined __GNUC__ || defined __clang__
+ #define TS_PUBLIC __attribute__((visibility("default")))
++#else
++#define TS_PUBLIC
+ #endif
+ 
+ TS_PUBLIC const TSLanguage *tree_sitter_tsx(void) {
+diff --git a/tsx/src/tree_sitter/parser.h b/tsx/src/tree_sitter/parser.h
+index 799f599..130b4d0 100644
+--- a/tsx/src/tree_sitter/parser.h
++++ b/tsx/src/tree_sitter/parser.h
+@@ -155,8 +155,10 @@ static inline bool set_contains(TSCharacterRange *ranges, uint32_t len, int32_t
+ 
+ #ifdef _MSC_VER
+ #define UNUSED __pragma(warning(suppress : 4101))
+-#else
++#elif defined __GNUC__ || defined __clang__
+ #define UNUSED __attribute__((unused))
++#else
++#define UNUSED
+ #endif
+ 
+ #define START_LEXER()           \
+diff --git a/typescript/src/parser.c b/typescript/src/parser.c
+index a88f8e1..b03339e 100644
+--- a/typescript/src/parser.c
++++ b/typescript/src/parser.c
+@@ -282387,8 +282387,10 @@ void tree_sitter_typescript_external_scanner_deserialize(void *, const char *, u
+ #define TS_PUBLIC
+ #elif defined(_WIN32)
+ #define TS_PUBLIC __declspec(dllexport)
+-#else
++#elif defined __GNUC__ || defined __clang__
+ #define TS_PUBLIC __attribute__((visibility("default")))
++#else
++#define TS_PUBLIC
+ #endif
+ 
+ TS_PUBLIC const TSLanguage *tree_sitter_typescript(void) {
+diff --git a/typescript/src/tree_sitter/parser.h b/typescript/src/tree_sitter/parser.h
+index 799f599..130b4d0 100644
+--- a/typescript/src/tree_sitter/parser.h
++++ b/typescript/src/tree_sitter/parser.h
+@@ -155,8 +155,10 @@ static inline bool set_contains(TSCharacterRange *ranges, uint32_t len, int32_t
+ 
+ #ifdef _MSC_VER
+ #define UNUSED __pragma(warning(suppress : 4101))
+-#else
++#elif defined __GNUC__ || defined __clang__
+ #define UNUSED __attribute__((unused))
++#else
++#define UNUSED
+ #endif
+ 
+ #define START_LEXER()           \

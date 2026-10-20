@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/data.h	Abstract Data
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -18,21 +12,24 @@
 extern "C" {
 #endif
 
+struct nlattr;
+
 struct nl_data;
 
 /* General */
-extern struct nl_data *	nl_data_alloc(void *, size_t);
-extern struct nl_data * nl_data_alloc_attr(struct nlattr *);
-extern struct nl_data *	nl_data_clone(struct nl_data *);
-extern int		nl_data_append(struct nl_data *, void *, size_t);
+extern struct nl_data *	nl_data_alloc(const void *, size_t);
+extern struct nl_data * nl_data_alloc_attr(const struct nlattr *);
+extern struct nl_data *	nl_data_clone(const struct nl_data *);
+extern int		nl_data_append(struct nl_data *, const void *, size_t);
 extern void		nl_data_free(struct nl_data *);
 
 /* Access Functions */
-extern void *		nl_data_get(struct nl_data *);
-extern size_t		nl_data_get_size(struct nl_data *);
+extern void *		nl_data_get(const struct nl_data *);
+extern size_t		nl_data_get_size(const struct nl_data *);
 
 /* Misc */
-extern int		nl_data_cmp(struct nl_data *, struct nl_data *);
+extern int		nl_data_cmp(const struct nl_data *,
+				    const struct nl_data *);
 
 #ifdef __cplusplus
 }

@@ -3,29 +3,42 @@
 
 SHELL = /bin/sh
 MAKE = make
-AUTOCONF = autoconf-2.68
-AUTOHEADER = autoheader-2.68
-ACLOCAL = aclocal-1.11
+AUTOCONF = autoconf
+AUTOHEADER = autoheader
+ACLOCAL = aclocal-1.18
 CP = cp
 RM = rm -f
 
-all : configures include/localcharset.h.build.in
+all : configures include/libcharset.h.build.in include/localcharset.h.build.in
 
 autoconf/aclocal.m4 : $(wildcard m4/*.m4)
-	$(ACLOCAL) -I m4 --output=$@
+	test -d autoconf || mkdir autoconf
+	$(ACLOCAL) -I m4 --output=$@ && rm -rf autom4te.cache
 
 configures : configure config.h.in
 
 configure : configure.ac autoconf/aclocal.m4
-	$(AUTOCONF) --include autoconf
+	$(AUTOCONF) --include autoconf && rm -rf autom4te.cache
 
 config.h.in : configure.ac autoconf/aclocal.m4
-	$(AUTOHEADER) --include autoconf
+	$(AUTOHEADER) --include autoconf && rm -rf autom4te.cache
 	touch config.h.in
 
+include/libcharset.h.build.in : include/libcharset.h.in include/export.h
+	cat $< \
+	| sed -e 's/extern \([^"]\)/extern LIBCHARSET_SHLIB_EXPORTED \1/' \
+	      -e '/#define _LIBCHARSET_H/r include/export.h' \
+	| sed -e '/#define _LIBCHARSET_H/,/[*][/]$$/{/#define _LIBCHARSET_H/!d;}' \
+	  > $@
+
 include/localcharset.h.build.in : include/localcharset.h.in include/export.h
-	sed -e 's/extern \([^"]\)/extern LIBCHARSET_DLL_EXPORTED \1/' \
-	    -e '/#define _LOCALCHARSET_H/r include/export.h' \
-	  < $< > $@
+	cat $< \
+	| sed -e 's/extern \([^"]\)/extern LIBCHARSET_SHLIB_EXPORTED \1/' \
+	      -e '/#define _LOCALCHARSET_H/r include/export.h' \
+	| sed -e '/#define _LOCALCHARSET_H/,/[*][/]$$/{/#define _LOCALCHARSET_H/!d;}' \
+	  > $@
+
+totally-clean : force
+	rm -f autoconf/aclocal.m4 configure config.h.in include/libcharset.h.build.in include/localcharset.h.build.in
 
 force :

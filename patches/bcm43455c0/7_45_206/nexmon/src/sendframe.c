@@ -44,21 +44,110 @@
 #include <nexioctls.h>          // ioctls added in the nexmon patch
 #include <capabilities.h>       // capabilities included in a nexmon patch
 
-char
+/* AC firmware prepends a 124-byte D11 TX header plus PHY/control data. */
+#define TXOFF 202
+
+static struct sk_buff *
+pkt_with_txoff(struct wlc_info *wlc, struct sk_buff *p)
+{
+    struct sk_buff *n;
+    int orig_len = p->len;
+
+    n = pkt_buf_get_skb(wlc->osh, orig_len + TXOFF);
+    if (!n) {
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return 0;
+    }
+
+    skb_pull(n, TXOFF);
+    memcpy(n->data, p->data, orig_len);
+    n->len = orig_len;
+    n->flags = p->flags;
+    n->pkttag_flags = p->pkttag_flags;
+    pkt_buf_free_skb(wlc->osh, p, 0);
+    return n;
+}
+
+/*
+ * wlc_send_q (0x1AAB66) walks pkt->scb at offset 0x28 and immediately
+ * dereferences it. Monitor-mode TX (ours, or firmware-generated) can
+ * land on that path with scb == NULL and take a data abort at 0x1AABB0.
+ * If the packet has no scb, free it and continue the FIFO drain.
+ *
+ * 0x1AABB4 is the instruction after the original ldr r3, [r7, #0xe8].
+ * 0x1AAD16 is the top of the FIFO loop. ip is caller-saved and unused
+ * across that resume point.
+ */
+__attribute__((naked))
+void
+wlc_send_q_scb_check(void)
+{
+    asm volatile(
+        "ldr r6, [r1, #40]\n\t"
+        "cbz r6, 1f\n\t"
+        "ldr r7, [r6, #16]\n\t"
+        "ldr.w r3, [r7, #232]\n\t"
+        "movw ip, #0xABB5\n\t"
+        "movt ip, #0x001A\n\t"
+        "bx ip\n\t"
+        "1:\n\t"
+        "push {lr}\n\t"
+        "mov r0, sl\n\t"
+        "ldr r1, [sp, #12]\n\t"
+        "movs r2, #0\n\t"
+        "bl pkt_buf_free_skb\n\t"
+        "pop {lr}\n\t"
+        "movw ip, #0xAD17\n\t"
+        "movt ip, #0x001A\n\t"
+        "bx ip\n\t"
+    );
+}
+
+__attribute__((at(0x1AABAC, "", CHIP_VER_BCM43455c0, FW_VER_7_45_206)))
+BPatch(wlc_send_q_scb_check, wlc_send_q_scb_check);
+
+void
 sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
-    char ret;
+    void *scb;
+    struct wlc_txh_info txh = {0};
+    short txh_off[2] = {0};
 
-    if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
-        rate = RATES_RATE_6M;
+    p = pkt_with_txoff(wlc, p);
+    if (!p)
+        return;
+
+    scb = wlc->band->hwrs_scb;
+    if (!scb) {
+        printf("ERR: no scb found, discarding packet!\n");
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return;
     }
 
-    if (wlc->hw->up) {
-        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
-    } else {
-        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
+    if (!wlc->hw->up) {
         printf("ERR: wlc down\n");
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return;
     }
 
-    return ret;
+    if (rate == 0)
+        rate = (wlc->band->bandtype == WLC_BAND_5G) ? RATES_RATE_6M : RATES_RATE_2M;
+    else if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M)
+        rate = RATES_RATE_6M;
+
+    if (!fifo)
+        fifo = 1;
+
+    /*
+     * Raw monitor frames carry no Broadcom TX header. Build it synchronously
+     * and submit straight to the D11 FIFO - the same path the working
+     * BCM43430a1 port takes. wlc_sendctl() instead parks the packet on
+     * wlc_send_q(), which data-aborts on a NULL pkt->scb (0x1AABB0) even
+     * after we stamp hwrs_scb.
+     */
+    wlc_enable_mac(wlc);
+    wlc_d11hdrs(wlc, p, scb, 0, 0, 1, fifo, 0, 0, rate, txh_off);
+    p->scb = scb;
+    wlc_get_txh_info(wlc, p, &txh);
+    wlc_txfifo(wlc, fifo, p, &txh, 1, 1);
 }

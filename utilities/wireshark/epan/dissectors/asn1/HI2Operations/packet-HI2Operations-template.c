@@ -1,24 +1,13 @@
 /* packet-HI2Operations.c
- * Routines for HI2 (ETSI TS 101 671 V3.5.1 (2009-11))
+ * Routines for HI2 (ETSI TS 101 671 V3.15.1 (2018-06))
  *  Erwin van Eijk 2010
+ *  Joakim Karlsson 2023
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,35 +17,65 @@
 #include <epan/oids.h>
 #include <epan/asn1.h>
 
+#include <wsutil/array.h>
+
 #include "packet-ber.h"
+#include "packet-e212.h"
+#include "packet-gsm_a_common.h"
+#include "packet-gtpv2.h"
+#include "packet-isup.h"
+#include "packet-q931.h"
 
 #define PNAME  "HI2Operations"
 #define PSNAME "HI2OPERATIONS"
-#define PFNAME "hi2operations"
+#define PFNAME "HI2operations"
 
 void proto_register_HI2Operations(void);
 void proto_reg_handoff_HI2Operations(void);
 
 /* Initialize the protocol and registered fields */
-int proto_HI2Operations = -1;
+int proto_HI2Operations;
+int hf_HI2Operations_apn_str;
 #include "packet-HI2Operations-hf.c"
 
 /* Initialize the subtree pointers */
+static int ett_HI2Operations_eps_paa;
+static int ett_HI2Operations_eps_qos;
+static int ett_HI2Operations_eps_apn_ambr;
+static int ett_HI2Operations_eps_uli;
+static int ett_HI2Operations_eps_tft;
+static int ett_HI2Operations_eps_network;
 #include "packet-HI2Operations-ett.c"
 
 #include "packet-HI2Operations-fn.c"
 
+static bool
+dissect_UUS1_Content_PDU_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
+  return dissect_UUS1_Content_PDU(tvb, pinfo, tree, data) > 0;
+}
 
 /*--- proto_register_HI2Operations ----------------------------------------------*/
 void proto_register_HI2Operations(void) {
 
   /* List of fields */
   static hf_register_info hf[] = {
+    {&hf_HI2Operations_apn_str,
+         {"APN (Access Point Name)", "gtpv2.apn",
+          FT_STRING, BASE_NONE, NULL, 0x0,
+          NULL, HFILL}
+        },
+
 #include "packet-HI2Operations-hfarr.c"
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
+    &ett_HI2Operations_eps_paa,
+    &ett_HI2Operations_eps_qos,
+    &ett_HI2Operations_eps_apn_ambr,
+    &ett_HI2Operations_eps_uli,
+    &ett_HI2Operations_eps_tft,
+    &ett_HI2Operations_eps_network,
 #include "packet-HI2Operations-ettarr.c"
   };
 
@@ -68,10 +87,16 @@ void proto_register_HI2Operations(void) {
   proto_register_subtree_array(ett, array_length(ett));
 
   register_dissector("HI2Operations", dissect_IRIsContent_PDU, proto_HI2Operations);
+
+
 }
 
 
 /*--- proto_reg_handoff_HI2Operations -------------------------------------------*/
 void proto_reg_handoff_HI2Operations(void) {
+
+    heur_dissector_add("q931_user", dissect_UUS1_Content_PDU_heur, "HI3CCLinkData", "hi3cclinkdata",
+        proto_HI2Operations, HEURISTIC_ENABLE);
+
 }
 

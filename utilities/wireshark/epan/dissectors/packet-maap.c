@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  */
 
@@ -30,6 +18,8 @@
 
 void proto_register_maap(void);
 void proto_reg_handoff_maap(void);
+
+static dissector_handle_t maap_handle;
 
 /* MAAP starts after common 1722 header */
 #define MAAP_START_OFFSET                   1
@@ -66,25 +56,25 @@ static const value_string maap_msg_type_vals [] = {
 /**********************************************************/
 /* Initialize the protocol and registered fields          */
 /**********************************************************/
-static int proto_maap = -1;
+static int proto_maap;
 
 /* MAAP PDU */
-static int hf_maap_message_type = -1;
-static int hf_maap_version = -1;
-static int hf_maap_data_length = -1;
-static int hf_maap_stream_id = -1;
-static int hf_maap_req_start_addr = -1;
-static int hf_maap_req_count = -1;
-static int hf_maap_conflict_start_addr = -1;
-static int hf_maap_conflict_count = -1;
+static int hf_maap_message_type;
+static int hf_maap_version;
+static int hf_maap_data_length;
+static int hf_maap_stream_id;
+static int hf_maap_req_start_addr;
+static int hf_maap_req_count;
+static int hf_maap_conflict_start_addr;
+static int hf_maap_conflict_count;
 
 /* Initialize the subtree pointers */
-static int ett_maap = -1;
+static int ett_maap;
 
 static int
 dissect_maap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint8      maap_msg_type;
+    uint8_t     maap_msg_type;
     proto_item *maap_item     = NULL;
     proto_tree *maap_tree     = NULL;
 
@@ -92,12 +82,12 @@ dissect_maap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     col_clear(pinfo->cinfo, COL_INFO);
 
     /* The maap msg type will be handy in a moment */
-    maap_msg_type = tvb_get_guint8(tvb, MAAP_MSG_TYPE_OFFSET);
+    maap_msg_type = tvb_get_uint8(tvb, MAAP_MSG_TYPE_OFFSET);
     maap_msg_type &= 0x0f;
 
     /* Display the name of the packet type in the info column. */
     col_add_fstr(pinfo->cinfo, COL_INFO, "%s:",
-                val_to_str(maap_msg_type, maap_msg_type_vals,
+                val_to_str(pinfo->pool, maap_msg_type, maap_msg_type_vals,
                             "Unknown Type(0x%02x)"));
 
     /* Now, we'll add the start and conflict addresses and counts to the info column as appropriate */
@@ -106,13 +96,13 @@ dissect_maap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     case MAAP_MSG_TYPE_PROBE:
     case MAAP_MSG_TYPE_ANNOUNCE:
         col_append_fstr(pinfo->cinfo, COL_INFO, " req_start=%s, cnt=%d",
-                        tvb_ether_to_str(tvb, MAAP_REQ_START_ADDR_OFFSET),
+                        tvb_ether_to_str(pinfo->pool, tvb, MAAP_REQ_START_ADDR_OFFSET),
                         tvb_get_ntohs(tvb, MAAP_REQ_COUNT_OFFSET));
 
         break;
     case MAAP_MSG_TYPE_DEFEND:
         col_append_fstr(pinfo->cinfo, COL_INFO, " conflict_start=%s, cnt=%d",
-                        tvb_ether_to_str(tvb, MAAP_CONFLICT_START_ADDR_OFFSET),
+                        tvb_ether_to_str(pinfo->pool, tvb, MAAP_CONFLICT_START_ADDR_OFFSET),
                         tvb_get_ntohs(tvb, MAAP_CONFLICT_COUNT_OFFSET));
         break;
     default:
@@ -193,7 +183,7 @@ proto_register_maap(void)
     }; /* end of static hf_register_info hf[] = */
 
     /* Setup protocol subtree array */
-    static gint *ett[] = { &ett_maap };
+    static int *ett[] = { &ett_maap };
 
     /* Register the protocol name and description */
     proto_maap = proto_register_protocol (
@@ -206,19 +196,19 @@ proto_register_maap(void)
     proto_register_field_array(proto_maap, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
+    /* Register the dissector */
+    maap_handle = register_dissector("maap", dissect_maap, proto_maap);
+
 } /* end proto_register_maap() */
 
 void
 proto_reg_handoff_maap(void)
 {
-    dissector_handle_t maap_handle;
-
-    maap_handle = create_dissector_handle(dissect_maap, proto_maap);
-    dissector_add_uint("ieee1722.subtype", 0x7E, maap_handle);
+    dissector_add_uint("ieee1722.subtype", 0xFE, maap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

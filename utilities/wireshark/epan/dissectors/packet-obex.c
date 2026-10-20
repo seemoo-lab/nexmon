@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,247 +23,248 @@
 #include "packet-btrfcomm.h"
 #include "packet-btl2cap.h"
 #include "packet-btsdp.h"
+#include <wsutil/array.h>
 
 /* Initialize the protocol and registered fields */
-static int proto_obex = -1;
-static int hf_opcode = -1;
-static int hf_response_code = -1;
-static int hf_final_flag = -1;
-static int hf_length = -1;
-static int hf_version = -1;
-static int hf_flags = -1;
-static int hf_constants = -1;
-static int hf_max_pkt_len = -1;
-static int hf_set_path_flags_0 = -1;
-static int hf_set_path_flags_1 = -1;
-static int hf_headers = -1;
-static int hf_header = -1;
-static int hf_hdr_id = -1;
-static int hf_hdr_id_encoding = -1;
-static int hf_hdr_id_meaning = -1;
-static int hf_hdr_length = -1;
-static int hf_hdr_val_unicode = -1;
-static int hf_hdr_val_byte_seq = -1;
-static int hf_hdr_val_byte = -1;
-static int hf_hdr_val_long = -1;
-static int hf_authentication_parameter = -1;
-static int hf_authentication_parameter_data = -1;
-static int hf_authentication_challenge_tag = -1;
-static int hf_authentication_response_tag = -1;
-static int hf_authentication_key = -1;
-static int hf_authentication_result_key = -1;
-static int hf_authentication_user_id = -1;
-static int hf_authentication_length = -1;
-static int hf_authentication_info_charset = -1;
-static int hf_authentication_info = -1;
-static int hf_authentication_option_reserved = -1;
-static int hf_authentication_option_user_id = -1;
-static int hf_authentication_option_read_only = -1;
-static int hf_application_parameter = -1;
-static int hf_application_parameter_id = -1;
-static int hf_application_parameter_length = -1;
-static int hf_application_parameter_data = -1;
-static int hf_bpp_application_parameter_id = -1;
-static int hf_bpp_application_parameter_data_offset = -1;
-static int hf_bpp_application_parameter_data_count = -1;
-static int hf_bpp_application_parameter_data_job_id = -1;
-static int hf_bpp_application_parameter_data_file_size = -1;
-static int hf_bip_application_parameter_id = -1;
-static int hf_bip_application_parameter_data_number_of_returned_handles = -1;
-static int hf_bip_application_parameter_data_list_start_offset = -1;
-static int hf_bip_application_parameter_data_latest_captured_images = -1;
-static int hf_bip_application_parameter_data_partial_file_length = -1;
-static int hf_bip_application_parameter_data_partial_file_start_offset = -1;
-static int hf_bip_application_parameter_data_total_file_size = -1;
-static int hf_bip_application_parameter_data_end_flag = -1;
-static int hf_bip_application_parameter_data_remote_display = -1;
-static int hf_bip_application_parameter_data_service_id = -1;
-static int hf_bip_application_parameter_data_store_flag = -1;
-static int hf_pbap_application_parameter_id = -1;
-static int hf_pbap_application_parameter_data_order = -1;
-static int hf_pbap_application_parameter_data_search_value = -1;
-static int hf_pbap_application_parameter_data_search_attribute = -1;
-static int hf_pbap_application_parameter_data_max_list_count = -1;
-static int hf_pbap_application_parameter_data_list_start_offset = -1;
-static int hf_pbap_application_parameter_data_filter = -1;
-static int hf_pbap_application_parameter_vcard_selector = -1;
-static int hf_pbap_application_parameter_data_filter_version = -1;
-static int hf_pbap_application_parameter_data_filter_fn = -1;
-static int hf_pbap_application_parameter_data_filter_n = -1;
-static int hf_pbap_application_parameter_data_filter_photo = -1;
-static int hf_pbap_application_parameter_data_filter_birthday = -1;
-static int hf_pbap_application_parameter_data_filter_adr = -1;
-static int hf_pbap_application_parameter_data_filter_label = -1;
-static int hf_pbap_application_parameter_data_filter_tel = -1;
-static int hf_pbap_application_parameter_data_filter_email = -1;
-static int hf_pbap_application_parameter_data_filter_mailer = -1;
-static int hf_pbap_application_parameter_data_filter_time_zone = -1;
-static int hf_pbap_application_parameter_data_filter_geographic_position = -1;
-static int hf_pbap_application_parameter_data_filter_title = -1;
-static int hf_pbap_application_parameter_data_filter_role = -1;
-static int hf_pbap_application_parameter_data_filter_logo = -1;
-static int hf_pbap_application_parameter_data_filter_agent = -1;
-static int hf_pbap_application_parameter_data_filter_name_of_organization = -1;
-static int hf_pbap_application_parameter_data_filter_comments = -1;
-static int hf_pbap_application_parameter_data_filter_revision = -1;
-static int hf_pbap_application_parameter_data_filter_pronunciation_of_name = -1;
-static int hf_pbap_application_parameter_data_filter_url = -1;
-static int hf_pbap_application_parameter_data_filter_uid = -1;
-static int hf_pbap_application_parameter_data_filter_key = -1;
-static int hf_pbap_application_parameter_data_filter_nickname = -1;
-static int hf_pbap_application_parameter_data_filter_categories = -1;
-static int hf_pbap_application_parameter_data_filter_product_id = -1;
-static int hf_pbap_application_parameter_data_filter_class = -1;
-static int hf_pbap_application_parameter_data_filter_sort_string = -1;
-static int hf_pbap_application_parameter_data_filter_timestamp = -1;
-static int hf_pbap_application_parameter_data_filter_reserved_29_31 = -1;
-static int hf_pbap_application_parameter_data_filter_reserved_32_38 = -1;
-static int hf_pbap_application_parameter_data_filter_proprietary_filter = -1;
-static int hf_pbap_application_parameter_data_filter_reserved_for_proprietary_filter_usage = -1;
-static int hf_pbap_application_parameter_data_format = -1;
-static int hf_pbap_application_parameter_data_phonebook_size = -1;
-static int hf_pbap_application_parameter_data_new_missed_calls = -1;
-static int hf_pbap_application_parameter_data_primary_version_counter = -1;
-static int hf_pbap_application_parameter_data_secondary_version_counter = -1;
-static int hf_pbap_application_parameter_data_database_identifier = -1;
-static int hf_pbap_application_parameter_data_vcard_selector_operator = -1;
-static int hf_pbap_application_parameter_data_reset_new_missed_calls = -1;
-static int hf_pbap_application_parameter_data_supported_features = -1;
-static int hf_pbap_application_parameter_data_supported_features_reserved = -1;
-static int hf_pbap_application_parameter_data_supported_features_download = -1;
-static int hf_pbap_application_parameter_data_supported_features_browsing = -1;
-static int hf_pbap_application_parameter_data_supported_features_database_identifier = -1;
-static int hf_pbap_application_parameter_data_supported_features_folder_version_counters = -1;
-static int hf_pbap_application_parameter_data_supported_features_vcard_selecting = -1;
-static int hf_pbap_application_parameter_data_supported_features_enhanced_missed_calls = -1;
-static int hf_pbap_application_parameter_data_supported_features_x_bt_uci_vcard_property = -1;
-static int hf_pbap_application_parameter_data_supported_features_x_bt_uid_vcard_property = -1;
-static int hf_pbap_application_parameter_data_supported_features_contact_referencing = -1;
-static int hf_pbap_application_parameter_data_supported_features_default_contact_image_format = -1;
-static int hf_map_application_parameter_id = -1;
-static int hf_map_application_parameter_data_max_list_count = -1;
-static int hf_map_application_parameter_data_start_offset = -1;
-static int hf_map_application_parameter_data_filter_message_type_reserved = -1;
-static int hf_map_application_parameter_data_filter_message_type_mms = -1;
-static int hf_map_application_parameter_data_filter_message_type_email = -1;
-static int hf_map_application_parameter_data_filter_message_type_sms_cdma = -1;
-static int hf_map_application_parameter_data_filter_message_type_sms_gsm = -1;
-static int hf_map_application_parameter_data_filter_period_begin = -1;
-static int hf_map_application_parameter_data_filter_period_end = -1;
-static int hf_map_application_parameter_data_filter_read_status_reserved_6 = -1;
-static int hf_map_application_parameter_data_filter_read_status_get_read = -1;
-static int hf_map_application_parameter_data_filter_read_status_get_unread = -1;
-static int hf_map_application_parameter_data_filter_recipient = -1;
-static int hf_map_application_parameter_data_filter_originator = -1;
-static int hf_map_application_parameter_data_filter_priority_reserved_6 = -1;
-static int hf_map_application_parameter_data_filter_priority_get_high = -1;
-static int hf_map_application_parameter_data_filter_priority_non_high = -1;
-static int hf_map_application_parameter_data_reserved_7 = -1;
-static int hf_map_application_parameter_data_attachment = -1;
-static int hf_map_application_parameter_data_transparent = -1;
-static int hf_map_application_parameter_data_retry = -1;
-static int hf_map_application_parameter_data_new_message = -1;
-static int hf_map_application_parameter_data_notification_status = -1;
-static int hf_map_application_parameter_data_mas_instance_id = -1;
-static int hf_map_application_parameter_data_parameter_mask_reserved = -1;
-static int hf_map_application_parameter_data_parameter_mask_reply_to_addressing = -1;
-static int hf_map_application_parameter_data_parameter_mask_protected = -1;
-static int hf_map_application_parameter_data_parameter_mask_sent = -1;
-static int hf_map_application_parameter_data_parameter_mask_read = -1;
-static int hf_map_application_parameter_data_parameter_mask_priority = -1;
-static int hf_map_application_parameter_data_parameter_mask_attachment_size = -1;
-static int hf_map_application_parameter_data_parameter_mask_text = -1;
-static int hf_map_application_parameter_data_parameter_mask_reception_status = -1;
-static int hf_map_application_parameter_data_parameter_mask_size = -1;
-static int hf_map_application_parameter_data_parameter_mask_type = -1;
-static int hf_map_application_parameter_data_parameter_mask_recipient_addressing = -1;
-static int hf_map_application_parameter_data_parameter_mask_recipient_name = -1;
-static int hf_map_application_parameter_data_parameter_mask_sender_addressing = -1;
-static int hf_map_application_parameter_data_parameter_mask_sender_name = -1;
-static int hf_map_application_parameter_data_parameter_mask_datetime = -1;
-static int hf_map_application_parameter_data_parameter_mask_subject = -1;
-static int hf_map_application_parameter_data_folder_listing_size = -1;
-static int hf_map_application_parameter_data_messages_listing_size = -1;
-static int hf_map_application_parameter_data_subject_length = -1;
-static int hf_map_application_parameter_data_charset = -1;
-static int hf_map_application_parameter_data_fraction_request = -1;
-static int hf_map_application_parameter_data_fraction_deliver = -1;
-static int hf_map_application_parameter_data_status_indicator = -1;
-static int hf_map_application_parameter_data_status_value = -1;
-static int hf_map_application_parameter_data_mse_time = -1;
-static int hf_gpp_application_parameter_id = -1;
-static int hf_gpp_application_parameter_data_max_list_count = -1;
-static int hf_gpp_application_parameter_data_list_start_offset = -1;
-static int hf_gpp_application_parameter_data_reserved_7 = -1;
-static int hf_gpp_application_parameter_data_notification_status = -1;
-static int hf_gpp_application_parameter_data_instance_id = -1;
-static int hf_gpp_application_parameter_data_listing_size = -1;
-static int hf_ctn_application_parameter_id = -1;
-static int hf_ctn_application_parameter_data_acoustic_alarm_status = -1;
-static int hf_ctn_application_parameter_data_attachment = -1;
-static int hf_ctn_application_parameter_data_send = -1;
-static int hf_ctn_application_parameter_data_filter_period_begin = -1;
-static int hf_ctn_application_parameter_data_filter_period_end = -1;
-static int hf_ctn_application_parameter_data_parameter_mask = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_reserved = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_recurrent = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_send_status = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_alarm_status = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_pstatus = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_priority = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_originator_address = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_originator_name = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_end_time = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_summary = -1;
-static int hf_ctn_application_parameter_data_parameter_mask_attachment = -1;
-static int hf_ctn_application_parameter_data_status_indicator = -1;
-static int hf_ctn_application_parameter_data_status_value = -1;
-static int hf_ctn_application_parameter_data_postpone_val = -1;
-static int hf_ctn_application_parameter_data_email_uri = -1;
-static int hf_ctn_application_parameter_data_cse_time = -1;
-static int hf_ctn_application_parameter_data_recurrent = -1;
-static int hf_ctn_application_parameter_data_attach_id = -1;
-static int hf_ctn_application_parameter_data_last_update = -1;
-static int hf_profile = -1;
-static int hf_type = -1;
-static int hf_object_class = -1;
-static int hf_time_iso8601 = -1;
-static int hf_wan_uuid = -1;
-static int hf_hdr_val_action = -1;
-static int hf_hdr_val_single_response_mode = -1;
-static int hf_hdr_val_single_response_mode_parameter = -1;
-static int hf_session_parameter = -1;
-static int hf_session_parameter_tag = -1;
-static int hf_session_parameter_length = -1;
-static int hf_session_parameter_data = -1;
-static int hf_session_parameter_nonce = -1;
-static int hf_session_parameter_session_id = -1;
-static int hf_session_parameter_next_sequence_number = -1;
-static int hf_session_parameter_timeout = -1;
-static int hf_session_parameter_opcode = -1;
-static int hf_sender_bd_addr = -1;
-static int hf_count = -1;
-static int hf_data_length = -1;
-static int hf_connection_id = -1;
-static int hf_name = -1;
-static int hf_current_path = -1;
-static int hf_request_in_frame = -1;
-static int hf_response_in_frame = -1;
+static int proto_obex;
+static int hf_opcode;
+static int hf_response_code;
+static int hf_final_flag;
+static int hf_length;
+static int hf_version;
+static int hf_flags;
+static int hf_constants;
+static int hf_max_pkt_len;
+static int hf_set_path_flags_0;
+static int hf_set_path_flags_1;
+static int hf_headers;
+static int hf_header;
+static int hf_hdr_id;
+static int hf_hdr_id_encoding;
+static int hf_hdr_id_meaning;
+static int hf_hdr_length;
+static int hf_hdr_val_unicode;
+static int hf_hdr_val_byte_seq;
+static int hf_hdr_val_byte;
+static int hf_hdr_val_long;
+static int hf_authentication_parameter;
+static int hf_authentication_parameter_data;
+static int hf_authentication_challenge_tag;
+static int hf_authentication_response_tag;
+static int hf_authentication_key;
+static int hf_authentication_result_key;
+static int hf_authentication_user_id;
+static int hf_authentication_length;
+static int hf_authentication_info_charset;
+static int hf_authentication_info;
+static int hf_authentication_option_reserved;
+static int hf_authentication_option_user_id;
+static int hf_authentication_option_read_only;
+static int hf_application_parameter;
+static int hf_application_parameter_id;
+static int hf_application_parameter_length;
+static int hf_application_parameter_data;
+static int hf_bpp_application_parameter_id;
+static int hf_bpp_application_parameter_data_offset;
+static int hf_bpp_application_parameter_data_count;
+static int hf_bpp_application_parameter_data_job_id;
+static int hf_bpp_application_parameter_data_file_size;
+static int hf_bip_application_parameter_id;
+static int hf_bip_application_parameter_data_number_of_returned_handles;
+static int hf_bip_application_parameter_data_list_start_offset;
+static int hf_bip_application_parameter_data_latest_captured_images;
+static int hf_bip_application_parameter_data_partial_file_length;
+static int hf_bip_application_parameter_data_partial_file_start_offset;
+static int hf_bip_application_parameter_data_total_file_size;
+static int hf_bip_application_parameter_data_end_flag;
+static int hf_bip_application_parameter_data_remote_display;
+static int hf_bip_application_parameter_data_service_id;
+static int hf_bip_application_parameter_data_store_flag;
+static int hf_pbap_application_parameter_id;
+static int hf_pbap_application_parameter_data_order;
+static int hf_pbap_application_parameter_data_search_value;
+static int hf_pbap_application_parameter_data_search_attribute;
+static int hf_pbap_application_parameter_data_max_list_count;
+static int hf_pbap_application_parameter_data_list_start_offset;
+static int hf_pbap_application_parameter_data_filter;
+static int hf_pbap_application_parameter_vcard_selector;
+static int hf_pbap_application_parameter_data_filter_version;
+static int hf_pbap_application_parameter_data_filter_fn;
+static int hf_pbap_application_parameter_data_filter_n;
+static int hf_pbap_application_parameter_data_filter_photo;
+static int hf_pbap_application_parameter_data_filter_birthday;
+static int hf_pbap_application_parameter_data_filter_adr;
+static int hf_pbap_application_parameter_data_filter_label;
+static int hf_pbap_application_parameter_data_filter_tel;
+static int hf_pbap_application_parameter_data_filter_email;
+static int hf_pbap_application_parameter_data_filter_mailer;
+static int hf_pbap_application_parameter_data_filter_time_zone;
+static int hf_pbap_application_parameter_data_filter_geographic_position;
+static int hf_pbap_application_parameter_data_filter_title;
+static int hf_pbap_application_parameter_data_filter_role;
+static int hf_pbap_application_parameter_data_filter_logo;
+static int hf_pbap_application_parameter_data_filter_agent;
+static int hf_pbap_application_parameter_data_filter_name_of_organization;
+static int hf_pbap_application_parameter_data_filter_comments;
+static int hf_pbap_application_parameter_data_filter_revision;
+static int hf_pbap_application_parameter_data_filter_pronunciation_of_name;
+static int hf_pbap_application_parameter_data_filter_url;
+static int hf_pbap_application_parameter_data_filter_uid;
+static int hf_pbap_application_parameter_data_filter_key;
+static int hf_pbap_application_parameter_data_filter_nickname;
+static int hf_pbap_application_parameter_data_filter_categories;
+static int hf_pbap_application_parameter_data_filter_product_id;
+static int hf_pbap_application_parameter_data_filter_class;
+static int hf_pbap_application_parameter_data_filter_sort_string;
+static int hf_pbap_application_parameter_data_filter_timestamp;
+static int hf_pbap_application_parameter_data_filter_reserved_29_31;
+static int hf_pbap_application_parameter_data_filter_reserved_32_38;
+static int hf_pbap_application_parameter_data_filter_proprietary_filter;
+static int hf_pbap_application_parameter_data_filter_reserved_for_proprietary_filter_usage;
+static int hf_pbap_application_parameter_data_format;
+static int hf_pbap_application_parameter_data_phonebook_size;
+static int hf_pbap_application_parameter_data_new_missed_calls;
+static int hf_pbap_application_parameter_data_primary_version_counter;
+static int hf_pbap_application_parameter_data_secondary_version_counter;
+static int hf_pbap_application_parameter_data_database_identifier;
+static int hf_pbap_application_parameter_data_vcard_selector_operator;
+static int hf_pbap_application_parameter_data_reset_new_missed_calls;
+static int hf_pbap_application_parameter_data_supported_features;
+static int hf_pbap_application_parameter_data_supported_features_reserved;
+static int hf_pbap_application_parameter_data_supported_features_download;
+static int hf_pbap_application_parameter_data_supported_features_browsing;
+static int hf_pbap_application_parameter_data_supported_features_database_identifier;
+static int hf_pbap_application_parameter_data_supported_features_folder_version_counters;
+static int hf_pbap_application_parameter_data_supported_features_vcard_selecting;
+static int hf_pbap_application_parameter_data_supported_features_enhanced_missed_calls;
+static int hf_pbap_application_parameter_data_supported_features_x_bt_uci_vcard_property;
+static int hf_pbap_application_parameter_data_supported_features_x_bt_uid_vcard_property;
+static int hf_pbap_application_parameter_data_supported_features_contact_referencing;
+static int hf_pbap_application_parameter_data_supported_features_default_contact_image_format;
+static int hf_map_application_parameter_id;
+static int hf_map_application_parameter_data_max_list_count;
+static int hf_map_application_parameter_data_start_offset;
+static int hf_map_application_parameter_data_filter_message_type_reserved;
+static int hf_map_application_parameter_data_filter_message_type_mms;
+static int hf_map_application_parameter_data_filter_message_type_email;
+static int hf_map_application_parameter_data_filter_message_type_sms_cdma;
+static int hf_map_application_parameter_data_filter_message_type_sms_gsm;
+static int hf_map_application_parameter_data_filter_period_begin;
+static int hf_map_application_parameter_data_filter_period_end;
+static int hf_map_application_parameter_data_filter_read_status_reserved_6;
+static int hf_map_application_parameter_data_filter_read_status_get_read;
+static int hf_map_application_parameter_data_filter_read_status_get_unread;
+static int hf_map_application_parameter_data_filter_recipient;
+static int hf_map_application_parameter_data_filter_originator;
+static int hf_map_application_parameter_data_filter_priority_reserved_6;
+static int hf_map_application_parameter_data_filter_priority_get_high;
+static int hf_map_application_parameter_data_filter_priority_non_high;
+static int hf_map_application_parameter_data_reserved_7;
+static int hf_map_application_parameter_data_attachment;
+static int hf_map_application_parameter_data_transparent;
+static int hf_map_application_parameter_data_retry;
+static int hf_map_application_parameter_data_new_message;
+static int hf_map_application_parameter_data_notification_status;
+static int hf_map_application_parameter_data_mas_instance_id;
+static int hf_map_application_parameter_data_parameter_mask_reserved;
+static int hf_map_application_parameter_data_parameter_mask_reply_to_addressing;
+static int hf_map_application_parameter_data_parameter_mask_protected;
+static int hf_map_application_parameter_data_parameter_mask_sent;
+static int hf_map_application_parameter_data_parameter_mask_read;
+static int hf_map_application_parameter_data_parameter_mask_priority;
+static int hf_map_application_parameter_data_parameter_mask_attachment_size;
+static int hf_map_application_parameter_data_parameter_mask_text;
+static int hf_map_application_parameter_data_parameter_mask_reception_status;
+static int hf_map_application_parameter_data_parameter_mask_size;
+static int hf_map_application_parameter_data_parameter_mask_type;
+static int hf_map_application_parameter_data_parameter_mask_recipient_addressing;
+static int hf_map_application_parameter_data_parameter_mask_recipient_name;
+static int hf_map_application_parameter_data_parameter_mask_sender_addressing;
+static int hf_map_application_parameter_data_parameter_mask_sender_name;
+static int hf_map_application_parameter_data_parameter_mask_datetime;
+static int hf_map_application_parameter_data_parameter_mask_subject;
+static int hf_map_application_parameter_data_folder_listing_size;
+static int hf_map_application_parameter_data_messages_listing_size;
+static int hf_map_application_parameter_data_subject_length;
+static int hf_map_application_parameter_data_charset;
+static int hf_map_application_parameter_data_fraction_request;
+static int hf_map_application_parameter_data_fraction_deliver;
+static int hf_map_application_parameter_data_status_indicator;
+static int hf_map_application_parameter_data_status_value;
+static int hf_map_application_parameter_data_mse_time;
+static int hf_gpp_application_parameter_id;
+static int hf_gpp_application_parameter_data_max_list_count;
+static int hf_gpp_application_parameter_data_list_start_offset;
+static int hf_gpp_application_parameter_data_reserved_7;
+static int hf_gpp_application_parameter_data_notification_status;
+static int hf_gpp_application_parameter_data_instance_id;
+static int hf_gpp_application_parameter_data_listing_size;
+static int hf_ctn_application_parameter_id;
+static int hf_ctn_application_parameter_data_acoustic_alarm_status;
+static int hf_ctn_application_parameter_data_attachment;
+static int hf_ctn_application_parameter_data_send;
+static int hf_ctn_application_parameter_data_filter_period_begin;
+static int hf_ctn_application_parameter_data_filter_period_end;
+static int hf_ctn_application_parameter_data_parameter_mask;
+static int hf_ctn_application_parameter_data_parameter_mask_reserved;
+static int hf_ctn_application_parameter_data_parameter_mask_recurrent;
+static int hf_ctn_application_parameter_data_parameter_mask_send_status;
+static int hf_ctn_application_parameter_data_parameter_mask_alarm_status;
+static int hf_ctn_application_parameter_data_parameter_mask_pstatus;
+static int hf_ctn_application_parameter_data_parameter_mask_priority;
+static int hf_ctn_application_parameter_data_parameter_mask_originator_address;
+static int hf_ctn_application_parameter_data_parameter_mask_originator_name;
+static int hf_ctn_application_parameter_data_parameter_mask_end_time;
+static int hf_ctn_application_parameter_data_parameter_mask_summary;
+static int hf_ctn_application_parameter_data_parameter_mask_attachment;
+static int hf_ctn_application_parameter_data_status_indicator;
+static int hf_ctn_application_parameter_data_status_value;
+static int hf_ctn_application_parameter_data_postpone_val;
+static int hf_ctn_application_parameter_data_email_uri;
+static int hf_ctn_application_parameter_data_cse_time;
+static int hf_ctn_application_parameter_data_recurrent;
+static int hf_ctn_application_parameter_data_attach_id;
+static int hf_ctn_application_parameter_data_last_update;
+static int hf_profile;
+static int hf_type;
+static int hf_object_class;
+static int hf_time_iso8601;
+static int hf_wan_uuid;
+static int hf_hdr_val_action;
+static int hf_hdr_val_single_response_mode;
+static int hf_hdr_val_single_response_mode_parameter;
+static int hf_session_parameter;
+static int hf_session_parameter_tag;
+static int hf_session_parameter_length;
+static int hf_session_parameter_data;
+static int hf_session_parameter_nonce;
+static int hf_session_parameter_session_id;
+static int hf_session_parameter_next_sequence_number;
+static int hf_session_parameter_timeout;
+static int hf_session_parameter_opcode;
+static int hf_sender_bd_addr;
+static int hf_count;
+static int hf_data_length;
+static int hf_connection_id;
+static int hf_name;
+static int hf_current_path;
+static int hf_request_in_frame;
+static int hf_response_in_frame;
 
-static const int *hfx_hdr_id[] = {
+static int * const hfx_hdr_id[] = {
     &hf_hdr_id_encoding,
     &hf_hdr_id_meaning,
     NULL
 };
 
-static const int *hfx_pbap_application_parameter_data_filter_1[] = {
+static int * const hfx_pbap_application_parameter_data_filter_1[] = {
     &hf_pbap_application_parameter_data_filter_reserved_32_38,
     &hf_pbap_application_parameter_data_filter_proprietary_filter,
     &hf_pbap_application_parameter_data_filter_reserved_for_proprietary_filter_usage,
     NULL
 };
 
-static const int *hfx_pbap_application_parameter_data_filter_0[] = {
+static int * const hfx_pbap_application_parameter_data_filter_0[] = {
     &hf_pbap_application_parameter_data_filter_version,
     &hf_pbap_application_parameter_data_filter_fn,
     &hf_pbap_application_parameter_data_filter_n,
@@ -309,7 +298,7 @@ static const int *hfx_pbap_application_parameter_data_filter_0[] = {
     NULL
 };
 
-static const int *hfx_pbap_application_parameter_data_supported_features[] = {
+static int * const hfx_pbap_application_parameter_data_supported_features[] = {
     &hf_pbap_application_parameter_data_supported_features_reserved,
     &hf_pbap_application_parameter_data_supported_features_default_contact_image_format,
     &hf_pbap_application_parameter_data_supported_features_contact_referencing,
@@ -324,7 +313,7 @@ static const int *hfx_pbap_application_parameter_data_supported_features[] = {
     NULL
 };
 
-static const int *hfx_ctn_application_parameter_data_parameter_mask[] = {
+static int * const hfx_ctn_application_parameter_data_parameter_mask[] = {
     &hf_ctn_application_parameter_data_parameter_mask_reserved,
     &hf_ctn_application_parameter_data_parameter_mask_recurrent,
     &hf_ctn_application_parameter_data_parameter_mask_send_status,
@@ -339,9 +328,9 @@ static const int *hfx_ctn_application_parameter_data_parameter_mask[] = {
     NULL
 };
 
-static expert_field ei_unexpected_data = EI_INIT;
-static expert_field ei_application_parameter_length_bad = EI_INIT;
-static expert_field ei_decoded_as_profile = EI_INIT;
+static expert_field ei_unexpected_data;
+static expert_field ei_application_parameter_length_bad;
+static expert_field ei_decoded_as_profile;
 
 static dissector_table_t obex_profile_table;
 static dissector_table_t media_type_dissector_table;
@@ -350,19 +339,19 @@ static dissector_table_t media_type_dissector_table;
 /* ************************************************************************* */
 /*                   Header values for reassembly                            */
 /* ************************************************************************* */
-static int hf_obex_fragments = -1;
-static int hf_obex_fragment = -1;
-static int hf_obex_fragment_overlap = -1;
-static int hf_obex_fragment_overlap_conflict = -1;
-static int hf_obex_fragment_multiple_tails = -1;
-static int hf_obex_fragment_too_long_fragment = -1;
-static int hf_obex_fragment_error = -1;
-static int hf_obex_fragment_count = -1;
-static int hf_obex_reassembled_in = -1;
-static int hf_obex_reassembled_length = -1;
+static int hf_obex_fragments;
+static int hf_obex_fragment;
+static int hf_obex_fragment_overlap;
+static int hf_obex_fragment_overlap_conflict;
+static int hf_obex_fragment_multiple_tails;
+static int hf_obex_fragment_too_long_fragment;
+static int hf_obex_fragment_error;
+static int hf_obex_fragment_count;
+static int hf_obex_reassembled_in;
+static int hf_obex_reassembled_length;
 
-static gint ett_obex_fragment = -1;
-static gint ett_obex_fragments = -1;
+static int ett_obex_fragment;
+static int ett_obex_fragments;
 
 static dissector_handle_t obex_handle;
 static dissector_handle_t raw_application_parameters_handle;
@@ -394,82 +383,82 @@ static const fragment_items obex_frag_items = {
 };
 
 /* Initialize the subtree pointers */
-static gint ett_obex = -1;
-static gint ett_obex_hdrs = -1;
-static gint ett_obex_hdr = -1;
-static gint ett_obex_hdr_id = -1;
-static gint ett_obex_filter = -1;
-static gint ett_obex_parameter = -1;
-static gint ett_obex_session_parameters = -1;
-static gint ett_obex_application_parameters = -1;
-static gint ett_obex_authentication_parameters = -1;
+static int ett_obex;
+static int ett_obex_hdrs;
+static int ett_obex_hdr;
+static int ett_obex_hdr_id;
+static int ett_obex_filter;
+static int ett_obex_parameter;
+static int ett_obex_session_parameters;
+static int ett_obex_application_parameters;
+static int ett_obex_authentication_parameters;
 
-static wmem_tree_t *obex_path = NULL;
-static wmem_tree_t *obex_profile = NULL;
-static wmem_tree_t *obex_last_opcode = NULL;
+static wmem_tree_t *obex_path;
+static wmem_tree_t *obex_profile;
+static wmem_tree_t *obex_last_opcode;
 
 static dissector_handle_t http_handle;
 static dissector_handle_t xml_handle;
 static dissector_handle_t data_handle;
 static dissector_handle_t data_text_lines_handle;
 
-static const gchar  *path_unknown = "?";
-static const gchar  *path_root    = "/";
+static const char   *path_unknown = "?";
+static const char   *path_root    = "/";
 
 typedef struct _obex_proto_data_t {
-    guint32  interface_id;
-    guint32  adapter_id;
-    guint32  chandle;
-    guint32  channel;
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    uint32_t chandle;
+    uint32_t channel;
 } obex_proto_data_t;
 
 typedef struct _ext_value_string {
-    guint8       value[16];
-    gint         length;
-    const gchar *strptr;
+    uint8_t      value[16];
+    int          length;
+    const char *strptr;
 } ext_value_string;
 
 typedef struct _obex_path_data_t {
-    guint32  interface_id;
-    guint32  adapter_id;
-    guint32  chandle;
-    guint32   channel;
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    uint32_t chandle;
+    uint32_t  channel;
 /* TODO: add OBEX ConnectionId */
 
-    const gchar  *path;
+    const char   *path;
 } obex_path_data_t;
 
 typedef struct _obex_profile_data_t {
-    guint32  interface_id;
-    guint32  adapter_id;
-    guint32  chandle;
-    guint32  channel;
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    uint32_t chandle;
+    uint32_t channel;
 /* TODO: add OBEX ConnectionId */
 
-    gint     profile;
+    int      profile;
 } obex_profile_data_t;
 
 typedef struct _obex_last_opcode_data_t {
-    guint32 interface_id;
-    guint32 adapter_id;
-    guint32 chandle;
-    guint32 channel;
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    uint32_t chandle;
+    uint32_t channel;
 /* TODO: add OBEX ConnectionId */
-    gint    code;
+    int     code;
 
-    gboolean final_flag;
+    bool final_flag;
 
-    guint32  request_in_frame;
-    guint32  response_in_frame;
+    uint32_t request_in_frame;
+    uint32_t response_in_frame;
 
     union {
         struct {
-            const gchar  *name;
-            gboolean      go_up;
+            const char   *name;
+            bool          go_up;
         } set_data;
         struct {
-            gchar     *type;
-            gchar     *name;
+            char      *type;
+            char      *name;
         } get_put;
     } data;
 } obex_last_opcode_data_t;
@@ -531,8 +520,8 @@ static const ext_value_string target_vals[] = {
     {   { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0, NULL },
 };
 
-/* This table must map tagets from "target_vals" to profile */
-static const gint target_to_profile[] = {
+/* This table must map targets from "target_vals" to profile */
+static const int target_to_profile[] = {
     PROFILE_FTP,
     PROFILE_PBAP,
     PROFILE_SYNCML,
@@ -1006,18 +995,18 @@ void proto_register_obex(void);
 void proto_reg_handoff_obex(void);
 
 static void
-save_path(packet_info *pinfo, const gchar *current_path, const gchar *name,
-        gboolean go_up, obex_proto_data_t *obex_proto_data)
+save_path(packet_info *pinfo, const char *current_path, const char *name,
+        bool go_up, obex_proto_data_t *obex_proto_data)
 {
 
 /* On Connect response sets "/"
    On SetPath sets what is needed
  */
-    if (!pinfo->fd->flags.visited) {
+    if (!pinfo->fd->visited) {
         obex_path_data_t     *obex_path_data;
         wmem_tree_key_t       key[6];
-        guint32               frame_number;
-        const gchar          *path = path_unknown;
+        uint32_t              frame_number;
+        const char           *path = path_unknown;
 
         frame_number = pinfo->num;
 
@@ -1040,9 +1029,9 @@ save_path(packet_info *pinfo, const gchar *current_path, const gchar *name,
         obex_path_data->chandle = obex_proto_data->chandle;
         obex_path_data->channel = obex_proto_data->channel;
 
-        if (go_up == TRUE) {
+        if (go_up == true) {
             if (current_path != path_unknown && current_path != path_root) {
-                gchar *i_path;
+                char *i_path;
 
                 i_path = g_strrstr(current_path, "/");
                 if (!i_path) {
@@ -1069,67 +1058,54 @@ save_path(packet_info *pinfo, const gchar *current_path, const gchar *name,
     }
 }
 
-static void media_type_prompt(packet_info *pinfo, gchar* result)
+static void media_type_prompt(packet_info *pinfo, char* result)
 {
-    gchar *value_data;
+    char *value_data;
 
-    value_data = (gchar *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_MEDIA_TYPE);
+    value_data = (char *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_MEDIA_TYPE);
     if (value_data)
-        g_snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Media Type %s as", (gchar *) value_data);
+        snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Media Type %s as", (char *) value_data);
     else
-        g_snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Unknown Media Type");
+        snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Unknown Media Type");
 }
 
-static gpointer media_type_value(packet_info *pinfo)
+static void *media_type_value(packet_info *pinfo)
 {
-    gchar *value_data;
+    char *value_data;
 
-    value_data = (gchar *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_MEDIA_TYPE);
+    value_data = (char *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_MEDIA_TYPE);
 
     if (value_data)
-        return (gpointer) value_data;
+        return (void *) value_data;
 
     return NULL;
 }
 
-static void obex_profile_prompt(packet_info *pinfo _U_, gchar* result)
+static void obex_profile_prompt(packet_info *pinfo, char* result)
 {
-    guint8 *value_data;
+    uint8_t *value_data;
 
-    value_data = (guint8 *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_OBEX_PROFILE);
+    value_data = (uint8_t *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_OBEX_PROFILE);
     if (value_data)
-        g_snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "OBEX Profile 0x%04x as", (guint) *value_data);
+        snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "OBEX Profile 0x%04x as", (unsigned) *value_data);
     else
-        g_snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Unknown OBEX Profile");
+        snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Unknown OBEX Profile");
 }
 
-static gpointer obex_profile_value(packet_info *pinfo _U_)
+static void *obex_profile_value(packet_info *pinfo)
 {
-    guint8 *value_data;
+    uint8_t *value_data;
 
-    value_data = (guint8 *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_OBEX_PROFILE);
+    value_data = (uint8_t *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_OBEX_PROFILE);
 
     if (value_data)
-        return GUINT_TO_POINTER((gulong)*value_data);
+        return GUINT_TO_POINTER((unsigned long)*value_data);
 
     return NULL;
-}
-
-static void
-defragment_init(void)
-{
-    reassembly_table_init(&obex_reassembly_table,
-                          &addresses_reassembly_table_functions);
-}
-
-static void
-defragment_cleanup(void)
-{
-    reassembly_table_destroy(&obex_reassembly_table);
 }
 
 static int
-is_ascii_str(const guint8 *str, int length)
+is_ascii_str(const uint8_t *str, int length)
 {
     int i;
 
@@ -1147,20 +1123,20 @@ is_ascii_str(const guint8 *str, int length)
     return 1;
 }
 
-static gint
+static int
 dissect_obex_application_parameter_raw(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
     proto_item  *parameter_item;
     proto_tree  *parameter_tree;
-    guint8       parameter_id;
-    gint         offset = 0;
-    gint         parameters_length;
-    gint         parameter_length;
+    uint8_t      parameter_id;
+    int          offset = 0;
+    int          parameters_length;
+    int          parameter_length;
 
     parameters_length = tvb_reported_length(tvb);
 
     while (parameters_length > 0) {
-        parameter_id = tvb_get_guint8(tvb, offset);
+        parameter_id = tvb_get_uint8(tvb, offset);
         parameter_item = proto_tree_add_none_format(tree, hf_application_parameter, tvb, offset,
                 tvb_captured_length_remaining(tvb, offset), "Parameter: 0x%02x", parameter_id);
         parameter_tree = proto_item_add_subtree(parameter_item, ett_obex_application_parameters);
@@ -1171,7 +1147,7 @@ dissect_obex_application_parameter_raw(tvbuff_t *tvb, packet_info *pinfo _U_, pr
 
         proto_tree_add_item(parameter_tree, hf_application_parameter_length, tvb, offset,
                 1, ENC_BIG_ENDIAN);
-        parameter_length = tvb_get_guint8(tvb, offset);
+        parameter_length = tvb_get_uint8(tvb, offset);
         proto_item_set_len(parameter_item, parameter_length + 2);
         offset += 1;
 
@@ -1185,22 +1161,22 @@ dissect_obex_application_parameter_raw(tvbuff_t *tvb, packet_info *pinfo _U_, pr
     return offset;
 }
 
-static gint
+static int
 dissect_obex_application_parameter_bt_bpp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item  *item;
     proto_item  *parameter_item;
     proto_tree  *parameter_tree;
-    guint8       parameter_id;
-    gint         offset = 0;
-    gint         parameters_length;
-    gint         parameter_length;
+    uint8_t      parameter_id;
+    int          offset = 0;
+    int          parameters_length;
+    int          parameter_length;
 
     parameters_length = tvb_reported_length(tvb);
 
     while (parameters_length > 0) {
-        parameter_id = tvb_get_guint8(tvb, offset);
-        parameter_length = tvb_get_guint8(tvb, offset + 1);
+        parameter_id = tvb_get_uint8(tvb, offset);
+        parameter_length = tvb_get_uint8(tvb, offset + 1);
 
         parameter_item = proto_tree_add_none_format(tree, hf_application_parameter, tvb, offset, parameter_length + 2,
                 "Parameter: %s", val_to_str_const(parameter_id,
@@ -1241,23 +1217,23 @@ dissect_obex_application_parameter_bt_bpp(tvbuff_t *tvb, packet_info *pinfo, pro
     return offset;
 }
 
-static gint
+static int
 dissect_obex_application_parameter_bt_bip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item  *item;
     proto_item  *parameter_item;
     proto_tree  *parameter_tree;
-    guint8       parameter_id;
-    gint         offset = 0;
-    gint         parameters_length;
-    gint         parameter_length;
-    static gint  required_length_map[] = {0, 2, 2, 1, 4, 4, 4, 1, 1, 16, 1};
+    uint8_t      parameter_id;
+    int          offset = 0;
+    int          parameters_length;
+    int          parameter_length;
+    static int   required_length_map[] = {0, 2, 2, 1, 4, 4, 4, 1, 1, 16, 1};
 
     parameters_length = tvb_reported_length(tvb);
 
     while (parameters_length > 0) {
-        parameter_id = tvb_get_guint8(tvb, offset);
-        parameter_length = tvb_get_guint8(tvb, offset + 1);
+        parameter_id = tvb_get_uint8(tvb, offset);
+        parameter_length = tvb_get_uint8(tvb, offset + 1);
 
         parameter_item = proto_tree_add_none_format(tree, hf_application_parameter, tvb, offset, parameter_length + 2,
                 "Parameter: %s", val_to_str_const(parameter_id,
@@ -1270,7 +1246,7 @@ dissect_obex_application_parameter_bt_bip(tvbuff_t *tvb, packet_info *pinfo, pro
         item = proto_tree_add_item(parameter_tree, hf_application_parameter_length, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
-       if (parameter_id < (sizeof(required_length_map)/sizeof(gint)) &&
+       if (parameter_id < array_length(required_length_map) &&
                 required_length_map[parameter_id] != parameter_length) {
             proto_tree_add_item(parameter_tree, hf_application_parameter_data, tvb, offset, parameter_length, ENC_NA);
             expert_add_info_format(pinfo, item, &ei_application_parameter_length_bad,
@@ -1318,23 +1294,23 @@ dissect_obex_application_parameter_bt_bip(tvbuff_t *tvb, packet_info *pinfo, pro
     return offset;
 }
 
-static gint
+static int
 dissect_obex_application_parameter_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item  *item;
     proto_item  *parameter_item;
     proto_tree  *parameter_tree;
-    guint8       parameter_id;
-    gint         offset = 0;
-    gint         parameters_length;
-    gint         parameter_length;
-    static gint  required_length_map[] = {0, 1, -1, 1, 2, 2, 8, 1, 2, 1, 16, 16, 8, 16, 1, 1};
+    uint8_t      parameter_id;
+    int          offset = 0;
+    int          parameters_length;
+    int          parameter_length;
+    static int   required_length_map[] = {0, 1, -1, 1, 2, 2, 8, 1, 2, 1, 16, 16, 8, 16, 1, 1};
 
     parameters_length = tvb_reported_length(tvb);
 
     while (parameters_length > 0) {
-        parameter_id = tvb_get_guint8(tvb, offset);
-        parameter_length = tvb_get_guint8(tvb, offset + 1);
+        parameter_id = tvb_get_uint8(tvb, offset);
+        parameter_length = tvb_get_uint8(tvb, offset + 1);
 
         parameter_item = proto_tree_add_none_format(tree, hf_application_parameter, tvb, offset, parameter_length + 2,
                 "Parameter: %s", val_to_str_const(parameter_id,
@@ -1347,7 +1323,7 @@ dissect_obex_application_parameter_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, pr
         item = proto_tree_add_item(parameter_tree, hf_application_parameter_length, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
-        if (parameter_id < (sizeof(required_length_map)/sizeof(gint)) &&
+        if (parameter_id < array_length(required_length_map) &&
                 required_length_map[parameter_id] != -1 &&
                 required_length_map[parameter_id] != parameter_length) {
             proto_tree_add_item(parameter_tree, hf_application_parameter_data, tvb, offset, parameter_length, ENC_NA);
@@ -1359,7 +1335,7 @@ dissect_obex_application_parameter_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, pr
                 proto_tree_add_item(parameter_tree, hf_pbap_application_parameter_data_order, tvb, offset, 1, ENC_BIG_ENDIAN);
                 break;
             case 0x02: /* Search Value */
-                proto_tree_add_item(parameter_tree, hf_pbap_application_parameter_data_search_value, tvb, offset, parameter_length, ENC_ASCII | ENC_NA);
+                proto_tree_add_item(parameter_tree, hf_pbap_application_parameter_data_search_value, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x03: /* Search Attribute */
                 proto_tree_add_item(parameter_tree, hf_pbap_application_parameter_data_search_attribute, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1371,8 +1347,8 @@ dissect_obex_application_parameter_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, pr
                 proto_tree_add_item(parameter_tree, hf_pbap_application_parameter_data_list_start_offset, tvb, offset, 2, ENC_BIG_ENDIAN);
                 break;
             case 0x06: /* Filter */
-                proto_tree_add_bitmask(parameter_tree, tvb, offset, hf_pbap_application_parameter_data_filter, ett_obex_filter,  hfx_pbap_application_parameter_data_filter_1, ENC_BIG_ENDIAN);
-                proto_tree_add_bitmask(parameter_tree, tvb, offset, hf_pbap_application_parameter_data_filter, ett_obex_filter,  hfx_pbap_application_parameter_data_filter_0, ENC_BIG_ENDIAN);
+                proto_tree_add_bitmask(parameter_tree, tvb, offset + 0, hf_pbap_application_parameter_data_filter, ett_obex_filter,  hfx_pbap_application_parameter_data_filter_1, ENC_BIG_ENDIAN);
+                proto_tree_add_bitmask(parameter_tree, tvb, offset + 4, hf_pbap_application_parameter_data_filter, ett_obex_filter,  hfx_pbap_application_parameter_data_filter_0, ENC_BIG_ENDIAN);
                 break;
             case 0x07: /* Format */
                 proto_tree_add_item(parameter_tree, hf_pbap_application_parameter_data_format, tvb, offset, 1, ENC_NA);
@@ -1390,8 +1366,8 @@ dissect_obex_application_parameter_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, pr
                 proto_tree_add_item(parameter_tree, hf_pbap_application_parameter_data_secondary_version_counter, tvb, offset, 16, ENC_NA);
                 break;
             case 0x0C: /* vCard Selector */
-                proto_tree_add_bitmask(parameter_tree, tvb, offset, hf_pbap_application_parameter_vcard_selector, ett_obex_filter,  hfx_pbap_application_parameter_data_filter_1, ENC_BIG_ENDIAN);
-                proto_tree_add_bitmask(parameter_tree, tvb, offset, hf_pbap_application_parameter_vcard_selector, ett_obex_filter,  hfx_pbap_application_parameter_data_filter_0, ENC_BIG_ENDIAN);
+                proto_tree_add_bitmask(parameter_tree, tvb, offset + 0, hf_pbap_application_parameter_vcard_selector, ett_obex_filter,  hfx_pbap_application_parameter_data_filter_1, ENC_BIG_ENDIAN);
+                proto_tree_add_bitmask(parameter_tree, tvb, offset + 4, hf_pbap_application_parameter_vcard_selector, ett_obex_filter,  hfx_pbap_application_parameter_data_filter_0, ENC_BIG_ENDIAN);
                 break;
             case 0x0D: /* Database Identifier */
                 proto_tree_add_item(parameter_tree, hf_pbap_application_parameter_data_database_identifier, tvb, offset, 16, ENC_NA);
@@ -1416,23 +1392,23 @@ dissect_obex_application_parameter_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, pr
     return offset;
 }
 
-static gint
+static int
 dissect_obex_application_parameter_bt_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item  *item;
     proto_item  *parameter_item;
     proto_tree  *parameter_tree;
-    guint8       parameter_id;
-    gint         offset = 0;
-    gint         parameters_length;
-    gint         parameter_length;
-    static gint  required_length_map[] = {0, 2, 2, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 4, 2, 2, 1, 1, 1, 1, 1, 1, -1};
+    uint8_t      parameter_id;
+    int          offset = 0;
+    int          parameters_length;
+    int          parameter_length;
+    static int   required_length_map[] = {0, 2, 2, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 4, 2, 2, 1, 1, 1, 1, 1, 1, -1};
 
     parameters_length = tvb_reported_length(tvb);
 
     while (parameters_length > 0) {
-        parameter_id = tvb_get_guint8(tvb, offset);
-        parameter_length = tvb_get_guint8(tvb, offset + 1);
+        parameter_id = tvb_get_uint8(tvb, offset);
+        parameter_length = tvb_get_uint8(tvb, offset + 1);
 
         parameter_item = proto_tree_add_none_format(tree, hf_application_parameter, tvb, offset, parameter_length + 2,
                 "Parameter: %s", val_to_str_const(parameter_id,
@@ -1445,7 +1421,7 @@ dissect_obex_application_parameter_bt_map(tvbuff_t *tvb, packet_info *pinfo, pro
         item = proto_tree_add_item(parameter_tree, hf_application_parameter_length, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
-        if (parameter_id < (sizeof(required_length_map)/sizeof(gint)) &&
+        if (parameter_id < array_length(required_length_map) &&
                 required_length_map[parameter_id] != -1 &&
                 required_length_map[parameter_id] != parameter_length) {
             proto_tree_add_item(parameter_tree, hf_application_parameter_data, tvb, offset, parameter_length, ENC_NA);
@@ -1467,10 +1443,10 @@ dissect_obex_application_parameter_bt_map(tvbuff_t *tvb, packet_info *pinfo, pro
                 proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_message_type_sms_gsm,  tvb, offset, required_length_map[parameter_id], ENC_BIG_ENDIAN);
                 break;
             case 0x04:
-                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_period_begin, tvb, offset, parameter_length, ENC_ASCII | ENC_NA);
+                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_period_begin, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x05:
-                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_period_end, tvb, offset, parameter_length, ENC_ASCII | ENC_NA);
+                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_period_end, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x06:
                 proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_read_status_reserved_6, tvb, offset, required_length_map[parameter_id], ENC_BIG_ENDIAN);
@@ -1478,10 +1454,10 @@ dissect_obex_application_parameter_bt_map(tvbuff_t *tvb, packet_info *pinfo, pro
                 proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_read_status_get_unread, tvb, offset, required_length_map[parameter_id], ENC_BIG_ENDIAN);
                 break;
             case 0x07:
-                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_recipient, tvb, offset, parameter_length, ENC_ASCII | ENC_NA);
+                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_recipient, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x08:
-                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_originator, tvb, offset, parameter_length, ENC_ASCII | ENC_NA);
+                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_originator, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x09:
                 proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_filter_priority_reserved_6, tvb, offset, required_length_map[parameter_id], ENC_BIG_ENDIAN);
@@ -1561,7 +1537,7 @@ dissect_obex_application_parameter_bt_map(tvbuff_t *tvb, packet_info *pinfo, pro
                 proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_status_value, tvb, offset, required_length_map[parameter_id], ENC_BIG_ENDIAN);
                 break;
             case 0x19:
-                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_mse_time, tvb, offset, parameter_length, ENC_ASCII | ENC_NA);
+                proto_tree_add_item(parameter_tree, hf_map_application_parameter_data_mse_time, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             default:
                 proto_tree_add_item(parameter_tree, hf_application_parameter_data, tvb, offset, parameter_length, ENC_NA);
@@ -1574,23 +1550,23 @@ dissect_obex_application_parameter_bt_map(tvbuff_t *tvb, packet_info *pinfo, pro
    return offset;
 }
 
-static gint
+static int
 dissect_obex_application_parameter_bt_gpp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item  *item;
     proto_item  *parameter_item;
     proto_tree  *parameter_tree;
-    guint8       parameter_id;
-    gint         offset = 0;
-    gint         parameters_length;
-    gint         parameter_length;
-    static gint  required_length_map[] = {2, 2, 1, 1, 0, 2};
+    uint8_t      parameter_id;
+    int          offset = 0;
+    int          parameters_length;
+    int          parameter_length;
+    static int   required_length_map[] = {2, 2, 1, 1, 0, 2};
 
     parameters_length = tvb_reported_length(tvb);
 
     while (parameters_length > 0) {
-        parameter_id = tvb_get_guint8(tvb, offset);
-        parameter_length = tvb_get_guint8(tvb, offset + 1);
+        parameter_id = tvb_get_uint8(tvb, offset);
+        parameter_length = tvb_get_uint8(tvb, offset + 1);
 
         parameter_item = proto_tree_add_none_format(tree, hf_application_parameter, tvb, offset, parameter_length + 2,
                 "Parameter: %s", val_to_str_const(parameter_id,
@@ -1603,7 +1579,7 @@ dissect_obex_application_parameter_bt_gpp(tvbuff_t *tvb, packet_info *pinfo, pro
         item = proto_tree_add_item(parameter_tree, hf_application_parameter_length, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
-        if (parameter_id >= 0x41 && (guint8)(parameter_id - 0x41) < (sizeof(required_length_map)/sizeof(gint)) &&
+        if (parameter_id >= 0x41 && (uint8_t)(parameter_id - 0x41) < array_length(required_length_map) &&
                 required_length_map[parameter_id - 0x41] != -1 &&
                 required_length_map[parameter_id - 0x41] != parameter_length) {
             proto_tree_add_item(parameter_tree, hf_application_parameter_data, tvb, offset, parameter_length, ENC_NA);
@@ -1638,24 +1614,24 @@ dissect_obex_application_parameter_bt_gpp(tvbuff_t *tvb, packet_info *pinfo, pro
     return offset;
 }
 
-static gint
+static int
 dissect_obex_application_parameter_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item  *item;
     proto_item  *parameter_item;
     proto_tree  *parameter_tree;
-    guint8       parameter_id;
-    gint         offset = 0;
-    gint         parameters_length;
-    gint         parameter_length;
-    static gint  required_length_map[] = {0, 1, 1, 1, -1, -1, 4, 1, 1, 4, -1, -1, 1, 1, -1};
-    static gint  required_length_map_gpp[] = {2, 2, 1, 1, -1, 2};
+    uint8_t      parameter_id;
+    int          offset = 0;
+    int          parameters_length;
+    int          parameter_length;
+    static int   required_length_map[] = {0, 1, 1, 1, -1, -1, 4, 1, 1, 4, -1, -1, 1, 1, -1};
+    static int   required_length_map_gpp[] = {2, 2, 1, 1, -1, 2};
 
     parameters_length = tvb_reported_length(tvb);
 
     while (parameters_length > 0) {
-        parameter_id = tvb_get_guint8(tvb, offset);
-        parameter_length = tvb_get_guint8(tvb, offset + 1);
+        parameter_id = tvb_get_uint8(tvb, offset);
+        parameter_length = tvb_get_uint8(tvb, offset + 1);
 
         parameter_item = proto_tree_add_none_format(tree, hf_application_parameter, tvb, offset, parameter_length + 2,
                 "Parameter: %s", val_to_str_const(parameter_id,
@@ -1668,16 +1644,18 @@ dissect_obex_application_parameter_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, pro
         item = proto_tree_add_item(parameter_tree, hf_application_parameter_length, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
-        if (parameter_id < 0x41 && parameter_id < (sizeof(required_length_map)/sizeof(gint)) &&
+        if ((parameter_id < 0x41) && (parameter_id < array_length(required_length_map)) &&
                 required_length_map[parameter_id] != -1 &&
                 required_length_map[parameter_id] != parameter_length) {
+
             proto_tree_add_item(parameter_tree, hf_application_parameter_data, tvb, offset, parameter_length, ENC_NA);
             expert_add_info_format(pinfo, item, &ei_application_parameter_length_bad,
                     "According to the specification this parameter length should be %i, but there is %i",
                     required_length_map[parameter_id], parameter_length);
-        } else if (parameter_id >= 0x41 && (guint8)(parameter_id - 0x41) < (sizeof(required_length_map_gpp)/sizeof(gint)) &&
+        } else if ((parameter_id >= 0x41) && ((uint8_t)(parameter_id - 0x41) < array_length(required_length_map_gpp)) &&
                 required_length_map[parameter_id - 0x41] != -1 &&
                 required_length_map[parameter_id - 0x41] != parameter_length) {
+
             proto_tree_add_item(parameter_tree, hf_application_parameter_data, tvb, offset, parameter_length, ENC_NA);
             expert_add_info_format(pinfo, item, &ei_application_parameter_length_bad,
                     "According to the specification this parameter length should be %i, but there is %i",
@@ -1709,10 +1687,10 @@ dissect_obex_application_parameter_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, pro
                 proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_send, tvb, offset, 1, ENC_NA);
                 break;
             case 0x04: /* Filter Period Begin */
-                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_filter_period_begin, tvb, offset, parameter_length, ENC_NA | ENC_ASCII);
+                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_filter_period_begin, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x05: /* Filter Period End */
-                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_filter_period_end, tvb, offset, parameter_length, ENC_NA | ENC_ASCII);
+                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_filter_period_end, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x06: /* Parameter Mask */
                 proto_tree_add_bitmask(parameter_tree, tvb, offset, hf_ctn_application_parameter_data_parameter_mask, ett_obex_filter,  hfx_ctn_application_parameter_data_parameter_mask, ENC_BIG_ENDIAN);
@@ -1727,10 +1705,10 @@ dissect_obex_application_parameter_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, pro
                 proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_postpone_val, tvb, offset, 4, ENC_BIG_ENDIAN);
                 break;
             case 0x0A: /* Email URI */
-                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_email_uri, tvb, offset, parameter_length, ENC_NA | ENC_ASCII);
+                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_email_uri, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x0B: /* CSE Time */
-                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_cse_time, tvb, offset, parameter_length, ENC_NA | ENC_ASCII);
+                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_cse_time, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             case 0x0C: /* Recurrent */
                 proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_recurrent, tvb, offset, 1, ENC_NA);
@@ -1739,7 +1717,7 @@ dissect_obex_application_parameter_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, pro
                 proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_attach_id, tvb, offset, 1, ENC_NA);
                 break;
             case 0x0E: /* Last Update */
-                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_last_update, tvb, offset, parameter_length, ENC_NA | ENC_ASCII);
+                proto_tree_add_item(parameter_tree, hf_ctn_application_parameter_data_last_update, tvb, offset, parameter_length, ENC_ASCII);
                 break;
             default:
                 proto_tree_add_item(parameter_tree, hf_application_parameter_data, tvb, offset, parameter_length, ENC_NA);
@@ -1754,7 +1732,7 @@ dissect_obex_application_parameter_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, pro
 
 static int
 dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
-        gint profile, obex_last_opcode_data_t *obex_last_opcode_data,
+        int profile, obex_last_opcode_data_t *obex_last_opcode_data,
         obex_proto_data_t *obex_proto_data)
 {
     proto_tree *hdrs_tree   = NULL;
@@ -1762,14 +1740,14 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
     proto_item *hdr         = NULL;
     proto_item *handle_item;
     tvbuff_t   *next_tvb;
-    gint        new_offset;
-    gint        item_length = 0;
-    gint        value_length = 0;
-    guint8      hdr_id, i;
-    guint32     value;
-    guint32     frame_number;
-    guint8      tag;
-    gchar      *str = NULL;
+    int         new_offset;
+    int         item_length = 0;
+    int         value_length = 0;
+    uint8_t     hdr_id, i;
+    uint32_t    value;
+    uint32_t    frame_number;
+    uint8_t     tag;
+    char       *str = NULL;
 
     if (tvb_reported_length_remaining(tvb, offset) > 0) {
         proto_item *hdrs;
@@ -1781,7 +1759,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
     }
 
     while (tvb_reported_length_remaining(tvb, offset) > 0) {
-        hdr_id = tvb_get_guint8(tvb, offset);
+        hdr_id = tvb_get_uint8(tvb, offset);
 
         switch(0xC0 & hdr_id)
         {
@@ -1820,7 +1798,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                 switch (hdr_id) {
                 case 0x01: /* Name */
                     proto_tree_add_item(hdr_tree, hf_name, tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
-                    if (!pinfo->fd->flags.visited && obex_last_opcode_data) {
+                    if (!pinfo->fd->visited && obex_last_opcode_data) {
                         if (obex_last_opcode_data->code == OBEX_CODE_VALS_SET_PATH)
                             obex_last_opcode_data->data.set_data.name = tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
                         else if (obex_last_opcode_data->code == OBEX_CODE_VALS_GET || obex_last_opcode_data->code == OBEX_CODE_VALS_PUT)
@@ -1830,7 +1808,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                 default:
                     proto_tree_add_item(hdr_tree, hf_hdr_val_unicode, tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
                 }
-                str = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
+                str = tvb_get_string_enc(pinfo->pool, tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
                 proto_item_append_text(hdr_tree, ": \"%s\"", str);
 
                 col_append_fstr(pinfo->cinfo, COL_INFO, " \"%s\"", str);
@@ -1844,7 +1822,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                 switch (hdr_id) {
                 case 0x4c: /* Application Parameters */
                     next_tvb = tvb_new_subset_length(tvb, offset, value_length);
-                    if (!(new_offset = dissector_try_uint_new(obex_profile_table, profile, next_tvb, pinfo, hdr_tree, TRUE, NULL))) {
+                    if (!(new_offset = dissector_try_uint_with_data(obex_profile_table, profile, next_tvb, pinfo, hdr_tree, true, NULL))) {
                         new_offset = call_dissector(raw_application_parameters_handle, next_tvb, pinfo, hdr_tree);
                     }
                     offset += new_offset;
@@ -1852,13 +1830,13 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     break;
                 case 0x4d: /* Authentication Challenge */
                     while (value_length) {
-                        guint8       parameter_id;
-                        guint8       sub_parameter_length;
+                        uint8_t      parameter_id;
+                        uint8_t      sub_parameter_length;
                         proto_item  *parameter_item;
                         proto_tree  *parameter_tree;
 
-                        parameter_id = tvb_get_guint8(tvb, offset);
-                        sub_parameter_length = tvb_get_guint8(tvb, offset + 1);
+                        parameter_id = tvb_get_uint8(tvb, offset);
+                        sub_parameter_length = tvb_get_uint8(tvb, offset + 1);
 
                         parameter_item = proto_tree_add_none_format(hdr_tree, hf_authentication_parameter, tvb, offset,
                                 2 + sub_parameter_length, "Tag: %s", val_to_str_const(parameter_id,
@@ -1866,7 +1844,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                         parameter_tree = proto_item_add_subtree(parameter_item, ett_obex_authentication_parameters);
 
                         proto_tree_add_item(parameter_tree, hf_authentication_challenge_tag, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        tag = tvb_get_guint8(tvb, offset);
+                        tag = tvb_get_uint8(tvb, offset);
                         offset += 1;
 
                         proto_tree_add_item(parameter_tree, hf_authentication_length, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1886,7 +1864,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                         case 0x02:
                             proto_tree_add_item(parameter_tree, hf_authentication_info_charset, tvb, offset, 1, ENC_BIG_ENDIAN);
                             offset += 1;
-                            proto_tree_add_item(parameter_tree, hf_authentication_info, tvb, offset, sub_parameter_length - 1, ENC_ASCII|ENC_NA);
+                            proto_tree_add_item(parameter_tree, hf_authentication_info, tvb, offset, sub_parameter_length - 1, ENC_ASCII);
                             offset += sub_parameter_length - 1;
                             break;
                         default:
@@ -1899,13 +1877,13 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     break;
                 case 0x4e: /* Authentication Response */
                     while (value_length) {
-                        guint8       parameter_id;
-                        guint8       sub_parameter_length;
+                        uint8_t      parameter_id;
+                        uint8_t      sub_parameter_length;
                         proto_item  *parameter_item;
                         proto_tree  *parameter_tree;
 
-                        parameter_id = tvb_get_guint8(tvb, offset);
-                        sub_parameter_length = tvb_get_guint8(tvb, offset + 1);
+                        parameter_id = tvb_get_uint8(tvb, offset);
+                        sub_parameter_length = tvb_get_uint8(tvb, offset + 1);
 
                         parameter_item = proto_tree_add_none_format(hdr_tree, hf_authentication_parameter, tvb, offset,
                                 2 + sub_parameter_length, "Tag: %s", val_to_str_const(parameter_id,
@@ -1913,11 +1891,11 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                         parameter_tree = proto_item_add_subtree(parameter_item, ett_obex_authentication_parameters);
 
                         proto_tree_add_item(parameter_tree, hf_authentication_response_tag, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        tag = tvb_get_guint8(tvb, offset);
+                        tag = tvb_get_uint8(tvb, offset);
                         offset += 1;
 
                         proto_tree_add_item(parameter_tree, hf_authentication_length, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        sub_parameter_length = tvb_get_guint8(tvb, offset);
+                        sub_parameter_length = tvb_get_uint8(tvb, offset);
                         offset += 1;
 
                         switch (tag) {
@@ -1944,13 +1922,13 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     }
                     break;
                 case 0x42: /* Type */
-                    proto_tree_add_item(hdr_tree, hf_type, tvb, offset, value_length, ENC_ASCII | ENC_NA);
-                    proto_item_append_text(hdr_tree, ": \"%s\"", tvb_get_string_enc(wmem_packet_scope(), tvb, offset, value_length, ENC_ASCII));
-                    if (!pinfo->fd->flags.visited && obex_last_opcode_data && (obex_last_opcode_data->code == OBEX_CODE_VALS_GET || obex_last_opcode_data->code == OBEX_CODE_VALS_PUT)) {
+                    proto_tree_add_item(hdr_tree, hf_type, tvb, offset, value_length, ENC_ASCII);
+                    proto_item_append_text(hdr_tree, ": \"%s\"", tvb_get_string_enc(pinfo->pool, tvb, offset, value_length, ENC_ASCII));
+                    if (!pinfo->fd->visited && obex_last_opcode_data && (obex_last_opcode_data->code == OBEX_CODE_VALS_GET || obex_last_opcode_data->code == OBEX_CODE_VALS_PUT)) {
                         obex_last_opcode_data->data.get_put.type = tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_ASCII | ENC_NA);
                     }
                     if (p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_MEDIA_TYPE) == NULL) {
-                        guint8 *value_data;
+                        uint8_t *value_data;
 
                         value_data = tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_ASCII | ENC_NA);
 
@@ -1961,8 +1939,8 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     break;
                 case 0x44: /* Time (ISO8601) */
                     {
-                    const guint8* time_str;
-                    proto_tree_add_item_ret_string(hdr_tree, hf_time_iso8601, tvb, offset, value_length, ENC_ASCII | ENC_NA, wmem_packet_scope(), &time_str);
+                    const uint8_t* time_str;
+                    proto_tree_add_item_ret_string(hdr_tree, hf_time_iso8601, tvb, offset, value_length, ENC_ASCII | ENC_NA, pinfo->pool, &time_str);
                     proto_item_append_text(hdr_tree, ": \"%s\"", time_str);
 
                     offset += value_length;
@@ -1976,7 +1954,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     if (value_length > 0 && obex_last_opcode_data &&
                             (obex_last_opcode_data->code == OBEX_CODE_VALS_GET || obex_last_opcode_data->code == OBEX_CODE_VALS_PUT) &&
                             p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_MEDIA_TYPE) == NULL) {
-                        guint8 *value_data;
+                        uint8_t *value_data;
 
                         value_data = obex_last_opcode_data->data.get_put.type;
 
@@ -1985,15 +1963,15 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     if (value_length > 0 && obex_last_opcode_data &&
                             (obex_last_opcode_data->code == OBEX_CODE_VALS_GET || obex_last_opcode_data->code == OBEX_CODE_VALS_PUT) &&
                             obex_last_opcode_data->data.get_put.type &&
-                            dissector_try_string(media_type_dissector_table, obex_last_opcode_data->data.get_put.type, next_tvb, pinfo, tree, NULL) > 0) {
+                            dissector_try_string_with_data(media_type_dissector_table, obex_last_opcode_data->data.get_put.type, next_tvb, pinfo, tree, true, NULL) > 0) {
                         offset += value_length;
                     } else {
                         if (!tvb_strneql(tvb, offset, "<?xml", 5))
                         {
                             call_dissector(xml_handle, next_tvb, pinfo, tree);
                         } else if (is_ascii_str(tvb_get_ptr(tvb, offset, value_length), value_length)) {
-                            proto_item_append_text(hdr_tree, ": \"%s\"", tvb_get_string_enc(wmem_packet_scope(), tvb, offset, value_length, ENC_ASCII));
-                            col_append_fstr(pinfo->cinfo, COL_INFO, " \"%s\"", tvb_get_string_enc(wmem_packet_scope(), tvb, offset, value_length, ENC_ASCII));
+                            proto_item_append_text(hdr_tree, ": \"%s\"", tvb_get_string_enc(pinfo->pool, tvb, offset, value_length, ENC_ASCII));
+                            col_append_fstr(pinfo->cinfo, COL_INFO, " \"%s\"", tvb_get_string_enc(pinfo->pool, tvb, offset, value_length, ENC_ASCII));
                         }
                         offset += value_length;
                     }
@@ -2009,7 +1987,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                             proto_item_append_text(hdr_tree, ": %s", target_vals[i].strptr);
 
                             col_append_fstr(pinfo->cinfo, COL_INFO, " - %s", target_vals[i].strptr);
-                            if (!pinfo->fd->flags.visited) {
+                            if (!pinfo->fd->visited) {
                                 obex_profile_data_t  *obex_profile_data;
 
                                 wmem_tree_key_t       key[6];
@@ -2061,8 +2039,8 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     break;
                 case 0x51: /* Object Class */
                     {
-                    const guint8* obj_str;
-                    proto_tree_add_item_ret_string(hdr_tree, hf_object_class, tvb, offset, value_length, ENC_ASCII | ENC_NA, wmem_packet_scope(), &obj_str);
+                    const uint8_t* obj_str;
+                    proto_tree_add_item_ret_string(hdr_tree, hf_object_class, tvb, offset, value_length, ENC_ASCII | ENC_NA, pinfo->pool, &obj_str);
                     proto_item_append_text(hdr_tree, ": \"%s\"", obj_str);
 
                     offset += value_length;
@@ -2070,13 +2048,13 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     break;
                 case 0x52: /* Session Parameter */
                     while (value_length) {
-                        guint8       parameter_id;
-                        guint8       sub_parameter_length;
+                        uint8_t      parameter_id;
+                        uint8_t      sub_parameter_length;
                         proto_item  *parameter_item;
                         proto_tree  *parameter_tree;
 
-                        parameter_id = tvb_get_guint8(tvb, offset);
-                        sub_parameter_length = tvb_get_guint8(tvb, offset + 1);
+                        parameter_id = tvb_get_uint8(tvb, offset);
+                        sub_parameter_length = tvb_get_uint8(tvb, offset + 1);
 
                         parameter_item = proto_tree_add_none_format(hdr_tree, hf_session_parameter, tvb, offset,
                                 2 + sub_parameter_length, "Tag: %s", val_to_str_const(parameter_id,
@@ -2084,17 +2062,17 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                         parameter_tree = proto_item_add_subtree(parameter_item, ett_obex_session_parameters);
 
                         proto_tree_add_item(parameter_tree, hf_session_parameter_tag, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        tag = tvb_get_guint8(tvb, offset);
+                        tag = tvb_get_uint8(tvb, offset);
                         offset += 1;
 
                         proto_tree_add_item(parameter_tree, hf_session_parameter_length, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        sub_parameter_length = tvb_get_guint8(tvb, offset);
+                        sub_parameter_length = tvb_get_uint8(tvb, offset);
                         offset += 1;
 
                         switch (tag) {
                         case 0x00: /* Device Address */
                             if (sub_parameter_length == 6) {
-                                offset = dissect_bd_addr(hf_sender_bd_addr, pinfo, parameter_tree, tvb, offset, FALSE, obex_proto_data->interface_id, obex_proto_data->adapter_id, NULL);
+                                offset = dissect_bd_addr(hf_sender_bd_addr, pinfo, parameter_tree, tvb, offset, false, obex_proto_data->interface_id, obex_proto_data->adapter_id, NULL);
                             } else {
                                 proto_tree_add_item(parameter_tree, hf_session_parameter_data, tvb, offset, sub_parameter_length, ENC_NA);
 
@@ -2179,7 +2157,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
 
                 break;
             case 0x80:  /* 1 byte */
-                value = tvb_get_guint8(tvb, offset);
+                value = tvb_get_uint8(tvb, offset);
 
                 switch (hdr_id) {
                 case 0x94: /* Action */
@@ -2242,30 +2220,31 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
     return offset;
 }
 
-static gint
+static int
 dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item    *main_item;
     proto_tree    *main_tree;
     proto_item    *sub_item;
     fragment_head *frag_msg       = NULL;
-    gboolean       save_fragmented;
-    gboolean       complete;
+    fragment_item *frag           = NULL;
+    bool           save_fragmented;
+    bool           complete;
     tvbuff_t*      new_tvb        = NULL;
     tvbuff_t*      next_tvb       = NULL;
-    gint           offset         = 0;
-    gint           profile        = PROFILE_UNKNOWN;
-    const gchar   *path           = path_unknown;
+    int            offset         = 0;
+    int            profile        = PROFILE_UNKNOWN;
+    const char    *path           = path_unknown;
     obex_profile_data_t      *obex_profile_data;
     wmem_tree_key_t           key[6];
-    guint32                   frame_number;
+    uint32_t                  frame_number;
     obex_last_opcode_data_t  *obex_last_opcode_data;
     obex_path_data_t         *obex_path_data;
-    guint32                   length;
-    guint8                   *profile_data;
+    uint32_t                  length;
+    uint8_t                  *profile_data;
     dissector_handle_t        current_handle;
     dissector_handle_t        default_handle;
-    gint                      previous_proto;
+    int                       previous_proto;
     obex_proto_data_t         obex_proto_data;
 
     previous_proto = (GPOINTER_TO_INT(wmem_list_frame_data(wmem_list_frame_prev(wmem_list_tail(pinfo->layers)))));
@@ -2316,7 +2295,7 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     key[5].length = 0;
     key[5].key = NULL;
 
-    profile_data = (guint8 *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_OBEX_PROFILE);
+    profile_data = (uint8_t *) p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_OBEX_PROFILE);
     if (profile_data == NULL) {
         obex_profile_data = (obex_profile_data_t *)wmem_tree_lookup32_array_le(obex_profile, key);
         if (obex_profile_data && obex_profile_data->interface_id == obex_proto_data.interface_id &&
@@ -2326,7 +2305,7 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             profile = obex_profile_data->profile;
         }
 
-        profile_data = wmem_new(wmem_file_scope(), guint8);
+        profile_data = wmem_new(wmem_file_scope(), uint8_t);
         *profile_data = profile;
 
         p_add_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_OBEX_PROFILE, profile_data);
@@ -2341,20 +2320,20 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
       }
 
     sub_item = proto_tree_add_uint(main_tree, hf_profile, tvb, 0, 0, profile);
-    PROTO_ITEM_SET_GENERATED(sub_item);
+    proto_item_set_generated(sub_item);
 
     if (path) {
         sub_item = proto_tree_add_string(main_tree, hf_current_path, tvb, 0, 0, path);
-        PROTO_ITEM_SET_GENERATED(sub_item);
+        proto_item_set_generated(sub_item);
     }
 
     current_handle = dissector_get_uint_handle(obex_profile_table, profile);
     default_handle = dissector_get_default_uint_handle("obex.profile", profile);
     if (current_handle != default_handle) {
-        expert_add_info_format(pinfo, main_item, &ei_decoded_as_profile, "Decoded As %s", dissector_handle_get_long_name(current_handle));
+        expert_add_info_format(pinfo, main_item, &ei_decoded_as_profile, "Decoded As %s", dissector_handle_get_protocol_long_name(current_handle));
     }
 
-    complete = FALSE;
+    complete = false;
 
     if (tvb_captured_length(tvb) == tvb_reported_length(tvb)) {
         frag_msg = fragment_get_reassembled_id(&obex_reassembly_table, pinfo, pinfo->p2p_dir);
@@ -2376,20 +2355,18 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
                 /* packet stream is guaranted to be sequence of fragments, one by one,
                    so find last fragment for its offset and length */
-                while (frag_msg->next) {
-                    frag_msg = frag_msg->next;
-                }
+                for (frag = frag_msg->next; frag->next; frag = frag->next) {}
 
                 frag_msg = fragment_add_check(&obex_reassembly_table,
                         tvb, 0, pinfo, pinfo->p2p_dir, NULL,
-                        frag_msg->offset + frag_msg->len, tvb_reported_length(tvb),
-                                ((frag_msg->offset + frag_msg->len + tvb_reported_length(tvb)) <
-                                    fragment_get_tot_len(&obex_reassembly_table, pinfo, pinfo->p2p_dir, NULL)) ? TRUE : FALSE);
+                        frag->offset + frag->len, tvb_reported_length(tvb),
+                                ((frag->offset + frag->len + tvb_reported_length(tvb)) <
+                                    fragment_get_tot_len(&obex_reassembly_table, pinfo, pinfo->p2p_dir, NULL)) ? true : false);
 
                 new_tvb = process_reassembled_data(tvb, 0, pinfo,
                         "Reassembled Obex packet", frag_msg, &obex_frag_items, NULL, main_tree);
 
-                pinfo->fragmented = TRUE;
+                pinfo->fragmented = true;
             } else {
                 if (tvb_reported_length(tvb) < 3) {
                     /* Packet length is in the second and the third bye of packet, anything shorter than 3 is bad */
@@ -2401,7 +2378,7 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                     /* first fragment in a sequence */
                     frag_msg = fragment_add_check(&obex_reassembly_table,
                                         tvb, 0, pinfo, pinfo->p2p_dir, NULL,
-                                        0, tvb_reported_length(tvb), TRUE);
+                                        0, tvb_reported_length(tvb), true);
 
                     fragment_set_tot_len(&obex_reassembly_table,
                                         pinfo, pinfo->p2p_dir, NULL,
@@ -2409,11 +2386,11 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
                     new_tvb = process_reassembled_data(tvb, 0, pinfo,
                                 "Reassembled Obex packet", frag_msg, &obex_frag_items, NULL, main_tree);
-                    pinfo->fragmented = TRUE;
+                    pinfo->fragmented = true;
                 } else if (tvb_reported_length(tvb) == tvb_get_ntohs(tvb, offset+1)) {
                     /* non-fragmented */
-                    complete = TRUE;
-                    pinfo->fragmented = FALSE;
+                    complete = true;
+                    pinfo->fragmented = false;
                 }
             }
         }
@@ -2421,20 +2398,20 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
     if (new_tvb) { /* take it all */
         next_tvb = new_tvb;
-        complete = TRUE;
+        complete = true;
     } else { /* make a new subset */
         next_tvb = tvb_new_subset_remaining(tvb, offset);
     }
 
     if (complete) {
-        guint8       code;
-        guint8       final_flag;
+        uint8_t      code;
+        uint8_t      final_flag;
 
         /* fully dissectable packet ready */
 
         /* op/response code */
-        code = tvb_get_guint8(next_tvb, offset) & OBEX_CODE_VALS_MASK;
-        final_flag = tvb_get_guint8(next_tvb, offset) & 0x80;
+        code = tvb_get_uint8(next_tvb, offset) & OBEX_CODE_VALS_MASK;
+        final_flag = tvb_get_uint8(next_tvb, offset) & 0x80;
 
         switch (pinfo->p2p_dir) {
             case P2P_DIR_SENT:
@@ -2453,7 +2430,7 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
         if (code < OBEX_CODE_VALS_CONTINUE || code == OBEX_CODE_VALS_ABORT) {
             proto_tree_add_item(main_tree, hf_opcode, next_tvb, offset, 1, ENC_BIG_ENDIAN);
-            if (!pinfo->fd->flags.visited &&
+            if (!pinfo->fd->visited &&
                     (pinfo->p2p_dir == P2P_DIR_SENT ||
                     pinfo->p2p_dir == P2P_DIR_RECV)) {
                 frame_number = pinfo->num;
@@ -2517,16 +2494,16 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                 obex_last_opcode_data->channel == obex_proto_data.channel) {
             if (obex_last_opcode_data->request_in_frame > 0 && obex_last_opcode_data->request_in_frame != pinfo->num) {
                 sub_item = proto_tree_add_uint(main_tree, hf_request_in_frame, next_tvb, 0, 0, obex_last_opcode_data->request_in_frame);
-                PROTO_ITEM_SET_GENERATED(sub_item);
+                proto_item_set_generated(sub_item);
             }
 
-            if (!pinfo->fd->flags.visited && obex_last_opcode_data->response_in_frame == 0 && obex_last_opcode_data->request_in_frame < pinfo->num) {
+            if (!pinfo->fd->visited && obex_last_opcode_data->response_in_frame == 0 && obex_last_opcode_data->request_in_frame < pinfo->num) {
                 obex_last_opcode_data->response_in_frame = pinfo->num;
             }
 
             if (obex_last_opcode_data->response_in_frame > 0 && obex_last_opcode_data->response_in_frame != pinfo->num) {
                 sub_item = proto_tree_add_uint(main_tree, hf_response_in_frame, next_tvb, 0, 0, obex_last_opcode_data->response_in_frame);
-                PROTO_ITEM_SET_GENERATED(sub_item);
+                proto_item_set_generated(sub_item);
             }
         }
 
@@ -2553,8 +2530,8 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             proto_tree_add_item(main_tree, hf_set_path_flags_0, next_tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(main_tree, hf_set_path_flags_1, next_tvb, offset, 1, ENC_BIG_ENDIAN);
 
-            if (!pinfo->fd->flags.visited && obex_last_opcode_data) {
-                obex_last_opcode_data->data.set_data.go_up = tvb_get_guint8(tvb, offset) & 0x01;
+            if (!pinfo->fd->visited && obex_last_opcode_data) {
+                obex_last_opcode_data->data.set_data.go_up = tvb_get_uint8(tvb, offset) & 0x01;
                 obex_last_opcode_data->data.set_data.name = NULL;
             }
 
@@ -2585,14 +2562,14 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                 proto_tree_add_item(main_tree, hf_max_pkt_len, next_tvb, offset, 2, ENC_BIG_ENDIAN);
                 offset += 2;
 
-                if (!pinfo->fd->flags.visited)
-                    save_path(pinfo, path, "", FALSE, &obex_proto_data);
+                if (!pinfo->fd->visited)
+                    save_path(pinfo, path, "", false, &obex_proto_data);
             }
             break;
         }
 
         dissect_headers(main_tree, next_tvb, offset, pinfo, profile, obex_last_opcode_data, &obex_proto_data);
-        if (!pinfo->fd->flags.visited &&
+        if (!pinfo->fd->visited &&
                     obex_last_opcode_data &&
                     obex_last_opcode_data->data.set_data.name &&
                     obex_last_opcode_data->code == OBEX_CODE_VALS_SET_PATH &&
@@ -2745,7 +2722,7 @@ proto_register_obex(void)
         },
         { &hf_session_parameter,
           { "Session Parameter", "obex.session",
-            FT_UINT8, BASE_HEX, NULL, 0x00,
+            FT_NONE, BASE_NONE, NULL, 0x00,
             NULL, HFILL}
         },
         { &hf_session_parameter_data,
@@ -2790,7 +2767,7 @@ proto_register_obex(void)
         },
         { &hf_authentication_parameter,
           { "Authentication Parameter", "obex.authentication",
-            FT_UINT8, BASE_HEX, NULL, 0x00,
+            FT_NONE, BASE_NONE, NULL, 0x00,
             NULL, HFILL}
         },
         { &hf_authentication_parameter_data,
@@ -2917,7 +2894,7 @@ proto_register_obex(void)
         },
         { &hf_bip_application_parameter_data_latest_captured_images,
             { "Latest Captured Images",   "obex.parameter.value.latest_captured_images",
-            FT_BOOLEAN, 8, NULL, 0x00,
+            FT_BOOLEAN, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_bip_application_parameter_data_partial_file_length,
@@ -2937,7 +2914,7 @@ proto_register_obex(void)
         },
         { &hf_bip_application_parameter_data_end_flag,
             { "End Flag",   "obex.parameter.value.end_flag",
-            FT_BOOLEAN, 8, NULL, 0x00,
+            FT_BOOLEAN, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_bip_application_parameter_data_remote_display,
@@ -2952,7 +2929,7 @@ proto_register_obex(void)
         },
         { &hf_bip_application_parameter_data_store_flag,
             { "Store Flag",   "obex.parameter.value.store_flag",
-            FT_BOOLEAN, 8, NULL, 0x00,
+            FT_BOOLEAN, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         /* application parameters for PBAP */
@@ -2992,7 +2969,7 @@ proto_register_obex(void)
             NULL, HFILL}
         },
         { &hf_pbap_application_parameter_vcard_selector,
-          { "vCard Selector", "obex.parameter.value.filter",
+          { "vCard Selector", "obex.parameter.value.vcard_selector",
             FT_UINT32, BASE_HEX, NULL, 0x0,
             NULL, HFILL}
         },
@@ -3394,82 +3371,82 @@ proto_register_obex(void)
         },
         { &hf_map_application_parameter_data_parameter_mask_reply_to_addressing,
           { "Parameter Mask: Reply to Addressing", "obex.parameter.value.parameter_mask.reply_to_addressing",
-            FT_BOOLEAN, 32, NULL, 0x8000,
+            FT_BOOLEAN, 32, NULL, 0x00008000,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_protected,
           { "Parameter Mask: Protected", "obex.parameter.value.parameter_mask.protected",
-            FT_BOOLEAN, 32, NULL, 0x4000,
+            FT_BOOLEAN, 32, NULL, 0x00004000,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_sent,
           { "Parameter Mask: Sent", "obex.parameter.value.parameter_mask.sent",
-            FT_BOOLEAN, 32, NULL, 0x2000,
+            FT_BOOLEAN, 32, NULL, 0x00002000,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_read,
           { "Parameter Mask: Read", "obex.parameter.value.parameter_mask.read",
-            FT_BOOLEAN, 32, NULL, 0x1000,
+            FT_BOOLEAN, 32, NULL, 0x00001000,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_priority,
           { "Parameter Mask: Priority", "obex.parameter.value.parameter_mask.priority",
-            FT_BOOLEAN, 32, NULL, 0x0800,
+            FT_BOOLEAN, 32, NULL, 0x00000800,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_attachment_size,
           { "Parameter Mask: Attachment Size", "obex.parameter.value.parameter_mask.attachment_size",
-            FT_BOOLEAN, 32, NULL, 0x0400,
+            FT_BOOLEAN, 32, NULL, 0x00000400,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_text,
           { "Parameter Mask: Text", "obex.parameter.value.parameter_mask.text",
-            FT_BOOLEAN, 32, NULL, 0x0200,
+            FT_BOOLEAN, 32, NULL, 0x00000200,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_reception_status,
           { "Parameter Mask: Reception Status", "obex.parameter.value.parameter_mask.reception_status",
-            FT_BOOLEAN, 32, NULL, 0x0100,
+            FT_BOOLEAN, 32, NULL, 0x00000100,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_size,
           { "Parameter Mask: Size", "obex.parameter.value.parameter_mask.size",
-            FT_BOOLEAN, 32, NULL, 0x0080,
+            FT_BOOLEAN, 32, NULL, 0x00000080,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_type,
           { "Parameter Mask: Type", "obex.parameter.value.parameter_mask.type",
-            FT_BOOLEAN, 32, NULL, 0x0040,
+            FT_BOOLEAN, 32, NULL, 0x00000040,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_recipient_addressing,
           { "Parameter Mask: Recipient Addressing", "obex.parameter.value.parameter_mask.recipient_addressing",
-            FT_BOOLEAN, 32, NULL, 0x0020,
+            FT_BOOLEAN, 32, NULL, 0x00000020,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_recipient_name,
           { "Parameter Mask: Recipient Name", "obex.parameter.value.parameter_mask.recipient_name",
-            FT_BOOLEAN, 32, NULL, 0x0010,
+            FT_BOOLEAN, 32, NULL, 0x00000010,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_sender_addressing,
           { "Parameter Mask: Sender Addressing", "obex.parameter.value.parameter_mask.sender_addressing",
-            FT_BOOLEAN, 32, NULL, 0x0008,
+            FT_BOOLEAN, 32, NULL, 0x00000008,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_sender_name,
           { "Parameter Mask: Sender Name", "obex.parameter.value.parameter_mask.sender_name",
-            FT_BOOLEAN, 32, NULL, 0x0004,
+            FT_BOOLEAN, 32, NULL, 0x00000004,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_datetime,
           { "Parameter Mask: Datetime", "obex.parameter.value.parameter_mask.datetime",
-            FT_BOOLEAN, 32, NULL, 0x0002,
+            FT_BOOLEAN, 32, NULL, 0x00000002,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_parameter_mask_subject,
           { "Parameter Mask: Subject", "obex.parameter.value.parameter_mask.subject",
-            FT_BOOLEAN, 32, NULL, 0x0001,
+            FT_BOOLEAN, 32, NULL, 0x00000001,
             NULL, HFILL}
         },
         { &hf_map_application_parameter_data_folder_listing_size,
@@ -3576,12 +3553,12 @@ proto_register_obex(void)
         },
         { &hf_ctn_application_parameter_data_filter_period_begin,
           { "Filter Period Begin", "obex.parameter.ctn.filter_period_begin",
-            FT_STRING, STR_ASCII, NULL, 0x00,
+            FT_STRING, BASE_NONE, NULL, 0x00,
             NULL, HFILL}
         },
         { &hf_ctn_application_parameter_data_filter_period_end,
           { "Filter Period End", "obex.parameter.ctn.filter_period_end",
-            FT_STRING, STR_ASCII, NULL, 0x00,
+            FT_STRING, BASE_NONE, NULL, 0x00,
             NULL, HFILL}
         },
         { &hf_ctn_application_parameter_data_parameter_mask,
@@ -3605,7 +3582,7 @@ proto_register_obex(void)
             NULL, HFILL}
         },
         { &hf_ctn_application_parameter_data_parameter_mask_alarm_status,
-          { "Alarm Status", "obex.parameter.ctn.parameter_mask.",
+          { "Alarm Status", "obex.parameter.ctn.parameter_mask.alarm_status",
             FT_UINT32, BASE_HEX, NULL, 0x00000080,
             NULL, HFILL}
         },
@@ -3661,12 +3638,12 @@ proto_register_obex(void)
         },
         { &hf_ctn_application_parameter_data_email_uri,
           { "Email URI", "obex.parameter.ctn.email_uri",
-            FT_STRING, STR_ASCII, NULL, 0x00,
+            FT_STRING, BASE_NONE, NULL, 0x00,
             NULL, HFILL}
         },
         { &hf_ctn_application_parameter_data_cse_time,
           { "CSE Time", "obex.parameter.ctn.cse_time",
-            FT_STRING, STR_ASCII, NULL, 0x00,
+            FT_STRING, BASE_NONE, NULL, 0x00,
             NULL, HFILL}
         },
         { &hf_ctn_application_parameter_data_recurrent,
@@ -3681,7 +3658,7 @@ proto_register_obex(void)
         },
         { &hf_ctn_application_parameter_data_last_update,
           { "Last Update", "obex.parameter.ctn.last_update",
-            FT_STRING, STR_ASCII, NULL, 0x00,
+            FT_STRING, BASE_NONE, NULL, 0x00,
             NULL, HFILL}
         },
         /* for fragmentation */
@@ -3727,18 +3704,18 @@ proto_register_obex(void)
         },
         { &hf_profile,
           { "Profile", "obex.profile", FT_UINT32, BASE_DEC | BASE_EXT_STRING, &profile_vals_ext, 0x0,
-            "Blutooth Profile used in this OBEX session", HFILL }
+            "Bluetooth Profile used in this OBEX session", HFILL }
         },
         { &hf_type,
-          { "Type", "obex.type", FT_STRINGZ, STR_ASCII, NULL, 0x0,
+          { "Type", "obex.type", FT_STRINGZ, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_object_class,
-          { "Object Class", "obex.object_class", FT_STRINGZ, STR_ASCII, NULL, 0x0,
+          { "Object Class", "obex.object_class", FT_STRINGZ, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_time_iso8601,
-          { "Time", "obex.time", FT_STRINGZ, STR_ASCII, NULL, 0x0,
+          { "Time", "obex.time", FT_STRINGZ, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_hdr_val_action,
@@ -3774,17 +3751,17 @@ proto_register_obex(void)
             NULL, HFILL }
         },
         { &hf_request_in_frame,
-          { "Request in Frame", "obex.request_in_frame", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
+          { "Request in Frame", "obex.request_in_frame", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
             NULL, HFILL}
         },
         { &hf_response_in_frame,
-          { "Response in Frame", "obex.response_in_frame", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
+          { "Response in Frame", "obex.response_in_frame", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
             NULL, HFILL}
         }
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_obex,
         &ett_obex_hdrs,
         &ett_obex_hdr,
@@ -3807,12 +3784,12 @@ proto_register_obex(void)
     /* Decode As handling */
     static build_valid_func obex_profile_da_build_value[1] = {obex_profile_value};
     static decode_as_value_t obex_profile_da_values = {obex_profile_prompt, 1, obex_profile_da_build_value};
-    static decode_as_t obex_profile_da = {"obex", "OBEX Profile", "obex.profile", 1, 0, &obex_profile_da_values, NULL, NULL,
+    static decode_as_t obex_profile_da = {"obex", "obex.profile", 1, 0, &obex_profile_da_values, NULL, NULL,
             decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
 
     static build_valid_func media_type_da_build_value[1] = {media_type_value};
     static decode_as_value_t media_type_da_values = {media_type_prompt, 1, media_type_da_build_value};
-    static decode_as_t media_type_da = {"obex", "Media Type", "media_type",
+    static decode_as_t media_type_da = {"obex", "media_type",
             1, 0, &media_type_da_values, NULL, NULL,
             decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
 
@@ -3833,8 +3810,8 @@ proto_register_obex(void)
     expert_obex = expert_register_protocol(proto_obex);
     expert_register_field_array(expert_obex, ei, array_length(ei));
 
-    register_init_routine(&defragment_init);
-    register_cleanup_routine(&defragment_cleanup);
+    reassembly_table_register(&obex_reassembly_table,
+                          &addresses_reassembly_table_functions);
 
     register_decode_as(&obex_profile_da);
 
@@ -3959,12 +3936,12 @@ proto_reg_handoff_obex(void)
     dissector_add_for_decode_as("usb.product",  obex_handle);
     dissector_add_for_decode_as("usb.device",   obex_handle);
     dissector_add_for_decode_as("usb.protocol", obex_handle);
-    dissector_add_for_decode_as("tcp.port",     obex_handle);
-    dissector_add_for_decode_as("udp.port",     obex_handle);
+    dissector_add_for_decode_as_with_preference("tcp.port",     obex_handle);
+    dissector_add_for_decode_as_with_preference("udp.port",     obex_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4
