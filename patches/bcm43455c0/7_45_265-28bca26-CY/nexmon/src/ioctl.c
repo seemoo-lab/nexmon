@@ -95,6 +95,28 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             break;
         }
 
+        case NEX_SET_CHANSPEC_OVERRIDE:
+        {
+            if (len >= 2 && arg) {
+                uint16 chanspec = *(uint16 *) arg;
+                char charbuf[16] __attribute__((aligned(4))) = "chanspec";
+                memcpy(&charbuf[9], &chanspec, sizeof(chanspec));
+                ret = wlc_ioctl(wlc, WLC_SET_VAR, charbuf, 13, wlc_if);
+            }
+            break;
+        }
+
+        case NEX_GET_CHANSPEC_OVERRIDE:
+        {
+            if (len >= 2 && arg) {
+                char charbuf[16] __attribute__((aligned(4))) = "chanspec";
+                ret = wlc_ioctl(wlc, WLC_GET_VAR, charbuf, 13, wlc_if);
+                if (ret == IOCTL_SUCCESS)
+                    memcpy(arg, charbuf, 2);
+            }
+            break;
+        }
+
         case 514:
         {
             if (len > 0 && arg) {
