@@ -70,6 +70,27 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
             self.assertIn("brcmf_next_mgmt_tx_id", content, f"brcmf_next_mgmt_tx_id missing in {drv_ver}")
             self.assertIn("action_frame->packet_id = cpu_to_le32(", content, f"packet_id assignment missing in {drv_ver}")
 
+    def test_8021x_tx_completion_memory_barrier(self):
+        """Kernel 7.4-rc1 (621d90169cef): Memory barrier smp_mb__after_atomic prevents lost 802.1X TX completion wakeup."""
+        all_drv_versions = (
+            "4.4", "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in all_drv_versions:
+            core_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.c"
+            self.assertTrue(core_c.is_file(), f"Missing {core_c}")
+            content = core_c.read_text(errors="replace")
+            self.assertIn("atomic_dec(&ifp->pend_8021x_cnt);", content, f"atomic_dec missing in {drv_ver}")
+            self.assertIn("smp_mb__after_atomic();", content, f"smp_mb__after_atomic missing in {drv_ver}")
+            # Ensure smp_mb__after_atomic() comes after atomic_dec and before waitqueue_active
+            dec_pos = content.find("atomic_dec(&ifp->pend_8021x_cnt);")
+            barrier_pos = content.find("smp_mb__after_atomic();", dec_pos)
+            wq_pos = content.find("if (waitqueue_active(&ifp->pend_8021x_wait))", barrier_pos)
+            self.assertTrue(
+                dec_pos < barrier_pos < wq_pos,
+                f"Memory barrier ordering incorrect in {drv_ver}: dec={dec_pos}, barrier={barrier_pos}, wq={wq_pos}"
+            )
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions
