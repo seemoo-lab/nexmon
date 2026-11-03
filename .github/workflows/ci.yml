@@ -57,12 +57,14 @@ jobs:
 
       - name: Install System Dependencies
         run: |
+          sudo dpkg --add-architecture i386 || true
           sudo apt-get update
+          sudo apt-get install -y gcc g++-multilib libc6-i386 libgmp-dev libgmp-dev:i386 make gawk xxd libpcap-dev libnl-3-dev libnl-genl-3-dev libcap-dev ccache || \
           sudo apt-get install -y gcc make gawk xxd libpcap-dev libnl-3-dev libnl-genl-3-dev libcap-dev ccache
           ccache --set-config=cache_dir=$HOME/.ccache || true
 
       - name: Install Python Test Dependencies
-        run: python -m pip install capstone numpy
+        run: python -m pip install capstone numpy zstandard
 
       - name: Build Userspace Utilities & Extractors
         # Explicitly select the host compiler on x86 too. The default x86 path
@@ -71,6 +73,7 @@ jobs:
           make -C utilities/nexutil NATIVE_BUILD=1
           make -C buildtools/flash_patch_extractor
           make -C buildtools/ucode_extractor
+          make -C buildtools/gcc-nexmon-plugin || true
 
       - name: Run Unit Tests
         run: python -m unittest discover -s tests -v

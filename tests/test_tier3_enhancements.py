@@ -544,7 +544,10 @@ class TestTier3PythonSDKAndTooling(unittest.TestCase):
     def test_zstandard_firmware_support(self):
         """Verify nexfirmware transparently supports .zst compressed firmware and NVRAM/CLM files."""
         import nexfirmware
-        import zstandard
+        try:
+            import zstandard
+        except ImportError:
+            self.skipTest("zstandard library not installed")
         with tempfile.TemporaryDirectory(prefix="nex-t3-zst-") as tmp:
             tmp_path = Path(tmp)
             raw_data = b"NEXMON_ZST_TEST_BLOB_BCM43455_7.45.206" + (b"\x00" * 1024)

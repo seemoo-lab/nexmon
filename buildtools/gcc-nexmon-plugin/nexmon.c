@@ -1,4 +1,5 @@
 #include <gcc-plugin.h>
+#include <plugin.h>
 #include <plugin-version.h>
 #include <tree.h>
 #include <stringpool.h>
