@@ -16,11 +16,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class TestC01DriverNetlinkHardening(unittest.TestCase):
-    """C-01: Verify Netlink security, bounds, and lifetime hardening across all 13 brcmfmac trees."""
+    """C-01: Verify Netlink security, bounds, and lifetime hardening across all 14 brcmfmac trees."""
 
     def test_all_drivers_enforce_netlink_hardening(self):
         drivers = sorted(ROOT.glob("patches/driver/brcmfmac_*/core.c"))
-        self.assertEqual(len(drivers), 13)
+        self.assertEqual(len(drivers), 14)
         for core_c in drivers:
             ver = core_c.parent.name
             text = core_c.read_text()
