@@ -43,6 +43,10 @@ as cfg80211 now pre-assigns the cookie value before invoking drivers.
   a control frame is pending.
 
 ### Monitor mode auto-recovery & channel state preservation
+- `core.c`: In `brcmf_detach()`, synchronized netdev-less P2P device VIF removal under
+  `rtnl_lock()` and `wiphy_lock(drvr->wiphy)` (upstream fix `08a3f02fea63`), preventing
+  fatal `LIST_POISON2` page faults when `wpa_supplicant` exits concurrently during monitor
+  teardown or module removal.
 - `core.c`: Retained monitor interface name and active chanspec in `nexmon_mon_restore` across SDIO
   bus watchdog resets (`brcmf_sdio_ctl_watchdog`).
 - `core.c`: Replayed monitor session via `brcmf_core_mon_restore` workqueue upon `brcmf_bus_started()`,

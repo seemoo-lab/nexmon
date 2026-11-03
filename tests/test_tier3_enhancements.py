@@ -30,6 +30,17 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
             self.assertIn("4 + mon_flag", content, f"4 + mon_flag missing in {drv_ver}")
             self.assertIn("3 + mon_flag", content, f"3 + mon_flag missing in {drv_ver}")
 
+    def test_p2p_detach_race_rtnl_wiphy_locks(self):
+        """Kernel 7.4-rc1 (08a3f02fea63): Guard P2P netdev-less VIF detach with rtnl_lock and wiphy_lock."""
+        for drv_ver in ("5.15", "6.1", "6.2", "6.6", "6.18", "7.2", "7.3"):
+            core_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.c"
+            self.assertTrue(core_c.is_file(), f"Missing {core_c}")
+            content = core_c.read_text(errors="replace")
+            self.assertIn("wiphy_lock(drvr->wiphy);", content, f"wiphy_lock missing in {drv_ver}")
+            self.assertIn("rtnl_lock();", content, f"rtnl_lock missing in {drv_ver}")
+            self.assertIn("if (ifp->ndev)", content, f"ifp->ndev branch missing in {drv_ver}")
+            self.assertIn("brcmf_remove_interface(ifp, true);", content, f"locked remove missing in {drv_ver}")
+
     def test_l01_firmware_common_static_inline_and_statistics(self):
         """L-01: Ensure helper.h uses static inline, statistics.mk supports DISABLE_STATISTICS, and typo is fixed."""
         helper_h = ROOT / "patches/include/helper.h"
