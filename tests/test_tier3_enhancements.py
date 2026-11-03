@@ -308,6 +308,38 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
             self.assertIn("wiphy->features |= NL80211_FEATURE_SAE;", cfg_text)
             self.assertIn("using EXTSAE with PSK offload", cfg_text)
 
+    def test_msgbuf_flowring_id_validation_all_trees(self):
+        """Kernel 7.4-rc1 (32856f39fefd): Validate msgbuf flowring IDs before use across all 14 trees."""
+        all_drv_versions = (
+            "4.4", "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in all_drv_versions:
+            mb_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/msgbuf.c"
+            self.assertTrue(mb_c.is_file(), f"Missing {mb_c}")
+            content = mb_c.read_text(errors="replace")
+
+            # 1. brcmf_msgbuf_get_flowid implementation exists
+            self.assertIn(
+                "static bool brcmf_msgbuf_get_flowid(",
+                content,
+                f"brcmf_msgbuf_get_flowid missing in {drv_ver}/msgbuf.c",
+            )
+
+            # 2. txstatus validates flowring ID and calls brcmf_txfinalize on invalid ID
+            self.assertIn(
+                "if (!brcmf_msgbuf_get_flowid(msgbuf, flow_ring_id, &flowid)) {",
+                content,
+                f"txstatus flowid check missing in {drv_ver}/msgbuf.c",
+            )
+
+            # 3. create and delete responses validate flowring ID
+            self.assertIn(
+                "if (!brcmf_msgbuf_get_flowid(msgbuf, flow_ring_id, &flowid))\n\t\treturn;",
+                content,
+                f"create/delete response check missing in {drv_ver}/msgbuf.c",
+            )
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions
