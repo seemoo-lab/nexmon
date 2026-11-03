@@ -63,6 +63,12 @@ static int dhd_nl_valid_handler(struct nl_msg *msg, void *arg)
 
 int dhd_nl_sock_connect(struct dhd_netlink_info *dhd_nli)
 {
+	if (dhd_nli == NULL)
+		return -1;
+
+	dhd_nli->nl = NULL;
+	dhd_nli->cb = NULL;
+
 	dhd_nli->nl = nl_socket_alloc();
 	if (dhd_nli->nl == NULL)
 		return -1;
@@ -86,16 +92,30 @@ int dhd_nl_sock_connect(struct dhd_netlink_info *dhd_nli)
 	return 0;
 
 err:
-	nl_cb_put(dhd_nli->cb);
-	nl_socket_free(dhd_nli->nl);
+	if (dhd_nli->cb) {
+		nl_cb_put(dhd_nli->cb);
+		dhd_nli->cb = NULL;
+	}
+	if (dhd_nli->nl) {
+		nl_socket_free(dhd_nli->nl);
+		dhd_nli->nl = NULL;
+	}
 	fprintf(stderr, "nl80211 connection failed\n");
 	return -1;
 }
 
 void dhd_nl_sock_disconnect(struct dhd_netlink_info *dhd_nli)
 {
-	nl_cb_put(dhd_nli->cb);
-	nl_socket_free(dhd_nli->nl);
+	if (dhd_nli == NULL)
+		return;
+	if (dhd_nli->cb) {
+		nl_cb_put(dhd_nli->cb);
+		dhd_nli->cb = NULL;
+	}
+	if (dhd_nli->nl) {
+		nl_socket_free(dhd_nli->nl);
+		dhd_nli->nl = NULL;
+	}
 }
 
 int dhd_nl_do_testmode(struct dhd_netlink_info *dhd_nli, dhd_ioctl_t *ioc)
@@ -125,8 +145,13 @@ int dhd_nl_do_testmode(struct dhd_netlink_info *dhd_nli, dhd_ioctl_t *ioc)
 		dhd_nl_finish_handler, &err);
 	nl_cb_set(dhd_nli->cb, NL_CB_VALID, NL_CB_CUSTOM,
 		dhd_nl_valid_handler, &err);
-	while (err > 0)
-		nl_recvmsgs(dhd_nli->nl, dhd_nli->cb);
+	while (err > 0) {
+		int res = nl_recvmsgs(dhd_nli->nl, dhd_nli->cb);
+		if (res < 0) {
+			err = res;
+			break;
+		}
+	}
 out:
 	nlmsg_free(msg);
 	return err;

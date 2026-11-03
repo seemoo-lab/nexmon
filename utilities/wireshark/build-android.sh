@@ -1,9 +1,9 @@
 #!/bin/sh
-# Cross-build wireshark 4.6.8 (static libs only: wsutil, wiretap, epan) and
+# Cross-build wireshark 5.1.0rc0 (static libs only: wsutil, wiretap, epan) and
 # its dependencies for Android with the NDK:
 #
 #   libgpg-error 1.61 -> libgcrypt 1.12.3   (autotools, from ../libgpg-error, ../libgcrypt)
-#   c-ares 1.34.8, pcre2 10.48, libxml2 2.15.3 (autotools, from ../c-ares, ../pcre2, ../libxml2)
+#   c-ares 1.34.9, pcre2 10.49, libxml2 2.15.3 (autotools, from ../c-ares, ../pcre2, ../libxml2)
 #   glib 2.90.0 from the ../libglib-2.0 build (its prefix is consumed)
 #   wireshark itself via CMake with the NDK Android toolchain
 #
@@ -34,20 +34,25 @@ fi
 case "$ABI" in
   arm64-v8a|arm64|aarch64)
     ANDROID_ABI=arm64-v8a
-    AUTOTOOLS_HOST=aarch64-linux-android ;;
+    AUTOTOOLS_HOST=aarch64-linux-android
+    CLANG_TARGET=aarch64-linux-android$API ;;
   armeabi-v7a|armv7|arm|armeabi)
     ANDROID_ABI=armeabi-v7a
-    AUTOTOOLS_HOST=arm-linux-androideabi ;;
+    AUTOTOOLS_HOST=arm-linux-androideabi
+    CLANG_TARGET=armv7a-linux-androideabi$API ;;
   x86)
     ANDROID_ABI=x86
-    AUTOTOOLS_HOST=i686-linux-android ;;
+    AUTOTOOLS_HOST=i686-linux-android
+    CLANG_TARGET=i686-linux-android$API ;;
   x86_64|x64)
     ANDROID_ABI=x86_64
-    AUTOTOOLS_HOST=x86_64-linux-android ;;
+    AUTOTOOLS_HOST=x86_64-linux-android
+    CLANG_TARGET=x86_64-linux-android$API ;;
   *)
     echo "unsupported APP_ABI: $ABI (supported: arm64-v8a armeabi-v7a x86 x86_64)" >&2
     exit 1 ;;
 esac
+ABI="$ANDROID_ABI"
 
 PUB_WSUTIL="$HERE/../libwsutil/local/$ABI/libwsutil.a"
 PUB_WIRETAP="$HERE/../libwiretap/local/$ABI/libwiretap.a"
@@ -63,10 +68,12 @@ flock 9
 # The dependency prefix must live OUTSIDE this source directory: CMake refuses
 # interface include paths that are prefixed in the source tree.
 DEPROOT="$HERE/../.wsdeps/$ABI"
-if [ -f "$STAMP" ] && [ -f "$PUB_WSUTIL" ] && [ -f "$PUB_WIRETAP" ] && [ -f "$PUB_WIRESHARK" ] \
-   && [ "$PUB_WSUTIL" -nt "$STAMP" ] && [ "$PUB_WIRETAP" -nt "$STAMP" ] && [ "$PUB_WIRESHARK" -nt "$STAMP" ]; then
-    echo "  wireshark ($ABI) archives up to date"
-    exit 0
+if [ -f "$STAMP" ] && [ -f "$PUB_WSUTIL" ] && [ -f "$PUB_WIRETAP" ] && [ -f "$PUB_WIRESHARK" ]; then
+    newer_src=$(find "$HERE/epan" "$HERE/wsutil" "$HERE/wiretap" \( -name "*.c" -o -name "*.h" \) -newer "$STAMP" 2>/dev/null | head -n1)
+    if [ -z "$newer_src" ]; then
+        echo "  wireshark ($ABI) archives up to date"
+        exit 0
+    fi
 fi
 
 # --- NDK ---------------------------------------------------------------
@@ -97,8 +104,8 @@ if [ ! -x "$TC/clang" ] || [ ! -f "$TOOLCHAIN_FILE" ]; then
     echo "NDK toolchain incomplete at $TC" >&2
     exit 1
 fi
-CC="$TC/${AUTOTOOLS_HOST}${API}-clang"
-CXX="$TC/${AUTOTOOLS_HOST}${API}-clang++"
+CC="$TC/${CLANG_TARGET}-clang"
+CXX="$TC/${CLANG_TARGET}-clang++"
 
 command -v cmake >/dev/null 2>&1 || { echo "cmake not found" >&2; exit 1; }
 command -v ninja >/dev/null 2>&1 || { echo "ninja not found" >&2; exit 1; }
@@ -130,15 +137,24 @@ autotools_build() {
         mkdir -p "$bdir"
         (
             cd "$bdir"
-            "$src/configure" --host="$AUTOTOOLS_HOST" --prefix="$PREFIX" \
+            if ! "$src/configure" --host="$AUTOTOOLS_HOST" --prefix="$PREFIX" \
                 --disable-shared --enable-static \
                 CC="$CC" CXX="$CXX" AR="$TC/llvm-ar" \
                 RANLIB="$TC/llvm-ranlib" STRIP="$TC/llvm-strip" \
-                "$@" > configure.log 2>&1
+                "$@" > configure.log 2>&1; then
+                tail -n 30 configure.log >&2
+                exit 1
+            fi
         )
     fi
-    make -C "$bdir" -j"$(nproc)" > "$bdir/make.log" 2>&1
-    make -C "$bdir" install > "$bdir/install.log" 2>&1
+    if ! make -C "$bdir" -j"$(nproc)" > "$bdir/make.log" 2>&1; then
+        tail -n 30 "$bdir/make.log" >&2
+        exit 1
+    fi
+    if ! make -C "$bdir" install > "$bdir/install.log" 2>&1; then
+        tail -n 30 "$bdir/install.log" >&2
+        exit 1
+    fi
 }
 
 # --- dependencies ------------------------------------------------------
@@ -161,20 +177,19 @@ autotools_build "$HERE/../libxml2" "$DEPROOT/libxml2" \
     --without-python --without-zlib --without-icu
 
 # --- host build tool: lemon (parser generator) -------------------------
-# Cross-compiling needs lemon to run on the BUILD HOST. wireshark's cmake
-# (cmake/modules/UseLemon.cmake) uses a system lemon iff
-# /usr/share/lemon/lempar.c exists and `lemon` is on PATH; otherwise it
-# compiles its bundled lemon for the TARGET, which cannot run on the host.
-# Build wireshark's own lemon natively once so versions match.
-if [ ! -f /usr/share/lemon/lempar.c ] || ! command -v lemon >/dev/null 2>&1; then
+HOSTTOOLS="$HERE/local/hosttools"
+mkdir -p "$HOSTTOOLS"
+if [ ! -x "$HOSTTOOLS/lemon" ] && { [ ! -f /usr/share/lemon/lempar.c ] || ! command -v lemon >/dev/null 2>&1; }; then
     echo "  BUILDING host lemon"
-    HOSTTOOLS="$HERE/local/hosttools"
-    mkdir -p "$HOSTTOOLS"
     cc -O2 -o "$HOSTTOOLS/lemon" "$HERE/tools/lemon/lemon.c"
-    mkdir -p /usr/share/lemon
-    cp "$HERE/tools/lemon/lempar.c" /usr/share/lemon/lempar.c
-    cp "$HOSTTOOLS/lemon" /usr/local/bin/lemon
+    cp "$HERE/tools/lemon/lempar.c" "$HOSTTOOLS/lempar.c"
+    if [ -w /usr/share ] && [ -w /usr/local/bin ]; then
+        mkdir -p /usr/share/lemon 2>/dev/null || true
+        cp "$HERE/tools/lemon/lempar.c" /usr/share/lemon/lempar.c 2>/dev/null || true
+        cp "$HOSTTOOLS/lemon" /usr/local/bin/lemon 2>/dev/null || true
+    fi
 fi
+export PATH="$HOSTTOOLS:$PATH"
 
 # --- wireshark ---------------------------------------------------------
 echo "  BUILDING wireshark ($ABI)"
@@ -205,8 +220,9 @@ EOF
 fi
 
 if [ ! -f "$WORK/wireshark/CMakeCache.txt" ]; then
-    cmake -G Ninja -S "$HERE" -B "$WORK/wireshark" \
+    if ! cmake -G Ninja -S "$HERE" -B "$WORK/wireshark" \
         -DCMAKE_TOOLCHAIN_FILE="$USE_TOOLCHAIN_FILE" \
+        -DLEMON_EXECUTABLE="$HOSTTOOLS/lemon" \
         -DANDROID_ABI="$ANDROID_ABI" \
         -DANDROID_PLATFORM="android-$API" \
         -DCMAKE_BUILD_TYPE=Release \
@@ -233,11 +249,18 @@ if [ ! -f "$WORK/wireshark/CMakeCache.txt" ]; then
         -DENABLE_ILBC=OFF -DENABLE_OPUS=OFF -DENABLE_SINSP=OFF \
         -DENABLE_PLUGINS=OFF -DENABLE_MINIZIP=OFF -DENABLE_CAP=OFF \
         -DENABLE_NETLINK=OFF -DENABLE_WERROR=OFF \
-        > "$WORK/cmake-config.log" 2>&1
+        > "$WORK/cmake-config.log" 2>&1; then
+        tail -n 30 "$WORK/cmake-config.log" >&2
+        exit 1
+    fi
 fi
-ninja -C "$WORK/wireshark" -j"$(nproc)" wsutil wiretap epan > "$WORK/ninja.log" 2>&1
+if ! ninja -C "$WORK/wireshark" -j"$(nproc)" wsutil wiretap epan > "$WORK/ninja.log" 2>&1; then
+    tail -n 30 "$WORK/ninja.log" >&2
+    exit 1
+fi
 
 # --- publish -----------------------------------------------------------
+touch "$STAMP"
 for spec in "run/libwsutil.a:$PUB_WSUTIL" \
             "run/libwiretap.a:$PUB_WIRETAP" \
             "run/libwireshark.a:$PUB_WIRESHARK"; do
@@ -246,5 +269,5 @@ for spec in "run/libwsutil.a:$PUB_WSUTIL" \
     mkdir -p "$(dirname "$to")"
     cp "$from" "$to"
 done
-touch "$STAMP"
+touch "$PUB_WSUTIL" "$PUB_WIRETAP" "$PUB_WIRESHARK"
 echo "  DONE: wireshark $(sed -n 's/^#define VERSION "\(.*\)"/\1/p' "$WORK/wireshark/config.h") ($ABI) libraries published"

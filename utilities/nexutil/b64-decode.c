@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <ctype.h>
 #include "b64.h"
 
@@ -42,11 +43,12 @@ b64_decode (const char *src, size_t len) {
 unsigned char *
 b64_decode_ex (const char *src, size_t len, size_t *decsize) {
   int i = 0;
-  int j = 0;
+  size_t j = 0;
+  int k = 0;
   int l = 0;
   size_t size = 0;
+  size_t max_alloc = 0;
   unsigned char *dec = NULL;
-  unsigned char *new_dec = NULL;
   unsigned char buf[3];
   unsigned char tmp[4];
 
@@ -57,8 +59,16 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
     return NULL;
   }
 
-  // alloc
-  dec = (unsigned char *) b64_malloc(1);
+  if (len / 4 > (SIZE_MAX - 4) / 3) {
+    if (decsize != NULL) {
+      *decsize = 0;
+    }
+    return NULL;
+  }
+  max_alloc = (len / 4) * 3 + 4;
+
+  // alloc output buffer once up front
+  dec = (unsigned char *) b64_malloc(max_alloc);
   if (NULL == dec) {
     if (decsize != NULL) {
       *decsize = 0;
@@ -68,12 +78,15 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
 
   // parse until end of source
   while (len--) {
-    // break if char is `=' or not base64 char
-    if ('=' == src[j]) { break; }
-    if (!(isalnum(src[j]) || '+' == src[j] || '/' == src[j])) { break; }
+    unsigned char c = (unsigned char) src[j];
+    // break if char is `=' or not ASCII base64 char
+    if ('=' == c) { break; }
+    if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+          (c >= '0' && c <= '9') || '+' == c || '/' == c)) { break; }
 
     // read up to 4 bytes at a time into `tmp'
-    tmp[i++] = src[j++];
+    tmp[i++] = c;
+    j++;
 
     // if 4 bytes read then decode into `buf'
     if (4 == i) {
@@ -81,31 +94,21 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
       for (i = 0; i < 4; ++i) {
         // find translation char in `b64_table'
         for (l = 0; l < 64; ++l) {
-          if (tmp[i] == b64_table[l]) {
-            tmp[i] = l;
+          if (tmp[i] == (unsigned char) b64_table[l]) {
+            tmp[i] = (unsigned char) l;
             break;
           }
         }
       }
 
       // decode
-      buf[0] = (tmp[0] << 2) + ((tmp[1] & 0x30) >> 4);
-      buf[1] = ((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2);
-      buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
+      buf[0] = (unsigned char) ((tmp[0] << 2) + ((tmp[1] & 0x30) >> 4));
+      buf[1] = (unsigned char) (((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2));
+      buf[2] = (unsigned char) (((tmp[2] & 0x3) << 6) + tmp[3]);
 
       // write decoded buffer to `dec'
-      new_dec = (unsigned char *) b64_realloc(dec, size + 3);
-      if (new_dec != NULL) {
-        dec = new_dec;
-        for (i = 0; i < 3; ++i) {
-          dec[size++] = buf[i];
-        }
-      } else {
-        b64_free(dec);
-        if (decsize != NULL) {
-          *decsize = 0;
-        }
-        return NULL;
+      for (i = 0; i < 3; ++i) {
+        dec[size++] = buf[i];
       }
 
       // reset
@@ -113,57 +116,44 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
     }
   }
 
-  // remainder
-  if (i > 0) {
-    // fill `tmp' with `\0' at most 4 times
-    for (j = i; j < 4; ++j) {
-      tmp[j] = '\0';
-    }
-
-    // translate remainder
-    for (j = 0; j < 4; ++j) {
-        // find translation char in `b64_table'
-        for (l = 0; l < 64; ++l) {
-          if (tmp[j] == b64_table[l]) {
-            tmp[j] = l;
-            break;
-          }
-        }
-    }
-
-    // decode remainder
-    buf[0] = (tmp[0] << 2) + ((tmp[1] & 0x30) >> 4);
-    buf[1] = ((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2);
-    buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
-
-    // write remainer decoded buffer to `dec'
-    new_dec = (unsigned char *) b64_realloc(dec, size + (i - 1));
-    if (new_dec != NULL) {
-      dec = new_dec;
-      for (j = 0; (j < i - 1); ++j) {
-        dec[size++] = buf[j];
-      }
-    } else {
-      b64_free(dec);
-      if (decsize != NULL) {
-        *decsize = 0;
-      }
-      return NULL;
-    }
-  }
-
-  // Make sure we have enough space to add '\0' character at end.
-  new_dec = (unsigned char *) b64_realloc(dec, size + 1);
-  if (new_dec != NULL) {
-    dec = new_dec;
-    dec[size] = '\0';
-  } else {
+  // remainder: a 1-char trailing quantum has only 6 bits and is invalid base64
+  if (i == 1) {
     b64_free(dec);
     if (decsize != NULL) {
       *decsize = 0;
     }
     return NULL;
   }
+
+  if (i > 1) {
+    // fill `tmp' with `\0' at most 4 times
+    for (k = i; k < 4; ++k) {
+      tmp[k] = '\0';
+    }
+
+    // translate remainder
+    for (k = 0; k < i; ++k) {
+      // find translation char in `b64_table'
+      for (l = 0; l < 64; ++l) {
+        if (tmp[k] == (unsigned char) b64_table[l]) {
+          tmp[k] = (unsigned char) l;
+          break;
+        }
+      }
+    }
+
+    // decode remainder
+    buf[0] = (unsigned char) ((tmp[0] << 2) + ((tmp[1] & 0x30) >> 4));
+    buf[1] = (unsigned char) (((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2));
+    buf[2] = (unsigned char) (((tmp[2] & 0x3) << 6) + tmp[3]);
+
+    // write remainder decoded buffer to `dec'
+    for (k = 0; k < (i - 1); ++k) {
+      dec[size++] = buf[k];
+    }
+  }
+
+  dec[size] = '\0';
 
   // Return back the size of decoded string if demanded.
   if (decsize != NULL) {

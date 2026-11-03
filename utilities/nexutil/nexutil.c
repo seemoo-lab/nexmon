@@ -51,6 +51,7 @@
 
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#include <signal.h>
 #ifdef BUILD_ON_RPI
 #include <linux/if.h>
 #else
@@ -185,15 +186,20 @@ parse_opt(int key, char *arg, struct argp_state *state)
             last_optional_opt = 0;
             break;
 
-        case 'I':
+        case 'I': {
+            if (strlen(arg) >= IFNAMSIZ) {
+                fprintf(stderr, "ERR: interface name '%s' too long (max %d)\n", arg, IFNAMSIZ-1);
+                exit(EXIT_FAILURE);
+            }
             ifname = arg;
             last_optional_opt = 0;
             break;
+        }
 
         case 'm':
             if (arg) {
                 set_monitor = true;
-                set_monitor_value = parse_uchar_range(arg, 0, 2, "monitor mode", state);
+                set_monitor_value = parse_uchar_range(arg, 0, 255, "monitor mode", state);
                 last_optional_opt = 0;
             } else {
                 get_monitor = true;
@@ -228,17 +234,35 @@ parse_opt(int key, char *arg, struct argp_state *state)
             last_optional_opt = 0;
             break;
 
-        case 'g':
+        case 'g': {
+            char *endptr = NULL;
+            long v;
+            errno = 0;
+            v = strtol(arg, &endptr, 0);
+            if (endptr == arg || *endptr != '\0' || errno != 0 || v < 0 || v > INT_MAX) {
+                fprintf(stderr, "ERR: invalid custom command '%s'\n", arg);
+                exit(EXIT_FAILURE);
+            }
             custom_cmd_set = false;
-            custom_cmd = strtol(arg, NULL, 0);
+            custom_cmd = (unsigned int) v;
             last_optional_opt = 0;
             break;
+        }
 
-        case 's':
+        case 's': {
+            char *endptr = NULL;
+            long v;
+            errno = 0;
+            v = strtol(arg, &endptr, 0);
+            if (endptr == arg || *endptr != '\0' || errno != 0 || v < 0 || v > INT_MAX) {
+                fprintf(stderr, "ERR: invalid custom command '%s'\n", arg);
+                exit(EXIT_FAILURE);
+            }
             custom_cmd_set = true;
-            custom_cmd = strtol(arg, NULL, 0);
+            custom_cmd = (unsigned int) v;
             last_optional_opt = 0;
             break;
+        }
         
         case 'l':
             {
@@ -305,11 +329,20 @@ parse_opt(int key, char *arg, struct argp_state *state)
             last_optional_opt = 0;
             break;
 
-        case 'o':
-            dump_objmem_addr = strtol(arg, NULL, 0);
+        case 'o': {
+            char *endptr = NULL;
+            unsigned long v;
+            errno = 0;
+            v = strtoul(arg, &endptr, 0);
+            if (endptr == arg || *endptr != '\0' || errno != 0 || v > 0xFFFFFFFFUL) {
+                fprintf(stderr, "ERR: invalid objmem addr '%s'\n", arg);
+                exit(EXIT_FAILURE);
+            }
+            dump_objmem_addr = (unsigned int) v;
             dump_objmem = true;
             last_optional_opt = 0;
             break;
+        }
 
         case 'w':
             dump_wl_cnt = true;
@@ -438,6 +471,15 @@ hexdump(void *mem, unsigned int len)
     }
 }
 
+static void
+ioctl_alarm_handler(int sig)
+{
+    (void) sig;
+    const char msg[] = "ERR: ioctl timed out after 10s (firmware wedged, SDIO -110? check dmesg)\n";
+    (void) write(STDERR_FILENO, msg, sizeof(msg) - 1);
+    _exit(124);
+}
+
 /* Produce a human-readable string for boardrev */
 char *
 bcm_brev_str(uint32 brev, char *buf)
@@ -459,6 +501,10 @@ main(int argc, char **argv)
     int failed = 0;
 
     argp_parse(&argp, argc, argv, 0, 0, 0);
+
+    /* Guard against wedged SDIO firmware that blocks ioctl indefinitely */
+    signal(SIGALRM, ioctl_alarm_handler);
+    alarm(10);
 
     if (use_udp_tunneling != 0)
         nexio = nex_init_udp(use_udp_tunneling, txip);
@@ -718,15 +764,24 @@ main(int argc, char **argv)
         for (i = 0; i < custom_cmd_buf_len / 0x2000; i++) {
             *custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
             printf("%8p %08x\n", custom_cmd_buf_pos, *custom_cmd_buf_pos);
-            ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, 0x2000, false);    
+            ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, 0x2000, false);
+            if (ret < 0) {
+                fprintf(stderr, "ERR: dump_objmem ioctl failed\n");
+                failed++;
+                break;
+            }
             custom_cmd_buf_pos += 0x2000 / 4;
         }
         /* Only seed the address word into the tail if the remainder is at least
          * a full word; a 1-3 byte remainder has no room for the 4-byte write and
          * would overrun the allocation. */
-        if (custom_cmd_buf_len % 0x2000 >= sizeof(unsigned int)) {
+        if (failed == 0 && custom_cmd_buf_len % 0x2000 >= sizeof(unsigned int)) {
             *(unsigned int *) custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
             ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, custom_cmd_buf_len % 0x2000, false);
+            if (ret < 0) {
+                fprintf(stderr, "ERR: dump_objmem ioctl failed\n");
+                failed++;
+            }
         }
 
         if (raw_output) {
@@ -882,6 +937,7 @@ main(int argc, char **argv)
             model_string, fw_ver2, str[0], str[1], str[2], str[3], str[4], str[5], str[6], str[7], str[8], str[9], str[10], str[11], str[12], str[13], str[14], str[15], str[16]);
     }
 
+    alarm(0);
     nex_free(nexio);
     return failed ? EXIT_FAILURE : 0;
 }

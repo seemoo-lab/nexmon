@@ -12,15 +12,16 @@ NATIVE_BUILD :=
 endif
 
 ifeq ($(NATIVE_BUILD),)
-all: libs/armeabi/nexutil
+all: Android.mk nexutil.c FORCE
+	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21 GIT_VERSION=$(GIT_VERSION) $(if $(APP_ABI),APP_ABI=$(APP_ABI))
 else
 all: nexutil
 endif
 
 ifeq ($(NATIVE_BUILD),)
-libs/armeabi/nexutil: Android.mk nexutil.c ../libargp/local/armeabi/libargp.a ../libnexio/local/armeabi/libnexio.a FORCE
+libs/armeabi/nexutil libs/armeabi-v7a/nexutil libs/arm64-v8a/nexutil: Android.mk nexutil.c FORCE
 	touch nexutil.c
-	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21 GIT_VERSION=$(GIT_VERSION)
+	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21 GIT_VERSION=$(GIT_VERSION) $(if $(APP_ABI),APP_ABI=$(APP_ABI))
 else
 nexutil: nexutil.c ../libnexio/libnexio.a FORCE
 ifeq ($(USE_VENDOR_CMD),1)

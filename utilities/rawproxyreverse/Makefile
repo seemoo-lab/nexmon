@@ -15,6 +15,10 @@ libs/armeabi-v7a/rawproxyreverse: Android.mk rawproxyreverse.c ../libargp/local/
 clean:
 	rm -Rf libs
 	rm -Rf local
+	rm -f /tmp/rawproxyreverse_sanitize.o
+
+sanitize: rawproxyreverse.c
+	$${CC:-gcc} $${CFLAGS:-} -fsanitize=address,undefined -g -O1 -DVERSION=\"test\" -I../libargp -I../libpcap -c rawproxyreverse.c -o /tmp/rawproxyreverse_sanitize.o
 
 install: libs/armeabi-v7a/rawproxyreverse
 	adb push $< /sdcard/

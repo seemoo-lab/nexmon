@@ -39,18 +39,24 @@
  *                                                                         *
  **************************************************************************/
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <stdarg.h>
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <sys/socket.h>
+#include <net/if.h>
 #include <linux/if_arp.h>
+#include <linux/if_packet.h>
 #include <linux/sockios.h>
 #include <linux/wireless.h>
 #include <monitormode.h>
 #include <errno.h>
-#include <net/if.h>
 #include <nexioctls.h>
 #include <string.h>
 #include <unistd.h>
@@ -68,7 +74,11 @@
 
 #define REAL_LIBC RTLD_NEXT
 
+#ifdef __ANDROID__
 typedef int request_t;
+#else
+typedef unsigned long request_t;
+#endif
 
 typedef void (*sighandler_t)(int);
 
@@ -76,11 +86,11 @@ static struct nexio *nexio = NULL;
 
 static const char *ifname = "wlan0";
 
-static int (*func_sendto) (int, const void *, size_t, int, const struct sockaddr *, socklen_t) = NULL;
-static int (*func_ioctl) (int, request_t, void *) = NULL;
+static ssize_t (*func_sendto) (int, const void *, size_t, int, const struct sockaddr *, socklen_t) = NULL;
+static int (*func_ioctl) (int, request_t, ...) = NULL;
 static int (*func_socket) (int, int, int) = NULL;
-static int (*func_bind) (int, const struct sockaddr *, int) = NULL;
-static int (*func_write) (int, const void *, size_t) = NULL;
+static int (*func_bind) (int, const struct sockaddr *, socklen_t) = NULL;
+static ssize_t (*func_write) (int, const void *, size_t) = NULL;
 static int (*func_close) (int) = NULL;
 
 /* Resolve the real libc symbols. Safe to call more than once and from a hook
@@ -89,29 +99,38 @@ static int (*func_close) (int) = NULL;
 static void
 _libnexmon_resolve(void) {
     if (! func_ioctl)
-        func_ioctl = (int (*) (int, request_t, void *)) dlsym (REAL_LIBC, "ioctl");
+        func_ioctl = (int (*) (int, request_t, ...)) dlsym (REAL_LIBC, "ioctl");
 
     if (! func_socket)
         func_socket = (int (*) (int, int, int)) dlsym (REAL_LIBC, "socket");
 
     if (! func_bind)
-        func_bind = (int (*) (int, const struct sockaddr *, int)) dlsym (REAL_LIBC, "bind");
+        func_bind = (int (*) (int, const struct sockaddr *, socklen_t)) dlsym (REAL_LIBC, "bind");
 
     if (! func_write)
-        func_write = (int (*) (int, const void *, size_t)) dlsym (REAL_LIBC, "write");
+        func_write = (ssize_t (*) (int, const void *, size_t)) dlsym (REAL_LIBC, "write");
 
     if (! func_sendto)
-        func_sendto = (int (*) (int, const void *, size_t, int, const struct sockaddr *, socklen_t)) dlsym (REAL_LIBC, "sendto");
+        func_sendto = (ssize_t (*) (int, const void *, size_t, int, const struct sockaddr *, socklen_t)) dlsym (REAL_LIBC, "sendto");
 
     if (! func_close)
         func_close = (int (*) (int)) dlsym (REAL_LIBC, "close");
 }
 
-static void _libmexmon_init() __attribute__ ((constructor));
-static void _libmexmon_init() {
-    nexio = nex_init_ioctl(ifname);
+static void
+_libnexmon_ensure_init(void) {
+    if (!nexio) {
+        const char *env_if = getenv("NEXMON_IFNAME");
+        if (env_if && env_if[0] != '\0')
+            ifname = env_if;
+        nexio = nex_init_ioctl(ifname);
+    }
+}
 
+static void _libmexmon_init(void) __attribute__ ((constructor));
+static void _libmexmon_init(void) {
     _libnexmon_resolve();
+    _libnexmon_ensure_init();
 }
 
 int
@@ -134,52 +153,59 @@ ioctl(int fd, request_t request, ...)
 
     switch (request) {
         case SIOCGIFHWADDR:
-            {
-                int buf;
+            if (argp != NULL) {
+                int buf = 0;
                 struct ifreq* p_ifr = (struct ifreq *) argp;
-                if (!strncmp(p_ifr->ifr_ifrn.ifrn_name, ifname, strlen(ifname))) {
-                    nex_ioctl(nexio, WLC_GET_MONITOR, &buf, 4, false);
-                    
-                    if (buf & MONITOR_IEEE80211) p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
-                    else if (buf & MONITOR_RADIOTAP) p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211_RADIOTAP;
-                    else if (buf & MONITOR_DISABLED || buf & MONITOR_LOG_ONLY || buf & MONITOR_DROP_FRM || buf & MONITOR_IPV4_UDP)
-                        p_ifr->ifr_hwaddr.sa_family = ARPHRD_ETHER;
+                if (!strncmp(p_ifr->ifr_ifrn.ifrn_name, ifname, IFNAMSIZ)) {
+                    _libnexmon_ensure_init();
+                    if (nex_ioctl(nexio, WLC_GET_MONITOR, &buf, sizeof(buf), false) == 0) {
+                        if (buf & MONITOR_IEEE80211)
+                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
+                        else if (buf & MONITOR_RADIOTAP)
+                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211_RADIOTAP;
+                        else if (buf == MONITOR_DISABLED || (buf & (MONITOR_LOG_ONLY | MONITOR_DROP_FRM | MONITOR_IPV4_UDP)))
+                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_ETHER;
 
-                    ret = 0;
+                        ret = 0;
+                    }
                 }
             }
             break;
 
         case SIOCGIWMODE:
-            {
-                int buf;
+            if (argp != NULL) {
+                int buf = 0;
                 struct iwreq* p_wrq = (struct iwreq*) argp;
                 
-                if (!strncmp(p_wrq->ifr_ifrn.ifrn_name, ifname, strlen(ifname))) {
-                    nex_ioctl(nexio, WLC_GET_MONITOR, &buf, 4, false);
+                if (!strncmp(p_wrq->ifr_ifrn.ifrn_name, ifname, IFNAMSIZ)) {
+                    _libnexmon_ensure_init();
+                    if (nex_ioctl(nexio, WLC_GET_MONITOR, &buf, sizeof(buf), false) == 0) {
+                        if (buf & (MONITOR_RADIOTAP | MONITOR_IEEE80211 | MONITOR_LOG_ONLY | MONITOR_DROP_FRM | MONITOR_IPV4_UDP)) {
+                            p_wrq->u.mode = IW_MODE_MONITOR;
+                        } else if (buf == MONITOR_DISABLED) {
+                            p_wrq->u.mode = IW_MODE_INFRA;
+                        }
 
-                    if (buf & MONITOR_RADIOTAP || buf & MONITOR_IEEE80211 || buf & MONITOR_LOG_ONLY || buf & MONITOR_DROP_FRM || buf & MONITOR_IPV4_UDP) {
-                        p_wrq->u.mode = IW_MODE_MONITOR;
+                        ret = 0;
                     }
-
-                    ret = 0;
                 }
             }
             break;
 
         case SIOCSIWMODE:
-            {
-                int buf;
+            if (argp != NULL) {
+                int buf = 0;
                 struct iwreq* p_wrq = (struct iwreq*) argp;
 
-                if (!strncmp(p_wrq->ifr_ifrn.ifrn_name, ifname, strlen(ifname))) {
+                if (!strncmp(p_wrq->ifr_ifrn.ifrn_name, ifname, IFNAMSIZ)) {
+                    _libnexmon_ensure_init();
                     if (p_wrq->u.mode == IW_MODE_MONITOR) {
                         buf = MONITOR_RADIOTAP;
                     } else {
                         buf = MONITOR_DISABLED;
                     }
 
-                    ret = nex_ioctl(nexio, WLC_SET_MONITOR, &buf, 4, true);
+                    ret = nex_ioctl(nexio, WLC_SET_MONITOR, &buf, sizeof(buf), true);
                 }
             }
             break;
@@ -205,12 +231,15 @@ void
 hexdump(const char *desc, const void *addr, int len)
 {
     int i;
-    unsigned char buff[17];
-    unsigned char *pc = (unsigned char*)addr;
+    unsigned char buff[17] = { 0 };
+    const unsigned char *pc = (const unsigned char *)addr;
 
     // Output description if given.
     if (desc != 0)
         printf ("%s:\n", desc);
+
+    if (len <= 0 || pc == NULL)
+        return;
 
     // Process every byte in the data.
     for (i = 0; i < len; i++) {
@@ -308,15 +337,23 @@ int
 socket(int domain, int type, int protocol)
 {
     int ret;
+    int base_type = type;
 
     if (! func_socket) _libnexmon_resolve();
 
     ret = func_socket(domain, type, protocol);
 
+#ifdef SOCK_CLOEXEC
+    base_type &= ~SOCK_CLOEXEC;
+#endif
+#ifdef SOCK_NONBLOCK
+    base_type &= ~SOCK_NONBLOCK;
+#endif
+
     // save the socket type (only for valid, in-range descriptors: a failed
     // socket() returns -1, which must not index the array)
     if (ret >= 0 && ret < NEXMON_FD_MAX(socket_to_type))
-        socket_to_type[ret] = type;
+        socket_to_type[ret] = base_type;
 
     //if ((type - 1 < sizeof(sock_types)/sizeof(sock_types[0])) && (domain - 1 < sizeof(domain_types)/sizeof(domain_types[0])))
     //    printf("LIBNEXMON: %d = %s(%s(%d), %s(%d), %d)\n", ret, __FUNCTION__, domain_types[domain], domain, sock_types[type - 1], type, protocol);
@@ -352,15 +389,16 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
     // Only inspect the address as an AF_PACKET sockaddr_ll when it actually is
     // one; otherwise a short/NULL address would over-read or NULL-deref.
-    if (addr != NULL && addrlen >= sizeof(struct sockaddr_ll) &&
+    if (ret == 0 && addr != NULL && addrlen >= sizeof(struct sockaddr_ll) &&
         addr->sa_family == AF_PACKET &&
         sockfd >= 0 && sockfd < NEXMON_FD_MAX(bound_to_correct_if)) {
-        struct sockaddr_ll *sll = (struct sockaddr_ll *) addr;
+        const struct sockaddr_ll *sll = (const struct sockaddr_ll *) addr;
         char sll_ifname[IF_NAMESIZE] = { 0 };
 
-        if (if_indextoname(sll->sll_ifindex, sll_ifname) != NULL &&
-            !strncmp(ifname, sll_ifname, IF_NAMESIZE))
-            bound_to_correct_if[sockfd] = 1;
+        _libnexmon_ensure_init();
+        bound_to_correct_if[sockfd] =
+            (if_indextoname(sll->sll_ifindex, sll_ifname) != NULL &&
+             !strncmp(ifname, sll_ifname, IF_NAMESIZE)) ? 1 : 0;
     }
 
     //printf("LIBNEXMON: %d = %s(%d, 0x%p, %d)\n", ret, __FUNCTION__, sockfd, addr, addrlen);
@@ -375,6 +413,48 @@ struct inject_frame {
     char data[];
 };
 
+static ssize_t
+_nexmon_inject_frame(const void *buf, size_t len)
+{
+    size_t total_len;
+    struct inject_frame *buf_dup;
+    int ioctl_ret;
+
+    if (len > 0 && buf == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
+    if (len > (size_t)UINT16_MAX - sizeof(struct inject_frame)) {
+        errno = EMSGSIZE;
+        return -1;
+    }
+
+    total_len = len + sizeof(struct inject_frame);
+    buf_dup = (struct inject_frame *) malloc(total_len);
+    if (!buf_dup) {
+        errno = ENOMEM;
+        return -1;
+    }
+
+    buf_dup->len = (unsigned short) total_len;
+    buf_dup->pad = 0;
+    buf_dup->type = 1;
+    if (len > 0)
+        memcpy(buf_dup->data, buf, len);
+
+    _libnexmon_ensure_init();
+    ioctl_ret = nex_ioctl(nexio, NEX_INJECT_FRAME, buf_dup, (int) total_len, true);
+    free(buf_dup);
+
+    if (ioctl_ret < 0) {
+        if (errno == 0)
+            errno = EIO;
+        return -1;
+    }
+
+    return (ssize_t) len;
+}
+
 ssize_t
 write(int fd, const void *buf, size_t count)
 {
@@ -384,18 +464,7 @@ write(int fd, const void *buf, size_t count)
 
     // check if the user wants to write on a raw socket
     if ((fd > 2) && (fd < NEXMON_FD_MAX(socket_to_type)) && (socket_to_type[fd] == SOCK_RAW) && (bound_to_correct_if[fd] == 1)) {
-        struct inject_frame *buf_dup = (struct inject_frame *) malloc(count + sizeof(struct inject_frame));
-
-        buf_dup->len = count + sizeof(struct inject_frame);
-        buf_dup->pad = 0;
-        buf_dup->type = 1;
-        memcpy(buf_dup->data, buf, count);
-
-        nex_ioctl(nexio, NEX_INJECT_FRAME, buf_dup, count + sizeof(struct inject_frame), true);
-
-        free(buf_dup);
-
-        ret = count;
+        ret = _nexmon_inject_frame(buf, count);
     } else {
         // otherwise write the regular frame to the socket
         ret = func_write(fd, buf, count);
@@ -413,18 +482,7 @@ sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr
 
     // check if the user wants to write on a raw socket
     if ((sockfd > 2) && (sockfd < NEXMON_FD_MAX(socket_to_type)) && (socket_to_type[sockfd] == SOCK_RAW) && (bound_to_correct_if[sockfd] == 1)) {
-        struct inject_frame *buf_dup = (struct inject_frame *) malloc(len + sizeof(struct inject_frame));
-
-        buf_dup->len = len + sizeof(struct inject_frame);
-        buf_dup->pad = 0;
-        buf_dup->type = 1;
-        memcpy(buf_dup->data, buf, len);
-
-        nex_ioctl(nexio, NEX_INJECT_FRAME, buf_dup, len + sizeof(struct inject_frame), true);
-
-        free(buf_dup);
-
-        ret = len;
+        ret = _nexmon_inject_frame(buf, len);
     } else {
         // otherwise write the regular frame to the socket
         ret = func_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
