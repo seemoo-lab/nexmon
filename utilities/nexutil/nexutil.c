@@ -115,6 +115,12 @@ unsigned char   disassociate = false;
 unsigned char   dump_wl_cnt = false;
 unsigned char   revinfo = false;
 unsigned char   nonblock = false;
+unsigned char   read_shm = false;
+unsigned int    read_shm_offset = 0;
+unsigned char   write_shm = false;
+unsigned char   write_shm_offset_set = false;
+unsigned int    write_shm_offset = 0;
+unsigned int    write_shm_val = 0;
 
 const char *argp_program_version = VERSION;
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -134,8 +140,10 @@ static struct argp_option options[] = {
     {"custom-cmd-value-int", 'i', 0, 0, "Define that custom-cmd-value should be interpreted as integer"},
     {"custom-cmd-value-base64", 'b', 0, 0, "Define that custom-cmd-value should be interpreted as base64 string"},
     {"base64-output", 'R', 0, 0, "Write base64 encoded strings to stdout instead of hex dumping"},
-    {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
-    {"dump-wl_cnt", 'w', 0, 0, "Dump WL counters"},
+    {"raw-output", 'r', "INT", OPTION_ARG_OPTIONAL, "Write raw output to stdout, or read D11 SHM at offset INT"},
+    {"dump-wl_cnt", 'w', "INT", OPTION_ARG_OPTIONAL, "Dump WL counters, or write D11 SHM at offset INT"},
+    {"read-shm", 'S', "INT", OPTION_ARG_OPTIONAL, "Read D11 SHM register at offset INT (host memory-mapped)"},
+    {"write-shm", 'W', "INT=VAL", OPTION_ARG_OPTIONAL, "Write D11 SHM register (offset=val, or offset with -v)"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
     {"chanspec", 'k', "CHAR/INT", OPTION_ARG_OPTIONAL, "Set chanspec either as integer (e.g., 0x1001, set -i) or as string (e.g., 64/80)."},
     {"nonblock", 'n', 0, 0, "Non-blocking channel hopping mode (sub-2ms fast hop)"},
@@ -320,12 +328,27 @@ parse_opt(int key, char *arg, struct argp_state *state)
             last_optional_opt = 0;
             break;
 
+        case 'S':
+            if (arg) {
+                read_shm = true;
+                read_shm_offset = parse_uint(arg, "shm offset", state);
+                last_optional_opt = 0;
+            } else {
+                read_shm = true;
+                last_optional_opt = 'S';
+            }
+            break;
+
         case 'r':
-            if (!base64_output)
-                raw_output = true;
-            else
-                argp_error(state, "you can only either use base64 (-R) or raw (-r) output");
-            last_optional_opt = 0;
+            if (arg) {
+                read_shm = true;
+                read_shm_offset = parse_uint(arg, "shm offset", state);
+                last_optional_opt = 0;
+            } else {
+                if (!base64_output)
+                    raw_output = true;
+                last_optional_opt = 'r';
+            }
             break;
 
         case 'R':
@@ -351,10 +374,34 @@ parse_opt(int key, char *arg, struct argp_state *state)
             break;
         }
 
-        case 'w':
-            dump_wl_cnt = true;
-            last_optional_opt = 0;
+        case 'W':
+        case 'w': {
+            if (arg) {
+                char *eq = strpbrk(arg, "=,:");
+                if (eq) {
+                    *eq = '\0';
+                    write_shm_offset = parse_uint(arg, "shm offset", state);
+                    write_shm_val = parse_uint(eq + 1, "shm value", state);
+                    write_shm = true;
+                    last_optional_opt = 0;
+                } else {
+                    write_shm_offset = parse_uint(arg, "shm offset", state);
+                    write_shm_offset_set = true;
+                    if (custom_cmd_value) {
+                        write_shm_val = parse_uint(custom_cmd_value, "shm value", state);
+                        write_shm = true;
+                        last_optional_opt = 0;
+                    } else {
+                        last_optional_opt = key;
+                    }
+                }
+            } else {
+                if (key == 'w')
+                    dump_wl_cnt = true;
+                last_optional_opt = key;
+            }
             break;
+        }
 
         case 'x':
             if (use_udp_tunneling != 0)
@@ -427,6 +474,44 @@ parse_opt(int key, char *arg, struct argp_state *state)
                     set_securitycookie_value = parse_uint(arg, "security cookie", state);
                     last_optional_opt = 0;
                     break;
+                case 'S':
+                    read_shm = true;
+                    read_shm_offset = parse_uint(arg, "shm offset", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'r':
+                    raw_output = false;
+                    read_shm = true;
+                    read_shm_offset = parse_uint(arg, "shm offset", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'W':
+                case 'w': {
+                    dump_wl_cnt = false;
+                    char *eq = strpbrk(arg, "=,:");
+                    if (eq) {
+                        *eq = '\0';
+                        write_shm_offset = parse_uint(arg, "shm offset", state);
+                        write_shm_val = parse_uint(eq + 1, "shm value", state);
+                        write_shm = true;
+                        last_optional_opt = 0;
+                    } else if (!write_shm_offset_set) {
+                        write_shm_offset = parse_uint(arg, "shm offset", state);
+                        write_shm_offset_set = true;
+                        if (custom_cmd_value) {
+                            write_shm_val = parse_uint(custom_cmd_value, "shm value", state);
+                            write_shm = true;
+                            last_optional_opt = 0;
+                        } else {
+                            last_optional_opt = 'w';
+                        }
+                    } else {
+                        write_shm_val = parse_uint(arg, "shm value", state);
+                        write_shm = true;
+                        last_optional_opt = 0;
+                    }
+                    break;
+                }
                 default:
                     return ARGP_ERR_UNKNOWN;
             }
@@ -831,6 +916,34 @@ main(int argc, char **argv)
 
         free(custom_cmd_buf);
         custom_cmd_buf = NULL;
+    }
+
+    if (read_shm) {
+        unsigned int val = 0;
+        ret = nex_read_d11_shm(nexio, read_shm_offset, &val);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: read D11 SHM at 0x%04x failed (err=%d)\n", read_shm_offset, ret);
+            failed = 1;
+        } else {
+            if (raw_output) {
+                uint16_t val16 = (uint16_t) val;
+                fwrite(&val16, sizeof(val16), 1, stdout);
+                fflush(stdout);
+            } else {
+                printf("D11 SHM [0x%04x]: 0x%04x (%u)\n", read_shm_offset, val, val);
+            }
+        }
+    }
+
+    if (write_shm) {
+        ret = nex_write_d11_shm(nexio, write_shm_offset, write_shm_val);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: write D11 SHM at 0x%04x <= 0x%04x failed (err=%d)\n",
+                    write_shm_offset, write_shm_val, ret);
+            failed = 1;
+        } else {
+            printf("D11 SHM [0x%04x] <= 0x%04x: SUCCESS\n", write_shm_offset, write_shm_val);
+        }
     }
 
     if (disassociate) {

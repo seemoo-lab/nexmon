@@ -1526,3 +1526,95 @@ wf_chspec_is_6g_psc(chanspec_t chspec)
 	return WF_IS_6G_PSC_CHAN(pri_ch);
 }
 
+#ifndef NEX_READ_D11_SHM
+#define NEX_READ_D11_SHM                430
+#endif
+#ifndef NEX_WRITE_D11_SHM
+#define NEX_WRITE_D11_SHM               431
+#endif
+
+struct nex_d11_shm_req {
+    uint32_t offset;
+    uint32_t val;
+    uint16_t width;
+    uint16_t is_reg;
+};
+
+int
+nex_read_d11_shm(struct nexio *nexio, unsigned int offset, unsigned int *val)
+{
+    struct nex_d11_shm_req req;
+    int ret;
+
+    if (!nexio || !val)
+        return -EINVAL;
+
+    memset(&req, 0, sizeof(req));
+    req.offset = offset;
+    req.width = 2;
+    req.is_reg = 0;
+
+    ret = nex_ioctl(nexio, NEX_READ_D11_SHM, &req, sizeof(req), false);
+    if (ret < 0)
+        return ret;
+
+    *val = req.val;
+    return 0;
+}
+
+int
+nex_write_d11_shm(struct nexio *nexio, unsigned int offset, unsigned int val)
+{
+    struct nex_d11_shm_req req;
+
+    if (!nexio)
+        return -EINVAL;
+
+    memset(&req, 0, sizeof(req));
+    req.offset = offset;
+    req.val = val;
+    req.width = 2;
+    req.is_reg = 0;
+
+    return nex_ioctl(nexio, NEX_WRITE_D11_SHM, &req, sizeof(req), true);
+}
+
+int
+nex_read_d11_reg(struct nexio *nexio, unsigned int offset, unsigned int *val)
+{
+    struct nex_d11_shm_req req;
+    int ret;
+
+    if (!nexio || !val)
+        return -EINVAL;
+
+    memset(&req, 0, sizeof(req));
+    req.offset = offset;
+    req.width = 4;
+    req.is_reg = 1;
+
+    ret = nex_ioctl(nexio, NEX_READ_D11_SHM, &req, sizeof(req), false);
+    if (ret < 0)
+        return ret;
+
+    *val = req.val;
+    return 0;
+}
+
+int
+nex_write_d11_reg(struct nexio *nexio, unsigned int offset, unsigned int val)
+{
+    struct nex_d11_shm_req req;
+
+    if (!nexio)
+        return -EINVAL;
+
+    memset(&req, 0, sizeof(req));
+    req.offset = offset;
+    req.val = val;
+    req.width = 4;
+    req.is_reg = 1;
+
+    return nex_ioctl(nexio, NEX_WRITE_D11_SHM, &req, sizeof(req), true);
+}
+

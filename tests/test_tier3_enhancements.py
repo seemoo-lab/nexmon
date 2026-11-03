@@ -441,6 +441,64 @@ class TestTier3PythonSDKAndTooling(unittest.TestCase):
         self.assertIn("channels_match", hwcheck)
         self.assertIn("6g", hwcheck)
 
+    def test_d11_shm_memory_mapped_primitives(self):
+        """Kernel 7.4-rc1 (f6e39ae4ea84): Direct D11 SHM host memory-mapped access primitives."""
+        # 1. IOCTLs and memory map definitions in headers
+        for drv_ver in ("7.3", "7.4"):
+            hdr = (ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/nexmon_ioctls.h").read_text(errors="replace")
+            self.assertIn("#define NEX_READ_D11_SHM", hdr)
+            self.assertIn("430", hdr)
+            self.assertIn("#define NEX_WRITE_D11_SHM", hdr)
+            self.assertIn("431", hdr)
+            self.assertIn("struct nex_d11_shm_req", hdr)
+            self.assertIn("D11_BASE_ADDR", hdr)
+            self.assertIn("0x18001000", hdr)
+            self.assertIn("D11_AXI_BASE_ADDR", hdr)
+            self.assertIn("0xE8000000", hdr)
+            self.assertIn("D11_SHM_BASE_ADDR", hdr)
+            self.assertIn("D11REG_ADDR", hdr)
+            self.assertIn("D11SHM_ADDR", hdr)
+
+        common_hdr = (ROOT / "patches/include/nexioctls.h").read_text(errors="replace")
+        self.assertIn("#define NEX_READ_D11_SHM                430", common_hdr)
+        self.assertIn("#define NEX_WRITE_D11_SHM               431", common_hdr)
+        self.assertIn("struct nex_d11_shm_req", common_hdr)
+
+        # 2. Driver core handlers
+        for drv_ver in ("7.3", "7.4"):
+            core = (ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.c").read_text(errors="replace")
+            self.assertIn("frame->cmd == NEX_READ_D11_SHM", core)
+            self.assertIn("frame->cmd == NEX_WRITE_D11_SHM", core)
+            self.assertIn("brcmf_sdio_sleep(sdiodev->bus, false);", core)
+            self.assertIn("brcmf_sdio_trigger_dpc(sdiodev->bus);", core)
+            self.assertIn("brcmf_sdiod_readl", core)
+            self.assertIn("brcmf_sdiod_writel", core)
+
+        # 3. Libnexio bindings and CLI options
+        lib_h = (ROOT / "utilities/libnexio/libnexio.h").read_text(errors="replace")
+        self.assertIn("int nex_read_d11_shm(", lib_h)
+        self.assertIn("int nex_write_d11_shm(", lib_h)
+        self.assertIn("int nex_read_d11_reg(", lib_h)
+        self.assertIn("int nex_write_d11_reg(", lib_h)
+
+        nexutil_c = (ROOT / "utilities/nexutil/nexutil.c").read_text(errors="replace")
+        self.assertIn('{"read-shm", \'S\', "INT"', nexutil_c)
+        self.assertIn('{"write-shm", \'W\', "INT=VAL"', nexutil_c)
+        self.assertIn("nex_read_d11_shm", nexutil_c)
+        self.assertIn("nex_write_d11_shm", nexutil_c)
+
+        # 4. Python SDK
+        import sys
+        sys.path.insert(0, str(ROOT / "python"))
+        import pynexmon
+        self.assertEqual(pynexmon.NEX_READ_D11_SHM, 430)
+        self.assertEqual(pynexmon.NEX_WRITE_D11_SHM, 431)
+        self.assertTrue(hasattr(pynexmon.NexmonDevice, "read_d11_shm"))
+        self.assertTrue(hasattr(pynexmon.NexmonDevice, "write_d11_shm"))
+        self.assertTrue(hasattr(pynexmon.NexmonDevice, "read_d11_reg"))
+        self.assertTrue(hasattr(pynexmon.NexmonDevice, "write_d11_reg"))
+
+
 
 class TestTier3BuildAndEnvironment(unittest.TestCase):
     """M-11, M-12, M-13, L-04: Makefile bootstrap, setup_env.sh, .gitignore, JNI releases."""

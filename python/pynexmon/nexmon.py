@@ -21,6 +21,8 @@ NEX_INJECT_FRAME = 401
 NEX_GET_SECURITYCOOKIE = 404
 NEX_SET_SECURITYCOOKIE = 405
 NEX_GET_WL_CNT = 407
+NEX_READ_D11_SHM = 430
+NEX_WRITE_D11_SHM = 431
 
 INVCHANSPEC = 0
 
@@ -85,6 +87,19 @@ class _LibNexioBindings:
 
         self.lib.wf_chanspec2mhz.argtypes = [ctypes.c_uint16]
         self.lib.wf_chanspec2mhz.restype = ctypes.c_int
+
+        # D11 SHM and register access primitives
+        self.lib.nex_read_d11_shm.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.POINTER(ctypes.c_uint)]
+        self.lib.nex_read_d11_shm.restype = ctypes.c_int
+
+        self.lib.nex_write_d11_shm.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
+        self.lib.nex_write_d11_shm.restype = ctypes.c_int
+
+        self.lib.nex_read_d11_reg.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.POINTER(ctypes.c_uint)]
+        self.lib.nex_read_d11_reg.restype = ctypes.c_int
+
+        self.lib.nex_write_d11_reg.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
+        self.lib.nex_write_d11_reg.restype = ctypes.c_int
 
     @classmethod
     def get(cls) -> "_LibNexioBindings":
@@ -253,3 +268,39 @@ class NexmonDevice:
         ]
         values = struct.unpack("<17I", res[:68])
         return dict(zip(fields, values))
+
+    def read_d11_shm(self, offset: int) -> int:
+        """Read 16-bit word from D11 shared memory at byte offset."""
+        if not self._handle:
+            raise NexmonError("Device handle is closed")
+        val = ctypes.c_uint(0)
+        ret = self._bindings.lib.nex_read_d11_shm(self._handle, offset, ctypes.byref(val))
+        if ret < 0:
+            raise NexmonError(f"read_d11_shm failed for offset 0x{offset:04x} (err={ret})")
+        return val.value
+
+    def write_d11_shm(self, offset: int, val: int):
+        """Write 16-bit word to D11 shared memory at byte offset."""
+        if not self._handle:
+            raise NexmonError("Device handle is closed")
+        ret = self._bindings.lib.nex_write_d11_shm(self._handle, offset, val)
+        if ret < 0:
+            raise NexmonError(f"write_d11_shm failed for offset 0x{offset:04x} <= 0x{val:04x} (err={ret})")
+
+    def read_d11_reg(self, offset: int) -> int:
+        """Read 32-bit word from D11 MAC register at byte offset."""
+        if not self._handle:
+            raise NexmonError("Device handle is closed")
+        val = ctypes.c_uint(0)
+        ret = self._bindings.lib.nex_read_d11_reg(self._handle, offset, ctypes.byref(val))
+        if ret < 0:
+            raise NexmonError(f"read_d11_reg failed for offset 0x{offset:04x} (err={ret})")
+        return val.value
+
+    def write_d11_reg(self, offset: int, val: int):
+        """Write 32-bit word to D11 MAC register at byte offset."""
+        if not self._handle:
+            raise NexmonError("Device handle is closed")
+        ret = self._bindings.lib.nex_write_d11_reg(self._handle, offset, val)
+        if ret < 0:
+            raise NexmonError(f"write_d11_reg failed for offset 0x{offset:04x} <= 0x{val:08x} (err={ret})")
