@@ -1,3 +1,11 @@
+2026-10-31  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for version 1.19.1.
+	* configure.ac: Bump version number to 1.19.1.
+	* lib/Makefile.in (LIBICONV_VERSION_INFO): Bump to 9:2:7.
+	* NEWS: Update.
+	* README: Update download link.
+
 2026-03-06  Bruno Haible  <bruno@clisp.org>
 
 	Prepare for version 1.19.

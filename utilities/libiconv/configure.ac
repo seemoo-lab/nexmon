@@ -16,7 +16,7 @@ dnl License along with the GNU LIBICONV Library; see the file COPYING.LIB.
 dnl If not, see <https://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.64])
-AC_INIT([libiconv], [1.19])
+AC_INIT([libiconv], [1.19.1])
 AC_CONFIG_SRCDIR([lib/iconv.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE

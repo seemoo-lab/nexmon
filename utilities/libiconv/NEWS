@@ -1,3 +1,6 @@
+New in 1.19.1:
+* Bug fixes and build improvements.
+
 New in 1.19:
 * Fixed a bug in the GB18030 converter.
 * Special support for OS/2: Encoding names that are results of
