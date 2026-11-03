@@ -47,6 +47,7 @@ __pycache__/
 /DISABLE_STATISTICS
 /updates.json
 utilities/rawproxy/fuzz_radiotap_sanitize
+utilities/libnexio/libnexio_sanitize.*
 utilities/nexutil/nexutil
 *.ko
 *.mod*
