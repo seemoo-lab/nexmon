@@ -132,6 +132,27 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
                 f"2000ms sleep return delay missing in {drv_ver}"
             )
 
+    def test_firmware_capabilities_full_word_matching(self):
+        """RPi Kernel (e50f4ef00c2c): Only match complete feature words to avoid substring collisions."""
+        fwcap_drv_versions = (
+            "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in fwcap_drv_versions:
+            feat_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/feature.c"
+            self.assertTrue(feat_c.is_file(), f"Missing {feat_c}")
+            content = feat_c.read_text(errors="replace")
+            self.assertIn(
+                "match != caps && match[-1] != ' '",
+                content,
+                f"Word start boundary check missing in {drv_ver}"
+            )
+            self.assertIn(
+                "endc != '\\0' && endc != ' '",
+                content,
+                f"Word end boundary check missing in {drv_ver}"
+            )
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions
