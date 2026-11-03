@@ -1887,10 +1887,12 @@ gotpkt:
 		bus->rxlen = len - doff;
 		spin_unlock_bh(&bus->rxctl_lock);
 	}
+	buf = NULL;
 
 done:
 	/* Awake any waiters */
 	brcmf_sdio_dcmd_resp_wake(bus);
+	vfree(buf);
 }
 
 /* Pad read to blocksize for efficiency */

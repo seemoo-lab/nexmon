@@ -202,6 +202,28 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
                 f"D3 timeout handling ordering incorrect in {drv_ver}: wowl={wowl_pos}, err={err_pos}, dbg={dbg_pos}"
             )
 
+    def test_sdio_read_control_memory_leak_fix(self):
+        """Kernel 7.4-rc1 (0d10db8e94fc): Prevent memory leak in brcmf_sdio_read_control on error paths."""
+        all_drv_versions = (
+            "4.4", "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in all_drv_versions:
+            sdio_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/sdio.c"
+            self.assertTrue(sdio_c.is_file(), f"Missing {sdio_c}")
+            content = sdio_c.read_text(errors="replace")
+            fn_pos = content.find("brcmf_sdio_read_control(")
+            self.assertNotEqual(fn_pos, -1, f"brcmf_sdio_read_control missing in {drv_ver}")
+            pad_pos = content.find("brcmf_sdio_pad(", fn_pos)
+            self.assertNotEqual(pad_pos, -1, f"brcmf_sdio_pad missing in {drv_ver}")
+            fn_text = content[fn_pos:pad_pos]
+            self.assertIn("buf = NULL;", fn_text, f"buf = NULL missing in {drv_ver}/sdio.c")
+            self.assertIn(
+                "brcmf_sdio_dcmd_resp_wake(bus);\n\tvfree(buf);",
+                fn_text,
+                f"vfree(buf) after dcmd_resp_wake missing in {drv_ver}/sdio.c"
+            )
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions
