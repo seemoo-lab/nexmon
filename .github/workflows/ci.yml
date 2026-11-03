@@ -14,11 +14,11 @@ jobs:
     name: Lint (ruff + shellcheck)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -40,16 +40,16 @@ jobs:
     name: Native Utilities & Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
       - name: Cache ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.ccache
           key: ccache-test-${{ runner.os }}-${{ hashFiles('utilities/nexutil/**', 'buildtools/**') }}
@@ -61,7 +61,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc g++-multilib libc6-i386 libgmp-dev libgmp-dev:i386 make gawk xxd libpcap-dev libnl-3-dev libnl-genl-3-dev libcap-dev ccache || \
           sudo apt-get install -y gcc make gawk xxd libpcap-dev libnl-3-dev libnl-genl-3-dev libcap-dev ccache
-          ccache --set-config=cache_dir=$HOME/.ccache || true
+          mkdir -p "$HOME/.ccache"
+          ccache --set-config=cache_dir="$HOME/.ccache" || true
 
       - name: Install Python Test Dependencies
         run: python -m pip install capstone numpy zstandard
@@ -70,6 +71,9 @@ jobs:
         # Explicitly select the host compiler on x86 too. The default x86 path
         # builds Android binaries, which cannot serve the native SDK tests.
         run: |
+          mkdir -p "$HOME/.ccache"
+          export PATH="/usr/lib/ccache:$PATH"
+          export CCACHE_DIR="$HOME/.ccache"
           make -C utilities/nexutil NATIVE_BUILD=1
           make -C buildtools/flash_patch_extractor
           make -C buildtools/ucode_extractor
@@ -82,16 +86,16 @@ jobs:
     name: Build & Validate BCM43455c0 Firmware
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
       - name: Cache ccache and toolchain
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.ccache
@@ -106,7 +110,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc g++-multilib libc6-i386 libgmp-dev libgmp-dev:i386 make gawk qpdf xxd ccache || \
           sudo apt-get install -y gcc g++-multilib libc6-i386 libgmp-dev make gawk qpdf xxd ccache
-          ccache --set-config=cache_dir=$HOME/.ccache || true
+          mkdir -p "$HOME/.ccache"
+          ccache --set-config=cache_dir="$HOME/.ccache" || true
 
       - name: Build Firmware and Require Validation
         shell: bash
@@ -128,11 +133,11 @@ jobs:
     name: Sanitize (ASan+UBSan) + Fuzz
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
