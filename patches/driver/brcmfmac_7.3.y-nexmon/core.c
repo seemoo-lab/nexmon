@@ -324,7 +324,8 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         frame->cmd == 30  /* WLC_SET_CHANNEL */ || frame->cmd == 29  /* WLC_GET_CHANNEL */ ||
         frame->cmd == 262 /* WLC_GET_VAR */     || frame->cmd == 263 /* WLC_SET_VAR */ ||
         frame->cmd == NEX_GET_CHANSPEC_OVERRIDE || frame->cmd == NEX_SET_CHANSPEC_OVERRIDE ||
-        frame->cmd == NEX_READ_D11_SHM || frame->cmd == NEX_WRITE_D11_SHM) {
+        frame->cmd == NEX_READ_D11_SHM || frame->cmd == NEX_WRITE_D11_SHM ||
+        frame->cmd == NEX_READ_TEMPLATE_RAM || frame->cmd == NEX_WRITE_TEMPLATE_RAM) {
         struct brcmf_if *pri_ifp = ifp->drvr ? ifp->drvr->iflist[0] : NULL;
 
         /*
@@ -447,7 +448,10 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         if (req.offset >= 0xE8004000 && req.offset < 0xE8008000) {
             req.offset -= 0xE8004000;
             req.is_reg = 0;
-        } else if (req.offset >= 0x18001000 && req.offset < 0x18002000) {
+        } else if (req.offset >= 0x18001800 && req.offset < 0x18002000) {
+            req.offset -= 0x18001800;
+            req.is_reg = 3;
+        } else if (req.offset >= 0x18001000 && req.offset < 0x18001800) {
             req.offset -= 0x18001000;
             req.is_reg = 1;
         } else if (req.offset >= 0x18000000) {
@@ -462,24 +466,57 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
             goto out_put;
         }
 
-        if (sdiodev->bus) {
+        if (sdiodev->bus)
             brcmf_sdio_sleep(sdiodev->bus, false);
-            brcmf_sdio_trigger_dpc(sdiodev->bus);
-        }
-
-        if (req.is_reg == 1)
-            target_addr = D11REG_ADDR(req.offset);
-        else if (req.is_reg == 2)
-            target_addr = req.offset;
-        else
-            target_addr = D11SHM_ADDR(req.offset);
 
         sdio_claim_host(sdiodev->func1);
-        if (req.width == 4) {
-            req.val = brcmf_sdiod_readl(sdiodev, target_addr & ~3, &ret);
+        if (req.is_reg == 3) {
+            /* Template RAM read via hardware indirect registers (0x130/0x134) */
+            brcmf_sdiod_writel(sdiodev, D11_TPLATEWRPTR_REG, req.offset & 0x7FC, &ret);
+            if (!ret) {
+                u32 raw = brcmf_sdiod_readl(sdiodev, D11_TPLATEWRDATA_REG, &ret);
+                if (!ret) {
+                    if (req.width == 4)
+                        req.val = raw;
+                    else
+                        req.val = (req.offset & 2) ? ((raw >> 16) & 0xFFFF) : (raw & 0xFFFF);
+                }
+            }
+        } else if (req.is_reg == 1 || req.is_reg == 2) {
+            target_addr = (req.is_reg == 1) ? D11REG_ADDR(req.offset) : req.offset;
+            if (req.width == 4) {
+                req.val = brcmf_sdiod_readl(sdiodev, target_addr & ~3, &ret);
+            } else {
+                u32 raw = brcmf_sdiod_readl(sdiodev, target_addr & ~3, &ret);
+                req.val = (req.offset & 2) ? ((raw >> 16) & 0xFFFF) : (raw & 0xFFFF);
+            }
         } else {
-            u32 raw = brcmf_sdiod_readl(sdiodev, target_addr & ~3, &ret);
-            req.val = (req.offset & 2) ? ((raw >> 16) & 0xFFFF) : (raw & 0xFFFF);
+            /* Broadcom SiliconBackplane D11 objaddr (0x160) / objdata (0x164) */
+            brcmf_sdiod_writel(sdiodev, D11_OBJADDR_REG, OBJADDR_SHM_SEL | ((req.offset & 0xFFFC) >> 2), &ret);
+            if (!ret) {
+                (void)brcmf_sdiod_readl(sdiodev, D11_OBJADDR_REG, &ret);
+                if (!ret) {
+                    u32 raw = brcmf_sdiod_readl(sdiodev, D11_OBJDATA_REG, &ret);
+                    if (!ret) {
+                        if (req.width == 4)
+                            req.val = raw;
+                        else
+                            req.val = (req.offset & 2) ? ((raw >> 16) & 0xFFFF) : (raw & 0xFFFF);
+                    }
+                }
+            }
+            if (ret) {
+                /* Cypress AXI memory window fallback */
+                ret = 0;
+                target_addr = D11SHM_ADDR(req.offset);
+                u32 raw = brcmf_sdiod_readl(sdiodev, target_addr & ~3, &ret);
+                if (!ret) {
+                    if (req.width == 4)
+                        req.val = raw;
+                    else
+                        req.val = (req.offset & 2) ? ((raw >> 16) & 0xFFFF) : (raw & 0xFFFF);
+                }
+            }
         }
         sdio_release_host(sdiodev->func1);
 
@@ -533,7 +570,10 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         if (req.offset >= 0xE8004000 && req.offset < 0xE8008000) {
             req.offset -= 0xE8004000;
             req.is_reg = 0;
-        } else if (req.offset >= 0x18001000 && req.offset < 0x18002000) {
+        } else if (req.offset >= 0x18001800 && req.offset < 0x18002000) {
+            req.offset -= 0x18001800;
+            req.is_reg = 3;
+        } else if (req.offset >= 0x18001000 && req.offset < 0x18001800) {
             req.offset -= 0x18001000;
             req.is_reg = 1;
         } else if (req.offset >= 0x18000000) {
@@ -548,29 +588,234 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
             goto out_put;
         }
 
-        if (sdiodev->bus) {
+        if (sdiodev->bus)
             brcmf_sdio_sleep(sdiodev->bus, false);
-            brcmf_sdio_trigger_dpc(sdiodev->bus);
-        }
-
-        if (req.is_reg == 1)
-            target_addr = D11REG_ADDR(req.offset);
-        else if (req.is_reg == 2)
-            target_addr = req.offset;
-        else
-            target_addr = D11SHM_ADDR(req.offset);
 
         sdio_claim_host(sdiodev->func1);
-        if (req.width == 4) {
-            brcmf_sdiod_writel(sdiodev, target_addr & ~3, req.val, &ret);
+        if (req.is_reg == 3) {
+            /* Template RAM write via hardware indirect registers (0x130/0x134) */
+            brcmf_sdiod_writel(sdiodev, D11_TPLATEWRPTR_REG, req.offset & 0x7FC, &ret);
+            if (!ret)
+                brcmf_sdiod_writel(sdiodev, D11_TPLATEWRDATA_REG, req.val, &ret);
+        } else if (req.is_reg == 1 || req.is_reg == 2) {
+            target_addr = (req.is_reg == 1) ? D11REG_ADDR(req.offset) : req.offset;
+            if (req.width == 4) {
+                brcmf_sdiod_writel(sdiodev, target_addr & ~3, req.val, &ret);
+            } else {
+                u32 raw = brcmf_sdiod_readl(sdiodev, target_addr & ~3, &ret);
+                if (!ret) {
+                    if (req.offset & 2)
+                        raw = (raw & 0x0000FFFF) | ((req.val & 0xFFFF) << 16);
+                    else
+                        raw = (raw & 0xFFFF0000) | (req.val & 0xFFFF);
+                    brcmf_sdiod_writel(sdiodev, target_addr & ~3, raw, &ret);
+                }
+            }
         } else {
-            u32 raw = brcmf_sdiod_readl(sdiodev, target_addr & ~3, &ret);
+            /* SHM write: SiliconBackplane objaddr (0x160) / objdata (0x164) */
+            brcmf_sdiod_writel(sdiodev, D11_OBJADDR_REG, OBJADDR_SHM_SEL | ((req.offset & 0xFFFC) >> 2), &ret);
             if (!ret) {
-                if (req.offset & 2)
-                    raw = (raw & 0x0000FFFF) | ((req.val & 0xFFFF) << 16);
-                else
-                    raw = (raw & 0xFFFF0000) | (req.val & 0xFFFF);
-                brcmf_sdiod_writel(sdiodev, target_addr & ~3, raw, &ret);
+                (void)brcmf_sdiod_readl(sdiodev, D11_OBJADDR_REG, &ret);
+                if (!ret) {
+                    if (req.width == 4) {
+                        brcmf_sdiod_writel(sdiodev, D11_OBJDATA_REG, req.val, &ret);
+                    } else {
+                        u32 raw = brcmf_sdiod_readl(sdiodev, D11_OBJDATA_REG, &ret);
+                        if (!ret) {
+                            if (req.offset & 2)
+                                raw = (raw & 0x0000FFFF) | ((req.val & 0xFFFF) << 16);
+                            else
+                                raw = (raw & 0xFFFF0000) | (req.val & 0xFFFF);
+                            brcmf_sdiod_writel(sdiodev, D11_OBJADDR_REG, OBJADDR_SHM_SEL | ((req.offset & 0xFFFC) >> 2), &ret);
+                            (void)brcmf_sdiod_readl(sdiodev, D11_OBJADDR_REG, &ret);
+                            brcmf_sdiod_writel(sdiodev, D11_OBJDATA_REG, raw, &ret);
+                        }
+                    }
+                }
+            }
+            if (ret) {
+                /* Cypress AXI memory window fallback */
+                ret = 0;
+                target_addr = D11SHM_ADDR(req.offset);
+                if (req.width == 4) {
+                    brcmf_sdiod_writel(sdiodev, target_addr & ~3, req.val, &ret);
+                } else {
+                    u32 raw = brcmf_sdiod_readl(sdiodev, target_addr & ~3, &ret);
+                    if (!ret) {
+                        if (req.offset & 2)
+                            raw = (raw & 0x0000FFFF) | ((req.val & 0xFFFF) << 16);
+                        else
+                            raw = (raw & 0xFFFF0000) | (req.val & 0xFFFF);
+                        brcmf_sdiod_writel(sdiodev, target_addr & ~3, raw, &ret);
+                    }
+                }
+            }
+        }
+        sdio_release_host(sdiodev->func1);
+
+        if (ret) {
+            netlink_ack(skb, nlh, ret < 0 ? ret : -ret, NULL);
+            goto out_put;
+        }
+
+        skb_out = nlmsg_new(4, GFP_KERNEL);
+        if (!skb_out) {
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
+        nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, 4, 0);
+        if (!nlh_tx) {
+            kfree_skb(skb_out);
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
+        memcpy(nlmsg_data(nlh_tx), "ACK", 4);
+        nlmsg_unicast(nl_sock, skb_out, portid);
+        goto out_put;
+    }
+
+    if (frame->cmd == NEX_READ_TEMPLATE_RAM) {
+        struct nex_d11_templ_req req;
+        struct brcmf_bus *bus_if = target_ifp->drvr ? target_ifp->drvr->bus_if : NULL;
+        struct brcmf_sdio_dev *sdiodev = NULL;
+        int ret = 0, i;
+        u32 base_addr;
+        size_t hdr_sz = sizeof(req.offset) + sizeof(req.len) + sizeof(req.method) + sizeof(req.pad);
+        size_t resp_len;
+
+        if (payload_len < sizeof(req.offset) + sizeof(req.len)) {
+            netlink_ack(skb, nlh, -EINVAL, NULL);
+            goto out_put;
+        }
+
+        memset(&req, 0, sizeof(req));
+        memcpy(&req, frame->payload, min_t(size_t, payload_len, sizeof(req)));
+        req.offset = le32_to_cpu(req.offset);
+        req.len = le32_to_cpu(req.len);
+        req.method = le16_to_cpu(req.method);
+        if (req.len > sizeof(req.data))
+            req.len = sizeof(req.data);
+        if (req.offset + req.len > 0x800) {
+            netlink_ack(skb, nlh, -EINVAL, NULL);
+            goto out_put;
+        }
+
+        if (bus_if && bus_if->bus_priv.sdio)
+            sdiodev = bus_if->bus_priv.sdio;
+
+        if (!sdiodev || !sdiodev->func1) {
+            netlink_ack(skb, nlh, -EOPNOTSUPP, NULL);
+            goto out_put;
+        }
+
+        if (sdiodev->bus)
+            brcmf_sdio_sleep(sdiodev->bus, false);
+
+        sdio_claim_host(sdiodev->func1);
+        if (req.method == 1) {
+            base_addr = D11_TEMPLATE_RAM_BASE + (req.offset & 0x7FC);
+            for (i = 0; i < req.len && !ret; i += 4) {
+                u32 dword = brcmf_sdiod_readl(sdiodev, (base_addr + i) & ~3, &ret);
+                int chunk = min_t(int, req.len - i, 4);
+                memcpy(req.data + i, &dword, chunk);
+            }
+        }
+        if (req.method == 0 || ret) {
+            ret = 0;
+            for (i = 0; i < req.len && !ret; i += 4) {
+                u32 dword;
+                int chunk = min_t(int, req.len - i, 4);
+                brcmf_sdiod_writel(sdiodev, D11_TPLATEWRPTR_REG, (req.offset + i) & 0x7FC, &ret);
+                if (ret)
+                    break;
+                dword = brcmf_sdiod_readl(sdiodev, D11_TPLATEWRDATA_REG, &ret);
+                if (ret)
+                    break;
+                memcpy(req.data + i, &dword, chunk);
+            }
+        }
+        sdio_release_host(sdiodev->func1);
+
+        if (ret) {
+            netlink_ack(skb, nlh, ret < 0 ? ret : -ret, NULL);
+            goto out_put;
+        }
+
+        resp_len = hdr_sz + req.len;
+        req.offset = cpu_to_le32(req.offset);
+        req.len = cpu_to_le32(req.len);
+        req.method = cpu_to_le16(req.method);
+        req.pad = 0;
+        memcpy(frame->payload, &req, resp_len);
+
+        size_t resp_frame_len = header_len + resp_len;
+        skb_out = nlmsg_new(resp_frame_len, GFP_KERNEL);
+        if (!skb_out) {
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
+        nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, resp_frame_len, 0);
+        if (!nlh_tx) {
+            kfree_skb(skb_out);
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
+        memcpy(nlmsg_data(nlh_tx), frame, resp_frame_len);
+        nlmsg_unicast(nl_sock, skb_out, portid);
+        goto out_put;
+    }
+
+    if (frame->cmd == NEX_WRITE_TEMPLATE_RAM) {
+        struct nex_d11_templ_req req;
+        struct brcmf_bus *bus_if = target_ifp->drvr ? target_ifp->drvr->bus_if : NULL;
+        struct brcmf_sdio_dev *sdiodev = NULL;
+        int ret = 0, i;
+
+        if (payload_len < sizeof(req.offset) + sizeof(req.len)) {
+            netlink_ack(skb, nlh, -EINVAL, NULL);
+            goto out_put;
+        }
+
+        memset(&req, 0, sizeof(req));
+        memcpy(&req, frame->payload, min_t(size_t, payload_len, sizeof(req)));
+        req.offset = le32_to_cpu(req.offset);
+        req.len = le32_to_cpu(req.len);
+        req.method = le16_to_cpu(req.method);
+        if (req.len > sizeof(req.data) || req.offset + req.len > 0x800) {
+            netlink_ack(skb, nlh, -EINVAL, NULL);
+            goto out_put;
+        }
+
+        if (bus_if && bus_if->bus_priv.sdio)
+            sdiodev = bus_if->bus_priv.sdio;
+
+        if (!sdiodev || !sdiodev->func1) {
+            netlink_ack(skb, nlh, -EOPNOTSUPP, NULL);
+            goto out_put;
+        }
+
+        if (sdiodev->bus)
+            brcmf_sdio_sleep(sdiodev->bus, false);
+
+        sdio_claim_host(sdiodev->func1);
+        if (req.method == 1) {
+            /* Direct backplane write */
+            u32 base_addr = D11_TEMPLATE_RAM_BASE + (req.offset & 0x7FC);
+            for (i = 0; i < req.len && !ret; i += 4) {
+                u32 dword = 0;
+                int chunk = min_t(int, req.len - i, 4);
+                memcpy(&dword, req.data + i, chunk);
+                brcmf_sdiod_writel(sdiodev, (base_addr + i) & ~3, dword, &ret);
+            }
+        } else {
+            /* Register-indirect write via tplatewrptr (0x130) and tplatewrdata (0x134) */
+            for (i = 0; i < req.len && !ret; i += 4) {
+                u32 dword = 0;
+                int chunk = min_t(int, req.len - i, 4);
+                memcpy(&dword, req.data + i, chunk);
+                brcmf_sdiod_writel(sdiodev, D11_TPLATEWRPTR_REG, (req.offset + i) & 0x7FC, &ret);
+                if (!ret)
+                    brcmf_sdiod_writel(sdiodev, D11_TPLATEWRDATA_REG, dword, &ret);
             }
         }
         sdio_release_host(sdiodev->func1);

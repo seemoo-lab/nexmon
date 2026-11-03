@@ -43,6 +43,10 @@ int nex_read_d11_shm(struct nexio *nexio, unsigned int offset, unsigned int *val
 int nex_write_d11_shm(struct nexio *nexio, unsigned int offset, unsigned int val);
 int nex_read_d11_reg(struct nexio *nexio, unsigned int offset, unsigned int *val);
 int nex_write_d11_reg(struct nexio *nexio, unsigned int offset, unsigned int val);
+int nex_read_d11_templ(struct nexio *nexio, unsigned int offset, unsigned int *val);
+int nex_write_d11_templ(struct nexio *nexio, unsigned int offset, unsigned int val);
+int nex_read_d11_template_ram(struct nexio *nexio, unsigned int offset, void *buf, unsigned int len);
+int nex_write_d11_template_ram(struct nexio *nexio, unsigned int offset, const void *buf, unsigned int len);
 
 struct nexio *nex_init_ioctl(const char *ifname);
 struct nexio *nex_init_udp(unsigned int securitycookie, unsigned int txip);

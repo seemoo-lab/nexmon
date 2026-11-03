@@ -121,6 +121,14 @@ unsigned char   write_shm = false;
 unsigned char   write_shm_offset_set = false;
 unsigned int    write_shm_offset = 0;
 unsigned int    write_shm_val = 0;
+unsigned char   read_templ = false;
+unsigned int    read_templ_offset = 0;
+unsigned char   write_templ = false;
+unsigned char   write_templ_offset_set = false;
+unsigned int    write_templ_offset = 0;
+unsigned int    write_templ_val = 0;
+unsigned char   dump_templ = false;
+unsigned int    dump_templ_offset = 0;
 
 const char *argp_program_version = VERSION;
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -144,6 +152,9 @@ static struct argp_option options[] = {
     {"dump-wl_cnt", 'w', "INT", OPTION_ARG_OPTIONAL, "Dump WL counters, or write D11 SHM at offset INT"},
     {"read-shm", 'S', "INT", OPTION_ARG_OPTIONAL, "Read D11 SHM register at offset INT (host memory-mapped)"},
     {"write-shm", 'W', "INT=VAL", OPTION_ARG_OPTIONAL, "Write D11 SHM register (offset=val, or offset with -v)"},
+    {"read-template", 'T', "INT", OPTION_ARG_OPTIONAL, "Read D11 template RAM at offset INT (host memory-mapped)"},
+    {"write-template", 'Y', "INT=VAL", OPTION_ARG_OPTIONAL, "Write D11 template RAM (offset=val, or -Y offset val)"},
+    {"dump-template", 'M', "INT", OPTION_ARG_OPTIONAL, "Dump D11 template RAM table (offset, default: 0)"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
     {"chanspec", 'k', "CHAR/INT", OPTION_ARG_OPTIONAL, "Set chanspec either as integer (e.g., 0x1001, set -i) or as string (e.g., 64/80)."},
     {"nonblock", 'n', 0, 0, "Non-blocking channel hopping mode (sub-2ms fast hop)"},
@@ -359,6 +370,54 @@ parse_opt(int key, char *arg, struct argp_state *state)
             last_optional_opt = 0;
             break;
 
+        case 'T':
+            read_templ = true;
+            if (arg) {
+                read_templ_offset = parse_uint(arg, "template offset", state);
+                last_optional_opt = 0;
+            } else {
+                read_templ_offset = 0;
+                last_optional_opt = 'T';
+            }
+            break;
+
+        case 'M':
+            dump_templ = true;
+            if (arg) {
+                dump_templ_offset = parse_uint(arg, "template dump offset", state);
+                last_optional_opt = 0;
+            } else {
+                dump_templ_offset = 0;
+                last_optional_opt = 'M';
+            }
+            break;
+
+        case 'Y': {
+            if (arg) {
+                char *eq = strpbrk(arg, "=,:");
+                if (eq) {
+                    *eq = '\0';
+                    write_templ_offset = parse_uint(arg, "template offset", state);
+                    write_templ_val = parse_uint(eq + 1, "template value", state);
+                    write_templ = true;
+                    last_optional_opt = 0;
+                } else {
+                    write_templ_offset = parse_uint(arg, "template offset", state);
+                    write_templ_offset_set = true;
+                    if (custom_cmd_value) {
+                        write_templ_val = parse_uint(custom_cmd_value, "template value", state);
+                        write_templ = true;
+                        last_optional_opt = 0;
+                    } else {
+                        last_optional_opt = 'Y';
+                    }
+                }
+            } else {
+                last_optional_opt = 'Y';
+            }
+            break;
+        }
+
         case 'o': {
             char *endptr = NULL;
             unsigned long v;
@@ -508,6 +567,41 @@ parse_opt(int key, char *arg, struct argp_state *state)
                     } else {
                         write_shm_val = parse_uint(arg, "shm value", state);
                         write_shm = true;
+                        last_optional_opt = 0;
+                    }
+                    break;
+                }
+                case 'T':
+                    read_templ = true;
+                    read_templ_offset = parse_uint(arg, "template offset", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'M':
+                    dump_templ = true;
+                    dump_templ_offset = parse_uint(arg, "template dump offset", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'Y': {
+                    char *eq = strpbrk(arg, "=,:");
+                    if (eq) {
+                        *eq = '\0';
+                        write_templ_offset = parse_uint(arg, "template offset", state);
+                        write_templ_val = parse_uint(eq + 1, "template value", state);
+                        write_templ = true;
+                        last_optional_opt = 0;
+                    } else if (!write_templ_offset_set) {
+                        write_templ_offset = parse_uint(arg, "template offset", state);
+                        write_templ_offset_set = true;
+                        if (custom_cmd_value) {
+                            write_templ_val = parse_uint(custom_cmd_value, "template value", state);
+                            write_templ = true;
+                            last_optional_opt = 0;
+                        } else {
+                            last_optional_opt = 'Y';
+                        }
+                    } else {
+                        write_templ_val = parse_uint(arg, "template value", state);
+                        write_templ = true;
                         last_optional_opt = 0;
                     }
                     break;
@@ -943,6 +1037,56 @@ main(int argc, char **argv)
             failed = 1;
         } else {
             printf("D11 SHM [0x%04x] <= 0x%04x: SUCCESS\n", write_shm_offset, write_shm_val);
+        }
+    }
+
+    if (read_templ) {
+        unsigned int val = 0;
+        ret = nex_read_d11_templ(nexio, read_templ_offset, &val);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: read D11 template RAM at 0x%04x failed (err=%d)\n", read_templ_offset, ret);
+            failed = 1;
+        } else {
+            if (raw_output) {
+                uint32_t val32 = (uint32_t) val;
+                fwrite(&val32, sizeof(val32), 1, stdout);
+                fflush(stdout);
+            } else {
+                printf("D11 TEMPL [0x%04x]: 0x%08x (%u)\n", read_templ_offset, val, val);
+            }
+        }
+    }
+
+    if (write_templ) {
+        ret = nex_write_d11_templ(nexio, write_templ_offset, write_templ_val);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: write D11 template RAM at 0x%04x <= 0x%08x failed (err=%d)\n",
+                    write_templ_offset, write_templ_val, ret);
+            failed = 1;
+        } else {
+            printf("D11 TEMPL [0x%04x] <= 0x%08x: SUCCESS\n", write_templ_offset, write_templ_val);
+        }
+    }
+
+    if (dump_templ) {
+        unsigned char tbuf[256];
+        unsigned int dump_len = custom_cmd_buf_len_set ? custom_cmd_buf_len : 128;
+        if (dump_len > sizeof(tbuf))
+            dump_len = sizeof(tbuf);
+        memset(tbuf, 0, sizeof(tbuf));
+        ret = nex_read_d11_template_ram(nexio, dump_templ_offset, tbuf, dump_len);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: dump D11 template RAM at 0x%04x len %u failed (err=%d)\n",
+                    dump_templ_offset, dump_len, ret);
+            failed = 1;
+        } else {
+            if (raw_output) {
+                fwrite(tbuf, 1, dump_len, stdout);
+                fflush(stdout);
+            } else {
+                printf("D11 TEMPLATE RAM DUMP [offset 0x%04x, len %u]:\n", dump_templ_offset, dump_len);
+                hexdump(tbuf, dump_len);
+            }
         }
     }
 

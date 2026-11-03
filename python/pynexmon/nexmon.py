@@ -21,6 +21,8 @@ NEX_INJECT_FRAME = 401
 NEX_GET_SECURITYCOOKIE = 404
 NEX_SET_SECURITYCOOKIE = 405
 NEX_GET_WL_CNT = 407
+NEX_WRITE_TEMPLATE_RAM = 426
+NEX_READ_TEMPLATE_RAM = 429
 NEX_READ_D11_SHM = 430
 NEX_WRITE_D11_SHM = 431
 
@@ -100,6 +102,19 @@ class _LibNexioBindings:
 
         self.lib.nex_write_d11_reg.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
         self.lib.nex_write_d11_reg.restype = ctypes.c_int
+
+        # D11 Template RAM access primitives
+        self.lib.nex_read_d11_templ.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.POINTER(ctypes.c_uint)]
+        self.lib.nex_read_d11_templ.restype = ctypes.c_int
+
+        self.lib.nex_write_d11_templ.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
+        self.lib.nex_write_d11_templ.restype = ctypes.c_int
+
+        self.lib.nex_read_d11_template_ram.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
+        self.lib.nex_read_d11_template_ram.restype = ctypes.c_int
+
+        self.lib.nex_write_d11_template_ram.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
+        self.lib.nex_write_d11_template_ram.restype = ctypes.c_int
 
     @classmethod
     def get(cls) -> "_LibNexioBindings":
@@ -304,3 +319,46 @@ class NexmonDevice:
         ret = self._bindings.lib.nex_write_d11_reg(self._handle, offset, val)
         if ret < 0:
             raise NexmonError(f"write_d11_reg failed for offset 0x{offset:04x} <= 0x{val:08x} (err={ret})")
+
+    def read_d11_templ(self, offset: int) -> int:
+        """Read 16-bit word from D11 hardware template RAM at byte offset."""
+        if not self._handle:
+            raise NexmonError("Device handle is closed")
+        val = ctypes.c_uint(0)
+        ret = self._bindings.lib.nex_read_d11_templ(self._handle, offset, ctypes.byref(val))
+        if ret < 0:
+            raise NexmonError(f"read_d11_templ failed for offset 0x{offset:04x} (err={ret})")
+        return val.value
+
+    def write_d11_templ(self, offset: int, val: int):
+        """Write 16-bit word to D11 hardware template RAM at byte offset."""
+        if not self._handle:
+            raise NexmonError("Device handle is closed")
+        ret = self._bindings.lib.nex_write_d11_templ(self._handle, offset, val)
+        if ret < 0:
+            raise NexmonError(f"write_d11_templ failed for offset 0x{offset:04x} <= 0x{val:04x} (err={ret})")
+
+    def read_d11_template_ram(self, offset: int, length: int) -> bytes:
+        """Read a block of bytes from D11 hardware template RAM."""
+        if not self._handle:
+            raise NexmonError("Device handle is closed")
+        if length <= 0 or length > 1024:
+            raise NexmonValueError(f"Invalid template read length {length}: must be between 1 and 1024 bytes")
+        buf = bytearray(length)
+        c_buf = (ctypes.c_char * length).from_buffer(buf)
+        ret = self._bindings.lib.nex_read_d11_template_ram(self._handle, offset, c_buf, length)
+        if ret < 0:
+            raise NexmonError(f"read_d11_template_ram failed for offset 0x{offset:04x}, len={length} (err={ret})")
+        return bytes(buf)
+
+    def write_d11_template_ram(self, offset: int, data: Union[bytes, bytearray]):
+        """Write a block of bytes to D11 hardware template RAM."""
+        if not self._handle:
+            raise NexmonError("Device handle is closed")
+        if not data or len(data) > 1024:
+            raise NexmonValueError(f"Invalid template write length {len(data)}: must be between 1 and 1024 bytes")
+        buf = bytearray(data)
+        c_buf = (ctypes.c_char * len(buf)).from_buffer(buf)
+        ret = self._bindings.lib.nex_write_d11_template_ram(self._handle, offset, c_buf, len(buf))
+        if ret < 0:
+            raise NexmonError(f"write_d11_template_ram failed for offset 0x{offset:04x}, len={len(buf)} (err={ret})")

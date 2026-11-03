@@ -11,6 +11,8 @@ from .nexmon import (
     NexmonValueError,
     NEX_READ_D11_SHM,
     NEX_WRITE_D11_SHM,
+    NEX_READ_TEMPLATE_RAM,
+    NEX_WRITE_TEMPLATE_RAM,
 )
 from .csi import CSIPacket, CSIReceiver, parse_csi_payload
 
@@ -21,6 +23,8 @@ __all__ = [
     "NexmonValueError",
     "NEX_READ_D11_SHM",
     "NEX_WRITE_D11_SHM",
+    "NEX_READ_TEMPLATE_RAM",
+    "NEX_WRITE_TEMPLATE_RAM",
     "CSIPacket",
     "CSIReceiver",
     "parse_csi_payload",

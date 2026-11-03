@@ -73,9 +73,9 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
      * p->len, after which wlc_sendctl DMAs from a bogus pointer and length.
      * The sizeof() floor also makes the it_len read itself in-bounds.
      */
-    if (p->len < sizeof(struct ieee80211_radiotap_header) ||
+    if (p->len <= sizeof(struct ieee80211_radiotap_header) ||
         rtap_header->it_len < sizeof(struct ieee80211_radiotap_header) ||
-        rtap_header->it_len > p->len) {
+        rtap_header->it_len >= p->len) {
         pkt_buf_free_skb(wlc->osh, p, 0);
         return 0;
     }

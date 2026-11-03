@@ -470,7 +470,6 @@ class TestTier3PythonSDKAndTooling(unittest.TestCase):
             self.assertIn("frame->cmd == NEX_READ_D11_SHM", core)
             self.assertIn("frame->cmd == NEX_WRITE_D11_SHM", core)
             self.assertIn("brcmf_sdio_sleep(sdiodev->bus, false);", core)
-            self.assertIn("brcmf_sdio_trigger_dpc(sdiodev->bus);", core)
             self.assertIn("brcmf_sdiod_readl", core)
             self.assertIn("brcmf_sdiod_writel", core)
 
@@ -497,6 +496,86 @@ class TestTier3PythonSDKAndTooling(unittest.TestCase):
         self.assertTrue(hasattr(pynexmon.NexmonDevice, "write_d11_shm"))
         self.assertTrue(hasattr(pynexmon.NexmonDevice, "read_d11_reg"))
         self.assertTrue(hasattr(pynexmon.NexmonDevice, "write_d11_reg"))
+
+    def test_d11_template_ram_host_primitives(self):
+        """Item 3: Direct D11 Template RAM Host Primitives (NEX_READ_TEMPLATE_RAM / NEX_WRITE_TEMPLATE_RAM)."""
+        # 1. IOCTL headers & definitions
+        for drv_ver in ("7.3", "7.4"):
+            hdr = (ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/nexmon_ioctls.h").read_text(errors="replace")
+            self.assertIn("#define NEX_READ_TEMPLATE_RAM", hdr)
+            self.assertIn("429", hdr)
+            self.assertIn("#define NEX_WRITE_TEMPLATE_RAM", hdr)
+            self.assertIn("426", hdr)
+            self.assertIn("struct nex_d11_templ_req", hdr)
+            self.assertIn("D11_TEMPLATE_RAM_BASE", hdr)
+            self.assertIn("0x18001800", hdr)
+            self.assertIn("D11_TPLATEWRPTR_REG", hdr)
+            self.assertIn("0x130", hdr)
+            self.assertIn("D11_TPLATEWRDATA_REG", hdr)
+            self.assertIn("0x134", hdr)
+            self.assertIn("D11_TPL_BCN0_BASE", hdr)
+            self.assertIn("D11_TPL_PRS_BASE", hdr)
+
+        common_hdr = (ROOT / "patches/include/nexioctls.h").read_text(errors="replace")
+        self.assertIn("#define NEX_READ_TEMPLATE_RAM           429", common_hdr)
+        self.assertIn("#define NEX_WRITE_TEMPLATE_RAM          426", common_hdr)
+        self.assertIn("struct nex_d11_templ_req", common_hdr)
+
+        # 2. Driver core handlers
+        for drv_ver in ("7.3", "7.4"):
+            core = (ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.c").read_text(errors="replace")
+            self.assertIn("frame->cmd == NEX_READ_TEMPLATE_RAM", core)
+            self.assertIn("frame->cmd == NEX_WRITE_TEMPLATE_RAM", core)
+            self.assertIn("D11_TPLATEWRPTR_REG", core)
+            self.assertIn("D11_TPLATEWRDATA_REG", core)
+
+        # 3. Libnexio bindings and CLI options
+        lib_h = (ROOT / "utilities/libnexio/libnexio.h").read_text(errors="replace")
+        self.assertIn("int nex_read_d11_templ(", lib_h)
+        self.assertIn("int nex_write_d11_templ(", lib_h)
+        self.assertIn("int nex_read_d11_template_ram(", lib_h)
+        self.assertIn("int nex_write_d11_template_ram(", lib_h)
+
+        nexutil_c = (ROOT / "utilities/nexutil/nexutil.c").read_text(errors="replace")
+        self.assertIn('{"read-template", \'T\', "INT"', nexutil_c)
+        self.assertIn('{"write-template", \'Y\', "INT=VAL"', nexutil_c)
+        self.assertIn('{"dump-template", \'M\', "INT"', nexutil_c)
+        self.assertIn("nex_read_d11_templ", nexutil_c)
+        self.assertIn("nex_write_d11_templ", nexutil_c)
+        self.assertIn("nex_read_d11_template_ram", nexutil_c)
+
+        # 4. Python SDK
+        import sys
+        sys.path.insert(0, str(ROOT / "python"))
+        import pynexmon
+        self.assertEqual(pynexmon.NEX_READ_TEMPLATE_RAM, 429)
+        self.assertEqual(pynexmon.NEX_WRITE_TEMPLATE_RAM, 426)
+        self.assertTrue(hasattr(pynexmon.NexmonDevice, "read_d11_templ"))
+        self.assertTrue(hasattr(pynexmon.NexmonDevice, "write_d11_templ"))
+        self.assertTrue(hasattr(pynexmon.NexmonDevice, "read_d11_template_ram"))
+        self.assertTrue(hasattr(pynexmon.NexmonDevice, "write_d11_template_ram"))
+
+    def test_bcm4375b1_runt_frame_injection_check(self):
+        """Ensure BCM4375b1 firmware injection boundary check uses >= to prevent runt frame underflows."""
+        for path in (
+            ROOT / "patches/bcm4375b1/18_38_18_sta/nexmon/src/injection.c",
+            ROOT / "patches/bcm4375b1/18_41_8_9_sta/nexmon/src/injection.c",
+        ):
+            content = path.read_text(errors="replace")
+            self.assertIn("rtap_header->it_len >= p->len", content)
+            self.assertNotIn("rtap_header->it_len > p->len", content)
+
+    def test_per_board_clm_blob_firmware_declaration(self):
+        """Kernel 7.4 commit 8a0f175488bd: Ensure per-board clm_blob MODULE_FIRMWARE declarations exist."""
+        for drv_ver in ("7.3", "7.4"):
+            sdio_c = (ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/sdio.c").read_text(errors="replace")
+            self.assertIn('MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH "brcmfmac*-sdio.*.clm_blob");', sdio_c)
+
+    def test_bcm43341_chip_id_mapping(self):
+        """Ensure BCM43341 chip ID mapping is correct in 4.19 driver sdio.c."""
+        sdio_c = (ROOT / "patches/driver/brcmfmac_4.19.y-nexmon/sdio.c").read_text(errors="replace")
+        self.assertIn('BRCMF_FW_DEF(43341, "brcmfmac43341-sdio");', sdio_c)
+        self.assertIn('BRCMF_FW_ENTRY(BRCM_CC_43341_CHIP_ID, 0xFFFFFFFF, 43341)', sdio_c)
 
 
 

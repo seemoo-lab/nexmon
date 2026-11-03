@@ -1618,3 +1618,104 @@ nex_write_d11_reg(struct nexio *nexio, unsigned int offset, unsigned int val)
     return nex_ioctl(nexio, NEX_WRITE_D11_SHM, &req, sizeof(req), true);
 }
 
+#ifndef NEX_WRITE_TEMPLATE_RAM
+#define NEX_WRITE_TEMPLATE_RAM          426
+#endif
+#ifndef NEX_READ_TEMPLATE_RAM
+#define NEX_READ_TEMPLATE_RAM           429
+#endif
+
+struct nex_d11_templ_req {
+    uint32_t offset;
+    uint32_t len;
+    uint16_t method;
+    uint16_t pad;
+    uint8_t  data[1024];
+};
+
+int
+nex_read_d11_templ(struct nexio *nexio, unsigned int offset, unsigned int *val)
+{
+    struct nex_d11_shm_req req;
+    int ret;
+
+    if (!nexio || !val)
+        return -EINVAL;
+
+    memset(&req, 0, sizeof(req));
+    req.offset = offset;
+    req.width = 4;
+    req.is_reg = 3;
+
+    ret = nex_ioctl(nexio, NEX_READ_D11_SHM, &req, sizeof(req), false);
+    if (ret < 0)
+        return ret;
+
+    *val = req.val;
+    return 0;
+}
+
+int
+nex_write_d11_templ(struct nexio *nexio, unsigned int offset, unsigned int val)
+{
+    struct nex_d11_shm_req req;
+
+    if (!nexio)
+        return -EINVAL;
+
+    memset(&req, 0, sizeof(req));
+    req.offset = offset;
+    req.val = val;
+    req.width = 4;
+    req.is_reg = 3;
+
+    return nex_ioctl(nexio, NEX_WRITE_D11_SHM, &req, sizeof(req), true);
+}
+
+int
+nex_read_d11_template_ram(struct nexio *nexio, unsigned int offset, void *buf, unsigned int len)
+{
+    struct nex_d11_templ_req req;
+    int ret;
+    size_t req_sz;
+
+    if (!nexio || !buf || len == 0)
+        return -EINVAL;
+    if (len > sizeof(req.data) || offset + len > 0x800)
+        return -EINVAL;
+
+    memset(&req, 0, sizeof(req));
+    req.offset = offset;
+    req.len = len;
+    req.method = 0;
+
+    req_sz = sizeof(req.offset) + sizeof(req.len) + sizeof(req.method) + sizeof(req.pad) + len;
+    ret = nex_ioctl(nexio, NEX_READ_TEMPLATE_RAM, &req, (int)req_sz, false);
+    if (ret < 0)
+        return ret;
+
+    memcpy(buf, req.data, len);
+    return 0;
+}
+
+int
+nex_write_d11_template_ram(struct nexio *nexio, unsigned int offset, const void *buf, unsigned int len)
+{
+    struct nex_d11_templ_req req;
+    size_t req_sz;
+
+    if (!nexio || !buf || len == 0)
+        return -EINVAL;
+    if (len > sizeof(req.data) || offset + len > 0x800)
+        return -EINVAL;
+
+    memset(&req, 0, sizeof(req));
+    req.offset = offset;
+    req.len = len;
+    req.method = 0;
+    memcpy(req.data, buf, len);
+
+    req_sz = sizeof(req.offset) + sizeof(req.len) + sizeof(req.method) + sizeof(req.pad) + len;
+    return nex_ioctl(nexio, NEX_WRITE_TEMPLATE_RAM, &req, (int)req_sz, true);
+}
+
