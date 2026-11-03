@@ -44,6 +44,21 @@
 #define _GNU_SOURCE
 
 #include <ctype.h>
+
+/*
+ * Android NDK only declares ftello/fseeko for API >= 24 in <stdio.h>,
+ * but the symbols exist in libc at all API levels.  Provide explicit
+ * declarations so that builds targeting android-21 compile cleanly with
+ * modern Clang (which makes implicit-function-declaration an error).
+ */
+#if defined(ANDROID) || defined(__ANDROID__)
+#include <sys/types.h>   /* off_t */
+#include <stdio.h>
+#  if __ANDROID_API__ < 24
+extern int   fseeko(FILE *, off_t, int);
+extern off_t ftello(FILE *);
+#  endif
+#endif
 #include <dlfcn.h>
 #include <err.h>
 #include <errno.h>

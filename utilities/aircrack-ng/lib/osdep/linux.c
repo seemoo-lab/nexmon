@@ -256,12 +256,12 @@ static char * wiToolsPath(const char * tool)
 {
 	char * path /*, *found, *env */;
 	int i, nbelems;
-	static const char * paths[] = {"/sbin",
+	static const char * paths[] = {"/usr/local/sbin",
+								   "/usr/local/bin",
+								   "/sbin",
 								   "/usr/sbin",
-								   "/usr/local/sbin",
 								   "/bin",
 								   "/usr/bin",
-								   "/usr/local/bin",
 								   "/tmp"};
 
 	// Also search in other known location just in case we haven't found it yet
