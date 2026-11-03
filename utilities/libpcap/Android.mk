@@ -10,14 +10,13 @@ libpcap_cflags := \
 
 include $(CLEAR_VARS)
 
-# Upstream libpcap 1.10.7 core (see Makefile.in PLATFORM_C_SRC / *.c) plus the
-# AOSP-added pcap-netfilter-linux-android.c. pcap-util.c is new in 1.10 (byte
-# order / snapshot helpers moved out of pcap-common.c).
+# Upstream libpcap 1.11.0 core (see Makefile.in PLATFORM_C_SRC / *.c) plus the
+# AOSP-added pcap-netfilter-linux-android.c. pcap-util.c is new in 1.10, pcap-new.c is new in 1.11.
 LOCAL_SRC_FILES := \
   pcap-linux.c pcap-netfilter-linux-android.c \
   fad-gifc.c \
   pcap.c gencode.c optimize.c nametoaddr.c etherent.c fmtutils.c \
-  savefile.c sf-pcap.c sf-pcapng.c pcap-common.c pcap-util.c \
+  savefile.c sf-pcap.c sf-pcapng.c pcap-common.c pcap-util.c pcap-new.c \
   bpf_filter.c bpf_image.c bpf_dump.c \
 
 # Generated on the host with `configure && make` and copied across.

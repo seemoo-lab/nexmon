@@ -24,11 +24,6 @@
 
 #include <config.h>
 
-#ifdef DECNETLIB
-#include <sys/types.h>
-#include <netdnet/dnetdb.h>
-#endif
-
 #ifdef _WIN32
   #include <winsock2.h>
   #include <ws2tcpip.h>
@@ -39,6 +34,17 @@
   #include <sys/time.h>
 
   #include <netinet/in.h>
+
+  #if defined(__linux__) && defined(HAVE_ETHER_HOSTTON)
+    #include <features.h>
+    #if ! defined(__GLIBC__) && ! defined(__UCLIBC__)
+      /*
+       * In musl libc (which does not identify itself) ether_hostton() is
+       * present and does not work.
+       */
+      #undef HAVE_ETHER_HOSTTON
+    #endif
+  #endif // defined(__linux__) && defined(HAVE_ETHER_HOSTTON)
 
   #ifdef HAVE_ETHER_HOSTTON
     #if defined(NET_ETHERNET_H_DECLARES_ETHER_HOSTTON)
@@ -121,7 +127,6 @@
 
 #ifndef NTOHL
 #define NTOHL(x) (x) = ntohl(x)
-#define NTOHS(x) (x) = ntohs(x)
 #endif
 
 /*
@@ -251,9 +256,9 @@ pcap_nametonetaddr(const char *name)
 		 */
 		return 0;
 	}
-  #elif defined(HAVE_SOLARIS_IRIX_GETNETBYNAME_R)
+  #elif defined(HAVE_SOLARIS_GETNETBYNAME_R)
 	/*
-	 * We have Solaris's and IRIX's reentrant getnetbyname_r().
+	 * We have Solaris's reentrant getnetbyname_r().
 	 */
 	struct netent result_buf;
 	char buf[1024];	/* arbitrary size */
@@ -276,7 +281,7 @@ pcap_nametonetaddr(const char *name)
 	 * getnetbyname() that uses thread-specific data, in which
 	 * case we're thread-safe (sufficiently recent FreeBSD,
 	 * sufficiently recent Darwin-based OS, sufficiently recent
-	 * HP-UX, sufficiently recent Tru64 UNIX), or we have the
+	 * HP-UX, or we have the
 	 * traditional getnetbyname() (everything else, including
 	 * current NetBSD and OpenBSD), in which case we're not
 	 * thread-safe.
@@ -301,9 +306,7 @@ pcap_nametoport(const char *name, int *port, int *proto)
 	struct addrinfo hints, *res, *ai;
 	int error;
 	struct sockaddr_in *in4;
-#ifdef INET6
 	struct sockaddr_in6 *in6;
-#endif
 	int tcp_port = -1;
 	int udp_port = -1;
 
@@ -343,13 +346,11 @@ pcap_nametoport(const char *name, int *port, int *proto)
 					tcp_port = ntohs(in4->sin_port);
 					break;
 				}
-#ifdef INET6
 				if (ai->ai_addr->sa_family == AF_INET6) {
 					in6 = (struct sockaddr_in6 *)ai->ai_addr;
 					tcp_port = ntohs(in6->sin6_port);
 					break;
 				}
-#endif
 			}
 		}
 		freeaddrinfo(res);
@@ -387,13 +388,11 @@ pcap_nametoport(const char *name, int *port, int *proto)
 					udp_port = ntohs(in4->sin_port);
 					break;
 				}
-#ifdef INET6
 				if (ai->ai_addr->sa_family == AF_INET6) {
 					in6 = (struct sockaddr_in6 *)ai->ai_addr;
 					udp_port = ntohs(in6->sin6_port);
 					break;
 				}
-#endif
 			}
 		}
 		freeaddrinfo(res);
@@ -426,14 +425,6 @@ pcap_nametoport(const char *name, int *port, int *proto)
 		*proto = IPPROTO_UDP;
 		return 1;
 	}
-#if defined(ultrix) || defined(__osf__)
-	/* Special hack in case NFS isn't in /etc/services */
-	if (strcmp(name, "nfs") == 0) {
-		*port = 2049;
-		*proto = PROTO_UNDEF;
-		return 1;
-	}
-#endif
 	return 0;
 }
 
@@ -484,36 +475,51 @@ int
 pcap_nametoproto(const char *str)
 {
 	struct protoent *p;
-  #if defined(HAVE_LINUX_GETNETBYNAME_R)
+  #if defined(HAVE_LINUX_GETPROTOBYNAME_R)
 	/*
 	 * We have Linux's reentrant getprotobyname_r().
 	 */
 	struct protoent result_buf;
-	char buf[1024];	/* arbitrary size */
+	char buf[1024];	// "...1024 bytes should be sufficient for most applications."
 	int err;
 
 	err = getprotobyname_r(str, &result_buf, buf, sizeof buf, &p);
+	/*
+	 * As far as GNU libc implementation goes, an "error" means the
+	 * protocol database could not be searched, which could mean err ==
+	 * ERANGE if the buffer is too small or ENOENT if the protocols(5)
+	 * file does not exist (the man page does not document the latter
+	 * eventuality).  If the database has been searched normally and the
+	 * requested protocol name was not found, it is not an "error" and
+	 * err == 0.
+	 *
+	 * This notwithstanding, p == NULL iff a record was not found for any
+	 * reason (whether an "error" or not), which is the same semantics as
+	 * in every other HAVE_xxxxx branch of this block.  The final check
+	 * after the block will catch that if necessary.
+	 */
 	if (err != 0) {
 		/*
 		 * XXX - dynamically allocate the buffer, and make it
 		 * bigger if we get ERANGE back?
 		 */
-		return 0;
+		return PROTO_UNDEF;
 	}
-  #elif defined(HAVE_SOLARIS_IRIX_GETNETBYNAME_R)
+  #elif defined(HAVE_SOLARIS_GETPROTOBYNAME_R)
 	/*
-	 * We have Solaris's and IRIX's reentrant getprotobyname_r().
+	 * We have Solaris's reentrant getprotobyname_r().
 	 */
 	struct protoent result_buf;
-	char buf[1024];	/* arbitrary size */
+	char buf[1024];	// "...must be at least 1024 bytes."
 
 	p = getprotobyname_r(str, &result_buf, buf, (int)sizeof buf);
-  #elif defined(HAVE_AIX_GETNETBYNAME_R)
+  #elif defined(HAVE_AIX_GETPROTOBYNAME_R)
 	/*
 	 * We have AIX's reentrant getprotobyname_r().
 	 */
 	struct protoent result_buf;
-	struct protoent_data proto_data;
+	// "The structure must be zero-filled before it is used..." (OpenBSD).
+	struct protoent_data proto_data = {0};
 
 	if (getprotobyname_r(str, &result_buf, &proto_data) == -1)
 		p = NULL;
@@ -525,7 +531,7 @@ pcap_nametoproto(const char *str)
 	 * getprotobyname() that uses thread-specific data, in which
 	 * case we're thread-safe (sufficiently recent FreeBSD,
 	 * sufficiently recent Darwin-based OS, sufficiently recent
-	 * HP-UX, sufficiently recent Tru64 UNIX, Windows), or we have
+	 * HP-UX, Windows), or we have
 	 * the traditional getprotobyname() (everything else, including
 	 * current NetBSD and OpenBSD), in which case we're not
 	 * thread-safe.
@@ -563,29 +569,33 @@ PCAP_API_DEF struct eproto eproto_db[] = {
 	{ "atalk", ETHERTYPE_ATALK },
 	{ "decnet", ETHERTYPE_DN },
 	{ "ip", ETHERTYPE_IP },
-#ifdef INET6
 	{ "ip6", ETHERTYPE_IPV6 },
-#endif
 	{ "lat", ETHERTYPE_LAT },
+	{ "lldp", ETHERTYPE_LLDP },
 	{ "loopback", ETHERTYPE_LOOPBACK },
 	{ "mopdl", ETHERTYPE_MOPDL },
 	{ "moprc", ETHERTYPE_MOPRC },
 	{ "rarp", ETHERTYPE_REVARP },
 	{ "sca", ETHERTYPE_SCA },
-	{ (char *)0, 0 }
+	{ "slow", ETHERTYPE_SLOW },
+	{ NULL, 0 }
 };
 
-int
-pcap_nametoeproto(const char *s)
+static int
+proto_or_undef(const struct eproto *p, const char *s)
 {
-	struct eproto *p = eproto_db;
-
-	while (p->s != 0) {
+	while (p->s) {
 		if (strcmp(p->s, s) == 0)
 			return p->p;
 		p += 1;
 	}
 	return PROTO_UNDEF;
+}
+
+int
+pcap_nametoeproto(const char *s)
+{
+	return proto_or_undef(eproto_db, s);
 }
 
 #include "llc.h"
@@ -596,25 +606,18 @@ static struct eproto llc_db[] = {
 	{ "stp", LLCSAP_8021D },
 	{ "ipx", LLCSAP_IPX },
 	{ "netbeui", LLCSAP_NETBEUI },
-	{ (char *)0, 0 }
+	{ NULL, 0 }
 };
 
 int
 pcap_nametollc(const char *s)
 {
-	struct eproto *p = llc_db;
-
-	while (p->s != 0) {
-		if (strcmp(p->s, s) == 0)
-			return p->p;
-		p += 1;
-	}
-	return PROTO_UNDEF;
+	return proto_or_undef(llc_db, s);
 }
 
 /* Hex digit to 8-bit unsigned integer. */
-static inline u_char
-pcapint_xdtoi(u_char c)
+u_char
+pcapint_xdtoi(const u_char c)
 {
 	if (c >= '0' && c <= '9')
 		return (u_char)(c - '0');
@@ -625,7 +628,7 @@ pcapint_xdtoi(u_char c)
 }
 
 int
-__pcap_atoin(const char *s, bpf_u_int32 *addr)
+pcapint_atoin(const char *s, bpf_u_int32 *addr)
 {
 	u_int n;
 	int len;
@@ -653,22 +656,93 @@ __pcap_atoin(const char *s, bpf_u_int32 *addr)
 	/* NOTREACHED */
 }
 
+/*
+ * Iff 's' is a string that is a well-formed DECnet address (aa.nnnn), parse
+ * the address into 'addr' and return 1, otherwise return 0.
+ *
+ * A binary DECnet address consists of a 6-bit area number and a 10-bit node
+ * number; neither area 0 nor node 0 are valid for normal addressing purposes,
+ * but either can potentially appear on the wire.
+ */
 int
-__pcap_atodn(const char *s, bpf_u_int32 *addr)
+pcapint_atodn(const char *s, uint16_t *addr)
 {
 #define AREASHIFT 10
 #define AREAMASK 0176000
 #define NODEMASK 01777
 
-	u_int node, area;
+	/* Initialize to squelch a compiler warning only. */
+	u_int node = 0, area = 0;
+	/*
+	 *               +--+             +--+
+	 *               |  |             |  |
+	 *               v  |             v  |
+	 * --> START --> AREA --> DOT --> NODE -->
+	 *       |          |     |        |
+	 *       |          v     v        |
+	 *       +--------> INVALID <------+
+	 */
+	enum {
+		START,
+		AREA,
+		DOT,
+		NODE,
+		INVALID
+	} fsm_state = START;
 
-	if (sscanf(s, "%d.%d", &area, &node) != 2)
-		return(0);
+	while (*s) {
+		switch (fsm_state) {
+		case START:
+			if (PCAP_ISDIGIT(*s)) {
+				area = *s - '0';
+				fsm_state = AREA;
+				break;
+			}
+			fsm_state = INVALID;
+			break;
+		case AREA:
+			if (*s == '.') {
+				fsm_state = DOT;
+				break;
+			}
+			if (PCAP_ISDIGIT(*s)) {
+				area = area * 10 + *s - '0';
+				if (area <= AREAMASK >> AREASHIFT)
+					break;
+			}
+			fsm_state = INVALID;
+			break;
+		case DOT:
+			if (PCAP_ISDIGIT(*s)) {
+				node = *s - '0';
+				fsm_state = NODE;
+				break;
+			}
+			fsm_state = INVALID;
+			break;
+		case NODE:
+			if (PCAP_ISDIGIT(*s)) {
+				node = node * 10 + *s - '0';
+				if (node <= NODEMASK)
+					break;
+			}
+			fsm_state = INVALID;
+			break;
+		case INVALID:
+			return 0;
+		} /* switch */
+		s++;
+	} /* while */
+	/*
+	 * This condition is false if the string comes from the lexer, but
+	 * let's not depend on that.
+	 */
+	if (fsm_state != NODE)
+		return 0;
 
-	*addr = (area << AREASHIFT) & AREAMASK;
-	*addr |= (node & NODEMASK);
-
-	return(32);
+	// Both 'area' and 'node' have been verified to be in range.
+	*addr = (uint16_t)(area << AREASHIFT | node);
+	return 1;
 }
 
 /*
@@ -1064,7 +1138,7 @@ reject:
 }
 
 // The 'addr' argument must point to an array of at least 6 elements.
-static int
+int
 pcapint_atomac48(const char *s, uint8_t *addr)
 {
 	return s && (
@@ -1104,8 +1178,8 @@ pcap_ether_aton(const char *s)
 u_char *
 pcap_ether_hostton(const char *name)
 {
-	register struct pcap_etherent *ep;
-	register u_char *ap;
+	struct pcap_etherent *ep;
+	u_char *ap;
 	static thread_local FILE *fp = NULL;
 	static thread_local int init = 0;
 
@@ -1139,7 +1213,7 @@ pcap_ether_hostton(const char *name)
 u_char *
 pcap_ether_hostton(const char *name)
 {
-	register u_char *ap;
+	u_char *ap;
 	u_char a[6];
 	char namebuf[1024];
 
@@ -1156,26 +1230,3 @@ pcap_ether_hostton(const char *name)
 	return (ap);
 }
 #endif
-
-/*
- * XXX - not guaranteed to be thread-safe!
- */
-int
-#ifdef	DECNETLIB
-__pcap_nametodnaddr(const char *name, u_short *res)
-{
-	struct nodeent *getnodebyname();
-	struct nodeent *nep;
-
-	nep = getnodebyname(name);
-	if (nep == ((struct nodeent *)0))
-		return(0);
-
-	memcpy((char *)res, (char *)nep->n_addr, sizeof(unsigned short));
-	return(1);
-#else
-__pcap_nametodnaddr(const char *name _U_, u_short *res _U_)
-{
-	return(0);
-#endif
-}

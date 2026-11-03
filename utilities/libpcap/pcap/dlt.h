@@ -121,6 +121,7 @@
  * didn't.  So it goes.
  */
 #if defined(__NetBSD__) || defined(__FreeBSD__)
+// Via __FreeBSD__ this matches MidnightBSD too.
 #ifndef DLT_SLIP_BSDOS
 #define DLT_SLIP_BSDOS	13	/* BSD/OS Serial Line IP */
 #define DLT_PPP_BSDOS	14	/* BSD/OS Point-to-point Protocol */
@@ -445,6 +446,7 @@
  * didn't map to 246 as DLT_PFSYNC files.
  */
 #ifdef __FreeBSD__
+// Via __FreeBSD__ this matches MidnightBSD too.
 #define DLT_PFSYNC		121
 #else
 #define DLT_HHDLC		121
@@ -595,7 +597,7 @@
  * Do *NOT* use these in capture files that you expect anybody not using
  * your private versions of capture-file-reading tools to read; in
  * particular, do *NOT* use them in products, otherwise you may find that
- * people won't be able to use tcpdump, or snort, or Ethereal, or... to
+ * people won't be able to use tcpdump, or snort, or Wireshark, or... to
  * read capture files from your firewall/intrusion detection/traffic
  * monitoring/etc. appliance, or whatever product uses that DLT_ value,
  * and you may also find that the developers of those applications will
@@ -948,8 +950,16 @@
  */
 
 /*
- * IPMB with a Linux-specific pseudo-header; as requested by Alexey Neyman
+ * I2C with a Linux-specific pseudo-header; as requested by Alexey Neyman
  * <avn@pigeonpoint.com>.
+ */
+#define DLT_I2C_LINUX		209
+
+/*
+ * This was renamed as it's also used for other protocols, such as
+ * Display Data Channel as used by HDMI.
+ *
+ * We still define DLT_IPMB_LINUX for backwards source compatibility.
  */
 #define DLT_IPMB_LINUX		209
 
@@ -1551,7 +1561,7 @@
 #define DLT_IEEE802_15_4_TAP    283
 
 /*
- * Marvell (Ethertype) Distributed Switch Architecture proprietary tagging format.
+ * Marvell (EtherType) Distributed Switch Architecture proprietary tagging format.
  */
 #define DLT_DSA_TAG_DSA		284
 #define DLT_DSA_TAG_EDSA	285
@@ -1598,7 +1608,11 @@
 
 /*
  * Serial NCP (Network Co-Processor) protocol for Zigbee stack ZBOSS
- * by DSR, https://dsr-iot.com/downloads
+ * by DSR.
+ * ZBOSS NCP protocol description: https://cloud.dsr-corporation.com/index.php/s/3isHzaNTTgtJebn
+ * Header in pcap file: https://cloud.dsr-corporation.com/index.php/s/fiqSDorAAAZrsYB
+ *
+ * Requested by Eugene Exarevsky <eugene.exarevsky@dsr-corporation.com>
  */
 #define DLT_ZBOSS_NCP		292
 
@@ -1677,6 +1691,15 @@
 #define DLT_DEBUG_ONLY		303
 
 /*
+ * DECT-2020 New Radio (NR) TAP with custom metadata header prepended to
+ * standard DLT_DECT_NR MAC-layer frame.
+ * Specification at https://github.com/DSRCorporation/dect-nr-tap
+ *
+ * Requested by Edem Khadiev <edem.khadiev@dsr-corporation.com>
+ */
+#define DLT_DECT_NR_TAP		304
+
+/*
  * In case the code that includes this file (directly or indirectly)
  * has also included OS files that happen to define DLT_HIGH_MATCHING_MAX,
  * with a different value (perhaps because that OS hasn't picked up
@@ -1686,6 +1709,7 @@
 #ifdef DLT_HIGH_MATCHING_MAX
 #undef DLT_HIGH_MATCHING_MAX
 #endif
-#define DLT_HIGH_MATCHING_MAX	303	/* highest value in the "matching" range */
+
+#define DLT_HIGH_MATCHING_MAX	304	/* highest value in the "matching" range */
 
 #endif /* !defined(lib_pcap_dlt_h) */

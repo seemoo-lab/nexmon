@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 #define NETMAP_WITH_LIBS
 #include <net/netmap_user.h>
@@ -40,12 +41,20 @@
 #include "pcap-int.h"
 #include "pcap-netmap.h"
 
-#ifndef __FreeBSD__
+#if ! defined(__FreeBSD__) && ! defined(__QNX__)
   /*
    * On FreeBSD we use IFF_PPROMISC which is in ifr_flagshigh.
+   * The reason for this is the same as in ifconfig(8) and is documented in
+   * ifnet(9): IFF_PROMISC is a part of the IFF_CANTCHANGE bitmask and is
+   * reserved for kernel purposes.  ioctl(2) silently disregards requests to
+   * change IFF_PROMISC, so trying to use the latter would not even cause an
+   * obvious run-time error.  Exactly the same applies to QNX 8.0, which uses
+   * FreeBSD network stack.  Idem MidnightBSD, which also defines __FreeBSD__
+   * and thus does not need a separate condition.
+   *
    * Remap to IFF_PROMISC on other platforms.
    *
-   * XXX - DragonFly BSD?
+   * DragonFly BSD does not implement netmap.
    */
   #define IFF_PPROMISC	IFF_PROMISC
 #endif /* __FreeBSD__ */
@@ -147,10 +156,19 @@ pcap_netmap_ioctl(pcap_t *p, u_long what, uint32_t *if_flags)
 		return -1;
 	}
 #endif /* __linux__ */
-	bzero(&ifr, sizeof(ifr));
-	strncpy(ifr.ifr_name, d->req.nr_name, sizeof(ifr.ifr_name));
+	memset(&ifr, 0, sizeof(ifr));
+	/*
+	 * ifreq.ifr_name and nmreq.nr_name have the same size and both
+	 * contain a NUL-terminated string.
+	 */
+	(void)pcapint_strlcpy(ifr.ifr_name, d->req.nr_name, sizeof(ifr.ifr_name));
+	const char *reqstr = "bogus";
 	switch (what) {
+	case SIOCGIFFLAGS:
+		reqstr = "SIOCGIFFLAGS";
+		break;
 	case SIOCSIFFLAGS:
+		reqstr = "SIOCSIFFLAGS";
 		/*
 		 * The flags we pass in are 32-bit and unsigned.
 		 *
@@ -163,7 +181,7 @@ pcap_netmap_ioctl(pcap_t *p, u_long what, uint32_t *if_flags)
 		 * So we mask out the upper 16 bits.
 		 */
 		ifr.ifr_flags = *if_flags & 0xffff;
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__QNX__)
 		/*
 		 * In FreeBSD, we need to set the high-order flags,
 		 * as we're using IFF_PPROMISC, which is in those bits.
@@ -175,7 +193,11 @@ pcap_netmap_ioctl(pcap_t *p, u_long what, uint32_t *if_flags)
 		break;
 	}
 	error = ioctl(fd, what, &ifr);
-	if (!error) {
+	if (error) {
+		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
+		    errno, "ioctl() request 0x%lx (%s)", what, reqstr);
+		return PCAP_ERROR;
+	} else {
 		switch (what) {
 		case SIOCGIFFLAGS:
 			/*
@@ -189,7 +211,7 @@ pcap_netmap_ioctl(pcap_t *p, u_long what, uint32_t *if_flags)
 			 * sign-extended value.
 			 */
 			*if_flags = ifr.ifr_flags & 0xffff;
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__QNX__)
 			/*
 			 * In FreeBSD, we need to return the
 			 * high-order flags, as we're using
@@ -204,7 +226,7 @@ pcap_netmap_ioctl(pcap_t *p, u_long what, uint32_t *if_flags)
 #ifdef __linux__
 	close(fd);
 #endif /* __linux__ */
-	return error ? -1 : 0;
+	return 0;
 }
 
 
@@ -216,8 +238,8 @@ pcap_netmap_close(pcap_t *p)
 	uint32_t if_flags = 0;
 
 	if (pn->must_clear_promisc) {
-		pcap_netmap_ioctl(p, SIOCGIFFLAGS, &if_flags); /* fetch flags */
-		if (if_flags & IFF_PPROMISC) {
+		if (! pcap_netmap_ioctl(p, SIOCGIFFLAGS, &if_flags) &&
+		    if_flags & IFF_PPROMISC) {
 			if_flags &= ~IFF_PPROMISC;
 			pcap_netmap_ioctl(p, SIOCSIFFLAGS, &if_flags);
 		}
@@ -244,7 +266,7 @@ pcap_netmap_activate(pcap_t *p)
 	}
 #if 0
 	fprintf(stderr, "%s device %s priv %p fd %d ports %d..%d\n",
-	    __FUNCTION__, p->opt.device, d, d->fd,
+	    __func__, p->opt.device, d, d->fd,
 	    d->first_rx_ring, d->last_rx_ring);
 #endif
 	pn->d = d;
@@ -262,11 +284,13 @@ pcap_netmap_activate(pcap_t *p)
 		p->snapshot = MAXIMUM_SNAPLEN;
 
 	if (p->opt.promisc && !(d->req.nr_ringid & NETMAP_SW_RING)) {
-		pcap_netmap_ioctl(p, SIOCGIFFLAGS, &if_flags); /* fetch flags */
+		if (pcap_netmap_ioctl(p, SIOCGIFFLAGS, &if_flags))
+			return PCAP_ERROR; // errbuf already filled
 		if (!(if_flags & IFF_PPROMISC)) {
 			pn->must_clear_promisc = 1;
 			if_flags |= IFF_PPROMISC;
-			pcap_netmap_ioctl(p, SIOCSIFFLAGS, &if_flags);
+			if (pcap_netmap_ioctl(p, SIOCSIFFLAGS, &if_flags))
+				return PCAP_ERROR; // errbuf already filled
 		}
 	}
 	p->linktype = DLT_EN10MB;

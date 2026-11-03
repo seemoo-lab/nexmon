@@ -51,7 +51,7 @@ The Regents of the University of California.  All rights reserved.\n";
   #include "portability.h"
 #endif
 
-static char *program_name;
+static const char *program_name;
 
 /* Forwards */
 static void PCAP_NORETURN usage(void);
@@ -447,9 +447,13 @@ main(int argc, char **argv)
 		if (status != 0) {
 			printf("%d packets seen\n", status);
 			struct pcap_stat ps;
-			pcap_stats(pd, &ps);
-			printf("%d ps_recv, %d ps_drop, %d ps_ifdrop\n",
-			    ps.ps_recv, ps.ps_drop, ps.ps_ifdrop);
+			if (pcap_stats(pd, &ps) < 0) {
+				(void)fprintf(stderr, "pcap_stats: %s\n",
+				    pcap_geterr(pd));
+			} else {
+				printf("%d ps_recv, %d ps_drop, %d ps_ifdrop\n",
+				    ps.ps_recv, ps.ps_drop, ps.ps_ifdrop);
+			}
 		}
 	}
 	if (status == -2) {
@@ -525,10 +529,10 @@ warning(const char *fmt, ...)
  * Copy arg vector into a new buffer, concatenating arguments with spaces.
  */
 static char *
-copy_argv(register char **argv)
+copy_argv(char **argv)
 {
-	register char **p;
-	register size_t len = 0;
+	char **p;
+	size_t len = 0;
 	char *buf;
 	char *src, *dst;
 

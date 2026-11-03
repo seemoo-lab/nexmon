@@ -17,7 +17,7 @@
 .\" WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
 .\" MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH PCAP-SAVEFILE @MAN_FILE_FORMATS@ "6 Jan 2025"
+.TH PCAP-SAVEFILE @MAN_FILE_FORMATS@ "21 Jan 2025"
 .SH NAME
 pcap-savefile \- libpcap savefile format
 .SH DESCRIPTION
@@ -93,7 +93,7 @@ A 2-byte file format minor version number; the current version number is
 .IP
 A 4-byte not used - SHOULD be filled with 0 by pcap file writers, and MUST
 be ignored by pcap file readers.  This value was documented by some older
-implementations as "gmt to local correction" or "time zone offset".
+implementations as "GMT to local correction" or "time zone offset".
 Some older pcap file writers stored non-zero values in this field.
 .IP
 A 4-byte not used - SHOULD be filled with 0 by pcap file writers, and MUST
@@ -102,14 +102,18 @@ implementations as "accuracy of timestamps".  Some older pcap file
 writers stored non-zero values in this field.
 .IP
 A 4-byte number giving the "snapshot length" of the capture; packets
-longer than the snapshot length are truncated to the snapshot length, so
-that, if the snapshot length is
+longer than the snapshot length are truncated to the snapshot length.
+Specifically, when libpcap is writing to a savefile (from a live packet
+capture or otherwise), if the savefile's snapshot length is
 .IR N ,
-only the first
+it writes to the savefile only the first
 .I N
 bytes of a packet longer than
 .I N
-bytes will be saved in the capture.
+bytes; when libpcap is reading from a savefile, it delivers at most
+.I N
+bytes for any packet in the savefile.  Other software that needs to access
+savefiles directly should implement the same logic.
 .IP
 A 4-byte number giving the link-layer header type for packets in the
 capture and optional additional information.

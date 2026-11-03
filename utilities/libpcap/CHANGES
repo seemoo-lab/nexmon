@@ -1,3 +1,171 @@
+Sunday, September 13, 2026 / The Tcpdump Group
+  Summary for 1.11.0 libpcap release
+    Source code:
+      Use C99 fixed-width integer types, rather than self-defined
+        fixed-width integer types, in rpcap code.
+      Clean up DECnet address handling.
+      struct pcap: Update buffer type from "void *" to "u_char *".
+      Remove dead code that supported SITA ACN devices.
+      Remove the TODO file.
+      Merge four header files into gencode.c.
+      Remove DAG card support on Windows as Linux is the only
+        platform currently supported.
+      Remove code related to Riverbed TurboCap card.
+        Riverbed TurboCap hardware has reached EOA as of Jun 30 2014.
+      Remove dead code that supported Septel devices.
+      Remove outdated code related to AirPcap HW.
+        The Riverbed AirPcap Product has reached End of Availability
+        (EOA) as of December 31, 2017
+      Make pcap_compile() error messages more uniform and consistent.
+      Deprecate pcap_compile_nopcap().
+      Remove unmaintained DPDK capture backend (was disabled by default).
+      Return more useful strings from pcap_statustostr().
+      Rename SWAPSHORT(), SWAPLONG(), SWAPLL() to PCAP_BSWAP_({16,32,64}).
+      Replace EXTRACT_SHORT by EXTRACT_BE_U_2, EXTRACT_LONG by EXTRACT_BE_U_4.
+      Add a comment to pcap-npf.c describing what pcap_stats() returns
+          as ps_recv and ps_drop.
+    Link-layer types:
+      Add LINKTYPE_DECT_NR_TAP/DLT_DECT_NR_TAP.
+    Packet filtering:
+      Add support for Block Ack Req and Block Ack frame types (pull
+        request #1039).
+      Add support for filtering packets encapsulated with VXLAN (pull
+        request #1273).
+      Eliminate trailing space in bpf_image() result.
+      Fix DECnet packet filtering on big-endian hosts.
+      Fix various failures to reject invalid DECnet primitives.
+      Require "vpi" and "vci" argument to be within valid ranges.
+      Require "[wlan] dir" integer argument to be within range.
+      Fix the != comparison for ATM and MTP field values.
+      Require a live capture for all Linux BPF extensions.
+      Have "outbound" mean Tx only for DLT_SLIP.
+      Filter Linux SocketCAN frames in userland if necessary.
+      Enable "[wlan] dir/type/subtype" for DLT_PPI.
+      Require "(iso|isis) proto" argument to be within valid ranges.
+      Use the correct IS-IS PDU type offset for DLT_C_HDLC.
+      Use the correct bit mask for IS-IS PDU type value.
+      Fix the "|" and "&" operators of the "byte" primitive.
+      Require "byte" argument to be within range.
+      Require "link proto" argument to be within range.
+      Require "(ip|ip6) proto" argument to be within range.
+      Require "protochain" argument to be within range.
+      Always enable the "gateway" primitive.
+      Properly reject "link proto" for DLT_BACNET_MS_TP.
+      Extend "link (host|broadcast)" support onto DLT_BACNET_MS_TP.
+      Do not try matching RFC 1051 system codes for ARCnet.
+      Enable various primitives for DLT_DSA_TAG_BRCM and DLT_DSA_TAG_DSA.
+      Test link protocol once per AF, not per address.
+      Sort resolved IPv4 and IPv6 addresses.
+      In "gateway" negate the host(s), but not the protocol.
+      Reject "gateway" within MPLS, VXLAN or Geneve.
+      Match both byte orders for the AF_ value when filtering DLT_NULL
+        and DLT_ENC savefiles. (issue #74)
+      Match all AF_INET6 values when filtering DLT_PFLOG savefiles.
+      Fix optimization of "jset #0xffffffff".
+      Produce cleaner DOT in the optimizer debugging code.
+    Capture file reading:
+      Fix misaligned accesses in processing Linux USB captures (issue
+        #1634, reported by FuzzAnything Organization
+        (https://github.com/FuzzAnything-ORG) (fuzzanything@gmail.com).
+    rpcap:
+      Add a -t flag to rpcapd to specify the data channel port; from
+        another incorporate-remote-capture project. (issue #1120)
+      rpcapd: Refine SSL options in printusage().
+      Fix parameter name validation in the configuration file.
+    Documentation:
+      Add a README.hurd.md file.
+      Cross-reference some man pages better.
+      Actualize README.dag and make it Markdown.
+      Add a README.snf.md file.
+      pcap-filter(7): Make a number of assorted improvements.
+      pcap_lib_version(3PCAP): Add details and examples.
+      Discuss Linux BPF extensions in the man pages.
+      Note endianness in pcap_compile(3PCAP) and pcap_lookupnet(3PCAP).
+      man: Document devices, interfaces and "any" better.
+      Add a README.qnx.md file.
+      Improve documentation of TLS support in rpcapd man page.
+      man: Use "null pointer" rather than "NULL" and fix some other
+        issues.
+    Building and testing:
+      Apply GNU Hurd support patch from the Debian package.
+      CI: Introduce and use LIBPCAP_CMAKE_TAINTED.
+      Remove all remaining support for AOS (4.3BSD Unix), BSD/OS, DOS,
+        HP-UX before 10.20, IRIX, {OSF/1, Digital Unix, Tru64 Unix}, SINIX,
+        SunOS 3.x, 4.x and 5.x before 5.3.2, and Ultrix.
+      Add a new test program for pcap_activate().
+      Make FreeBSD, Linux, macOS, NetBSD, QNX and Sun C builds warning-free.
+      Print MAC addresses in findalldevstest.
+      Parameterize the interface name in reactivatetest.
+      When necessary, trust the OS to implement ffs().
+      At build time require a proof of suitable snprintf(3) implementation in
+        libc (and document Solaris 9 and MinGW as unsupported because of that).
+      Makefile.in: Update the .c.o build rule (Remove hacks for old SunOS 4).
+      CMake: Skip snprintf(3) tests when cross-compiling; test whether
+        check_c_source_runs() with a trivial program and, if it doesn't
+        work, don't run tests that use it.
+      Autoconf: Add support for libnl-tiny with pkg-config.
+      Autoconf: Fix building of something-only libpcap.
+      CI: Implement "make check".
+      Fix autotools and CMake issues with snprintf test and sanitizers.
+        Fixes issue #1396.
+      filtertest: Add "-l" flag to use Linux BPF extensions.
+      filtertest: Use ntohl() on the netmask to fix the -m option.
+      filtertest: Add support for stdin as "-" to the -F option.
+      Rename CMake option to ENABLE_PROTOCHAIN to match Autoconf.
+      Remove the "disable IPv6" build option.
+      translatetest: Add a test program for various translation functions.
+      Autoconf: Fix detection of crypt() on QNX.
+      Autoconf: Update config.{guess,sub}, timestamps 2025-07-10.
+      CMake: Fix getaddrinfo() detection on QNX.
+      enumeratetest: Add a new test program.
+      Fix building libpcap with CMake without libnl-genl-3-dev.
+    Hurd:
+      Support network capture devices too.
+      Fix a few device activation bugs.
+      Count and timestamp packets better.
+      Add kernel filtering, fix userland filtering.
+    FreeBSD:
+      Handle USB devices correctly on FreeBSD-CURRENT as of 2025-12.
+    OpenBSD:
+      Use getprotobyname_r() correctly on OpenBSD.
+    Linux:
+      Do not use ether_hostton() from musl libc.
+      Fix propagation of getprotobyname_r() errors.
+      Don't treat permission failures trying to fetch connection status
+        as errors, just indicate connection status unknown.
+    Linux Bluetooth monitor:
+      Report permission failures as PCAP_ERROR_PERM_DENIED and indicate
+        what privileges may be required.
+    Linux nflog:
+      Report permission failures as PCAP_ERROR_PERM_DENIED and indicate
+        what privileges may be required.
+    Haiku:
+      Look for ethers(5) in /boot/system/settings/network/.
+    DAG:
+      Always set PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE.
+      In dag_findalldevs() handle known errors better.
+      Trust dag_get_stream_erf_types() to be available.
+      Require the API to have 64-bit streams support.
+      Make device descriptions more useful, make dagN conditional.
+      Use PCAP_ERROR_NO_SUCH_DEVICE more in dag_activate().
+      Validate capture device names better.
+      Enumerate streams without trying to lock them.
+      If the environment variable ERF_FCS_BITS is set, require it to be either
+        0 or 16 or 32.  Likewise for ERF_DONT_STRIP_FCS (either 0 or 1).
+      Remove FCS quirks specific to 4.2S and 4.23S.
+      Fix ps_drop for stream drop counters.
+      Add experimental packet transmit support.
+    SNF:
+      Require SNF_VERSION_API >= 0x0003.
+      Improve device descriptions and flags.
+      Fill pcap_if_t in more consistently.
+    QNX:
+      Use "unix.h" instead of the missing <sysexits.h>.
+      Fix promiscuous mode for netmap.
+    RDMA:
+      Fix some resource freeing issues. (issues #1532 and #1300)
+      Improve error messages for activate and findalldevs failures.
+
 Saturday, September 5, 2026 / The Tcpdump Group
   Summary for 1.10.7 libpcap release
     General:

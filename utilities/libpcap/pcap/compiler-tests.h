@@ -93,8 +93,8 @@
  * Check whether this is Clang major.minor or a later release.
  */
 
-#if !defined(__clang__)
-  /* Not Clang */
+#if !defined(__clang__) || !defined(__clang_major__) || !defined(__clang_minor__)
+  /* Not Clang or very old Clang that does not define the version macros. */
   #define PCAP_IS_AT_LEAST_CLANG_VERSION(major, minor) 0
 #else
   /* Clang */
@@ -169,21 +169,30 @@
 /*
  * Check whether this is HP aC++/HP C major.minor or a later release.
  *
- * The version number in __HP_aCC is encoded in zero-padded decimal BCD,
- * with the "A." stripped off, the uppermost two decimal digits being
- * the major version number, the next two decimal digits being the minor
- * version number, and the last two decimal digits being the patch version.
- * (Strip off the A., remove the . between the major and minor version
+ * __HP_aCC is defined by the C++ compiler; its value is the version of
+ * the compiler, encoded in zero-padded decimal BCD, with the "A." (or
+ * "B."?) stripped off, the uppermost two decimal digits being the major
+ * version number, the next two decimal digits being the minor version
+ * number, and the last two decimal digits being the patch version.
+ * (Strip off the A./B., remove the . between the major and minor version
  * number, and add two digits of patch.)
+ *
+ * __HP_cc is defined by the C compiler; its value doesn't appear to be
+ * documented in any HP/HPE documentation, but it does appear to be
+ * encoded in the same fashion as __HP_aCC.
  */
 
-#if ! defined(__HP_aCC)
-  /* Not HP C */
-  #define PCAP_IS_AT_LEAST_HP_C_VERSION(major,minor) 0
-#else
+#if defined(__HP_cc)
   /* HP C */
-  #define PCAP_IS_AT_LEAST_HP_C_VERSION(major,minor) \
+  #define PCAP_IS_AT_LEAST_HP_C_CXX_VERSION(major,minor) \
+	(__HP_cc >= ((major)*10000 + (minor)*100))
+#elif defined(__HP_aCC)
+  /* HP C++ */
+  #define PCAP_IS_AT_LEAST_HP_C_CXX_VERSION(major,minor) \
 	(__HP_aCC >= ((major)*10000 + (minor)*100))
+#else
+  /* Not HP C */
+  #define PCAP_IS_AT_LEAST_HP_C_CXX_VERSION(major,minor) 0
 #endif
 
 #endif /* lib_pcap_compiler_tests_h */

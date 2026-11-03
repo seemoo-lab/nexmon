@@ -26,14 +26,11 @@
  */
 
 /*
- * Packet capture routine for DLPI under SunOS 5, HP-UX 9/10/11, and AIX.
+ * Packet capture routine for DLPI under SunOS 5, HP-UX 10/11, and AIX.
  *
  * Notes:
  *
  *    - The DLIOCRAW ioctl() is specific to SunOS.
- *
- *    - There is a bug in bufmod(7) such that setting the snapshot
- *      length results in data being left of the front of the packet.
  *
  *    - It might be desirable to use pfmod(7) to filter packets in the
  *      kernel when possible.
@@ -79,9 +76,6 @@
 #ifdef HAVE_SYS_DLPI_EXT_H
 #include <sys/dlpi_ext.h>
 #endif
-#ifdef HAVE_HPUX9
-#include <sys/socket.h>
-#endif
 #ifdef DL_HP_PPA_REQ
 #include <sys/stat.h>
 #endif
@@ -90,13 +84,6 @@
 #include <sys/systeminfo.h>
 #endif
 
-#ifdef HAVE_HPUX9
-#include <net/if.h>
-#endif
-
-#ifdef HAVE_HPUX9
-#include <nlist.h>
-#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <memory.h>
@@ -158,15 +145,7 @@ static int dlrawdatareq(int, const u_char *, int);
 static int recv_ack(int, int, const char *, char *, char *, int *);
 static char *dlstrerror(char *, size_t, bpf_u_int32);
 static char *dlprim(char *, size_t, bpf_u_int32);
-#if defined(HAVE_SOLARIS) && defined(HAVE_SYS_BUFMOD_H)
-#define GET_RELEASE_BUFSIZE	32
-static void get_release(char *, size_t, bpf_u_int32 *, bpf_u_int32 *,
-    bpf_u_int32 *);
-#endif
 static int send_request(int, char *, int, char *, char *);
-#ifdef HAVE_HPUX9
-static int dlpi_kread(int, off_t, void *, u_int, char *);
-#endif
 #ifdef HAVE_DEV_DLPI
 static int get_dlpi_ppa(int, const char *, u_int, u_int *, char *);
 #endif
@@ -236,7 +215,7 @@ pcap_read_dlpi(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 			}
 			cc = data.len;
 		} while (cc == 0);
-		bp = (u_char *)p->buffer + p->offset;
+		bp = p->buffer + p->offset;
 	} else
 		bp = p->bp;
 
@@ -656,13 +635,9 @@ pcap_activate_dlpi(pcap_t *p)
 #ifdef HAVE_SOLARIS
 	int isatm = 0;
 #endif
-	register dl_info_ack_t *infop;
+	dl_info_ack_t *infop;
 #ifdef HAVE_SYS_BUFMOD_H
 	bpf_u_int32 ss;
-#ifdef HAVE_SOLARIS
-	char release[GET_RELEASE_BUFSIZE];
-	bpf_u_int32 osmajor, osminor, osmicro;
-#endif
 #endif
 	bpf_u_int32 buf[MAXDLBUF];
 
@@ -734,10 +709,8 @@ pcap_activate_dlpi(pcap_t *p)
 	dlpassive(p->fd, p->errbuf);
 #endif
 	/*
-	** Bind (defer if using HP-UX 9 or HP-UX 10.20 or later, totally
-	** skip if using SINIX)
+	** Bind.
 	*/
-#if !defined(HAVE_HPUX9) && !defined(HAVE_HPUX10_20_OR_LATER) && !defined(sinix)
 #ifdef _AIX
 	/*
 	** AIX.
@@ -763,28 +736,13 @@ pcap_activate_dlpi(pcap_t *p)
 		status = PCAP_ERROR;
 		goto bad;
 	}
-#elif defined(DL_HP_RAWDLS)
+#elif defined(HAVE_HPUX10_20_OR_LATER)
 	/*
-	** HP-UX 10.0x and 10.1x.
+	** Defer.
 	*/
-	if (dl_dohpuxbind(p->fd, p->errbuf) < 0) {
-		status = PCAP_ERROR;
-		goto bad;
-	}
-	if (pd->send_fd >= 0) {
-		/*
-		** XXX - if this fails, just close send_fd and
-		** set it to -1, so that you can't send but can
-		** still receive?
-		*/
-		if (dl_dohpuxbind(pd->send_fd, p->errbuf) < 0) {
-			status = PCAP_ERROR;
-			goto bad;
-		}
-	}
 #else /* neither AIX nor HP-UX */
 	/*
-	** Not Sinix, and neither AIX nor HP-UX - Solaris, and any other
+	** Neither AIX nor HP-UX - Solaris, and any other
 	** OS using DLPI.
 	**/
 	if (dlbindreq(p->fd, 0, p->errbuf) < 0 ||
@@ -793,7 +751,6 @@ pcap_activate_dlpi(pcap_t *p)
 		goto bad;
 	}
 #endif /* AIX vs. HP-UX vs. other */
-#endif /* !HP-UX 9 and !HP-UX 10.20 or later and !SINIX */
 
 	/*
 	 * Turn a negative snapshot value (invalid), a snapshot value of
@@ -838,9 +795,9 @@ pcap_activate_dlpi(pcap_t *p)
 		/*
 		** Try to enable multicast (you would have thought
 		** promiscuous would be sufficient). (Skip if using
-		** HP-UX or SINIX) (Not necessary on send FD)
+		** HP-UX) (Not necessary on send FD)
 		*/
-#if !defined(__hpux) && !defined(sinix)
+#if !defined(__hpux)
 		retv = dlpromiscon(p, DL_PROMISC_MULTI);
 		if (retv < 0)
 			status = PCAP_WARNING;
@@ -848,10 +805,9 @@ pcap_activate_dlpi(pcap_t *p)
 	}
 	/*
 	** Try to enable SAP promiscuity (when not in promiscuous mode
-	** when using HP-UX, when not doing SunATM on Solaris, and never
-	** under SINIX) (Not necessary on send FD)
+	** when using HP-UX, when not doing SunATM on Solaris)
+	** (Not necessary on send FD)
 	*/
-#ifndef sinix
 #if defined(__hpux)
 	/* HP-UX - only do this when not in promiscuous mode */
 	if (!p->opt.promisc) {
@@ -859,7 +815,7 @@ pcap_activate_dlpi(pcap_t *p)
 	/* Solaris - don't do this on SunATM devices */
 	if (!isatm) {
 #else
-	/* Everything else (except for SINIX) - always do this */
+	/* Everything else - always do this. */
 	{
 #endif
 		retv = dlpromiscon(p, DL_PROMISC_SAP);
@@ -881,20 +837,19 @@ pcap_activate_dlpi(pcap_t *p)
 			}
 		}
 	}
-#endif /* sinix */
 
 	/*
-	** HP-UX 9, and HP-UX 10.20 or later, must bind after setting
+	** HP-UX 10.20 or later must bind after setting
 	** promiscuous options.
 	*/
-#if defined(HAVE_HPUX9) || defined(HAVE_HPUX10_20_OR_LATER)
+#if defined(HAVE_HPUX10_20_OR_LATER)
 	if (dl_dohpuxbind(p->fd, p->errbuf) < 0) {
 		status = PCAP_ERROR;
 		goto bad;
 	}
 	/*
 	** We don't set promiscuous mode on the send FD, but we'll defer
-	** binding it anyway, just to keep the HP-UX 9/10.20 or later
+	** binding it anyway, just to keep the HP-UX 10.20 or later
 	** code together.
 	*/
 	if (pd->send_fd >= 0) {
@@ -942,27 +897,6 @@ pcap_activate_dlpi(pcap_t *p)
 
 #ifdef HAVE_SYS_BUFMOD_H
 	ss = p->snapshot;
-
-	/*
-	** There is a bug in bufmod(7). When dealing with messages of
-	** less than snaplen size it strips data from the beginning not
-	** the end.
-	**
-	** This bug is fixed in 5.3.2. Also, there is a patch available.
-	** Ask for bugid 1149065.
-	*/
-#ifdef HAVE_SOLARIS
-	get_release(release, sizeof (release), &osmajor, &osminor, &osmicro);
-	if (osmajor == 5 && (osminor <= 2 || (osminor == 3 && osmicro < 2)) &&
-	    getenv("BUFMOD_FIXED") == NULL) {
-		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
-		"WARNING: bufmod is broken in SunOS %s; ignoring snaplen.",
-		    release);
-		ss = 0;
-		status = PCAP_WARNING;
-	}
-#endif
-
 	/* Push and configure bufmod. */
 	if (pcap_conf_bufmod(p, ss) != 0) {
 		status = PCAP_ERROR;
@@ -1022,8 +956,8 @@ static char *
 split_dname(char *device, u_int *unitp, char *ebuf)
 {
 	char *cp;
-	char *eos;
-	long unit;
+	u_int unit;
+	int ret;
 
 	/*
 	 * Look for a number at the end of the device name string.
@@ -1044,23 +978,23 @@ split_dname(char *device, u_int *unitp, char *ebuf)
 		return (NULL);
 	}
 
-	errno = 0;
-	unit = strtol(cp, &eos, 10);
-	if (*eos != '\0') {
-		snprintf(ebuf, PCAP_ERRBUF_SIZE, "%s bad unit number", device);
+	ret = pcapint_get_decuint(cp, NULL, &unit);
+	if (ret != 0) {
+		if (ret == EINVAL)
+			snprintf(ebuf, PCAP_ERRBUF_SIZE, "%s bad unit number", device);
+		else if (ret == ERANGE) {
+			snprintf(ebuf, PCAP_ERRBUF_SIZE, "%s unit number too large",
+			    device);
+		} else {
+			pcapint_fmt_errmsg_for_errno(ebuf, PCAP_ERRBUF_SIZE,
+			    ret, "%s unit number error", device);
+		}
 		return (NULL);
 	}
 	if (errno == ERANGE || unit > INT_MAX) {
-		snprintf(ebuf, PCAP_ERRBUF_SIZE, "%s unit number too large",
-		    device);
 		return (NULL);
 	}
-	if (unit < 0) {
-		snprintf(ebuf, PCAP_ERRBUF_SIZE, "%s unit number is negative",
-		    device);
-		return (NULL);
-	}
-	*unitp = (u_int)unit;
+	*unitp = unit;
 	return (cp);
 }
 
@@ -1666,33 +1600,6 @@ dlrawdatareq(int fd, const u_char *datap, int datalen)
 }
 #endif /* DL_HP_RAWDLS */
 
-#if defined(HAVE_SOLARIS) && defined(HAVE_SYS_BUFMOD_H)
-static void
-get_release(char *buf, size_t bufsize, bpf_u_int32 *majorp,
-    bpf_u_int32 *minorp, bpf_u_int32 *microp)
-{
-	char *cp;
-
-	*majorp = 0;
-	*minorp = 0;
-	*microp = 0;
-	if (sysinfo(SI_RELEASE, buf, bufsize) < 0) {
-		pcapint_strlcpy(buf, "?", bufsize);
-		return;
-	}
-	cp = buf;
-	if (!PCAP_ISDIGIT((unsigned char)*cp))
-		return;
-	*majorp = strtol(cp, &cp, 10);
-	if (*cp++ != '.')
-		return;
-	*minorp =  strtol(cp, &cp, 10);
-	if (*cp++ != '.')
-		return;
-	*microp =  strtol(cp, &cp, 10);
-}
-#endif
-
 #ifdef DL_HP_PPA_REQ
 /*
  * Under HP-UX 10 and HP-UX 11, we can ask for the ppa
@@ -1734,14 +1641,14 @@ echo 'lanc_outbound_promisc_flag/W1' | /usr/bin/adb -w /stand/vmunix /dev/kmem
  * Setting the variable is not necessary on HP-UX 11.x.
  */
 static int
-get_dlpi_ppa(register int fd, register const char *device, register u_int unit,
-    u_int *ppa, register char *ebuf)
+get_dlpi_ppa(int fd, const char *device, u_int unit,
+    u_int *ppa, char *ebuf)
 {
-	register dl_hp_ppa_ack_t *ap;
-	register dl_hp_ppa_info_t *ipstart, *ip;
-	register u_int i;
+	dl_hp_ppa_ack_t *ap;
+	dl_hp_ppa_info_t *ipstart, *ip;
+	u_int i;
 	char dname[100];
-	register u_long majdev;
+	u_long majdev;
 	struct stat statbuf;
 	dl_hp_ppa_req_t	req;
 	char buf[MAXDLBUF];
@@ -1912,99 +1819,6 @@ get_dlpi_ppa(register int fd, register const char *device, register u_int unit,
 	*ppa = ip->dl_ppa;
 	free(ppa_data_buf);
 	return (0);
-}
-#endif
-
-#ifdef HAVE_HPUX9
-/*
- * Under HP-UX 9, there is no good way to determine the ppa.
- * So punt and read it from /dev/kmem.
- */
-static struct nlist nl[] = {
-#define NL_IFNET 0
-	{ "ifnet" },
-	{ "" }
-};
-
-static char path_vmunix[] = "/hp-ux";
-
-/* Determine ppa number that specifies ifname */
-static int
-get_dlpi_ppa(register int fd, register const char *ifname, register u_int unit,
-    u_int *ppa, register char *ebuf)
-{
-	register const char *cp;
-	register int kd;
-	void *addr;
-	struct ifnet ifnet;
-	char if_name[sizeof(ifnet.if_name) + 1];
-
-	cp = strrchr(ifname, '/');
-	if (cp != NULL)
-		ifname = cp + 1;
-	if (nlist(path_vmunix, &nl) < 0) {
-		snprintf(ebuf, PCAP_ERRBUF_SIZE, "nlist %s failed",
-		    path_vmunix);
-		return (PCAP_ERROR);
-	}
-	if (nl[NL_IFNET].n_value == 0) {
-		snprintf(ebuf, PCAP_ERRBUF_SIZE,
-		    "couldn't find %s kernel symbol",
-		    nl[NL_IFNET].n_name);
-		return (PCAP_ERROR);
-	}
-	kd = open("/dev/kmem", O_RDONLY);
-	if (kd < 0) {
-		pcapint_fmt_errmsg_for_errno(ebuf, PCAP_ERRBUF_SIZE,
-		    errno, "kmem open");
-		return (PCAP_ERROR);
-	}
-	if (dlpi_kread(kd, nl[NL_IFNET].n_value,
-	    &addr, sizeof(addr), ebuf) < 0) {
-		close(kd);
-		return (PCAP_ERROR);
-	}
-	for (; addr != NULL; addr = ifnet.if_next) {
-		if (dlpi_kread(kd, (off_t)addr,
-		    &ifnet, sizeof(ifnet), ebuf) < 0 ||
-		    dlpi_kread(kd, (off_t)ifnet.if_name,
-		    if_name, sizeof(ifnet.if_name), ebuf) < 0) {
-			(void)close(kd);
-			return (PCAP_ERROR);
-		}
-		if_name[sizeof(ifnet.if_name)] = '\0';
-		if (strcmp(if_name, ifname) == 0 && ifnet.if_unit == unit) {
-			*ppa = ifnet.if_index;
-			return (0);
-		}
-	}
-
-	snprintf(ebuf, PCAP_ERRBUF_SIZE, "Can't find %s", ifname);
-	return (PCAP_ERROR_NO_SUCH_DEVICE);
-}
-
-static int
-dlpi_kread(register int fd, register off_t addr,
-    register void *buf, register u_int len, register char *ebuf)
-{
-	register int cc;
-
-	if (lseek(fd, addr, SEEK_SET) < 0) {
-		pcapint_fmt_errmsg_for_errno(ebuf, PCAP_ERRBUF_SIZE,
-		    errno, "lseek");
-		return (-1);
-	}
-	cc = read(fd, buf, len);
-	if (cc < 0) {
-		pcapint_fmt_errmsg_for_errno(ebuf, PCAP_ERRBUF_SIZE,
-		    errno, "read");
-		return (-1);
-	} else if (cc != len) {
-		snprintf(ebuf, PCAP_ERRBUF_SIZE, "short read (%d != %d)", cc,
-		    len);
-		return (-1);
-	}
-	return (cc);
 }
 #endif
 

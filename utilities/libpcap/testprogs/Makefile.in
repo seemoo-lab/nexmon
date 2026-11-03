@@ -71,16 +71,14 @@ INSTALL = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 
-# Explicitly define compilation rule since SunOS 4's make doesn't like gcc.
-# Also, gcc does not remove the .o before forking 'as', which can be a
-# problem if you don't own the file but can write to the directory.
 .c.o:
-	@rm -f $@
-	$(CC) $(FULL_CFLAGS) -c $(srcdir)/$*.c
+	$(CC) $(FULL_CFLAGS) -c -o $@ $<
 
 SRC = @VALGRINDTEST_SRC@ \
+	activatetest.c \
 	can_set_rfmon_test.c \
 	capturetest.c \
+	enumeratetest.c \
 	filtertest.c \
 	findalldevstest-perf.c \
 	findalldevstest.c \
@@ -89,6 +87,7 @@ SRC = @VALGRINDTEST_SRC@ \
 	reactivatetest.c \
 	selpolltest.c \
 	threadsignaltest.c \
+	translatetest.c \
 	versiontest.c \
 	writecaptest.c
 
@@ -101,52 +100,67 @@ CLEANFILES = $(OBJ) $(TESTS)
 
 all: $(TESTS)
 
+# illumos make is the only known supported make that would expand "$<" below
+# into "../libpcap.a" instead of "$(srcdir)/xxxxxxxx.c ../libpcap.a".
+
+activatetest: $(srcdir)/activatetest.c ../libpcap.a
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/activatetest.c \
+	    ../libpcap.a $(LIBS)
+
 capturetest: $(srcdir)/capturetest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o capturetest $(srcdir)/capturetest.c \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/capturetest.c \
 	    ../libpcap.a $(LIBS)
 
 can_set_rfmon_test: $(srcdir)/can_set_rfmon_test.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o can_set_rfmon_test \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ \
 	    $(srcdir)/can_set_rfmon_test.c \
 	    ../libpcap.a $(LIBS)
 
+enumeratetest: $(srcdir)/enumeratetest.c ../libpcap.a
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/enumeratetest.c \
+	    ../libpcap.a $(LIBS)
+
 filtertest: $(srcdir)/filtertest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o filtertest $(srcdir)/filtertest.c \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/filtertest.c \
 	    ../libpcap.a $(LIBS)
 
 findalldevstest: $(srcdir)/findalldevstest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o findalldevstest \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ \
 	    $(srcdir)/findalldevstest.c \
 	    ../libpcap.a $(LIBS)
 
 findalldevstest-perf: $(srcdir)/findalldevstest-perf.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o findalldevstest-perf \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ \
 	    $(srcdir)/findalldevstest-perf.c \
 	    ../libpcap.a $(LIBS)
 
 opentest: $(srcdir)/opentest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o opentest $(srcdir)/opentest.c \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/opentest.c \
 	    ../libpcap.a $(LIBS)
 
 nonblocktest: $(srcdir)/nonblocktest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o nonblocktest $(srcdir)/nonblocktest.c \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/nonblocktest.c \
 	    ../libpcap.a $(LIBS)
 
 reactivatetest: $(srcdir)/reactivatetest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o reactivatetest \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ \
 	    $(srcdir)/reactivatetest.c ../libpcap.a $(LIBS)
 
 selpolltest: $(srcdir)/selpolltest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o selpolltest $(srcdir)/selpolltest.c \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/selpolltest.c \
 	    ../libpcap.a $(LIBS)
 
 threadsignaltest: $(srcdir)/threadsignaltest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o threadsignaltest \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ \
 	    $(srcdir)/threadsignaltest.c \
 	    ../libpcap.a $(LIBS) $(PTHREAD_LIBS)
 
+translatetest: $(srcdir)/translatetest.c ../libpcap.a
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/translatetest.c \
+	    ../libpcap.a $(LIBS)
+
 valgrindtest: $(srcdir)/valgrindtest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o valgrindtest $(srcdir)/valgrindtest.c \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/valgrindtest.c \
 	    ../libpcap.a $(LIBS)
 
 versiontest: $(srcdir)/versiontest.c ../libpcap.a
@@ -154,7 +168,7 @@ versiontest: $(srcdir)/versiontest.c ../libpcap.a
 	    ../libpcap.a $(LIBS)
 
 writecaptest: $(srcdir)/writecaptest.c ../libpcap.a
-	$(CC) $(FULL_CFLAGS) -I. -L. -o writecaptest $(srcdir)/writecaptest.c \
+	$(CC) $(FULL_CFLAGS) -I. -L. -o $@ $(srcdir)/writecaptest.c \
 	    ../libpcap.a $(LIBS)
 
 clean:

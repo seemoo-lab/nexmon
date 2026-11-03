@@ -71,16 +71,10 @@ static pcap_t *pcap_fopen_offline_with_tstamp_precision(FILE *, u_int, char *);
 #endif
 
 /*
- * Setting O_BINARY on DOS/Windows is a bit tricky
+ * Setting O_BINARY on Windows is a bit tricky.
  */
 #if defined(_WIN32)
   #define SET_BINMODE(f)  _setmode(_fileno(f), _O_BINARY)
-#elif defined(MSDOS)
-  #if defined(__HIGHC__)
-  #define SET_BINMODE(f)  setmode(f, O_BINARY)
-  #else
-  #define SET_BINMODE(f)  setmode(fileno(f), O_BINARY)
-  #endif
 #endif
 
 static int
@@ -216,12 +210,6 @@ sf_live_dump_ended(pcap_t *p, int sync _U_)
 	snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
 	    "Live packet dumping cannot be performed on a pcap_open_dead pcap_t");
 	return (-1);
-}
-
-static PAirpcapHandle
-sf_get_airpcap_handle(pcap_t *pcap _U_)
-{
-	return (NULL);
 }
 #endif
 
@@ -363,7 +351,7 @@ pcap_open_offline_with_tstamp_precision(const char *fname, u_int precision,
 			    "The standard input is not open");
 			return (NULL);
 		}
-#if defined(_WIN32) || defined(MSDOS)
+#if defined(_WIN32)
 		/*
 		 * We're reading from the standard input, so put it in binary
 		 * mode, as savefiles are binary files.
@@ -379,8 +367,7 @@ pcap_open_offline_with_tstamp_precision(const char *fname, u_int precision,
 		 * wraps fopen().
 		 *
 		 * "b" is supported as of C90, so *all* UN*Xes should
-		 * support it, even though it does nothing.  For MS-DOS,
-		 * we again need it.
+		 * support it, even though it does nothing.
 		 */
 		fp = pcapint_charset_fopen(fname, "rb");
 		if (fp == NULL) {
@@ -480,7 +467,7 @@ pcap_t *
 pcap_fopen_offline_with_tstamp_precision(FILE *fp, u_int precision,
     char *errbuf)
 {
-	register pcap_t *p;
+	pcap_t *p;
 	uint8_t magic[4];
 	size_t amt_read;
 	u_int i;
@@ -548,7 +535,7 @@ found:
 	/* Padding only needed for live capture fcode */
 	p->fddipad = 0;
 
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 	/*
 	 * You can do "select()" and "poll()" on plain files on most
 	 * platforms, and should be able to do so on pipes.
@@ -580,7 +567,6 @@ found:
 	p->setuserbuffer_op = sf_setuserbuffer;
 	p->live_dump_op = sf_live_dump;
 	p->live_dump_ended_op = sf_live_dump_ended;
-	p->get_airpcap_handle_op = sf_get_airpcap_handle;
 #endif
 
 	/*
@@ -595,9 +581,19 @@ found:
 	p->breakloop_op = pcapint_breakloop_common;
 
 	/*
-	 * Savefiles never require special BPF code generation.
+	 * For link-layer headers in which the packet type is indicated
+	 * by an AF_ value, we don't know what OS generated it, so we
+	 * don't know what numerical value corresponds to AF_INET6, and
+	 * we don't know the byte order of the host that originally
+	 * captured the packets in the file (as opposed to the host
+	 * that *wrote* this file), so we don't know the byte order
+	 * of multi-byte AF_ values.
+	 *
+	 * That requires different filtering code than a live capture.
+	 *
+	 * Savefiles don't require any other special BPF code generation.
 	 */
-	p->bpf_codegen_flags = 0;
+	p->bpf_codegen_flags = BPF_OFFLINE_AF_HANDLING;
 
 	p->activated = 1;
 

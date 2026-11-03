@@ -67,6 +67,7 @@ PROG=libpcap
 PTHREAD_LIBS=@PTHREAD_LIBS@
 BUILD_RPCAPD=@BUILD_RPCAPD@
 INSTALL_RPCAPD=@INSTALL_RPCAPD@
+PERL?=perl
 
 # Standard CFLAGS for building members of a shared library
 FULL_CFLAGS = $(CCOPT) @V_LIB_CCOPT_FAT@ $(SHLIB_CCOPT) $(INCLS) $(DEFS) $(CFLAGS)
@@ -79,18 +80,14 @@ RANLIB = @RANLIB@
 LEX = @LEX@
 BISON_BYACC = @BISON_BYACC@
 
-# Explicitly define compilation rule since SunOS 4's make doesn't like gcc.
-# Also, gcc does not remove the .o before forking 'as', which can be a
-# problem if you don't own the file but can write to the directory.
 .c.o:
-	@rm -f $@
-	$(CC) $(FULL_CFLAGS) -c $(srcdir)/$*.c
+	$(CC) $(FULL_CFLAGS) -c -o $@ $<
 
 PLATFORM_C_SRC =	@PLATFORM_C_SRC@
 MODULE_C_SRC =		@MODULE_C_SRC@
 REMOTE_C_SRC =		@REMOTE_C_SRC@
 COMMON_C_SRC =	pcap.c gencode.c optimize.c nametoaddr.c etherent.c \
-		fmtutils.c pcap-util.c \
+		fmtutils.c pcap-util.c pcap-new.c \
 		savefile.c sf-pcap.c sf-pcapng.c pcap-common.c \
 		bpf_image.c bpf_filter.c bpf_dump.c
 GENERATED_C_SRC = scanner.c grammar.c
@@ -100,12 +97,7 @@ SRC =	$(PLATFORM_C_SRC) \
 	$(MODULE_C_SRC) $(REMOTE_C_SRC) $(COMMON_C_SRC) \
 	$(GENERATED_C_SRC)
 
-# We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
-# hack the extra indirection
-OBJ =	$(PLATFORM_C_SRC:.c=.o) \
-	$(MODULE_C_SRC:.c=.o) $(REMOTE_C_SRC:.c=.o) $(COMMON_C_SRC:.c=.o) \
-	$(GENERATED_C_SRC:.c=.o) \
-	$(LIBOBJS)
+OBJ =	$(SRC:.c=.o) $(LIBOBJS)
 
 PUBHDR = \
 	pcap.h \
@@ -128,8 +120,6 @@ PUBHDR = \
 	pcap/vlan.h
 
 HDR = $(PUBHDR) \
-	arcnet.h \
-	atmuni31.h \
 	diag-control.h \
 	ethertype.h \
 	extract.h \
@@ -139,7 +129,7 @@ HDR = $(PUBHDR) \
 	ieee80211.h \
 	llc.h \
 	nametoaddr.h \
-	nlpid.h \
+	no_sanitize.h \
 	optimize.h \
 	pcap-common.h \
 	pcap-int.h \
@@ -153,7 +143,6 @@ HDR = $(PUBHDR) \
 	rpcap-protocol.h \
 	sf-pcap.h \
 	sf-pcapng.h \
-	sunatmpos.h \
 	thread-local.h \
 	varattrs.h
 
@@ -233,6 +222,7 @@ MAN3PCAP_NOEXPAND = \
 
 MAN3PCAP = $(MAN3PCAP_NOEXPAND) $(MAN3PCAP_EXPAND:.in=)
 
+# cbpf-savefile.manfile.in is not ready for a release yet.
 MANFILE = \
 	pcap-savefile.manfile.in
 
@@ -253,17 +243,17 @@ EXTRA_DIST = \
 	Makefile-devel-adds \
 	README.md \
 	doc/README.aix \
-	doc/README.dag \
+	doc/README.dag.md \
 	doc/README.haiku.md \
 	doc/README.hpux \
+	doc/README.hurd.md \
 	doc/README.linux \
 	doc/README.macos \
-	doc/README.septel \
-	doc/README.sita \
+	doc/README.qnx.md \
+	doc/README.snf.md \
 	doc/README.solaris.md \
 	doc/README.windows.md \
 	CONTRIBUTING.md \
-	TODO \
 	VERSION \
 	aclocal.m4 \
 	autogen.sh \
@@ -272,14 +262,11 @@ EXTRA_DIST = \
 	chmod_bpf \
 	cmake_uninstall.cmake.in \
 	cmakeconfig.h.in \
-	cmake/Modules/FindAirPcap.cmake \
 	cmake/Modules/FindDAG.cmake \
-	cmake/Modules/Finddpdk.cmake \
 	cmake/Modules/FindFseeko.cmake \
 	cmake/Modules/FindLFS.cmake \
 	cmake/Modules/FindPacket.cmake \
 	cmake/Modules/FindSNF.cmake \
-	cmake/Modules/FindTC.cmake \
 	cmake/have_siocglifconf.c \
 	config.guess \
 	config.sub \
@@ -292,14 +279,6 @@ EXTRA_DIST = \
 	grammar.y.in \
 	install-sh \
 	instrument-functions.c \
-	lbl/os-aix4.h \
-	lbl/os-aix7.h \
-	lbl/os-hpux11.h \
-	lbl/os-osf4.h \
-	lbl/os-osf5.h \
-	lbl/os-solaris2.h \
-	lbl/os-sunos4.h \
-	lbl/os-ultrix4.h \
 	libpcap.pc.in \
 	missing/asprintf.c \
 	missing/getopt.c \
@@ -309,19 +288,8 @@ EXTRA_DIST = \
 	missing/strtok_r.c \
 	missing/win_asprintf.c \
 	mkdep \
-	msdos/bin2c.c \
-	msdos/makefile \
-	msdos/makefile.dj \
-	msdos/makefile.wc \
-	msdos/pkt_rx0.asm \
-	msdos/pkt_rx1.s \
-	msdos/pktdrvr.c \
-	msdos/pktdrvr.h \
-	msdos/readme.dos \
 	nomkdep \
 	org.tcpdump.chmod_bpf.plist \
-	pcap-airpcap.c \
-	pcap-airpcap.h \
 	pcap-bpf.c \
 	pcap-bt-linux.c \
 	pcap-bt-linux.h \
@@ -334,39 +302,23 @@ EXTRA_DIST = \
 	pcap-dbus.h \
 	pcap-dll.rc \
 	pcap-dlpi.c \
-	pcap-dos.c \
-	pcap-dos.h \
-	pcap-dpdk.c \
-	pcap-dpdk.h \
-	pcap-enet.c \
 	pcap-haiku.c \
+	pcap-hurd.c \
 	pcap-int.h \
 	pcap-libdlpi.c \
 	pcap-linux.c \
 	pcap-namedb.h \
-	pcap-new.c \
 	pcap-netfilter-linux.c \
 	pcap-netfilter-linux.h \
 	pcap-netmap.c \
 	pcap-netmap.h \
-	pcap-nit.c \
 	pcap-npf.c \
 	pcap-null.c \
-	pcap-pf.c \
 	pcap-rdmasniff.c \
 	pcap-rdmasniff.h \
 	pcap-rpcap.c \
-	pcap-septel.c \
-	pcap-septel.h \
-	pcap-sita.h \
-	pcap-sita.c \
-	pcap-sita.html \
 	pcap-snf.c \
 	pcap-snf.h \
-	pcap-snit.c \
-	pcap-snoop.c \
-	pcap-tc.c \
-	pcap-tc.h \
 	pcap-usb-linux.c \
 	pcap-usb-linux.h \
 	rpcap-protocol.c \
@@ -398,8 +350,14 @@ EXTRA_DIST = \
 	scanner.l \
 	testprogs/CMakeLists.txt \
 	testprogs/Makefile.in \
+	testprogs/TESTrun \
+	testprogs/TESTlib.pm \
+	testprogs/TESTmt.pm \
+	testprogs/TESTst.pm \
+	testprogs/activatetest.c \
 	testprogs/can_set_rfmon_test.c \
 	testprogs/capturetest.c \
+	testprogs/enumeratetest.c \
 	testprogs/filtertest.c \
 	testprogs/findalldevstest.c \
 	testprogs/findalldevstest.supp \
@@ -409,6 +367,7 @@ EXTRA_DIST = \
 	testprogs/reactivatetest.c \
 	testprogs/selpolltest.c \
 	testprogs/threadsignaltest.c \
+	testprogs/translatetest.c \
 	testprogs/unix.h \
 	testprogs/valgrindtest.c \
 	testprogs/versiontest.c \
@@ -552,9 +511,6 @@ gencode.o: $(srcdir)/gencode.c grammar.h scanner.h
 
 asprintf.o: $(srcdir)/missing/asprintf.c
 	$(CC) $(FULL_CFLAGS) -o $@ -c $(srcdir)/missing/asprintf.c
-
-snprintf.o: $(srcdir)/missing/snprintf.c
-	$(CC) $(FULL_CFLAGS) -o $@ -c $(srcdir)/missing/snprintf.c
 
 strlcat.o: $(srcdir)/missing/strlcat.c
 	$(CC) $(FULL_CFLAGS) -o $@ -c $(srcdir)/missing/strlcat.c
@@ -807,6 +763,9 @@ distclean: clean
 	(cd rpcapd; $(MAKE) distclean)
 	(cd testprogs; $(MAKE) distclean)
 
+check: testprogs
+	$(PERL) $(srcdir)/testprogs/TESTrun
+
 extags: $(TAGFILES)
 	ctags $(TAGFILES)
 
@@ -815,11 +774,11 @@ tags: $(TAGFILES)
 
 #
 # Use git archive piped to tar to construct a subdirectory whose name
-# is libpcap-{release}, containing all the checked-in source files,
-# and then run autoreconf in that directory to generate the configure
-# script and other files from that source. Then remove autom4te.cache,
-# construct the release tarball from that subdirectory, and remove
-# the subdirectory.
+# is libpcap-{release}, containing all the checked-in source files
+# that are in RELEASE_FILES, and then run autoreconf in that directory
+# to generate the configure script and other files from that source.
+# Then remove autom4te.cache, construct the release tarball from that
+# subdirectory, and remove the subdirectory.
 #
 # The --format=tar is to force git archive to write a non-compressed
 # archive, in case the platform's tar command doesn't have built-in
@@ -867,7 +826,7 @@ releasecheck: releasetar
 	cd /tmp && \
 	rm -rf "$$TAG" && \
 	rm -rf "$$INSTALL_DIR" && \
-	tar xf "$$DIR"/"$$TAG".tar.gz && \
+	tar xzf "$$DIR"/"$$TAG".tar.gz && \
 	cd "$$TAG" && \
 	echo "[$@] $$ touch .devel" && \
 	touch .devel && \
@@ -875,12 +834,14 @@ releasecheck: releasetar
 	./configure --enable-remote --quiet --prefix="$$INSTALL_DIR" && \
 	echo '[$@] $$ $(MAKE) -s all testprogs' && \
 	$(MAKE) -s all testprogs && \
+	echo '[$@] $$ $(MAKE) -s check' && \
+	$(MAKE) -s check >/dev/null && \
 	echo '[$@] $$ $(MAKE) -s install' && \
 	$(MAKE) -s install && \
 	cd .. && \
 	rm -rf "$$TAG" && \
 	rm -rf "$$INSTALL_DIR" && \
-	tar xf "$$DIR"/"$$TAG".tar.gz && \
+	tar xzf "$$DIR"/"$$TAG".tar.gz && \
 	cd "$$TAG" && \
 	echo "[$@] $$ touch .devel" && \
 	touch .devel && \
@@ -895,6 +856,8 @@ releasecheck: releasetar
 	    .. && \
 	echo '[$@] $$ $(MAKE) -s all testprogs' && \
 	$(MAKE) -s all testprogs && \
+	echo '[$@] $$ $(MAKE) -s check' && \
+	$(MAKE) -s check >/dev/null && \
 	echo '[$@] $$ $(MAKE) -s install' && \
 	$(MAKE) -s install && \
 	cd ../.. && \

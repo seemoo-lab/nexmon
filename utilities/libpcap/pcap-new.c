@@ -49,6 +49,8 @@
 #include <stdlib.h>		// for malloc(), free(), ...
 #include <string.h>		// for strstr, etc
 
+#ifdef ENABLE_REMOTE
+
 #ifndef _WIN32
 #include <dirent.h>		// for readdir
 #endif
@@ -532,3 +534,33 @@ struct pcap_samp *pcap_setsampling(pcap_t *p)
 {
 	return &p->rmt_samp;
 }
+
+#else /* ENABLE_REMOTE */
+
+int
+pcap_findalldevs_ex(const char *source _U_, struct pcap_rmtauth *auth _U_,
+    pcap_if_t **alldevs _U_, char *errbuf)
+{
+	pcapint_strlcpy(errbuf, "pcap_findalldevs_ex() is not supported",
+	    PCAP_ERRBUF_SIZE);
+	return (-1);
+}
+
+pcap_t *
+pcap_open(const char *source _U_, int snaplen _U_, int flags _U_,
+    int read_timeout _U_, struct pcap_rmtauth *auth _U_, char *errbuf)
+{
+	pcapint_strlcpy(errbuf, "pcap_open() is not supported",
+	    PCAP_ERRBUF_SIZE);
+	return (NULL);
+}
+
+struct pcap_samp *
+pcap_setsampling(pcap_t *p)
+{
+	pcapint_strlcpy(p->errbuf, "Capture sampling is not supported",
+	    PCAP_ERRBUF_SIZE);
+	return (NULL);
+}
+
+#endif /* ENABLE_REMOTE */

@@ -38,13 +38,8 @@
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
-#endif
-#include <sys/time.h>				/* concession to AIX */
 
-struct mbuf;		/* Squelch compiler warnings on some platforms for */
-struct rtentry;		/* declarations in <net/if.h> */
 #include <net/if.h>
 #include <netinet/in.h>
 
@@ -79,15 +74,13 @@ int
 pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
     int (*check_usable)(const char *), get_if_flags_func get_flags_func)
 {
-	register int fd4, fd6, fd;
-	register struct lifreq *ifrp, *ifend;
+	int fd4, fd6, fd;
+	struct lifreq *ifrp, *ifend;
 	struct lifnum ifn;
 	struct lifconf ifc;
 	char *buf = NULL;
 	unsigned buf_size;
-#ifdef HAVE_SOLARIS
 	char *p, *q;
-#endif
 	struct lifreq ifrflags, ifrnetmask, ifrbroadaddr, ifrdstaddr;
 	struct sockaddr *netmask, *broadaddr, *dstaddr;
 	int ret = 0;
@@ -132,10 +125,10 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 	 * Allocate a buffer for those entries.
 	 */
 	buf_size = ifn.lifn_count * sizeof (struct lifreq);
-	buf = malloc(buf_size);
+	buf = calloc(1, buf_size);
 	if (buf == NULL) {
 		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "malloc");
+		    errno, "calloc");
 		(void)close(fd6);
 		(void)close(fd4);
 		return (-1);
@@ -148,7 +141,6 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 	ifc.lifc_buf = buf;
 	ifc.lifc_family = AF_UNSPEC;
 	ifc.lifc_flags = 0;
-	memset(buf, 0, buf_size);
 	if (ioctl(fd4, SIOCGLIFCONF, (char *)&ifc) < 0) {
 		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "SIOCGLIFCONF");
@@ -165,14 +157,6 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 	ifend = (struct lifreq *)(buf + ifc.lifc_len);
 
 	for (; ifrp < ifend; ifrp++) {
-		/*
-		 * Skip entries that begin with "dummy".
-		 * XXX - what are these?  Is this Linux-specific?
-		 * Are there platforms on which we shouldn't do this?
-		 */
-		if (strncmp(ifrp->lifr_name, "dummy", 5) == 0)
-			continue;
-
 		/*
 		 * Can we capture on this device?
 		 */
@@ -194,7 +178,7 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		/*
 		 * Get the flags for this interface.
 		 */
-		strncpy(ifrflags.lifr_name, ifrp->lifr_name,
+		pcapint_strlcpy(ifrflags.lifr_name, ifrp->lifr_name,
 		    sizeof(ifrflags.lifr_name));
 		if (ioctl(fd, SIOCGLIFFLAGS, (char *)&ifrflags) < 0) {
 			if (errno == ENXIO)
@@ -210,7 +194,7 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		/*
 		 * Get the netmask for this address on this interface.
 		 */
-		strncpy(ifrnetmask.lifr_name, ifrp->lifr_name,
+		pcapint_strlcpy(ifrnetmask.lifr_name, ifrp->lifr_name,
 		    sizeof(ifrnetmask.lifr_name));
 		memcpy(&ifrnetmask.lifr_addr, &ifrp->lifr_addr,
 		    sizeof(ifrnetmask.lifr_addr));
@@ -237,7 +221,7 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		 * interface (if any).
 		 */
 		if (ifrflags.lifr_flags & IFF_BROADCAST) {
-			strncpy(ifrbroadaddr.lifr_name, ifrp->lifr_name,
+			pcapint_strlcpy(ifrbroadaddr.lifr_name, ifrp->lifr_name,
 			    sizeof(ifrbroadaddr.lifr_name));
 			memcpy(&ifrbroadaddr.lifr_addr, &ifrp->lifr_addr,
 			    sizeof(ifrbroadaddr.lifr_addr));
@@ -272,7 +256,7 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		 * interface (if any).
 		 */
 		if (ifrflags.lifr_flags & IFF_POINTOPOINT) {
-			strncpy(ifrdstaddr.lifr_name, ifrp->lifr_name,
+			pcapint_strlcpy(ifrdstaddr.lifr_name, ifrp->lifr_name,
 			    sizeof(ifrdstaddr.lifr_name));
 			memcpy(&ifrdstaddr.lifr_addr, &ifrp->lifr_addr,
 			    sizeof(ifrdstaddr.lifr_addr));
@@ -297,7 +281,6 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		} else
 			dstaddr = NULL;
 
-#ifdef HAVE_SOLARIS
 		/*
 		 * If this entry has a colon followed by a number at
 		 * the end, it's a logical interface.  Those are just
@@ -323,7 +306,6 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 				*p = '\0';
 			}
 		}
-#endif
 
 		/*
 		 * Add information for this address to the list.

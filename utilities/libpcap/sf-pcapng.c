@@ -292,8 +292,8 @@ read_block(FILE *fp, pcap_t *p, struct block_cursor *cursor, char *errbuf)
 		return (status);	/* error or EOF */
 
 	if (p->swapped) {
-		bhdr.block_type = SWAPLONG(bhdr.block_type);
-		bhdr.total_length = SWAPLONG(bhdr.total_length);
+		bhdr.block_type = PCAP_BSWAP_32(bhdr.block_type);
+		bhdr.total_length = PCAP_BSWAP_32(bhdr.total_length);
 	}
 
 	/*
@@ -350,7 +350,7 @@ read_block(FILE *fp, pcap_t *p, struct block_cursor *cursor, char *errbuf)
 	 * of the block.
 	 */
 	memcpy(p->buffer, &bhdr, sizeof(bhdr));
-	bdata = (u_char *)p->buffer + sizeof(bhdr);
+	bdata = p->buffer + sizeof(bhdr);
 	data_remaining = bhdr.total_length - sizeof(bhdr);
 	if (read_bytes(fp, bdata, data_remaining, 1, errbuf) == -1)
 		return (-1);
@@ -360,7 +360,7 @@ read_block(FILE *fp, pcap_t *p, struct block_cursor *cursor, char *errbuf)
 	 */
 	btrlr = (struct block_trailer *)(bdata + data_remaining - sizeof (struct block_trailer));
 	if (p->swapped)
-		btrlr->total_length = SWAPLONG(btrlr->total_length);
+		btrlr->total_length = PCAP_BSWAP_32(btrlr->total_length);
 
 	/*
 	 * Is the total length from the trailer the same as the total
@@ -371,7 +371,8 @@ read_block(FILE *fp, pcap_t *p, struct block_cursor *cursor, char *errbuf)
 		 * No.
 		 */
 		snprintf(errbuf, PCAP_ERRBUF_SIZE,
-		    "block total length in header and trailer don't match");
+		    "block total length in header %u and trailer %u don't match",
+		    bhdr.total_length, btrlr->total_length);
 		return (-1);
 	}
 
@@ -427,8 +428,8 @@ get_opthdr_from_block_data(pcap_t *p, struct block_cursor *cursor, char *errbuf)
 	 * Byte-swap it if necessary.
 	 */
 	if (p->swapped) {
-		opthdr->option_code = SWAPSHORT(opthdr->option_code);
-		opthdr->option_length = SWAPSHORT(opthdr->option_length);
+		opthdr->option_code = PCAP_BSWAP_16(opthdr->option_code);
+		opthdr->option_length = PCAP_BSWAP_16(opthdr->option_length);
 	}
 
 	return (opthdr);
@@ -575,7 +576,7 @@ process_idb_options(pcap_t *p, struct block_cursor *cursor, uint64_t *tsresol,
 			saw_tsoffset = 1;
 			memcpy(tsoffset, optvalue, sizeof(*tsoffset));
 			if (p->swapped)
-				*tsoffset = SWAPLL(*tsoffset);
+				*tsoffset = PCAP_BSWAP_64(*tsoffset);
 			break;
 
 		default:
@@ -846,7 +847,7 @@ pcap_ng_check_header(const uint8_t *magic, FILE *fp, u_int precision,
 		return (NULL);
 	}
 	if (byte_order_magic != BYTE_ORDER_MAGIC) {
-		byte_order_magic = SWAPLONG(byte_order_magic);
+		byte_order_magic = PCAP_BSWAP_32(byte_order_magic);
 		if (byte_order_magic != BYTE_ORDER_MAGIC) {
 			/*
 			 * Not a pcapng file.
@@ -854,7 +855,7 @@ pcap_ng_check_header(const uint8_t *magic, FILE *fp, u_int precision,
 			return (NULL);
 		}
 		swapped = 1;
-		total_length = SWAPLONG(total_length);
+		total_length = PCAP_BSWAP_32(total_length);
 	}
 
 	/*
@@ -941,12 +942,12 @@ pcap_ng_check_header(const uint8_t *magic, FILE *fp, u_int precision,
 	 * of the SHB.
 	 */
 	bhdrp = (struct block_header *)p->buffer;
-	shbp = (struct section_header_block *)((u_char *)p->buffer + sizeof(struct block_header));
+	shbp = (struct section_header_block *)(p->buffer + sizeof(struct block_header));
 	bhdrp->block_type = magic_int;
 	bhdrp->total_length = total_length;
 	shbp->byte_order_magic = byte_order_magic;
 	if (read_bytes(fp,
-	    (u_char *)p->buffer + (sizeof(magic_int) + sizeof(total_length) + sizeof(byte_order_magic)),
+	    p->buffer + (sizeof(magic_int) + sizeof(total_length) + sizeof(byte_order_magic)),
 	    total_length - (sizeof(magic_int) + sizeof(total_length) + sizeof(byte_order_magic)),
 	    1, errbuf) == -1)
 		goto fail;
@@ -955,8 +956,8 @@ pcap_ng_check_header(const uint8_t *magic, FILE *fp, u_int precision,
 		/*
 		 * Byte-swap the fields we've read.
 		 */
-		shbp->major_version = SWAPSHORT(shbp->major_version);
-		shbp->minor_version = SWAPSHORT(shbp->minor_version);
+		shbp->major_version = PCAP_BSWAP_16(shbp->major_version);
+		shbp->minor_version = PCAP_BSWAP_16(shbp->minor_version);
 
 		/*
 		 * XXX - we don't care about the section length.
@@ -1024,8 +1025,8 @@ pcap_ng_check_header(const uint8_t *magic, FILE *fp, u_int precision,
 			 * Byte-swap it if necessary.
 			 */
 			if (p->swapped) {
-				idbp->linktype = SWAPSHORT(idbp->linktype);
-				idbp->snaplen = SWAPLONG(idbp->snaplen);
+				idbp->linktype = PCAP_BSWAP_16(idbp->linktype);
+				idbp->snaplen = PCAP_BSWAP_32(idbp->snaplen);
 			}
 
 			/*
@@ -1142,11 +1143,11 @@ pcap_ng_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 			 */
 			if (p->swapped) {
 				/* these were written in opposite byte order */
-				interface_id = SWAPLONG(epbp->interface_id);
-				hdr->caplen = SWAPLONG(epbp->caplen);
-				hdr->len = SWAPLONG(epbp->len);
-				t = ((uint64_t)SWAPLONG(epbp->timestamp_high)) << 32 |
-				    SWAPLONG(epbp->timestamp_low);
+				interface_id = PCAP_BSWAP_32(epbp->interface_id);
+				hdr->caplen = PCAP_BSWAP_32(epbp->caplen);
+				hdr->len = PCAP_BSWAP_32(epbp->len);
+				t = ((uint64_t)PCAP_BSWAP_32(epbp->timestamp_high)) << 32 |
+				    PCAP_BSWAP_32(epbp->timestamp_low);
 			} else {
 				interface_id = epbp->interface_id;
 				hdr->caplen = epbp->caplen;
@@ -1177,7 +1178,7 @@ pcap_ng_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 			 */
 			if (p->swapped) {
 				/* these were written in opposite byte order */
-				hdr->len = SWAPLONG(spbp->len);
+				hdr->len = PCAP_BSWAP_32(spbp->len);
 			} else
 				hdr->len = spbp->len;
 
@@ -1207,11 +1208,11 @@ pcap_ng_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 			 */
 			if (p->swapped) {
 				/* these were written in opposite byte order */
-				interface_id = SWAPSHORT(pbp->interface_id);
-				hdr->caplen = SWAPLONG(pbp->caplen);
-				hdr->len = SWAPLONG(pbp->len);
-				t = ((uint64_t)SWAPLONG(pbp->timestamp_high)) << 32 |
-				    SWAPLONG(pbp->timestamp_low);
+				interface_id = PCAP_BSWAP_16(pbp->interface_id);
+				hdr->caplen = PCAP_BSWAP_32(pbp->caplen);
+				hdr->len = PCAP_BSWAP_32(pbp->len);
+				t = ((uint64_t)PCAP_BSWAP_32(pbp->timestamp_high)) << 32 |
+				    PCAP_BSWAP_32(pbp->timestamp_low);
 			} else {
 				interface_id = pbp->interface_id;
 				hdr->caplen = pbp->caplen;
@@ -1235,8 +1236,8 @@ pcap_ng_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 			 * Byte-swap it if necessary.
 			 */
 			if (p->swapped) {
-				idbp->linktype = SWAPSHORT(idbp->linktype);
-				idbp->snaplen = SWAPLONG(idbp->snaplen);
+				idbp->linktype = PCAP_BSWAP_16(idbp->linktype);
+				idbp->snaplen = PCAP_BSWAP_32(idbp->snaplen);
 			}
 
 			/*
@@ -1290,9 +1291,9 @@ pcap_ng_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 			 */
 			if (p->swapped) {
 				shbp->byte_order_magic =
-				    SWAPLONG(shbp->byte_order_magic);
+				    PCAP_BSWAP_32(shbp->byte_order_magic);
 				shbp->major_version =
-				    SWAPSHORT(shbp->major_version);
+				    PCAP_BSWAP_16(shbp->major_version);
 			}
 
 			/*
@@ -1308,7 +1309,7 @@ pcap_ng_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 				 */
 				break;
 
-			case SWAPLONG(BYTE_ORDER_MAGIC):
+			case PCAP_BSWAP_32(BYTE_ORDER_MAGIC):
 				/*
 				 * Byte order changes.
 				 */

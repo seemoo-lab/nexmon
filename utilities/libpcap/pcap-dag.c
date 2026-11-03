@@ -9,25 +9,21 @@
 
 #include <config.h>
 
-#include <sys/param.h>			/* optionally get BSD define */
-
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <endian.h>
+#include <limits.h>
+#include <unistd.h>
+#include <stdbool.h>
 
 #include "pcap-int.h"
 
-#include <netinet/in.h>
-#include <sys/mman.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
+#if __BYTE_ORDER == __BIG_ENDIAN
+// Will need PCAP_BSWAP_64().
+#include "pcap-util.h"
+#endif
 
-struct mbuf;		/* Squelch compiler warnings on some platforms for */
-struct rtentry;		/* declarations in <net/if.h> */
-#include <net/if.h>
-
-#include "dagnew.h"
 #include "dagapi.h"
 #include "dagpci.h"
 #include "dag_config_api.h"
@@ -41,103 +37,6 @@ struct rtentry;		/* declarations in <net/if.h> */
  */
 #ifndef DAG_MAX_BOARDS
 #define DAG_MAX_BOARDS 32
-#endif
-
-
-#ifndef ERF_TYPE_AAL5
-#define ERF_TYPE_AAL5               4
-#endif
-
-#ifndef ERF_TYPE_MC_HDLC
-#define ERF_TYPE_MC_HDLC            5
-#endif
-
-#ifndef ERF_TYPE_MC_RAW
-#define ERF_TYPE_MC_RAW             6
-#endif
-
-#ifndef ERF_TYPE_MC_ATM
-#define ERF_TYPE_MC_ATM             7
-#endif
-
-#ifndef ERF_TYPE_MC_RAW_CHANNEL
-#define ERF_TYPE_MC_RAW_CHANNEL     8
-#endif
-
-#ifndef ERF_TYPE_MC_AAL5
-#define ERF_TYPE_MC_AAL5            9
-#endif
-
-#ifndef ERF_TYPE_COLOR_HDLC_POS
-#define ERF_TYPE_COLOR_HDLC_POS     10
-#endif
-
-#ifndef ERF_TYPE_COLOR_ETH
-#define ERF_TYPE_COLOR_ETH          11
-#endif
-
-#ifndef ERF_TYPE_MC_AAL2
-#define ERF_TYPE_MC_AAL2            12
-#endif
-
-#ifndef ERF_TYPE_IP_COUNTER
-#define ERF_TYPE_IP_COUNTER         13
-#endif
-
-#ifndef ERF_TYPE_TCP_FLOW_COUNTER
-#define ERF_TYPE_TCP_FLOW_COUNTER   14
-#endif
-
-#ifndef ERF_TYPE_DSM_COLOR_HDLC_POS
-#define ERF_TYPE_DSM_COLOR_HDLC_POS 15
-#endif
-
-#ifndef ERF_TYPE_DSM_COLOR_ETH
-#define ERF_TYPE_DSM_COLOR_ETH      16
-#endif
-
-#ifndef ERF_TYPE_COLOR_MC_HDLC_POS
-#define ERF_TYPE_COLOR_MC_HDLC_POS  17
-#endif
-
-#ifndef ERF_TYPE_AAL2
-#define ERF_TYPE_AAL2               18
-#endif
-
-#ifndef ERF_TYPE_COLOR_HASH_POS
-#define ERF_TYPE_COLOR_HASH_POS     19
-#endif
-
-#ifndef ERF_TYPE_COLOR_HASH_ETH
-#define ERF_TYPE_COLOR_HASH_ETH     20
-#endif
-
-#ifndef ERF_TYPE_INFINIBAND
-#define ERF_TYPE_INFINIBAND         21
-#endif
-
-#ifndef ERF_TYPE_IPV4
-#define ERF_TYPE_IPV4               22
-#endif
-
-#ifndef ERF_TYPE_IPV6
-#define ERF_TYPE_IPV6               23
-#endif
-
-#ifndef ERF_TYPE_RAW_LINK
-#define ERF_TYPE_RAW_LINK           24
-#endif
-
-#ifndef ERF_TYPE_INFINIBAND_LINK
-#define ERF_TYPE_INFINIBAND_LINK    25
-#endif
-
-#ifndef ERF_TYPE_META
-#define ERF_TYPE_META               27
-#endif
-
-#ifndef ERF_TYPE_PAD
-#define ERF_TYPE_PAD                48
 #endif
 
 #define ATM_CELL_SIZE		52
@@ -171,16 +70,28 @@ struct pcap_dag {
 	u_char	*dag_mem_top;	/* DAG card current memory top pointer */
 	int	dag_fcs_bits;	/* Number of checksum bits from link layer */
 	int	dag_flags;	/* Flags */
-	int	dag_stream;	/* DAG stream number */
+	int	dag_devnum;	/* This is the N in "dagN" or "dagN:M". */
+	int	dag_stream;	/* And this is the M. */
 	int	dag_timeout;	/* timeout specified to pcap_open_live.
 				 * Same as in linux above, introduce
 				 * generally? */
 	dag_card_ref_t dag_ref; /* DAG Configuration/Status API card reference */
 	dag_component_t dag_root;	/* DAG CSAPI Root component */
 	attr_uuid_t drop_attr;  /* DAG Stream Drop Attribute handle, if available */
+	uint64_t drop_base;	// Rx stream drop counter initial value.
 	struct timeval required_select_timeout;
 				/* Timeout caller must use in event loops */
+	uint8_t	tx_iface;	// Tx interface number
+	uint8_t tx_align_bytes;	/* If necessary, add trailing padding to an
+				 * ERF record to make it a multiple of this
+				 * many bytes long.  DAG API calls this "ERF
+				 * record alignment". */
+	uint8_t terf_fcs_bytes;	// How many FCS bytes TERF is expecting.
 };
+
+#define ALIGN_BYTES_DEFAULT 8
+#define ALIGN_BYTES_9_2 16
+#define ALIGN_BYTES_MAX ALIGN_BYTES_9_2
 
 typedef struct pcap_dag_node {
 	struct pcap_dag_node *next;
@@ -190,25 +101,73 @@ typedef struct pcap_dag_node {
 
 static pcap_dag_node_t *pcap_dags = NULL;
 static int atexit_handler_installed = 0;
-static const unsigned short endian_test_word = 0x0100;
-
-#define IS_BIGENDIAN() (*((unsigned char *)&endian_test_word))
 
 #define MAX_DAG_PACKET 65536
 
 static unsigned char TempPkt[MAX_DAG_PACKET];
 
-#ifndef HAVE_DAG_LARGE_STREAMS_API
-#define dag_attach_stream64(a, b, c, d) dag_attach_stream(a, b, c, d)
-#define dag_get_stream_poll64(a, b, c, d, e) dag_get_stream_poll(a, b, c, d, e)
-#define dag_set_stream_poll64(a, b, c, d, e) dag_set_stream_poll(a, b, c, d, e)
-#define dag_size_t uint32_t
-#endif
+#define TX_ONLY(stream) ((stream) % 2)
+#define RX_ONLY(stream) (! TX_ONLY(stream))
+#define RXTX_STR(stream) (TX_ONLY(stream) ? "Tx" : "Rx")
 
 static int dag_stats(pcap_t *p, struct pcap_stat *ps);
 static int dag_set_datalink(pcap_t *p, int dlt);
 static int dag_get_datalink(pcap_t *p);
 static int dag_setnonblock(pcap_t *p, int nonblock);
+
+// Environment variables that can control behaviour of this libpcap module.
+#define ENV_RX_FCS_BITS "ERF_FCS_BITS"
+#define ENV_RX_FCS_NOSTRIP "ERF_DONT_STRIP_FCS"
+#define ENV_TX_IFACE "ERF_TX_INTERFACE"
+
+/*
+ * Convert the return value of getenv() to an unsigned integer in the
+ * range [0, UINT_MAX].
+ *
+ * If the environment variable is not set or is empty, set *val to the default
+ * value supplied as an argument and return true.
+ *
+ * Otherwise, on success, return true and set *val to the parsed value, and, on
+ * error, return false.
+ */
+static bool
+get_decuint_from_env(const char *envname, unsigned *val,
+    const unsigned defaultval, char *errbuf)
+{
+	const char *env;
+
+	env = getenv(envname);
+	if (env == NULL || *env == '\0') {
+		/*
+		 * The environment variable isn't set or is set to an
+		 * empty value; use the default.
+		 */
+		*val = defaultval;
+	} else {
+		/* Parse the environment variable. */
+		int ret;
+
+		ret = pcapint_get_decuint(env, NULL, val);
+		if (ret != 0) {
+			if (ret == EINVAL) {
+				snprintf(errbuf, PCAP_ERRBUF_SIZE,
+				    "invalid %s value: \"%s\" is not a valid unsigned number",
+				    envname, env);
+			} else if (ret == ERANGE) {
+				snprintf(errbuf, PCAP_ERRBUF_SIZE,
+				    "invalid %s value: \"%s\" is too large",
+				    envname, env);
+			} else {
+				pcapint_fmt_errmsg_for_errno(errbuf,
+				    PCAP_ERRBUF_SIZE, ret,
+				    "invalid %s value: \"%s\" can't be parsed",
+				    envname, env);
+			}
+			return false;
+		}
+	}
+	return true;
+}
 
 static void
 delete_pcap_dag(const pcap_t *p)
@@ -237,6 +196,15 @@ static void
 dag_platform_cleanup(pcap_t *p)
 {
 	struct pcap_dag *pd = p->priv;
+
+	/*
+	 * Before stopping a Tx stream wait until the stream buffer has been
+	 * drained, otherwise packets that have been buffered but have not yet
+	 * been transmitted will be lost.
+	 */
+	if (TX_ONLY(pd->dag_stream))
+		while (dag_get_stream_buffer_level64(p->fd, pd->dag_stream) > 0)
+			usleep (10000);
 
 	if(dag_stop_stream(p->fd, pd->dag_stream) < 0)
 		fprintf(stderr,"dag_stop_stream: %s\n", strerror(errno));
@@ -309,7 +277,7 @@ dag_erf_ext_header_count(const uint8_t *erf, size_t len)
 		return 0;
 
 	/* check if we have any extension headers */
-	if ( (erf[8] & 0x80) == 0x00 )
+	if (! (erf[8] & ERF_TYPE_MORE_EXT))
 		return 0;
 
 	/* loop over the extension headers */
@@ -323,21 +291,69 @@ dag_erf_ext_header_count(const uint8_t *erf, size_t len)
 		hdr_type = erf[(16 + (hdr_num * 8))];
 		hdr_num++;
 
-	} while ( hdr_type & 0x80 );
+	} while (hdr_type & ERF_TYPE_MORE_EXT);
 
 	return hdr_num;
 }
 
+static int
+dag_rxtx_mismatch(const char *func, pcap_t *p)
+{
+	const struct pcap_dag *pd = p->priv;
+
+	snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "%s: device %s is %s-only",
+	    func,
+	    p->opt.device,
+	    RXTX_STR(pd->dag_stream));
+	return PCAP_ERROR;
+}
+
+static int
+dag_read_notimpl(pcap_t *p, int cnt _U_, pcap_handler callback _U_, u_char *user _U_)
+{
+	return dag_rxtx_mismatch(__func__, p);
+}
+
+static int
+dag_getnonblock_fd_notimpl(pcap_t *p)
+{
+	return dag_rxtx_mismatch(__func__, p);
+}
+
+static int
+dag_stats_notimpl(pcap_t *p, struct pcap_stat *ps _U_)
+{
+	return dag_rxtx_mismatch(__func__, p);
+}
+
+static int
+dag_setnonblock_notimpl(pcap_t *p, int nonblock _U_)
+{
+	return dag_rxtx_mismatch( __func__, p);
+}
+
+static int
+dag_inject_notimpl(pcap_t *p, const void *buf _U_, int size _U_)
+{
+	return dag_rxtx_mismatch(__func__, p);
+}
+
+static int
+dag_install_bpf_program_notimpl(pcap_t *p, struct bpf_program *fp _U_)
+{
+	return dag_rxtx_mismatch(__func__, p);
+}
+
 /*
  *  Read at most max_packets from the capture stream and call the callback
- *  for each of them. Returns the number of packets handled, -1 if an
- *  error occurred, or -2 if we were told to break out of the loop.
+ *  for each of them. Returns the number of packets handled, PCAP_ERROR if an
+ *  error occurred, or PCAP_ERROR_BREAK if we were told to break out of the loop.
  */
 static int
 dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 {
 	struct pcap_dag *pd = p->priv;
-	unsigned int processed = 0;
+	int processed = 0;
 	unsigned int nonblocking = pd->dag_flags & DAGF_NONBLOCK;
 	unsigned int num_ext_hdr = 0;
 	unsigned int ticks_per_second;
@@ -351,11 +367,11 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		if (p->break_loop) {
 			/*
 			 * Yes - clear the flag that indicates that
-			 * it has, and return -2 to indicate that
+			 * it has, and return PCAP_ERROR_BREAK to indicate that
 			 * we were told to break out of the loop.
 			 */
 			p->break_loop = 0;
-			return -2;
+			return PCAP_ERROR_BREAK;
 		}
 
 		/* dag_advance_stream() will block (unless nonblock is called)
@@ -370,7 +386,7 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		 * is then responsible for efficiency.
 		 */
 		if ( NULL == (pd->dag_mem_top = dag_advance_stream(p->fd, pd->dag_stream, &(pd->dag_mem_bottom))) ) {
-		     return -1;
+		     return PCAP_ERROR;
 		}
 
 		if (nonblocking && (pd->dag_mem_top - pd->dag_mem_bottom < dag_record_size))
@@ -412,24 +428,26 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		if (p->break_loop) {
 			/*
 			 * Yes - clear the flag that indicates that
-			 * it has, and return -2 to indicate that
+			 * it has, and return PCAP_ERROR_BREAK to indicate that
 			 * we were told to break out of the loop.
 			 */
 			p->break_loop = 0;
-			return -2;
+			return PCAP_ERROR_BREAK;
 		}
 
 		rlen = ntohs(header->rlen);
 		if (rlen < dag_record_size)
 		{
-			pcapint_strlcpy(p->errbuf, "dag_read: record too small",
-			    PCAP_ERRBUF_SIZE);
-			return -1;
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "%s: record too small", __func__);
+			return PCAP_ERROR;
 		}
 		pd->dag_mem_bottom += rlen;
 
+		uint8_t erf_type = header->type & ERF_TYPE_MASK;
+
 		/* Count lost packets. */
-		switch((header->type & 0x7f)) {
+		switch(erf_type) {
 			/* in these types the color value overwrites the lctr */
 		case ERF_TYPE_COLOR_HDLC_POS:
 		case ERF_TYPE_COLOR_ETH:
@@ -446,7 +464,7 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 			}
 		}
 
-		if ((header->type & 0x7f) == ERF_TYPE_PAD) {
+		if (erf_type == ERF_TYPE_PAD) {
 			continue;
 		}
 
@@ -469,7 +487,7 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		if (p->linktype == DLT_ERF) {
 			packet_len = ntohs(header->wlen) + dag_record_size;
 			caplen = rlen;
-			switch ((header->type & 0x7f)) {
+			switch (erf_type) {
 			case ERF_TYPE_MC_AAL5:
 			case ERF_TYPE_MC_ATM:
 			case ERF_TYPE_MC_HDLC:
@@ -502,20 +520,22 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 			/* Skip over extension headers */
 			dp += 8 * num_ext_hdr;
 
-			switch((header->type & 0x7f)) {
+			switch(erf_type) {
 			case ERF_TYPE_ATM:
 			case ERF_TYPE_AAL5:
-				if ((header->type & 0x7f) == ERF_TYPE_AAL5) {
+				if (erf_type == ERF_TYPE_AAL5) {
 					packet_len = ntohs(header->wlen);
 					caplen = rlen - dag_record_size;
 				}
+				/* FALLTHROUGH */
 			case ERF_TYPE_MC_ATM:
-				if ((header->type & 0x7f) == ERF_TYPE_MC_ATM) {
+				if (erf_type == ERF_TYPE_MC_ATM) {
 					caplen = packet_len = ATM_CELL_SIZE;
 					dp+=4;
 				}
+				/* FALLTHROUGH */
 			case ERF_TYPE_MC_AAL5:
-				if ((header->type & 0x7f) == ERF_TYPE_MC_AAL5) {
+				if (erf_type == ERF_TYPE_MC_AAL5) {
 					packet_len = ntohs(header->wlen);
 					caplen = rlen - dag_record_size - 4;
 					dp+=4;
@@ -523,14 +543,14 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 				/* Skip over extension headers */
 				caplen -= (8 * num_ext_hdr);
 
-				if ((header->type & 0x7f) == ERF_TYPE_ATM) {
+				if (erf_type == ERF_TYPE_ATM) {
 					caplen = packet_len = ATM_CELL_SIZE;
 				}
 				if (p->linktype == DLT_SUNATM) {
 					struct sunatm_hdr *sunatm = (struct sunatm_hdr *)dp;
 					unsigned long rawatm;
 
-					rawatm = ntohl(*((unsigned long *)dp));
+					rawatm = ntohl(*((uint32_t *)dp));
 					sunatm->vci = htons((rawatm >>  4) & 0xffff);
 					sunatm->vpi = (rawatm >> 20) & 0x00ff;
 					sunatm->flags = ((header->flags.iface & 1) ? 0x80 : 0x00) |
@@ -603,7 +623,6 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 				}
 				/* jump the MC_HDLC_HEADER */
 				dp += 4;
-#ifdef DLT_MTP2_WITH_PHDR
 				if (p->linktype == DLT_MTP2_WITH_PHDR) {
 					/* Add the MTP2 Pseudo Header */
 					caplen += MTP2_HDR_LEN;
@@ -616,7 +635,6 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 					memcpy(TempPkt+MTP2_HDR_LEN, dp, caplen);
 					dp = TempPkt;
 				}
-#endif
 				break;
 
 			case ERF_TYPE_IPV4:
@@ -677,13 +695,13 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		    pcapint_filter(p->fcode.bf_insns, p->fcode.bf_len,
 		                   dp, packet_len, caplen)) {
 			/* convert between timestamp formats */
-			register unsigned long long ts;
+			unsigned long long ts;
 
-			if (IS_BIGENDIAN()) {
-				ts = SWAPLL(header->ts);
-			} else {
-				ts = header->ts;
-			}
+#if __BYTE_ORDER == __BIG_ENDIAN
+			ts = PCAP_BSWAP_64(header->ts);
+#else
+			ts = header->ts;
+#endif // __BYTE_ORDER
 
 			switch (p->opt.tstamp_precision) {
 			case PCAP_TSTAMP_PRECISION_NANO:
@@ -727,75 +745,247 @@ dag_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 	return processed;
 }
 
+/*
+ * The minimum number of bytes in a valid Ethernet packet from the beginning
+ * of the destination MAC address to the end of the payload, as far as DAG
+ * TERF and IEEE 802.3 are concerned.
+ */
+#define ETH_MINLEN_NOFCS 60
+
+// ...and the maximum, as far as DAG TERF is concerned.
+#define ETH_MAXLEN_NOFCS 9596
+
+/*
+ * The minimum number of bytes in a valid Ethernet header: the destination and
+ * the source MAC addresses, the EtherType.  (This does not take 802.1Q or
+ * Q-in-Q into account.)
+ */
+#define ETH_MINLEN_HDRONLY 14
+
+// Zero padding source (a bit oversized for ERF_TYPE_ETH purposes).
+static const uint8_t tx_pad[ETH_MINLEN_NOFCS + 4 + ALIGN_BYTES_MAX];
+
+/*
+ * Take an Ethernet frame, build an ERF record around it and feed the record
+ * into the [Tx-only] DAG stream.  The frame must not include FCS, which is
+ * usually the case for DLT_EN10MB in libpcap.
+ */
 static int
-dag_inject(pcap_t *p, const void *buf _U_, int size _U_)
+dag_inject(pcap_t *p, const void *packet, const int plen)
 {
-	pcapint_strlcpy(p->errbuf, "Sending packets isn't supported on DAG cards",
-	    PCAP_ERRBUF_SIZE);
-	return (-1);
+	struct pcap_dag *pd = p->priv;
+
+	if (plen <= ETH_MINLEN_HDRONLY || plen > ETH_MAXLEN_NOFCS) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "invalid packet size %d", plen);
+		return PCAP_ERROR;
+	}
+
+	/*
+	 * sizeof(struct dag_record_t) cannot be used because it is much
+	 * greater than the specific ERF header in this buffer.
+	 */
+	const dag_size_t hlen = dag_record_size + 2;
+	/*
+	 * Some DAG hardware (e.g. 7.5G2) automatically pads outgoing Ethernet
+	 * frames that are shorter than the minimum length to make them long
+	 * enough.  Other DAG hardware (e.g. 9.2X2) rejects such frames.  Pad
+	 * the frame here if necessary and remove this difference from the
+	 * problem space.
+	 *
+	 * If the TERF is expecting Ethernet frames to have a non-zero number
+	 * of FCS bytes (typically in order to strip the FCS correctly before
+	 * further processing), append a dummy zero FCS of the expected size.
+	 */
+	const unsigned eth_pad_len = ETH_MINLEN_NOFCS
+	    - min(plen, ETH_MINLEN_NOFCS) + pd->terf_fcs_bytes;
+	const unsigned rlen = hlen + plen + eth_pad_len;
+	const unsigned erf_pad_len = rlen % pd->tx_align_bytes ?
+	    pd->tx_align_bytes - rlen % pd->tx_align_bytes :
+	    0;
+	dag_record_t header = {
+		.type = ERF_TYPE_ETH,
+		.flags.vlen = 1,
+		.rlen = htons(rlen + erf_pad_len),
+		.wlen = htons(plen + eth_pad_len),
+		// Silence a -Wmissing-field-initializers from old GCC.
+		.rec.eth = {0},
+	};
+	DAG_ERF_SET_IFACE(&header, pd->tx_iface);
+
+	/*
+	 * It is fine to feed less data than a complete ERF record at a time so
+	 * long as a complete and well-formed ERF record eventually makes it
+	 * into the buffer.  This simplifies the process when different parts
+	 * of the ERF record come from different memory locations.
+	 */
+	if (dag_tx_stream_copy_bytes64(p->fd, pd->dag_stream, (uint8_t *)&header, hlen) < 0 ||
+	    dag_tx_stream_copy_bytes64(p->fd, pd->dag_stream, (uint8_t *)packet, plen) < 0)
+		goto fail;
+	/*
+	 * Possibly pad to the minimum packet length and/or append a dummy FCS
+	 * and/or pad to the next multiple of the detected alignment unit.
+	 */
+	const unsigned pad_len = eth_pad_len + erf_pad_len;
+	if (pad_len &&
+	    dag_tx_stream_copy_bytes64(p->fd, pd->dag_stream, (uint8_t *)tx_pad, pad_len) < 0)
+		goto fail;
+	return plen;
+
+fail:
+	pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
+	    errno, "dag_tx_stream_copy_bytes64 %s", p->opt.device);
+	return PCAP_ERROR;
+}
+
+static int
+dag_activate_tx(pcap_t *p)
+{
+	struct pcap_dag *pd = p->priv;
+
+	uint32_t iface;
+	if (!get_decuint_from_env(ENV_TX_IFACE, &iface, 0, p->errbuf))
+		return PCAP_ERROR;
+	uint32_t ifcount = dag_config_get_interface_count(pd->dag_ref);
+	if (iface >= ifcount) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "invalid %s value %u: this card has %u interface(s)",
+		    ENV_TX_IFACE, iface, ifcount);
+		return PCAP_ERROR;
+	}
+	if (iface > UINT8_MAX) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "invalid %s value: %u is too large (> %u)",
+		    ENV_TX_IFACE, iface, UINT8_MAX);
+	}
+	pd->tx_iface = (uint8_t)iface;
+
+	const dag_card_inf_t *inf = dag_pciinfo(p->fd);
+	if (! inf) {
+		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
+		    errno, "dag_pciinfo");
+		return PCAP_ERROR;
+	}
+
+	if (inf->device_code == PCI_DEVICE_ID_VDAG) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "vDAG Tx streams are not supported");
+		return PCAP_ERROR;
+	}
+
+	// Determine the correct alignment/padding size for the card.
+	switch(inf->device_code) {
+	case PCI_DEVICE_ID_DAG9_2X2:
+	case PCI_DEVICE_ID_DAG9_2SX2:
+		pd->tx_align_bytes = ALIGN_BYTES_9_2;
+		break;
+	default:
+		pd->tx_align_bytes = ALIGN_BYTES_DEFAULT;
+	}
+
+	// Read the TERF FCS size for later use by dag_inject().
+	dag_component_t cfg_comp = dag_component_get_subcomponent(
+	    pd->dag_root, kComponentTerf, 0);
+	if (! cfg_comp) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "%s: dag_component_get_subcomponent",
+		    __func__);
+		return PCAP_ERROR;
+	}
+
+	attr_uuid_t cfg_uuid = dag_component_get_config_attribute_uuid(
+	    cfg_comp, kUint32AttributeTerfStripCrc);
+	if (cfg_uuid == kNullAttributeUuid) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "%s: dag_component_get_config_attribute_uuid",
+		    __func__);
+		return PCAP_ERROR;
+	}
+
+	uint32_t cfg_uint32;
+	dag_err_t cfg_err = dag_config_get_uint32_attribute_ex(pd->dag_ref,
+	    cfg_uuid, &cfg_uint32);
+	if (cfg_err != kDagErrNone) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "%s: dag_config_get_uint32_attribute_ex",
+		    __func__);
+		return PCAP_ERROR;
+	}
+
+	switch (cfg_uint32) {
+	case kTerfNoStrip:
+		pd->terf_fcs_bytes = 0;
+		break;
+	case kTerfStrip16:
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "TERF FCS is configured to 16 bits, is this Ethernet?");
+		return PCAP_ERROR;
+	case kTerfStrip32:
+		pd->terf_fcs_bytes = 4;
+		break;
+	default:
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "failed reading TERF FCS configuration");
+		return PCAP_ERROR;
+	}
+
+	/*
+	 * TODO: It would be nice to verify that the Tx port is
+	 * configured for 32-bit Tx FCS, but it is not trivial to
+	 * tell the exact subcomponent that has the attribute.
+	 */
+
+	return 0;
 }
 
 /*
- *  Get a handle for a live capture from the given DAG device.  Passing a NULL
- *  device will result in a failure.  The promisc flag is ignored because DAG
- *  cards are always promiscuous.  The to_ms parameter is used in setting the
- *  API polling parameters.
- *
- *  snaplen is now also ignored, until we get per-stream slen support. Set
- *  slen with appropriate DAG tool BEFORE pcap_activate().
+ *  Get a handle for a live capture from the given DAG device.  The promisc
+ *  flag is ignored because DAG cards are always promiscuous.  The to_ms
+ *  parameter is used in setting the API polling parameters.
  *
  *  See also pcap(3).
  */
 static int dag_activate(pcap_t* p)
 {
 	struct pcap_dag *pd = p->priv;
-	char *s;
-	int n;
-	daginf_t* daginf;
-	char * newDev = NULL;
 	char * device = p->opt.device;
 	int ret;
 	dag_size_t mindata;
 	struct timeval maxwait;
 	struct timeval poll;
 
-	if (device == NULL) {
-		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "device is NULL");
-		return PCAP_ERROR;
-	}
-
-	/* Initialize some components of the pcap structure. */
-	newDev = (char *)malloc(strlen(device) + 16);
-	if (newDev == NULL) {
-		ret = PCAP_ERROR;
-		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "Can't allocate string for device name");
+	/*
+	 * dag_create() has validated the device name syntax and stored the
+	 * parsed device and stream numbers to p->priv.  Validate these values
+	 * semantically.
+	 */
+	if (pd->dag_devnum >= DAG_MAX_BOARDS) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "DAG device number %d is too large", pd->dag_devnum);
+		ret = PCAP_ERROR_NO_SUCH_DEVICE;
 		goto fail;
 	}
-
-	/* Parse input name to get dag device and stream number if provided */
-	if (dag_parse_name(device, newDev, strlen(device) + 16, &pd->dag_stream) < 0) {
+	if (pd->dag_stream >= DAG_STREAM_MAX) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "DAG stream number %d is too large", pd->dag_stream);
+		ret = PCAP_ERROR_NO_SUCH_DEVICE;
+		goto fail;
+	}
+#ifndef ENABLE_DAG_TX
+	if (TX_ONLY(pd->dag_stream)) {
 		/*
-		 * XXX - it'd be nice if this indicated what was wrong
-		 * with the name.  Does this reliably set errno?
-		 * Should this return PCAP_ERROR_NO_SUCH_DEVICE in some
-		 * cases?
+		 * dag_findalldevs() does not return any Tx streams, so
+		 * PCAP_ERROR_NO_SUCH_DEVICE is more consistent than
+		 * PCAP_ERROR_CAPTURE_NOTSUP.
 		 */
-		ret = PCAP_ERROR;
-		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "dag_parse_name");
+		ret = PCAP_ERROR_NO_SUCH_DEVICE;
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "%s: tx (odd numbered) streams not supported for capture", __func__);
 		goto fail;
 	}
-	device = newDev;
-
-	if (pd->dag_stream%2) {
-		ret = PCAP_ERROR;
-		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "dag_parse_name: tx (even numbered) streams not supported for capture");
-		goto fail;
-	}
+#endif // ENABLE_DAG_TX
 
 	/* setup device parameters */
-	if((pd->dag_ref = dag_config_init((char *)device)) == NULL) {
+	if((pd->dag_ref = dag_config_init(device)) == NULL) {
 		/*
 		 * XXX - does this reliably set errno?
 		 */
@@ -831,9 +1021,27 @@ static int dag_activate(pcap_t* p)
 
 	/* Open requested stream. Can fail if already locked or on error */
 	if (dag_attach_stream64(p->fd, pd->dag_stream, 0, 0) < 0) {
+		if (errno == ENOMEM) {
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "dag%u has no memory allocated to %s stream %u",
+			    pd->dag_devnum, RXTX_STR(pd->dag_stream), pd->dag_stream);
+			/*
+			 * dag_findalldevs() does not return streams that do
+			 * not have buffer memory, so PCAP_ERROR_NO_SUCH_DEVICE
+			 * is more consistent than PCAP_ERROR_CAPTURE_NOTSUP.
+			 */
+			ret = PCAP_ERROR_NO_SUCH_DEVICE;
+			goto failclose;
+		} else if (errno == EINVAL) {
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "dag%u has no %s stream %u",
+			    pd->dag_devnum, RXTX_STR(pd->dag_stream), pd->dag_stream);
+			ret = PCAP_ERROR_NO_SUCH_DEVICE;
+			goto failclose;
+		}
 		ret = PCAP_ERROR;
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "dag_attach_stream");
+		    errno, "dag_attach_stream64");
 		goto failclose;
 	}
 
@@ -842,7 +1050,10 @@ static int dag_activate(pcap_t* p)
 	pd->dag_root = dag_config_get_root_component(pd->dag_ref);
 	if ( dag_component_get_subcomponent(pd->dag_root, kComponentStreamFeatures, 0) )
 	{
-		pd->drop_attr = dag_config_get_indexed_attribute_uuid(pd->dag_ref, kUint32AttributeStreamDropCount, pd->dag_stream/2);
+		pd->drop_attr = dag_config_get_indexed_attribute_uuid(pd->dag_ref, kUint32AttributeStreamDropCount, pd->dag_stream);
+		if (pd->drop_attr != kNullAttributeUuid)
+			pd->drop_base = dag_config_get_uint64_attribute(
+			    pd->dag_ref, pd->drop_attr);
 	}
 
 	/* Set up default poll parameters for stream
@@ -852,7 +1063,7 @@ static int dag_activate(pcap_t* p)
 				&mindata, &maxwait, &poll) < 0) {
 		ret = PCAP_ERROR;
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "dag_get_stream_poll");
+		    errno, "dag_get_stream_poll64");
 		goto faildetach;
 	}
 
@@ -897,25 +1108,9 @@ static int dag_activate(pcap_t* p)
 				mindata, &maxwait, &poll) < 0) {
 		ret = PCAP_ERROR;
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "dag_set_stream_poll");
+		    errno, "dag_set_stream_poll64");
 		goto faildetach;
 	}
-
-        /* XXX Not calling dag_configure() to set slen; this is unsafe in
-	 * multi-stream environments as the gpp config is global.
-         * Once the firmware provides 'per-stream slen' this can be supported
-	 * again via the Config API without side-effects */
-#if 0
-	/* set the card snap length to the specified snaplen parameter */
-	/* This is a really bad idea, as different cards have different
-	 * valid slen ranges. Should fix in Config API. */
-	if (p->snapshot == 0 || p->snapshot > MAX_DAG_SNAPLEN) {
-		p->snapshot = MAX_DAG_SNAPLEN;
-	} else if (snaplen < MIN_DAG_SNAPLEN) {
-		p->snapshot = MIN_DAG_SNAPLEN;
-	}
-	/* snap len has to be a multiple of 4 */
-#endif
 
 	if(dag_start_stream(p->fd, pd->dag_stream) < 0) {
 		ret = PCAP_ERROR;
@@ -932,51 +1127,63 @@ static int dag_activate(pcap_t* p)
 	pd->dag_mem_bottom = 0;
 	pd->dag_mem_top = 0;
 
+	unsigned n;
 	/*
 	 * Find out how many FCS bits we should strip.
-	 * First, query the card to see if it strips the FCS.
+	 * Assume Rx FCS length to be 32 bits unless the user has
+	 * requested a different value, in which case validate it well.
 	 */
-	daginf = dag_info(p->fd);
-	if ((0x4200 == daginf->device_code) || (0x4230 == daginf->device_code))	{
-		/* DAG 4.2S and 4.23S already strip the FCS.  Stripping the final word again truncates the packet. */
+	if (!get_decuint_from_env(ENV_RX_FCS_BITS, &n, 32, p->errbuf)) {
+		ret = PCAP_ERROR;
+		goto failstop;
+	}
+	switch (n) {
+	case 0:
+	case 16:
+	case 32:
+		pd->dag_fcs_bits = n;
+		break;
+	default:
+		ret = PCAP_ERROR;
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "%s: invalid %s value %u: must be 0 (no FCS), 16, or 32 bits",
+		    device, ENV_RX_FCS_BITS, n);
+		goto failstop;
+	}
+
+	/*
+	 * Did the user request that they not be stripped?
+	 */
+	if (!get_decuint_from_env(ENV_RX_FCS_NOSTRIP, &n, 0, p->errbuf)) {
+		ret = PCAP_ERROR;
+		goto failstop;
+	}
+	switch (n) {
+	case 0:
+		break;
+	case 1:
+		/* Yes.  Note the number of 16-bit words that will be
+		   supplied. */
+		p->linktype_ext = LT_FCS_DATALINK_EXT(pd->dag_fcs_bits/16);
+
+		/* And don't strip them. */
 		pd->dag_fcs_bits = 0;
+		break;
+	default:
+		ret = PCAP_ERROR;
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "%s: invalid %s value %u: must be 0 (false), or 1 (true)",
+		    device, ENV_RX_FCS_NOSTRIP, n);
+		goto failstop;
+	}
 
-		/* Note that no FCS will be supplied. */
-		p->linktype_ext = LT_FCS_DATALINK_EXT(0);
-	} else {
-		/*
-		 * Start out assuming it's 32 bits.
-		 */
-		pd->dag_fcs_bits = 32;
-
-		/* Allow an environment variable to override. */
-		if ((s = getenv("ERF_FCS_BITS")) != NULL) {
-			if ((n = atoi(s)) == 0 || n == 16 || n == 32) {
-				pd->dag_fcs_bits = n;
-			} else {
-				ret = PCAP_ERROR;
-				snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
-					"pcap_activate %s: bad ERF_FCS_BITS value (%d) in environment", device, n);
-				goto failstop;
-			}
-		}
-
-		/*
-		 * Did the user request that they not be stripped?
-		 */
-		if ((s = getenv("ERF_DONT_STRIP_FCS")) != NULL) {
-			/* Yes.  Note the number of 16-bit words that will be
-			   supplied. */
-			p->linktype_ext = LT_FCS_DATALINK_EXT(pd->dag_fcs_bits/16);
-
-			/* And don't strip them. */
-			pd->dag_fcs_bits = 0;
-		}
+	if (TX_ONLY(pd->dag_stream) && dag_activate_tx(p) < 0) {
+		ret = PCAP_ERROR;
+		goto failstop;
 	}
 
 	pd->dag_timeout	= p->opt.timeout;
 
-	p->linktype = -1;
 	if (dag_get_datalink(p) < 0) {
 		ret = PCAP_ERROR;
 		goto failstop;
@@ -996,18 +1203,26 @@ static int dag_activate(pcap_t* p)
 	 */
 	p->selectable_fd = -1;
 
-	if (newDev != NULL) {
-		free((char *)newDev);
-	}
-
-	p->read_op = dag_read;
-	p->inject_op = dag_inject;
-	p->setfilter_op = pcapint_install_bpf_program;
+	p->read_op = RX_ONLY(pd->dag_stream) ?
+	    dag_read :
+	    dag_read_notimpl;
+	p->inject_op = TX_ONLY(pd->dag_stream) ?
+	    dag_inject :
+	    dag_inject_notimpl;
+	p->setfilter_op = RX_ONLY(pd->dag_stream) ?
+	    pcapint_install_bpf_program :
+	    dag_install_bpf_program_notimpl;
 	p->setdirection_op = NULL; /* Not implemented.*/
 	p->set_datalink_op = dag_set_datalink;
-	p->getnonblock_op = pcapint_getnonblock_fd;
-	p->setnonblock_op = dag_setnonblock;
-	p->stats_op = dag_stats;
+	p->getnonblock_op = RX_ONLY(pd->dag_stream) ?
+	    pcapint_getnonblock_fd :
+	    dag_getnonblock_fd_notimpl;
+	p->setnonblock_op = RX_ONLY(pd->dag_stream) ?
+	    dag_setnonblock :
+	    dag_setnonblock_notimpl;
+	p->stats_op = RX_ONLY(pd->dag_stream) ?
+	    dag_stats :
+	    dag_stats_notimpl;
 	p->cleanup_op = dag_platform_cleanup;
 	pd->stat.ps_drop = 0;
 	pd->stat.ps_recv = 0;
@@ -1037,9 +1252,6 @@ failclose:
 
 fail:
 	pcapint_cleanup_live_common(p);
-	if (newDev != NULL) {
-		free((char *)newDev);
-	}
 
 	return ret;
 }
@@ -1048,49 +1260,81 @@ pcap_t *dag_create(const char *device, char *ebuf, int *is_ours)
 {
 	const char *cp;
 	char *cpend;
-	long devnum;
+	unsigned devnum;
 	pcap_t *p;
-	long stream = 0;
+	unsigned stream = 0;
+
+	/*
+	 * The nominal libpcap DAG device name format is either "dagN" or
+	 * "dagN:M", as returned from dag_findalldevs().
+	 *
+	 * First attempt the most basic syntax validation.  If the device string
+	 * does not look like a potentially valid DAG device name, reject it
+	 * silently to have pcap_create() try another capture source type.
+	 */
+	*is_ours = 0;
 
 	/* Does this look like a DAG device? */
-	cp = strrchr(device, '/');
-	if (cp == NULL)
-		cp = device;
+	cp = device;
 	/* Does it begin with "dag"? */
 	if (strncmp(cp, "dag", 3) != 0) {
 		/* Nope, doesn't begin with "dag" */
-		*is_ours = 0;
 		return NULL;
 	}
 	/* Yes - is "dag" followed by a number from 0 to DAG_MAX_BOARDS-1 */
 	cp += 3;
-	devnum = strtol(cp, &cpend, 10);
+	if (pcapint_get_decuint(cp, &cpend, &devnum) != 0) {
+		/* Not followed by a valid number */
+		return NULL;
+	}
 	if (*cpend == ':') {
 		/* Followed by a stream number. */
-		stream = strtol(++cpend, &cpend, 10);
-	}
-
-	if (cpend == cp || *cpend != '\0') {
-		/* Not followed by a number. */
-		*is_ours = 0;
+		if (pcapint_get_decuint(++cpend, NULL, &stream) != 0) {
+			/* Not followed by a valid number */
+			return NULL;
+		}
+	} else if (*cpend != '\0') {
+		/* Followed by something other than a colon and stream number */
 		return NULL;
 	}
 
-	if (devnum < 0 || devnum >= DAG_MAX_BOARDS) {
-		/* Followed by a non-valid number. */
-		*is_ours = 0;
-		return NULL;
-	}
-
-	if (stream <0 || stream >= DAG_STREAM_MAX) {
-		/* Followed by a non-valid stream number. */
-		*is_ours = 0;
-		return NULL;
-	}
-
-	/* OK, it's probably ours. */
+	/*
+	 * OK, it's probably ours, validate the syntax further.  From now on
+	 * reject the device string authoritatively with an error message to
+	 * have pcap_create() propagate the failure.  Validate the device and
+	 * stream number ranges loosely only.
+	 */
 	*is_ours = 1;
+	snprintf (ebuf, PCAP_ERRBUF_SIZE,
+	    "DAG device name \"%s\" is invalid", device);
 
+	/*
+	 * The syntax validation done so far is lax enough to accept some
+	 * device strings that are not actually acceptable in libpcap as
+	 * defined above.  The device strings that are acceptable in libpcap
+	 * are a strict subset of the device strings that are acceptable in
+	 * dag_parse_name(), thus using the latter for validation in libpcap
+	 * would not work reliably.  Instead from the detected device and
+	 * stream numbers produce the acceptable device string(s) and require
+	 * the input device string to match an acceptable string exactly.
+	 */
+	char buf[DAGNAME_BUFSIZE];
+	snprintf(buf, sizeof(buf), "dag%u:%u", devnum, stream);
+	char acceptable = ! strcmp(device, buf);
+	if (! acceptable && stream == 0) {
+		snprintf(buf, sizeof(buf), "dag%u", devnum);
+		acceptable = ! strcmp(device, buf);
+	}
+	if (! acceptable)
+		return NULL;
+
+	/*
+	 * The device string syntax is acceptable, save the device and stream
+	 * numbers for dag_activate(), which will do semantic and run-time
+	 * validation and possibly reject the pcap_t using more specific error
+	 * codes.
+	 */
+	ebuf[0] = '\0';
 	p = PCAP_CREATE_COMMON(ebuf, struct pcap_dag);
 	if (p == NULL)
 		return NULL;
@@ -1114,13 +1358,16 @@ pcap_t *dag_create(const char *device, char *ebuf, int *is_ours)
 	p->tstamp_precision_list[0] = PCAP_TSTAMP_PRECISION_MICRO;
 	p->tstamp_precision_list[1] = PCAP_TSTAMP_PRECISION_NANO;
 	p->tstamp_precision_count = 2;
+	struct pcap_dag *pd = p->priv;
+	pd->dag_devnum = (int)devnum;
+	pd->dag_stream = (int)stream;
 	return p;
 }
 
 static int
 dag_stats(pcap_t *p, struct pcap_stat *ps) {
 	struct pcap_dag *pd = p->priv;
-	uint32_t stream_drop;
+	uint64_t stream_drop;
 	dag_err_t dag_error;
 
 	/*
@@ -1134,12 +1381,12 @@ dag_stats(pcap_t *p, struct pcap_stat *ps) {
 		/* Note this counter is cleared at start of capture and will wrap at UINT_MAX.
 		 * The application is responsible for polling ps_drop frequently enough
 		 * to detect each wrap and integrate total drop with a wider counter */
-		if ((dag_error = dag_config_get_uint32_attribute_ex(pd->dag_ref, pd->drop_attr, &stream_drop)) == kDagErrNone) {
-			pd->stat.ps_drop = stream_drop;
+		if ((dag_error = dag_config_get_uint64_attribute_ex(pd->dag_ref, pd->drop_attr, &stream_drop)) == kDagErrNone) {
+			pd->stat.ps_drop = (u_int)(stream_drop - pd->drop_base);
 		} else {
 			snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "reading stream drop attribute: %s",
 				 dag_config_strerror(dag_error));
-			return -1;
+			return PCAP_ERROR;
 		}
 	}
 
@@ -1148,73 +1395,185 @@ dag_stats(pcap_t *p, struct pcap_stat *ps) {
 	return 0;
 }
 
+static void
+dag_device_description(char *strbuf, const size_t strbufsize,
+    const unsigned dagid)
+{
+	snprintf(strbuf, strbufsize, "alias for dag%u:0", dagid);
+}
+
+static void
+dag_stream_short_description(char *strbuf, const size_t strbufsize,
+    const unsigned stream)
+{
+	snprintf(strbuf, strbufsize, "%s stream %u", RXTX_STR(stream), stream);
+}
+
+static void
+dag_stream_long_description(char *strbuf, const size_t strbufsize,
+    const unsigned stream, const dag_size_t dagbufsize,
+    const dag_card_inf_t *inf)
+{
+	int done = snprintf(strbuf, strbufsize,
+	    "%s stream %u, %" PRIu64 " MiB, %s",
+	    RXTX_STR(stream),
+	    stream,
+	    dagbufsize / 1024 / 1024,
+	    dag_device_name(inf->device_code, 1));
+	if (inf->device_code != PCI_DEVICE_ID_VDAG)
+		snprintf(strbuf + done, strbufsize - done,
+		    " rev %c at %s",
+		    PCAP_ISUPPER('A' + inf->brd_rev) ? ('A' + inf->brd_rev) : '?',
+		    inf->bus_id);
+}
+
 /*
  * Add all DAG devices.
+ * This excludes vDAG Tx streams, which libpcap cannot use.
  */
 int
 dag_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 {
-	char name[12];	/* XXX - pick a size */
 	int c;
-	char dagname[DAGNAME_BUFSIZE];
-	int dagstream;
 	int dagfd;
-	dag_card_inf_t *inf;
-	char *description;
+	char description[256];
 	int stream, rxstreams;
+	// A DAG card associates a link status with each physical port, but not
+	// with the data streams.  The number of ports is a matter of hardware,
+	// the number of streams and how each stream associates with zero or
+	// more ports is a matter of how the user configures the card.  In this
+	// context libpcap uses the streams only (i.e. "dag0" is a shorthand
+	// for "dag0:0"), thus the notion of link status does not apply to the
+	// resulting libpcap DAG capture devices.
+	const bpf_u_int32 flags = PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE;
+	FILE * sysfsinfo = NULL;
 
 	/* Try all the DAGs 0-DAG_MAX_BOARDS */
 	for (c = 0; c < DAG_MAX_BOARDS; c++) {
-		snprintf(name, 12, "dag%d", c);
-		if (-1 == dag_parse_name(name, dagname, DAGNAME_BUFSIZE, &dagstream))
-		{
-			(void) snprintf(errbuf, PCAP_ERRBUF_SIZE,
-			    "dag: device name %s can't be parsed", name);
-			return (-1);
-		}
+		char name[DAGNAME_BUFSIZE]; // libpcap device
+		snprintf(name, sizeof(name), "dag%d", c);
+		char dagname[DAGNAME_BUFSIZE]; // DAG API device
+		snprintf(dagname, sizeof(dagname), "/dev/dag%d", c);
 		if ( (dagfd = dag_open(dagname)) >= 0 ) {
-			description = NULL;
-			if ((inf = dag_pciinfo(dagfd)))
-				description = dag_device_name(inf->device_code, 1);
-			/*
-			 * XXX - is there a way to determine whether
-			 * the card is plugged into a network or not?
-			 * If so, we should check that and set
-			 * PCAP_IF_CONNECTION_STATUS_CONNECTED or
-			 * PCAP_IF_CONNECTION_STATUS_DISCONNECTED.
-			 *
-			 * Also, are there notions of "up" and "running"?
-			 */
-			if (pcapint_add_dev(devlistp, name, 0, description, errbuf) == NULL) {
-				/*
-				 * Failure.
-				 */
-				return (-1);
+			// Do not add a shorthand device for stream 0 (dagN) yet -- the
+			// user can disable any stream in the card configuration.
+			const dag_card_inf_t *inf = dag_pciinfo(dagfd);
+			if (! inf) {
+				pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
+				    errno, "dag_pciinfo");
+				goto failclose;
 			}
+			// The count includes existing streams that have no buffer memory.
 			rxstreams = dag_rx_get_stream_count(dagfd);
-			for(stream=0;stream<DAG_STREAM_MAX;stream+=2) {
-				if (0 == dag_attach_stream64(dagfd, stream, 0, 0)) {
-					dag_detach_stream(dagfd, stream);
-
-					snprintf(name,  10, "dag%d:%d", c, stream);
-					if (pcapint_add_dev(devlistp, name, 0, description, errbuf) == NULL) {
-						/*
-						 * Failure.
-						 */
-						return (-1);
-					}
-
-					rxstreams--;
-					if(rxstreams <= 0) {
-						break;
+			if (rxstreams < 0) {
+				pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
+				    errno, "dag_rx_get_stream_count");
+				goto failclose;
+			}
+			int txstreams = 0;
+#ifdef ENABLE_DAG_TX
+			txstreams = dag_tx_get_stream_count(dagfd);
+			if (txstreams < 0) {
+				pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
+				    errno, "dag_tx_get_stream_count");
+				goto failclose;
+			}
+#endif // ENABLE_DAG_TX
+			for(stream = 0;
+			    stream < DAG_STREAM_MAX && (rxstreams > 0 || txstreams > 0);
+			    stream++) {
+#ifndef ENABLE_DAG_TX
+				if (TX_ONLY(stream))
+					continue;
+#endif // ENABLE_DAG_TX
+				/*
+				 * dag_attach_stream64() was used before to test if the
+				 * stream exists, but it is not the best tool for the
+				 * job because it tries to lock the stream exclusively.
+				 * If the stream is already locked by another process,
+				 * it fails with EBUSY, otherwise it creates a race
+				 * condition for other processes that may be trying to
+				 * lock the same stream at the same time.  Therefore
+				 * dag_get_stream_buffer_size64() seems to be a better
+				 * fit.
+				 */
+				dag_ssize_t bufsize = dag_get_stream_buffer_size64(dagfd, stream);
+				if (bufsize < 0)
+					continue; // Does not exist.
+				// Only streams with buffer memory are usable.
+				if (bufsize > 0 &&
+				    (RX_ONLY(stream) || inf->device_code != PCI_DEVICE_ID_VDAG)) {
+					dag_device_description(description, sizeof(description), c);
+					// a conditional shorthand device
+					if (stream == 0 &&
+					    pcapint_add_dev(devlistp, name, flags, description, errbuf) == NULL)
+						goto failclose;
+					// and the stream device
+					snprintf(name,  sizeof(name), "dag%d:%d", c, stream);
+					dag_stream_long_description(description, sizeof(description),
+					    stream, dag_get_stream_buffer_size64(dagfd, stream), inf);
+					if (pcapint_add_dev(devlistp, name, flags, description, errbuf) == NULL) {
+						goto failclose;
 					}
 				}
+				if (RX_ONLY(stream))
+					rxstreams--;
+				else
+					txstreams--;
 			}
 			dag_close(dagfd);
-		}
+			dagfd = -1;
+		} else if (errno == EACCES) {
+			// The device exists, but the current user privileges are not
+			// sufficient for dag_open().
+			// Do not add a shorthand device for stream 0 yet -- same as above.
+			// Try enumerating the streams using sysfs.  The file lists
+			// all streams (Rx and Tx) that have non-zero amount of buffer
+			// memory.
+			char sysfspath[PATH_MAX];
+			snprintf(sysfspath, sizeof(sysfspath), "/sys/devices/virtual/dag/%s/info", name);
+			if ((sysfsinfo = fopen(sysfspath, "r"))) {
+				char linebuf[1024];
+				while (fgets(linebuf, sizeof(linebuf), sysfsinfo))
+					if (1 == sscanf(linebuf, "Stream %u:", &stream)) {
+#ifndef ENABLE_DAG_TX
+						if (TX_ONLY(stream))
+							continue;
+#else
+						/*
+						 * TODO: To tell whether the current device is a vDAG,
+						 * instead of comparing the device index with hard-coded
+						 * values parse the allocation type of the current stream.
+						 */
+						if (TX_ONLY(stream) && c >= 16 && c <= 31)
+							continue;
+#endif // ENABLE_DAG_TX
+						// a conditional shorthand device
+						dag_device_description(description, sizeof(description), c);
+						if (stream == 0 &&
+						    pcapint_add_dev(devlistp, name, flags, description, errbuf) == NULL)
+							goto failclose;
+						// and the stream device
+						snprintf(name,  sizeof(name), "dag%u:%u", c, stream);
+						// TODO: Parse and describe the buffer size too.
+						dag_stream_short_description(description, sizeof(description), stream);
+						if (pcapint_add_dev(devlistp, name, flags, description, errbuf) == NULL)
+							goto failclose;
+					}
+				fclose(sysfsinfo);
+				sysfsinfo = NULL;
+			}
+		} // errno == EACCES
 
 	}
 	return (0);
+
+failclose:
+	if (dagfd >= 0)
+		dag_close(dagfd);
+	if (sysfsinfo)
+		fclose(sysfsinfo);
+	return PCAP_ERROR;
 }
 
 static int
@@ -1240,13 +1599,13 @@ dag_setnonblock(pcap_t *p, int nonblock)
 	 * "pd->dag_flags".
 	 */
 	if (pcapint_setnonblock_fd(p, nonblock) < 0)
-		return (-1);
+		return PCAP_ERROR;
 
 	if (dag_get_stream_poll64(p->fd, pd->dag_stream,
 				&mindata, &maxwait, &poll) < 0) {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "dag_get_stream_poll");
-		return -1;
+		    errno, "dag_get_stream_poll64");
+		return PCAP_ERROR;
 	}
 
 	/* Amount of data to collect in Bytes before calling callbacks.
@@ -1261,8 +1620,8 @@ dag_setnonblock(pcap_t *p, int nonblock)
 	if (dag_set_stream_poll64(p->fd, pd->dag_stream,
 				mindata, &maxwait, &poll) < 0) {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "dag_set_stream_poll");
-		return -1;
+		    errno, "dag_set_stream_poll64");
+		return PCAP_ERROR;
 	}
 
 	if (nonblock) {
@@ -1277,6 +1636,15 @@ static int
 dag_get_datalink(pcap_t *p)
 {
 	struct pcap_dag *pd = p->priv;
+
+	/*
+	 * There seems to be no trivial way to tell which ERF type(s) a Tx
+	 * stream would accept.  Let's assume ERF_TYPE_ETH would work, which
+	 * in libpcap terms means using DLT_EN10MB.
+	 */
+	if (TX_ONLY(pd->dag_stream))
+		return (p->linktype = DLT_EN10MB);
+
 	int index=0, dlt_index=0;
 	uint8_t types[255];
 
@@ -1285,37 +1653,21 @@ dag_get_datalink(pcap_t *p)
 	if (p->dlt_list == NULL && (p->dlt_list = malloc(255*sizeof(*(p->dlt_list)))) == NULL) {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, sizeof(p->errbuf),
 		    errno, "malloc");
-		return (-1);
+		return PCAP_ERROR;
 	}
 
 	p->linktype = 0;
 
-#ifdef HAVE_DAG_GET_STREAM_ERF_TYPES
 	/* Get list of possible ERF types for this card */
 	if (dag_get_stream_erf_types(p->fd, pd->dag_stream, types, 255) < 0) {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, sizeof(p->errbuf),
 		    errno, "dag_get_stream_erf_types");
-		return (-1);
+		return PCAP_ERROR;
 	}
 
 	while (types[index]) {
 
-#elif defined HAVE_DAG_GET_ERF_TYPES
-	/* Get list of possible ERF types for this card */
-	if (dag_get_erf_types(p->fd, types, 255) < 0) {
-		pcapint_fmt_errmsg_for_errno(p->errbuf, sizeof(p->errbuf),
-		    errno, "dag_get_erf_types");
-		return (-1);
-	}
-
-	while (types[index]) {
-#else
-	/* Check the type through a dagapi call. */
-	types[index] = dag_linktype(p->fd);
-
-	{
-#endif
-		switch((types[index] & 0x7f)) {
+		switch((types[index] & ERF_TYPE_MASK)) {
 
 		case ERF_TYPE_HDLC_POS:
 		case ERF_TYPE_COLOR_HDLC_POS:
@@ -1422,7 +1774,7 @@ dag_get_datalink(pcap_t *p)
  * There are no regular interfaces, just DAG interfaces.
  */
 int
-pcapint_platform_finddevs(pcap_if_list_t *devlistp _U_, char *errbuf)
+pcapint_platform_finddevs(pcap_if_list_t *devlistp _U_, char *errbuf _U_)
 {
 	return (0);
 }
@@ -1431,7 +1783,7 @@ pcapint_platform_finddevs(pcap_if_list_t *devlistp _U_, char *errbuf)
  * Attempts to open a regular interface fail.
  */
 pcap_t *
-pcapint_create_interface(const char *device, char *errbuf)
+pcapint_create_interface(const char *device _U_, char *errbuf)
 {
 	snprintf(errbuf, PCAP_ERRBUF_SIZE, PCAP_ENODEV_MESSAGE, "DAG");
 	return NULL;

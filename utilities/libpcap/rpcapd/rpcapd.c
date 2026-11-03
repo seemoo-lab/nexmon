@@ -85,6 +85,7 @@ static int passivemode = 1;			//!< '1' if we want to run in passive mode as well
 static struct addrinfo mainhints;		//!< temporary struct to keep settings needed to open the new socket
 static char address[MAX_LINE + 1];		//!< keeps the network address (either numeric or literal) to bind to
 static char port[MAX_LINE + 1];			//!< keeps the network port to bind to
+static char data_port[MAX_LINE + 1];		//!< keeps the network port to use to transfer data
 #ifdef _WIN32
 static HANDLE state_change_event;		//!< event to signal that a state change should take place
 static volatile long shutdown_server;		//!< '1' if the server is to shut down
@@ -124,16 +125,22 @@ static void printusage(FILE * f)
 {
 	const char *usagetext =
 	"USAGE:"
-	" "  PROGRAM_NAME " [-b <address>] [-p <port>] [-4] [-l <host_list>] [-a <host,port>]\n"
-	"              [-n] [-v] [-d] "
+	" "  PROGRAM_NAME " [-b <address>] [-p <port>] [-t <data_port>] [-4] [-l <host_list>]\n"
+	"              [-a <host,port>] [-n] [-v] [-d] "
 #ifndef _WIN32
 	"[-i] "
 #endif
-        "[-D] [-s <config_file>] [-f <config_file>]\n\n"
+        "[-D] [-s <config_file>]\n"
+#ifdef HAVE_OPENSSL
+	"              [-S] [-C] [-K <ssl_keyfile>] [-X <ssl_certfile>]\n"
+#endif
+        "              [-f <config_file>]\n\n"
 	"  -b <address>    the address to bind to (either numeric or literal).\n"
 	"                  Default: binds to all local IPv4 and IPv6 addresses\n\n"
 	"  -p <port>       the port to bind to.\n"
 	"                  Default: binds to port " RPCAP_DEFAULT_NETPORT "\n\n"
+	"  -t <data_port>: the port to use to transfer data.\n"
+	"                  Default: an unused port is chosen by the operating system\n\n"
 	"  -4              use only IPv4.\n"
 	"                  Default: use both IPv4 and IPv6 waiting sockets\n\n"
 	"  -l <host_list>  a file that contains a list of hosts that are allowed\n"
@@ -156,8 +163,8 @@ static void printusage(FILE * f)
 #ifdef HAVE_OPENSSL
 	"  -S              encrypt all communication with SSL (implements rpcaps://)\n"
 	"  -C              enable compression\n"
-	"  -K <pem_file>   uses the SSL private key in this file (default: key.pem)\n"
-	"  -X <pem_file>   uses the certificate from this file (default: cert.pem)\n"
+	"  -K <ssl_keyfile> use the SSL private key in this file (default: key.pem)\n"
+	"  -X <ssl_certfile> use the certificate from this file (default: cert.pem)\n"
 #endif
 	"  -s <config_file> save the current configuration to file\n\n"
 	"  -f <config_file> load the current configuration from file; all switches\n"
@@ -217,7 +224,7 @@ int main(int argc, char *argv[])
 #		define SSL_CLOPTS ""
 #	endif
 
-#	define CLOPTS "b:dDhip:4l:na:s:f:v" SSL_CLOPTS
+#	define CLOPTS "b:dDhip:4l:na:s:f:t:v" SSL_CLOPTS
 
 	while ((retval = getopt(argc, argv, CLOPTS)) != -1)
 	{
@@ -232,6 +239,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'p':
 				pcapint_strlcpy(port, optarg, sizeof (port));
+				break;
+			case 't':
+				pcapint_strlcpy(data_port, optarg, sizeof (data_port));
 				break;
 			case '4':
 				mainhints.ai_family = PF_INET;		// IPv4 server only
@@ -276,16 +286,17 @@ int main(int argc, char *argv[])
 
 					pcapint_strlcpy(activelist[i].address, tmpaddress, sizeof (activelist[i].address));
 
-					if ((tmpport == NULL) || (strcmp(tmpport, "DEFAULT") == 0)) // the user choose a custom port
+					if ((tmpport == NULL) || (strcmp(tmpport, "DEFAULT") == 0))
+						// The default port.
 						pcapint_strlcpy(activelist[i].port, RPCAP_DEFAULT_NETPORT_ACTIVE, sizeof (activelist[i].port));
 					else
+						// A custom port.
 						pcapint_strlcpy(activelist[i].port, tmpport, sizeof (activelist[i].port));
 
 					tmpaddress = pcapint_strtok_r(NULL, RPCAP_HOSTLIST_SEP, &lasts);
 
 					i++;
 				}
-
 				if (i > MAX_ACTIVE_LIST)
 					rpcapd_log(LOGPRIO_ERROR, "Only MAX_ACTIVE_LIST active connections are currently supported.");
 
@@ -468,7 +479,7 @@ int main(int argc, char *argv[])
 			exit(0);
 		}
 		(void)daemon_serviceloop(sockctrl, 0, hostlist_copy,
-		    nullAuthAllowed, uses_ssl);
+		    nullAuthAllowed, data_port, uses_ssl);
 
 		//
 		// Nothing more to do.
@@ -1308,7 +1319,7 @@ accept_connection(PCAP_SOCKET listen_sock)
 			exit(0);
 		}
 		(void)daemon_serviceloop(sockctrl, 0, hostlist_copy,
-		    nullAuthAllowed, uses_ssl);
+		    nullAuthAllowed, data_port, uses_ssl);
 
 		exit(0);
 	}
@@ -1400,7 +1411,8 @@ main_active(void *ptr)
 			// daemon_serviceloop() will free the copy.
 			//
 			activeclose = daemon_serviceloop(sockctrl, 1,
-			    hostlist_copy, nullAuthAllowed, uses_ssl);
+			    hostlist_copy, nullAuthAllowed, data_port,
+			    uses_ssl);
 		}
 
 		// If the connection is closed by the user explicitly, don't try to connect to it again
@@ -1428,7 +1440,7 @@ unsigned __stdcall main_passive_serviceloop_thread(void *ptr)
 	// told by the client to close.
 	//
 	(void)daemon_serviceloop(params.sockctrl, 0, params.hostlist,
-	    nullAuthAllowed, uses_ssl);
+	    nullAuthAllowed, data_port, uses_ssl);
 
 	return 0;
 }

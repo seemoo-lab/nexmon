@@ -31,9 +31,6 @@
  * <netinet/if_ether.h> if all it needs are ETHERTYPE_ values.
  */
 
-#ifndef ETHERTYPE_PUP
-#define ETHERTYPE_PUP		0x0200	/* PUP protocol */
-#endif
 #ifndef ETHERTYPE_IP
 #define ETHERTYPE_IP		0x0800	/* IP protocol */
 #endif
@@ -42,12 +39,6 @@
 #endif
 #ifndef ETHERTYPE_NS
 #define ETHERTYPE_NS		0x0600
-#endif
-#ifndef	ETHERTYPE_SPRITE
-#define ETHERTYPE_SPRITE	0x0500
-#endif
-#ifndef ETHERTYPE_TRAIL
-#define ETHERTYPE_TRAIL		0x1000
 #endif
 #ifndef	ETHERTYPE_MOPDL
 #define ETHERTYPE_MOPDL		0x6001
@@ -70,21 +61,6 @@
 #ifndef ETHERTYPE_REVARP
 #define ETHERTYPE_REVARP	0x8035	/* reverse Addr. resolution protocol */
 #endif
-#ifndef	ETHERTYPE_LANBRIDGE
-#define ETHERTYPE_LANBRIDGE	0x8038
-#endif
-#ifndef	ETHERTYPE_DECDNS
-#define ETHERTYPE_DECDNS	0x803c
-#endif
-#ifndef	ETHERTYPE_DECDTS
-#define ETHERTYPE_DECDTS	0x803e
-#endif
-#ifndef	ETHERTYPE_VEXP
-#define ETHERTYPE_VEXP		0x805b
-#endif
-#ifndef	ETHERTYPE_VPROD
-#define ETHERTYPE_VPROD		0x805c
-#endif
 #ifndef ETHERTYPE_ATALK
 #define ETHERTYPE_ATALK		0x809b
 #endif
@@ -100,6 +76,9 @@
 #ifndef ETHERTYPE_IPV6
 #define ETHERTYPE_IPV6		0x86dd
 #endif
+#ifndef ETHERTYPE_SLOW
+#define ETHERTYPE_SLOW		0x8809
+#endif
 #ifndef ETHERTYPE_MPLS
 #define ETHERTYPE_MPLS		0x8847
 #endif
@@ -114,6 +93,9 @@
 #endif
 #ifndef ETHERTYPE_8021AD
 #define ETHERTYPE_8021AD	0x88a8
+#endif
+#ifndef ETHERTYPE_LLDP
+#define ETHERTYPE_LLDP		0x88cc
 #endif
 #ifndef	ETHERTYPE_LOOPBACK
 #define ETHERTYPE_LOOPBACK	0x9000

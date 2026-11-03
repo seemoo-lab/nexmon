@@ -277,7 +277,7 @@
  * Do *NOT* use these in capture files that you expect anybody not using
  * your private versions of capture-file-reading tools to read; in
  * particular, do *NOT* use them in products, otherwise you may find that
- * people won't be able to use tcpdump, or snort, or Ethereal, or... to
+ * people won't be able to use tcpdump, or snort, or Wireshark, or... to
  * read capture files from your firewall/intrusion detection/traffic
  * monitoring/etc. appliance, or whatever product uses that LINKTYPE_ value,
  * and you may also find that the developers of those applications will
@@ -609,10 +609,25 @@
  */
 
 /*
- * IPMB with a Linux-specific pseudo-header; as requested by Alexey Neyman
+ * I2C with a Linux-specific pseudo-header; as requested by Alexey Neyman
  * <avn@pigeonpoint.com>.
+ *
+ * In the discussion, starting at
+ *
+ *	https://seclists.org/tcpdump/2007/q4/127
+ *
+ * the original idea that it was a link-layer type for I2C, but,
+ * as it was proposed as a way to capture IPMB-over-I2C, and
+ * the conclusion was that reserving it for IPMB-over-I2C meant
+ * that analyzers could just assume the traffic was IPMB.
+ *
+ * However, it was later used for HDMI DDC traffic, so there's
+ * no point in pretending that it's IPMB-only any more, so we
+ * renamed it to a name suggested earlier in the discussion,
+ * namely LINKTYPE_I2C_LINUX/DLT_I2C_LINUX, as the header was,
+ * at least originally, Linux-specific.
  */
-#define LINKTYPE_IPMB_LINUX	209
+#define LINKTYPE_I2C_LINUX	209
 
 /*
  * FlexRay automotive bus - http://www.flexray.com/ - as requested
@@ -1180,7 +1195,7 @@
 #define LINKTYPE_IEEE802_15_4_TAP       283
 
 /*
- * Marvell (Ethertype) Distributed Switch Architecture proprietary tagging format.
+ * Marvell (EtherType) Distributed Switch Architecture proprietary tagging format.
  */
 #define LINKTYPE_DSA_TAG_DSA	284
 #define LINKTYPE_DSA_TAG_EDSA	285
@@ -1227,7 +1242,11 @@
 
 /*
  * Serial NCP (Network Co-Processor) protocol for Zigbee stack ZBOSS
- * by DSR, https://dsr-iot.com/downloads
+ * by DSR.
+ * ZBOSS NCP protocol description: https://cloud.dsr-corporation.com/index.php/s/3isHzaNTTgtJebn
+ * Header in pcap file: https://cloud.dsr-corporation.com/index.php/s/fiqSDorAAAZrsYB
+ *
+ * Requested by Eugene Exarevsky <eugene.exarevsky@dsr-corporation.com>
  */
 #define LINKTYPE_ZBOSS_NCP	292
 
@@ -1293,7 +1312,15 @@
 // See DLT_DEBUG_ONLY
 #define LINKTYPE_DEBUG_ONLY	303
 
-#define LINKTYPE_HIGH_MATCHING_MAX	303		/* highest value in the "matching" range */
+/*
+ * DECT-2020 New Radio (NR) TAP with custom metadata header.
+ * Specification at https://github.com/DSRCorporation/dect-nr-tap
+ *
+ * Requested by Edem Khadiev <edem.khadiev@dsr-corporation.com>
+ */
+#define LINKTYPE_DECT_NR_TAP		304
+
+#define LINKTYPE_HIGH_MATCHING_MAX	304		/* highest value in the "matching" range */
 
 /*
  * The DLT_ and LINKTYPE_ values in the "matching" range should be the

@@ -43,16 +43,12 @@ The Regents of the University of California.  All rights reserved.\n";
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
-#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
-#else
-#include <sys/time.h>	/* older UN*Xes */
-#endif
 #include <poll.h>
 
 #include "pcap/funcattrs.h"
 
-static char *program_name;
+static const char *program_name;
 
 /* Forwards */
 static void countme(u_char *, const struct pcap_pkthdr *, const u_char *);
@@ -66,9 +62,9 @@ static pcap_t *pd;
 int
 main(int argc, char **argv)
 {
-	register int op;
+	int op;
 	bpf_u_int32 localnet, netmask;
-	register char *cp, *cmdbuf, *device;
+	char *cp, *cmdbuf, *device;
 	int doselect, dopoll, dotimeout, dononblock, quiet;
 	const char *mechanism;
 	struct bpf_program fcode;
@@ -414,10 +410,10 @@ warning(const char *fmt, ...)
  * Copy arg vector into a new buffer, concatenating arguments with spaces.
  */
 static char *
-copy_argv(register char **argv)
+copy_argv(char **argv)
 {
-	register char **p;
-	register size_t len = 0;
+	char **p;
+	size_t len = 0;
 	char *buf;
 	char *src, *dst;
 

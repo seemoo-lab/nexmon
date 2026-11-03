@@ -38,7 +38,7 @@
  * Helpers for portability between Windows and UN*X and between different
  * flavors of UN*X.
  */
-#include <stdarg.h>	/* we declare varargs functions on some platforms */
+#include <stdarg.h>	/* this file declares varargs functions on some platforms */
 
 #include "pcap/funcattrs.h"
 
@@ -157,6 +157,7 @@ extern int pcapint_vasprintf(char **, PCAP_FORMAT_STRING(const char *), va_list 
   #if !defined(__cplusplus)
     #define inline __inline
   #endif
+#include <winsock2.h>
 #endif /* _WIN32 */
 
 #ifdef __cplusplus

@@ -55,16 +55,10 @@
 #include "sf-pcap.h"
 
 /*
- * Setting O_BINARY on DOS/Windows is a bit tricky
+ * Setting O_BINARY on Windows is a bit tricky.
  */
 #if defined(_WIN32)
   #define SET_BINMODE(f)  _setmode(_fileno(f), _O_BINARY)
-#elif defined(MSDOS)
-  #if defined(__HIGHC__)
-  #define SET_BINMODE(f)  setmode(f, O_BINARY)
-  #else
-  #define SET_BINMODE(f)  setmode(fileno(f), O_BINARY)
-  #endif
 #endif
 
 /*
@@ -98,6 +92,11 @@
  * as per a request by Ulf Lamping <ulf.lamping@web.de>
  */
 #define NSEC_TCPDUMP_MAGIC	0xa1b23c4d
+
+/*
+ * Used for identification of cbpf-savefile(5).
+ */
+#define CBPF_SAVEFILE_MAGIC	0xa1b2c3cb
 
 /*
  * This is a timeval as stored in a savefile.
@@ -240,7 +239,7 @@ pcap_check_header(const uint8_t *magic, FILE *fp, u_int precision, char *errbuf,
 	if (magic_int != TCPDUMP_MAGIC &&
 	    magic_int != KUZNETZOV_TCPDUMP_MAGIC &&
 	    magic_int != NSEC_TCPDUMP_MAGIC) {
-		magic_int = SWAPLONG(magic_int);
+		magic_int = PCAP_BSWAP_32(magic_int);
 		if (magic_int != TCPDUMP_MAGIC &&
 		    magic_int != KUZNETZOV_TCPDUMP_MAGIC &&
 		    magic_int != NSEC_TCPDUMP_MAGIC)
@@ -272,19 +271,12 @@ pcap_check_header(const uint8_t *magic, FILE *fp, u_int precision, char *errbuf,
 	 * If it's a byte-swapped capture file, byte-swap the header.
 	 */
 	if (swapped) {
-		hdr.version_major = SWAPSHORT(hdr.version_major);
-		hdr.version_minor = SWAPSHORT(hdr.version_minor);
-		hdr.thiszone = SWAPLONG(hdr.thiszone);
-		hdr.sigfigs = SWAPLONG(hdr.sigfigs);
-		hdr.snaplen = SWAPLONG(hdr.snaplen);
-		hdr.linktype = SWAPLONG(hdr.linktype);
-	}
-
-	if (hdr.version_major < PCAP_VERSION_MAJOR) {
-		snprintf(errbuf, PCAP_ERRBUF_SIZE,
-		    "archaic pcap savefile format");
-		*err = 1;
-		return (NULL);
+		hdr.version_major = PCAP_BSWAP_16(hdr.version_major);
+		hdr.version_minor = PCAP_BSWAP_16(hdr.version_minor);
+		hdr.thiszone = PCAP_BSWAP_32(hdr.thiszone);
+		hdr.sigfigs = PCAP_BSWAP_32(hdr.sigfigs);
+		hdr.snaplen = PCAP_BSWAP_32(hdr.snaplen);
+		hdr.linktype = PCAP_BSWAP_32(hdr.linktype);
 	}
 
 	/*
@@ -423,7 +415,7 @@ pcap_check_header(const uint8_t *magic, FILE *fp, u_int precision, char *errbuf,
 		 * we'd have to use some hacks^H^H^H^H^Hheuristics to
 		 * detect those variants.
 		 *
-		 * Ethereal does that, but it does so by trying to read
+		 * Wireshark does that, but it does so by trying to read
 		 * the first two packets of the file with each of the
 		 * record header formats.  That currently means it seeks
 		 * backwards and retries the reads, which doesn't work
@@ -550,10 +542,10 @@ pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 
 	if (p->swapped) {
 		/* these were written in opposite byte order */
-		hdr->caplen = SWAPLONG(sf_hdr.caplen);
-		hdr->len = SWAPLONG(sf_hdr.len);
-		hdr->ts.tv_sec = SWAPLONG(sf_hdr.ts.tv_sec);
-		hdr->ts.tv_usec = SWAPLONG(sf_hdr.ts.tv_usec);
+		hdr->caplen = PCAP_BSWAP_32(sf_hdr.caplen);
+		hdr->len = PCAP_BSWAP_32(sf_hdr.len);
+		hdr->ts.tv_sec = PCAP_BSWAP_32(sf_hdr.ts.tv_sec);
+		hdr->ts.tv_usec = PCAP_BSWAP_32(sf_hdr.ts.tv_usec);
 	} else {
 		hdr->caplen = sf_hdr.caplen;
 		hdr->len = sf_hdr.len;
@@ -819,7 +811,7 @@ sf_write_header(pcap_t *p, FILE *fp, int linktype, int snaplen)
 void
 pcap_dump(u_char *user, const struct pcap_pkthdr *h, const u_char *sp)
 {
-	register FILE *f;
+	FILE *f;
 	struct pcap_sf_pkthdr sf_hdr;
 
 	f = (FILE *)user;
@@ -873,7 +865,7 @@ static pcap_dumper_t *
 pcap_setup_dump(pcap_t *p, int linktype, FILE *f, const char *fname)
 {
 
-#if defined(_WIN32) || defined(MSDOS)
+#if defined(_WIN32)
 	/*
 	 * If we're writing to the standard output, put it in binary
 	 * mode, as savefiles are binary files.
@@ -1079,7 +1071,7 @@ pcap_dump_open_append(pcap_t *p, const char *fname)
 		}
 	}
 
-#if defined(_WIN32) || defined(MSDOS)
+#if defined(_WIN32)
 	/*
 	 * We turn off buffering.
 	 * XXX - why?  And why not on the standard output?
@@ -1124,17 +1116,17 @@ pcap_dump_open_append(pcap_t *p, const char *fname)
 			}
 			break;
 
-		case SWAPLONG(TCPDUMP_MAGIC):
-		case SWAPLONG(NSEC_TCPDUMP_MAGIC):
+		case PCAP_BSWAP_32(TCPDUMP_MAGIC):
+		case PCAP_BSWAP_32(NSEC_TCPDUMP_MAGIC):
 			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
 			    "%s: different byte order, cannot append to file", fname);
 			(void)fclose(f);
 			return (NULL);
 
 		case KUZNETZOV_TCPDUMP_MAGIC:
-		case SWAPLONG(KUZNETZOV_TCPDUMP_MAGIC):
+		case PCAP_BSWAP_32(KUZNETZOV_TCPDUMP_MAGIC):
 		case NAVTEL_TCPDUMP_MAGIC:
-		case SWAPLONG(NAVTEL_TCPDUMP_MAGIC):
+		case PCAP_BSWAP_32(NAVTEL_TCPDUMP_MAGIC):
 			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
 			    "%s: not a pcap file to which we can append", fname);
 			(void)fclose(f);

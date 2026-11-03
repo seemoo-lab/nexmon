@@ -128,53 +128,54 @@ extern int pcap_debug;
     PPPOED = 329,                  /* PPPOED  */
     PPPOES = 330,                  /* PPPOES  */
     GENEVE = 331,                  /* GENEVE  */
-    ISO = 332,                     /* ISO  */
-    ESIS = 333,                    /* ESIS  */
-    CLNP = 334,                    /* CLNP  */
-    ISIS = 335,                    /* ISIS  */
-    L1 = 336,                      /* L1  */
-    L2 = 337,                      /* L2  */
-    IIH = 338,                     /* IIH  */
-    LSP = 339,                     /* LSP  */
-    SNP = 340,                     /* SNP  */
-    CSNP = 341,                    /* CSNP  */
-    PSNP = 342,                    /* PSNP  */
-    STP = 343,                     /* STP  */
-    IPX = 344,                     /* IPX  */
-    NETBEUI = 345,                 /* NETBEUI  */
-    LANE = 346,                    /* LANE  */
-    LLC = 347,                     /* LLC  */
-    METAC = 348,                   /* METAC  */
-    BCC = 349,                     /* BCC  */
-    SC = 350,                      /* SC  */
-    ILMIC = 351,                   /* ILMIC  */
-    OAMF4EC = 352,                 /* OAMF4EC  */
-    OAMF4SC = 353,                 /* OAMF4SC  */
-    OAM = 354,                     /* OAM  */
-    OAMF4 = 355,                   /* OAMF4  */
-    CONNECTMSG = 356,              /* CONNECTMSG  */
-    METACONNECT = 357,             /* METACONNECT  */
-    VPI = 358,                     /* VPI  */
-    VCI = 359,                     /* VCI  */
-    RADIO = 360,                   /* RADIO  */
-    FISU = 361,                    /* FISU  */
-    LSSU = 362,                    /* LSSU  */
-    MSU = 363,                     /* MSU  */
-    HFISU = 364,                   /* HFISU  */
-    HLSSU = 365,                   /* HLSSU  */
-    HMSU = 366,                    /* HMSU  */
-    SIO = 367,                     /* SIO  */
-    OPC = 368,                     /* OPC  */
-    DPC = 369,                     /* DPC  */
-    SLS = 370,                     /* SLS  */
-    HSIO = 371,                    /* HSIO  */
-    HOPC = 372,                    /* HOPC  */
-    HDPC = 373,                    /* HDPC  */
-    HSLS = 374,                    /* HSLS  */
-    LEX_ERROR = 375,               /* LEX_ERROR  */
-    OR = 376,                      /* OR  */
-    AND = 377,                     /* AND  */
-    UMINUS = 378                   /* UMINUS  */
+    VXLAN = 332,                   /* VXLAN  */
+    ISO = 333,                     /* ISO  */
+    ESIS = 334,                    /* ESIS  */
+    CLNP = 335,                    /* CLNP  */
+    ISIS = 336,                    /* ISIS  */
+    L1 = 337,                      /* L1  */
+    L2 = 338,                      /* L2  */
+    IIH = 339,                     /* IIH  */
+    LSP = 340,                     /* LSP  */
+    SNP = 341,                     /* SNP  */
+    CSNP = 342,                    /* CSNP  */
+    PSNP = 343,                    /* PSNP  */
+    STP = 344,                     /* STP  */
+    IPX = 345,                     /* IPX  */
+    NETBEUI = 346,                 /* NETBEUI  */
+    LANE = 347,                    /* LANE  */
+    LLC = 348,                     /* LLC  */
+    METAC = 349,                   /* METAC  */
+    BCC = 350,                     /* BCC  */
+    SC = 351,                      /* SC  */
+    ILMIC = 352,                   /* ILMIC  */
+    OAMF4EC = 353,                 /* OAMF4EC  */
+    OAMF4SC = 354,                 /* OAMF4SC  */
+    OAM = 355,                     /* OAM  */
+    OAMF4 = 356,                   /* OAMF4  */
+    CONNECTMSG = 357,              /* CONNECTMSG  */
+    METACONNECT = 358,             /* METACONNECT  */
+    VPI = 359,                     /* VPI  */
+    VCI = 360,                     /* VCI  */
+    RADIO = 361,                   /* RADIO  */
+    FISU = 362,                    /* FISU  */
+    LSSU = 363,                    /* LSSU  */
+    MSU = 364,                     /* MSU  */
+    HFISU = 365,                   /* HFISU  */
+    HLSSU = 366,                   /* HLSSU  */
+    HMSU = 367,                    /* HMSU  */
+    SIO = 368,                     /* SIO  */
+    OPC = 369,                     /* OPC  */
+    DPC = 370,                     /* DPC  */
+    SLS = 371,                     /* SLS  */
+    HSIO = 372,                    /* HSIO  */
+    HOPC = 373,                    /* HOPC  */
+    HDPC = 374,                    /* HDPC  */
+    HSLS = 375,                    /* HSLS  */
+    LEX_ERROR = 376,               /* LEX_ERROR  */
+    OR = 377,                      /* OR  */
+    AND = 378,                     /* AND  */
+    UMINUS = 379                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -183,7 +184,7 @@ extern int pcap_debug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 344 "grammar.y"
+#line 346 "grammar.y"
 
 	int i;
 	bpf_u_int32 h;
@@ -198,7 +199,7 @@ union YYSTYPE
 	} blk;
 	struct block *rblk;
 
-#line 202 "grammar.h"
+#line 203 "grammar.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

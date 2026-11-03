@@ -43,7 +43,7 @@
 #include <fcntl.h>
 
 static pcap_t *pd;
-static char *program_name = "nonblocktest";
+static const char *program_name = "nonblocktest";
 /* Forwards */
 static void PCAP_NORETURN usage(void);
 static void PCAP_NORETURN error(const char *, ...) PCAP_PRINTFLIKE(1, 2);
@@ -168,7 +168,12 @@ main(int argc, char **argv)
 
 	/* Now pcap_loop forever, with a callback that
 	 * uses pcap_breakloop to get out of forever */
-	pcap_loop(pd, -1, breakme, NULL);
+	status = pcap_loop(pd, -1, breakme, NULL);
+	if (status != PCAP_ERROR_BREAK) {
+		if (status >= 0)
+			error("pcap_breakloop didn't cause a break");
+		error("pcap_loop failed: %s", pcap_geterr(pd));
+	}
 
         /* Now test that pcap_setnonblock fails if we can't open the
          * eventfd. */

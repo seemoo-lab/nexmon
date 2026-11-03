@@ -51,7 +51,7 @@ The Regents of the University of California.  All rights reserved.\n";
   #include "portability.h"
 #endif
 
-static char *program_name;
+static const char *program_name;
 
 /* Forwards */
 static void countme(u_char *, const struct pcap_pkthdr *, const u_char *);
@@ -90,7 +90,7 @@ sigint_handler(int signum _U_)
 #ifdef SA_RESTART
 #define R_OPTION	"r"
 #else
-// QNX 8.0 neither defines not supports SA_RESTART.
+// QNX 8.0 neither defines nor supports SA_RESTART.
 #define R_OPTION	""
 #endif // SA_RESTART
 
@@ -103,8 +103,8 @@ sigint_handler(int signum _U_)
 int
 main(int argc, char **argv)
 {
-	register int op;
-	register char *cp, *cmdbuf, *device;
+	int op;
+	char *cp, *cmdbuf, *device;
 	long longarg;
 	char *p;
 	int timeout = 1000;
@@ -280,9 +280,13 @@ main(int argc, char **argv)
 			printf("%d packets seen, %d packets counted after pcap_dispatch returns\n",
 			    status, packet_count);
 			struct pcap_stat ps;
-			pcap_stats(pd, &ps);
-			printf("%d ps_recv, %d ps_drop, %d ps_ifdrop\n",
-			    ps.ps_recv, ps.ps_drop, ps.ps_ifdrop);
+			if (pcap_stats(pd, &ps) < 0) {
+				(void)fprintf(stderr, "pcap_stats: %s\n",
+				    pcap_geterr(pd));
+			} else {
+				printf("%d ps_recv, %d ps_drop, %d ps_ifdrop\n",
+				    ps.ps_recv, ps.ps_drop, ps.ps_ifdrop);
+			}
 		}
 	}
 	if (status == -2) {
@@ -364,10 +368,10 @@ warning(const char *fmt, ...)
  * Copy arg vector into a new buffer, concatenating arguments with spaces.
  */
 static char *
-copy_argv(register char **argv)
+copy_argv(char **argv)
 {
-	register char **p;
-	register size_t len = 0;
+	char **p;
+	size_t len = 0;
 	char *buf;
 	char *src, *dst;
 

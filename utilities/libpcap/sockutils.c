@@ -69,8 +69,6 @@
    */
   #define WINSOCK_MAJOR_VERSION 2
   #define WINSOCK_MINOR_VERSION 2
-
-  static int sockcount = 0;	/*!< Variable that allows calling the WSAStartup() only one time */
 #endif
 
 /* Some minor differences between UNIX and Win32 */
@@ -302,12 +300,11 @@ static sock_errtype sock_geterrtype(int errcode)
 }
 
 /*
- * \brief This function initializes the socket mechanism if it hasn't
- * already been initialized or reinitializes it after it has been
- * cleaned up.
+ * \brief This function initializes the socket mechanism, if
+ * necessary.
  *
  * On UN*Xes, it doesn't need to do anything; on Windows, it needs to
- * initialize Winsock.
+ * call WSAStartup().
  *
  * \param errbuf: a pointer to an user-allocated buffer that will contain
  * the complete error message. This buffer has to be at least 'errbuflen'
@@ -323,20 +320,20 @@ static sock_errtype sock_geterrtype(int errcode)
 #ifdef _WIN32
 int sock_init(char *errbuf, int errbuflen)
 {
-	if (sockcount == 0)
-	{
-		WSADATA wsaData;			/* helper variable needed to initialize Winsock */
+	int errcode;
+	WSADATA wsaData;			/* helper variable needed to initialize Winsock */
 
-		if (WSAStartup(MAKEWORD(WINSOCK_MAJOR_VERSION,
-		    WINSOCK_MINOR_VERSION), &wsaData) != 0)
-		{
-			if (errbuf)
-				snprintf(errbuf, errbuflen, "Failed to initialize Winsock\n");
-			return -1;
+	errcode = WSAStartup(MAKEWORD(WINSOCK_MAJOR_VERSION,
+	    WINSOCK_MINOR_VERSION), &wsaData);
+	if (errcode != 0)
+	{
+		if (errbuf) {
+			sock_fmterrmsg(errbuf, errbuflen, errcode,
+			    "WSAStartup() failed");
 		}
+		return -1;
 	}
 
-	sockcount++;
 	return 0;
 }
 #else
@@ -350,8 +347,7 @@ int sock_init(char *errbuf _U_, int errbuflen _U_)
 #endif
 
 /*
- * \brief This function cleans up the socket mechanism if we have no
- * sockets left open.
+ * \brief This function cleans up after a sock_init().
  *
  * On UN*Xes, it doesn't need to do anything; on Windows, it needs
  * to clean up Winsock.
@@ -361,10 +357,7 @@ int sock_init(char *errbuf _U_, int errbuflen _U_)
 void sock_cleanup(void)
 {
 #ifdef _WIN32
-	sockcount--;
-
-	if (sockcount == 0)
-		WSACleanup();
+	WSACleanup();
 #endif
 }
 
@@ -1708,10 +1701,10 @@ int sock_discard(PCAP_SOCKET sock, SSL *ssl, int size, char *errbuf,
  *
  * This function is useful after an accept() call in order to check if the connecting
  * host is allowed to connect to me. To do that, we have a buffer that keeps the list of the
- * allowed host; this function checks the sockaddr_storage structure of the connecting host
+ * allowed hosts; this function checks the sockaddr_storage structure of the connecting host
  * against this host list, and it returns '0' is the host is included in this list.
  *
- * \param hostlist: pointer to a string that contains the list of the allowed host.
+ * \param hostlist: pointer to a string that contains the list of the allowed hosts.
  *
  * \param sep: a string that keeps the separators used between the hosts (for example the
  * space character) in the host list.
@@ -1722,14 +1715,14 @@ int sock_discard(PCAP_SOCKET sock, SSL *ssl, int size, char *errbuf,
  * error message. This buffer has to be at least 'errbuflen' in length.
  * It can be NULL; in this case the error cannot be printed.
  *
- * \param errbuflen: length of the buffer that will contains the error. The error message cannot be
+ * \param errbuflen: length of the buffer that will contain the error. The error message cannot be
  * larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
  *
  * \return It returns:
  * - '1' if the host list is empty
  * - '0' if the host belongs to the host list (and therefore it is allowed to connect)
- * - '-1' in case the host does not belong to the host list (and therefore it is not allowed to connect
- * - '-2' in case or error. The error message is returned in the 'errbuf' variable.
+ * - '-1' in case the host does not belong to the host list (and therefore it is not allowed to connect)
+ * - '-2' in case of error. The error message is returned in the 'errbuf' variable.
  */
 int sock_check_hostlist(const char *hostlist, const char *sep, struct sockaddr_storage *from, char *errbuf, int errbuflen)
 {

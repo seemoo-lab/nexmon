@@ -58,22 +58,9 @@
  * we end up including both the OS's <net/bpf.h> and our <pcap/bpf.h>,
  * and their definitions of some data structures collide.
  */
-#if (defined(__linux__) || defined(__Lynx__)) && defined(AF_PACKET)
-# ifdef HAVE_NETPACKET_PACKET_H
-/* Linux distributions with newer glibc */
-#  include <netpacket/packet.h>
-# else /* HAVE_NETPACKET_PACKET_H */
-/* LynxOS, Linux distributions with older glibc */
-# ifdef __Lynx__
-/* LynxOS */
-#  include <netpacket/if_packet.h>
-# else /* __Lynx__ */
-/* Linux */
-#  include <linux/types.h>
-#  include <linux/if_packet.h>
-# endif /* __Lynx__ */
-# endif /* HAVE_NETPACKET_PACKET_H */
-#endif /* (defined(__linux__) || defined(__Lynx__)) && defined(AF_PACKET) */
+#ifdef __linux__
+#include <netpacket/packet.h>
+#endif
 
 /*
  * This is fun.
@@ -113,23 +100,18 @@
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 #define SA_LEN(addr)	((addr)->sa_len)
 #else /* HAVE_STRUCT_SOCKADDR_SA_LEN */
-#ifdef HAVE_STRUCT_SOCKADDR_STORAGE
 static size_t
 get_sa_len(struct sockaddr *addr)
 {
 	switch (addr->sa_family) {
 
-#ifdef AF_INET
 	case AF_INET:
 		return (sizeof (struct sockaddr_in));
-#endif
 
-#ifdef AF_INET6
 	case AF_INET6:
 		return (sizeof (struct sockaddr_in6));
-#endif
 
-#if (defined(__linux__) || defined(__Lynx__)) && defined(AF_PACKET)
+#if defined(__linux__)
 	case AF_PACKET:
 		return (sizeof (struct sockaddr_ll));
 #endif
@@ -144,9 +126,6 @@ get_sa_len(struct sockaddr *addr)
 	}
 }
 #define SA_LEN(addr)	(get_sa_len(addr))
-#else /* HAVE_STRUCT_SOCKADDR_STORAGE */
-#define SA_LEN(addr)	(sizeof (struct sockaddr))
-#endif /* HAVE_STRUCT_SOCKADDR_STORAGE */
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
 #endif /* SA_LEN */
 

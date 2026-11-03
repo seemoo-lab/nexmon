@@ -1,5 +1,6 @@
 Currently, libpcap supports packet capturing on Linux 2.6.27 and later;
-earlier versions are not supported.
+earlier versions are not supported.  libpcap will not work if the kernel
+does not have the packet socket option enabled.
 
 You must configure 2.6.x kernels with the CONFIG_PACKET_MMAP option for
 this protocol.  3.x and later kernels do not require that.
@@ -10,6 +11,10 @@ configuration option to disable building with libnl, but, if that option
 is chosen, the monitor-mode APIs (as used by tcpdump's "-I" flag, and as
 will probably be used by other applications in the future) won't work
 properly on mac80211 devices.
+
+libnl-tiny can be used when libnl is not available.  This works using
+Autoconf only and requires the provided libnl-tiny to have sufficient
+pkg-config support.
 
 Linux's run-time linker allows shared libraries to be linked with other
 shared libraries, which means that if an older version of a shared

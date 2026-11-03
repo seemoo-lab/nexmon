@@ -89,13 +89,8 @@ extern "C" {
 /* BSD style release date */
 #define BPF_RELEASE 199606
 
-#ifdef MSDOS /* must be 32-bit */
-typedef long          bpf_int32;
-typedef unsigned long bpf_u_int32;
-#else
 typedef	int bpf_int32;
 typedef	u_int bpf_u_int32;
-#endif
 
 /*
  * Alignment macros.  BPF_WORDALIGN rounds up to the next
@@ -155,7 +150,7 @@ struct bpf_program {
 #define		BPF_MEM		0x60
 #define		BPF_LEN		0x80
 #define		BPF_MSH		0xa0
-/*				0xc0	reserved; used by BSD/OS */
+/*				0xc0	reserved; used by BSD/OS; also by OpenBSD for BPF_RND */
 /*				0xe0	reserved; used by BSD/OS */
 
 /* alu/jmp fields */
@@ -197,7 +192,7 @@ struct bpf_program {
 #define		BPF_K		0x00
 #define		BPF_X		0x08
 
-/* ret - BPF_K and BPF_X also apply */
+/* ret - BPF_K also applies */
 #define BPF_RVAL(code)	((code) & 0x18)
 #define		BPF_A		0x10
 /*				0x18	reserved */

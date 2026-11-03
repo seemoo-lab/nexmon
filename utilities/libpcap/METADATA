@@ -7,13 +7,13 @@ third_party {
   }
   url {
     type: ARCHIVE
-    value: "https://www.tcpdump.org/release/libpcap-1.10.7.tar.xz"
+    value: "https://www.tcpdump.org/release/libpcap-1.11.0.tar.xz"
   }
-  version: "libpcap-1.10.7"
+  version: "libpcap-1.11.0"
   license_type: RESTRICTED
   last_upgrade_date {
     year: 2026
     month: 9
-    day: 6
+    day: 16
   }
 }

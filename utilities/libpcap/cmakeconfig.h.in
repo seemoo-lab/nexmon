@@ -15,29 +15,29 @@
 /* define if we have the AIX getprotobyname_r() */
 #cmakedefine HAVE_AIX_GETPROTOBYNAME_R 1
 
-/* define if you have the AirPcap API */
-#cmakedefine HAVE_AIRPCAP_API 1
-
 /* Define to 1 if you have the `asprintf' function. */
 #cmakedefine HAVE_ASPRINTF 1
 
-/* Define to 1 if you have the <config/HaikuConfig.h> header file. */
-#cmakedefine HAVE_CONFIG_HAIKUCONFIG_H 1
+/* Define to 1 if you have the '__builtin_bswap16' compiler builtin. */
+#cmakedefine HAVE_BUILTIN_BSWAP16
+
+/* Define to 1 if you have the '__builtin_bswap32' compiler builtin. */
+#cmakedefine HAVE_BUILTIN_BSWAP32
+
+/* Define to 1 if you have the '__builtin_bswap64' compiler builtin. */
+#cmakedefine HAVE_BUILTIN_BSWAP64
+
+/* Define to 1 if you have the '__builtin_ctz' compiler builtin. */
+#cmakedefine HAVE_BUILTIN_CTZ
 
 /* define if you have the DAG API */
 #cmakedefine HAVE_DAG_API 1
 
-/* define if you have dag_get_erf_types() */
-#cmakedefine HAVE_DAG_GET_ERF_TYPES 1
-
-/* define if you have dag_get_stream_erf_types() */
-#cmakedefine HAVE_DAG_GET_STREAM_ERF_TYPES 1
-
-/* define if you have large streams capable DAG API */
-#cmakedefine HAVE_DAG_LARGE_STREAMS_API 1
-
 /* define if you have vdag_set_device_info() */
 #cmakedefine HAVE_DAG_VDAG 1
+
+/* Define to 1 if DAG transmit support is enabled */
+#cmakedefine ENABLE_DAG_TX 1
 
 /* Define to 1 if you have the declaration of `ether_hostton' */
 #cmakedefine HAVE_DECL_ETHER_HOSTTON 1
@@ -57,17 +57,14 @@
 /* Define to 1 if you have the `getspnam' function. */
 #cmakedefine HAVE_GETSPNAM 1
 
+/* Define to 1 if using GNU libc. */
+#cmakedefine HAVE_GLIBC 1
+
 /* Define to 1 if you have a GNU-style `strerror_r' function. */
 #cmakedefine HAVE_GNU_STRERROR_R 1
 
 /* on HP-UX 10.20 or later */
 #cmakedefine HAVE_HPUX10_20_OR_LATER 1
-
-/* on HP-UX 9.x */
-#cmakedefine HAVE_HPUX9 1
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H 1
 
 /* if libdlpi exists */
 #cmakedefine HAVE_LIBDLPI 1
@@ -87,40 +84,22 @@
 /* Define to 1 if you have the <linux/net_tstamp.h> header file. */
 #cmakedefine HAVE_LINUX_NET_TSTAMP_H 1
 
-/* Define to 1 if you have the <linux/socket.h> header file. */
-#cmakedefine HAVE_LINUX_SOCKET_H 1
-
 /* Define to 1 if you have the <linux/usbdevice_fs.h> header file. */
 #cmakedefine HAVE_LINUX_USBDEVICE_FS_H 1
 
-/* Define to 1 if you have the <memory.h> header file. */
-#cmakedefine HAVE_MEMORY_H 1
-
-/* Define to 1 if you have the <netpacket/packet.h> header file. */
-#cmakedefine HAVE_NETPACKET_PACKET_H 1
+/* Define to 1 if you have the <machine/atomic.h> header file. */
+#cmakedefine HAVE_MACHINE_ATOMIC_H 1
 
 /* Define to 1 if you have the <net/bpf.h> header file. */
 #cmakedefine HAVE_NET_BPF_H 1
 
-/* Define to 1 if you have the <net/enet.h> header file. */
-#cmakedefine HAVE_NET_ENET_H 1
-
 /* Define to 1 if you have the <net/if_media.h> header file. */
 #cmakedefine HAVE_NET_IF_MEDIA_H 1
-
-/* Define to 1 if you have the <net/nit.h> header file. */
-#cmakedefine HAVE_NET_NIT_H 1
-
-/* Define to 1 if you have the <net/pfilt.h> header file. */
-#cmakedefine HAVE_NET_PFILT_H 1
-
-/* Define to 1 if you have the <net/raw.h> header file. */
-#cmakedefine HAVE_NET_RAW_H 1
 
 /* Use OpenSSL */
 #cmakedefine HAVE_OPENSSL 1
 
-/* if there's an os_proto.h for this platform, to use additional prototypes */
+/* if there's an os-proto.h for this platform, to use additional prototypes */
 #cmakedefine HAVE_OS_PROTO_H 1
 
 /* Define to 1 if Packet32 API (Npcap driver) is available */
@@ -135,9 +114,6 @@
 /* Define to 1 if you have a POSIX-style `strerror_r' function. */
 #cmakedefine HAVE_POSIX_STRERROR_R 1
 
-/* define if you have the Septel API */
-#cmakedefine HAVE_SEPTEL_API 1
-
 /* define if you have the Myricom SNF API */
 #cmakedefine HAVE_SNF_API 1
 
@@ -147,29 +123,17 @@
 /* Define to 1 if the system has the type `socklen_t'. */
 #cmakedefine HAVE_SOCKLEN_T 1
 
-/* On solaris */
+/* On Solaris */
 #cmakedefine HAVE_SOLARIS 1
 
 /* target host supports Solaris "any" device */
 #cmakedefine HAVE_SOLARIS_ANY_DEVICE 1
 
-/* define if we have the Solaris/IRIX getnetbyname_r() */
-#cmakedefine HAVE_SOLARIS_IRIX_GETNETBYNAME_R 1
+/* define if we have the Solaris getnetbyname_r() */
+#cmakedefine HAVE_SOLARIS_GETNETBYNAME_R 1
 
-/* define if we have the Solaris/IRIX getprotobyname_r() */
-#cmakedefine HAVE_SOLARIS_IRIX_GETPROTOBYNAME_R 1
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#cmakedefine HAVE_STDINT_H 1
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#cmakedefine HAVE_STDLIB_H 1
-
-/* Define to 1 if you have the <strings.h> header file. */
-#cmakedefine HAVE_STRINGS_H 1
-
-/* Define to 1 if you have the <string.h> header file. */
-#cmakedefine HAVE_STRING_H 1
+/* define if we have the Solaris getprotobyname_r() */
+#cmakedefine HAVE_SOLARIS_GETPROTOBYNAME_R 1
 
 /* Define to 1 if you have the `strlcat' function. */
 #cmakedefine HAVE_STRLCAT 1
@@ -192,20 +156,15 @@
 /* Define to 1 if `msg_flags' is a member of `struct msghdr'. */
 #cmakedefine HAVE_STRUCT_MSGHDR_MSG_FLAGS 1
 
-/* Define to 1 if the system has the type `struct rte_ether_addr'. */
-#cmakedefine HAVE_STRUCT_RTE_ETHER_ADDR 1
-
 /* Define to 1 if `hci_channel' is a member of `struct sockaddr_hci'. */
 #cmakedefine HAVE_STRUCT_SOCKADDR_HCI_HCI_CHANNEL 1
 
 /* Define to 1 if `sa_len' is a member of `struct sockaddr'. */
 #cmakedefine HAVE_STRUCT_SOCKADDR_SA_LEN 1
 
-/* Define to 1 if the system has the type `struct sockaddr_storage'. */
-#cmakedefine HAVE_STRUCT_SOCKADDR_STORAGE 1
-
-/* Define to 1 if `tp_vlan_tci' is a member of `struct tpacket_auxdata'. */
-#cmakedefine HAVE_STRUCT_TPACKET_AUXDATA_TP_VLAN_TCI 1
+/* Define to 1 if you have the declaration of `SKF_AD_VLAN_TAG_PRESENT', and
+   to 0 if you don't. */
+#cmakedefine01 HAVE_DECL_SKF_AD_VLAN_TAG_PRESENT
 
 /* Define to 1 if `bRequestType' is a member of `struct
    usbdevfs_ctrltransfer'. */
@@ -223,20 +182,8 @@
 /* Define to 1 if you have the <sys/ioccom.h> header file. */
 #cmakedefine HAVE_SYS_IOCCOM_H 1
 
-/* Define to 1 if you have the <sys/net/nit.h> header file. */
-#cmakedefine HAVE_SYS_NET_NIT_H 1
-
-/* Define to 1 if you have the <sys/sockio.h> header file. */
-#cmakedefine HAVE_SYS_SOCKIO_H 1
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#cmakedefine HAVE_SYS_STAT_H 1
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#cmakedefine HAVE_SYS_TYPES_H 1
-
-/* define if you have the TurboCap API */
-#cmakedefine HAVE_TC_API 1
+/* Define to 1 if using uclibc(-ng). */
+#cmakedefine HAVE_UCLIBC 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
@@ -268,9 +215,6 @@
 /* Define to 1 if you have the `PacketGetInfo' function. */
 #cmakedefine HAVE_PACKET_GET_INFO 1
 
-/* IPv6 */
-#cmakedefine INET6 1
-
 /* Define to 1 if netinet/ether.h declares `ether_hostton' */
 #cmakedefine NETINET_ETHER_H_DECLARES_ETHER_HOSTTON 1
 
@@ -284,7 +228,7 @@
 #cmakedefine NO_PROTOCHAIN 1
 
 /* Define to the address where bug reports for this package should be sent. */
-#cmakedefine PACKAGE_BUGREPORT 1
+#cmakedefine PACKAGE_BUGREPORT "@PACKAGE_BUGREPORT@"
 
 /* Define to the DLL-preferred version string of this package. */
 #cmakedefine PACKAGE_VERSION_DLL @PACKAGE_VERSION_DLL@
@@ -296,10 +240,10 @@
 #cmakedefine PACKAGE_STRING "@PACKAGE_STRING@"
 
 /* Define to the one symbol short name of this package. */
-#cmakedefine PACKAGE_TARNAME 1
+#cmakedefine PACKAGE_TARNAME "@PACKAGE_TARNAME@"
 
 /* Define to the home page for this package. */
-#cmakedefine PACKAGE_URL 1
+#cmakedefine PACKAGE_URL "@PACKAGE_URL@"
 
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION "@PACKAGE_VERSION@"
@@ -312,9 +256,6 @@
 
 /* support D-Bus sniffing */
 #cmakedefine PCAP_SUPPORT_DBUS 1
-
-/* target host supports DPDK */
-#cmakedefine PCAP_SUPPORT_DPDK 1
 
 /* target host supports Linux usbmon for USB sniffing */
 #cmakedefine PCAP_SUPPORT_LINUX_USBMON 1
@@ -331,11 +272,8 @@
 /* The size of `time_t', as computed by sizeof. */
 #cmakedefine SIZEOF_TIME_T @SIZEOF_TIME_T@
 
-/* Define to 1 if you have the ANSI C header files. */
-#cmakedefine STDC_HEADERS 1
-
-/* Define to 1 if strings.h declares `ffs' */
-#cmakedefine STRINGS_H_DECLARES_FFS 1
+/* The size of `void *', as computed by sizeof. */
+#cmakedefine SIZEOF_VOID_P @SIZEOF_VOID_P@
 
 /* Define to 1 if sys/ethernet.h declares `ether_hostton' */
 #cmakedefine SYS_ETHERNET_H_DECLARES_ETHER_HOSTTON 1
@@ -356,11 +294,3 @@
 
 /* Define for large files, on AIX-style hosts. */
 #cmakedefine _LARGE_FILES 1
-
-/* define on AIX to get certain functions */
-#cmakedefine _SUN 1
-
-#if 0
-/* on sinix */
-#cmakedefine sinix 1
-#endif

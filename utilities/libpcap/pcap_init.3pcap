@@ -17,7 +17,7 @@
 .\" WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
 .\" MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH PCAP_INIT 3PCAP "30 November 2023"
+.TH PCAP_INIT 3PCAP "30 December 2025"
 .SH NAME
 pcap_init \- initialize the library
 .SH SYNOPSIS
@@ -49,6 +49,9 @@ Currently, the options that can be specified in
 .I opts
 are:
 .TP
+.B PCAP_MMAP_32BIT
+Map packet buffers with 32-bit addresses.
+.TP
 .B PCAP_CHAR_ENC_LOCAL
 Treat all strings supplied as arguments, and return all strings to the
 caller, as being in the local character encoding.
@@ -73,15 +76,7 @@ makes an attempt to check whether the string passed as an argument is a
 UTF-16LE string - note that this attempt is unsafe, as it may run past
 the end of the string - to handle
 .BR pcap_lookupdev ()
-returning a UTF-16LE string. Programs that don't call
-.BR pcap_init ()
-should, on Windows, call
-.BR pcap_wsockinit ()
-to initialize Winsock; this is not necessary if
-.BR pcap_init ()
-is called, as
-.BR pcap_init ()
-will initialize Winsock itself on Windows.
+returning a UTF-16LE string.
 .SH RETURN VALUE
 .BR pcap_init ()
 returns
@@ -95,7 +90,7 @@ is returned,
 .I errbuf
 is filled in with an appropriate error message.
 .SH BACKWARD COMPATIBILITY
-This function became available in libpcap release 1.9.0.  In previous
+This function became available in libpcap release 1.10.0.  In previous
 releases, on Windows, all strings supplied as arguments, and all strings
 returned to the caller, are in the local character encoding.
 .SH SEE ALSO

@@ -33,23 +33,30 @@
 
 #include <config.h>
 
-/* Get the same variety of strerror_r() as Autoconf/CMake has detected. */
+/*
+ * Include this before including any system header files, as it
+ * may do some #defines that cause those headers to declare
+ * more functions than they do by default.
+ */
 #include "ftmacros.h"
 
 #include <pcap-types.h>
 #ifndef _WIN32
 #include <sys/param.h>
-#ifndef MSDOS
 #include <sys/file.h>
-#endif
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#ifdef HAVE_SYS_SOCKIO_H
+
+/*
+ * On most supported platforms <sys/ioctl.h> also defines the SIOCGIF* macros.
+ * However, on Haiku, illumos and Solaris the macros need <sys/sockio.h>,
+ * which does not exist in AIX 7, HP-UX 11, GNU/Hurd and Linux (both GNU and
+ * musl libc).
+ */
+#if defined(HAVE_SOLARIS) || defined(__HAIKU__)
 #include <sys/sockio.h>
 #endif
 
-struct mbuf;		/* Squelch compiler warnings on some platforms for */
-struct rtentry;		/* declarations in <net/if.h> */
 #include <net/if.h>
 #include <netinet/in.h>
 #endif /* _WIN32 */
@@ -57,6 +64,7 @@ struct rtentry;		/* declarations in <net/if.h> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #if !defined(_MSC_VER) && !defined(__BORLANDC__) && !defined(__MINGW32__)
 #include <unistd.h>
 #endif
@@ -72,10 +80,6 @@ struct rtentry;		/* declarations in <net/if.h> */
 #include "os-proto.h"
 #endif
 
-#ifdef MSDOS
-#include "pcap-dos.h"
-#endif
-
 #include "pcap-int.h"
 
 #include "optimize.h"
@@ -84,17 +88,9 @@ struct rtentry;		/* declarations in <net/if.h> */
 #include "pcap-dag.h"
 #endif /* HAVE_DAG_API */
 
-#ifdef HAVE_SEPTEL_API
-#include "pcap-septel.h"
-#endif /* HAVE_SEPTEL_API */
-
 #ifdef HAVE_SNF_API
 #include "pcap-snf.h"
 #endif /* HAVE_SNF_API */
-
-#ifdef HAVE_TC_API
-#include "pcap-tc.h"
-#endif /* HAVE_TC_API */
 
 #ifdef PCAP_SUPPORT_LINUX_USBMON
 #include "pcap-usb-linux.h"
@@ -124,12 +120,8 @@ struct rtentry;		/* declarations in <net/if.h> */
 #include "pcap-rdmasniff.h"
 #endif
 
-#ifdef PCAP_SUPPORT_DPDK
-#include "pcap-dpdk.h"
-#endif
-
-#ifdef HAVE_AIRPCAP_API
-#include "pcap-airpcap.h"
+#ifdef ENABLE_REMOTE
+#include "pcap-rpcap.h"
 #endif
 
 #ifdef _WIN32
@@ -150,9 +142,10 @@ struct rtentry;		/* declarations in <net/if.h> */
  *
  * So we don't initialize Winsock in a DllMain() routine.
  *
- * pcap_init() should be called to initialize pcap on both UN*X and
- * Windows; it will initialize Winsock on Windows.  (It will also be
- * initialized as needed if pcap_init() hasn't been called.)
+ * Similarly, we cannot register an atexit() handler to call WSACleanup()
+ * because that handler will be run in the context of DllMain. Therefore, we
+ * call WSAStartup each time Winsock is needed and WSACleanup as soon as it is
+ * no longer needed.
  */
 
 /*
@@ -175,32 +168,7 @@ internal_wsockfini(void)
 static int
 internal_wsockinit(char *errbuf)
 {
-	WORD wVersionRequested;
-	WSADATA wsaData;
-	static int err = -1;
-	static int done = 0;
-	int status;
-
-	if (done)
-		return (err);
-
-	/*
-	 * Versions of Windows that don't support Winsock 2.2 are
-	 * too old for us.
-	 */
-	wVersionRequested = MAKEWORD(2, 2);
-	status = WSAStartup(wVersionRequested, &wsaData);
-	done = 1;
-	if (status != 0) {
-		if (errbuf != NULL) {
-			pcapint_fmt_errmsg_for_win32_err(errbuf, PCAP_ERRBUF_SIZE,
-			    status, "WSAStartup() failed");
-		}
-		return (err);
-	}
-	atexit(internal_wsockfini);
-	err = 0;
-	return (err);
+	return 0;
 }
 
 /*
@@ -246,6 +214,7 @@ pcap_wsockinit(void)
  */
 int pcapint_new_api;		/* pcap_lookupdev() always fails */
 int pcapint_utf_8_mode;		/* Strings should be in UTF-8. */
+int pcapint_mmap_32bit;		/* Map packet buffers with 32-bit addresses. */
 
 int
 pcap_init(unsigned int opts, char *errbuf)
@@ -283,6 +252,10 @@ pcap_init(unsigned int opts, char *errbuf)
 		pcapint_utf_8_mode = 1;
 		break;
 
+	case PCAP_MMAP_32BIT:
+		pcapint_mmap_32bit = 1;
+		break;
+
 	default:
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Unknown options specified");
 		return (PCAP_ERROR);
@@ -303,16 +276,6 @@ pcap_init(unsigned int opts, char *errbuf)
 		 */
 		return (0);
 	}
-
-#ifdef _WIN32
-	/*
-	 * Now set up Winsock.
-	 */
-	if (internal_wsockinit(errbuf) == -1) {
-		/* Failed. */
-		return (PCAP_ERROR);
-	}
-#endif
 
 	/*
 	 * We're done.
@@ -490,13 +453,6 @@ pcap_live_dump_ended_not_initialized(pcap_t *pcap, int sync _U_)
 	pcap_set_not_initialized_message(pcap);
 	return (PCAP_ERROR_NOT_ACTIVATED);
 }
-
-static PAirpcapHandle
-pcap_get_airpcap_handle_not_initialized(pcap_t *pcap)
-{
-	pcap_set_not_initialized_message(pcap);
-	return (NULL);
-}
 #endif
 
 /*
@@ -673,14 +629,8 @@ static struct capture_source_type {
 #ifdef HAVE_DAG_API
 	{ dag_findalldevs, dag_create },
 #endif
-#ifdef HAVE_SEPTEL_API
-	{ septel_findalldevs, septel_create },
-#endif
 #ifdef HAVE_SNF_API
 	{ snf_findalldevs, snf_create },
-#endif
-#ifdef HAVE_TC_API
-	{ TcFindAllDevs, TcCreate },
 #endif
 #ifdef PCAP_SUPPORT_BT
 	{ bt_findalldevs, bt_create },
@@ -702,12 +652,6 @@ static struct capture_source_type {
 #endif
 #ifdef PCAP_SUPPORT_RDMASNIFF
 	{ rdmasniff_findalldevs, rdmasniff_create },
-#endif
-#ifdef PCAP_SUPPORT_DPDK
-	{ pcap_dpdk_findalldevs, pcap_dpdk_create },
-#endif
-#ifdef HAVE_AIRPCAP_API
-	{ airpcap_findalldevs, airpcap_create },
 #endif
 	{ NULL, NULL }
 };
@@ -982,22 +926,19 @@ get_if_description(const char *name)
 			/*
 			 * OK, it begins with "usbus".
 			 */
-			long busnum;
-			char *p;
+			unsigned busnum;
+			int ret;
 
-			errno = 0;
-			busnum = strtol(name + 5, &p, 10);
-			if (errno == 0 && p != name + 5 && *p == '\0' &&
-			    busnum >= 0 && busnum <= INT_MAX) {
+			ret = pcapint_get_decuint(name + 5, NULL, &busnum);
+			if (ret == 0) {
 				/*
-				 * OK, it's a valid number that's not
-				 * bigger than INT_MAX.  Construct
+				 * OK, it's a valid number.  Construct
 				 * a description from it.
 				 * (If that fails, we don't worry about
 				 * it, we just return NULL.)
 				 */
 				if (pcapint_asprintf(&description,
-				    "USB bus number %ld", busnum) == -1) {
+				    "USB bus number %u", busnum) == -1) {
 					/* Failed. */
 					description = NULL;
 				}
@@ -1364,6 +1305,10 @@ pcapint_add_dev(pcap_if_list_t *devlistp, const char *name, bpf_u_int32 flags,
 	/*
 	 * Add it to the list, in the appropriate location.
 	 * First, get the "figure of merit" for this interface.
+	 *
+	 * To have the list of devices ordered correctly, after adding a
+	 * device to the list the device flags value must not change (i.e. it
+	 * should be set correctly beforehand).
 	 */
 	this_figure_of_merit = get_figure_of_merit(curdev);
 
@@ -1439,7 +1384,7 @@ pcapint_add_dev(pcap_if_list_t *devlistp, const char *name, bpf_u_int32 flags,
  * Add an entry for the "any" device.
  */
 pcap_if_t *
-pcap_add_any_dev(pcap_if_list_t *devlistp, char *errbuf)
+pcapint_add_any_dev(pcap_if_list_t *devlistp, char *errbuf)
 {
 	static const char any_descr[] = "Pseudo-device that captures on all interfaces";
 
@@ -1449,7 +1394,9 @@ pcap_add_any_dev(pcap_if_list_t *devlistp, char *errbuf)
 	 * doesn't apply to the "any" device.
 	 */
 	return pcapint_add_dev(devlistp, "any",
-	    PCAP_IF_UP|PCAP_IF_RUNNING|PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE,
+	    PCAP_IF_UP |
+	    PCAP_IF_RUNNING |
+	    PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE,
 	    any_descr, errbuf);
 }
 
@@ -1504,13 +1451,10 @@ pcap_freealldevs(pcap_if_t *alldevs)
  * it actually returns the names of all interfaces, with a NUL separator
  * between them; some callers may depend on that.
  *
- * MS-DOS has its own pcap_lookupdev(), but that might be useful only
- * as an optimization.
- *
  * In all other cases, we just use pcap_findalldevs() to get a list of
  * devices, and pick from that list.
  */
-#if !defined(HAVE_PACKET32) && !defined(MSDOS)
+#if !defined(HAVE_PACKET32)
 /*
  * Return the name of a network interface attached to the system, or NULL
  * if none can be found.  The interface must be configured up; the
@@ -1532,10 +1476,6 @@ pcap_lookupdev(char *errbuf)
    * XXX - that might not be large enough for capture devices
    * that aren't regular network interfaces.
    */
-  /* for old BSD systems, including bsdi3 */
-  #ifndef IF_NAMESIZE
-  #define IF_NAMESIZE IFNAMSIZ
-  #endif
 #endif
 	static char device[IF_NAMESIZE + 1];
 	char *ret;
@@ -1585,9 +1525,9 @@ pcap_lookupdev(char *errbuf)
 	pcap_freealldevs(alldevs);
 	return (ret);
 }
-#endif /* !defined(HAVE_PACKET32) && !defined(MSDOS) */
+#endif /* !defined(HAVE_PACKET32) */
 
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 /*
  * We don't just fetch the entire list of devices, search for the
  * particular device, and use its first IPv4 address, as that's too
@@ -1600,8 +1540,8 @@ int
 pcap_lookupnet(const char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp,
     char *errbuf)
 {
-	register int fd;
-	register struct sockaddr_in *sin4;
+	int fd;
+	struct sockaddr_in *sin4;
 	struct ifreq ifr;
 
 	/*
@@ -1612,9 +1552,6 @@ pcap_lookupnet(const char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp,
 	if (!device || strcmp(device, "any") == 0
 #ifdef HAVE_DAG_API
 	    || strstr(device, "dag") != NULL
-#endif
-#ifdef HAVE_SEPTEL_API
-	    || strstr(device, "septel") != NULL
 #endif
 #ifdef PCAP_SUPPORT_BT
 	    || strstr(device, "bluetooth") != NULL
@@ -1629,12 +1566,9 @@ pcap_lookupnet(const char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp,
 	    || strncmp(device, "netmap:", 7) == 0
 	    || strncmp(device, "vale", 4) == 0
 #endif
-#ifdef PCAP_SUPPORT_DPDK
-	    || strncmp(device, "dpdk:", 5) == 0
-#endif
 	    ) {
 		*netp = *maskp = 0;
-		return 0;
+		return (0);
 	}
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -1709,10 +1643,9 @@ pcap_lookupnet(const char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp,
 	*netp &= *maskp;
 	return (0);
 }
-#endif /* !defined(_WIN32) && !defined(MSDOS) */
+#endif /* !defined(_WIN32) */
 
 #ifdef ENABLE_REMOTE
-#include "pcap-rpcap.h"
 
 /*
  * Extract a substring from a string.
@@ -1772,7 +1705,7 @@ static int
 pcap_parse_source(const char *source, char **schemep, char **userinfop,
     char **hostp, char **portp, char **pathp, char *ebuf)
 {
-	char *colonp;
+	const char *colonp;
 	size_t scheme_len;
 	char *scheme;
 	const char *endp;
@@ -1821,7 +1754,7 @@ pcap_parse_source(const char *source, char **schemep, char **userinfop,
 	 * include colons (e.g., I think some Solaris interfaces
 	 * might).
 	 */
-	colonp = strchr(source, ':');
+	colonp = (const char *)strchr(source, ':');
 	if (colonp == NULL) {
 		/*
 		 * The source is the device to open.
@@ -1883,6 +1816,18 @@ pcap_parse_source(const char *source, char **schemep, char **userinfop,
 	/*
 	 * Treat file: specially - take everything after file:// as
 	 * the pathname.
+	 *
+	 * That doesn't conform to RFC 8089 "The "file" URI Scheme",
+	 * but it does conform to the way WinPcap's pcap_open() handles
+	 * the file scheme.
+	 *
+	 * XXX - however, it *also* means that
+	 *
+	 *    file://localhost/this/is/a/capture.pcap
+	 *
+	 * will be interpreted as a path, relative to the current
+	 * directory, of "localhost/this/is/a/capture.pcap", not
+	 * as an absolute path of "/this/is/a/capture.pcap".
 	 */
 	if (pcapint_strcasecmp(scheme, "file") == 0) {
 		*pathp = strdup(colonp + 3);
@@ -2116,8 +2061,8 @@ pcap_parse_source(const char *source, char **schemep, char **userinfop,
 }
 
 int
-pcapint_createsrcstr_ex(char *source, int type, const char *host, const char *port,
-    const char *name, unsigned char uses_ssl, char *errbuf)
+pcapint_createsrcstr_ex(char *source, int type, const char *userinfo, const char *host,
+    const char *port, const char *name, unsigned char uses_ssl, char *errbuf)
 {
 	switch (type) {
 
@@ -2137,6 +2082,11 @@ pcapint_createsrcstr_ex(char *source, int type, const char *host, const char *po
 		    (uses_ssl ? "rpcaps://" : PCAP_SRC_IF_STRING),
 		    PCAP_BUF_SIZE);
 		if (host != NULL && *host != '\0') {
+			if (userinfo != NULL && *userinfo != '\0') {
+				pcapint_strlcat(source, userinfo, PCAP_BUF_SIZE);
+				pcapint_strlcat(source, "@", PCAP_BUF_SIZE);
+			}
+
 			if (strchr(host, ':') != NULL) {
 				/*
 				 * The host name contains a colon, so it's
@@ -2186,16 +2136,18 @@ int
 pcap_createsrcstr(char *source, int type, const char *host, const char *port,
     const char *name, char *errbuf)
 {
-	return (pcapint_createsrcstr_ex(source, type, host, port, name, 0, errbuf));
+	return (pcapint_createsrcstr_ex(source, type, NULL, host, port, name, 0, errbuf));
 }
 
 int
-pcapint_parsesrcstr_ex(const char *source, int *type, char *host, char *port,
-    char *name, unsigned char *uses_ssl, char *errbuf)
+pcapint_parsesrcstr_ex(const char *source, int *type, char *userinfo, char *host,
+    char *port, char *name, unsigned char *uses_ssl, char *errbuf)
 {
 	char *scheme, *tmpuserinfo, *tmphost, *tmpport, *tmppath;
 
 	/* Initialization stuff */
+	if (userinfo)
+		*userinfo = '\0';
 	if (host)
 		*host = '\0';
 	if (port)
@@ -2244,13 +2196,10 @@ pcapint_parsesrcstr_ex(const char *source, int *type, char *host, char *port,
 		 * pcap_parse_source() has already handled the case of
 		 * rpcap[s]://device
 		 */
-		if (host && tmphost) {
-			if (tmpuserinfo)
-				snprintf(host, PCAP_BUF_SIZE, "%s@%s",
-				    tmpuserinfo, tmphost);
-			else
-				pcapint_strlcpy(host, tmphost, PCAP_BUF_SIZE);
-		}
+		if (userinfo && tmpuserinfo)
+			pcapint_strlcpy(userinfo, tmpuserinfo, PCAP_BUF_SIZE);
+		if (host && tmphost)
+			pcapint_strlcpy(host, tmphost, PCAP_BUF_SIZE);
 		if (port && tmpport)
 			pcapint_strlcpy(port, tmpport, PCAP_BUF_SIZE);
 		if (name && tmppath)
@@ -2298,9 +2247,50 @@ int
 pcap_parsesrcstr(const char *source, int *type, char *host, char *port,
     char *name, char *errbuf)
 {
-	return (pcapint_parsesrcstr_ex(source, type, host, port, name, NULL, errbuf));
+	return (pcapint_parsesrcstr_ex(source, type, NULL, host, port, name, NULL, errbuf));
 }
-#endif
+
+#else /* ENABLE_REMOTE */
+
+int
+pcapint_createsrcstr_ex(char *source _U_, int type _U_, const char *userinfo _U_,
+   const char *host _U_, const char *port _U_, const char *name _U_,
+   unsigned char uses_ssl _U_, char *errbuf)
+{
+	pcapint_strlcpy(errbuf, "pcapint_createsrcstr_ex() is not supported",
+	    PCAP_ERRBUF_SIZE);
+	return (-1);
+}
+
+int
+pcap_createsrcstr(char *source _U_, int type _U_, const char *host _U_,
+    const char *port _U_, const char *name _U_, char *errbuf)
+{
+	pcapint_strlcpy(errbuf, "pcapint_createsrcstr() is not supported",
+	    PCAP_ERRBUF_SIZE);
+	return (-1);
+}
+
+int
+pcapint_parsesrcstr_ex(const char *source _U_, int *type _U_,
+    char *userinfo _U_, char *host _U_, char *port _U_, char *name _U_,
+    unsigned char *uses_ssl _U_, char *errbuf)
+{
+	pcapint_strlcpy(errbuf, "pcapint_parsesrcstr_ex() is not supported",
+	    PCAP_ERRBUF_SIZE);
+	return (-1);
+}
+
+int
+pcap_parsesrcstr(const char *source _U_, int *type _U_, char *host _U_,
+    char *port _U_, char *name _U_, char *errbuf)
+{
+	pcapint_strlcpy(errbuf, "pcapint_parsesrcstr() is not supported",
+	    PCAP_ERRBUF_SIZE);
+	return (-1);
+}
+
+#endif /* ENABLE_REMOTE */
 
 pcap_t *
 pcap_create(const char *device, char *errbuf)
@@ -2466,7 +2456,6 @@ initialize_ops(pcap_t *p)
 	p->setuserbuffer_op = pcap_setuserbuffer_not_initialized;
 	p->live_dump_op = pcap_live_dump_not_initialized;
 	p->live_dump_ended_op = pcap_live_dump_ended_not_initialized;
-	p->get_airpcap_handle_op = pcap_get_airpcap_handle_not_initialized;
 #endif
 
 	/*
@@ -2516,10 +2505,8 @@ pcap_alloc_pcap_t(char *ebuf, size_t total_size, size_t private_offset)
 	p->handle = INVALID_HANDLE_VALUE;	/* not opened yet */
 #else /* _WIN32 */
 	p->fd = -1;	/* not opened yet */
-#ifndef MSDOS
 	p->selectable_fd = -1;
 	p->required_select_timeout = NULL;
-#endif /* MSDOS */
 #endif /* _WIN32 */
 
 	/*
@@ -2965,7 +2952,7 @@ pcap_dispatch(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 int
 pcap_loop(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 {
-	register int n;
+	int n;
 
 	for (;;) {
 		if (p->rfile != NULL) {
@@ -3207,14 +3194,13 @@ static const u_char charmap[] = {
 int
 pcapint_strcasecmp(const char *s1, const char *s2)
 {
-	register const u_char	*cm = charmap,
-				*us1 = (const u_char *)s1,
-				*us2 = (const u_char *)s2;
+	const u_char	*us1 = (const u_char *)s1,
+			*us2 = (const u_char *)s2;
 
-	while (cm[*us1] == cm[*us2++])
+	while (charmap[*us1] == charmap[*us2++])
 		if (*us1++ == '\0')
 			return(0);
-	return (cm[*us1] - cm[*--us2]);
+	return (charmap[*us1] - charmap[*--us2]);
 }
 
 struct dlt_choice {
@@ -3229,18 +3215,23 @@ struct dlt_choice {
 static struct dlt_choice dlt_choices[] = {
 	DLT_CHOICE(NULL, "BSD loopback"),
 	DLT_CHOICE(EN10MB, "Ethernet"),
-	DLT_CHOICE(IEEE802, "Token ring"),
-	DLT_CHOICE(ARCNET, "BSD ARCNET"),
-	DLT_CHOICE(SLIP, "SLIP"),
-	DLT_CHOICE(PPP, "PPP"),
-	DLT_CHOICE(FDDI, "FDDI"),
+	DLT_CHOICE(EN3MB, "experimental Ethernet (3Mb/s)"),
+	DLT_CHOICE(AX25, "AX.25 layer 2"),
+	DLT_CHOICE(PRONET, "Proteon ProNET Token Ring"),
+	DLT_CHOICE(CHAOS, "MIT Chaosnet"),
+	DLT_CHOICE(IEEE802, "802.5 Token Ring"),
+	DLT_CHOICE(ARCNET, "BSD ARCnet"),
+	DLT_CHOICE(SLIP, "Serial Line IP"),
+	DLT_CHOICE(PPP, "Point-to-Point Protocol"),
+	DLT_CHOICE(FDDI, "Fiber Distributed Data Interface"),
+	DLT_CHOICE(REDBACK_SMARTEDGE, "Redback SmartEdge 400/800"),
 	DLT_CHOICE(ATM_RFC1483, "RFC 1483 LLC-encapsulated ATM"),
-	DLT_CHOICE(RAW, "Raw IP"),
-	DLT_CHOICE(SLIP_BSDOS, "BSD/OS SLIP"),
-	DLT_CHOICE(PPP_BSDOS, "BSD/OS PPP"),
+	DLT_CHOICE(RAW, "Raw IPv4/IPv6"),
+	DLT_CHOICE(SLIP_BSDOS, "BSD/OS Serial Line IP"),
+	DLT_CHOICE(PPP_BSDOS, "BSD/OS Point-to-Point Protocol"),
 	DLT_CHOICE(ATM_CLIP, "Linux Classical IP over ATM"),
-	DLT_CHOICE(PPP_SERIAL, "PPP over serial"),
-	DLT_CHOICE(PPP_ETHER, "PPPoE"),
+	DLT_CHOICE(PPP_SERIAL, "Point-to-Point Protocol over serial"),
+	DLT_CHOICE(PPP_ETHER, "PPPoE session packets"),
 	DLT_CHOICE(SYMANTEC_FIREWALL, "Symantec Firewall"),
 	DLT_CHOICE(C_HDLC, "Cisco HDLC"),
 	DLT_CHOICE(IEEE802_11, "802.11"),
@@ -3248,14 +3239,14 @@ static struct dlt_choice dlt_choices[] = {
 	DLT_CHOICE(LOOP, "OpenBSD loopback"),
 	DLT_CHOICE(ENC, "OpenBSD encapsulated IP"),
 	DLT_CHOICE(LINUX_SLL, "Linux cooked v1"),
-	DLT_CHOICE(LTALK, "Localtalk"),
+	DLT_CHOICE(LTALK, "LocalTalk"),
 	DLT_CHOICE(PFLOG, "OpenBSD pflog file"),
 	DLT_CHOICE(PFSYNC, "Packet filter state syncing"),
 	DLT_CHOICE(PRISM_HEADER, "802.11 plus Prism header"),
 	DLT_CHOICE(IP_OVER_FC, "RFC 2625 IP-over-Fibre Channel"),
 	DLT_CHOICE(SUNATM, "Sun raw ATM"),
 	DLT_CHOICE(IEEE802_11_RADIO, "802.11 plus radiotap header"),
-	DLT_CHOICE(ARCNET_LINUX, "Linux ARCNET"),
+	DLT_CHOICE(ARCNET_LINUX, "Linux ARCnet"),
 	DLT_CHOICE(JUNIPER_MLPPP, "Juniper Multi-Link PPP"),
 	DLT_CHOICE(JUNIPER_MLFR, "Juniper Multi-Link Frame Relay"),
 	DLT_CHOICE(JUNIPER_ES, "Juniper Encryption Services PIC"),
@@ -3309,7 +3300,7 @@ static struct dlt_choice dlt_choices[] = {
 	DLT_CHOICE(JUNIPER_ST, "Juniper Secure Tunnel"),
 	DLT_CHOICE(BLUETOOTH_HCI_H4_WITH_PHDR, "Bluetooth HCI UART transport layer plus pseudo-header"),
 	DLT_CHOICE(AX25_KISS, "AX.25 with KISS header"),
-	DLT_CHOICE(IPMB_LINUX, "IPMB with Linux/Pigeon Point pseudo-header"),
+	DLT_CHOICE(I2C_LINUX, "I2C with Linux/Pigeon Point pseudo-header"),
 	DLT_CHOICE(IEEE802_15_4_NONASK_PHY, "IEEE 802.15.4 with non-ASK PHY data"),
 	DLT_CHOICE(MPLS, "MPLS with label as link-layer header"),
 	DLT_CHOICE(LINUX_EVDEV, "Linux evdev events"),
@@ -3335,7 +3326,7 @@ static struct dlt_choice dlt_choices[] = {
 	DLT_CHOICE(NFLOG, "Linux netfilter log messages"),
 	DLT_CHOICE(NETANALYZER, "Ethernet with Hilscher netANALYZER pseudo-header"),
 	DLT_CHOICE(NETANALYZER_TRANSPARENT, "Ethernet with Hilscher netANALYZER pseudo-header and with preamble and SFD"),
-	DLT_CHOICE(IPOIB, "RFC 4391 IP-over-Infiniband"),
+	DLT_CHOICE(IPOIB, "RFC 4391 IP-over-InfiniBand"),
 	DLT_CHOICE(MPEG_2_TS, "MPEG-2 transport stream"),
 	DLT_CHOICE(NG40, "ng40 protocol tester Iub/Iur"),
 	DLT_CHOICE(NFC_LLCP, "NFC LLCP PDUs with pseudo-header"),
@@ -3370,11 +3361,11 @@ static struct dlt_choice dlt_choices[] = {
 	DLT_CHOICE(OPENVIZSLA, "OpenVizsla USB"),
 	DLT_CHOICE(EBHSCR, "Elektrobit High Speed Capture and Replay (EBHSCR)"),
 	DLT_CHOICE(VPP_DISPATCH, "VPP graph dispatch tracer"),
-	DLT_CHOICE(DSA_TAG_BRCM, "Broadcom tag"),
-	DLT_CHOICE(DSA_TAG_BRCM_PREPEND, "Broadcom tag (prepended)"),
+	DLT_CHOICE(DSA_TAG_BRCM, "Broadcom infix DSA tag"),
+	DLT_CHOICE(DSA_TAG_BRCM_PREPEND, "Broadcom prefix DSA tag"),
 	DLT_CHOICE(IEEE802_15_4_TAP, "IEEE 802.15.4 with pseudo-header"),
-	DLT_CHOICE(DSA_TAG_DSA, "Marvell DSA"),
-	DLT_CHOICE(DSA_TAG_EDSA, "Marvell EDSA"),
+	DLT_CHOICE(DSA_TAG_DSA, "Marvell infix 4-octet DSA tag"),
+	DLT_CHOICE(DSA_TAG_EDSA, "Marvell infix 8-octet DSA tag"),
 	DLT_CHOICE(ELEE, "ELEE lawful intercept packets"),
 	DLT_CHOICE(Z_WAVE_SERIAL, "Z-Wave serial frames between host and chip"),
 	DLT_CHOICE(USB_2_0, "USB 2.0/1.1/1.0 as transmitted over the cable"),
@@ -3407,8 +3398,9 @@ static struct dlt_choice dlt_choices[] = {
 	DLT_CHOICE(USER13, "Private use 13"),
 	DLT_CHOICE(USER14, "Private use 14"),
 	DLT_CHOICE(USER15, "Private use 15"),
-	DLT_CHOICE(EDK2_MM, "edk2 mm request serialization protocol"),
+	DLT_CHOICE(EDK2_MM, "EDK II MM request serialization protocol"),
 	DLT_CHOICE(DEBUG_ONLY, "unstructured data for manual debugging only"),
+	DLT_CHOICE(DECT_NR_TAP, "DECT-2020 New Radio TAP"),
 	DLT_CHOICE_SENTINEL
 };
 
@@ -3589,7 +3581,7 @@ pcap_fileno(pcap_t *p)
 }
 #endif /* _WIN32 */
 
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 int
 pcap_get_selectable_fd(pcap_t *p)
 {
@@ -3640,7 +3632,7 @@ pcap_getnonblock(pcap_t *p, char *errbuf)
  * Get the current non-blocking mode setting, under the assumption that
  * it's just the standard POSIX non-blocking flag.
  */
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 int
 pcapint_getnonblock_fd(pcap_t *p)
 {
@@ -3680,7 +3672,7 @@ pcap_setnonblock(pcap_t *p, int nonblock, char *errbuf)
 	return (ret);
 }
 
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 /*
  * Set non-blocking mode, under the assumption that it's just the
  * standard POSIX non-blocking flag.  (This can be called by the
@@ -3720,6 +3712,8 @@ pcap_statustostr(int errnum)
 	static thread_local char ebuf[15+10+1];
 
 	switch (errnum) {
+	case 0:
+		return ("Success");
 
 	case PCAP_WARNING:
 		return("Generic warning");
@@ -3769,7 +3763,8 @@ pcap_statustostr(int errnum)
 	case PCAP_ERROR_CAPTURE_NOTSUP:
 		return ("Packet capture is not supported on that device");
 	}
-	(void)snprintf(ebuf, sizeof ebuf, "Unknown error: %d", errnum);
+	(void)snprintf(ebuf, sizeof ebuf, "Unknown %s: %d",
+	               errnum < 0 ? "error" : "warning", errnum);
 	return(ebuf);
 }
 
@@ -3865,6 +3860,84 @@ pcap_strerror(int errnum)
 	 */
 	return (strerror(errnum));
 #endif /* _WIN32 */
+}
+
+/*
+ * Routine to parse a string containing an unsigned decimal integer,
+ * which catches some errors that strtoul() doesn't (strtoul() appears
+ * to parse numbers according to the way a C compiler does, so it skips
+ * leading white space and will happily allow an unsigned number with
+ * a negative sign), and also can treat the string not being completely
+ * numeric as an error and will treat values that don't fit into
+ * an unsigned int as an error.
+ *
+ * If endptr is non-null, the string may have additional text after
+ * the number; if it is null, any additional text after the number
+ * is treated as an error.
+ *
+ * On success, it returns 0 and sets the item pointed to by nump to the
+ * integer value and, if endptr is not null, sets the item pointed to by
+ * it to a pointer to the character following the number.
+ *
+ * On error, it returns EINVAL for an invalid number or ERANGE for a
+ * value that's too large to fit in an unsigned int.
+ */
+int
+pcapint_get_decuint(const char *cp, char **endptr, unsigned *nump)
+{
+	unsigned long val;
+	char *end;
+
+	if (cp == NULL) {
+		/* Don't do this. */
+		return (EINVAL);
+	}
+
+	if ((cp[0] & 0x80) != 0 || isspace((unsigned char)cp[0]) ||
+	    cp[0] == '-' || cp[0] == '+') {
+		/*
+		 * Numbers don't begin with non-ASCII characters or white
+		 * space and unsigned numbers don't have a sign.
+		 */
+		*nump = 0;
+		if (endptr != NULL)
+			*endptr = (char *)cp;
+		return (EINVAL);
+	}
+
+	/*
+	 * Clear errno, so we can check whether it was set by strtoul().
+	 */
+	errno = 0;
+	val = strtoul(cp, &end, 10);
+	if ((val == 0 && end == cp) || (endptr == NULL && *end != '\0')) {
+		/*
+		 * Parsing error, including, if endptr is NULL, the
+		 * string ending with a non-digit character.
+		 */
+		*nump = 0;
+		if (endptr != NULL)
+			*endptr = end;
+		return (EINVAL);
+	}
+	if (val == ULONG_MAX && errno == ERANGE) {
+		/* Number is bigger than ULONG_MAX */
+		*nump = 0;
+		if (endptr != NULL)
+			*endptr = end;
+		return (ERANGE);
+	}
+	if (val > UINT_MAX) {
+		/* Number won't fit in an unsigned int */
+		*nump = 0;
+		if (endptr != NULL)
+			*endptr = end;
+		return (ERANGE);
+	}
+	if (endptr != NULL)
+		*endptr = end;
+	*nump = (unsigned) val;
+	return (0);
 }
 
 int
@@ -4033,14 +4106,10 @@ pcap_live_dump_ended(pcap_t *p, int sync)
 PAirpcapHandle
 pcap_get_airpcap_handle(pcap_t *p)
 {
-	PAirpcapHandle handle;
+	(void)snprintf(p->errbuf, sizeof(p->errbuf),
+		"AirPcap devices are no longer supported");
 
-	handle = p->get_airpcap_handle_op(p);
-	if (handle == NULL) {
-		(void)snprintf(p->errbuf, sizeof(p->errbuf),
-		    "This isn't an AirPcap device");
-	}
-	return (handle);
+	return (NULL);
 }
 #endif
 
@@ -4191,7 +4260,7 @@ pcapint_cleanup_live_common(pcap_t *p)
 		p->tstamp_precision_count = 0;
 	}
 	pcap_freecode(&p->fcode);
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 	if (p->fd >= 0) {
 		close(p->fd);
 		p->fd = -1;
@@ -4364,6 +4433,10 @@ pcap_offline_filter(const struct bpf_program *fp, const struct pcap_pkthdr *h,
 {
 	const struct bpf_insn *fcode = fp->bf_insns;
 
+	/*
+	 * Here .bf_insns == NULL means to reject all packets, but downstream
+	 * of pcapint_filter() it means to accept all packets.
+	 */
 	if (fcode != NULL)
 		return (pcapint_filter(fcode, fp->bf_len, pkt, h->len, h->caplen));
 	else
@@ -4549,12 +4622,6 @@ pcap_live_dump_ended_dead(pcap_t *p, int sync _U_)
 	    "Live packet dumping cannot be performed on a pcap_open_dead pcap_t");
 	return (-1);
 }
-
-static PAirpcapHandle
-pcap_get_airpcap_handle_dead(pcap_t *p _U_)
-{
-	return (NULL);
-}
 #endif /* _WIN32 */
 
 static void
@@ -4612,7 +4679,6 @@ pcap_open_dead_with_tstamp_precision(int linktype, int snaplen, u_int precision)
 	p->setuserbuffer_op = pcap_setuserbuffer_dead;
 	p->live_dump_op = pcap_live_dump_dead;
 	p->live_dump_ended_op = pcap_live_dump_ended_dead;
-	p->get_airpcap_handle_op = pcap_get_airpcap_handle_dead;
 #endif
 	p->breakloop_op = pcap_breakloop_dead;
 	p->cleanup_op = pcap_cleanup_dead;
